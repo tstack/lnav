@@ -466,10 +466,12 @@ public:
     }
 
     std::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
-    find_line_with_file(vis_line_t vl) const
+    find_line_with_file(std::optional<vis_line_t> vl) const
     {
-        if (vl >= 0_vl && vl < vis_line_t(this->lss_filtered_index.size())) {
-            return this->find_line_with_file(this->at(vl));
+        if (vl && vl.value() >= 0_vl
+            && vl.value() < vis_line_t(this->lss_filtered_index.size()))
+        {
+            return this->find_line_with_file(this->at(vl.value()));
         }
 
         return std::nullopt;

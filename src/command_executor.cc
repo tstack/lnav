@@ -786,8 +786,9 @@ execute_from_file(exec_context& ec,
     auto _sg
         = ec.enter_source(intern_string::lookup(src), line_number, cmdline);
 
-    lnav_data.ld_view_stack.top() |
-        [&ec](auto* tc) { ec.ec_top_line = tc->get_selection(); };
+    lnav_data.ld_view_stack.top() | [&ec](auto* tc) {
+        ec.ec_top_line = tc->get_selection().value_or(0_vl);
+    };
     switch (cmdline[0]) {
         case ':':
             retval = TRY(execute_command(ec, cmdline.substr(1)));
@@ -914,8 +915,9 @@ execute_init_commands(
 
             wait_for_children();
 
-            lnav_data.ld_view_stack.top() |
-                [&ec](auto* tc) { ec.ec_top_line = tc->get_selection(); };
+            lnav_data.ld_view_stack.top() | [&ec](auto* tc) {
+                ec.ec_top_line = tc->get_selection().value_or(0_vl);
+            };
             log_debug("init cmd: %s", cmd.c_str());
             {
                 auto _sg

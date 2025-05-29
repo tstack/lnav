@@ -709,7 +709,8 @@ db_label_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             if (ov_sel) {
                 std::vector<attr_line_t> rows;
                 auto* ov_source = lv.get_overlay_source();
-                ov_source->list_value_for_overlay(lv, lv.get_selection(), rows);
+                ov_source->list_value_for_overlay(
+                    lv, lv.get_selection().value(), rows);
                 if (ov_sel.value() < (ssize_t) rows.size()) {
                     auto& row_al = rows[ov_sel.value()];
                     auto col_attr
@@ -751,7 +752,7 @@ db_label_source::text_row_details(const textview_curses& tc)
     if (ov_sel.has_value()) {
         std::vector<attr_line_t> rows;
         auto* ov_source = tc.get_overlay_source();
-        ov_source->list_value_for_overlay(tc, tc.get_selection(), rows);
+        ov_source->list_value_for_overlay(tc, tc.get_selection().value(), rows);
         if (ov_sel.value() < (ssize_t) rows.size()) {
             auto& row_al = rows[ov_sel.value()];
             auto deets_attr = get_string_attr(row_al.al_attrs, DBA_DETAILS);
@@ -769,36 +770,41 @@ db_label_source::text_row_details(const textview_curses& tc)
         {
             yajlpp_map root(gen);
 
-            root.gen("value");
+            auto sel = tc.get_selection();
+            if (sel) {
+                root.gen("value");
 
-            {
-                yajlpp_map value_map(gen);
-
-                auto cursor = this->dls_row_cursors[tc.get_selection()].sync();
-                for (const auto& [col, hm] :
-                     lnav::itertools::enumerate(this->dls_headers))
                 {
-                    value_map.gen(hm.hm_name);
+                    yajlpp_map value_map(gen);
 
-                    switch (cursor->get_type()) {
-                        case lnav::cell_type::CT_NULL:
-                            value_map.gen();
-                            break;
-                        case lnav::cell_type::CT_INTEGER:
-                            value_map.gen(cursor->get_int());
-                            break;
-                        case lnav::cell_type::CT_FLOAT:
-                            if (cursor->get_sub_value() == 0) {
-                                value_map.gen(cursor->get_float());
-                            } else {
-                                value_map.gen(cursor->get_float_as_text());
-                            }
-                            break;
-                        case lnav::cell_type::CT_TEXT:
-                            value_map.gen(cursor->get_text());
-                            break;
+                    auto cursor
+                        = this->dls_row_cursors[tc.get_selection().value()]
+                              .sync();
+                    for (const auto& [col, hm] :
+                         lnav::itertools::enumerate(this->dls_headers))
+                    {
+                        value_map.gen(hm.hm_name);
+
+                        switch (cursor->get_type()) {
+                            case lnav::cell_type::CT_NULL:
+                                value_map.gen();
+                                break;
+                            case lnav::cell_type::CT_INTEGER:
+                                value_map.gen(cursor->get_int());
+                                break;
+                            case lnav::cell_type::CT_FLOAT:
+                                if (cursor->get_sub_value() == 0) {
+                                    value_map.gen(cursor->get_float());
+                                } else {
+                                    value_map.gen(cursor->get_float_as_text());
+                                }
+                                break;
+                            case lnav::cell_type::CT_TEXT:
+                                value_map.gen(cursor->get_text());
+                                break;
+                        }
+                        cursor = cursor->next();
                     }
-                    cursor = cursor->next();
                 }
             }
         }
@@ -970,7 +976,8 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
         return;
     }
 
-    if (row != lv.get_selection()) {
+    auto sel = lv.get_selection();
+    if (!sel || row != sel.value()) {
         return;
     }
 

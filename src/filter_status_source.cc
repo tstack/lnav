@@ -261,10 +261,11 @@ filter_help_status_source::statusview_fields()
         if (lnav_data.ld_mode == ln_mode_t::FILTER) {
             static auto* editor = injector::get<filter_sub_source*>();
             auto& lv = lnav_data.ld_filter_view;
+            auto sel = lv.get_selection();
             auto& fs = tss->get_filters();
 
             if (editor->fss_editing) {
-                auto tf = *(fs.begin() + lv.get_selection());
+                auto tf = *(fs.begin() + sel.value());
                 auto lang = tf->get_lang() == filter_lang_t::SQL ? "an SQL"
                                                                  : "a regular";
 
@@ -281,8 +282,8 @@ filter_help_status_source::statusview_fields()
                 }
             } else if (fs.empty()) {
                 this->fss_help.set_value("  %s", CREATE_HELP);
-            } else {
-                auto tf = *(fs.begin() + lv.get_selection());
+            } else if (sel) {
+                auto tf = *(fs.begin() + sel.value());
 
                 this->fss_help.set_value(
                     "  %s  %s%s  %s  %s%s  %s  %s%s",

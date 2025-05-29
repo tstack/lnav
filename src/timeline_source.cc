@@ -206,7 +206,8 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     struct tm lb_tm;
     auto ub = this->gho_src->gs_upper_bound;
     struct tm ub_tm;
-    auto bounds = this->gho_src->get_time_bounds_for(lv.get_selection());
+    auto bounds
+        = this->gho_src->get_time_bounds_for(lv.get_selection().value_or(0_vl));
 
     if (bounds.first < lb) {
         lb = bounds.first;
@@ -575,7 +576,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
         value_out = this->gs_rendered_line.get_attrs();
 
         auto lr = line_range{-1, -1, line_range::unit::codepoint};
-        auto sel_bounds = this->get_time_bounds_for(tc.get_selection());
+        auto sel_bounds = this->get_time_bounds_for(tc.get_selection().value_or(0_vl));
 
         if (row.or_value.otr_range.tr_begin <= sel_bounds.second
             && sel_bounds.first <= row.or_value.otr_range.tr_end)
@@ -946,8 +947,11 @@ timeline_source::time_for_row(vis_line_t row)
     }
 
     auto preview_selection = this->gs_preview_view.get_selection();
+    if (!preview_selection) {
+        return std::nullopt;
+    }
     if (preview_selection < this->gs_preview_rows.size()) {
-        return this->gs_preview_rows[preview_selection];
+        return this->gs_preview_rows[preview_selection.value()];
     }
 
     return row_info{
@@ -971,11 +975,11 @@ timeline_source::text_selection_changed(textview_curses& tc)
 
     this->gs_preview_source.clear();
     this->gs_preview_rows.clear();
-    if (sel >= this->gs_time_order.size()) {
+    if (!sel || sel.value() >= this->gs_time_order.size()) {
         return;
     }
 
-    const auto& row = this->gs_time_order[sel].get();
+    const auto& row = this->gs_time_order[sel.value()].get();
     auto low_tv = row.or_value.otr_range.tr_begin;
     auto high_tv = row.or_value.otr_range.tr_end;
     auto id_sf = row.or_name;

@@ -347,10 +347,11 @@ CREATE TABLE lnav_views (
             case 5: {
                 auto* time_source
                     = dynamic_cast<text_time_translator*>(tc.get_sub_source());
+                auto sel = tc.get_selection();
 
-                if (time_source != nullptr && tc.get_inner_height() > 0) {
-                    auto top_ri_opt
-                        = time_source->time_for_row(tc.get_selection());
+                if (time_source != nullptr && tc.get_inner_height() > 0 && sel)
+                {
+                    auto top_ri_opt = time_source->time_for_row(sel.value());
 
                     if (top_ri_opt) {
                         char timestamp[64];
@@ -416,14 +417,15 @@ CREATE TABLE lnav_views (
                     auto* time_source = dynamic_cast<text_time_translator*>(
                         tc.get_sub_source());
                     auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
+                    auto sel = tc.get_selection();
                     std::vector<breadcrumb::crumb> crumbs;
 
                     tss->text_crumbs_for_line(tc.get_top(), crumbs);
 
                     top_line_meta tlm;
-                    if (time_source != nullptr) {
+                    if (sel && time_source != nullptr) {
                         auto top_ri_opt
-                            = time_source->time_for_row(tc.get_selection());
+                            = time_source->time_for_row(sel.value());
 
                         if (top_ri_opt) {
                             char timestamp[64];
@@ -463,9 +465,15 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
-            case 12:
-                sqlite3_result_int(ctx, (int) tc.get_selection());
+            case 12: {
+                auto sel = tc.get_selection();
+                if (sel) {
+                    sqlite3_result_int(ctx, (int) sel.value());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
+            }
             case 13: {
                 if (sqlite3_vtab_nochange(ctx)) {
                     return SQLITE_OK;
@@ -601,15 +609,15 @@ CREATE TABLE lnav_views (
                 selection = top_row;
             }
         } else if (top_time != nullptr && time_source != nullptr) {
+            auto sel = tc.get_selection();
             date_time_scanner dts;
-            struct timeval tv;
+            timeval tv;
 
             log_debug("setting top time for %s to %s",
                       tc.get_title().c_str(),
                       top_time);
-            if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                auto last_ri_opt
-                    = time_source->time_for_row(tc.get_selection());
+            if (sel && dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
+                auto last_ri_opt = time_source->time_for_row(sel.value());
 
                 if (last_ri_opt) {
                     auto last_time = last_ri_opt->ri_time;

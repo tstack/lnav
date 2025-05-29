@@ -166,6 +166,7 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
     static auto& prompt = lnav::prompt::get();
 
     auto* tc = *lnav_data.ld_view_stack.top();
+    auto sel = tc->get_selection();
     auto& ec = lnav_data.ld_exec_context;
     auto* tc_tss = tc->get_sub_source();
     auto& bm = tc->get_bookmarks();
@@ -221,8 +222,8 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
                     top_tc->get_sub_source());
 
                 lnav_data.ld_last_view = nullptr;
-                if (src_view != nullptr && dst_view != nullptr) {
-                    src_view->time_for_row(top_tc->get_selection()) |
+                if (src_view != nullptr && dst_view != nullptr && sel) {
+                    src_view->time_for_row(sel.value()) |
                         [dst_view, tc](auto top_ri) {
                             dst_view->row_for_time(top_ri.ri_time) |
                                 [tc](auto row) { tc->set_selection(row); };
@@ -302,8 +303,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'f':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                bm[&logfile_sub_source::BM_FILES].next(tc->get_selection()) |
-                    [&tc](auto vl) { tc->set_selection(vl); };
+                bm[&logfile_sub_source::BM_FILES].next(
+                    tc->get_selection().value_or(0_vl))
+                    | [&tc](auto vl) { tc->set_selection(vl); };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 
@@ -316,13 +318,14 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'F':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                bm[&logfile_sub_source::BM_FILES].prev(tc->get_selection()) |
-                    [&tc](auto vl) {
-                        // setting the selection for movement to previous file
-                        // marker instead of the top will move the cursor, too,
-                        // if needed.
-                        tc->set_selection(vl);
-                    };
+                bm[&logfile_sub_source::BM_FILES].prev(
+                    tc->get_selection().value_or(0_vl))
+                    | [&tc](auto vl) {
+                          // setting the selection for movement to previous file
+                          // marker instead of the top will move the cursor,
+                          // too, if needed.
+                          tc->set_selection(vl);
+                      };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
 
@@ -337,9 +340,11 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
-                ec.execute(INTERNAL_SRC_LOC, fmt::format(
-                    FMT_STRING(":zoom-to {}"),
-                    +lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                ec.execute(
+                    INTERNAL_SRC_LOC,
+                    fmt::format(
+                        FMT_STRING(":zoom-to {}"),
+                        +lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
@@ -347,21 +352,23 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                ec.execute(INTERNAL_SRC_LOC, fmt::format(
-                    FMT_STRING(":zoom-to {}"),
-                    +lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                ec.execute(
+                    INTERNAL_SRC_LOC,
+                    fmt::format(
+                        FMT_STRING(":zoom-to {}"),
+                        +lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 
         case 'J':
             if (tc->is_selectable()) {
-                if (tc->get_selection() >= 0_vl) {
+                if (sel) {
                     tc->toggle_user_mark(&textview_curses::BM_USER,
-                                         tc->get_selection());
-                    lnav_data.ld_select_start[tc] = tc->get_selection();
-                    lnav_data.ld_last_user_mark[tc] = tc->get_selection();
-                    if (tc->get_selection() + 1_vl < tc->get_inner_height()) {
-                        tc->set_selection(tc->get_selection() + 1_vl);
+                                         sel.value());
+                    lnav_data.ld_select_start[tc] = sel.value();
+                    lnav_data.ld_last_user_mark[tc] = sel.value();
+                    if (sel.value() + 1_vl < tc->get_inner_height()) {
+                        tc->set_selection(sel.value() + 1_vl);
                     }
                 }
             } else {
@@ -370,16 +377,15 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     || !tc->is_line_visible(
                         vis_line_t(lnav_data.ld_last_user_mark[tc])))
                 {
-                    lnav_data.ld_select_start[tc] = tc->get_selection();
-                    lnav_data.ld_last_user_mark[tc] = tc->get_selection();
+                    lnav_data.ld_select_start[tc] = tc->get_top();
+                    lnav_data.ld_last_user_mark[tc] = tc->get_top();
                 } else {
                     vis_line_t height;
                     unsigned long width;
 
                     tc->get_dimensions(height, width);
                     if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2)
-                        && tc->get_selection() + height
-                            < tc->get_inner_height())
+                        && tc->get_top() + height < tc->get_inner_height())
                     {
                         tc->shift_top(1_vl);
                     }
@@ -403,7 +409,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case 'K': {
             if (tc->is_selectable()) {
                 tc->toggle_user_mark(&textview_curses::BM_USER,
-                                     tc->get_selection());
+                                     tc->get_selection().value_or(0_vl));
                 tc->shift_selection(listview_curses::shift_amount_t::up_line);
             } else {
                 int new_mark;
@@ -413,14 +419,14 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     || !tc->is_line_visible(
                         vis_line_t(lnav_data.ld_last_user_mark[tc])))
                 {
-                    new_mark = tc->get_selection();
+                    new_mark = tc->get_top();
                 } else {
                     new_mark = lnav_data.ld_last_user_mark[tc];
                 }
 
                 tc->toggle_user_mark(&textview_curses::BM_USER,
                                      vis_line_t(new_mark));
-                if (new_mark == tc->get_selection() && tc->get_top() > 0_vl) {
+                if (new_mark == tc->get_top() && tc->get_top() > 0_vl) {
                     tc->shift_top(-1_vl);
                 }
                 if (new_mark > 0) {
@@ -429,9 +435,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     lnav_data.ld_last_user_mark[tc] = new_mark;
                     alerter::singleton().chime("no more lines to mark");
                 }
-                lnav_data.ld_select_start[tc] = tc->get_selection();
-                if (tc->is_selectable() && tc->get_selection() > 0_vl) {
-                    tc->set_selection(tc->get_selection() - 1_vl);
+                lnav_data.ld_select_start[tc] = tc->get_top();
+                if (tc->is_selectable() && tc->get_top() > 0_vl) {
+                    tc->set_selection(tc->get_top() - 1_vl);
                 }
             }
             tc->reload_data();
@@ -441,15 +447,16 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
         }
 
-        case 'M':
-            if (lnav_data.ld_last_user_mark.find(tc)
-                == lnav_data.ld_last_user_mark.end())
+        case 'M': {
+            if (!sel) {
+            } else if (lnav_data.ld_last_user_mark.find(tc)
+                       == lnav_data.ld_last_user_mark.end())
             {
                 alerter::singleton().chime("no lines have been marked");
             } else {
-                int start_line = std::min((int) tc->get_selection(),
+                int start_line = std::min((int) tc->get_selection().value(),
                                           lnav_data.ld_last_user_mark[tc] + 1);
-                int end_line = std::max((int) tc->get_selection(),
+                int end_line = std::max((int) tc->get_selection().value(),
                                         lnav_data.ld_last_user_mark[tc] - 1);
 
                 tc->toggle_user_mark(&textview_curses::BM_USER,
@@ -458,6 +465,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 tc->reload_data();
             }
             break;
+        }
 
 #if 0
             case 'S':
@@ -477,8 +485,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 #endif
 
         case 's':
-            if (text_accel_p && text_accel_p->is_time_offset_supported()) {
-                auto next_top = tc->get_selection() + 1_vl;
+            if (sel && text_accel_p && text_accel_p->is_time_offset_supported())
+            {
+                auto next_top = sel.value() + 1_vl;
 
                 if (!tc->is_selectable()) {
                     next_top += 1_vl;
@@ -510,7 +519,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'S':
             if (text_accel_p && text_accel_p->is_time_offset_supported()) {
-                auto next_top = tc->get_selection();
+                auto next_top = tc->get_selection().value_or(0_vl);
 
                 if (tc->is_selectable() && next_top > 0_vl) {
                     next_top -= 1_vl;
@@ -558,7 +567,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case '0':
             if (lss) {
                 const int step = 24 * 60 * 60;
-                lss->time_for_row(tc->get_selection()) |
+                lss->time_for_row(tc->get_selection().value_or(0_vl)) |
                     [lss, tc](auto first_ri) {
                         lss->find_from_time(
                             roundup_size(first_ri.ri_time.tv_sec, step))
@@ -569,7 +578,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case ')':
             if (lss) {
-                lss->time_for_row(tc->get_selection()) |
+                lss->time_for_row(tc->get_selection().value_or(0_vl)) |
                     [lss, tc](auto first_ri) {
                         time_t day
                             = rounddown(first_ri.ri_time.tv_sec, 24 * 60 * 60);
@@ -588,7 +597,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 alerter::singleton().chime(
                     "the top of the log has been reached");
             } else if (lss) {
-                lss->time_for_row(tc->get_selection()) |
+                lss->time_for_row(tc->get_selection().value_or(0_vl)) |
                     [lss, ch, tc](auto first_ri) {
                         int step = ch.id == 'D' ? (24 * 60 * 60) : (60 * 60);
                         time_t top_time = first_ri.ri_time.tv_sec;
@@ -606,7 +615,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'd':
             if (lss) {
-                lss->time_for_row(tc->get_selection()) |
+                lss->time_for_row(tc->get_selection().value_or(0_vl)) |
                     [ch, lss, tc](auto first_ri) {
                         int step = ch.id == 'd' ? (24 * 60 * 60) : (60 * 60);
                         lss->find_from_time(first_ri.ri_time.tv_sec + step) |
@@ -619,8 +628,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'o':
         case 'O':
-            if (lss != nullptr && lss->text_line_count() > 0) {
-                auto start_win = lss->window_at(tc->get_selection());
+            if (sel && lss != nullptr && lss->text_line_count() > 0) {
+                auto start_win = lss->window_at(sel.value());
                 auto start_win_iter = start_win.begin();
                 const auto& opid_opt
                     = start_win_iter->get_values().lvv_opid_value;
@@ -703,7 +712,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     = dynamic_cast<text_time_translator*>(tc->get_sub_source());
 
                 if (src_view != nullptr) {
-                    src_view->time_for_row(tc->get_selection()) |
+                    src_view->time_for_row(tc->get_selection().value_or(0_vl)) |
                         [](auto log_top_ri) {
                             lnav_data.ld_hist_source2.row_for_time(
                                 log_top_ri.ri_time)
@@ -720,10 +729,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
                     if (dst_view != nullptr) {
                         auto& hs = lnav_data.ld_hist_source2;
-                        auto hist_top_time_opt
-                            = hs.time_for_row(hist_tc.get_selection());
-                        auto curr_top_time_opt
-                            = dst_view->time_for_row(top_tc->get_selection());
+                        auto hist_top_time_opt = hs.time_for_row(
+                            hist_tc.get_selection().value_or(0_vl));
+                        auto curr_top_time_opt = dst_view->time_for_row(
+                            top_tc->get_selection().value_or(0_vl));
                         if (hist_top_time_opt && curr_top_time_opt
                             && hs.row_for_time(hist_top_time_opt->ri_time)
                                 != hs.row_for_time(curr_top_time_opt->ri_time))
@@ -775,9 +784,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     log_line_col = dls.column_name_to_index("min(log_line)");
                 }
 
-                if (log_line_col) {
-                    auto line_number
-                        = dls.get_cell_as_int64(db_row, log_line_col.value());
+                if (!db_row) {
+                } else if (log_line_col) {
+                    auto line_number = dls.get_cell_as_int64(
+                        db_row.value(), log_line_col.value());
 
                     if (line_number < tc->listview_rows(*tc)) {
                         tc->set_selection(vis_line_t(line_number.value()));
@@ -789,7 +799,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                         timeval tv;
                         exttm tm;
                         const auto col_value
-                            = dls.get_cell_as_string(db_row, lpc);
+                            = dls.get_cell_as_string(db_row.value(), lpc);
 
                         if (dts.scan(col_value.c_str(),
                                      col_value.length(),
@@ -846,7 +856,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'r':
         case 'R':
-            if (lss != nullptr) {
+            if (sel && lss != nullptr) {
                 const auto& last_time = injector::get<const relative_time&,
                                                       last_relative_time_tag>();
 
@@ -857,10 +867,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                             .append(" command to set the relative time to "
                                     "move by"));
                 } else {
-                    vis_line_t vl = tc->get_selection(), new_vl;
+                    vis_line_t vl = sel.value(), new_vl;
                     relative_time rt = last_time;
                     content_line_t cl;
-                    struct exttm tm;
+                    exttm tm;
                     bool done = false;
 
                     if (ch.id == 'r') {

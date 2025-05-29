@@ -754,7 +754,7 @@ public:
         tv.tv_usec = (ms_to_deadline % 1000) * 1000;
         gettimeofday(&now, nullptr);
         timeradd(&now, &tv, &this->tc_follow_deadline);
-        this->tc_follow_selection = this->get_selection();
+        this->tc_follow_selection = this->get_selection().value_or(-1_vl);
         this->tc_follow_func = func;
     }
 

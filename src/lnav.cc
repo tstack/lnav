@@ -314,18 +314,20 @@ setup_logline_table(exec_context& ec)
     if (log_view.get_inner_height()) {
         static const intern_string_t logline = intern_string::lookup("logline");
         auto vl = log_view.get_selection();
-        auto cl = lnav_data.ld_log_source.at_base(vl);
-        auto file_and_line_opt
-            = lnav_data.ld_log_source.find_line_with_file(cl);
-        if (file_and_line_opt && file_and_line_opt->second->is_message()) {
-            lnav_data.ld_vtab_manager->unregister_vtab(
-                logline.to_string_fragment());
-            lnav_data.ld_vtab_manager->register_vtab(
-                std::make_shared<log_data_table>(lnav_data.ld_log_source,
-                                                 *lnav_data.ld_vtab_manager,
-                                                 cl,
-                                                 logline));
-            retval = true;
+        if (vl) {
+            auto cl = lnav_data.ld_log_source.at_base(vl.value());
+            auto file_and_line_opt
+                = lnav_data.ld_log_source.find_line_with_file(cl);
+            if (file_and_line_opt && file_and_line_opt->second->is_message()) {
+                lnav_data.ld_vtab_manager->unregister_vtab(
+                    logline.to_string_fragment());
+                lnav_data.ld_vtab_manager->register_vtab(
+                    std::make_shared<log_data_table>(lnav_data.ld_log_source,
+                                                     *lnav_data.ld_vtab_manager,
+                                                     cl,
+                                                     logline));
+                retval = true;
+            }
         }
     }
 
@@ -1460,11 +1462,20 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     breadcrumb_view->set_y(1);
     breadcrumb_view->set_window(lnav_data.ld_window);
     breadcrumb_view->set_line_source(lnav_crumb_source);
-    breadcrumb_view->bc_perform_handler =
-        [](breadcrumb::crumb::perform p, const breadcrumb::crumb::key_t& key) {
-            isc::to<main_looper&, services::main_t>().send(
-                [p, key](auto& mlooper) { p(key); });
-        };
+    breadcrumb_view->bc_perform_handler
+        = [](breadcrumb_curses& bc,
+             breadcrumb::crumb::perform p,
+             const breadcrumb::crumb::key_t& key) {
+              isc::to<main_looper&, services::main_t>().send(
+                  [p, key, &bc](auto& mlooper) {
+                      p(key);
+                      bc.reload_data();
+                      if (bc.is_focused()) {
+                          bc.focus_next();
+                      }
+                      bc.set_needs_update();
+                  });
+          };
     auto event_handler = [](auto&& tc) {
         auto top_view = lnav_data.ld_view_stack.top();
 
@@ -1949,7 +1960,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (lnav_data.ld_preview_view[0].get_needs_update()
             || lnav_data.ld_preview_view[1].get_needs_update())
         {
-            log_trace("preview updated, update prompt");
+            // log_trace("preview updated, update prompt");
             prompt.p_editor.set_needs_update();
         }
         if (filter_source->fss_editing
@@ -1962,13 +1973,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             || (lnav_data.ld_filter_view.is_visible()
                 && lnav_data.ld_filter_view.get_needs_update()))
         {
-            log_trace("config panels updated, update prompt");
+            // log_trace("config panels updated, update prompt");
             prompt.p_editor.set_needs_update();
             lnav_data.ld_status[LNS_FILTER].set_needs_update();
             lnav_data.ld_status[LNS_FILTER_HELP].set_needs_update();
         }
         if (prompt.p_editor.get_needs_update()) {
-            log_trace("prompt updated, update others");
+            // log_trace("prompt updated, update others");
             if (lnav_data.ld_files_view.is_visible()) {
                 lnav_data.ld_files_view.set_needs_update();
             }
@@ -2030,6 +2041,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             next_status_update_time = ui_clock::now() + 100ms;
         }
         if (breadcrumb_view->do_update()) {
+            log_trace("update crumb");
             updated_views.emplace_back(breadcrumb_view);
         }
         // These updates need to be done last so their textinput views can
@@ -2424,17 +2436,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         if (lnav_data.ld_sigint_count > 0) {
-            bool found_piper = false;
+            auto found_piper = false;
 
             lnav_data.ld_sigint_count = 0;
             if (!lnav_data.ld_view_stack.empty()) {
                 auto* tc = *lnav_data.ld_view_stack.top();
+                auto sel = tc->get_selection();
 
-                if (tc->get_inner_height() > 0_vl) {
+                if (tc->get_inner_height() > 0_vl && sel) {
                     std::vector<attr_line_t> rows(1);
 
                     tc->get_data_source()->listview_value_for_rows(
-                        *tc, tc->get_selection(), rows);
+                        *tc, sel.value(), rows);
                     auto& sa = rows[0].get_attrs();
                     auto line_attr_opt = get_string_attr(sa, L_FILE);
                     if (line_attr_opt) {

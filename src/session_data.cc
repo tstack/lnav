@@ -1614,15 +1614,18 @@ save_session_with_id(const std::string& session_id)
                         && tc.get_inner_height() > 0_vl
                         && tc.get_selection() != tc.get_inner_height() - 1)
                     {
-                        view_map.gen("focused_line");
-                        view_map.gen((long long) tc.get_selection());
+                        auto sel = tc.get_selection();
+                        if (sel) {
+                            view_map.gen("focused_line");
+                            view_map.gen((long long) sel.value());
 
-                        if (ta != nullptr) {
-                            auto anchor_opt
-                                = ta->anchor_for_row(tc.get_selection());
-                            if (anchor_opt) {
-                                view_map.gen("anchor");
-                                view_map.gen(anchor_opt.value());
+                            if (ta != nullptr) {
+                                auto anchor_opt
+                                    = ta->anchor_for_row(sel.value());
+                                if (anchor_opt) {
+                                    view_map.gen("anchor");
+                                    view_map.gen(anchor_opt.value());
+                                }
                             }
                         }
                     }
@@ -1945,8 +1948,9 @@ lnav::session::restore_view_states()
                      vs.vs_selection.value());
             tview.set_selection(vis_line_t(vs.vs_selection.value()));
         }
-        if (ta != nullptr && vs.vs_anchor && !vs.vs_anchor->empty()) {
-            auto curr_anchor = ta->anchor_for_row(tview.get_selection());
+        auto sel = tview.get_selection();
+        if (sel && ta != nullptr && vs.vs_anchor && !vs.vs_anchor->empty()) {
+            auto curr_anchor = ta->anchor_for_row(sel.value());
 
             if (!curr_anchor || curr_anchor.value() != vs.vs_anchor.value()) {
                 log_info("%s view anchor mismatch %s != %s",

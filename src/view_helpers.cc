@@ -1340,10 +1340,14 @@ moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                vis_line_t top)
 {
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto sel = tc->get_selection();
+    if (!sel) {
+        return false;
+    }
     auto new_top = next_cluster(f, bt, top);
 
     if (!new_top) {
-        new_top = next_cluster(f, bt, tc->get_selection());
+        new_top = next_cluster(f, bt, sel.value());
     }
     if (new_top != -1) {
         tc->get_sub_source()->get_location_history() |
@@ -1365,7 +1369,7 @@ moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
 vis_line_t
 search_forward_from(textview_curses* tc)
 {
-    vis_line_t height, retval = tc->get_selection();
+    vis_line_t height, retval = tc->get_selection().value_or(0_vl);
 
     if (!tc->is_selectable()) {
         auto& krh = lnav_data.ld_key_repeat_history;
@@ -1531,8 +1535,12 @@ lnav_crumb_source()
         view_performer);
 
     auto* tss = top_view->get_sub_source();
+    auto sel = top_view->get_selection();
+    if (!sel) {
+        return retval;
+    }
     if (tss != nullptr) {
-        tss->text_crumbs_for_line(top_view->get_selection(), retval);
+        tss->text_crumbs_for_line(sel.value(), retval);
     }
 
     return retval;

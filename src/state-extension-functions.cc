@@ -44,23 +44,25 @@ static std::optional<int64_t>
 sql_log_top_line()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
+    auto sel = tc.get_selection();
 
-    if (tc.get_inner_height() == 0_vl) {
+    if (!sel || tc.get_inner_height() == 0_vl) {
         return std::nullopt;
     }
-    return (int64_t) tc.get_selection();
+    return (int64_t) sel.value();
 }
 
 static std::optional<int64_t>
 sql_log_msg_line()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
+    auto top_line_opt = tc.get_selection();
 
-    if (tc.get_inner_height() == 0_vl) {
+    if (!top_line_opt || tc.get_inner_height() == 0_vl) {
         return std::nullopt;
     }
 
-    auto top_line = tc.get_selection();
+    auto top_line = top_line_opt.value();
     auto line_pair_opt = lnav_data.ld_log_source.find_line_with_file(top_line);
     if (!line_pair_opt) {
         return std::nullopt;
@@ -79,13 +81,13 @@ static std::optional<std::string>
 sql_log_top_datetime()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
+    auto top_line_opt = tc.get_selection();
 
-    if (tc.get_inner_height() == 0_vl) {
+    if (!top_line_opt || tc.get_inner_height() == 0_vl) {
         return std::nullopt;
     }
 
-    auto top_ri = lnav_data.ld_log_source.time_for_row(
-        lnav_data.ld_views[LNV_LOG].get_selection());
+    auto top_ri = lnav_data.ld_log_source.time_for_row(top_line_opt.value());
     if (!top_ri) {
         return std::nullopt;
     }

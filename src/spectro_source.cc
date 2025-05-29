@@ -64,7 +64,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
     switch (ch.eff_text[0]) {
         case 'm': {
             auto sel = lv.get_selection();
-            if (sel < 0 || (size_t) sel >= this->text_line_count()
+            if (!sel || sel.value() < 0
+                || (size_t) sel.value() >= this->text_line_count()
                 || !this->ss_cursor_column || this->ss_value_source == nullptr)
             {
                 alerter::singleton().chime(
@@ -79,7 +80,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
             width -= 2;
 
             auto& sb = this->ss_cached_bounds;
-            auto begin_time_opt = this->time_for_row_int(sel);
+            auto begin_time_opt = this->time_for_row_int(sel.value());
             if (!begin_time_opt) {
                 return true;
             }
@@ -131,7 +132,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
 
             lv.get_dimensions(height, width);
 
-            this->text_attrs_for_line((textview_curses&) lv, sel, sa);
+            this->text_attrs_for_line(
+                (textview_curses&) lv, sel.value_or(0_vl), sa);
 
             if (sa.empty()) {
                 this->ss_details_source.reset();
@@ -186,7 +188,10 @@ spectrogram_source::text_handle_mouse(
     mouse_event& me)
 {
     auto sel = tc.get_selection();
-    const auto& s_row = this->load_row(tc, sel);
+    if (!sel) {
+        return false;
+    }
+    const auto& s_row = this->load_row(tc, sel.value());
 
     for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
         int col_value = s_row.sr_values[lpc].rb_counter;
@@ -218,15 +223,15 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
 
     auto sel = lv.get_selection();
 
-    if (row == sel && this->ss_cursor_column) {
-        const auto& s_row = this->load_row(lv, sel);
+    if (sel && row == sel.value() && this->ss_cursor_column) {
+        const auto& s_row = this->load_row(lv, sel.value());
         const auto& bucket = s_row.sr_values[this->ss_cursor_column.value()];
         auto& sb = this->ss_cached_bounds;
         spectrogram_request sr(sb);
         attr_line_t retval;
 
         auto sel_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-            + (sel * this->ss_granularity);
+            + (sel.value() * this->ss_granularity);
         sr.sr_width = width;
         sr.sr_begin_time = sel_time;
         sr.sr_end_time = sel_time + this->ss_granularity;
@@ -561,10 +566,10 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
         return;
     }
 
-    if (tc.get_selection() == -1_vl) {
+    if (!tc.get_selection()) {
         tc.set_selection(0_vl);
     }
-    const auto& s_row = this->load_row(tc, tc.get_selection());
+    const auto& s_row = this->load_row(tc, tc.get_selection().value());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));
     this->ss_details_source.reset();

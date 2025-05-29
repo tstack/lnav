@@ -208,7 +208,7 @@
         "filtering": 0,
         "movement": "cursor",
         "top_meta": null,
-        "selection": 0,
+        "selection": null,
         "options": {
             "row-details": "hide",
             "hidden-fields": "hide",

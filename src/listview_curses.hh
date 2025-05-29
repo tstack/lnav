@@ -248,9 +248,12 @@ public:
 
     void shift_selection(shift_amount_t sa);
 
-    vis_line_t get_selection() const
+    std::optional<vis_line_t> get_selection() const
     {
-        if (this->lv_selectable && this->lv_selection != -1_vl) {
+        if (this->lv_selectable) {
+            if (this->lv_selection == -1) {
+                return std::nullopt;
+            }
             return this->lv_selection;
         }
         return this->lv_top;
@@ -327,9 +330,17 @@ public:
         }
 
         std::vector<attr_line_t> top_line{1};
+        auto sel = this->get_selection();
+        if (!sel) {
+            if constexpr (std::is_same_v<R, void>) {
+                return;
+            } else {
+                return std::nullopt;
+            }
+        }
 
         this->lv_source->listview_value_for_rows(
-            *this, this->get_selection(), top_line);
+            *this, sel.value(), top_line);
         return func(top_line[0]);
     }
 

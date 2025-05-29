@@ -61,6 +61,7 @@ public:
     bool handle_mouse(mouse_event& me) override;
 
     void focus();
+    void focus_next();
     void blur();
 
     bool handle_key(const ncinput& ch);
@@ -69,14 +70,18 @@ public:
 
     void reload_data();
 
+    bool is_focused() const { return !this->bc_focused_crumbs.empty(); }
+
     static void no_op_action(breadcrumb_curses&);
 
     action on_focus{no_op_action};
     action on_blur{no_op_action};
 
-    std::function<void(breadcrumb::crumb::perform,
+    std::function<void(breadcrumb_curses&,
+                       breadcrumb::crumb::perform,
                        const breadcrumb::crumb::key_t& key)>
         bc_perform_handler;
+
 private:
     class search_overlay_source : public list_overlay_source {
     public:
@@ -93,7 +98,7 @@ private:
         if_different,
     };
 
-    void perform_selection(perform_behavior_t behavior);
+    bool perform_selection(perform_behavior_t behavior);
 
     ncplane* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;

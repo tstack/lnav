@@ -245,6 +245,19 @@ breadcrumb_curses::blur()
     this->set_needs_update();
 }
 
+void
+breadcrumb_curses::focus_next()
+{
+    this->blur();
+    this->focus();
+    this->reload_data();
+    if (this->bc_selected_crumb.value() < this->bc_focused_crumbs.size() - 1) {
+        this->bc_selected_crumb = this->bc_selected_crumb.value() + 1;
+    }
+    this->bc_current_search.clear();
+    this->reload_data();
+}
+
 bool
 breadcrumb_curses::handle_key(const ncinput& ch)
 {
@@ -258,7 +271,6 @@ breadcrumb_curses::handle_key(const ncinput& ch)
             case 'a':
             case 'A':
                 mapped_id = KEY_CTRL('a');
-                break;
                 break;
             case 'e':
             case 'E':
@@ -300,22 +312,12 @@ breadcrumb_curses::handle_key(const ncinput& ch)
         case NCKEY_TAB:
         case NCKEY_RIGHT:
             if (this->bc_selected_crumb) {
-                this->perform_selection(perform_behavior_t::if_different);
-                this->blur();
-                this->focus();
-                this->reload_data();
-                if (this->bc_selected_crumb.value()
-                    < this->bc_focused_crumbs.size() - 1)
+                if (!this->perform_selection(perform_behavior_t::if_different))
                 {
-                    this->bc_selected_crumb
-                        = this->bc_selected_crumb.value() + 1;
-                    retval = true;
+                    this->focus_next();
                 }
-                this->bc_current_search.clear();
-                this->reload_data();
-            } else {
-                retval = true;
             }
+            retval = true;
             break;
         case NCKEY_HOME:
             this->bc_match_view.set_selection(0_vl);
@@ -376,35 +378,41 @@ breadcrumb_curses::handle_key(const ncinput& ch)
     return retval;
 }
 
-void
+bool
 breadcrumb_curses::perform_selection(perform_behavior_t behavior)
 {
+    auto retval = false;
+
     if (!this->bc_selected_crumb) {
-        return;
+        return retval;
     }
 
     auto& selected_crumb_ref
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     auto match_sel = this->bc_match_view.get_selection();
-    if (match_sel >= 0
-        && match_sel < vis_line_t(this->bc_similar_values.size()))
+    if (match_sel.has_value()
+        && match_sel.value() < vis_line_t(this->bc_similar_values.size()))
     {
-        const auto& new_value = this->bc_similar_values[match_sel].p_key;
+        const auto& new_value
+            = this->bc_similar_values[match_sel.value()].p_key;
 
         switch (behavior) {
             case perform_behavior_t::if_different:
                 if (breadcrumb::crumb::key_t{new_value}
                     == selected_crumb_ref.c_key)
                 {
-                    return;
+                    return retval;
                 }
                 break;
             case perform_behavior_t::always:
                 break;
         }
         if (this->bc_perform_handler) {
-            this->bc_perform_handler(selected_crumb_ref.c_performer, new_value);
+            this->bc_perform_handler(
+                *this, selected_crumb_ref.c_performer, new_value);
         }
+
+        retval = true;
     } else if (!this->bc_current_search.empty()) {
         switch (selected_crumb_ref.c_expected_input) {
             case breadcrumb::crumb::expected_input_t::exact:
@@ -421,12 +429,16 @@ breadcrumb_curses::perform_selection(perform_behavior_t behavior)
             }
             case breadcrumb::crumb::expected_input_t::anything:
                 if (this->bc_perform_handler) {
-                    this->bc_perform_handler(selected_crumb_ref.c_performer,
+                    this->bc_perform_handler(*this,
+                                             selected_crumb_ref.c_performer,
                                              this->bc_current_search);
                 }
                 break;
         }
+        retval = true;
     }
+
+    return retval;
 }
 
 bool

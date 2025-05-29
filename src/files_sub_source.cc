@@ -50,10 +50,14 @@ using namespace lnav::roles::literals;
 
 namespace files_model {
 files_list_selection
-from_selection(vis_line_t sel_vis)
+from_selection(std::optional<vis_line_t> sel_vis)
 {
+    if (!sel_vis) {
+        return no_selection{};
+    }
+
     auto& fc = lnav_data.ld_active_files;
-    int sel = sel_vis;
+    int sel = sel_vis.value();
 
     {
         safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);

@@ -61,12 +61,15 @@ bottom_status_source::bottom_status_source()
 void
 bottom_status_source::update_line_number(listview_curses* lc)
 {
-    status_field& sf = this->bss_fields[BSF_LINE_NUMBER];
+    auto& sf = this->bss_fields[BSF_LINE_NUMBER];
+    auto sel = lc->get_selection();
 
     if (lc->get_inner_height() == 0) {
         sf.set_value(" L0");
+    } else if (sel) {
+        sf.set_value(" L%'d", (int) sel.value());
     } else {
-        sf.set_value(" L%'d", (int) lc->get_selection());
+        sf.set_value(" L-");
     }
 
     this->bss_line_error.set_value(
@@ -135,13 +138,16 @@ bottom_status_source::update_marks(listview_curses* lc)
 
         if (!bv.empty() || !tc->get_current_search().empty()) {
             auto vl = tc->get_selection();
-            auto lb = bv.bv_tree.find(vl);
-            if (lb != bv.bv_tree.end()) {
-                retval = sf.set_value("  Hit %'d of %'d for ",
-                                      (lb - bv.bv_tree.begin()) + 1,
-                                      tc->get_match_count());
-            } else {
-                retval = sf.set_value("  %'d hits for ", tc->get_match_count());
+            if (vl) {
+                auto lb = bv.bv_tree.find(vl.value());
+                if (lb != bv.bv_tree.end()) {
+                    retval = sf.set_value("  Hit %'d of %'d for ",
+                                          (lb - bv.bv_tree.begin()) + 1,
+                                          tc->get_match_count());
+                } else {
+                    retval = sf.set_value("  %'d hits for ",
+                                          tc->get_match_count());
+                }
             }
         } else {
             retval = sf.clear();

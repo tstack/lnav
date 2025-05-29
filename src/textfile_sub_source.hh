@@ -199,7 +199,7 @@ private:
         void save_from(const textview_curses& tc)
         {
             this->fvs_top = tc.get_top();
-            this->fvs_selection = tc.get_selection();
+            this->fvs_selection = tc.get_selection().value_or(-1_vl);
         }
 
         void load_into(textview_curses& tc) const

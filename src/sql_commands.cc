@@ -264,12 +264,13 @@ prql_cmd_from_prompt(exec_context& ec, const std::string& cmdline)
 
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto sel = tc->get_selection();
 
-    if (lss == nullptr || lss->text_line_count() == 0) {
+    if (!sel || lss == nullptr || lss->text_line_count() == 0) {
         return {};
     }
 
-    auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+    auto line_pair = lss->find_line_with_file(lss->at(sel.value()));
     if (!line_pair) {
         return {};
     }

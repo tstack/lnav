@@ -86,10 +86,12 @@ com_hide_line(exec_context& ec,
                 exttm tm;
 
                 auto vl = tc->get_selection();
-                auto log_vl_ri = ttt->time_for_row(vl);
-                if (log_vl_ri) {
-                    tm = exttm::from_tv(log_vl_ri.value().ri_time);
-                    tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
+                if (vl) {
+                    auto log_vl_ri = ttt->time_for_row(vl.value());
+                    if (log_vl_ri) {
+                        tm = exttm::from_tv(log_vl_ri.value().ri_time);
+                        tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
+                    }
                 }
             }
         } else if (dts.convert_to_timeval(all_args, tv_abs)) {

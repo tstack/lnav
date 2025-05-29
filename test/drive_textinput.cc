@@ -404,7 +404,8 @@ main(int argc, char** argv)
         tc.tc_on_completion = [](textinput_curses& tc) {
             tc.tc_selection = tc.tc_complete_range;
             const auto& repl
-                = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
+                = tc.tc_popup_source
+                      .get_lines()[tc.tc_popup.get_selection().value()]
                       .tl_value.to_string_fragment();
             tc.replace_selection(repl);
         };

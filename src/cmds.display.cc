@@ -101,6 +101,7 @@ com_toggle_field(exec_context& ec,
             for (int lpc = 1; lpc < (int) args.size(); lpc++) {
                 intern_string_t name;
                 std::shared_ptr<log_format> format;
+                auto sel = tc->get_selection();
                 size_t dot;
 
                 if ((dot = args[lpc].find('.')) != std::string::npos) {
@@ -116,8 +117,8 @@ com_toggle_field(exec_context& ec,
                                                  args[lpc].length() - dot - 1);
                 } else if (tc->get_inner_height() == 0) {
                     return ec.make_error("no log messages to hide");
-                } else {
-                    auto cl = lss.at(tc->get_selection());
+                } else if (sel) {
+                    auto cl = lss.at(sel.value());
                     auto lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);

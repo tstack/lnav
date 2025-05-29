@@ -1494,7 +1494,7 @@ rl_callback(textinput_curses& rc)
                     = prompt.p_search_history.start_operation(cmdline);
                 auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
-                auto vl = is_alt ? bv.prev(tc->get_selection())
+                auto vl = is_alt ? bv.prev(tc->get_selection().value_or(0_vl))
                                  : bv.next(tc->get_top());
 
                 if (vl) {
@@ -1513,7 +1513,7 @@ rl_callback(textinput_curses& rc)
 
                         if (is_alt) {
                             first_hit = bm[&textview_curses::BM_SEARCH].prev(
-                                vis_line_t(tc->get_selection()));
+                                tc->get_selection().value_or(0_vl));
                         } else {
                             first_hit = bm[&textview_curses::BM_SEARCH].next(
                                 vis_line_t(tc->get_top() - 1));

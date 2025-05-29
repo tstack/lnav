@@ -2802,6 +2802,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     crumbs.back().c_search_placeholder = "(Enter an absolute or relative time)";
 
     auto format_name = format->get_name().to_string();
+
     crumbs.emplace_back(
         format_name,
         attr_line_t().append(format_name),

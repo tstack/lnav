@@ -120,7 +120,7 @@ struct file_selection
 using files_list_selection = mapbox::util::
     variant<no_selection, error_selection, other_selection, file_selection>;
 
-files_list_selection from_selection(vis_line_t sel_vis);
+files_list_selection from_selection(std::optional<vis_line_t> sel_vis);
 
 }  // namespace files_model
 

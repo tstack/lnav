@@ -247,12 +247,11 @@ com_adjust_log_time(exec_context& ec,
         struct timeval new_time = {0, 0};
         content_line_t top_content;
         date_time_scanner dts;
-        vis_line_t top_line;
         struct exttm tm;
         struct tm base_tm;
 
-        top_line = lnav_data.ld_views[LNV_LOG].get_selection();
-        top_content = lss.at(top_line);
+        auto top_line = lnav_data.ld_views[LNV_LOG].get_selection();
+        top_content = lss.at(top_line.value_or(0_vl));
         auto lf = lss.find(top_content);
 
         auto& ll = (*lf)[top_content];
@@ -406,10 +405,9 @@ com_set_file_timezone(exec_context& ec,
             return ec.make_error("no log messages to examine");
         }
 
-        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+        auto line_pair = lss->find_line_with_file(tc->get_selection());
         if (!line_pair) {
-            return ec.make_error(FMT_STRING("cannot find line: {}"),
-                                 (int) tc->get_selection());
+            return ec.make_error(FMT_STRING("cannot find line"));
         }
 
         shlex lexer(cmdline);
@@ -503,7 +501,7 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
         return {};
     }
 
-    auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+    auto line_pair = lss->find_line_with_file(tc->get_selection());
     if (!line_pair) {
         return {};
     }
@@ -561,7 +559,7 @@ com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
 
     if (lss != nullptr && lss->text_line_count() > 0) {
-        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+        auto line_pair = lss->find_line_with_file(tc->get_selection());
         if (line_pair) {
             try {
                 static auto& safe_options_hier
@@ -657,8 +655,12 @@ com_convert_time_to(exec_context& ec,
         if (lss->text_line_count() == 0) {
             return ec.make_error("no log messages to examine");
         }
+        auto sel = tc->get_selection();
+        if (!sel) {
+            return ec.make_error("no focused message");
+        }
 
-        const auto* ll = lss->find_line(lss->at(tc->get_selection()));
+        const auto* ll = lss->find_line(lss->at(sel.value()));
         try {
             auto* dst_tz = date::locate_zone(args[1]);
             auto utime = date::local_time<std::chrono::seconds>{
@@ -769,7 +771,8 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         auto parse_res = relative_time::from_str(all_args);
 
         if (ttt != nullptr && tc->get_inner_height() > 0_vl) {
-            auto top_time_opt = ttt->time_for_row(tc->get_selection());
+            auto top_time_opt
+                = ttt->time_for_row(tc->get_selection().value_or(0_vl));
 
             if (top_time_opt) {
                 auto top_time_tv = top_time_opt.value().ri_time;
@@ -789,13 +792,13 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (tc->get_inner_height() == 0_vl) {
                 return ec.make_error("view is empty");
             }
-            auto tv_opt = ttt->time_for_row(tc->get_selection());
+            auto tv_opt = ttt->time_for_row(tc->get_selection().value_or(0_vl));
             if (!tv_opt) {
                 return ec.make_error("cannot get time for the top row");
             }
             tv = tv_opt.value().ri_time;
 
-            vis_line_t vl = tc->get_selection(), new_vl;
+            vis_line_t vl = tc->get_selection().value_or(0_vl), new_vl;
             bool done = false;
             auto rt = parse_res.unwrap();
             log_info("  goto relative time: %s", rt.to_string().c_str());
@@ -960,10 +963,14 @@ com_relative_goto(exec_context& ec,
 
     if (args.empty()) {
     } else if (args.size() > 1) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
         int line_offset, consumed;
         float value;
 
+        auto sel = tc->get_selection();
+        if (!sel) {
+            return ec.make_error("no focused message");
+        }
         if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {
                 line_offset
@@ -976,8 +983,7 @@ com_relative_goto(exec_context& ec,
                 retval = "info: shifting top by " + std::to_string(line_offset)
                     + " lines";
             } else {
-                tc->set_selection(tc->get_selection()
-                                  + vis_line_t(line_offset));
+                tc->set_selection(sel.value() + vis_line_t(line_offset));
 
                 retval = "";
             }
@@ -1005,16 +1011,20 @@ com_annotate(exec_context& ec,
 
         if (lss != nullptr) {
             auto sel = tc->get_selection();
-            auto applicable_annos = lnav::log::annotate::applicable(sel);
+            if (sel) {
+                auto applicable_annos
+                    = lnav::log::annotate::applicable(sel.value());
 
-            if (applicable_annos.empty()) {
-                return ec.make_error(
-                    "no annotations available for this log message");
-            }
+                if (applicable_annos.empty()) {
+                    return ec.make_error(
+                        "no annotations available for this log message");
+                }
 
-            auto apply_res = lnav::log::annotate::apply(sel, applicable_annos);
-            if (apply_res.isErr()) {
-                return Err(apply_res.unwrapErr());
+                auto apply_res
+                    = lnav::log::annotate::apply(sel.value(), applicable_annos);
+                if (apply_res.isErr()) {
+                    return Err(apply_res.unwrapErr());
+                }
             }
         } else {
             return ec.make_error(
@@ -1081,7 +1091,7 @@ com_mark_expr(exec_context& ec,
         }
         lnav_data.ld_preview_status_source[0].get_description().set_value(
             "Matches are highlighted in the text view");
-            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
+        lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
     } else {
         auto set_res = lss.set_sql_marker(expr, stmt.release());
 
@@ -1139,8 +1149,10 @@ com_goto_location(exec_context& ec,
             tc->get_sub_source()->get_location_history() |
                 [tc, &args](auto lh) {
                     return args[0] == "prev-location"
-                        ? lh->loc_history_back(tc->get_selection())
-                        : lh->loc_history_forward(tc->get_selection());
+                        ? lh->loc_history_back(
+                              tc->get_selection().value_or(0_vl))
+                        : lh->loc_history_forward(
+                              tc->get_selection().value_or(0_vl));
                 }
                 | [tc](auto new_top) { tc->set_selection(new_top); };
         };
@@ -1165,7 +1177,7 @@ com_next_section(exec_context& ec,
             return ec.make_error("view does not support sections");
         }
 
-        auto adj_opt = ta->adjacent_anchor(tc->get_selection(),
+        auto adj_opt = ta->adjacent_anchor(tc->get_selection().value_or(0_vl),
                                            text_anchors::direction::next);
         if (!adj_opt) {
             return ec.make_error("no next section found");
@@ -1196,7 +1208,7 @@ com_prev_section(exec_context& ec,
             return ec.make_error("view does not support sections");
         }
 
-        auto adj_opt = ta->adjacent_anchor(tc->get_selection(),
+        auto adj_opt = ta->adjacent_anchor(tc->get_selection().value_or(0_vl),
                                            text_anchors::direction::prev);
         if (!adj_opt) {
             return ec.make_error("no previous section found");
@@ -1480,7 +1492,10 @@ com_create_logline_table(exec_context& ec,
             return ec.make_error("no log data available");
         }
         auto vl = log_view.get_selection();
-        auto cl = lnav_data.ld_log_source.at_base(vl);
+        if (!vl) {
+            return ec.make_error("no focused line");
+        }
+        auto cl = lnav_data.ld_log_source.at_base(vl.value());
         auto ldt
             = std::make_shared<log_data_table>(lnav_data.ld_log_source,
                                                *lnav_data.ld_vtab_manager,
@@ -1775,7 +1790,7 @@ com_file_visibility(exec_context& ec,
                 return ec.make_error("no log files loaded");
             }
             auto& lss = lnav_data.ld_log_source;
-            auto vl = tc->get_selection();
+            auto vl = tc->get_selection().value_or(0_vl);
             auto cl = lss.at(vl);
             lf = lss.find(cl);
         } else {
@@ -1898,7 +1913,7 @@ com_comment(exec_context& ec,
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_value("Comment rendered as markdown:");
-            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0].replace_with(al);
@@ -1947,7 +1962,8 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
     }
     auto& lss = lnav_data.ld_log_source;
 
-    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
+    auto line_meta_opt
+        = lss.find_bookmark_metadata(tc->get_selection().value_or(0_vl));
 
     if (line_meta_opt && !line_meta_opt.value()->bm_comment.empty()) {
         auto trimmed_comment = trim(line_meta_opt.value()->bm_comment);
@@ -1976,16 +1992,16 @@ com_clear_comment(exec_context& ec,
     }
     auto& lss = lnav_data.ld_log_source;
 
-    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
+    auto sel = tc->get_selection().value_or(0_vl);
+    auto line_meta_opt = lss.find_bookmark_metadata(sel);
     if (line_meta_opt) {
-        bookmark_metadata& line_meta = *(line_meta_opt.value());
+        auto& line_meta = *(line_meta_opt.value());
 
         line_meta.bm_comment.clear();
         if (line_meta.empty(bookmark_metadata::categories::notes)) {
-            tc->set_user_mark(
-                &textview_curses::BM_META, tc->get_selection(), false);
+            tc->set_user_mark(&textview_curses::BM_META, sel, false);
             if (line_meta.empty(bookmark_metadata::categories::any)) {
-                lss.erase_bookmark_metadata(tc->get_selection());
+                lss.erase_bookmark_metadata(sel);
             }
         }
 
@@ -2014,10 +2030,14 @@ com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error("The :tag command only works in the log view");
         }
+        auto sel = tc->get_selection();
+        if (!sel) {
+            return ec.make_error("no focused message");
+        }
         auto& lss = lnav_data.ld_log_source;
 
-        tc->set_user_mark(&textview_curses::BM_META, tc->get_selection(), true);
-        auto& line_meta = lss.get_bookmark_metadata(tc->get_selection());
+        tc->set_user_mark(&textview_curses::BM_META, sel.value(), true);
+        auto& line_meta = lss.get_bookmark_metadata(sel.value());
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
             std::string tag = args[lpc];
 
@@ -2055,9 +2075,13 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return ec.make_error(
                 "The :untag command only works in the log view");
         }
+        auto sel = tc->get_selection();
+        if (!sel) {
+            return ec.make_error("no focused message");
+        }
         auto& lss = lnav_data.ld_log_source;
 
-        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
+        auto line_meta_opt = lss.find_bookmark_metadata(sel.value());
         if (line_meta_opt) {
             auto& line_meta = *(line_meta_opt.value());
 
@@ -2071,7 +2095,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
             if (line_meta.empty(bookmark_metadata::categories::notes)) {
                 tc->set_user_mark(
-                    &textview_curses::BM_META, tc->get_selection(), false);
+                    &textview_curses::BM_META, sel.value(), false);
             }
         }
         tc->search_new_data();
@@ -2174,13 +2198,16 @@ com_partition_name(exec_context& ec,
         } else {
             auto& tc = lnav_data.ld_views[LNV_LOG];
             auto& lss = lnav_data.ld_log_source;
+            auto sel = tc.get_selection();
+            if (!sel) {
+                return ec.make_error("no focused message");
+            }
 
             args[1] = trim(remaining_args(cmdline, args));
 
-            tc.set_user_mark(
-                &textview_curses::BM_PARTITION, tc.get_selection(), true);
+            tc.set_user_mark(&textview_curses::BM_PARTITION, sel.value(), true);
 
-            auto& line_meta = lss.get_bookmark_metadata(tc.get_selection());
+            auto& line_meta = lss.get_bookmark_metadata(sel.value());
 
             line_meta.bm_name = args[1];
             retval = "info: name set for partition";
@@ -2204,11 +2231,15 @@ com_clear_partition(exec_context& ec,
         auto& lss = lnav_data.ld_log_source;
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
         std::optional<vis_line_t> part_start;
+        auto sel = tc.get_selection();
+        if (!sel) {
+            return ec.make_error("no focused message");
+        }
 
-        if (bv.bv_tree.exists(tc.get_selection())) {
-            part_start = tc.get_selection();
+        if (bv.bv_tree.exists(sel.value())) {
+            part_start = sel.value();
         } else {
-            part_start = bv.prev(tc.get_selection());
+            part_start = bv.prev(sel.value());
         }
         if (!part_start) {
             return ec.make_error("focused line is not in a partition");
@@ -2551,7 +2582,9 @@ com_zoom_to(exec_context& ec,
                 if (spectro_view.get_inner_height() > 0) {
                     auto old_time_opt
                         = lnav_data.ld_spectro_source->time_for_row(
-                            lnav_data.ld_views[LNV_SPECTRO].get_selection());
+                            lnav_data.ld_views[LNV_SPECTRO]
+                                .get_selection()
+                                .value_or(0_vl));
                     ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
                     ss.invalidate();
                     spectro_view.reload_data();
@@ -3532,7 +3565,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
-    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
     prompt.focus_for(*tc, ':', args);
 
     rl_set_help();
@@ -3547,7 +3580,7 @@ script_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::EXEC);
 
-    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
     prompt.focus_for(*tc, '|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("Esc") " to abort)");
@@ -3563,8 +3596,8 @@ search_prompt(std::vector<std::string>& args)
 
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
-    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
-    lnav_data.ld_search_start_line = tc->get_selection();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
+    lnav_data.ld_search_start_line = tc->get_selection().value_or(0_vl);
     prompt.focus_for(*tc, '/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
     lnav_data.ld_doc_status_source.set_description("");
@@ -3631,7 +3664,7 @@ sql_prompt(std::vector<std::string>& args)
     auto* tc = *lnav_data.ld_view_stack.top();
     auto& log_view = lnav_data.ld_views[LNV_LOG];
 
-    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
 
     set_view_mode(ln_mode_t::SQL);
     setup_logline_table(lnav_data.ld_exec_context);
@@ -3662,7 +3695,7 @@ user_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     auto* tc = *lnav_data.ld_view_stack.top();
-    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
 
     set_view_mode(ln_mode_t::USER);
     setup_logline_table(lnav_data.ld_exec_context);

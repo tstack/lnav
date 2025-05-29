@@ -1480,13 +1480,15 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         } else {
             auto& lss = lnav_data.ld_log_source;
             auto vl = tc->get_selection();
-            auto cl = lss.at(vl);
-            auto lf = lss.find(cl);
+            if (vl) {
+                auto cl = lss.at(vl.value());
+                auto lf = lss.find(cl);
 
-            actual_path_v.push_back(lf->get_actual_path());
-            fn_v.emplace_back(lf->get_filename());
-            if (!ec.ec_dry_run) {
-                lnav_data.ld_active_files.request_close(lf);
+                actual_path_v.push_back(lf->get_actual_path());
+                fn_v.emplace_back(lf->get_filename());
+                if (!ec.ec_dry_run) {
+                    lnav_data.ld_active_files.request_close(lf);
+                }
             }
         }
     } else {

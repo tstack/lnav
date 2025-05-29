@@ -110,7 +110,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection().value());
 
             fs.set_filter_enabled(tf, !tf->is_enabled());
             tss->text_filters_changed();
@@ -127,7 +127,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection().value());
 
             if (tf->get_type() == text_filter::INCLUDE) {
                 tf->set_type(text_filter::EXCLUDE);
@@ -149,7 +149,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection().value());
 
             fs.delete_filter(tf->get_id());
             lv.reload_data();
@@ -232,7 +232,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection());
+            auto tf = *(fs.begin() + lv.get_selection().value());
 
             this->fss_editing = true;
             this->tss_view->set_enabled(false);
@@ -420,7 +420,7 @@ filter_sub_source::rl_change(textinput_curses& rc)
         return;
     }
 
-    auto iter = fs.begin() + this->tss_view->get_selection();
+    auto iter = fs.begin() + this->tss_view->get_selection().value();
     auto tf = *iter;
     auto new_value = rc.get_content();
 
@@ -627,7 +627,7 @@ filter_sub_source::rl_perform(textinput_curses& rc)
     auto* top_view = *lnav_data.ld_view_stack.top();
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
-    auto iter = fs.begin() + this->tss_view->get_selection();
+    auto iter = fs.begin() + this->tss_view->get_selection().value();
     auto tf = *iter;
     auto new_value = rc.get_content();
 
@@ -722,7 +722,7 @@ filter_sub_source::rl_abort(textinput_curses& rc)
     auto* top_view = *lnav_data.ld_view_stack.top();
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
-    auto iter = fs.begin() + this->tss_view->get_selection();
+    auto iter = fs.begin() + this->tss_view->get_selection().value();
     auto tf = *iter;
 
     top_view->reload_data();

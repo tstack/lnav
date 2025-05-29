@@ -39,10 +39,13 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (lnav_data.ld_view_stack.empty()) {
     } else if (!ec.ec_dry_run) {
         auto* tc = *lnav_data.ld_view_stack.top();
-        lnav_data.ld_last_user_mark[tc] = tc->get_selection();
-        tc->toggle_user_mark(&textview_curses::BM_USER,
-                             vis_line_t(lnav_data.ld_last_user_mark[tc]));
-        tc->reload_data();
+        auto sel = tc->get_selection();
+        if (sel) {
+            lnav_data.ld_last_user_mark[tc] = sel.value();
+            tc->toggle_user_mark(&textview_curses::BM_USER,
+                                 vis_line_t(lnav_data.ld_last_user_mark[tc]));
+            tc->reload_data();
+        }
     }
 
     return Ok(retval);
@@ -90,6 +93,7 @@ com_goto_mark(exec_context& ec,
 
     if (!ec.ec_dry_run) {
         std::optional<vis_line_t> new_top;
+        auto sel = tc->get_selection();
 
         if (args[0] == "next-mark") {
             auto search_from_top = search_forward_from(tc);
@@ -113,11 +117,10 @@ com_goto_mark(exec_context& ec,
 
                 return Err(um);
             }
-        } else {
+        } else if (sel) {
             for (const auto& bt : mark_types) {
-                auto bt_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                           bt,
-                                           tc->get_selection());
+                auto bt_top = next_cluster(
+                    &bookmark_vector<vis_line_t>::prev, bt, sel.value());
 
                 if (bt_top && (!new_top || bt_top > new_top.value())) {
                     new_top = bt_top;

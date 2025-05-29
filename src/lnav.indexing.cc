@@ -304,7 +304,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                 text_view.set_selection(new_top_opt.value());
                 log_info("  actual top is now: %d", (int) text_view.get_top());
                 log_info("  actual selection is now: %d",
-                         (int) text_view.get_selection());
+                         (int) text_view.get_selection().value_or(-1_vl));
                 scroll_downs[LNV_TEXT] = false;
             } else {
                 log_info("no line requested");
