@@ -1,0 +1,5 @@
+2019-11-19T21:55:41.251                                    controller → host                                          HCI_EVT  14 Rcvd Sniff Subrating
+2019-11-19T21:56:08.685                                    controller → host                                          HCI_EVT   9 Rcvd Mode Change
+2019-11-19T21:56:08.768                                    controller → host                                          HCI_EVT   9 Rcvd Mode Change
+2019-11-19T21:56:09.376                                    controller → host                                          HCI_EVT  14 Rcvd Sniff Subrating
+2019-11-19T22:07:30.886                                    controller → host                                          HCI_EVT   6 Rcvd Encryption Key Refresh Complete

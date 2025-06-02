@@ -68,6 +68,9 @@ EOF
 EOF
 
   run_cap_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
+
+  gunzip -c ${test_dir}/capture.btsnoop.gz > capture.btsnoop
+  run_cap_test ${lnav_test} -n -c ':goto 790' capture.btsnoop
 fi
 
 

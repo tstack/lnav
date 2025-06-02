@@ -570,6 +570,7 @@ DISTCLEANFILES = \
 	*.errbak \
 	*.tmpbak \
 	*.xz \
+	catpure.btsnoop \
 	exported-session.0.lnav \
 	exported-sh-session.0.lnav \
 	exported-stdin-session.0.lnav \
