@@ -171,7 +171,7 @@ jobs:
             'CFLAGS=-O2 -g2' \
             "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
             --with-libarchive=$(brew --prefix libarchive) \
-            "LIBS=-llzma -lzstd -liconv -llz4 -lbz2 -lz -lpcre2-8"
+            "LIBS=-llzma -lexpat -lzstd -liconv -llz4 -lbz2 -lz -lpcre2-8"
       - name: make
         run: make -j2
       - name: Build macos package
@@ -261,7 +261,7 @@ jobs:
                       CPPFLAGS="-O2 -DNCURSES_STATIC" \
                       CXXFLAGS="-fPIC" \
                       CFLAGS="-fPIC" \
-                      LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
+                      LIBS="-larchive -lssh2 -llzma -lexpat -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
                       --sysconfdir=/etc \
                       --prefix=$PREFIX || cat config.log
       - name: "🚧 Make (do not use -j)"
