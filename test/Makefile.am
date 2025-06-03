@@ -267,6 +267,7 @@ dist_noinst_DATA = \
 	bad-config-json/formats/invalid-key/format.json \
 	books.json \
 	books.xml \
+	capture.btsnoop.gz \
 	file_for_dot_read.sql \
 	datafile_simple.0 \
 	datafile_simple.1 \
