@@ -1,7 +1,11 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "spdlog_log": {
-        "description": "Format file generated from regex101 entry -- https://regex101.com/r/74VsjN/1",
+        "title": "spdlog C++ logs",
+        "description": "Format for the spdlog C++ logging library",
+        "url": [
+            "https://github.com/gabime/spdlog"
+        ],
         "regex": {
             "std": {
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\]\\s\\[(?<logger>[^\\]]+)\\]\\s\\[(?<level>\\w+)\\]\\s+(?<body>.*)"
