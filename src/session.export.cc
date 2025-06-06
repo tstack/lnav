@@ -251,6 +251,12 @@ SELECT content_id, format, time_offset FROM lnav_file
 # desired.
 )";
 
+    static const char* HIGHLIGHT_HEADER = R"(
+# The following highlight commands were run by the
+# original user during this session.  Uncomment them if
+# desired.
+)";
+
     static constexpr char FILE_FOOTER[] = R"(
 ;SELECT {} - (total_changes() - $before_file_changes) AS failed_file_changes
 ;SELECT echoln(printf('%sERROR%s: failed to restore the state of %d files',
@@ -480,6 +486,29 @@ SELECT content_id, format, time_offset FROM lnav_file
                     | lnav::itertools::for_each([&file](const auto& cmd) {
                           fmt::print(file, FMT_STRING("{}"), cmd);
                       });
+            }
+        }
+
+        {
+            std::vector<std::string> hl_cmds;
+            const auto& hm = tc.get_highlights();
+            for (const auto& hl_pair : hm) {
+                if (hl_pair.first.first != highlight_source_t::INTERACTIVE) {
+                    continue;
+                }
+
+                auto cmd = fmt::format(FMT_STRING("# :highlight {}\n"),
+                                       hl_pair.second.h_regex->get_pattern());
+                hl_cmds.emplace_back(cmd);
+            }
+
+            if (!hl_cmds.empty()) {
+                fmt::print(file, FMT_STRING("{}"), HIGHLIGHT_HEADER);
+                hl_cmds
+                    | lnav::itertools::for_each([&file](const auto& cmd) {
+                          fmt::print(file, FMT_STRING("{}"), cmd);
+                      });
+                fmt::println(file, FMT_STRING(""));
             }
         }
 

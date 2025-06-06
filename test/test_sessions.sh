@@ -59,6 +59,7 @@ run_cap_test ${lnav_test} -nq \
 run_cap_test ${lnav_test} -nq \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ":hide-fields cs_user_agent" \
+    -c ":highlight vmw" \
     -c ":set-min-log-level debug" \
     -c ":hide-lines-before 2005" \
     -c ":hide-lines-after 2030" \
