@@ -3292,8 +3292,19 @@ logfile_sub_source::text_size_for_line(textview_curses& tc,
 
         this->text_value_for_line(tc, row, value, flags);
         scrub_ansi_string(value, nullptr);
-        this->lss_line_size_cache[index].second
-            = string_fragment::from_str(value).column_width();
+        auto line_width = string_fragment::from_str(value).column_width();
+        if (this->lss_line_context == line_context_t::time_column) {
+            auto time_attr
+                = find_string_attr(this->lss_token_attrs, &L_TIMESTAMP);
+            line_width -= time_attr->sa_range.length();
+            auto format = this->lss_token_file->get_format();
+            if (format->lf_level_hideable) {
+                auto level_attr
+                    = find_string_attr(this->lss_token_attrs, &L_LEVEL);
+                line_width -= level_attr->sa_range.length();
+            }
+        }
+        this->lss_line_size_cache[index].second = line_width;
         this->lss_line_size_cache[index].first = row;
     }
     return this->lss_line_size_cache[index].second;
