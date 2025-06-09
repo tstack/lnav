@@ -119,14 +119,18 @@ describe(const fs::path& filename)
             };
 
             do {
-                ai.ai_entries.emplace_back(archive_info::entry{
-                    archive_entry_pathname_utf8(entry),
-                    archive_entry_strmode(entry),
-                    archive_entry_mtime(entry),
-                    archive_entry_size_is_set(entry)
-                        ? std::make_optional(archive_entry_size(entry))
-                        : std::nullopt,
-                });
+                const auto* entry_path = archive_entry_pathname_utf8(entry);
+
+                if (entry_path != nullptr) {
+                    ai.ai_entries.emplace_back(archive_info::entry{
+                        entry_path,
+                        archive_entry_strmode(entry),
+                        archive_entry_mtime(entry),
+                        archive_entry_size_is_set(entry)
+                            ? std::make_optional(archive_entry_size(entry))
+                            : std::nullopt,
+                    });
+                }
             } while (archive_read_next_header(arc, &entry) == ARCHIVE_OK);
 
             return Ok(describe_result{ai});
@@ -316,10 +320,14 @@ extract(const std::string& filename, const extract_cb& cb)
         const auto* format_name = archive_format_name(arc);
         auto filter_count = archive_filter_count(arc);
 
+        const auto* entry_path_str = archive_entry_pathname_utf8(entry);
+        if (entry_path_str == nullptr) {
+            continue;
+        }
+
         auto_mem<archive_entry> wentry(archive_entry_free);
         wentry = archive_entry_clone(entry);
-        auto desired_pathname
-            = fs::path(archive_entry_pathname(entry)).relative_path();
+        auto desired_pathname = fs::path(entry_path_str).relative_path();
         if (strcmp(format_name, "raw") == 0 && filter_count >= 2) {
             desired_pathname = fs::path(filename).filename();
         }
