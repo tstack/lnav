@@ -1571,7 +1571,7 @@ prompt::get_regex_suggestion(textview_curses& tc,
         }
     });
 
-    if (retval.empty()) {
+    if (retval.empty() && tc.get_inner_height() > 0) {
         auto md = lnav::pcre2pp::match_data::unitialized();
         for (auto curr_line = tc.get_top(); curr_line <= tc.get_bottom();
              ++curr_line)
