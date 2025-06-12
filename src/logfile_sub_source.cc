@@ -242,6 +242,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 {
     if (this->lss_indexing_in_progress) {
         value_out = "";
+        this->lss_token_attrs.clear();
         return {};
     }
 
@@ -3296,12 +3297,16 @@ logfile_sub_source::text_size_for_line(textview_curses& tc,
         if (this->lss_line_context == line_context_t::time_column) {
             auto time_attr
                 = find_string_attr(this->lss_token_attrs, &L_TIMESTAMP);
-            line_width -= time_attr->sa_range.length();
-            auto format = this->lss_token_file->get_format();
-            if (format->lf_level_hideable) {
-                auto level_attr
-                    = find_string_attr(this->lss_token_attrs, &L_LEVEL);
-                line_width -= level_attr->sa_range.length();
+            if (time_attr != this->lss_token_attrs.end()) {
+                line_width -= time_attr->sa_range.length();
+                auto format = this->lss_token_file->get_format();
+                if (format->lf_level_hideable) {
+                    auto level_attr
+                        = find_string_attr(this->lss_token_attrs, &L_LEVEL);
+                    if (level_attr != this->lss_token_attrs.end()) {
+                        line_width -= level_attr->sa_range.length();
+                    }
+                }
             }
         }
         this->lss_line_size_cache[index].second = line_width;
