@@ -21,6 +21,14 @@ plugs:
     read:
       - /etc/lnav
 
+slots:
+  lnav-bin:
+    interface: content
+    content: lnav
+    source:
+      read:
+        - $SNAP/bin
+
 apps:
   lnav:
     command: usr/bin/lnav
