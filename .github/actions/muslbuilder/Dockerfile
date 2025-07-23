@@ -1,5 +1,6 @@
 FROM --platform=$TARGETPLATFORM alpine:latest AS depsbuilder
 
+RUN apk update
 RUN apk add --no-cache \
     autoconf \
     automake \
@@ -7,6 +8,7 @@ RUN apk add --no-cache \
     curl \
     ncurses \
     ncurses-terminfo \
+    nodejs \
     zip
 
 RUN mkdir -p /fake.root /extract
