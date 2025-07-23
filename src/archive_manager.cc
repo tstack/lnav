@@ -30,6 +30,7 @@
  */
 
 #include <future>
+#include <vector>
 
 #include <unistd.h>
 
