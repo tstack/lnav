@@ -50,7 +50,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
-          apk del nodejs
           apk add nodejs --update-cache
           mkdir /opt/bin
           ln -s /usr/bin/node /opt/bin/node
