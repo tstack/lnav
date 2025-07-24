@@ -232,7 +232,7 @@ extensions = [
     "sphinxcontrib.lightbox2",
     'sphinx_copybutton',
     'sphinx-jsonschema',
-    'sphinx-prompt',
+    'sphinx_prompt',
     '_ext.lnavlexer',
 ]
 
