@@ -40,7 +40,8 @@ jobs:
       image: tstack/lnav-build:latest
       options: --platform ${{ matrix.platform }}
       volumes:
-        - /:/host  # Jailbreak!
+        - /opt:/opt:rw,rshared
+        - /opt:/__e/node20:ro,rshared
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-linux-musl-${{ matrix.arch }}.zip
@@ -49,12 +50,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
-          ls -lha /host/home/runner/
-          ls -lha /host/home/runner/actions-runner
-          cd /host/home/runner/actions-runner/*/externals/
-          rm -rf node20/*
-          mkdir node20/bin
-          ln -s /usr/bin/node node20/bin/node
+          mkdir /opt/bin
+          ln -s /usr/bin/node /opt/bin/node
         shell: sh  # No bash in Alpine by default
       - name: checkout
         uses: actions/checkout@v3
