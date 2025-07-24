@@ -48,13 +48,13 @@ jobs:
       - name: Patch native Alpine NodeJS into Runner environment
         if: runner.os == 'Linux'
         run: |
-            sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
-            ls -lha /host/home/runner/
-            ls -lha /host/home/runner/runners
-            cd /host/home/runner/runners/*/externals/
-            rm -rf node20/*
-            mkdir node20/bin
-            ln -s /usr/bin/node node20/bin/node
+          sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
+          ls -lha /host/home/runner/
+          ls -lha /host/home/runner/actions-runner
+          cd /host/home/runner/actions-runner/*/externals/
+          rm -rf node20/*
+          mkdir node20/bin
+          ln -s /usr/bin/node node20/bin/node
         shell: sh  # No bash in Alpine by default
       - name: checkout
         uses: actions/checkout@v3
