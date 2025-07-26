@@ -2128,7 +2128,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             : 0ms;
 
         // log_debug("poll");
-        rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
+        rc = poll(pollfds.data(), pollfds.size(), poll_to.count());
 
         gettimeofday(&current_time, nullptr);
         ui_now = ui_clock::now();
