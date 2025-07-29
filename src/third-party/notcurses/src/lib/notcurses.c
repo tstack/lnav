@@ -21,6 +21,8 @@
 #define ESC "\x1b"
 #define TABSTOP 8
 
+Terminfo* notcurses_terminfo;
+
 void notcurses_version_components(int* major, int* minor, int* patch, int* tweak){
   *major = NOTCURSES_VERNUM_MAJOR;
   *minor = NOTCURSES_VERNUM_MINOR;
@@ -103,7 +105,9 @@ int reset_term_palette(const tinfo* ti, fbuf* f, unsigned touchedpalette){
       r = r * 1000 / 255;
       g = g * 1000 / 255;
       b = b * 1000 / 255;
-      if(fbuf_emit(f, tiparm(esc, z, r, g, b)) < 0){
+        TiparmValue argv[] = {tiparm_int(z), tiparm_int(r), tiparm_int(g), tiparm_int(b),};
+
+        if(fbuf_emit(f, tiparm_s(esc, 4, argv)) < 0){
         return -1;
       }
     }
@@ -1467,8 +1471,9 @@ err:
     (void)tcsetattr(ret->tcache.ttyfd, TCSAFLUSH, ret->tcache.tpreserved);
     free(ret->tcache.tpreserved);
   }
-  drop_signals(ret);
-  del_curterm(cur_term);
+    drop_signals(ret);
+    terminfo_free(notcurses_terminfo);
+    notcurses_terminfo = NULL;
   pthread_mutex_destroy(&ret->stats.lock);
   pthread_mutex_destroy(&ret->pilelock);
   free(ret);
@@ -1544,7 +1549,8 @@ int notcurses_stop(notcurses* nc){
       summarize_stats(nc);
     }
 #ifndef __MINGW32__
-    del_curterm(cur_term);
+    terminfo_free(notcurses_terminfo);
+    notcurses_terminfo = NULL;
 #endif
     ret |= pthread_mutex_destroy(&nc->stats.lock);
     ret |= pthread_mutex_destroy(&nc->pilelock);

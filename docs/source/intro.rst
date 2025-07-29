@@ -168,7 +168,6 @@ Dependencies
 
 When compiling from source, the following dependencies are required:
 
-* `NCurses <http://www.gnu.org/s/ncurses/>`_
 * `PCRE2 <http://www.pcre.org>`_
 * `SQLite <http://www.sqlite.org>`_
 * `ZLib <http://wwww.zlib.net>`_

@@ -354,7 +354,7 @@ prep_special_keys(inputctx* ictx){
     { .tinfo = NULL,    .key = 0, }
   }, *k;
   for(k = keys ; k->tinfo ; ++k){
-    char* seq = tigetstr(k->tinfo);
+    char* seq = terminfo_get_string_by_name(notcurses_terminfo, k->tinfo);
     if(seq == NULL || seq == (char*)-1){
       loginfo("no terminfo declaration for %s", k->tinfo);
       continue;
@@ -371,7 +371,7 @@ prep_special_keys(inputctx* ictx){
     }
     logdebug("support for terminfo's %s: %s", k->tinfo, seq);
   }
-  const char* bs = tigetstr("kbs");
+  const char* bs = terminfo_get_string_by_name(notcurses_terminfo, "kbs");
   if(bs == NULL){
     logwarn("no backspace key was defined");
   }else{

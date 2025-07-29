@@ -91,9 +91,9 @@ implemented in the [log_format_impls.cc](src/log_format_impls.cc) file.
 ## User Interface
 
 The lnav text-user-interface is built on top of
-[ncurses](https://invisible-island.net/ncurses/announce.html).
+[notcurses](https://notcurses.com).
 However, the higher-level functionality of panels, widgets, and such is not
-used.  Instead, the following custom components are built on top of the ncurses
+used.  Instead, the following custom components are built on top of the notcurses
 primitives:
 
 - [view_curses](src/view_curses.hh) - Provides the basics for text roles, which
@@ -108,13 +108,6 @@ primitives:
   displays the logs/plaintext/help is a textview.
 - [statusview_curses](src/state-extension-functions.cc) - Draws the status bars
   at the top and bottom of the TUI.
-- [vt52_curses](src/vt52_curses.hh) - Adapts vt52 escape codes to the ncurses
-  API.
-- [readline_curses](src/readline_curses.hh) - Provides access to the readline
-  library.  The readline code is executed in a child process since readline
-  does not get along with ncurses.  The child process and readline is set to
-  use a vt52 terminal and the vt52_curses view is uses to translate those
-  escape codes to ncurses.
 
 The following diagram shows the underlying components that make up the TUI:
 

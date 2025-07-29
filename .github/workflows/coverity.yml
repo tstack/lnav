@@ -33,7 +33,6 @@ jobs:
           autoconf
           g++
           libpcre2-dev
-          libncurses-dev
           libsqlite3-dev
           libbz2-dev
           libcurl4-openssl-dev

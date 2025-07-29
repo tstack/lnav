@@ -86,24 +86,6 @@ AC_SEARCH_LIBS(backtrace, execinfo)
 AC_SEARCH_LIBS(uc_width, unistring, [], [AC_MSG_ERROR([libunistring required to build])])
 LIBCURL_CHECK_CONFIG([], [7.23.0], [], [AC_MSG_ERROR([libcurl required to build])], [test x"${enable_static}" = x"yes"])
 
-# Sometimes, curses depends on these libraries being linked in...
-AC_ARG_ENABLE([tinfo],
-    AS_HELP_STRING([--disable-tinfo],
-        [Disable linking with tinfo, enabled by default]),
-    [], [enable_tinfo="yes"]
-)
-
-AS_IF([test "x${enable_tinfo}" != "xno"],
-    [dnl
-    AC_MSG_NOTICE([Trying to link with tinfo])
-    AC_SEARCH_LIBS(cur_term, [tinfow tinfo],
-        AC_MSG_NOTICE([Linking with tinfo]),
-        AC_MSG_WARN([libtinfo not found])
-    )
-    ],
-    AC_MSG_NOTICE([Building with tinfo linking disabled])
-)
-
 dnl libgpm is required on some systems where there is a misconfigured ncurses
 dnl and gpm libraries with interdependencies. This check is not required on OS X.
 AS_CASE(["$host_os"],
@@ -144,12 +126,6 @@ AS_IF([test "x$with_system_doctest" != "xyes"], [
 
 
 LNAV_WITH_JEMALLOC
-
-AX_WITH_CURSES
-
-AS_VAR_IF([ax_cv_curses],[yes],[],
-    AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])dnl
-)
 
 AX_PATH_LIB_ARCHIVE
 AX_CHECK_PCRE2([8], [], [AC_MSG_ERROR([pcre2 is required to build])])
@@ -201,9 +177,9 @@ AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $LIBARCHIVE_LDFLAGS $LIBCURL $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
-           ["libncurses.a libncursesw.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
+           ["libsqlite3.a libz.a"])
 AS_VAR_SET(static_lib_list,
-           ["$static_lib_list libpcre2-8.a libncursesw.a libbz2.a"])
+           ["$static_lib_list libpcre2-8.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 AS_VAR_SET(static_lib_list,

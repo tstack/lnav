@@ -373,6 +373,7 @@ add_library(
         third-party/notcurses/src/compat/compat.c
         third-party/notcurses/src/lib/automaton.c
         third-party/notcurses/src/lib/blit.c
+        third-party/notcurses/src/lib/capabilities.c
         third-party/notcurses/src/lib/debug.c
         third-party/notcurses/src/lib/direct.c
         third-party/notcurses/src/lib/fade.c
@@ -398,6 +399,7 @@ add_library(
         third-party/notcurses/src/lib/stats.c
         third-party/notcurses/src/lib/tabbed.c
         third-party/notcurses/src/lib/termdesc.c
+        third-party/notcurses/src/lib/terminfo.c
         third-party/notcurses/src/lib/tree.c
         third-party/notcurses/src/lib/unixsig.c
         third-party/notcurses/src/lib/util.c

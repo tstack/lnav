@@ -4,7 +4,6 @@
     "curl",
     "libarchive",
     "libunistring",
-    "ncurses",
     "pcre2",
     "sqlite3",
     "zlib"

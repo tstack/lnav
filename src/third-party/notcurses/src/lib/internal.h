@@ -12,6 +12,7 @@ extern "C" {
 #include "notcurses/ncport.h"
 #include "notcurses/notcurses.h"
 #include "notcurses/direct.h"
+#include "terminfo/terminfo.h"
 
 #ifndef __MINGW32__
 #define API __attribute__((visibility("default")))
@@ -23,9 +24,7 @@ extern "C" {
 // KEY_EVENT is defined by both ncurses.h (prior to 6.3) and wincon.h. since we
 // don't use either definition, kill it before inclusion of ncurses.h.
 #undef KEY_EVENT
-#include <term.h>
 #include <time.h>
-#include <term.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -1102,7 +1101,8 @@ static inline int
 term_bg_palindex(const notcurses* nc, fbuf* f, unsigned pal){
   const char* setab = get_escape(&nc->tcache, ESCAPE_SETAB);
   if(setab){
-    return fbuf_emit(f, tiparm(setab, pal));
+      TiparmValue argv[] = {tiparm_int(pal)};
+    return fbuf_emit(f, tiparm_s(setab, 1, argv));
   }
   return 0;
 }
@@ -1111,7 +1111,8 @@ static inline int
 term_fg_palindex(const notcurses* nc, fbuf* f, unsigned pal){
   const char* setaf = get_escape(&nc->tcache, ESCAPE_SETAF);
   if(setaf){
-    return fbuf_emit(f, tiparm(setaf, pal));
+      TiparmValue argv[] = {tiparm_int(pal)};
+    return fbuf_emit(f, tiparm_s(setaf, 1, argv));
   }
   return 0;
 }
@@ -1227,13 +1228,15 @@ goto_location(notcurses* nc, fbuf* f, int y, int x, const ncplane* srcp){
       }
       ++nc->stats.s.hpa_gratuitous;
     }
-    if(fbuf_emit(f, tiparm(hpa, x))){
+      TiparmValue argv[] = {tiparm_int(x)};
+    if(fbuf_emit(f, tiparm_s(hpa, 1, argv))){
       return -1;
     }
   }else{
     // cup is required, no need to verify existence
     const char* cup = get_escape(&nc->tcache, ESCAPE_CUP);
-    if(fbuf_emit(f, tiparm(cup, y, x))){
+      TiparmValue argv[] = {tiparm_int(y), tiparm_int(x)};
+    if(fbuf_emit(f, tiparm_s(cup, 2, argv))){
       return -1;
     }
   }
@@ -1867,7 +1870,8 @@ emit_scrolls(const tinfo* ti, int count, fbuf* f){
   if(count > 1){
     const char* indn = get_escape(ti, ESCAPE_INDN);
     if(indn){
-      if(fbuf_emit(f, tiparm(indn, count)) < 0){
+        TiparmValue argv[] = {tiparm_int(count)};
+      if(fbuf_emit(f, tiparm_s(indn, 1, argv)) < 0){
         return -1;
       }
       return 0;
@@ -1932,6 +1936,41 @@ encoding_is_utf8(const char *enc){
 
 // tell ncmetric that utf8 is available. should be per-context, but isn't.
 void ncmetric_use_utf8(void);
+
+extern Terminfo* notcurses_terminfo;
+
+#ifdef __cplusplus
+    extern "C" {
+#define NCURSES_CAST(type,value) static_cast<type>(value)
+#else
+#define NCURSES_CAST(type,value) (type)(value)
+#endif
+
+typedef unsigned chtype;
+
+#define NCURSES_ATTR_SHIFT       8
+#define NCURSES_BITS(mask,shift) (NCURSES_CAST(chtype,(mask)) << ((shift) + NCURSES_ATTR_SHIFT))
+
+#define A_NORMAL	(1U - 1U)
+#define A_ATTRIBUTES	NCURSES_BITS(~(1U - 1U),0)
+#define A_CHARTEXT	(NCURSES_BITS(1U,0) - 1U)
+#define A_COLOR		NCURSES_BITS(((1U) << 8) - 1U,0)
+#define A_STANDOUT	NCURSES_BITS(1U,8)
+#define A_UNDERLINE	NCURSES_BITS(1U,9)
+#define A_REVERSE	NCURSES_BITS(1U,10)
+#define A_BLINK		NCURSES_BITS(1U,11)
+#define A_DIM		NCURSES_BITS(1U,12)
+#define A_BOLD		NCURSES_BITS(1U,13)
+#define A_ALTCHARSET	NCURSES_BITS(1U,14)
+#define A_INVIS		NCURSES_BITS(1U,15)
+#define A_PROTECT	NCURSES_BITS(1U,16)
+#define A_HORIZONTAL	NCURSES_BITS(1U,17)
+#define A_LEFT		NCURSES_BITS(1U,18)
+#define A_LOW		NCURSES_BITS(1U,19)
+#define A_RIGHT		NCURSES_BITS(1U,20)
+#define A_TOP		NCURSES_BITS(1U,21)
+#define A_VERTICAL	NCURSES_BITS(1U,22)
+#define A_ITALIC	NCURSES_BITS(1U,23)	/* ncurses extension */
 
 #undef API
 #undef ALLOC

@@ -185,7 +185,6 @@ LDADD = \
 	third-party/base64/lib/libbase64.a \
 	third-party/notcurses/src/lib/liblnavnotcurses.a \
     $(RUST_DEPS_LIBS) \
-	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(LIBARCHIVE_LIBS) \
 	$(LIBCURL) \

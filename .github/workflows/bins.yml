@@ -156,7 +156,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: install packages
-        run: brew install pcre2 sqlite ncurses xz zstd lz4 libarchive curl autoconf automake libunistring
+        run: brew install pcre2 sqlite xz zstd lz4 libarchive curl autoconf automake libunistring
       - name: autogen
         run: ./autogen.sh
       - name: configure
@@ -165,10 +165,10 @@ jobs:
             --with-libcurl=/usr \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
-            "CPPFLAGS=-I$(brew --prefix libunistring)/include -I$(brew --prefix ncurses)/include" \
+            "CPPFLAGS=-I$(brew --prefix libunistring)/include" \
             "CXXFLAGS=-g2 -O2" \
             'CFLAGS=-O2 -g2' \
-            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
+            "LDFLAGS=-L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
             --with-libarchive=$(brew --prefix libarchive) \
             "LIBS=-llzma -lexpat -lzstd -liconv -llz4 -lbz2 -lz -lpcre2-8"
       - name: make
@@ -242,7 +242,6 @@ jobs:
             msys/liblzma-devel
             msys/libsqlite-devel
             msys/libunistring-devel
-            msys/ncurses-devel
             msys/pcre2-devel
             msys/zlib-devel
       - name: "🔧 Generate and configure"
@@ -257,7 +256,7 @@ jobs:
           ../lnav/configure \
                       --enable-static \
                       LDFLAGS="-static" \
-                      CPPFLAGS="-O2 -DNCURSES_STATIC" \
+                      CPPFLAGS="-O2" \
                       CXXFLAGS="-fPIC" \
                       CFLAGS="-fPIC" \
                       LIBS="-larchive -lssh2 -llzma -lexpat -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \

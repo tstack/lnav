@@ -88,8 +88,6 @@ parts:
       - libcurl4-gnutls-dev
       - libpcre2-dev
       - libsqlite3-dev
-      - libncursesw6
-      - libncurses-dev
       - libunistring-dev
       - zlib1g-dev
       - libbz2-dev
@@ -98,7 +96,6 @@ parts:
       - zlib1g
       - git-core
       - libcurl4
-      - libncursesw6
       - libpcre2-8-0
       - libgpm2
       - libarchive13

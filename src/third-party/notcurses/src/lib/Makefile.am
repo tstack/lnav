@@ -13,6 +13,8 @@ noinst_HEADERS = \
     ../../include/notcurses/ncseqs.h \
     ../../include/notcurses/notcurses.h \
     ../../include/notcurses/version.h \
+    ../../include/terminfo/capabilities.h \
+    ../../include/terminfo/terminfo.h \
     automaton.h \
     base64.h \
     blit.h \
@@ -38,6 +40,7 @@ liblnavnotcurses_a_SOURCES = \
     ../compat/compat.c \
     automaton.c \
     blit.c \
+    capabilities.c \
     debug.c \
     direct.c \
     fade.c \
@@ -63,6 +66,7 @@ liblnavnotcurses_a_SOURCES = \
     stats.c \
     tabbed.c \
     termdesc.c \
+    terminfo.c \
     tree.c \
     unixsig.c \
     util.c \

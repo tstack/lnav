@@ -75,7 +75,8 @@ int ncdirect_cursor_up(ncdirect* nc, int num){
   }
   const char* cuu = get_escape(&nc->tcache, ESCAPE_CUU);
   if(cuu){
-    return term_emit(tiparm(cuu, num), nc->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit(tiparm_s(cuu, 1, argv), nc->ttyfp, false);
   }
   return -1;
 }
@@ -90,7 +91,8 @@ int ncdirect_cursor_left(ncdirect* nc, int num){
   }
   const char* cub = get_escape(&nc->tcache, ESCAPE_CUB);
   if(cub){
-    return term_emit(tiparm(cub, num), nc->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit(tiparm_s(cub, 1, argv), nc->ttyfp, false);
   }
   return -1;
 }
@@ -105,7 +107,8 @@ int ncdirect_cursor_right(ncdirect* nc, int num){
   }
   const char* cuf = get_escape(&nc->tcache, ESCAPE_CUF);
   if(cuf){
-    return term_emit(tiparm(cuf, num), nc->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit(tiparm_s(cuf, 1, argv), nc->ttyfp, false);
   }
   return -1; // FIXME fall back to cuf1?
 }
@@ -219,7 +222,8 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
   const char* u7 = get_escape(&n->tcache, ESCAPE_U7);
   if(y == -1){ // keep row the same, horizontal move only
     if(hpa){
-      return term_emit(tiparm(hpa, x), n->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(x)};
+      return term_emit(tiparm_s(hpa, 1, argv), n->ttyfp, false);
     }else if(n->tcache.ttyfd >= 0 && u7){
       unsigned yprime;
       if(cursor_yx_get(n, u7, &yprime, NULL)){
@@ -231,7 +235,8 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
     }
   }else if(x == -1){ // keep column the same, vertical move only
     if(!vpa){
-      return term_emit(tiparm(vpa, y), n->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(y)};
+      return term_emit(tiparm_s(vpa, 1, argv), n->ttyfp, false);
     }else if(n->tcache.ttyfd >= 0 && u7){
       unsigned xprime;
       if(cursor_yx_get(n, u7, NULL, &xprime)){
@@ -244,10 +249,14 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
   }
   const char* cup = get_escape(&n->tcache, ESCAPE_CUP);
   if(cup){
-    return term_emit(tiparm(cup, y, x), n->ttyfp, false);
+      TiparmValue argv[] = {tiparm_int(y), tiparm_int(x)};
+    return term_emit(tiparm_s(cup, 2, argv), n->ttyfp, false);
   }else if(vpa && hpa){
-    if(term_emit(tiparm(hpa, x), n->ttyfp, false) == 0 &&
-       term_emit(tiparm(vpa, y), n->ttyfp, false) == 0){
+      TiparmValue argv[] = {tiparm_int(x)};
+      TiparmValue argv2[] = {tiparm_int(y)};
+    if(term_emit(tiparm_s(hpa, 1, argv), n->ttyfp, false) == 0 &&
+
+       term_emit(tiparm_s(vpa, 1, argv2), n->ttyfp, false) == 0){
       return 0;
     }
   }
@@ -786,7 +795,8 @@ int ncdirect_set_fg_palindex(ncdirect* nc, int pidx){
   if(ncchannels_set_fg_palindex(&nc->channels, pidx) < 0){
     return -1;
   }
-  return term_emit(tiparm(setaf, pidx), nc->ttyfp, false);
+              TiparmValue argv[] = {tiparm_int(pidx)};
+  return term_emit(tiparm_s(setaf, 1, argv), nc->ttyfp, false);
 }
 
 int ncdirect_set_bg_palindex(ncdirect* nc, int pidx){
@@ -797,7 +807,8 @@ int ncdirect_set_bg_palindex(ncdirect* nc, int pidx){
   if(ncchannels_set_bg_palindex(&nc->channels, pidx) < 0){
     return -1;
   }
-  return term_emit(tiparm(setab, pidx), nc->ttyfp, false);
+    TiparmValue argv[] = {tiparm_int(pidx)};
+  return term_emit(tiparm_s(setab, 1, argv), nc->ttyfp, false);
 }
 
 int ncdirect_vprintf_aligned(ncdirect* n, int y, ncalign_e align, const char* fmt, va_list ap){
@@ -860,7 +871,8 @@ ncdirect_stop_minimal(void* vnc){
   }
   ret |= ncdirect_flush(nc);
 #ifndef __MINGW32__
-  del_curterm(cur_term);
+  terminfo_free(notcurses_terminfo);
+  notcurses_terminfo = NULL;
 #endif
   return ret;
 }

@@ -10,7 +10,7 @@ jobs:
     resource_class: macos.m1.medium.gen1
     steps:
       - checkout
-      - run: brew install pcre2 sqlite ncurses xz zstd libarchive curl autoconf automake libunistring coreutils
+      - run: brew install pcre2 sqlite xz zstd libarchive curl autoconf automake libunistring coreutils
       - run: ./autogen.sh
       - run: >-
           ./configure \
@@ -18,10 +18,10 @@ jobs:
             --with-libcurl=$(brew --prefix curl) \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
-            "CPPFLAGS=-I$(brew --prefix ncurses)/include -I$(brew --prefix libunistring)/include" \
+            "CPPFLAGS=-I$(brew --prefix libunistring)/include" \
             "CXXFLAGS=-g2 -O2" \
             'CFLAGS=-O2 -g2' \
-            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix libunistring)/lib/" \
+            "LDFLAGS=-L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix libunistring)/lib/" \
             --with-libarchive=$(brew --prefix libarchive) \
             || cat config.log
       - run: make -j2 || true

@@ -1,6 +1,5 @@
 #include <fcntl.h>
 #include <unistd.h>
-#include <curses.h>
 #ifdef __linux__
 #include <sys/utsname.h>
 #endif
@@ -62,7 +61,7 @@ get_default_dimension(const char* envvar, const char* tinfovar, int def){
       return num;
     }
   }
-  num = tigetnum(tinfovar);
+  num = terminfo_get_number_by_name(notcurses_terminfo,tinfovar);
   if(num > 0){
     return num;
   }
@@ -175,7 +174,7 @@ setup_fbcon_bitmaps(tinfo* ti, int fd){
 
 static bool
 query_rgb(void){
-  bool rgb = (tigetflag("RGB") > 0 || tigetflag("Tc") > 0);
+  bool rgb = (terminfo_get_flag_by_name(notcurses_terminfo, "RGB") > 0 || terminfo_get_flag_by_name(notcurses_terminfo, "Tc") > 0);
   if(!rgb){
     // RGB terminfo capability being a new thing (as of ncurses 6.1), it's not
     // commonly found in terminal entries today. COLORTERM, however, is a
@@ -274,7 +273,7 @@ compare_versions(const char* restrict v1, const char* restrict v2){
 
 static inline int
 terminfostr(char** gseq, const char* name){
-  *gseq = tigetstr(name);
+  *gseq = terminfo_get_string_by_name(notcurses_terminfo, name);
   if(*gseq == NULL || *gseq == (char*)-1){
     *gseq = NULL;
     return -1;
@@ -531,7 +530,7 @@ send_initial_queries(tinfo* ti, unsigned minimal, unsigned noaltscreen,
     }
     total += strlen(SMCUP);
 
-    const char* enacs = tigetstr("enacs");
+    const char* enacs = terminfo_get_string_by_name(notcurses_terminfo, "enacs");
     if (enacs != NULL) {
       tty_emit(enacs, fd);
     }
@@ -571,7 +570,7 @@ int enter_alternate_screen(int fd, FILE* ttyfp, tinfo* ti, unsigned drain){
       return -1;
     }
   }
-  const char* enacs = tigetstr("enacs");
+  const char* enacs = terminfo_get_string_by_name(notcurses_terminfo, "enacs");
   if (enacs != NULL) {
     tty_emit(enacs, fd);
   }
@@ -1093,7 +1092,7 @@ build_supported_styles(tinfo* ti){
     { NCSTYLE_REVERSE, ESCAPE_REVERSE, "rev", A_REVERSE },
     { 0, 0, NULL, 0 }
   };
-  int nocolor_stylemask = tigetnum("ncv");
+  int nocolor_stylemask = terminfo_get_number_by_name(notcurses_terminfo,"ncv");
   for(typeof(*styles)* s = styles ; s->s ; ++s){
     if(get_escape(ti, s->esc)){
       if(nocolor_stylemask > 0){
@@ -1380,7 +1379,7 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
       return -1;
     }
 
-#ifndef __MINGW32__
+#if 0 && !defined( __MINGW32__)
       // windows doesn't really have a concept of terminfo. you might ssh into other
       // machines, but they'll use the terminfo installed thereon (putty, etc.).
       int termerr;
@@ -1390,6 +1389,30 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
           goto err;
       }
 #endif
+    {
+        tname = getenv("TERM");
+        if (tname) {
+            const char* terminfo_path = terminfo_find_path_for_term(tname);
+
+            loginfo("terminfo path for %s = %s", tname, terminfo_path);
+            if (terminfo_path) {
+                notcurses_terminfo = terminfo_load(terminfo_path);
+                if (terminfo_path) {
+                    loginfo("names = %s", notcurses_terminfo->name);
+                } else {
+                    logpanic("failed to load terminfo at %s", terminfo_path);
+                    goto err;
+                }
+                free(terminfo_path);
+            } else {
+                logpanic("could not find terminfo file for %s", tname);
+                goto err;
+            }
+        } else {
+            logpanic("TERM is not set");
+            goto err;
+        }
+    }
     // if we already know our terminal (e.g. on the linux console), there's no
     // need to send the identification queries. the controls are sufficient.
     bool minimal = (ti->qterm != TERMINAL_UNKNOWN);
@@ -1398,7 +1421,6 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
     }
   }
 #ifndef __MINGW32__
-      tname = termname(); // longname() is also available
 #endif
   int linesigs_enabled = 1;
   if(ti->tpreserved){
@@ -1417,7 +1439,7 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
   // variable of either "truecolor" or "24bit", or unconditionally enable it
   // for several terminals known to always support 8bpc rgb setaf/setab.
   if(ti->caps.colors == 0){
-    int colors = tigetnum("colors");
+    int colors = terminfo_get_number_by_name(notcurses_terminfo,"colors");
     if(colors <= 0){
       ti->caps.colors = 1;
     }else{
@@ -1432,13 +1454,13 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
     // if the keypad needn't be explicitly enabled, smkx is not present
     const char* smkx = get_escape(ti, ESCAPE_SMKX);
     if(smkx){
-      if(tty_emit(tiparm(smkx), ti->ttyfd) < 0){
+      if(tty_emit(smkx, ti->ttyfd) < 0){
         logpanic("error enabling keypad transmit mode");
         goto err;
       }
     }
   }
-  if(tigetflag("bce") > 0){
+  if(terminfo_get_flag_by_name(notcurses_terminfo, "bce") > 0){
     ti->bce = true;
   }
   if(ti->caps.colors > 1){
@@ -1573,7 +1595,8 @@ err:
   stop_inputlayer(ti);
   free(ti->esctable);
   free(ti->termversion);
-  del_curterm(cur_term);
+  terminfo_free(notcurses_terminfo);
+  notcurses_terminfo = NULL;
   close(ti->ttyfd);
   ti->ttyfd = -1;
   return -1;
