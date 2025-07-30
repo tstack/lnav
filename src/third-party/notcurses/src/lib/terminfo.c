@@ -13,6 +13,14 @@
 const char*
 terminfo_find_path_for_term(const char* term_name)
 {
+    static const char* DEFAULT_DIRS[] = {
+        "/usr/share/terminfo/",
+        "/lib/terminfo/",
+        "/usr/lib/terminfo/",
+        "/etc/terminfo/",
+        NULL,
+    };
+
     if (!term_name || !term_name[0]) {
         return NULL;
     }
@@ -51,6 +59,18 @@ terminfo_find_path_for_term(const char* term_name)
             break;
         }
         dirs = next_colon + 1;
+    }
+
+    for (int lpc = 0; DEFAULT_DIRS[lpc]; lpc++) {
+        snprintf(path,
+                 sizeof(path),
+                 "%s/%02x/%s",
+                 DEFAULT_DIRS[lpc],
+                 term_name[0],
+                 term_name);
+        if (access(path, R_OK) == 0) {
+            return strdup(path);
+        }
     }
 
     return NULL;
