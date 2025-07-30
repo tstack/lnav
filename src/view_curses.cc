@@ -36,7 +36,6 @@
 
 #include "view_curses.hh"
 
-#include <curses.h>
 #include <zlib.h>
 
 #include "base/ansi_scrubber.hh"
@@ -49,6 +48,7 @@
 #include "config.h"
 #include "lnav_config.hh"
 #include "shlex.hh"
+#include "terminfo/terminfo.h"
 #include "uniwidth.h"
 #include "xterm_mouse.hh"
 

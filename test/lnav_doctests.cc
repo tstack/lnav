@@ -44,6 +44,8 @@
 #include "shlex.hh"
 #include "unique_path.hh"
 
+#include "terminfo/terminfo.h"
+
 using namespace std;
 
 #if 0
@@ -81,6 +83,20 @@ TEST_CASE("shlex::eval")
     CHECK(rc);
     CHECK(out == "foo");
 }
+#if 0
+TEST_CASE("tiparm_s")
+{
+    const auto* path = terminfo_find_path_for_term("xterm-256color");
+    auto* ti = terminfo_load(path);
+
+    TiparmValue argv[] = {tiparm_int(5)};
+    const auto* fmt = terminfo_get_string_by_name(ti, "setab");
+    auto_mem<char> ab1;
+    ab1 = tiparm_s(fmt, 1, argv);
+    fprintf(stderr, "ab = %s", &(ab1.in()[1]));
+    terminfo_free(ti);
+}
+#endif
 
 TEST_CASE("lnav::command::parse_for_prompt")
 {

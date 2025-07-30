@@ -16,6 +16,10 @@
 #include <notcurses/nckeys.h>
 #include <notcurses/ncseqs.h>
 
+#include "terminfo/terminfo.h"
+
+extern Terminfo* notcurses_terminfo;
+
 #ifdef __cplusplus
 extern "C" {
 #define RESTRICT

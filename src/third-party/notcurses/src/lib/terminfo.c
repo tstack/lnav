@@ -440,14 +440,16 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
     int skip = 0;  // skip logic block
     int cond_level = 0;
     int exec = 1;  // whether we're in an active (true) branch
+    int cond_execed = 0;
 
     while (*p) {
         if (*p == '%') {
             p++;
             switch (*p) {
                 case '%':
-                    if (exec && out_len + 1 < out_cap)
+                    if (exec && out_len + 1 < out_cap) {
                         out[out_len++] = '%';
+                    }
                     p++;
                     break;
                 case 'p': {
@@ -554,21 +556,31 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case '?':  // start conditional
+                    exec = 1;
+                    cond_execed = 0;
                     cond_level++;
                     p++;
                     break;
                 case 't': {
                     StackVal v = pop(&stack);
-                    exec = (v.type == STK_INT && v.i);
+                    exec = exec && (v.type == STK_INT && v.i);
+                    if (exec) {
+                        cond_execed = 1;
+                    }
                     p++;
                     break;
                 }
                 case 'e':  // else
-                    exec = !exec;
+                    if (cond_execed) {
+                        exec = 0;
+                    } else {
+                        exec = !exec;
+                    }
                     p++;
                     break;
                 case ';':  // end if
                     cond_level--;
+                    cond_execed = 0;
                     exec = 1;
                     p++;
                     break;

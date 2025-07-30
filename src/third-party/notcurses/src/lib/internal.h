@@ -1937,8 +1937,6 @@ encoding_is_utf8(const char *enc){
 // tell ncmetric that utf8 is available. should be per-context, but isn't.
 void ncmetric_use_utf8(void);
 
-extern Terminfo* notcurses_terminfo;
-
 #ifdef __cplusplus
     extern "C" {
 #define NCURSES_CAST(type,value) static_cast<type>(value)
@@ -1946,7 +1944,7 @@ extern Terminfo* notcurses_terminfo;
 #define NCURSES_CAST(type,value) (type)(value)
 #endif
 
-typedef unsigned chtype;
+typedef int32_t chtype;
 
 #define NCURSES_ATTR_SHIFT       8
 #define NCURSES_BITS(mask,shift) (NCURSES_CAST(chtype,(mask)) << ((shift) + NCURSES_ATTR_SHIFT))

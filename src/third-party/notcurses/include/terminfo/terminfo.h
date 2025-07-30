@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TERMINFO_MAGIC       0x011A
 #define TERMINFO_MAGIC_32BIT 0x021E
 
@@ -73,5 +77,9 @@ tiparm_str(const char* value)
     v.s = value;
     return v;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
