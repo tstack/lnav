@@ -91,7 +91,7 @@ terminfo_parse(const char* orig_content, int size)
         uint16_t nums_count;
         uint16_t strs_count;
         uint16_t strtab_size;
-    }* header = content;
+    }* header = (void*) content;
 
     if (header->magic != TERMINFO_MAGIC) {
         return NULL;
@@ -141,7 +141,7 @@ terminfo_parse(const char* orig_content, int size)
         goto error;
     }
 
-    int16_t* str_offsets = content;
+    int16_t* str_offsets = (int16_t*) content;
     const char* strtab = content + stroff_size;
 
     retval->string_count = header->strs_count;
@@ -166,7 +166,7 @@ terminfo_parse(const char* orig_content, int size)
         uint16_t strs_count;
         uint16_t strtab_size;
         uint16_t strtab_end;
-    }* ext_header = content;
+    }* ext_header = (void*) content;
 
     if (remaining < sizeof(*ext_header)) {
         return retval;
@@ -207,7 +207,7 @@ terminfo_parse(const char* orig_content, int size)
         goto error;
     }
 
-    int16_t* ext_str_offsets = content;
+    int16_t* ext_str_offsets = (int16_t*) content;
     const char* ext_strtab = content + ext_stroff_size;
 
     retval->ext_string_count = ext_header->strs_count;
