@@ -105,9 +105,9 @@ int reset_term_palette(const tinfo* ti, fbuf* f, unsigned touchedpalette){
       r = r * 1000 / 255;
       g = g * 1000 / 255;
       b = b * 1000 / 255;
-        TiparmValue argv[] = {tiparm_int(z), tiparm_int(r), tiparm_int(g), tiparm_int(b),};
+      TiparmValue argv[] = {tiparm_int(z), tiparm_int(r), tiparm_int(g), tiparm_int(b),};
 
-        if(fbuf_emit(f, tiparm_s(esc, 4, argv)) < 0){
+      if(fbuf_emit_parm(f, tiparm_s(esc, 4, argv)) < 0){
         return -1;
       }
     }

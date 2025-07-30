@@ -3,19 +3,20 @@
 
 #include <stdint.h>
 
-#define TERMINFO_MAGIC 0x011A
+#define TERMINFO_MAGIC       0x011A
+#define TERMINFO_MAGIC_32BIT 0x021E
 
 typedef struct {
     char* name;
     uint8_t* bools;
-    int16_t* numbers;
+    int32_t* numbers;
     char** strings;
     int bool_count;
     int number_count;
     int string_count;
 
     uint8_t* ext_bools;
-    int16_t* ext_numbers;
+    int32_t* ext_numbers;
     char** ext_strings;
     int ext_bool_count;
     int ext_number_count;

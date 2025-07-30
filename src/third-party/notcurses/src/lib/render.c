@@ -734,12 +734,11 @@ term_bg_rgb8(const tinfo* ti, fbuf* f, unsigned r, unsigned g, unsigned b){
       // a single screen, start... combining close ones? For 8-color mode, simple
       // interpolation. I have no idea what to do for 88 colors. FIXME
       if(ti->caps.colors >= 256){
-          TiparmValue argv[] = {tiparm_int(rgb_quantize_256(r, g, b))};
-        return fbuf_emit(f, tiparm_s(setab, 1, argv));
+        TiparmValue argv[] = {tiparm_int(rgb_quantize_256(r, g, b))};
+        return fbuf_emit_parm(f, tiparm_s(setab, 1, argv));
       }else if(ti->caps.colors >= 8){
-          TiparmValue argv[] = {tiparm_int(rgb_quantize_8(r, g, b))};
-
-        return fbuf_emit(f, tiparm_s(setab, 1, argv));
+        TiparmValue argv[] = {tiparm_int(rgb_quantize_8(r, g, b))};
+        return fbuf_emit_parm(f, tiparm_s(setab, 1, argv));
       }
     }
   }
@@ -763,10 +762,10 @@ int term_fg_rgb8(const tinfo* ti, fbuf* f, unsigned r, unsigned g, unsigned b){
       // interpolation. I have no idea what to do for 88 colors. FIXME
       if(ti->caps.colors >= 256){
           TiparmValue argv[] = {tiparm_int(rgb_quantize_256(r, g, b))};
-        return fbuf_emit(f, tiparm_s(setaf, 1, argv));
+        return fbuf_emit_parm(f, tiparm_s(setaf, 1, argv));
       }else if(ti->caps.colors >= 8){
           TiparmValue argv[] = {tiparm_int(rgb_quantize_8(r, g, b))};
-        return fbuf_emit(f, tiparm_s(setaf, 1, argv));
+        return fbuf_emit_parm(f, tiparm_s(setaf, 1, argv));
       }
     }
   }
@@ -787,8 +786,8 @@ update_palette(notcurses* nc, fbuf* f){
         r = r * 1000 / 255;
         g = g * 1000 / 255;
         b = b * 1000 / 255;
-          TiparmValue argv[] = {tiparm_int(damageidx), tiparm_int(r), tiparm_int(g), tiparm_int(b),};
-        if(fbuf_emit(f, tiparm_s(initc, 4, argv)) < 0){
+        TiparmValue argv[] = {tiparm_int(damageidx), tiparm_int(r), tiparm_int(g), tiparm_int(b),};
+        if(fbuf_emit_parm(f, tiparm_s(initc, 4, argv)) < 0){
           return -1;
         }
         nc->palette_damage[damageidx] = false;

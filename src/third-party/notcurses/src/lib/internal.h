@@ -1101,8 +1101,8 @@ static inline int
 term_bg_palindex(const notcurses* nc, fbuf* f, unsigned pal){
   const char* setab = get_escape(&nc->tcache, ESCAPE_SETAB);
   if(setab){
-      TiparmValue argv[] = {tiparm_int(pal)};
-    return fbuf_emit(f, tiparm_s(setab, 1, argv));
+    TiparmValue argv[] = {tiparm_int(pal)};
+    return fbuf_emit_parm(f, tiparm_s(setab, 1, argv));
   }
   return 0;
 }
@@ -1111,8 +1111,8 @@ static inline int
 term_fg_palindex(const notcurses* nc, fbuf* f, unsigned pal){
   const char* setaf = get_escape(&nc->tcache, ESCAPE_SETAF);
   if(setaf){
-      TiparmValue argv[] = {tiparm_int(pal)};
-    return fbuf_emit(f, tiparm_s(setaf, 1, argv));
+    TiparmValue argv[] = {tiparm_int(pal)};
+    return fbuf_emit_parm(f, tiparm_s(setaf, 1, argv));
   }
   return 0;
 }
@@ -1229,14 +1229,14 @@ goto_location(notcurses* nc, fbuf* f, int y, int x, const ncplane* srcp){
       ++nc->stats.s.hpa_gratuitous;
     }
       TiparmValue argv[] = {tiparm_int(x)};
-    if(fbuf_emit(f, tiparm_s(hpa, 1, argv))){
+    if(fbuf_emit_parm(f, tiparm_s(hpa, 1, argv))){
       return -1;
     }
   }else{
     // cup is required, no need to verify existence
     const char* cup = get_escape(&nc->tcache, ESCAPE_CUP);
       TiparmValue argv[] = {tiparm_int(y), tiparm_int(x)};
-    if(fbuf_emit(f, tiparm_s(cup, 2, argv))){
+    if(fbuf_emit_parm(f, tiparm_s(cup, 2, argv))){
       return -1;
     }
   }
@@ -1871,7 +1871,7 @@ emit_scrolls(const tinfo* ti, int count, fbuf* f){
     const char* indn = get_escape(ti, ESCAPE_INDN);
     if(indn){
         TiparmValue argv[] = {tiparm_int(count)};
-      if(fbuf_emit(f, tiparm_s(indn, 1, argv)) < 0){
+      if(fbuf_emit_parm(f, tiparm_s(indn, 1, argv)) < 0){
         return -1;
       }
       return 0;
@@ -1883,7 +1883,7 @@ emit_scrolls(const tinfo* ti, int count, fbuf* f){
   }
   // fell through if we had no indn
   while(count > 0){
-    if(fbuf_emit(f, ind) < 0){
+    if(fbuf_emit_parm(f, ind) < 0){
       return -1;
     }
     --count;

@@ -1397,10 +1397,11 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
             loginfo("terminfo path for %s = %s", tname, terminfo_path);
             if (terminfo_path) {
                 notcurses_terminfo = terminfo_load(terminfo_path);
-                if (terminfo_path) {
+                if (notcurses_terminfo) {
                     loginfo("names = %s", notcurses_terminfo->name);
                 } else {
                     logpanic("failed to load terminfo at %s", terminfo_path);
+                    free(terminfo_path);
                     goto err;
                 }
                 free(terminfo_path);

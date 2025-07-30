@@ -245,6 +245,13 @@ fbuf_emit(fbuf* f, const char* esc){
   return 0;
 }
 
+static inline int
+fbuf_emit_parm(fbuf* f, const char* esc){
+  int retval = fbuf_emit(f, esc);
+  free(esc);
+  return retval;
+}
+
 // releases the resources held by f. f itself is not freed.
 static inline void
 fbuf_free(fbuf* f){

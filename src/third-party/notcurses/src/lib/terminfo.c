@@ -10,6 +10,29 @@
 
 #include "terminfo/capabilities.h"
 
+#define PATH_SIZE 1024
+
+static int
+check_path_for_term(char* path,
+                    const char* dir,
+                    int dir_len,
+                    const char* term_name)
+{
+    snprintf(
+        path, PATH_SIZE, "%.*s/%02x/%s", dir_len, dir, term_name[0], term_name);
+    if (access(path, R_OK) == 0) {
+        return 1;
+    }
+
+    snprintf(
+        path, PATH_SIZE, "%.*s/%c/%s", dir_len, dir, term_name[0], term_name);
+    if (access(path, R_OK) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 const char*
 terminfo_find_path_for_term(const char* term_name)
 {
@@ -28,9 +51,7 @@ terminfo_find_path_for_term(const char* term_name)
     char path[1024];
     const char* ti_dir = getenv("TERMINFO");
     if (ti_dir != NULL && ti_dir[0]) {
-        snprintf(
-            path, sizeof(path), "%s/%02x/%s", ti_dir, term_name[0], term_name);
-        if (access(path, R_OK) == 0) {
+        if (check_path_for_term(path, ti_dir, strlen(ti_dir), term_name)) {
             return strdup(path);
         }
     }
@@ -44,14 +65,7 @@ terminfo_find_path_for_term(const char* term_name)
         const char* next_colon = strchr(dirs, ':');
         int dir_len = next_colon ? next_colon - dirs : strlen(dirs);
 
-        snprintf(path,
-                 sizeof(path),
-                 "%.*s/%02x/%s",
-                 dir_len,
-                 dirs,
-                 term_name[0],
-                 term_name);
-        if (access(path, R_OK) == 0) {
+        if (check_path_for_term(path, dirs, dir_len, term_name)) {
             return strdup(path);
         }
 
@@ -62,13 +76,9 @@ terminfo_find_path_for_term(const char* term_name)
     }
 
     for (int lpc = 0; DEFAULT_DIRS[lpc]; lpc++) {
-        snprintf(path,
-                 sizeof(path),
-                 "%s/%02x/%s",
-                 DEFAULT_DIRS[lpc],
-                 term_name[0],
-                 term_name);
-        if (access(path, R_OK) == 0) {
+        if (check_path_for_term(
+                path, DEFAULT_DIRS[lpc], strlen(DEFAULT_DIRS[lpc]), term_name))
+        {
             return strdup(path);
         }
     }
@@ -104,7 +114,7 @@ Terminfo*
 terminfo_parse(const char* orig_content, int size)
 {
     const char* content = orig_content;
-    struct {
+    const struct {
         uint16_t magic;
         uint16_t names_size;
         uint16_t bools_count;
@@ -112,8 +122,13 @@ terminfo_parse(const char* orig_content, int size)
         uint16_t strs_count;
         uint16_t strtab_size;
     }* header = (void*) content;
+    int num_size = 0;
 
-    if (header->magic != TERMINFO_MAGIC) {
+    if (header->magic == TERMINFO_MAGIC) {
+        num_size = 2;
+    } else if (header->magic == TERMINFO_MAGIC_32BIT) {
+        num_size = 4;
+    } else {
         return NULL;
     }
 
@@ -145,16 +160,23 @@ terminfo_parse(const char* orig_content, int size)
         remaining -= 1;
     }
 
-    int num_size = header->nums_count * sizeof(uint16_t);
-    if (num_size > remaining) {
+    int std_num_size = header->nums_count * num_size;
+    if (std_num_size > remaining) {
         goto error;
     }
     retval->number_count = header->nums_count;
-    retval->numbers = malloc(num_size);
-    memcpy(retval->numbers, content, num_size);
+    retval->numbers = malloc(header->nums_count * sizeof(int32_t));
+    if (num_size == 2) {
+        int16_t* nums = content;
+        for (int lpc = 0; lpc < header->nums_count; lpc++) {
+            retval->numbers[lpc] = nums[lpc];
+        }
+    } else {
+        memcpy(retval->numbers, content, num_size);
+    }
 
-    content += num_size;
-    remaining -= num_size;
+    content += std_num_size;
+    remaining -= std_num_size;
 
     int stroff_size = header->strs_count * sizeof(uint16_t);
     if (stroff_size + header->strtab_size > remaining) {
@@ -209,13 +231,20 @@ terminfo_parse(const char* orig_content, int size)
         remaining -= 1;
     }
 
-    int ext_num_size = ext_header->nums_count * sizeof(uint16_t);
+    int ext_num_size = ext_header->nums_count * num_size;
     if (ext_num_size > remaining) {
         goto error;
     }
     retval->ext_number_count = ext_header->nums_count;
-    retval->ext_numbers = malloc(ext_num_size);
-    memcpy(retval->ext_numbers, content, ext_num_size);
+    retval->ext_numbers = malloc(ext_header->nums_count * sizeof(int32_t));
+    if (num_size == 2) {
+        int16_t* nums = content;
+        for (int lpc = 0; lpc < ext_header->nums_count; lpc++) {
+            retval->ext_numbers[lpc] = nums[lpc];
+        }
+    } else {
+        memcpy(retval->ext_numbers, content, ext_num_size);
+    }
 
     content += ext_num_size;
     remaining -= ext_num_size;

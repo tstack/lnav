@@ -316,6 +316,13 @@ term_emit(const char* seq, FILE* out, bool flush){
   return flush ? ncflush(out) : 0;
 }
 
+static inline int
+term_emit_parm(const char* seq, FILE* out, bool flush){
+  int retval = term_emit(seq, out, flush);
+  free(seq);
+  return retval;
+}
+
 // |drain| is set iff we're draining input.
 int enter_alternate_screen(int ttyfd, FILE* ttyfp, tinfo* ti, unsigned drain);
 int leave_alternate_screen(int ttyfd, FILE* ttyfp, tinfo* ti, unsigned drain);

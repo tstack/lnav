@@ -75,8 +75,8 @@ int ncdirect_cursor_up(ncdirect* nc, int num){
   }
   const char* cuu = get_escape(&nc->tcache, ESCAPE_CUU);
   if(cuu){
-      TiparmValue argv[] = {tiparm_int(num)};
-    return term_emit(tiparm_s(cuu, 1, argv), nc->ttyfp, false);
+    TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit_parm(tiparm_s(cuu, 1, argv), nc->ttyfp, false);
   }
   return -1;
 }
@@ -91,8 +91,8 @@ int ncdirect_cursor_left(ncdirect* nc, int num){
   }
   const char* cub = get_escape(&nc->tcache, ESCAPE_CUB);
   if(cub){
-      TiparmValue argv[] = {tiparm_int(num)};
-    return term_emit(tiparm_s(cub, 1, argv), nc->ttyfp, false);
+    TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit_parm(tiparm_s(cub, 1, argv), nc->ttyfp, false);
   }
   return -1;
 }
@@ -107,8 +107,8 @@ int ncdirect_cursor_right(ncdirect* nc, int num){
   }
   const char* cuf = get_escape(&nc->tcache, ESCAPE_CUF);
   if(cuf){
-      TiparmValue argv[] = {tiparm_int(num)};
-    return term_emit(tiparm_s(cuf, 1, argv), nc->ttyfp, false);
+    TiparmValue argv[] = {tiparm_int(num)};
+    return term_emit_parm(tiparm_s(cuf, 1, argv), nc->ttyfp, false);
   }
   return -1; // FIXME fall back to cuf1?
 }
@@ -223,7 +223,7 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
   if(y == -1){ // keep row the same, horizontal move only
     if(hpa){
       TiparmValue argv[] = {tiparm_int(x)};
-      return term_emit(tiparm_s(hpa, 1, argv), n->ttyfp, false);
+      return term_emit_parm(tiparm_s(hpa, 1, argv), n->ttyfp, false);
     }else if(n->tcache.ttyfd >= 0 && u7){
       unsigned yprime;
       if(cursor_yx_get(n, u7, &yprime, NULL)){
@@ -236,7 +236,7 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
   }else if(x == -1){ // keep column the same, vertical move only
     if(!vpa){
       TiparmValue argv[] = {tiparm_int(y)};
-      return term_emit(tiparm_s(vpa, 1, argv), n->ttyfp, false);
+      return term_emit_parm(tiparm_s(vpa, 1, argv), n->ttyfp, false);
     }else if(n->tcache.ttyfd >= 0 && u7){
       unsigned xprime;
       if(cursor_yx_get(n, u7, NULL, &xprime)){
@@ -250,13 +250,12 @@ int ncdirect_cursor_move_yx(ncdirect* n, int y, int x){
   const char* cup = get_escape(&n->tcache, ESCAPE_CUP);
   if(cup){
       TiparmValue argv[] = {tiparm_int(y), tiparm_int(x)};
-    return term_emit(tiparm_s(cup, 2, argv), n->ttyfp, false);
+    return term_emit_parm(tiparm_s(cup, 2, argv), n->ttyfp, false);
   }else if(vpa && hpa){
-      TiparmValue argv[] = {tiparm_int(x)};
-      TiparmValue argv2[] = {tiparm_int(y)};
-    if(term_emit(tiparm_s(hpa, 1, argv), n->ttyfp, false) == 0 &&
-
-       term_emit(tiparm_s(vpa, 1, argv2), n->ttyfp, false) == 0){
+    TiparmValue argv[] = {tiparm_int(x)};
+    TiparmValue argv2[] = {tiparm_int(y)};
+    if(term_emit_parm(tiparm_s(hpa, 1, argv), n->ttyfp, false) == 0 &&
+       term_emit_parm(tiparm_s(vpa, 1, argv2), n->ttyfp, false) == 0){
       return 0;
     }
   }
@@ -795,8 +794,8 @@ int ncdirect_set_fg_palindex(ncdirect* nc, int pidx){
   if(ncchannels_set_fg_palindex(&nc->channels, pidx) < 0){
     return -1;
   }
-              TiparmValue argv[] = {tiparm_int(pidx)};
-  return term_emit(tiparm_s(setaf, 1, argv), nc->ttyfp, false);
+  TiparmValue argv[] = {tiparm_int(pidx)};
+  return term_emit_parm(tiparm_s(setaf, 1, argv), nc->ttyfp, false);
 }
 
 int ncdirect_set_bg_palindex(ncdirect* nc, int pidx){
@@ -808,7 +807,7 @@ int ncdirect_set_bg_palindex(ncdirect* nc, int pidx){
     return -1;
   }
     TiparmValue argv[] = {tiparm_int(pidx)};
-  return term_emit(tiparm_s(setab, 1, argv), nc->ttyfp, false);
+  return term_emit_parm(tiparm_s(setab, 1, argv), nc->ttyfp, false);
 }
 
 int ncdirect_vprintf_aligned(ncdirect* n, int y, ncalign_e align, const char* fmt, va_list ap){
