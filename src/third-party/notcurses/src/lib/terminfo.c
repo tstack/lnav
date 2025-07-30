@@ -167,7 +167,7 @@ terminfo_parse(const char* orig_content, int size)
     retval->number_count = header->nums_count;
     retval->numbers = malloc(header->nums_count * sizeof(int32_t));
     if (num_size == 2) {
-        int16_t* nums = content;
+        int16_t* nums = (int16_t*) content;
         for (int lpc = 0; lpc < header->nums_count; lpc++) {
             retval->numbers[lpc] = nums[lpc];
         }
@@ -238,7 +238,7 @@ terminfo_parse(const char* orig_content, int size)
     retval->ext_number_count = ext_header->nums_count;
     retval->ext_numbers = malloc(ext_header->nums_count * sizeof(int32_t));
     if (num_size == 2) {
-        int16_t* nums = content;
+        int16_t* nums = (int16_t*) content;
         for (int lpc = 0; lpc < ext_header->nums_count; lpc++) {
             retval->ext_numbers[lpc] = nums[lpc];
         }
