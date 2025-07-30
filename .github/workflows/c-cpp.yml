@@ -71,6 +71,7 @@ jobs:
           automake
           autoconf
           g++
+          libncurses-dev
           libpcre2-dev
           libsqlite3-dev
           libbz2-dev
