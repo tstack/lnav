@@ -203,58 +203,64 @@ jobs:
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
 
-  build-windows-on-linux:
-    name: Build Windows Binary (Static)
-    runs-on: ubuntu-latest
+  build-windows-msys2:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            mingw-w64 \
-            cmake \
-            make \
-            pkg-config \
-            zip \
-            autoconf \
-            automake \
-            libtool \
-            gettext
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-libarchive
+            mingw-w64-x86_64-libbz2
+            mingw-w64-x86_64-sqlite3
+            mingw-w64-x86_64-libunistring
+            mingw-w64-x86_64-pkg-config
+            autotools
+            zip
 
-      - name: Configure & Build
+      - name: Bootstrap Autotools
+        run: ./autogen.sh
+
+      - name: Configure with SQLite
+        env:
+          CC: gcc
+          CXX: g++
+          PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
         run: |
-          set -x
-          ./autogen.sh
-          mkdir build
-          cd build
-          ../configure \
-            --host=x86_64-w64-mingw32 \
-                      --enable-static \
-                      LDFLAGS="-static" \
-                      CPPFLAGS="-O2" \
-                      CXXFLAGS="-fPIC" \
-                      CFLAGS="-fPIC" \
-                      LIBS="-larchive -lssh2 -llzma -lexpat -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
-                      --sysconfdir=/etc \
-                      --prefix=$PREFIX || cat config.log
+          ./configure \
+            --prefix=/mingw64 \
+            --enable-static \
+            --disable-shared \
+            --with-sqlite3 \
+            --with-editline
 
       - name: Build
-        run: |
-          make -j$(nproc)
+        run: make V=1
+
+      - name: Strip binary
+        run: strip src/lnav.exe || true
 
       - name: Package
-        run: |
-          zip -j lnav-windows2.zip build/lnav.exe
+        run: zip -j lnav-windows-msys2.zip src/lnav.exe
 
-      - name: Upload artifact
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: lnav-windows2
-          path: lnav-windows2.zip
+          name: lnav-windows-msys2
+          path: lnav-windows-msys2.zip
 
   build-windows:
     runs-on: windows-latest
