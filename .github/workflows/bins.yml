@@ -247,9 +247,7 @@ jobs:
           ./configure \
             --prefix=/mingw64 \
             --enable-static \
-            --disable-shared \
-            --with-sqlite3 \
-            --with-editline
+            --with-sqlite3
 
       - name: Build
         run: make V=1

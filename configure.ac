@@ -33,6 +33,14 @@ AC_SUBST(abssrcdir)
 CXX=`echo $CXX | sed -e 's/-std=gnu++11//g'`
 CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS -D_GNU_SOURCE -DUSE_OS_TZDB=1 -DHAS_REMOTE_API=0"
 
+case "$host_os" in
+*)
+  AC_DEFINE([USE_OS_TZDB], [1], [use tzdb])
+  ;;
+mingw*)
+  ;;
+esac
+
 AC_ARG_ENABLE([debug],
               AS_HELP_STRING([--enable-debug],
                              [Compile with symbols]))
