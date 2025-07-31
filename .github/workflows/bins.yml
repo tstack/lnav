@@ -203,6 +203,51 @@ jobs:
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
 
+  build-windows-on-linux:
+    name: Build Windows Binary (Static)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            mingw-w64 \
+            cmake \
+            make \
+            pkg-config \
+            zip \
+            autoconf \
+            automake \
+            libtool \
+            gettext
+
+      - name: Configure & Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+            -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32 \
+            -DCMAKE_EXE_LINKER_FLAGS="-static" \
+            -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++"
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          zip -j lnav-windows2.zip build/lnav.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lnav-windows2
+          path: lnav-windows2.zip
+
   build-windows:
     runs-on: windows-latest
     strategy:
