@@ -1406,8 +1406,14 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
                 }
                 free(terminfo_path);
             } else {
-                logpanic("could not find terminfo file for %s", tname);
-                goto err;
+                loginfo("loading from internal");
+                notcurses_terminfo = terminfo_load_from_internal(tname);
+                if (notcurses_terminfo != NULL) {
+                    loginfo("names = %s", notcurses_terminfo->name);
+                } else {
+                    logpanic("could not find terminfo file for %s", tname);
+                    goto err;
+                }
             }
         } else {
             logpanic("TERM is not set");

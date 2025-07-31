@@ -45,6 +45,7 @@ default-formats.cc: $(BIN2C_PATH) $(FORMAT_FILES)
 
 include keymaps/keymaps.am
 include prql/prql.am
+include terminfos/terminfos.am
 include themes/themes.am
 
 CONFIG_FILES = \
@@ -58,6 +59,9 @@ default-config.cc: $(BIN2C_PATH) $(CONFIG_FILES)
 
 prql-modules.cc: $(BIN2C_PATH) $(PRQL_FILES)
 	$(BIN2C_V)$(BIN2C_PATH) -n lnav_prql_modules prql-modules $(PRQL_FILES)
+
+terminfo-files.cc: $(BIN2C_PATH) $(TERMINFO_FILES)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_terminfo_files terminfo-files $(TERMINFO_FILES)
 
 include scripts/scripts.am
 
@@ -113,6 +117,7 @@ LNAV_BUILT_FILES = \
     help-md.cc \
     init-sql.cc \
     prql-modules.cc \
+    terminfo-files.cc \
     time_fmts.cc \
     xml-entities-json.cc \
     xterm-palette-json.cc
@@ -205,6 +210,7 @@ dist_noinst_DATA = \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
 	$(PRQL_FILES) \
+	$(TERMINFO_FILES) \
 	words.json \
 	xml-entities.json \
 	xterm-palette.json

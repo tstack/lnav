@@ -48,6 +48,7 @@
 #include "config.h"
 #include "lnav_config.hh"
 #include "shlex.hh"
+#include "terminfo-files.h"
 #include "terminfo/terminfo.h"
 #include "uniwidth.h"
 #include "xterm_mouse.hh"
@@ -1555,4 +1556,28 @@ screen_curses::screen_curses(screen_curses&& other) noexcept
     : sc_termios(other.sc_termios),
       sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
 {
+}
+
+extern "C"
+{
+Terminfo*
+terminfo_load_from_internal(const char* term_name)
+{
+    log_debug("checking for internal terminfo for: %s", term_name);
+    for (const auto& tf : lnav_terminfo_files) {
+        if (strcmp(tf.get_name(), term_name) != 0) {
+            continue;
+        }
+        log_info("  found internal terminfo!");
+        auto sfp = tf.to_string_fragment_producer();
+        auto content = sfp->to_string();
+        auto* retval = terminfo_parse(content.c_str(), content.size());
+        if (retval != nullptr) {
+            return retval;
+        }
+        log_error("  failed to load internal terminfo");
+    }
+
+    return nullptr;
+}
 }

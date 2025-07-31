@@ -1,0 +1,14 @@
+
+TERMINFO_FILES = \
+    $(srcdir)/%reldir%/ansi \
+    $(srcdir)/%reldir%/cygwin \
+    $(srcdir)/%reldir%/Eterm \
+    $(srcdir)/%reldir%/Eterm-256color \
+    $(srcdir)/%reldir%/screen \
+    $(srcdir)/%reldir%/screen-16color \
+    $(srcdir)/%reldir%/screen-256color \
+    $(srcdir)/%reldir%/tmux \
+    $(srcdir)/%reldir%/tmux-256color \
+    $(srcdir)/%reldir%/xterm \
+    $(srcdir)/%reldir%/xterm-256color \
+    $()

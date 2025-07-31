@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define TERMINFO_MAGIC       0x011A
@@ -31,6 +32,7 @@ typedef struct {
 const char* terminfo_find_path_for_term(const char* term_name);
 
 Terminfo* terminfo_load(const char* path);
+Terminfo* terminfo_load_from_internal(const char* term_name);
 Terminfo* terminfo_parse(const char* content, int size);
 void terminfo_free(Terminfo* ti);
 

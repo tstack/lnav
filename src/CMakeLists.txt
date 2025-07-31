@@ -268,6 +268,30 @@ add_custom_command(
         DEPENDS bin2c ${CONFIG_FILES})
 list(APPEND GEN_SRCS default-config.h default-config.cc)
 
+set(TERMINFO_FILES
+        terminfos/ansi
+        terminfos/cygwin
+        terminfos/Eterm
+        terminfos/Eterm-256color
+        terminfos/screen
+        terminfos/screen-16color
+        terminfos/screen-256color
+        terminfos/tmux
+        terminfos/tmux-256color
+        terminfos/xterm
+        terminfos/xterm-256color
+)
+
+set(TERMINFO_FILE_PATHS ${TERMINFO_FILES})
+
+list(TRANSFORM TERMINFO_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT terminfo-files.h terminfo-files.cc
+        COMMAND bin2c -n lnav_terminfo_files terminfo-files ${TERMINFO_FILE_PATHS}
+        DEPENDS bin2c ${TERMINFO_FILES})
+list(APPEND GEN_SRCS terminfo-files.h terminfo-files.cc)
+
 set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
