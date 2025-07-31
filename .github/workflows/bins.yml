@@ -224,7 +224,7 @@ jobs:
             git
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libarchive
-            mingw-w64-x86_64-curl
+            mingw-w64-x86_64-curl-gnutls
             mingw-w64-x86_64-pcre2
             mingw-w64-x86_64-zlib
             mingw-w64-x86_64-bzip2
