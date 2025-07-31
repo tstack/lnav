@@ -33,13 +33,13 @@
 #include <algorithm>
 #endif
 
-#include "paths.hh"
-
 #include <unistd.h>
 
 #include "config.h"
 #include "fmt/format.h"
+#include "lnav_log.hh"
 #include "opt_util.hh"
+#include "paths.hh"
 
 namespace lnav::paths {
 
@@ -47,7 +47,7 @@ namespace lnav::paths {
 std::string
 windows_to_unix_file_path(const std::string& input)
 {
-    static const auto CYGDRIVE = std::filesystem::path("cygdrive");
+    static const auto CYGDRIVE = std::filesystem::path("/cygdrive");
 
     std::string file_path;
     file_path.assign(input);
