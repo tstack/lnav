@@ -29,6 +29,10 @@
 
 #include <filesystem>
 
+#ifdef __CYGWIN__
+#include <algorithm>
+#endif
+
 #include "paths.hh"
 
 #include <unistd.h>
@@ -37,103 +41,9 @@
 #include "fmt/format.h"
 #include "opt_util.hh"
 
-#ifdef _WIN32
-// Make sure we don't bring in all the extra junk with windows.h
-#    ifndef WIN32_LEAN_AND_MEAN
-#        define WIN32_LEAN_AND_MEAN
-#    endif
-// stringapiset.h depends on this
-#    include <windows.h>
-// For SUCCEEDED macro
-#    include <winerror.h>
-// For WideCharToMultiByte
-#    include <stringapiset.h>
-// For SHGetFolderPathW and various CSIDL "magic numbers"
-#    include <shlobj.h>
-
-namespace sago {
-namespace internal {
-
-std::string
-win32_utf16_to_utf8(const wchar_t* wstr)
-{
-    std::string res;
-    // If the 6th parameter is 0 then WideCharToMultiByte returns the number of
-    // bytes needed to store the result.
-    int actualSize = WideCharToMultiByte(
-        CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
-    if (actualSize > 0) {
-        // If the converted UTF-8 string could not be in the initial buffer.
-        // Allocate one that can hold it.
-        std::vector<char> buffer(actualSize);
-        actualSize = WideCharToMultiByte(CP_UTF8,
-                                         0,
-                                         wstr,
-                                         -1,
-                                         &buffer[0],
-                                         static_cast<int>(buffer.size()),
-                                         nullptr,
-                                         nullptr);
-        res = buffer.data();
-    }
-    if (actualSize == 0) {
-        // WideCharToMultiByte return 0 for errors.
-        throw std::runtime_error("UTF16 to UTF8 failed with error code: "
-                                 + std::to_string(GetLastError()));
-    }
-    return res;
-}
-
-}  // namespace internal
-}  // namespace sago
-
-class FreeCoTaskMemory {
-    LPWSTR pointer = NULL;
-
-public:
-    explicit FreeCoTaskMemory(LPWSTR pointer) : pointer(pointer) {};
-    ~FreeCoTaskMemory() { CoTaskMemFree(pointer); }
-};
-
-static std::string
-GetKnownWindowsFolder(REFKNOWNFOLDERID folderId, const char* errorMsg)
-{
-    LPWSTR wszPath = NULL;
-    HRESULT hr;
-    hr = SHGetKnownFolderPath(folderId, KF_FLAG_CREATE, NULL, &wszPath);
-    FreeCoTaskMemory scopeBoundMemory(wszPath);
-
-    if (!SUCCEEDED(hr)) {
-        throw std::runtime_error(errorMsg);
-    }
-    return sago::internal::win32_utf16_to_utf8(wszPath);
-}
-
-static std::string
-GetAppData()
-{
-    return GetKnownWindowsFolder(FOLDERID_RoamingAppData,
-                                 "RoamingAppData could not be found");
-}
-
-static std::string
-GetAppDataCommon()
-{
-    return GetKnownWindowsFolder(FOLDERID_ProgramData,
-                                 "ProgramData could not be found");
-}
-
-static std::string
-GetAppDataLocal()
-{
-    return GetKnownWindowsFolder(FOLDERID_LocalAppData,
-                                 "LocalAppData could not be found");
-}
-#endif
-
 namespace lnav::paths {
 
-#ifdef _WIN32
+#ifdef __CYGWIN__
 std::string
 windows_to_unix_file_path(const std::string& input)
 {
@@ -167,12 +77,19 @@ windows_to_unix_file_path(const std::string& input)
 std::filesystem::path
 dotlnav()
 {
-#ifdef _WIN32
-    auto home_env = windows_to_unix_file_path(GetAppDataLocal());
-#else
     auto home_env = std::string(getenv_opt("HOME").value_or(""));
-#endif
     const auto* xdg_config_home = getenv("XDG_CONFIG_HOME");
+
+#ifdef __CYGWIN__
+    const auto* app_data = getenv("APPDATA");
+    if (app_data != nullptr) {
+        auto app_data_path = std::filesystem::path(windows_to_unix_file_path(app_data));
+
+        if (std::filesystem::is_directory(app_data_path)) {
+            return app_data_path / "lnav";
+        }
+    }
+#endif
 
     if (!home_env.empty()) {
         auto home_path = std::filesystem::path(home_env);
