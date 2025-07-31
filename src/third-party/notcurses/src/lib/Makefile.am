@@ -1,5 +1,6 @@
 
 AM_CPPFLAGS = \
+    -U__MINGW32__ \
     -I$(srcdir)/.. \
     -I$(srcdir)/../../include
 
