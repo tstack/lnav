@@ -1,7 +1,7 @@
 #include "compat/compat.h"
 #include <builddef.h>
 #include <pthread.h>
-#ifdef  __MINGW32__
+#if 0 && defined(__MINGW32__)
 #include <string.h>
 #include <stdlib.h>
 #include <synchapi.h>
