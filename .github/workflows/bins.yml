@@ -227,15 +227,23 @@ jobs:
 
       - name: Configure & Build
         run: |
+          set -x
+          ./autogen.sh
           mkdir build
           cd build
-          cmake .. \
-            -DCMAKE_SYSTEM_NAME=Windows \
-            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-            -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32 \
-            -DCMAKE_EXE_LINKER_FLAGS="-static" \
-            -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++"
+          ../lnav/configure \
+            --host=x86_64-w64-mingw32 \
+                      --enable-static \
+                      LDFLAGS="-static" \
+                      CPPFLAGS="-O2" \
+                      CXXFLAGS="-fPIC" \
+                      CFLAGS="-fPIC" \
+                      LIBS="-larchive -lssh2 -llzma -lexpat -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
+                      --sysconfdir=/etc \
+                      --prefix=$PREFIX || cat config.log
+
+      - name: Build
+        run: |
           make -j$(nproc)
 
       - name: Package
