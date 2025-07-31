@@ -132,6 +132,9 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
                  darwin*)
                     LIBCURL=`$_libcurl_config --libs`
                     ;;
+                 mingw*)
+                    LIBCURL=`/mingw64/bin/pkg-config --static --libs libcurl`
+                    ;;
                  *)
                     LIBCURL=`$_libcurl_config --static-libs`
                     ;;
