@@ -224,7 +224,6 @@ jobs:
             git
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libarchive
-            mingw-w64-x86_64-libbz2
             mingw-w64-x86_64-sqlite3
             mingw-w64-x86_64-libunistring
             mingw-w64-x86_64-pkg-config
