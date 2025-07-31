@@ -620,6 +620,7 @@ DISTCLEANFILES = \
     help-md.h \
     init-sql.h \
     prql-modules.h \
+    terminfo-files.h \
     time_fmts.h \
     xml-entities-json.h \
     xterm-palette-json.h \
