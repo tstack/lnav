@@ -231,7 +231,7 @@ jobs:
           ./autogen.sh
           mkdir build
           cd build
-          ../lnav/configure \
+          ./configure \
             --host=x86_64-w64-mingw32 \
                       --enable-static \
                       LDFLAGS="-static" \
