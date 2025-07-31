@@ -203,67 +203,6 @@ jobs:
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
 
-  build-windows-msys2:
-    runs-on: windows-latest
-
-    defaults:
-      run:
-        shell: msys2 {0}
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            base-devel
-            git
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-libarchive
-            mingw-w64-x86_64-curl-gnutls
-            mingw-w64-x86_64-pkg-config
-            mingw-w64-x86_64-pcre2
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-bzip2
-            mingw-w64-x86_64-sqlite3
-            mingw-w64-x86_64-libunistring
-            mingw-w64-x86_64-pkg-config
-            autotools
-            zip
-
-      - name: Bootstrap Autotools
-        run: ./autogen.sh
-
-      - name: Configure with SQLite
-        env:
-          CC: gcc
-          CXX: g++
-          PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
-        run: |
-          ./configure \
-            --prefix=/mingw64 \
-            --enable-static \
-            --with-sqlite3
-
-      - name: Build
-        run: make V=1
-
-      - name: Strip binary
-        run: strip src/lnav.exe || true
-
-      - name: Package
-        run: zip -j lnav-windows-msys2.zip src/lnav.exe
-
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: lnav-windows-msys2
-          path: lnav-windows-msys2.zip
-
   build-windows:
     runs-on: windows-latest
     strategy:
