@@ -867,7 +867,9 @@ rl_exec_change(textinput_curses& rc, bool is_req)
         const auto& scripts = prompt.p_scripts;
         const auto iter = scripts.as_scripts.find(script_name);
 
-        if (iter == scripts.as_scripts.end()) {
+        if (iter == scripts.as_scripts.end()
+            || (split_args.size() == 1 && !endswith(line, " ")))
+        {
             lnav_data.ld_bottom_source.set_prompt(
                 "Enter a script to execute: " ABORT_MSG);
             lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
