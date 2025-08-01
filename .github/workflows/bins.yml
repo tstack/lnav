@@ -281,8 +281,6 @@ jobs:
           mkdir -p $PREFIX
           make install
           ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
-          mkdir -p $PREFIX/lib/terminfo/78
-          cp -r /usr/lib/terminfo/78/xterm-256color $PREFIX/lib/terminfo/78/
           cp ../lnav/README ../lnav/NEWS.md .
           zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: "💉 Basic test"
