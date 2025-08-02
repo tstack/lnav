@@ -3088,17 +3088,18 @@ struct initial_responses* inputlayer_get_responses(inputctx* ictx){
       struct timespec ts = {wait_start_tv.tv_sec + 5, 0};
   pthread_mutex_lock(&ictx->ilock);
   while(ictx->initdata || !ictx->initdata_complete){
-    pthread_cond_timedwait(&ictx->icond, &ictx->ilock, &ts);
+      pthread_cond_timedwait(&ictx->icond, &ictx->ilock, &ts);
       gettimeofday(&curr_tv, NULL);
       timersub(&curr_tv, &wait_start_tv, &diff_tv);
       if (diff_tv.tv_sec > 5) {
           logpanic("timedout waiting for initial response");
+          pthread_mutex_unlock(&ictx->ilock);
           return NULL;
       }
   }
   iresp = ictx->initdata_complete;
   ictx->initdata_complete = NULL;
-      loginfo("inputlayer_get_resp got %p", iresp);
+  loginfo("inputlayer_get_resp got %p", iresp);
   pthread_mutex_unlock(&ictx->ilock);
   if(ictx->failed){
     logpanic("aborting after automaton construction failure");
