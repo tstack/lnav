@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
+#ifdef HAVE_SYS_SYSCTL_H
+#    include <sys/sysctl.h>
+#endif
+
 #include "config.h"
 #include "fmt/format.h"
 #include "itertools.hh"
@@ -53,7 +57,7 @@ namespace lnav::filesystem {
 std::optional<std::filesystem::path>
 self_path()
 {
-#ifdef HAVE_LIBPROC_H
+#if defined(HAVE_LIBPROC_H) && defined(PROC_PIDPATHINFO_MAXSIZE)
     auto pid = getpid();
     char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 
@@ -64,6 +68,21 @@ self_path()
         log_info("self path: %s", pathbuf);
         return std::filesystem::path(pathbuf);
     }
+    return std::nullopt;
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(KERN_PROC_PATHNAME)
+    char path[1024];
+    int mib[4];
+    size_t len = sizeof(path);
+
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PATHNAME;
+    mib[3] = -1;  // current process
+
+    if (sysctl(mib, 4, path, &len, NULL, 0) == 0) {
+        return std::filesystem::path(path);
+    }
+    log_error("unable to determine path: %s", strerror(errno));
     return std::nullopt;
 #else
     std::error_code ec;

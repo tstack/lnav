@@ -108,7 +108,7 @@ AS_CASE(["$host_os"],
     )
 )
 
-AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h uniwidth.h)
+AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h uniwidth.h sys/sysctl.h)
 
 AS_IF([test "x$ac_cv_header_uniwidth_h" != "xyes"], [
   AC_MSG_ERROR([uniwidth.h header from libunistring was not found])dnl
