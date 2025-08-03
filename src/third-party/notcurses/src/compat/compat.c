@@ -179,6 +179,7 @@ int pthread_condmonotonic_init(pthread_cond_t* cond){
     return -1;
   }
   // FIXME we need a solution for this on macos/windows
+#if 0 // XXX timeouts are used rarely and pass realtime clock
 #ifndef __APPLE__
 #ifndef __MINGW32__
   if(pthread_condattr_setclock(&cat, CLOCK_MONOTONIC)){
@@ -187,7 +188,8 @@ int pthread_condmonotonic_init(pthread_cond_t* cond){
   }
 #endif
 #endif
-  if(pthread_cond_init(cond, &cat)){
+#endif
+    if(pthread_cond_init(cond, &cat)){
     pthread_condattr_destroy(&cat);
     return -1;
   }
