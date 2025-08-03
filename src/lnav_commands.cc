@@ -3404,7 +3404,6 @@ com_config(exec_context& ec,
                     }
 
                     if (!errors.empty()) {
-                        lnav_data.ld_winched = true;
                         lnav_config = rollback_lnav_config;
                         reload_config(errors_ignored);
                         return Err(errors.back());
