@@ -61,6 +61,7 @@ constexpr string_fragment TEXT_FORMAT_STRINGS[text_format_count] = {
     "text/x-shellscript"_frag,
     "text/x-lnav-script"_frag,
     "text/x-rst"_frag,
+    "text/ini"_frag,
     "text/plain"_frag,
 };
 
@@ -98,6 +99,7 @@ detect_text_format(string_fragment sf,
     static const auto SH_EXT = std::filesystem::path(".sh");
     static const auto LNAV_EXT = std::filesystem::path(".lnav");
     static const auto RST_EXT = std::filesystem::path(".rst");
+    static const auto INI_EXT = std::filesystem::path(".ini");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -171,6 +173,16 @@ detect_text_format(string_fragment sf,
         ")",
         PCRE2_MULTILINE | PCRE2_CASELESS);
 
+    static const auto INI_MATCHERS = lnav::pcre2pp::code::from_const(
+        R"(
+        \A
+        (?:\s*[;#].*\n)*                             # Optional multi-line comment at top
+        (?:\s*\[[^\]\r\n]+\]\s*\n                    # Section header
+          (?:\s*[a-zA-Z0-9_.-]+\s*=\s*.*\n)+         # One or more key=value lines
+        )
+)",
+        PCRE2_MULTILINE | PCRE2_CASELESS | PCRE2_EXTENDED);
+
     if (path) {
         while (FILTER_EXTS.count(path->extension()) > 0) {
             path = path->stem();
@@ -229,6 +241,10 @@ detect_text_format(string_fragment sf,
         if (ext == RST_EXT) {
             return text_format_t::TF_RESTRUCTURED_TEXT;
         }
+
+        if (ext == INI_EXT) {
+            return text_format_t::TF_INI;
+        }
     }
 
     {
@@ -278,6 +294,10 @@ detect_text_format(string_fragment sf,
 
     if (XML_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_XML;
+    }
+
+    if (INI_MATCHERS.find_in(sf).ignore_error()) {
+        return text_format_t::TF_INI;
     }
 
     return text_format_t::TF_UNKNOWN;

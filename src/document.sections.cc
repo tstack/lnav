@@ -433,6 +433,7 @@ public:
             case text_format_t::TF_JSON:
             case text_format_t::TF_YAML:
             case text_format_t::TF_TOML:
+            case text_format_t::TF_INI:
             case text_format_t::TF_LOG:
             case text_format_t::TF_UNKNOWN:
                 return true;
