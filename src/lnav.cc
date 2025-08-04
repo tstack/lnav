@@ -3872,6 +3872,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 && verbosity == verbosity_t::quiet && load_stdin
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
+                log_info("pager mode, waiting for input to be consumed");
                 // give the pipers a chance to run to create the files to be
                 // scanned.
                 wait_for_pipers(ui_clock::now() + 10ms);
@@ -3883,15 +3884,19 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     && lnav_data.ld_child_pollers.empty()
                     && lnav_data.ld_active_files.active_pipers() == 0)
                 {
+                    log_info("  input fully consumed");
                     rebuild_indexes_repeatedly();
                     if (lnav_data.ld_active_files.fc_files.empty()
                         || lnav_data.ld_active_files.fc_files[0]->size() < 24)
                     {
+                        log_info("  input is smaller than screen, not paging");
                         lnav_data.ld_flags |= LNF_HEADLESS;
                         verbosity = verbosity_t::standard;
                         lnav_data.ld_views[LNV_LOG].set_top(0_vl);
-                        lnav_data.ld_views[LNV_TEXT].set_top(0_vl);
                     }
+                    lnav_data.ld_views[LNV_TEXT].set_top(0_vl);
+                } else {
+                    log_info("  input not fully consumed");
                 }
             }
 
