@@ -1,17 +1,17 @@
 #ifndef NOTCURSES_EGCPOOL
 #define NOTCURSES_EGCPOOL
 
-#include <wchar.h>
-#include <errno.h>
-#include <stdio.h>
-#include <wctype.h>
-#include <stddef.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <unictype.h>
 #include <unigbrk.h>
 #include <unictype.h>
+#include <unistr.h>
 #include "notcurses/notcurses.h"
 #include "compat/compat.h"
 #include "logging.h"
@@ -100,12 +100,10 @@ utf8_egc_len(const char* gcluster, int* colcount){
   size_t ret = 0;
   *colcount = 0;
   int r;
-  mbstate_t mbt;
-  memset(&mbt, 0, sizeof(mbt));
-  wchar_t wc, prevw = 0;
+  ucs4_t wc, prevw = 0;
   bool injoin = false;
   do{
-    r = mbrtowc(&wc, gcluster, MB_LEN_MAX, &mbt);
+    r = u8_mbtoucr(&wc, gcluster, MB_LEN_MAX);
     if(r < 0){
       // FIXME probably ought escape this somehow
       logerror("invalid UTF8: %s", gcluster);
