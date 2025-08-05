@@ -1,3 +1,19 @@
+## lnav v0.13.1
+
+Features:
+* Initial support for Windows.  Configuration should be stored
+  in %APPDATA%.  The binary is built using msys2.  So, it
+  depends on msys-2.0.dll being in the same directory.  No other
+  dependencies should be needed.
+* Removed dependency on ncurses during the build.  The terminfo
+  files are still used during runtime, but fallback terminfo
+  files for common terminals are included in the binary.
+
+Bug Fixes:
+* Fix a crash on startup for some environments.
+* Fix a spurious screen flash on some prompts.
+* Fix an issue with completion of script names.
+
 ## lnav v0.13.0
 
 Interface changes:
