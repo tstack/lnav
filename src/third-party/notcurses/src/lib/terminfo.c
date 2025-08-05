@@ -110,6 +110,18 @@ terminfo_load(const char* path)
     return retval;
 }
 
+static int16_t
+read_le16(const char* bits)
+{
+    return bits[0] | (bits[1] << 8);
+}
+
+static int32_t
+read_le32(const char* bits)
+{
+    return bits[0] | (bits[1] << 8) | (bits[2] << 16) | (bits[3] << 24);
+}
+
 Terminfo*
 terminfo_parse(const char* orig_content, int size)
 {
@@ -167,12 +179,13 @@ terminfo_parse(const char* orig_content, int size)
     retval->number_count = header->nums_count;
     retval->numbers = malloc(header->nums_count * sizeof(int32_t));
     if (num_size == 2) {
-        int16_t* nums = (int16_t*) content;
         for (int lpc = 0; lpc < header->nums_count; lpc++) {
-            retval->numbers[lpc] = nums[lpc];
+            retval->numbers[lpc] = read_le16(&content[lpc * num_size]);
         }
     } else {
-        memcpy(retval->numbers, content, num_size);
+        for (int lpc = 0; lpc < header->nums_count; lpc++) {
+            retval->numbers[lpc] = read_le32(&content[lpc * num_size]);
+        }
     }
 
     content += std_num_size;
@@ -238,12 +251,13 @@ terminfo_parse(const char* orig_content, int size)
     retval->ext_number_count = ext_header->nums_count;
     retval->ext_numbers = malloc(ext_header->nums_count * sizeof(int32_t));
     if (num_size == 2) {
-        int16_t* nums = (int16_t*) content;
         for (int lpc = 0; lpc < ext_header->nums_count; lpc++) {
-            retval->ext_numbers[lpc] = nums[lpc];
+            retval->ext_numbers[lpc] = read_le16(&content[lpc * num_size]);
         }
     } else {
-        memcpy(retval->ext_numbers, content, ext_num_size);
+        for (int lpc = 0; lpc < ext_header->nums_count; lpc++) {
+            retval->ext_numbers[lpc] = read_le32(&content[lpc * num_size]);
+        }
     }
 
     content += ext_num_size;
