@@ -96,6 +96,7 @@ libbase_a_SOURCES = \
     is_utf8.cc \
     isc.cc \
     lnav.console.cc \
+    lnav.console.win.cc \
     lnav.gzip.cc \
     lnav_log.cc \
     network.tcp.cc \

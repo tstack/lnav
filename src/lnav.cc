@@ -2628,6 +2628,10 @@ main(int argc, char* argv[])
         setenv("LANG", "en_US.UTF-8", 1);
     }
 
+    if (lnav::console::only_process_attached_to_win32_console()) {
+        mode_flags.mf_no_default = true;
+    }
+
     ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
 
     (void) signal(SIGPIPE, SIG_IGN);

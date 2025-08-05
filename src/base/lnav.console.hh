@@ -38,6 +38,8 @@
 
 namespace lnav::console {
 
+bool only_process_attached_to_win32_console();
+
 void println(FILE* file, const attr_line_t& al);
 
 struct snippet {
