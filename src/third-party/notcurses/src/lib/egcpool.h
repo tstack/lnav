@@ -12,6 +12,7 @@
 #include <unigbrk.h>
 #include <unictype.h>
 #include <unistr.h>
+#include <wctype.h>
 #include "notcurses/notcurses.h"
 #include "compat/compat.h"
 #include "logging.h"
