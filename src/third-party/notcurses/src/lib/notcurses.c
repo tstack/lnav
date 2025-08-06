@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <unistr.h>
+#include <unitypes.h>
 #include <locale.h>
 #include <uniwbrk.h>
 #include <inttypes.h>
