@@ -508,13 +508,15 @@ view_curses::mvwattrline(ncplane* window,
                 }
             } else if (iter->sa_type == &VC_BLOCK_ELEM) {
                 auto be = iter->sa_value.get<block_elem_t>();
-                ncplane_putwc_yx(window, y, x + attr_range.lr_start, be.value);
+                ncplane_pututf32_yx(
+                    window, y, x + attr_range.lr_start, be.value);
                 attrs = vc.attrs_for_role(be.role);
             } else if (iter->sa_type == &VC_ICON) {
                 auto ic = iter->sa_value.get<ui_icon_t>();
                 auto be = vc.wchar_for_icon(ic);
 
-                ncplane_putwc_yx(window, y, x + attr_range.lr_start, be.value);
+                ncplane_pututf32_yx(
+                    window, y, x + attr_range.lr_start, be.value);
                 attrs = vc.attrs_for_role(be.role);
                 // clear the BG color, it interferes with the cursor BG
                 attrs.ta_bg_color = styling::color_unit::EMPTY;

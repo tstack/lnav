@@ -2452,25 +2452,8 @@ ncplane_putwstr(struct ncplane* n, const wchar_t* gclustarr){
 // Replace the cell at the specified coordinates with the provided UTF-32
 // 'u'. Advance the cursor by the character's width as reported by wcwidth().
 // On success, returns the number of columns written. On failure, returns -1.
-static inline int
-ncplane_pututf32_yx(struct ncplane* n, int y, int x, uint32_t u){
-  if(u > WCHAR_MAX){
-    return -1;
-  }
-  // we use MB_LEN_MAX (and potentially "waste" a few stack bytes to avoid
-  // the greater sin of a VLA (and to be locale-independent).
-  char utf8c[MB_LEN_MAX + 1];
-  mbstate_t ps;
-  memset(&ps, 0, sizeof(ps));
-  // this isn't going to be valid for reconstructued surrogate pairs...
-  // we need our own, or to use unistring or something.
-  size_t s = wcrtomb(utf8c, (wchar_t)u, &ps);
-  if(s == (size_t)-1){
-    return -1;
-  }
-  utf8c[s] = '\0';
-  return ncplane_putegc_yx(n, y, x, utf8c, NULL);
-}
+int
+ncplane_pututf32_yx(struct ncplane* n, int y, int x, uint32_t u);
 
 static inline int
 ncplane_putwc_yx(struct ncplane* n, int y, int x, wchar_t w){
