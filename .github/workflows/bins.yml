@@ -225,7 +225,7 @@ jobs:
           fetch-depth: 0
       # Install Rust using moonrepo/setup-rust
       - name: Setup Rust
-        uses: moonrepo/setup-rust@v2
+        uses: moonrepo/setup-rust@v1
         with:
           rust-version: stable
       - name: "${{ matrix.icon }} Setup MSYS2"
