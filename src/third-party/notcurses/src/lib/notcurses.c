@@ -2080,9 +2080,6 @@ int ncplane_putegc_yx(ncplane* n, int y, int x, const char* gclust, size_t* sbyt
 
 int
 ncplane_pututf32_yx(struct ncplane* n, int y, int x, uint32_t u){
-    if(u > WCHAR_MAX){
-        return -1;
-    }
     // we use MB_LEN_MAX (and potentially "waste" a few stack bytes to avoid
     // the greater sin of a VLA (and to be locale-independent).
     unsigned char utf8c[MB_LEN_MAX + 1];
