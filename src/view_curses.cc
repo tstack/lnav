@@ -990,7 +990,7 @@ view_colors::init_roles(const lnav_theme& lt,
                         break;
                 }
                 this->vc_icons[icon_index]
-                    = block_elem_t{(wchar_t) read_res.unwrap(), icon_role};
+                    = block_elem_t{(char32_t) read_res.unwrap(), icon_role};
             }
         }
         icon_index += 1;

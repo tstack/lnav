@@ -309,7 +309,7 @@ struct text_attrs {
 };
 
 struct block_elem_t {
-    wchar_t value;
+    char32_t value;
     role_t role;
 
     bool operator==(const block_elem_t& rhs) const
