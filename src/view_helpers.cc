@@ -897,6 +897,11 @@ layout_views()
 
     vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                              + (filters_supported ? 1 : 0));
+    if (!vis && lnav_data.ld_mode == ln_mode_t::FILE_DETAILS) {
+        filter_height = 5;
+        vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
+                                 + (filters_supported ? 1 : 0));
+    }
     lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_filter_view.set_y(bottom + 2);
     lnav_data.ld_filter_view.set_width(width);
