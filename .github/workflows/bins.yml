@@ -223,6 +223,11 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      # Install Rust using moonrepo/setup-rust
+      - name: Setup Rust
+        uses: moonrepo/setup-rust@v2
+        with:
+          rust-version: stable
       - name: "${{ matrix.icon }} Setup MSYS2"
         uses: msys2/setup-msys2@v2
         with:
