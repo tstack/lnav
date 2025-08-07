@@ -2628,6 +2628,18 @@ main(int argc, char* argv[])
         setenv("LANG", "en_US.UTF-8", 1);
     }
 
+    {
+        const auto* TEMP = getenv("TEMP");
+
+        if (TEMP != nullptr) {
+            setenv("TMPDIR", TEMP, 0);
+        } else {
+            setenv("TMPDIR",
+                   std::filesystem::temp_directory_path().string().c_str(),
+                   0);
+        }
+    }
+
     if (lnav::console::only_process_attached_to_win32_console()) {
         mode_flags.mf_no_default = true;
     }
