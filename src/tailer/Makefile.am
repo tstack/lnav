@@ -88,6 +88,7 @@ drive_tailer_LDADD = \
     libtailercommon.a \
     libtailerpp.a \
     ../base/libbase.a \
+    ../pcrepp/libpcrepp.a \
 	../third-party/scnlib/src/libscnlib.a \
     ../fmtlib/libcppfmt.a
 

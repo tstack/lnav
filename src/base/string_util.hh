@@ -207,8 +207,6 @@ utf8_string_length(const std::string& str)
     return utf8_string_length(str.c_str(), str.length());
 }
 
-bool is_url(const std::string& fn);
-
 bool is_blank(const std::string& str);
 
 size_t abbreviate_str(char* str, size_t len, size_t max_len);

@@ -3580,16 +3580,19 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         auto_mem<char> abspath;
         struct stat st;
 
-        auto file_path = std::filesystem::path(
+        auto file_path = lnav::filesystem::to_posix_path(
             stat(file_path_without_trailer.c_str(), &st) == 0
                 ? file_path_without_trailer
                 : file_path_str);
+
+        auto file_path_type
+            = lnav::filesystem::determine_path_type(file_path.string());
 
         if (file_path_str == "-") {
             load_stdin = true;
         }
 #ifdef HAVE_LIBCURL
-        else if (is_url(file_path_str))
+        else if (file_path_type == lnav::filesystem::path_type::url)
         {
             auto ul = std::make_shared<url_loader>(file_path_str);
 
@@ -3603,12 +3606,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 fmt::format(FMT_STRING(":open {}"), file_path_str));
         }
 #endif
-        else if (lnav::filesystem::is_glob(file_path))
+        else if (file_path_type == lnav::filesystem::path_type::pattern)
         {
             lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
                 !(lnav_data.ld_flags & LNF_HEADLESS));
         } else if (lnav::filesystem::statp(file_path, &st) == -1) {
-            if (file_path_str.find(':') != std::string::npos) {
+            if (file_path_type == lnav::filesystem::path_type::remote) {
                 lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
                     !(lnav_data.ld_flags & LNF_HEADLESS));
             } else {

@@ -940,7 +940,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
 #endif
 
-            if (is_url(fn.c_str())) {
+            if (lnav::filesystem::is_url(fn)) {
 #ifndef HAVE_LIBCURL
                 retval = "error: lnav was not compiled with libcurl";
 #else
@@ -1502,7 +1502,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 const auto& fn = fn_v[lpc];
                 const auto& actual_path = actual_path_v[lpc];
 
-                if (is_url(fn.c_str())) {
+                if (lnav::filesystem::is_url(fn)) {
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [fn](auto& clooper) { clooper.close_request(fn); });
                 }

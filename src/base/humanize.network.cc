@@ -42,7 +42,7 @@ from_str(string_fragment sf)
 {
     static const auto REMOTE_PATTERN = lnav::pcre2pp::code::from_const(
         "^(?:(?<username>[\\w\\._\\-]+)@)?"
-        "(?:\\[(?<ipv6>[^\\]]+)\\]|(?<hostname>[^\\[/:]+)):"
+        "(?:\\[(?<ipv6>[^\\]]+)\\]|(?<hostname>[^\\[/:]{2,})):"
         "(?<path>.*)$");
     thread_local auto REMOTE_MATCH_DATA = REMOTE_PATTERN.create_match_data();
 

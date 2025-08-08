@@ -650,7 +650,7 @@ file_collection::expand_filename(
         }
     }
 
-    if (is_url(path)) {
+    if (lnav::filesystem::is_url(path)) {
         return;
     }
 

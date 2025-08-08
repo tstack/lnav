@@ -35,6 +35,20 @@
 #include "config.h"
 #include "doctest/doctest.h"
 
+TEST_CASE("fs_util::to_posix_path")
+{
+    CHECK("/c/foo/bar" == lnav::filesystem::to_posix_path("c:\\foo\\bar"));
+
+    CHECK("/c/" == lnav::filesystem::to_posix_path("c:"));
+
+    CHECK("/c/" == lnav::filesystem::to_posix_path("c:\\"));
+
+    // XXX what should this be?
+    CHECK("/c/foo/bar" == lnav::filesystem::to_posix_path("c:foo\\bar"));
+
+    CHECK("" == lnav::filesystem::to_posix_path(""));
+}
+
 TEST_CASE("fs_util::build_path")
 {
     auto* old_path = getenv("PATH");

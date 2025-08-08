@@ -996,7 +996,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         poss_paths.emplace(poss_rpath);
                     }
                 } else {
-                    auto str_as_path = std::filesystem::path{str};
+                    auto str_as_path = lnav::filesystem::to_posix_path(str);
                     auto parent = str_as_path.parent_path();
                     std::error_code ec;
 

@@ -690,7 +690,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     if (iter != scripts.as_scripts.end()) {
         paths_to_exec = iter->second;
     }
-    if (is_url(script_name)) {
+    if (lnav::filesystem::is_url(script_name)) {
         auto_mem<CURLU> cu(curl_url_cleanup);
         cu = curl_url();
         auto set_rc = curl_url_set(cu, CURLUPART_URL, script_name.c_str(), 0);

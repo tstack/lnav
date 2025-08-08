@@ -32,6 +32,7 @@
 #include "md2attr_line.hh"
 
 #include "base/attr_line.builder.hh"
+#include "base/fs_util.hh"
 #include "base/intern_string.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
@@ -862,7 +863,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
 
             if (img_src) {
                 auto src_value = std::string(img_src.value());
-                if (is_url(src_value)) {
+                if (lnav::filesystem::is_url(src_value)) {
                     src_href = src_value;
                 } else {
                     auto src_path = std::filesystem::path(src_value);

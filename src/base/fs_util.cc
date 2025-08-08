@@ -45,6 +45,7 @@
 #include "itertools.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "scn/scan.h"
 #include "short_alloc.h"
 
@@ -147,6 +148,9 @@ escape_path(const std::filesystem::path& p, path_type pt)
             case '?':
                 switch (pt) {
                     case path_type::normal:
+                    case path_type::windows:
+                    case path_type::remote:
+                    case path_type::url:
                         retval.push_back('\\');
                         break;
                     case path_type::pattern:
@@ -160,6 +164,59 @@ escape_path(const std::filesystem::path& p, path_type pt)
     }
 
     return retval;
+}
+
+bool
+is_url(const std::string& fn)
+{
+    static const auto url_re
+        = lnav::pcre2pp::code::from_const("^(file|https?|ftps?|scp|sftp):.*");
+
+    return url_re.find_in(fn).ignore_error().has_value();
+}
+
+path_type
+determine_path_type(const std::string& arg)
+{
+    if (is_glob(arg)) {
+        return path_type::pattern;
+    }
+
+    if (is_url(arg)) {
+        return path_type::url;
+    }
+
+    switch (arg.find(':')) {
+        case 0:
+            return path_type::normal;
+        case 1:
+            return path_type::windows;
+        default:
+            return path_type::remote;
+    }
+}
+
+std::filesystem::path
+to_posix_path(std::string arg)
+{
+    if (cget(arg, 1).value_or('\0') != ':') {
+        return {arg};
+    }
+
+    switch (cget(arg, 2).value_or('\0')) {
+        case '\\':
+        case '/':
+            arg.erase(1, 1);
+            break;
+        default:
+            arg[1] = '/';
+            break;
+    }
+
+    arg.insert(arg.begin(), '/');
+    std::replace(arg.begin(), arg.end(), '\\', '/');
+
+    return {arg};
 }
 
 std::pair<std::string, file_location_t>

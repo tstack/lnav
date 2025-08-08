@@ -213,13 +213,6 @@ utf8_char_to_byte_index(const std::string& str, ssize_t ch_index)
 
     return retval;
 }
-bool
-is_url(const std::string& fn)
-{
-    static const auto url_re = std::regex("^(file|https?|ftps?|scp|sftp):.*");
-
-    return std::regex_match(fn, url_re);
-}
 
 size_t
 last_word_str(char* str, size_t len, size_t max_len)

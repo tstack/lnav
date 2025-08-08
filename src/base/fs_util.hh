@@ -60,13 +60,22 @@ is_glob(const std::string& fn)
             || fn.find('[') != std::string::npos);
 }
 
+bool is_url(const std::string& fn);
+
 enum class path_type {
     normal,
     pattern,
+    windows,
+    remote,
+    url,
 };
 
 std::string escape_path(const std::filesystem::path& p,
                         path_type pt = path_type::normal);
+
+path_type determine_path_type(const std::string& arg);
+
+std::filesystem::path to_posix_path(std::string arg);
 
 std::pair<std::string, file_location_t> split_file_location(
     const std::string& path);
