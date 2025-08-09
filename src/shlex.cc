@@ -45,7 +45,13 @@ shlex::escape(std::string s)
 {
     static const auto SH_CHARS = lnav::pcre2pp::code::from_const("'");
 
-    return SH_CHARS.replace(s, "\\'");
+    return SH_CHARS.replace(s,
+#if defined(__MSYS__)
+                            "`'"
+#else
+                            "\\'"
+#endif
+    );
 }
 
 attr_line_t

@@ -1243,7 +1243,7 @@ public:
 
     const intern_string_t get_name() const override
     {
-        static const intern_string_t name(intern_string::lookup("w3c"));
+        static const intern_string_t name(intern_string::lookup("w3c_log"));
 
         return this->wlf_format_name.empty() ? name : this->wlf_format_name;
     }

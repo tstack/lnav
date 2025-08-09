@@ -268,12 +268,14 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
         if (attr_opt) {
             auto format_name = attr_opt->get();
             auto format = log_format::find_root_format(format_name.c_str());
-            for (const auto& lvm : format->get_value_metadata()) {
-                auto var_name
-                    = fmt::format(FMT_STRING(":{}"), lvm.lvm_name.c_str());
-                this->insert_sql_completion(var_name, sql_field_var_t{});
-                this->insert_sql_completion(lvm.lvm_name.to_string(),
-                                            sql_format_column_t{});
+            if (format) {
+                for (const auto& lvm : format->get_value_metadata()) {
+                    auto var_name
+                        = fmt::format(FMT_STRING(":{}"), lvm.lvm_name.c_str());
+                    this->insert_sql_completion(var_name, sql_field_var_t{});
+                    this->insert_sql_completion(lvm.lvm_name.to_string(),
+                                                sql_format_column_t{});
+                }
             }
         }
         return std::nullopt;
@@ -1089,9 +1091,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             auto format_name = attr_opt->get();
                             auto format = log_format::find_root_format(
                                 format_name.c_str());
-                            for (const auto& lvm : format->get_value_metadata())
-                            {
-                                field_names.emplace(lvm.lvm_name.to_string());
+                            if (format) {
+                                for (const auto& lvm :
+                                     format->get_value_metadata())
+                                {
+                                    field_names.emplace(
+                                        lvm.lvm_name.to_string());
+                                }
                             }
                         }
                         return std::nullopt;
@@ -1131,11 +1137,14 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             auto format_name = attr_opt->get();
                             auto format = log_format::find_root_format(
                                 format_name.c_str());
-                            for (const auto& lvm : format->get_value_metadata())
-                            {
-                                if (lvm.is_numeric()) {
-                                    field_names.emplace(
-                                        lvm.lvm_name.to_string());
+                            if (format) {
+                                for (const auto& lvm :
+                                     format->get_value_metadata())
+                                {
+                                    if (lvm.is_numeric()) {
+                                        field_names.emplace(
+                                            lvm.lvm_name.to_string());
+                                    }
                                 }
                             }
                         }
