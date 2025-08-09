@@ -60,6 +60,8 @@ is_glob(const std::string& fn)
             || fn.find('[') != std::string::npos);
 }
 
+std::string escape_glob_for_win(std::string arg);
+
 bool is_url(const std::string& fn);
 
 enum class path_type {

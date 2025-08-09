@@ -473,7 +473,12 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 #endif
 
     log_debug("doing glob %s", pattern);
+#if defined(__MSYS__)
+    auto win_path = lnav::filesystem::escape_glob_for_win(pattern);
+    switch (glob(win_path.c_str(), glob_flags, nullptr, pCur->c_glob.inout())) {
+#else
     switch (glob(pattern, glob_flags, nullptr, pCur->c_glob.inout())) {
+#endif
         case GLOB_NOSPACE:
             pVtabCursor->pVtab->zErrMsg
                 = sqlite3_mprintf("No space to perform glob()");

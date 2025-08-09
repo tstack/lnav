@@ -1184,6 +1184,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             } else if (lnav::filesystem::is_glob(fn_str)) {
                 static_root_mem<glob_t, globfree> gl;
 
+                fn_str = lnav::filesystem::escape_glob_for_win(fn_str);
                 if (glob(fn_str.c_str(), GLOB_NOCHECK, nullptr, gl.inout())
                     == 0)
                 {

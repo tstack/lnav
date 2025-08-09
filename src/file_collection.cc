@@ -655,7 +655,12 @@ file_collection::expand_filename(
     }
 
     auto filename_key = loo.loo_filename.empty() ? path : loo.loo_filename;
+#if defined(__MSYS__)
+    auto win_path = lnav::filesystem::escape_glob_for_win(path);
+    auto glob_rc = glob(win_path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
+#else
     auto glob_rc = glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
+#endif
     if (glob_rc == 0) {
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
             /* It's a pattern that doesn't match any files

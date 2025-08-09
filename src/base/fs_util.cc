@@ -55,6 +55,18 @@
 
 namespace lnav::filesystem {
 
+std::string
+escape_glob_for_win(std::string arg)
+{
+#if defined(__MSYS__)
+    std::replace(arg.begin(), arg.end(), '\\', '/');
+    std::replace(arg.begin(), arg.end(), '^', '\\');
+    return arg;
+#else
+    return arg;
+#endif
+}
+
 std::optional<std::filesystem::path>
 self_path()
 {

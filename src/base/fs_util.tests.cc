@@ -59,6 +59,16 @@ TEST_CASE("fs_util::to_posix_path")
     CHECK("" == pt.pt_path);
 }
 
+#if defined(__MSYS__)
+TEST_CASE("fs_util::escape_glob_for_win")
+{
+    CHECK(R"(c:/abc/def/*.log)"
+          == lnav::filesystem::escape_glob_for_win(R"(c:\abc\def\*.log)"));
+    CHECK(R"(c:/abc/def/\*.log)"
+          == lnav::filesystem::escape_glob_for_win(R"(c:\abc\def\^*.log)"));
+}
+#endif
+
 TEST_CASE("fs_util::build_path")
 {
     auto* old_path = getenv("PATH");
