@@ -970,6 +970,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     return this->get_env_completion(str);
                 }
 
+                auto str_as_path = lnav::filesystem::path_transcoder::from(str);
                 std::set<std::string> poss_paths;
 
                 auto rp_opt = humanize::network::path::from_str(str);
@@ -996,8 +997,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         poss_paths.emplace(poss_rpath);
                     }
                 } else {
-                    auto str_as_path = lnav::filesystem::to_posix_path(str);
-                    auto parent = str_as_path.parent_path();
+                    auto parent = str_as_path.pt_path.parent_path();
                     std::error_code ec;
 
                     log_trace("not a remote path: %s", str.c_str());
@@ -1018,6 +1018,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          std::filesystem::directory_iterator(parent, ec))
                     {
                         auto path_str = entry.path().string();
+                        log_debug("  entry: %s", path_str.c_str());
                         if (entry.is_directory()) {
                             path_str.push_back('/');
                         } else if (ht->ht_format
@@ -1025,26 +1026,33 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         {
                             continue;
                         }
+                        path_str = str_as_path.to_native(path_str);
                         poss_paths.emplace(std::move(path_str));
                     }
                     if (ht->ht_format == help_parameter_format_t::HPF_DIRECTORY
                         && !ec)
                     {
-                        poss_paths.emplace(parent.string() + "/");
+                        auto path_str = parent.string();
+                        path_str.push_back('/');
+                        path_str = str_as_path.to_native(path_str);
+                        poss_paths.emplace(path_str);
                     }
                 }
 
-                retval = poss_paths | lnav::itertools::similar_to(str, 10)
-                    | lnav::itertools::map([&str](const auto& path_str) {
-                             auto escaped_path = shlex::escape(path_str);
-                             if (!endswith(path_str, "/") || path_str == str) {
-                                 escaped_path.push_back(' ');
-                             }
-                             return attr_line_t()
-                                 .append(path_str)
-                                 .with_attr_for_all(
-                                     SUBST_TEXT.value(escaped_path));
-                         });
+                retval
+                    = poss_paths | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([&str](const std::string& path_str) {
+                          auto escaped_path = shlex::escape(path_str);
+                          if (path_str.find_last_of("/\\") == std::string::npos
+                              || path_str == str)
+                          {
+                              escaped_path.push_back(' ');
+                          }
+                          return attr_line_t()
+                              .append(path_str)
+                              .with_attr_for_all(
+                                  SUBST_TEXT.value(escaped_path));
+                      });
                 break;
             }
             case help_parameter_format_t::HPF_LOADED_FILE: {

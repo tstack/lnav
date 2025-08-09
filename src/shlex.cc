@@ -66,7 +66,11 @@ shlex::tokenize()
     retval.tr_frag.sf_string = this->s_str;
     while (this->s_index < this->s_len) {
         switch (this->s_str[this->s_index]) {
+#if defined(__MSYS__)
+            case '`':
+#else
             case '\\':
+#endif
                 retval.tr_frag.sf_begin = this->s_index;
                 if (this->s_index + 1 < this->s_len) {
                     retval.tr_token = shlex_token_t::escape;

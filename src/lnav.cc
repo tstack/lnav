@@ -3580,7 +3580,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         auto_mem<char> abspath;
         struct stat st;
 
-        auto file_path = lnav::filesystem::to_posix_path(
+        auto file_path = std::filesystem::path(
             stat(file_path_without_trailer.c_str(), &st) == 0
                 ? file_path_without_trailer
                 : file_path_str);

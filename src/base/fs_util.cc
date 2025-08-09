@@ -196,11 +196,16 @@ determine_path_type(const std::string& arg)
     }
 }
 
-std::filesystem::path
-to_posix_path(std::string arg)
+path_transcoder
+path_transcoder::from(std::string arg)
 {
     if (cget(arg, 1).value_or('\0') != ':') {
         return {arg};
+    }
+
+    bool caps = isupper(arg[0]);
+    if (caps) {
+        arg[0] = tolower(arg[0]);
     }
 
     switch (cget(arg, 2).value_or('\0')) {
@@ -216,7 +221,38 @@ to_posix_path(std::string arg)
     arg.insert(arg.begin(), '/');
     std::replace(arg.begin(), arg.end(), '\\', '/');
 
-    return {arg};
+    return {arg, caps};
+}
+
+std::string
+path_transcoder::to_native(std::string arg)
+{
+    if (!this->pt_root_name_capitalized) {
+        return arg;
+    }
+
+    arg.erase(0, 1);
+    if (this->pt_root_name_capitalized.value()) {
+        arg[0] = toupper(arg[0]);
+    }
+    arg.insert(1, ":");
+    std::replace(arg.begin(), arg.end(), '/', '\\');
+
+    return arg;
+}
+
+std::string
+path_transcoder::to_shell_arg(std::string arg)
+{
+    static const auto plain_path_re
+        = lnav::pcre2pp::code::from_const(R"(^[\w/]+$)");
+
+    if (plain_path_re.find_in(arg).ignore_error()) {
+        return arg;
+    }
+
+    // XXX
+    return fmt::format(FMT_STRING("'{}'"), arg);
 }
 
 std::pair<std::string, file_location_t>

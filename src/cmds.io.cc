@@ -835,11 +835,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("expecting file name to open");
     }
 
-    std::vector<std::string> word_exp;
-    std::string pat;
     file_collection fc;
-
-    pat = trim(remaining_args(cmdline, args));
+    auto pat = trim(remaining_args(cmdline, args));
 
     shlex lexer(pat);
     auto split_args_res = lexer.split(ec.create_resolver());
@@ -1367,11 +1364,7 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("expecting file name to open");
     }
 
-    std::vector<std::string> word_exp;
-    std::string pat;
-    file_collection fc;
-
-    pat = trim(remaining_args(cmdline, args));
+    auto pat = trim(remaining_args(cmdline, args));
 
     shlex lexer(pat);
     auto split_args_res = lexer.split(ec.create_resolver());
