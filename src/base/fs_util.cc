@@ -212,6 +212,12 @@ path_transcoder
 path_transcoder::from(std::string arg)
 {
     if (cget(arg, 1).value_or('\0') != ':') {
+#if defined(__MSYS__)
+        if (arg.find('\\') != std::string::npos) {
+            std::replace(arg.begin(), arg.end(), '\\', '/');
+            return {arg, false};
+        }
+#endif
         return {arg};
     }
 
