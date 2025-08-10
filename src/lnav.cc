@@ -3017,6 +3017,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     auto is_mmode = argc >= 2 && strcmp(argv[1], "-m") == 0;
     try {
+#if defined(__MSYS__)
+        lnav::console::get_command_line_args(&argc, &argv);
+#endif
         if (is_mmode) {
             mmode_ops = lnav::management::describe_cli(app, argc, argv);
         } else {

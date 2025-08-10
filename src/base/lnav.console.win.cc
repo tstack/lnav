@@ -32,18 +32,56 @@
 #if __has_include("windows.h")
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 #define HAVE_WINDOWS_H
 #endif
 
 namespace lnav::console {
-
-bool only_process_attached_to_win32_console() {
+bool
+only_process_attached_to_win32_console()
+{
 #if defined(HAVE_WINDOWS_H)
     DWORD procIDs[2];
-    DWORD count = GetConsoleProcessList((LPDWORD)procIDs, 2);
+    DWORD count = GetConsoleProcessList((LPDWORD) procIDs, 2);
     return count == 1;
 #else
     return false;
+#endif
+}
+
+void
+get_command_line_args(int* argc, char*** argv)
+{
+#if defined(HAVE_WINDOWS_H)
+    // Get the command line arguments as wchar_t strings
+    wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), argc);
+    if (!wargv) {
+        *argc = 0;
+        *argv = NULL;
+        return;
+    }
+
+    // Count the number of bytes necessary to store the UTF-8 versions of those strings
+    int n = 0;
+    for (int i = 0; i < *argc; i++)
+        n += WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, NULL, 0, NULL, NULL)
+            + 1;
+
+    // Allocate the argv[] array + all the UTF-8 strings
+    *argv = (char**) malloc((*argc + 1) * sizeof(char*) + n);
+    if (!*argv) {
+        *argc = 0;
+        return;
+    }
+
+    // Convert all wargv[] --> argv[]
+    char* arg = (char*) &((*argv)[*argc + 1]);
+    for (int i = 0; i < *argc; i++) {
+        (*argv)[i] = arg;
+        arg += WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, arg, n, NULL, NULL)
+            + 1;
+    }
+    (*argv)[*argc] = NULL;
 #endif
 }
 

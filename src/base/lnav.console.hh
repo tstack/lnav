@@ -40,6 +40,8 @@ namespace lnav::console {
 
 bool only_process_attached_to_win32_console();
 
+void get_command_line_args(int* argc, char*** argv);
+
 void println(FILE* file, const attr_line_t& al);
 
 struct snippet {
