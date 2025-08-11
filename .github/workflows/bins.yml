@@ -294,12 +294,28 @@ jobs:
           cd ../lnav-build
           export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
           $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
-      - name: "⬆️ Upload a Build Artifact"
+      - name: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
         with:
           name: lnav-windows-${{ matrix.arch }}.zip
           path: ${{ env.LNAV_ZIPNAME }}
           if-no-files-found: error
+      - name: sign
+        uses: signpath/github-action-submit-signing-request@v1.1
+        env:
+          # select release-signing policy for main and release branches
+          SIGNPATH_SIGNING_POLICY_SLUG: |
+            ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+              && 'test-signing'
+              || 'test-signing' }}
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'lnav'
+          signing-policy-slug: '${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}'
+          github-artifact-id: "${{steps.upload-unsigned-artifact.outputs.artifact-id}}"
+          wait-for-completion: true
+          output-artifact-directory: 'lnav-signed'
       - name: Upload windows archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
