@@ -288,6 +288,8 @@ jobs:
           ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
           cp ../lnav/README ../lnav/NEWS.md .
           zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+          mkdir bin
+          cp $PREFIX/bin/* bin/
       - name: "💉 Basic test"
         run: |
           set -x
@@ -295,10 +297,16 @@ jobs:
           export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
           $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
       - name: upload-unsigned-artifact
+        id: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
         with:
           name: lnav-windows-${{ matrix.arch }}.zip
-          path: ${{ env.LNAV_ZIPNAME }}
+          # path: ${{ env.LNAV_ZIPNAME }}
+          path: |
+            bin/lnav.exe
+            bin/msys-2.0.dll
+            README
+            NEWS.md
           if-no-files-found: error
       - name: sign
         uses: signpath/github-action-submit-signing-request@v1.1
