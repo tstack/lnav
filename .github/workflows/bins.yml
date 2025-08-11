@@ -288,8 +288,8 @@ jobs:
           ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
           cp ../lnav/README ../lnav/NEWS.md .
           zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
-          mkdir bin
-          cp $PREFIX/bin/* bin/
+          mkdir ../lnav/bin
+          cp $PREFIX/bin/* ../lnav/bin/
       - name: "💉 Basic test"
         run: |
           set -x
