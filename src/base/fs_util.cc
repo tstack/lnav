@@ -48,12 +48,20 @@
 #include "pcrepp/pcre2pp.hh"
 #include "scn/scan.h"
 #include "short_alloc.h"
+#include "string_util.hh"
 
 #ifdef HAVE_LIBPROC_H
 #    include <libproc.h>
 #endif
 
 namespace lnav::filesystem {
+
+static bool have_cygdrive()
+{
+    static const auto RETVAL = access("/cygdrive", X_OK) == 0;
+
+    return RETVAL;
+}
 
 std::string
 escape_glob_for_win(std::string arg)
@@ -237,6 +245,9 @@ path_transcoder::from(std::string arg)
     }
 
     arg.insert(arg.begin(), '/');
+    if (have_cygdrive()) {
+        arg.insert(0, "/cygdrive");
+    }
     std::replace(arg.begin(), arg.end(), '\\', '/');
 
     return {arg, caps};
@@ -249,7 +260,15 @@ path_transcoder::to_native(std::string arg)
         return arg;
     }
 
-    arg.erase(0, 1);
+    static const auto CYGDRIVE = "/cygdrive"_frag;
+
+    if (startswith(arg, CYGDRIVE.data())) {
+        arg.erase(0, CYGDRIVE.length());
+    }
+
+    if (arg[0] == '/') {
+        arg.erase(0, 1);
+    }
     if (this->pt_root_name_capitalized.value()) {
         arg[0] = toupper(arg[0]);
     }
