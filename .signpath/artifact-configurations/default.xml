@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+    <zip-file>
+        <directory path="bin">
+            <pe-file-set>
+                <include path="lnav.exe"/>
+                <for-each>
+                    <authenticode-sign/>
+                </for-each>
+            </pe-file-set>
+        </directory>
+        <authenticode-sign/>
+    </zip-file>
+</artifact-configuration>
