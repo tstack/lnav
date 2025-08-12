@@ -220,13 +220,30 @@ path_transcoder
 path_transcoder::from(std::string arg)
 {
     if (cget(arg, 1).value_or('\0') != ':') {
+        std::optional<bool> caps;
 #if defined(__MSYS__)
         if (arg.find('\\') != std::string::npos) {
             std::replace(arg.begin(), arg.end(), '\\', '/');
-            return {arg, false};
+            caps = false;
+        }
+        if (startswith(arg, "/")) {
+            auto cwd = std::filesystem::current_path();
+            auto cwd_iter = std::next(cwd.begin());
+            auto cwd_first_str = cwd_iter->string();
+            if (cwd_first_str == "cygdrive") {
+                auto drive_iter = std::next(cwd_iter);
+                if (drive_iter != cwd.end()) {
+                    auto cwd_drive_str = drive_iter->string();
+                    arg.insert(0, cwd_drive_str);
+                    arg.insert(0, "/");
+                    caps = true;
+                }
+            }
+            arg.insert(0, cwd_first_str);
+            arg.insert(0, "/");
         }
 #endif
-        return {arg};
+        return {arg, caps};
     }
 
     bool caps = isupper(arg[0]);
