@@ -268,7 +268,9 @@ path_transcoder::to_native(std::string arg)
 
     if (arg[0] == '/') {
         arg.erase(0, 1);
-        arg.insert(1, ":");
+        if (cget(arg, 1).value_or('\0') == '/') {
+            arg.insert(1, ":");
+        }
     }
     if (this->pt_root_name_capitalized.value()) {
         arg[0] = toupper(arg[0]);

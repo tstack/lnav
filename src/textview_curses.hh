@@ -226,6 +226,7 @@ public:
         while (!this->fs_filters.empty()) {
             this->fs_filters.pop_back();
         }
+        this->fs_generation += 1;
     }
 
     void set_filter_enabled(const std::shared_ptr<text_filter>& filter,
@@ -236,6 +237,7 @@ public:
         } else {
             filter->disable();
         }
+        this->fs_generation += 1;
     }
 
     std::shared_ptr<text_filter> get_filter(const std::string& id);
@@ -245,6 +247,8 @@ public:
     void get_mask(uint32_t& filter_mask);
 
     void get_enabled_mask(uint32_t& filter_in_mask, uint32_t& filter_out_mask);
+
+    uint32_t fs_generation{0};
 
 private:
     const size_t fs_reserved;

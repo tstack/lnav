@@ -324,6 +324,13 @@ jobs:
           github-artifact-id: "${{steps.upload-unsigned-artifact.outputs.artifact-id}}"
           wait-for-completion: true
           output-artifact-directory: 'lnav-signed'
+      - name: upload-unsigned-artifact
+        id: upload-unsigned-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lnav-signed-windows-${{ matrix.arch }}.zip
+          path: "lnav-signed"
+          if-no-files-found: error
       - name: Upload windows archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}

@@ -1263,6 +1263,7 @@ filter_stack::delete_filter(const std::string& id)
     }
     if (iter != this->fs_filters.end()) {
         this->fs_filters.erase(iter);
+        this->fs_generation += 1;
         return true;
     }
 
@@ -1328,6 +1329,7 @@ void
 filter_stack::add_filter(const std::shared_ptr<text_filter>& filter)
 {
     this->fs_filters.push_back(filter);
+    this->fs_generation += 1;
 }
 
 void

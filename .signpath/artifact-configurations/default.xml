@@ -9,6 +9,5 @@
                 </for-each>
             </pe-file-set>
         </directory>
-        <authenticode-sign/>
     </zip-file>
 </artifact-configuration>
