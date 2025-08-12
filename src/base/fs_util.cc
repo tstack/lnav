@@ -55,8 +55,8 @@
 #endif
 
 namespace lnav::filesystem {
-
-static bool have_cygdrive()
+static bool
+have_cygdrive()
 {
     static const auto RETVAL = access("/cygdrive", X_OK) == 0;
 
@@ -226,7 +226,8 @@ path_transcoder::from(std::string arg)
             std::replace(arg.begin(), arg.end(), '\\', '/');
             caps = false;
         }
-        if (startswith(arg, "/")) {
+        if (startswith(arg, "//")) {
+        } else if (startswith(arg, "/")) {
             auto cwd = std::filesystem::current_path();
             auto cwd_iter = std::next(cwd.begin());
             auto cwd_first_str = cwd_iter->string();
@@ -283,7 +284,7 @@ path_transcoder::to_native(std::string arg)
         arg.erase(0, CYGDRIVE.length());
     }
 
-    if (arg[0] == '/') {
+    if (arg[0] == '/' && !startswith(arg, "//")) {
         arg.erase(0, 1);
         if (cget(arg, 1).value_or('\0') == '/') {
             arg.insert(1, ":");
@@ -545,11 +546,9 @@ file_lock::file_lock(const std::filesystem::path& archive_path)
     }
     this->lh_fd = open_res.unwrap();
 }
-
 }  // namespace lnav::filesystem
 
 namespace fmt {
-
 auto
 formatter<std::filesystem::path>::format(const std::filesystem::path& p,
                                          format_context& ctx)

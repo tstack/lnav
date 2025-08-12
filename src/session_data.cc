@@ -1964,10 +1964,14 @@ lnav::session::restore_view_states()
                 }
             }
         }
+        sel = tview.get_selection();
+        if (!sel && tview.get_top() == 0_vl && tview.listview_rows(tview) > 0) {
+            tview.set_selection(0_vl);
+        }
         log_info("%s view actual top/selection: %d/%d",
                  lnav_view_strings[view_index],
                  tview.get_top(),
-                 tview.get_selection());
+                 tview.get_selection().value_or(-1_vl));
     }
 }
 

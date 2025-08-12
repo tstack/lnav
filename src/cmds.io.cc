@@ -865,7 +865,14 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     for (auto fn : split_args) {
+        std::replace(fn.begin(), fn.end(), '\\', '/');
+        auto fn_path = std::filesystem::path{fn};
         auto file_loc = file_location_t{file_location_tail{}};
+
+        if (fn_path.has_root_name() && fn_path.root_directory().empty()) {
+            return Err(
+                lnav::console::user_message::error("incomplete root name"));
+        }
 
         if (access(fn.c_str(), R_OK) != 0) {
             auto pair = lnav::filesystem::split_file_location(fn);
@@ -1185,8 +1192,14 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 static_root_mem<glob_t, globfree> gl;
 
                 fn_str = lnav::filesystem::escape_glob_for_win(fn_str);
-                if (glob(fn_str.c_str(), GLOB_NOCHECK, nullptr, gl.inout())
-                    == 0)
+                auto fn = std::filesystem::path(fn_str);
+                if (fn.has_root_name() && fn.root_directory().empty()) {
+                    log_debug("ignoring incomplete root name: %s", fn.c_str());
+                } else if (glob(fn_str.c_str(),
+                                GLOB_NOCHECK,
+                                nullptr,
+                                gl.inout())
+                           == 0)
                 {
                     attr_line_t al;
 

@@ -1015,29 +1015,31 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     if (parent.empty()) {
                         parent = ".";
                     }
-                    log_trace("completing directory: %s", parent.c_str());
-                    for (const auto& entry :
-                         std::filesystem::directory_iterator(parent, ec))
-                    {
-                        auto path_str = entry.path().string();
-                        log_debug("  entry: %s", path_str.c_str());
-                        if (entry.is_directory()) {
-                            path_str.push_back('/');
-                        } else if (ht->ht_format
-                                   == help_parameter_format_t::HPF_DIRECTORY)
+                    if (!parent.has_root_name() || !parent.root_directory().empty()) {
+                        log_trace("completing directory: %s", parent.c_str());
+                        for (const auto& entry :
+                             std::filesystem::directory_iterator(parent, ec))
                         {
-                            continue;
+                            auto path_str = entry.path().string();
+                            log_debug("  entry: %s", path_str.c_str());
+                            if (entry.is_directory()) {
+                                path_str.push_back('/');
+                            } else if (ht->ht_format
+                                       == help_parameter_format_t::HPF_DIRECTORY)
+                            {
+                                continue;
+                            }
+                            path_str = str_as_path.to_native(path_str);
+                            poss_paths.emplace(std::move(path_str));
                         }
-                        path_str = str_as_path.to_native(path_str);
-                        poss_paths.emplace(std::move(path_str));
-                    }
-                    if (ht->ht_format == help_parameter_format_t::HPF_DIRECTORY
-                        && !ec)
-                    {
-                        auto path_str = parent.string();
-                        path_str.push_back('/');
-                        path_str = str_as_path.to_native(path_str);
-                        poss_paths.emplace(path_str);
+                        if (ht->ht_format == help_parameter_format_t::HPF_DIRECTORY
+                            && !ec)
+                        {
+                            auto path_str = parent.string();
+                            path_str.push_back('/');
+                            path_str = str_as_path.to_native(path_str);
+                            poss_paths.emplace(path_str);
+                        }
                     }
                 }
 
