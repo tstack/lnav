@@ -106,13 +106,15 @@ public:
         std::optional<timeval> ls_min_time;
         std::optional<timeval> ls_max_time;
         log_level_t ls_min_level{log_level_t::LEVEL_UNKNOWN};
+        bool ls_marked_only{false};
 
         friend bool operator==(const lss_state& lhs, const lss_state& rhs)
         {
             return lhs.ls_filter_generation == rhs.ls_filter_generation
                 && lhs.ls_min_time == rhs.ls_min_time
                 && lhs.ls_max_time == rhs.ls_max_time
-                && lhs.ls_min_level == rhs.ls_min_level;
+                && lhs.ls_min_level == rhs.ls_min_level
+                && lhs.ls_marked_only == rhs.ls_marked_only;
         }
 
         friend bool operator!=(const lss_state& lhs, const lss_state& rhs)

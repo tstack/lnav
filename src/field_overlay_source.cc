@@ -773,6 +773,7 @@ field_overlay_source::lss_state::from(logfile_sub_source& lss)
         lss.get_min_row_time(),
         lss.get_max_row_time(),
         lss.get_min_log_level(),
+        lss.get_marked_only(),
     };
 }
 
@@ -825,6 +826,13 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                             .append(" matched ")
                             .append(lnav::roles::number(fmt::to_string(hits)))
                             .append(" message(s) "));
+                }
+                if (curr_state.ls_marked_only) {
+                    msg.with_note(attr_line_t("The ")
+                                      .append_quoted(lnav::roles::keyword(
+                                          ":hide-unmarked-lines"))
+                                      .append(" command was used and no "
+                                              "unfiltered lines are marked"));
                 }
                 this->fos_static_lines = msg.to_attr_line().split_lines();
                 this->fos_static_lines_state = curr_state;
