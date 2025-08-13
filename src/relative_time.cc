@@ -1135,6 +1135,7 @@ relative_time::to_microseconds() const
             etm.et_tm.tm_mday = 1;
         }
         etm.et_tm.tm_yday = -1;
+        etm.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
         etm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
         etm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
 
