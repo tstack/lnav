@@ -8,6 +8,7 @@ Features:
 * Removed dependency on ncurses during the build.  The terminfo
   files are still used during runtime, but fallback terminfo
   files for common terminals are included in the binary.
+* Added the postgres_log format.
 
 Interface changes:
 * If all the log messages in the LOG view are hidden, a notice

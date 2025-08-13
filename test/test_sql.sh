@@ -154,20 +154,10 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET time_offset=14400000 WHERE endswith(filepath, 'logfile_block.1')" \
     ${test_dir}/logfile_block.1 \
     ${test_dir}/logfile_block.2
-
-check_output "time_offset in lnav_file table is not reordering?" <<EOF
-Wed May 19 12:00:01  2021 line 1
-/abc/def
-Wed May 19 12:00:02 +0000 2021 line 2
-Wed May 19 12:00:03  2021 line 3
-/ghi/jkl
-Wed May 19 12:00:04 +0000 2021 line 4
-EOF
-
 
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log LIMIT 0" \

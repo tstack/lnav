@@ -1,0 +1,27 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "postgres_log": {
+        "description": "Format file generated from regex101 entry -- https://regex101.com/r/pwVch2/1",
+        "regex": {
+            "std": {
+                "pattern": "(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\S+) \\[(?<pid>\\d+)\\] (?<level>DEBUG\\d|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):\\s+(?<body>.*)$"
+            }
+        },
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "pid": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2025-08-13 01:45:01.127 PDT [12347] LOG:  database system was shut down at 2025-08-13 01:44:58 PDT"
+            }
+        ]
+    }
+}

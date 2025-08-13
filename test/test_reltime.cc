@@ -95,6 +95,21 @@ TEST_CASE("reltime")
 
     {
         auto rt_res = relative_time::from_str(
+            string_fragment::from_const("1:47 today"));
+
+        if (rt_res.isErr()) {
+            auto err = rt_res.unwrapErr();
+            fprintf(stderr, "error %s\n", err.pe_msg.c_str());
+        }
+
+        CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+        CHECK(rt.rt_field[relative_time::RTF_HOURS].value == 1);
+        CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == 47);
+    }
+
+    {
+        auto rt_res = relative_time::from_str(
             string_fragment::from_const("an hour before now"));
 
         if (rt_res.isErr()) {

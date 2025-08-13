@@ -348,6 +348,25 @@ relative_time::from_str(string_fragment str)
                     if (base_token == RTT_BEFORE) {
                         retval.negate();
                     }
+                    switch (token) {
+                        case RTT_YESTERDAY:
+                        case RTT_TODAY:
+                            if (!retval.rt_field[RTF_HOURS].is_set) {
+                                retval.rt_field[RTF_HOURS] = 0;
+                            }
+                            if (!retval.rt_field[RTF_MINUTES].is_set) {
+                                retval.rt_field[RTF_MINUTES] = 0;
+                            }
+                            if (!retval.rt_field[RTF_SECONDS].is_set) {
+                                retval.rt_field[RTF_SECONDS] = 0;
+                            }
+                            if (!retval.rt_field[RTF_MICROSECONDS].is_set) {
+                                retval.rt_field[RTF_MICROSECONDS] = 0;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     tm = retval.adjust(tm);
                     base_token = RTT_INVALID;
 
@@ -364,11 +383,6 @@ relative_time::from_str(string_fragment str)
                             break;
                         case RTT_YESTERDAY:
                             retval.rt_field[RTF_DAYS].value -= 1;
-                        case RTT_TODAY:
-                            retval.rt_field[RTF_HOURS] = 0;
-                            retval.rt_field[RTF_MINUTES] = 0;
-                            retval.rt_field[RTF_SECONDS] = 0;
-                            retval.rt_field[RTF_MICROSECONDS] = 0;
                             break;
                         default:
                             break;

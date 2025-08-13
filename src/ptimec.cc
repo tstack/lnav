@@ -134,6 +134,21 @@ main(int argc, char* argv[])
 
                 switch (arg[index + 1]) {
                     case 'a':
+                        if (arg[index + 2]) {
+                            printf(
+                                "    if (!ptime_upto('%s', str, off_inout, "
+                                "len)) "
+                                "return false;\n",
+                                escape_char(arg[index + 2]));
+                        } else {
+                            printf(
+                                "    if (!ptime_upto_end(dst, str, "
+                                "off_inout, "
+                                "len)) "
+                                "return false;\n");
+                        }
+                        index += 1;
+                        break;
                     case 'Z':
                         if (arg[index + 2]) {
                             printf(

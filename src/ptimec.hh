@@ -1022,6 +1022,11 @@ ftime_y(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((year / 1) % 10));
 }
 
+bool ptime_Z_to_gmtoff(exttm* dst,
+                       const char* str,
+                       off_t& off_inout,
+                       ssize_t len);
+
 inline bool
 ptime_Z_upto(struct exttm* dst,
              const char* str,
@@ -1029,21 +1034,8 @@ ptime_Z_upto(struct exttm* dst,
              ssize_t len,
              char term)
 {
-    auto avail = len - off_inout;
-
-    if (avail >= 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
-        && str[off_inout + 2] == 'C')
-    {
-        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
-        dst->et_gmtoff = 0;
-        return true;
-    }
-    if (avail >= 3 && str[off_inout + 0] == 'G' && str[off_inout + 1] == 'M'
-        && str[off_inout + 2] == 'T')
-    {
-        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_GMT; });
-        dst->et_gmtoff = 0;
-        return true;
+    if (!ptime_Z_to_gmtoff(dst, str, off_inout, len)) {
+        return false;
     }
 
     return ptime_upto(term, str, off_inout, len);
@@ -1055,21 +1047,8 @@ ptime_Z_upto_end(struct exttm* dst,
                  off_t& off_inout,
                  ssize_t len)
 {
-    auto avail = len - off_inout;
-
-    if (avail >= 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
-        && str[off_inout + 2] == 'C')
-    {
-        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
-        dst->et_gmtoff = 0;
-        return true;
-    }
-    if (avail >= 3 && str[off_inout + 0] == 'G' && str[off_inout + 1] == 'M'
-        && str[off_inout + 2] == 'T')
-    {
-        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_GMT; });
-        dst->et_gmtoff = 0;
-        return true;
+    if (!ptime_Z_to_gmtoff(dst, str, off_inout, len)) {
+        return false;
     }
 
     return ptime_upto_end(str, off_inout, len);

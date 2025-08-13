@@ -1,0 +1,28 @@
+2025-08-13 01:45:01.123 PDT [12345] LOG:  starting PostgreSQL 15.4 on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2025-08-13 01:45:01.123 PDT [12345] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2025-08-13 01:45:01.123 PDT [12345] LOG:  listening on IPv6 address "::", port 5432
+2025-08-13 01:45:01.125 PDT [12345] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2025-08-13 01:45:01.127 PDT [12347] LOG:  database system was shut down at 2025-08-13 01:44:58 PDT
+2025-08-13 01:45:01.130 PDT [12345] LOG:  database system is ready to accept connections
+
+2025-08-13 01:46:10.567 PDT [12389] LOG:  connection received: host=192.168.1.100 port=51762 user=appuser database=maindb
+2025-08-13 01:46:10.568 PDT [12389] LOG:  connection authorized: user=appuser database=maindb
+
+2025-08-13 01:46:11.122 PDT [12389] LOG:  statement: SELECT * FROM users WHERE last_login > NOW() - INTERVAL '7 days';
+
+2025-08-13 01:46:12.212 PDT [12389] ERROR:  relation "nonexistent_table" does not exist at character 15
+2025-08-13 01:46:12.212 PDT [12389] STATEMENT:  SELECT * FROM nonexistent_table;
+
+2025-08-13 01:47:03.904 PDT [12401] LOG:  connection received: host=192.168.1.102 port=51800 user=admin database=postgres
+2025-08-13 01:47:03.905 PDT [12401] LOG:  connection authorized: user=admin database=postgres
+2025-08-13 01:47:04.010 PDT [12401] LOG:  statement: CREATE INDEX idx_users_email ON users(email);
+
+2025-08-13 01:47:05.312 PDT [12401] LOG:  disconnection: session time: 0:00:02.112 user=admin database=postgres host=192.168.1.102 port=51800
+
+2025-08-13 01:47:08.444 PDT [12389] LOG:  disconnection: session time: 0:00:57.876 user=appuser database=maindb host=192.168.1.100 port=51762
+
+2025-08-13 01:50:01.999 PDT [12345] LOG:  received fast shutdown request
+2025-08-13 01:50:01.999 PDT [12350] LOG:  aborting any active transactions
+2025-08-13 01:50:02.003 PDT [12345] LOG:  background worker "logical replication launcher" (PID 12349) exited with exit code 1
+2025-08-13 01:50:02.004 PDT [12347] LOG:  shutting down
+2025-08-13 01:50:02.010 PDT [12347] LOG:  database system is shut down
