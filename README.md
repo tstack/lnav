@@ -66,7 +66,7 @@ you the basics of operation:
 
 ## Installation
 
-[Download a statically-linked binary for Linux/MacOS from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
+[Download a statically-linked binary for Linux/MacOS/Windows from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
 
 ### Brew on MacOS
 

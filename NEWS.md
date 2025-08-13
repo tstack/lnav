@@ -9,6 +9,11 @@ Features:
   files are still used during runtime, but fallback terminfo
   files for common terminals are included in the binary.
 
+Interface changes:
+* If all the log messages in the LOG view are hidden, a notice
+  will be displayed that describes the filters that are in
+  effect.
+
 Bug Fixes:
 * Fix a crash on startup for some environments.
 * Fix a spurious screen flash on some prompts.

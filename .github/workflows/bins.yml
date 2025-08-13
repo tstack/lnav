@@ -331,6 +331,11 @@ jobs:
           name: lnav-signed-windows-${{ matrix.arch }}.zip
           path: "lnav-signed"
           if-no-files-found: error
+      - name: "Produce zip"
+        run: |
+          set -x
+          cp lnav-signed/* ${{ env.LNAV_BASENAME }}
+          zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload windows archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
