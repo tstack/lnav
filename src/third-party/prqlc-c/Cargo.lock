@@ -120,9 +120,9 @@ dependencies = [
 
 [[package]]
 name = "ariadne"
-version = "0.4.1"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44055e597c674aef7cb903b2b9f6e4cba1277ed0d2d61dae7cd52d7ffa81f8e2"
+checksum = "36f5e3dca4e09a6f340a61a0e9c7b61e030c69fc27bf29d73218f7e5e3b7638f"
 dependencies = [
  "unicode-width",
  "yansi",
@@ -695,7 +695,7 @@ checksum = "e19b23d53f35ce9f56aebc7d1bb4e6ac1e9c0db7ac85c8d1760c04379edced37"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -913,9 +913,9 @@ dependencies = [
 
 [[package]]
 name = "prqlc"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2121ba4decae741495818caca677d22c63af7417183b5d6ae2891f730b193acc"
+checksum = "fab10b62543a446b0a159adb4ff031afff554e4a21097a08c555352bf48ab6af"
 dependencies = [
  "anstream",
  "anyhow",
@@ -959,9 +959,9 @@ dependencies = [
 
 [[package]]
 name = "prqlc-parser"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51a849d3ff43e0029f933b689d6d31565a665399f98c1788112d34a41b355aeb"
+checksum = "1b7cf533685fdc3cd8f16ff1fa57529f53c78872f6d7e0ca3a82057fda89bcae"
 dependencies = [
  "chumsky",
  "enum-as-inner",
@@ -1214,9 +1214,9 @@ dependencies = [
 
 [[package]]
 name = "sqlparser"
-version = "0.52.0"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a875d8cd437cc8a97e9aeaeea352ec9a19aea99c23e9effb17757291de80b08"
+checksum = "05a528114c392209b3264855ad491fcce534b94a38771b0a0b97a79379275ce8"
 dependencies = [
  "log",
  "serde",
@@ -1232,7 +1232,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1243,23 +1243,22 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
-version = "0.26.3"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
+checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
 dependencies = [
  "strum_macros",
 ]
 
 [[package]]
 name = "strum_macros"
-version = "0.26.4"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
+checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
 dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "rustversion",
  "syn",
 ]
 
