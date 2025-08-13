@@ -1,4 +1,5 @@
 [1m[31m✘[0m [1m[31merror[0m: invalid time value: badbadbad
+ [1m[31mreason[0m: Unrecognized input
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mhide-lines-before[0m[37m[40m badbadbad            [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mhide-lines-before[0m[4m [0m[4mdate[0m

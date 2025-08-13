@@ -345,7 +345,11 @@ relative_time::from_str(string_fragment str)
                     gettimeofday(&tv, nullptr);
                     localtime_r(&tv.tv_sec, &tm.et_tm);
                     tm.et_nsec = tv.tv_usec * 1000;
+                    if (base_token == RTT_BEFORE) {
+                        retval.negate();
+                    }
                     tm = retval.adjust(tm);
+                    base_token = RTT_INVALID;
 
                     retval.rt_field[RTF_YEARS] = tm.et_tm.tm_year;
                     retval.rt_field[RTF_MONTHS] = tm.et_tm.tm_mon;

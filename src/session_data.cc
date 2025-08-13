@@ -50,6 +50,7 @@
 #include "hasher.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
+#include "lnav.indexing.hh"
 #include "log_format_ext.hh"
 #include "logfile.hh"
 #include "service_tags.hh"
@@ -1801,7 +1802,7 @@ reset_session()
     lnav_data.ld_log_source.set_sql_filter("", nullptr);
     lnav_data.ld_log_source.set_sql_marker("", nullptr);
     lnav_data.ld_log_source.clear_bookmark_metadata();
-    lnav_data.ld_log_source.rebuild_index();
+    rebuild_indexes(std::nullopt);
 
     lnav_data.ld_db_row_source.reset_user_state();
 

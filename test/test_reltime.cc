@@ -91,6 +91,26 @@ static struct {
 
 TEST_CASE("reltime")
 {
+    setenv("TZ", "UTC", 1);
+
+    {
+        auto rt_res = relative_time::from_str(
+            string_fragment::from_const("an hour before now"));
+
+        if (rt_res.isErr()) {
+            auto err = rt_res.unwrapErr();
+            fprintf(stderr, "error %s\n", err.pe_msg.c_str());
+        }
+
+        CHECK(rt_res.isOk());
+        auto rt = rt_res.unwrap();
+
+        auto now_tv = current_timeval();
+        auto ago_tv = rt.to_timeval();
+        auto diff = now_tv - ago_tv;
+        CHECK(diff.tv_sec == (60 * 60));
+    }
+
     {
         auto tv = timeval{1690440588, 0};
         auto parse_res = relative_time::from_str(

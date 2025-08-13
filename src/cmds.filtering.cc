@@ -97,6 +97,15 @@ com_hide_line(exec_context& ec,
         } else if (dts.convert_to_timeval(all_args, tv_abs)) {
             tv_opt = tv_abs;
         } else {
+            auto pe = parse_res.unwrapErr();
+            if (!pe.pe_msg.empty()) {
+                auto msg
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid time value: ").append(all_args))
+                          .with_reason(pe.pe_msg);
+                return Err(msg);
+            }
+
             return ec.make_error(FMT_STRING("invalid time value: {}"),
                                  all_args);
         }
