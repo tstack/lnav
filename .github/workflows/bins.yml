@@ -287,7 +287,6 @@ jobs:
           make install
           ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
           cp ../lnav/README ../lnav/NEWS.md .
-          zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
           mkdir ../lnav/bin
           cp $PREFIX/bin/* ../lnav/bin/
       - name: "💉 Basic test"
@@ -334,8 +333,9 @@ jobs:
       - name: "Produce zip"
         run: |
           set -x
-          cp lnav-signed/* ${{ env.LNAV_BASENAME }}
-          zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+          cp lnav-signed/* ../lnav-build/${{ env.LNAV_BASENAME }}
+          cd ../lnav-build
+          zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload windows archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
