@@ -1,10 +1,11 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "postgres_log": {
-        "description": "Format file generated from regex101 entry -- https://regex101.com/r/pwVch2/1",
+        "title": "PostgreSQL",
+        "description": "Format for PostgreSQL logs",
         "regex": {
             "std": {
-                "pattern": "(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?<host>\\s+\\[[^\\]]+\\])?(?<user>\\s+\\S+)? (?<level>DEBUG\\d?|DETAIL|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):\\s+(?<body>.*)$"
+                "pattern": "(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?<host>\\s+\\[[^\\]]+\\])?(?:\\s+(?<user>[^@]+)@(?<db_name>\\S+))? (?<level>DEBUG\\d?|DETAIL|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):\\s+(?<body>.*)$"
             }
         },
         "value": {
@@ -20,6 +21,10 @@
                 "identifier": true
             },
             "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "db_name": {
                 "kind": "string",
                 "identifier": true
             },
