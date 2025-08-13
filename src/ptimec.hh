@@ -66,6 +66,7 @@
     off_inout += 1;
 
 #define ABR_TO_INT(a, b, c) (((a) << 24) | ((b) << 16) | ((c) << 8))
+#define ABR_TO_INT4(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | ((d)))
 
 inline bool
 ptime_upto(char ch, const char* str, off_t& off_inout, ssize_t len)

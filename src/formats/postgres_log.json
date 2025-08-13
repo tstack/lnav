@@ -4,7 +4,7 @@
         "description": "Format file generated from regex101 entry -- https://regex101.com/r/pwVch2/1",
         "regex": {
             "std": {
-                "pattern": "(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\S+) \\[(?<pid>\\d+)\\] (?<level>DEBUG\\d|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):\\s+(?<body>.*)$"
+                "pattern": "(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?<host>\\s+\\[[^\\]]+\\])?(?<user>\\s+\\S+)? (?<level>DEBUG\\d?|DETAIL|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):\\s+(?<body>.*)$"
             }
         },
         "value": {
@@ -12,7 +12,16 @@
                 "kind": "string"
             },
             "pid": {
-                "kind": "string"
+                "kind": "string",
+                "identifier": true
+            },
+            "host": {
+                "kind": "string",
+                "identifier": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
             },
             "timestamp": {
                 "kind": "string"
@@ -21,6 +30,9 @@
         "sample": [
             {
                 "line": "2025-08-13 01:45:01.127 PDT [12347] LOG:  database system was shut down at 2025-08-13 01:44:58 PDT"
+            },
+            {
+                "line": "2025-06-05 17:10:04 MSK [608647-3] [local] postgres@postgres WARNING: terminating connection because of crash of another server process"
             }
         ]
     }

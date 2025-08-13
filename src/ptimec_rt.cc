@@ -64,9 +64,10 @@ ptime_Z_to_gmtoff(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     auto zone_start = (unsigned char*) &str[off_inout];
-    uint32_t zone_int = ABR_TO_INT(zone_start[0] & ~0x20UL,
-                                   zone_start[1] & ~0x20UL,
-                                   zone_start[2] & ~0x20UL);
+    uint32_t zone_int = ABR_TO_INT4(zone_start[0] & ~0x20UL,
+                                    zone_start[1] & ~0x20UL,
+                                    zone_start[2] & ~0x20UL,
+                                    avail >= 4 ? zone_start[3] & ~0x20UL : 0);
     switch (zone_int) {
         case ABR_TO_INT('U', 'T', 'C'):
             PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
@@ -89,8 +90,14 @@ ptime_Z_to_gmtoff(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
             dst->et_gmtoff = 1 * 60 * 60;
             break;
         case ABR_TO_INT('C', 'A', 'T'):
+        case ABR_TO_INT4('C', 'E', 'D', 'T'):
+        case ABR_TO_INT4('C', 'E', 'S', 'T'):
             PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET; });
             dst->et_gmtoff = 2 * 60 * 60;
+            break;
+        case ABR_TO_INT('M', 'S', 'K'):
+            PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET; });
+            dst->et_gmtoff = 3 * 60 * 60;
             break;
         case ABR_TO_INT('I', 'S', 'T'):
             PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET; });
