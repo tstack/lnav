@@ -333,7 +333,7 @@ jobs:
       - name: "Produce zip"
         run: |
           set -x
-          cp lnav-signed/* ../lnav-build/${{ env.LNAV_BASENAME }}
+          cp lnav-signed/bin/* ../lnav-build/${{ env.LNAV_BASENAME }}/bin/
           cd ../lnav-build
           zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload windows archive
