@@ -243,12 +243,12 @@ log_vtab_impl::get_foreign_keys(
 void
 log_vtab_impl::extract(logfile* lf,
                        uint64_t line_number,
+                       string_attrs_t& sa,
                        logline_value_vector& values)
 {
-    auto format = lf->get_format_ptr();
+    const auto* format = lf->get_format_ptr();
 
-    this->vi_attrs.clear();
-    format->annotate(lf, line_number, this->vi_attrs, values, false);
+    format->annotate(lf, line_number, sa, values, false);
 }
 
 bool
@@ -353,6 +353,7 @@ struct vtab_cursor {
 
     void invalidate()
     {
+        this->attrs.clear();
         this->line_values.clear();
         this->log_msg_line = -1_vl;
     }
@@ -360,6 +361,7 @@ struct vtab_cursor {
     sqlite3_vtab_cursor base;
     struct log_cursor log_cursor;
     vis_line_t log_msg_line{-1_vl};
+    string_attrs_t attrs;
     logline_value_vector line_values;
 };
 
@@ -517,7 +519,7 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 
             vc->cache_msg(lf, ll);
             require(vc->line_values.lvv_sbr.get_data() != nullptr);
-            vt->vi->extract(lf, line_number, vc->line_values);
+            vt->vi->extract(lf, line_number, vc->attrs, vc->line_values);
         }
 
         auto sub_col = logline_value_meta::table_column{
@@ -792,14 +794,16 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 vc->cache_msg(lf, ll);
                                 require(vc->line_values.lvv_sbr.get_data()
                                         != nullptr);
-                                vt->vi->extract(
-                                    lf, line_number, vc->line_values);
+                                vt->vi->extract(lf,
+                                                line_number,
+                                                vc->attrs,
+                                                vc->line_values);
                             }
 
                             struct line_range time_range;
 
-                            time_range = find_string_attr_range(
-                                vt->vi->vi_attrs, &L_TIMESTAMP);
+                            time_range = find_string_attr_range(vc->attrs,
+                                                                &L_TIMESTAMP);
 
                             const auto* time_src
                                 = vc->line_values.lvv_sbr.get_data()
@@ -953,7 +957,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(lf, line_number, vc->line_values);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
                         }
 
                         if (vc->line_values.lvv_opid_value) {
@@ -969,7 +974,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(lf, line_number, vc->line_values);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
                         }
 
                         if (vc->line_values.lvv_opid_value
@@ -1040,13 +1046,14 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(lf, line_number, vc->line_values);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
                         }
 
                         struct line_range body_range;
 
-                        body_range = find_string_attr_range(vt->vi->vi_attrs,
-                                                            &SA_BODY);
+                        body_range
+                            = find_string_attr_range(vc->attrs, &SA_BODY);
                         if (!body_range.is_valid()) {
                             sqlite3_result_null(ctx);
                         } else {
@@ -1113,7 +1120,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                 if (vc->line_values.lvv_values.empty()) {
                     vc->cache_msg(lf, ll);
                     require(vc->line_values.lvv_sbr.get_data() != nullptr);
-                    vt->vi->extract(lf, line_number, vc->line_values);
+                    vt->vi->extract(
+                        lf, line_number, vc->attrs, vc->line_values);
                 }
 
                 auto sub_col = logline_value_meta::table_column{

@@ -169,12 +169,13 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 void
 log_data_table::extract(logfile* lf,
                         uint64_t line_number,
+                        string_attrs_t& sa,
                         logline_value_vector& values)
 {
     auto& line = values.lvv_sbr;
     auto meta_iter = this->ldt_value_metas.begin();
 
-    this->ldt_format_impl->extract(lf, line_number, values);
+    this->ldt_format_impl->extract(lf, line_number, sa, values);
     for (const auto& ldt_pair : this->ldt_pairs) {
         const auto& pvalue = ldt_pair.get_pair_value();
         auto lr = line_range{

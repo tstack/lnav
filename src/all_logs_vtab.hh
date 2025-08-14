@@ -50,6 +50,7 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
+                 string_attrs_t& sa,
                  logline_value_vector& values) override;
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;

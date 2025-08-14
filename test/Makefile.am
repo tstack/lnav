@@ -377,6 +377,7 @@ dist_noinst_DATA = \
 	logfile_pino.0 \
 	logfile_plain.0 \
 	logfile_postgres.0 \
+	logfile_postgres.1 \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
 	logfile_regexp_access_log.0 \

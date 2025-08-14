@@ -8187,6 +8187,11 @@
                 "description": "test annotation",
                 "condition": ":c_ip IS NOT NULL AND $TEST_ANNO = '1'",
                 "handler": "anno-test.sh"
+            },
+            "org.postgresql.statement-error": {
+                "description": "statement error",
+                "condition": ":log_body LIKE '% at character %' AND :log_format IN ('postgres_log', 'vpostgres_log')",
+                "handler": "|pg-annotate-errors"
             }
         },
         "demux": {

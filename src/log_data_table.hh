@@ -63,6 +63,7 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
+                 string_attrs_t& sa,
                  logline_value_vector& values) override;
 
 private:

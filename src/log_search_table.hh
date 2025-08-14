@@ -64,6 +64,7 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
+                 string_attrs_t& sa,
                  logline_value_vector& values) override;
 
     std::shared_ptr<lnav::pcre2pp::code> lst_regex;
@@ -77,6 +78,7 @@ public:
     mutable std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_match_index{-1};
     mutable std::vector<vtab_column> lst_cols;
+    string_attrs_t lst_attrs_cache;
     logline_value_vector lst_line_values_cache;
     auto_buffer lst_mismatch_bitmap{auto_buffer::alloc_bitmap(0)};
     uint32_t lst_index_generation{0};

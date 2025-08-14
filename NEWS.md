@@ -8,7 +8,12 @@ Features:
 * Removed dependency on ncurses during the build.  The terminfo
   files are still used during runtime, but fallback terminfo
   files for common terminals are included in the binary.
-* Added the postgres_log format.
+* Added the postgres_log format.  In addition, you can use
+  `:annotate` on a statement error line (e.g. syntax error
+  at or near "null" at character 522) to attach an annotation
+  with the statement and a pointer to the location of the error.
+* Annotation handlers can now be lnav scripts if the "handler"
+  field starts with a pipe ("|").
 
 Interface changes:
 * If all the log messages in the LOG view are hidden, a notice

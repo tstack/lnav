@@ -138,7 +138,7 @@ log_search_table::get_foreign_keys(
 bool
 log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    this->vi_attrs.clear();
+    this->lst_attrs_cache.clear();
     this->lst_line_values_cache.lvv_values.clear();
 
     if (this->lst_match_index >= 0) {
@@ -193,7 +193,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     lf->read_full_message(lf_iter, sbr);
     sbr.erase_ansi();
     lf->get_format()->annotate(
-        lf, cl, this->vi_attrs, this->lst_line_values_cache, false);
+        lf, cl, this->lst_attrs_cache, this->lst_line_values_cache, false);
     this->lst_content
         = this->lst_line_values_cache.lvv_sbr.to_string_fragment();
 
@@ -217,6 +217,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 void
 log_search_table::extract(logfile* lf,
                           uint64_t line_number,
+                          string_attrs_t& sa,
                           logline_value_vector& values)
 {
     auto& line = values.lvv_sbr;
@@ -242,6 +243,7 @@ log_search_table::extract(logfile* lf,
             values.lvv_values.emplace_back(this->lst_column_metas[curr_col]);
         }
     }
+    sa = this->lst_attrs_cache;
 }
 
 void

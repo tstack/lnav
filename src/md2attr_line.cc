@@ -835,6 +835,8 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
     static const auto NAME_TEXT_DECO = "text-decoration"_frag;
     static const auto NAME_BORDER_LEFT = "border-left"_frag;
     static const auto NAME_BORDER_RIGHT = "border-right"_frag;
+    static const auto NAME_WHITE_SPACE = "white-space"_frag;
+    static const auto VALUE_NOWRAP = "nowrap"_frag;
     static const auto& vc = view_colors::singleton();
 
     if (this->ml_source_path) {
@@ -982,6 +984,11 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                         } else if (key == NAME_BORDER_RIGHT) {
                             right_border
                                 = span_style_border(border_side::right, value);
+                        } else if (key == NAME_WHITE_SPACE) {
+                            if (value == VALUE_NOWRAP) {
+                                styled_span.with_attr_for_all(
+                                    SA_PREFORMATTED.value());
+                            }
                         }
                     }
                     style_sf = split_res.second;

@@ -296,7 +296,6 @@ public:
         : vi_name(name), vi_tags_name(intern_string::lookup(
                              fmt::format(FMT_STRING("{}.log_tags"), name)))
     {
-        this->vi_attrs.resize(128);
     }
 
     virtual ~log_vtab_impl() = default;
@@ -322,6 +321,7 @@ public:
 
     virtual void extract(logfile* lf,
                          uint64_t line_number,
+                         string_attrs_t& sa,
                          logline_value_vector& values);
 
     struct column_index {
@@ -349,7 +349,6 @@ public:
     provenance_t vi_provenance{provenance_t::format};
     bool vi_supports_indexes{true};
     int vi_column_count{0};
-    string_attrs_t vi_attrs;
 
 protected:
     const intern_string_t vi_name;

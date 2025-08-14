@@ -4304,33 +4304,33 @@ public:
         this->elt_module_format.mf_mod_format = nullptr;
         if (lf->get_format_name() == this->lfvi_format.get_name()) {
             return true;
-        } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
+        }
+        if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
             auto format = lf->get_format();
 
             return lf->read_line(lf_iter)
                 .map([this, format, cl, lf](auto line) {
+                    string_attrs_t sa;
                     logline_value_vector values;
                     line_range mod_name_range;
                     intern_string_t mod_name;
 
-                    this->vi_attrs.clear();
                     values.lvv_sbr = line.clone();
-                    format->annotate(lf, cl, this->vi_attrs, values, false);
+                    format->annotate(lf, cl, sa, values, false);
                     this->elt_container_body
-                        = find_string_attr_range(this->vi_attrs, &SA_BODY);
+                        = find_string_attr_range(sa, &SA_BODY);
                     if (!this->elt_container_body.is_valid()) {
                         return false;
                     }
                     this->elt_container_body.ltrim(line.get_data());
                     mod_name_range
-                        = find_string_attr_range(this->vi_attrs, &L_MODULE);
+                        = find_string_attr_range(sa, &L_MODULE);
                     if (!mod_name_range.is_valid()) {
                         return false;
                     }
                     mod_name = intern_string::lookup(
                         &line.get_data()[mod_name_range.lr_start],
                         mod_name_range.length());
-                    this->vi_attrs.clear();
                     this->elt_module_format
                         = external_log_format::MODULE_FORMATS[mod_name];
                     if (!this->elt_module_format.mf_mod_format) {
@@ -4347,6 +4347,7 @@ public:
 
     void extract(logfile* lf,
                  uint64_t line_number,
+                 string_attrs_t& sa,
                  logline_value_vector& values) override
     {
         auto& line = values.lvv_sbr;
@@ -4358,17 +4359,17 @@ public:
             body_ref.subset(line,
                             this->elt_container_body.lr_start,
                             this->elt_container_body.length());
-            this->vi_attrs.clear();
+            sa.clear();
             auto narrow_res
                 = values.lvv_sbr.narrow(this->elt_container_body.lr_start,
                                         this->elt_container_body.length());
             values.lvv_values.clear();
             this->elt_module_format.mf_mod_format->annotate(
-                lf, line_number, this->vi_attrs, values, false);
+                lf, line_number, sa, values, false);
             values.lvv_sbr.widen(narrow_res);
         } else {
-            this->vi_attrs.clear();
-            format->annotate(lf, line_number, this->vi_attrs, values, false);
+            sa.clear();
+            format->annotate(lf, line_number, sa, values, false);
         }
     }
 

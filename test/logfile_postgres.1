@@ -1,0 +1,45 @@
+2025-04-12 00:14:12.837 CEST [1329108] ERROR:  syntax error at or near "null" at character 510
+2025-04-12 00:14:12.837 CEST [1329108] STATEMENT:  create table if not exists scrape_memory (
+	    id smallserial primary key,
+	    created timestamp default CURRENT_TIMESTAMP not null,
+	    total_ms smallint null,
+	    pgnet_id bigint unique not null,
+	    is_completed boolean null,
+	    status_code smallint null,
+	    -- purpose_endpoint EnumScrapeEndpoint not null,
+	    -- purpose_initiation EnumScrapeInitiation not null,
+	    -- purpose_reason EnumScrapeReason not null,
+	    -- endpoint_id smallint not null,
+	    -- proxy_id smallint not null,
+	    plzsuche_plz null numeric(5, 0),
+	    response_count smallint null
+	    generated always as (jsonb_path_query_first(
+	        target := response_body,
+	        path   := '$.maxErgebnisse ? (@ >= 0 && @ <= 10000)'
+	    )::smallint) stored,
+	    response_page smallint null
+	    generated always as (jsonb_path_query_first(
+	        target := response_body,
+	        path   := '$.page ? (@ >= 1 && @ <= 1000)'
+	    )::smallint) stored,
+	    -- -- Let's genuinely hope I won't be regretting this kind of rigour when the AoA
+	    -- -- API becomes buggy.
+	    response_size smallint null
+	    generated always as (jsonb_path_query_first(
+	        target := response_body,
+	        path   := '$.size ? (@ >= 0 && @ <= 250 && @ == $.stellenangebote.size())'
+	    )::smallint) stored,
+	    response_plzsuche_plz numeric(5, 0) null
+	    generated always as (jsonb_path_query_first(
+	        target := response_body,
+	        path   := '$.woOutput.bereinigterOrt.number() ? ($.woOutput.suchmodus == "PLZSUCHE")'
+	    )::numeric(5, 0)) stored,
+	    request_body jsonb null,
+	    response_body jsonb null,
+	    response_headers jsonb null
+	);
+2025-04-12 00:14:12.884 CEST [1329108] WARNING:  there is no transaction in progress
+2025-04-12 00:17:29.552 CEST [1329108] ERROR:  relation "scrape_memory" does not exist
+2025-04-12 00:17:29.552 CEST [1329108] STATEMENT:  truncate table scrape_memory restart identity;
+2025-04-12 00:17:29.596 CEST [1329108] WARNING:  there is no transaction in progress
+2025-04-12 00:17:46.846 CEST [1329108] NOTICE:  table "scrape_memory" does not exist, skipping

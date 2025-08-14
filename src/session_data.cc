@@ -670,11 +670,13 @@ load_time_bookmarks()
                                         .to_attr_line()
                                         .get_string()
                                         .c_str());
-                            } else {
+                            } else if (bm_meta.find(line_number) == bm_meta.end()) {
                                 lss.set_user_mark(&textview_curses::BM_META,
                                                   line_cl);
                                 bm_meta[line_number].bm_annotations
                                     = parse_res.unwrap();
+                                meta = true;
+                            } else {
                                 meta = true;
                             }
                         }

@@ -9,6 +9,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/lnav-link-callback.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
     $(srcdir)/scripts/partition-by-boot.lnav \
+    $(srcdir)/scripts/pg-annotate-errors.lnav \
     $(srcdir)/scripts/piper-url-handler.lnav \
     $(srcdir)/scripts/rename-stdin.lnav \
     $(srcdir)/scripts/report-access-log.lnav \

@@ -146,3 +146,8 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE access_log SET log_annotations = '{\"abc\": \"def\"}' WHERE log_line = 0" \
     -c ";SELECT log_line,log_annotations FROM access_log WHERE log_annotations IS NOT NULL" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":annotate" \
+    ${test_dir}/logfile_postgres.1

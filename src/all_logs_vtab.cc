@@ -75,6 +75,7 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 void
 all_logs_vtab::extract(logfile* lf,
                        uint64_t line_number,
+                       string_attrs_t& sa,
                        logline_value_vector& values)
 {
     auto& line = values.lvv_sbr;
@@ -82,11 +83,11 @@ all_logs_vtab::extract(logfile* lf,
 
     logline_value_vector sub_values;
 
-    this->vi_attrs.clear();
+    sa.clear();
     sub_values.lvv_sbr = line.clone();
-    format->annotate(lf, line_number, this->vi_attrs, sub_values, false);
+    format->annotate(lf, line_number, sa, sub_values, false);
 
-    auto body = find_string_attr_range(this->vi_attrs, &SA_BODY);
+    auto body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_start == -1) {
         body.lr_start = 0;
         body.lr_end = line.length();

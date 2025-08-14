@@ -228,6 +228,36 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
             continue;
         }
 
+        if (startswith(iter->second.a_handler.pp_value, "|")) {
+            intern_string_t handler_path = intern_string::lookup(
+                fmt::format(FMT_STRING("/log/annotations/{}/handler"), anno));
+            logline_value_vector values;
+            exec_context ec(&values, internal_sql_callback, pipe_callback);
+            db_label_source anno_label_source;
+
+            ec.with_perms(exec_context::perm_t::READ_ONLY);
+            ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
+            ec.ec_top_line = vl;
+            auto src_guard = ec.enter_db_source(&anno_label_source);
+            auto src_loc = source_location{handler_path};
+
+            auto exec_res
+                = ec.execute(src_loc, iter->second.a_handler.pp_value);
+            if (exec_res.isErr()) {
+                auto err_msg = exec_res.unwrapErr();
+
+                la.la_pairs[anno.to_string()]
+                    = err_msg.to_attr_line().al_string;
+            } else {
+                auto content = exec_res.unwrap();
+                la.la_pairs[anno.to_string()] = content;
+            }
+
+            lnav_data.ld_views[LNV_LOG].reload_data();
+            lnav_data.ld_views[LNV_LOG].set_needs_update();
+            continue;
+        }
+
         la.la_pairs[anno.to_string()] = "Loading...";
         auto child_fds_res = auto_pipe::for_child_fds(
             STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
