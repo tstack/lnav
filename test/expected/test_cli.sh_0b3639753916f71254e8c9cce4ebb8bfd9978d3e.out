@@ -8190,7 +8190,7 @@
             },
             "org.postgresql.statement-error": {
                 "description": "statement error",
-                "condition": ":log_body LIKE '% at character %' AND :log_format IN ('postgres_log', 'vpostgres_log')",
+                "condition": ":log_level COLLATE loglevel >= 'error' AND :log_body LIKE '% at character %' AND :log_format IN ('postgres_log', 'vpostgres_log')",
                 "handler": "|pg-annotate-errors"
             }
         },
