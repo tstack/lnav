@@ -42,6 +42,18 @@ Underline</span>
 Goodbye, <span style="border-left: solid cyan; border-right: dashed green">
 World</span>!
 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+<span style="white-space: nowrap">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
+
+<span style="white-space: nowrap"><span style="color: green">Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span></span>
+
+<span style="color: green">Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span>
+
+<span style="color: green">
+**Nested Markdown**
+</span>
+
 ```foolang
 foo bar bar
 baz "xyz"

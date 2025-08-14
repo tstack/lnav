@@ -43,7 +43,7 @@ match_data::to_string() const
 
     if (this->get_count() == 1) {
         auto cap = (*this)[0];
-        retval.append(cap->data(), cap->length());
+        retval += cap.value();
     } else {
         for (size_t lpc = 1; lpc < this->get_count(); lpc++) {
             auto cap = (*this)[lpc];
@@ -52,7 +52,7 @@ match_data::to_string() const
                 continue;
             }
 
-            retval.append(cap->data(), cap->length());
+            retval += cap.value();
         }
     }
 
@@ -291,7 +291,7 @@ code::replace(string_fragment str, const char* repl) const
         remaining = find_res->f_remaining;
         bool in_escape = false;
 
-        retval.append(str.data(), start, (all.sf_begin - start));
+        retval.append(&str.data()[start],(all.sf_begin - start));
         start = all.sf_end;
         for (int lpc = 0; repl[lpc]; lpc++) {
             auto ch = repl[lpc];
@@ -303,7 +303,7 @@ code::replace(string_fragment str, const char* repl) const
                     if (capture_index < md.get_count()) {
                         auto cap = md[capture_index];
                         if (cap) {
-                            retval.append(cap->data(), cap->length());
+                            retval += cap.value();
                         }
                     } else if (capture_index > this->get_capture_count()) {
                         retval.push_back('\\');
@@ -329,7 +329,7 @@ code::replace(string_fragment str, const char* repl) const
         }
     }
     if (remaining.is_valid()) {
-        retval.append(remaining.data(), 0, remaining.length());
+        retval += remaining;
     }
 
     return retval;

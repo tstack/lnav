@@ -1464,6 +1464,7 @@ logfile::read_full_message(const_iterator ll,
         if (format == read_format_t::plain && mlr.mlr_line_count > 1
             && this->lf_line_buffer.is_piper())
         {
+            this->lf_plain_msg_shared.invalidate_refs();
             this->lf_plain_msg_buffer.expand_to(mlr.mlr_length);
             this->lf_plain_msg_buffer.clear();
             auto curr_ll = ll;
@@ -1491,7 +1492,6 @@ logfile::read_full_message(const_iterator ll,
 
                 ++curr_ll;
             } while (curr_ll != this->end() && curr_ll->is_continued());
-            this->lf_plain_msg_shared.invalidate_refs();
             msg_out.share(this->lf_plain_msg_shared,
                           this->lf_plain_msg_buffer.data(),
                           this->lf_plain_msg_buffer.size());

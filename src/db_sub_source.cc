@@ -842,7 +842,7 @@ db_label_source::get_row_as_string(vis_line_t row)
         retval.append(hm.hm_name);
         retval.push_back('=');
         auto sf = cursor->to_string_fragment(this->dls_cell_allocator);
-        retval.append(sf.data(), sf.length());
+        retval += sf;
 
         cursor = cursor->next();
         lpc += 1;

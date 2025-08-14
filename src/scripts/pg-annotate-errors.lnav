@@ -5,7 +5,7 @@
 
 ;SELECT
    '```sql' || char(10) || substr(stmt_body, 1, CASE WHEN error_line_end > 0 THEN char_offset + error_line_end ELSE length(stmt_body) END) || char(10) || '```' || char(10) ||
-   '> <span style="white-space: nowrap">' || replicate('&nbsp;', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '</span><span class="-lnav_log-level-styles_error" style="white-space: nowrap">' || replicate('^', length(token)) || '</span><span style="white-space: nowrap"> ' || err_body || '</span>' || char(10) AS content
+   '> <span style="white-space: nowrap">' || replicate(' ', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '<span class="-lnav_log-level-styles_error">' || replicate('^', length(token)) || '</span> ' || err_body || '</span>' || char(10) AS content
  FROM (
    SELECT
      token,
@@ -17,7 +17,7 @@
    FROM (
      SELECT
        all_logs.log_body AS err_body,
-       regexp_replace(pg_stmt_log.log_body, '\n\t', char(10)) AS stmt_body,
+       regexp_replace(pg_stmt_log.log_body, '\n\t|\n {8}', char(10)) AS stmt_body,
        regexp_match('"(.+)".+at character \d+$', all_logs.log_body) AS token,
        CAST(regexp_match('".+".+at character (\d+)$', all_logs.log_body) AS INTEGER) AS char_offset
      FROM all_logs

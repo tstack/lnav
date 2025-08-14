@@ -404,7 +404,7 @@ textinput_curses::handle_mouse(mouse_event& me)
                 auto byte_end = al.column_to_byte_index(sel_range->lr_end);
                 auto al_sf = string_fragment::from_str_range(
                     al.al_string, byte_start, byte_end);
-                content.append(al_sf.data(), al_sf.length());
+                content += al_sf;
                 add_nl = true;
             }
 
@@ -1251,8 +1251,7 @@ textinput_curses::handle_key(const ncinput& ch)
                             log_debug("clear left");
                             this->command_indent(indent_mode_t::clear_left);
                         } else if (this->is_cursor_at_end_of_line()) {
-                            indent.append(match_opt->f_all.data(),
-                                          match_opt->f_all.length());
+                            indent += match_opt->f_all;
                             if (md[2] && md[2]->front() != ' ') {
                                 indent[1 + md[2]->sf_begin] = ' ';
                             }
@@ -1914,7 +1913,7 @@ textinput_curses::get_content(bool trim) const
         if (need_lf) {
             retval.push_back('\n');
         }
-        retval.append(line_sf.data(), line_sf.length());
+        retval += line_sf;
         need_lf = true;
     }
     return retval;

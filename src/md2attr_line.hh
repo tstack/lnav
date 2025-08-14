@@ -114,7 +114,8 @@ private:
 
     std::string append_url_footnote(std::string href);
     void flush_footnotes();
-    attr_line_t to_attr_line(const pugi::xml_node& doc);
+    attr_line_t to_attr_line(const pugi::xml_node& doc,
+                             const attr_line_t& orig);
 
     std::optional<std::filesystem::path> ml_source_path;
     intern_string_t ml_source_id;
@@ -122,6 +123,7 @@ private:
 
     std::vector<attr_line_t> ml_blocks;
     std::vector<list_block_t> ml_list_stack;
+    bool ml_in_html_block{false};
     std::vector<table_t> ml_tables;
     std::vector<size_t> ml_span_starts;
     std::vector<std::pair<std::string, size_t>> ml_html_starts;

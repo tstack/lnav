@@ -2,7 +2,7 @@
 
 Features:
 * Initial support for Windows.  Configuration should be stored
-  in %APPDATA%.  The binary is built using msys2.  So, it
+  in `%APPDATA%`.  The binary is built using msys2.  So, it
   depends on msys-2.0.dll being in the same directory.  No other
   dependencies should be needed.
 * Removed dependency on ncurses during the build.  The terminfo
@@ -14,6 +14,8 @@ Features:
   with the statement and a pointer to the location of the error.
 * Annotation handlers can now be lnav scripts if the "handler"
   field starts with a pipe ("|").
+* The `<span>` tag in a markdown now supports
+  `white-space: nowrap` in the `style` attribute.
 
 Interface changes:
 * If all the log messages in the LOG view are hidden, a notice
@@ -24,6 +26,8 @@ Bug Fixes:
 * Fix a crash on startup for some environments.
 * Fix a spurious screen flash on some prompts.
 * Fix an issue with completion of script names.
+* Handle abbreviated timezones (e.g. PDT/PST) in timestamps.
+* Improve HTML handling in Markdown files.
 
 ## lnav v0.13.0
 

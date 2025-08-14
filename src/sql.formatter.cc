@@ -96,7 +96,7 @@ format(const attr_line_t& al, int cursor_offset)
             if (sf.empty()) {
                 continue;
             }
-            retval.append(sf.data(), sf.length());
+            retval += sf;
 
             if (attr.sa_range.contains(cursor_offset)) {
                 auto diff = attr.sa_range.lr_end - cursor_offset - trimmed_size;
@@ -287,13 +287,13 @@ format(const attr_line_t& al, int cursor_offset)
                 check_for_multi_word_clear(retval, scope_stack);
             }
         } else if (attr.sa_type == &SQL_COMMA_ATTR) {
-            retval.append(sf.data(), sf.length());
+            retval += sf;
             if (paren_indents.empty() || paren_indents.back()) {
                 clear_right(retval);
             }
         } else if (attr.sa_type == &SQL_COMMENT_ATTR) {
             add_space(retval, indent);
-            retval.append(sf.data(), sf.length());
+            retval += sf;
             clear_right(retval);
         } else if (attr.sa_type == &SQL_PAREN_ATTR && sf.front() == '(') {
             paren_indents.push_back(false);
@@ -306,7 +306,7 @@ format(const attr_line_t& al, int cursor_offset)
                 paren_indents.back() = true;
             }
             add_space(retval, indent);
-            retval.append(sf.data(), sf.length());
+            retval += sf;
             if (scope_stack.back() == "CREATE") {
                 clear_right(retval);
                 paren_indents.back() = true;
@@ -324,11 +324,11 @@ format(const attr_line_t& al, int cursor_offset)
                 paren_indents.pop_back();
             }
             add_indent(retval, indent > 0 ? indent - INDENT_SIZE : 0);
-            retval.append(sf.data(), sf.length());
+            retval += sf;
         } else if (attr.sa_type == &SQL_FUNCTION_ATTR) {
             funcs.emplace_back(attr);
             add_space(retval, indent);
-            retval.append(sf.data(), sf.length());
+            retval += sf;
         } else if (attr.sa_type == &SQL_GARBAGE_ATTR && sf.front() == '.') {
             retval.push_back('.');
         } else if (attr.sa_type == &SQL_GARBAGE_ATTR && sf.front() == ';') {
@@ -338,7 +338,7 @@ format(const attr_line_t& al, int cursor_offset)
             if (retval.empty() || retval.back() != '(') {
                 add_space(retval, indent);
             }
-            retval.append(sf.data(), sf.length());
+            retval += sf;
         }
 
         if (attr.sa_range.contains(cursor_offset)) {

@@ -13,9 +13,7 @@
  [33m•[0m Three
 
 🖼  ]8;;file://{top_srcdir}/docs/lnav-tui.png\lnav-tui.png]8;;\¹
-
 🖼  ]8;;file://{top_srcdir}/docs/lnav-architecture.png\The internal architecture of lnav]8;;\²
-
  [34m▌[0m[1] - file://{top_srcdir}/docs/lnav-tui.png          
  [34m▌[0m[2] - file://{top_srcdir}/docs/lnav-architecture.png 
 
@@ -31,12 +29,27 @@
 
 
 [4mUnderline[0m
-
   Hello,
   World!
 
-
 Goodbye, [36m▌[0m World[32m╏[0m!
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquip ex ea commodo consequat. Duis aute irure dolor in
+reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+culpa qui officia deserunt mollit anim id est laborum.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+[32mLoooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn[0m
+
+[32mLoooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn[0m
+
+
+[1m[32m**Nested Markdown**[0m
 
  ▌[37m[40mfoo bar bar                             [0m
  ▌[37m[40mbaz "xyz"                               [0m
@@ -114,3 +127,20 @@ Goodbye, [36m▌[0m World[32m╏[0m!
  abc        def 
 ════════════════
  foo | bar  ddd 
+
+
+Foo
+
+Foo
+
+Bar
+
+Bar
+
+Foo
+
+Foo
+
+Bar
+
+Bar

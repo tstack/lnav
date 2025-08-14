@@ -90,12 +90,16 @@ ptime_Z_to_gmtoff(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
             dst->et_gmtoff = 1 * 60 * 60;
             break;
         case ABR_TO_INT('C', 'A', 'T'):
-        case ABR_TO_INT4('C', 'E', 'D', 'T'):
-        case ABR_TO_INT4('C', 'E', 'S', 'T'):
             PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET; });
             dst->et_gmtoff = 2 * 60 * 60;
             break;
+        case ABR_TO_INT4('C', 'E', 'D', 'T'):
+        case ABR_TO_INT4('C', 'E', 'S', 'T'):
+            PTIME_CONSUME(4, { dst->et_flags |= ETF_ZONE_SET; });
+            dst->et_gmtoff = 2 * 60 * 60;
+            break;
         case ABR_TO_INT('M', 'S', 'K'):
+        case ABR_TO_INT('I', 'D', 'T'):
             PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET; });
             dst->et_gmtoff = 3 * 60 * 60;
             break;
