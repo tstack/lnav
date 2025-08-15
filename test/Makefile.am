@@ -371,6 +371,7 @@ dist_noinst_DATA = \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
 	logfile_mysql_error.0 \
+	logfile_mysql_gen.0 \
 	logfile_mysql_slow.0 \
 	logfile_nested_json.json \
 	logfile_nextcloud.0 \

@@ -1,0 +1,28 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "mysql_gen_log": {
+        "title": "MySQL General Log",
+        "description": "Format for the MySQL general log",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}[^\\s]+)\\s+(?<thread>\\d+)\\s+(?<command>Connect|Quit|Query|Init DB|Create DB|Drop DB|Field List|Refresh|Shutdown|Statistics|Processlist|Sleep|Prepare|Execute|Close stmt|Reset stmt|Change user|Binlog Dump|Connect Out)\\s*(?<body>.*)$"
+            }
+        },
+        "value": {
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            },
+            "command": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "opid-field": "thread_id",
+        "sample": [
+            {
+                "line": "2025-08-15T14:04:36.592691Z\t   10 Query\tselect @@version_comment limit 1"
+            }
+        ]
+    }
+}

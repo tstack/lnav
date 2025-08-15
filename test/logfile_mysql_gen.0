@@ -1,0 +1,17 @@
+/usr/sbin/mysqld, Version: 8.0.43-0ubuntu0.24.04.1 ((Ubuntu)). started with:
+Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+2025-08-15T14:03:50.259438Z	    9 Query	set global log_output = 'FILE'
+2025-08-15T14:04:10.394852Z	    9 Query	select * from testtab
+2025-08-15T14:04:35.806005Z	    9 Quit	
+2025-08-15T14:04:36.592572Z	   10 Connect	root@localhost on  using Socket
+2025-08-15T14:04:36.592691Z	   10 Query	select @@version_comment limit 1
+2025-08-15T14:04:40.805374Z	   10 Query	SELECT DATABASE()
+2025-08-15T14:04:40.805465Z	   10 Init DB	testdb1
+2025-08-15T14:04:40.805967Z	   10 Query	show databases
+2025-08-15T14:04:40.806553Z	   10 Query	show tables
+2025-08-15T14:04:40.807102Z	   10 Field List	testtab 
+2025-08-15T14:04:44.247491Z	   10 Query	select * from testtab
+2025-08-15T14:04:53.384391Z	   10 Query	insert into testtab values (1, 'two')
+2025-08-15T14:04:55.042726Z	   10 Query	select * from testtab
+2025-08-15T14:04:55.780575Z	   10 Quit	
