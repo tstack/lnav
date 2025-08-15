@@ -32,7 +32,6 @@ Lnav takes a list of files to view and/or you can use the flag
 arguments to load well-known log files, such as the syslog log files.
 The flag arguments are:
 
- [33m•[0m [37m[40m -a [0m Load all of the most recent log file types.
  [33m•[0m [37m[40m -r [0m Recursively load files from the given directory
    hierarchies.
  [33m•[0m [37m[40m -R [0m Load older rotated log files as well.
