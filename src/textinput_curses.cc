@@ -1610,7 +1610,7 @@ textinput_curses::apply_highlights()
             if (!hl.applies_to_format(this->tc_text_format)) {
                 continue;
             }
-            hl.annotate(line, 0);
+            hl.annotate(line, line_range{0, -1});
         }
     }
 }

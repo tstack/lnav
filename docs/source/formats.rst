@@ -60,11 +60,19 @@ logfmt
 
 There is also basic support for the `logfmt <https://brandur.org/logfmt>`_
 convention for formatting log messages.  Files that use this format must
-have the entire line be key/value pairs and the timestamp contained in a
-field named :code:`time` or :code:`ts`.  If the file you're using does not
+have the entire line be key/value pairs.  If the file you're using does not
 quite follow this formatting, but wraps logfmt data with another recognized
 format, you can use the :ref:`logfmt2json` SQL function to convert the data
 into JSON for further analysis.
+
+The following keys are recognized by lnav:
+
+* :code:`timestamp`, :code:`time`, :code:`ts`, :code:`t`: The timestamp for the log message.
+* :code:`level`, :code:`lvl`: The log level.
+* :code:`message`, :code:`msg`: The body of the message.
+
+Any other keys are available in the :code:`fields` column of the
+:code:`logfmt_log` table as a JSON object.
 
 Defining a New Format
 =====================

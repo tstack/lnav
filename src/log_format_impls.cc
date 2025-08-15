@@ -1893,7 +1893,9 @@ struct logfmt_pair_handler {
 
     log_format::scan_result_t process_value(const string_fragment& value_frag)
     {
-        if (this->lph_key_frag.is_one_of("timestamp", "time", "ts", "t")) {
+        if (this->lph_key_frag.is_one_of(
+                "timestamp"_frag, "time"_frag, "ts"_frag, "t"_frag))
+        {
             if (!this->lph_dt_scanner.scan(value_frag.data(),
                                            value_frag.length(),
                                            nullptr,
@@ -1907,7 +1909,7 @@ struct logfmt_pair_handler {
             this->lph_dt_scanner.ftime(
                 buf, sizeof(buf), nullptr, this->lph_time_tm);
             this->lph_found_time = true;
-        } else if (this->lph_key_frag == "level"_frag) {
+        } else if (this->lph_key_frag.is_one_of("level"_frag, "lvl"_frag)) {
             this->lph_level
                 = string2level(value_frag.data(), value_frag.length());
         }
@@ -2067,18 +2069,21 @@ public:
                   logline_value_vector& values,
                   bool annotate_module) const override
     {
-        static const auto FIELDS_NAME = intern_string::lookup("fields");
+        static const intern_string_t FIELDS_NAME
+            = intern_string::lookup("fields");
 
         auto& sbr = values.lvv_sbr;
         auto p = logfmt::parser(sbr.to_string_fragment());
-        bool done = false;
+        auto done = false;
+        auto found_body = false;
 
         while (!done) {
             auto parse_result = p.step();
 
             done = parse_result.match(
                 [](const logfmt::parser::end_of_input&) { return true; },
-                [this, &sa, &values](const logfmt::parser::kvpair& kvp) {
+                [this, &sa, &values, &found_body](
+                    const logfmt::parser::kvpair& kvp) {
                     auto value_frag = kvp.second.match(
                         [this, &kvp, &values](
                             const logfmt::parser::bool_value& bv) {
@@ -2131,12 +2136,16 @@ public:
                     auto value_lr
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
-                    if (kvp.first.is_one_of("timestamp", "time", "ts", "t")) {
+                    if (kvp.first.is_one_of(
+                            "timestamp"_frag, "time"_frag, "ts"_frag, "t"_frag))
+                    {
                         sa.emplace_back(value_lr, L_TIMESTAMP.value());
-                    } else if (kvp.first == "level"_frag) {
+                    } else if (kvp.first.is_one_of("level"_frag, "lvl"_frag)) {
                         sa.emplace_back(value_lr, L_LEVEL.value());
-                    } else if (kvp.first == "msg"_frag) {
+                    } else if (kvp.first.is_one_of("msg"_frag, "message"_frag))
+                    {
                         sa.emplace_back(value_lr, SA_BODY.value());
+                        found_body = true;
                     } else if (kvp.second.is<logfmt::parser::quoted_value>()
                                || kvp.second
                                       .is<logfmt::parser::unquoted_value>())
@@ -2163,6 +2172,11 @@ public:
                               err.e_msg.c_str());
                     return true;
                 });
+        }
+
+        if (!found_body) {
+            sa.emplace_back(line_range::empty_at(sbr.length()),
+                            SA_BODY.value());
         }
 
         log_format::annotate(lf, line_number, sa, values, annotate_module);

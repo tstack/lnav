@@ -286,7 +286,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 if (!hl.applies_to_format(tf_opt.value())) {
                     continue;
                 }
-                hl.annotate(block_text, 0);
+                hl.annotate(block_text, line_range{0, -1});
             }
         } else if (lang_sf == "lnav") {
             readline_lnav_highlighter(block_text, block_text.length());

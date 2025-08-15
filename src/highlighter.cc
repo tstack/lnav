@@ -67,7 +67,7 @@ highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
 }
 
 void
-highlighter::annotate(attr_line_t& al, int start) const
+highlighter::annotate(attr_line_t& al, const line_range& lr) const
 {
     if (!this->h_regex) {
         return;
@@ -77,7 +77,9 @@ highlighter::annotate(attr_line_t& al, int start) const
     const auto& str = al.get_string();
     auto& sa = al.get_attrs();
     const auto sf = string_fragment::from_str_range(
-        str, start, std::min(size_t{8192}, str.size()));
+        str,
+        lr.lr_start,
+        std::min(size_t{8192}, std::min((size_t) lr.length(), str.size())));
 
     if (!sf.is_valid()) {
         return;

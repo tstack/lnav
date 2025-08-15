@@ -95,7 +95,7 @@ struct highlighter {
 
     text_attrs get_attrs() const { return this->h_attrs; }
 
-    void annotate(attr_line_t& al, int start) const;
+    void annotate(attr_line_t& al, const line_range& lr) const;
 
     void annotate_capture(attr_line_t& al, const line_range& lr) const;
 

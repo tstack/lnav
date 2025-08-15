@@ -656,7 +656,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                 auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
 
                 if (hl_iter != hl.end()) {
-                    hl_iter->second.annotate(comment_line, filename_width);
+                    hl_iter->second.annotate(comment_line,
+                                             line_range{(int) filename_width});
                 }
             }
 
@@ -678,7 +679,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
 
             if (hl_iter != hl.end()) {
-                hl_iter->second.annotate(al, filename_width);
+                hl_iter->second.annotate(al, line_range{(int) filename_width});
             }
         }
         dst.emplace_back(al);
@@ -727,7 +728,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                         = hl.find({highlight_source_t::PREVIEW, "search"});
 
                     if (hl_iter != hl.end()) {
-                        hl_iter->second.annotate(anno_line, filename_width);
+                        hl_iter->second.annotate(
+                            anno_line, line_range{(int) filename_width});
                     }
                 }
 

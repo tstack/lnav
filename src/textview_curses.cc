@@ -832,8 +832,8 @@ textview_curses::apply_highlights(attr_line_t& al,
         // highlights should apply only to the line itself and not any of
         // the surrounding decorations that are added (for example, the file
         // lines that are inserted at the beginning of the log view).
-        int start_pos = internal_hl ? body.lr_start : orig_line.lr_start;
-        tc_highlight.second.annotate(al, start_pos);
+        auto lr = internal_hl ? body : orig_line;
+        tc_highlight.second.annotate(al, lr);
     }
 }
 

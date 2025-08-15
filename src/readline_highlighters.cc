@@ -257,7 +257,11 @@ readline_command_highlighter_int(attr_line_t& al,
                 continue;
             }
 
-            hl.annotate(al, sub.lr_start + command.length());
+            hl.annotate(al,
+                        line_range{
+                            (int) (sub.lr_start + command.length()),
+                            sub.lr_end,
+                        });
         }
     }
 }
