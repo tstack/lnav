@@ -23,9 +23,9 @@ Features:
   `white-space: nowrap` in the `style` attribute.
 
 Interface changes:
-* If all the log messages in the LOG view are hidden, a notice
-  will be displayed that describes the filters that are in
-  effect.
+* If all the content in the LOG/TEXT views are filtered out,
+  a notice will be displayed that describes the filters that
+  are in effect.
 
 Bug Fixes:
 * Fix a crash on startup for some environments.

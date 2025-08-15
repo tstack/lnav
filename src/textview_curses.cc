@@ -1374,6 +1374,32 @@ vis_location_history::loc_history_forward(vis_line_t current_top)
 }
 
 void
+text_sub_source::update_filter_hash_state(hasher& h) const
+{
+    h.update(this->tss_filters.fs_generation);
+
+    const auto* ttt = dynamic_cast<const text_time_translator*>(this);
+    if (ttt != nullptr) {
+        auto min_time = ttt->get_min_row_time();
+        if (min_time) {
+            h.update(min_time->tv_sec);
+            h.update(min_time->tv_usec);
+        } else {
+            h.update(0);
+            h.update(0);
+        }
+        auto max_time = ttt->get_max_row_time();
+        if (max_time) {
+            h.update(max_time->tv_sec);
+            h.update(max_time->tv_usec);
+        } else {
+            h.update(0);
+            h.update(0);
+        }
+    }
+}
+
+void
 text_sub_source::toggle_apply_filters()
 {
     this->tss_apply_filters = !this->tss_apply_filters;

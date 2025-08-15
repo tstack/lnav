@@ -631,6 +631,7 @@ filter_sub_source::rl_perform(textinput_curses& rc)
     auto tf = *iter;
     auto new_value = rc.get_content();
 
+    fs.fs_generation += 1;
     if (new_value.empty()) {
         this->rl_abort(rc);
     } else {

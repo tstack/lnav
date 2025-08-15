@@ -40,6 +40,7 @@
 #include "bookmarks.hh"
 #include "breadcrumb.hh"
 #include "grep_proc.hh"
+#include "hasher.hh"
 #include "highlighter.hh"
 #include "listview_curses.hh"
 #include "lnav_config_fwd.hh"
@@ -535,6 +536,8 @@ public:
     virtual int get_filtered_count() const { return 0; }
 
     virtual int get_filtered_count_for(size_t filter_index) const { return 0; }
+
+    virtual void update_filter_hash_state(hasher& h) const;
 
     virtual text_format_t get_text_format() const
     {

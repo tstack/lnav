@@ -290,6 +290,8 @@ public:
         }
     }
 
+    void update_filter_hash_state(hasher& h) const;
+
     bool get_marked_only() { return this->lss_marked_only; }
 
     size_t text_line_count() { return this->lss_filtered_index.size(); }

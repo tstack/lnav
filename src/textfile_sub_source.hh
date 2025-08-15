@@ -253,6 +253,8 @@ public:
 private:
     textfile_sub_source* tho_src;
     text_sub_source* tho_log_src;
+    std::vector<attr_line_t> tho_static_lines;
+    hasher::array_t tho_filter_state;
 };
 
 #endif

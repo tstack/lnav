@@ -3543,3 +3543,12 @@ logfile_sub_source::reload_config(error_reporter& reporter)
             break;
     }
 }
+
+void
+logfile_sub_source::update_filter_hash_state(hasher& h) const
+{
+    text_sub_source::update_filter_hash_state(h);
+
+    h.update(this->lss_min_log_level);
+    h.update(this->lss_marked_only);
+}

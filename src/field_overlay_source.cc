@@ -765,18 +765,6 @@ field_overlay_source::list_value_for_overlay(
     this->build_meta_line(lv, value_out, row);
 }
 
-field_overlay_source::lss_state
-field_overlay_source::lss_state::from(logfile_sub_source& lss)
-{
-    return {
-        lss.get_filters().fs_generation,
-        lss.get_min_row_time(),
-        lss.get_max_row_time(),
-        lss.get_min_log_level(),
-        lss.get_marked_only(),
-    };
-}
-
 bool
 field_overlay_source::list_static_overlay(const listview_curses& lv,
                                           int y,
@@ -786,25 +774,31 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
     const std::vector<attr_line_t>* lines = nullptr;
     if (this->fos_lss.text_line_count() == 0) {
         if (this->fos_lss.file_count() > 0) {
-            auto curr_state = lss_state::from(this->fos_lss);
+            hasher h;
+            this->fos_lss.update_filter_hash_state(h);
+            auto curr_state = h.to_array();
             if (this->fos_static_lines.empty()
                 || curr_state != this->fos_static_lines_state)
             {
                 auto msg = lnav::console::user_message::info(
                     "All log messages are currently hidden");
-                if (curr_state.ls_min_time) {
+                auto min_time = this->fos_lss.get_min_row_time();
+                if (min_time) {
                     msg.with_note(attr_line_t("Logs before ")
                                       .append_quoted(lnav::to_rfc3339_string(
-                                          curr_state.ls_min_time.value()))
+                                          min_time.value()))
                                       .append(" are not being shown"));
                 }
-                if (curr_state.ls_max_time) {
+                auto max_time = this->fos_lss.get_max_row_time();
+                if (max_time) {
                     msg.with_note(attr_line_t("Logs after ")
                                       .append_quoted(lnav::to_rfc3339_string(
-                                          curr_state.ls_max_time.value()))
+                                          max_time.value()))
                                       .append(" are not being shown"));
                 }
-                if (curr_state.ls_min_level > log_level_t::LEVEL_UNKNOWN) {
+                if (this->fos_lss.get_min_log_level()
+                    > log_level_t::LEVEL_UNKNOWN)
+                {
                     msg.with_note(
                         attr_line_t("Logs with a level below ")
                             .append_quoted(
@@ -827,7 +821,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                             .append(lnav::roles::number(fmt::to_string(hits)))
                             .append(" message(s) "));
                 }
-                if (curr_state.ls_marked_only) {
+                if (this->fos_lss.get_marked_only()) {
                     msg.with_note(attr_line_t("The ")
                                       .append_quoted(lnav::roles::keyword(
                                           ":hide-unmarked-lines"))
