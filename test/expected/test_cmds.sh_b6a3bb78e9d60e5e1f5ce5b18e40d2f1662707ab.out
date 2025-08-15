@@ -134,10 +134,10 @@ of information. The top line displays:
    focus on the next status line at the top, which is an
    interactive breadcrumb bar.
 
-The second status line at the top display breadcrumbs for the top line
-in the main view. Pressing [37m[40m ENTER [0m will focus input on the breadcrumb
-bar, the cursor keys can be used to select a breadcrumb. The common
-breadcrumbs are:
+The second status line at the top displays breadcrumbs for the top
+line in the main view. Pressing [37m[40m ENTER [0m will focus input on the
+breadcrumb bar, the cursor keys can be used to select a breadcrumb.
+The common breadcrumbs are:
 
  [33m•[0m The name of the current view.
  [33m•[0m In the log view, the timestamp of the top log message.

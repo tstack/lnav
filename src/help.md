@@ -103,7 +103,7 @@ On color displays, the lines will be highlighted as follows:
 
 * Errors will be colored in <span class="-lnav_log-level-styles_error">red</span>;
 * warnings will be <span class="-lnav_log-level-styles_warning">yellow</span>;
-* boundaries between days will be ${ansi_underline}underlined${ansi_norm}; and
+* boundaries between days will be _underlined_; and
 * various color highlights will be applied to: IP addresses, SQL keywords,
   XML tags, file and line numbers in Java backtraces, and quoted strings.
 
@@ -129,7 +129,7 @@ of information. The top line displays:
   The default message displayed on startup explains how to focus on the
   next status line at the top, which is an interactive breadcrumb bar.
 
-The second status line at the top display breadcrumbs for the top line
+The second status line at the top displays breadcrumbs for the top line
 in the main view. Pressing `ENTER` will focus input on the breadcrumb
 bar, the cursor keys can be used to select a breadcrumb. The common
 breadcrumbs are:
@@ -267,13 +267,13 @@ that you can always use `q` to pop the top view off of the stack.
 
 ### Query
 
-| Key(s)                                             | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Key(s)                                             | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **/**_regexp_                                      | Start a search for the given regular expression. The search is live, so when there is a pause in typing, the currently running search will be canceled and a new one started. The first ten lines that match the search will be displayed in the preview window at the bottom of the view. History is maintained for your searches so you can rerun them easily. Words that are currently displayed are also available for tab-completion, so you can easily search for values without needing to copy-and-paste the string. If there is an error encountered while trying to interpret the expression, the error will be displayed in red on the status line. While the search is active, the 'hits' field in the status line will be green, when finished it will turn back to black. |
-| **:**&lt;command&gt;                               | Execute an internal command. The commands are listed below. History is also supported in this context as well as tab-completion for commands and some arguments. The result of the command replaces the command you typed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **;**&lt;sql&gt;                                   | Execute an SQL query. Most supported log file formats provide a sqlite virtual table backend that can be used in queries. See the SQL section below for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **&VerticalLine;**&lt;script&gt; [arg1...] | Execute an lnav script contained in a format directory (e.g. \~/.lnav/formats/default). The script can contain lines starting with `:`, `;`, or `\|` to execute commands, SQL queries or execute other files in lnav. Any values after the script name are treated as arguments can be referenced in the script using `\$1`, `\$2`, and so on, like in a shell script.                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| CTRL+], ESCAPE                                     | Abort command-line entry started with `/`, `:`, `;`, or `\|`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **:**&lt;command&gt;                               | Execute an internal command. The commands are listed below. History is also supported in this context as well as tab-completion for commands and some arguments. The result of the command replaces the command you typed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **;**&lt;sql&gt;                                   | Execute an SQL query. Most supported log file formats provide a sqlite virtual table backend that can be used in queries. See the SQL section below for more information.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **&VerticalLine;**&lt;script&gt; [arg1...] | Execute an lnav script contained in a format directory (e.g. \~/.lnav/formats/default). The script can contain lines starting with `:`, `;`, or `|` to execute commands, SQL queries or execute other files in lnav. Any values after the script name are treated as arguments can be referenced in the script using `$1`, `$2`, and so on, like in a shell script.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| CTRL+], ESCAPE                                     | Abort command-line entry started with `/`, `:`, `;`, or `|`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 > **Note**: The regular expression format used by lnav is
 > [PCRE](http://perldoc.perl.org/perlre.html)
@@ -502,18 +502,18 @@ template.
 ## Other SQL Features
 
 Environment variables can be used in SQL statements by prefixing the
-variable name with a dollar-sign (\$). For example, to read the value of
+variable name with a dollar-sign ($). For example, to read the value of
 the `HOME` variable, you can do:
 
 ```lnav
-;SELECT \$HOME;
+;SELECT $HOME;
 ```
 
 To select the syslog messages that have a hostname field that is equal
 to the `HOSTNAME` variable:
 
 ```lnav
-;SELECT * FROM syslog_log WHERE log_hostname = \$HOSTNAME;
+;SELECT * FROM syslog_log WHERE log_hostname = $HOSTNAME;
 ```
 
 NOTE: Variable substitution is done for fields in the query and is not
@@ -521,7 +521,7 @@ a plain text substitution. For example, the following statement
 WILL NOT WORK:
 
 ```lnav
-;SELECT * FROM \$TABLE_NAME; -- Syntax error
+;SELECT * FROM $TABLE_NAME; -- Syntax error
 ```
 
 Access to lnav's environment variables is also available via the "environ"

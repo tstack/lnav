@@ -593,15 +593,8 @@ build_all_help_text()
     }
 
     auto help_md_str = help_md.to_string_fragment_producer()->to_string();
-    shlex lexer(help_md_str);
-    std::string sub_help_text;
-
-    lexer.with_ignore_quotes(true).eval(
-        sub_help_text,
-        scoped_resolver{&lnav_data.ld_exec_context.ec_global_vars});
-
     md2attr_line mdal;
-    auto parse_res = md4cpp::parse(sub_help_text, mdal);
+    auto parse_res = md4cpp::parse(help_md_str, mdal);
     attr_line_t all_help_text = parse_res.unwrap();
 
     std::map<std::string, const help_text*> sql_funcs;
