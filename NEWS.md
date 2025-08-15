@@ -1,3 +1,4 @@
+
 ## lnav v0.13.1
 
 Features:
@@ -12,6 +13,10 @@ Features:
   `:annotate` on a statement error line (e.g. syntax error
   at or near "null" at character 522) to attach an annotation
   with the statement and a pointer to the location of the error.
+* Added the mysql_error_log and mysql_slow_log formats.  There
+  is also a `mysql_slow_stats` search table that captures the
+  various statistics available in a slow query log message
+  (e.g. `query_time`, `lock_time`, ...).
 * Annotation handlers can now be lnav scripts if the "handler"
   field starts with a pipe ("|").
 * The `<span>` tag in a markdown now supports

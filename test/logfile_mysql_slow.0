@@ -1,0 +1,43 @@
+# Time: 2021-01-26T23:45:57.678222Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     2
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.011853  Lock_time: 0.011542  Rows_sent: 268  Rows_examined: 268  Rows_affected: 0
+# Bytes_sent: 10121
+use owncloud;
+SET timestamp=1611704757;
+SELECT * FROM `oc_appconfig`;
+# Time: 2021-01-26T23:45:58.073818Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     2
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.011857  Lock_time: 0.011599  Rows_sent: 0  Rows_examined: 0  Rows_affected: 0
+# Bytes_sent: 267
+SET timestamp=1611704758;
+SELECT `class`, `entity`, `events` FROM `oc_flow_operations` WHERE `events` <> '[]' GROUP BY `class`, `entity`, `events`;
+# Time: 2021-01-26T23:45:58.456739Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     3
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.000376  Lock_time: 0.000090  Rows_sent: 268  Rows_examined: 268  Rows_affected: 0
+# Bytes_sent: 10121
+SET timestamp=1611704758;
+SELECT * FROM `oc_appconfig`;
+# Time: 2021-01-26T23:45:58.470741Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     3
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.000346  Lock_time: 0.000073  Rows_sent: 0  Rows_examined: 0  Rows_affected: 0
+# Bytes_sent: 267
+SET timestamp=1611704758;
+SELECT `class`, `entity`, `events` FROM `oc_flow_operations` WHERE `events` <> '[]' GROUP BY `class`, `entity`, `events`;
+# Time: 2021-01-26T23:46:00.565861Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     4
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.000383  Lock_time: 0.000103  Rows_sent: 268  Rows_examined: 268  Rows_affected: 0
+# Bytes_sent: 10121
+SET timestamp=1611704760;
+SELECT * FROM `oc_appconfig`;
+# Time: 2021-01-26T23:46:00.584120Z
+# User@Host: owncloud[owncloud] @ localhost []  Id:     4
+# Schema: owncloud  Last_errno: 0  Killed: 0
+# Query_time: 0.000318  Lock_time: 0.000074  Rows_sent: 0  Rows_examined: 0  Rows_affected: 0
+# Bytes_sent: 267
+SET timestamp=1611704760;
+SELECT `class`, `entity`, `events` FROM `oc_flow_operations` WHERE `events` <> '[]' GROUP BY `class`, `entity`, `events`;

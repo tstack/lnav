@@ -188,6 +188,8 @@ set(FORMAT_FILES
         formats/journald_json_log.json
         formats/katello_log.json
         formats/lnav_debug_log.json
+        formats/mysql_error_log.json
+        formats/mysql_slow_log.json
         formats/nextcloud_log.json
         formats/nextflow_log.json
         formats/openam_log.json
@@ -195,6 +197,7 @@ set(FORMAT_FILES
         formats/openstack_log.json
         formats/page_log.json
         formats/pcap_log.json
+        formats/postgres_log.json
         formats/procstate_log.json
         formats/proxifier_log.json
         formats/redis_log.json

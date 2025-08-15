@@ -619,6 +619,10 @@ run_cap_test ./drive_logfile -t -f logfmt_log ${srcdir}/logfile_grafana.0
 
 run_cap_test ./drive_logfile -t -f postgres_log ${srcdir}/logfile_postgres.0
 
+run_cap_test ./drive_logfile -t -f mysql_slow_log ${srcdir}/logfile_mysql_slow.0
+
+run_cap_test ./drive_logfile -t -f mysql_error_log ${srcdir}/logfile_mysql_error.0
+
 run_test ${lnav_test} -C ${test_dir}/logfile_bad_access_log.0
 
 sed -ibak -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_err_filename`

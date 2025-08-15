@@ -1,0 +1,33 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "mysql_slow_log": {
+        "title": "MySQL Slow Query",
+        "description": "Format for the MySQL slow query log",
+        "regex": {
+            "std": {
+                "pattern": "^# Time: (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}.*)$"
+            },
+            "abbrev": {
+                "pattern": "^# Time: (?<timestamp>\\d{6} \\d{2}:\\d{2}:\\d{2})$"
+            }
+        },
+        "value": {
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "search-table": {
+            "mysql_slow_stats": {
+                "pattern": "^#\\s+Time:\\s+[^\\n]+\\n# User@Host: (?<user>[^\\s]+)\\s+@\\s(?<host>[^ ]*)\\s\\[[^\\]]*\\]\\s+Id:\\s+(?<conn_id>\\d+)\\n(?:#\\s+Schema:\\s+(?<schema>[^\\s]+)\\s+Last_errno:\\s+(?<last_errno>\\d+)\\s+Killed:\\s+(?<killed>\\d+)\\n)?# Query_time:\\s+(?<query_time>\\d+\\.\\d+)\\s+Lock_time:\\s+(?<lock_time>\\d+\\.\\d+)\\s+Rows_sent:\\s+(?<rows_sent>\\d+)\\s+Rows_examined:\\s+(?<rows_examined>\\d+)(?:\\s+Rows_affected:\\s+(?<rows_affected>\\d+))?\\n(?:#\\s+Bytes_sent:\\s+(?<bytes_sent>\\d+)\\n)?(?<query>.*)"
+            }
+        },
+        "sample": [
+            {
+                "line": "# Time: 2021-01-26T23:45:57.678222Z"
+            },
+            {
+                "line": "# Time: 170213 16:00:33"
+            }
+        ]
+    }
+}

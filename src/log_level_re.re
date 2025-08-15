@@ -90,8 +90,8 @@ log_level_t string2level(const char *levelstr, ssize_t len, bool exact)
              RET(LEVEL_DEBUG);
          }
      }
-     'info' { RET(LEVEL_INFO); }
-     'notice' { RET(LEVEL_NOTICE); }
+     'info'|'system' { RET(LEVEL_INFO); }
+     'notice'|'note'|'log' { RET(LEVEL_NOTICE); }
      'stats' { RET(LEVEL_STATS); }
      'warn'|'warning'|'deprecation' { RET(LEVEL_WARNING); }
      'err'|'error' { RET(LEVEL_ERROR); }

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "mysql_error_log": {
+        "title": "MySQL Error Log",
+        "description": "Format for MySQL error logs",
+        "url": ["https://dev.mysql.com/doc/refman/8.4/en/error-log-format.html"],
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}[^ ]+)\\s+(?<thread>\\d+)\\s+\\[(?<level>\\w+)\\](?:\\s+\\[(?<err_code>[^\\]]+)\\]\\s+\\[(?<subsystem>[^\\]]+)\\])?\\s+(?<body>.*)"
+            }
+        },
+        "value": {
+            "err_code": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
+                "kind": "string"
+            },
+            "subsystem": {
+                "kind": "string",
+                "identifier": true
+            },
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2020-08-06T14:25:02.835618Z 0 [Note] [MY-012487] [InnoDB] DDL log recovery : begin"
+            },
+            {
+                "line": "2020-08-06T14:25:02.835618Z 0 [Note] DDL log recovery : begin"
+            }
+        ]
+    }
+}
