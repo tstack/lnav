@@ -122,6 +122,7 @@ set(TIME_FORMATS
         "%m.%d %H:%M:%S"
         "%m%d %H:%M:%S"
         "%y%m%d %H%M%S"
+        "%y%m%d %H:%M:%S"
         "%Y%m%d %H:%M:%S"
         "%Y%m%d.%H%M%S"
         "%H:%M:%S"
