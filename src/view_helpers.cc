@@ -48,7 +48,6 @@
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "pretty_printer.hh"
-#include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "static_file_vtab.hh"

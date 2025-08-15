@@ -205,6 +205,9 @@
                     "code-border": {
                         "color": "#444"
                     },
+                    "object-key": {
+                        "color": "semantic()"
+                    },
                     "keyword": {
                         "color": "Navy"
                     },

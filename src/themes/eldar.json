@@ -171,6 +171,9 @@
                         "color": "#444",
                         "background-color": "#121212"
                     },
+                    "object-key": {
+                        "color": "semantic()"
+                    },
                     "keyword": {
                         "color": "$yellow"
                     },

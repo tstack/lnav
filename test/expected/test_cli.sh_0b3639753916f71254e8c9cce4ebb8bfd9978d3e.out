@@ -569,6 +569,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "keyword": {
                         "color": "Navy",
                         "background-color": "",
@@ -1441,6 +1449,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "keyword": {
                         "color": "$pink",
                         "background-color": "",
@@ -2255,6 +2271,14 @@
                     "code-border": {
                         "color": "#444",
                         "background-color": "#121212",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -3075,6 +3099,14 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "object-key": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -3931,6 +3963,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "object-key": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "keyword": {
                         "color": "$magenta_cooler",
                         "background-color": "",
@@ -4750,6 +4790,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "keyword": {
                         "color": "#ff6188",
                         "background-color": "",
@@ -5563,6 +5611,14 @@
                     "code-border": {
                         "color": "#444",
                         "background-color": "#222",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -6395,6 +6451,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "keyword": {
                         "color": "$yellow",
                         "background-color": "",
@@ -7217,6 +7281,14 @@
                     "code-border": {
                         "color": "$base01",
                         "background-color": "$base2",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "object-key": {
+                        "color": "semantic()",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,

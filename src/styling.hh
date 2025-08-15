@@ -135,6 +135,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_inline_code;
     positioned_property<style_config> lt_style_quoted_code;
     positioned_property<style_config> lt_style_code_border;
+    positioned_property<style_config> lt_style_object_key;
     positioned_property<style_config> lt_style_keyword;
     positioned_property<style_config> lt_style_string;
     positioned_property<style_config> lt_style_comment;

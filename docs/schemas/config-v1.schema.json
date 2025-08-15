@@ -709,6 +709,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/code-border",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "object-key": {
+                                            "description": "Styling for a key in an object",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/object-key",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "keyword": {
                                             "description": "Styling for keywords in source files",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/keyword",

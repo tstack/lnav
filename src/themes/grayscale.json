@@ -158,6 +158,9 @@
                     }
                 },
                 "syntax-styles": {
+                    "object-key": {
+                        "bold": true
+                    },
                     "comment": {
                         "color": "#888"
                     },

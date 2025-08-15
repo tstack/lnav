@@ -943,6 +943,10 @@ static const struct json_path_container theme_syntax_styles_handlers = {
         .with_description("Styling for quoted-code borders")
         .for_child(&lnav_theme::lt_style_code_border)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("object-key")
+        .with_description("Styling for a key in an object")
+        .for_child(&lnav_theme::lt_style_object_key)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("keyword")
         .with_description("Styling for keywords in source files")
         .for_child(&lnav_theme::lt_style_keyword)

@@ -1361,6 +1361,8 @@ view_colors::init_roles(const lnav_theme& lt,
             = this->to_attrs(lt, bar_sc, reporter);
     }
 
+    this->get_role_attrs(role_t::VCR_OBJECT_KEY)
+        = this->to_attrs(lt, lt.lt_style_object_key, reporter);
     this->get_role_attrs(role_t::VCR_KEYWORD)
         = this->to_attrs(lt, lt.lt_style_keyword, reporter);
     this->get_role_attrs(role_t::VCR_STRING)

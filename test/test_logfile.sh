@@ -772,3 +772,5 @@ run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n \
 
 cat ${test_dir}/logfile_generic.0 | run_cap_test ${lnav_test} -n \
     -c ':test-comment generic before piper'
+
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_logfmt.0

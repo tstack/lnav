@@ -101,6 +101,7 @@ The builtin themes are:
 `dracula <https://github.com/tstack/lnav/blob/master/src/themes/dracula.json>`_,
 `eldar <https://github.com/tstack/lnav/blob/master/src/themes/eldar.json>`_,
 `grayscale <https://github.com/tstack/lnav/blob/master/src/themes/grayscale.json>`_,
+`modus-operandi <https://github.com/tstack/lnav/blob/master/src/themes/modus-operandi.json>`_,
 `monocai <https://github.com/tstack/lnav/blob/master/src/themes/monocai.json>`_,
 `night-owl <https://github.com/tstack/lnav/blob/master/src/themes/night-owl.json>`_,
 `solarized-dark <https://github.com/tstack/lnav/blob/master/src/themes/solarized-dark.json>`_,

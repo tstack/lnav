@@ -2136,12 +2136,15 @@ public:
                     auto value_lr
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
+                    auto known_field = false;
                     if (kvp.first.is_one_of(
                             "timestamp"_frag, "time"_frag, "ts"_frag, "t"_frag))
                     {
                         sa.emplace_back(value_lr, L_TIMESTAMP.value());
+                        known_field = true;
                     } else if (kvp.first.is_one_of("level"_frag, "lvl"_frag)) {
                         sa.emplace_back(value_lr, L_LEVEL.value());
+                        known_field = true;
                     } else if (kvp.first.is_one_of("msg"_frag, "message"_frag))
                     {
                         sa.emplace_back(value_lr, SA_BODY.value());
@@ -2162,7 +2165,15 @@ public:
                                   .with_struct_name(FIELDS_NAME);
                         values.lvv_values.emplace_back(lvm, value_frag);
                     }
-
+                    if (known_field) {
+                        auto key_with_eq = kvp.first;
+                        key_with_eq.sf_end += 1;
+                        sa.emplace_back(to_line_range(key_with_eq),
+                                        SA_REPLACED.value());
+                    } else {
+                        sa.emplace_back(to_line_range(kvp.first),
+                                        VC_ROLE.value(role_t::VCR_OBJECT_KEY));
+                    }
                     return false;
                 },
                 [line_number, &sbr](const logfmt::parser::error& err) {

@@ -173,6 +173,9 @@
                         "color": "$base02",
                         "background-color": "$base2"
                     },
+                    "object-key": {
+                        "color": "semantic()"
+                    },
                     "keyword": {
                         "color": "$yellow"
                     },
