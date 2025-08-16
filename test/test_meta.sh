@@ -151,3 +151,8 @@ run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":annotate" \
     ${test_dir}/logfile_postgres.1
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":annotate" \
+    ${test_dir}/logfile_postgres.2

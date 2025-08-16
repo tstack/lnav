@@ -484,6 +484,8 @@ dist_noinst_DATA = \
     test_meta.sh_0ae5840c0758ec95a397493ac3c3d4fabd397a34.out \
     test_meta.sh_154047fb52e4831aabf7d36512247bad6a6a2cf7.err \
     test_meta.sh_154047fb52e4831aabf7d36512247bad6a6a2cf7.out \
+    test_meta.sh_3b98220effee179b899aa95b277dd6629fee30ca.err \
+    test_meta.sh_3b98220effee179b899aa95b277dd6629fee30ca.out \
     test_meta.sh_3c9b5940f7533c5fc3d4956a6efce50a9e7132d4.err \
     test_meta.sh_3c9b5940f7533c5fc3d4956a6efce50a9e7132d4.out \
     test_meta.sh_41f643bb4f720130625b042563e9591bee4ae588.err \

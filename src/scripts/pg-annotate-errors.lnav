@@ -5,7 +5,7 @@
 
 ;SELECT
    '```sql' || char(10) || substr(stmt_body, 1, CASE WHEN error_line_end > 0 THEN char_offset + error_line_end ELSE length(stmt_body) END) || char(10) || '```' || char(10) ||
-   '> <span style="white-space: nowrap">' || replicate(' ', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '<span class="-lnav_log-level-styles_error">' || replicate('^', length(token)) || '</span> ' || err_body || '</span>' || char(10) AS content
+   '> <span style="white-space: nowrap">' || replicate(' ', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '<span class="-lnav_log-level-styles_error">' || replicate('^', coalesce(length(token), 1)) || '</span> ' || err_body || '</span>' || char(10) AS content
  FROM (
    SELECT
      token,
@@ -19,10 +19,14 @@
        all_logs.log_body AS err_body,
        regexp_replace(pg_stmt_log.log_body, '\n\t|\n {8}', char(10)) AS stmt_body,
        regexp_match('"(.+)".+at character \d+$', all_logs.log_body) AS token,
-       CAST(regexp_match('".+".+at character (\d+)$', all_logs.log_body) AS INTEGER) AS char_offset
+       CAST(regexp_match('at character (\d+)$', all_logs.log_body) AS INTEGER) AS char_offset
      FROM all_logs
-     LEFT JOIN all_logs pg_stmt_log ON pg_stmt_log.log_line = all_logs.log_line + 1
+     LEFT JOIN all_logs pg_stmt_log ON (
+       pg_stmt_log.log_line >= all_logs.log_line + 1 AND
+       pg_stmt_log.log_line <= all_logs.log_line + 10 AND
+       pg_stmt_log.log_text LIKE '%STATEMENT:%')
      WHERE all_logs.log_line = log_msg_line()
+     LIMIT 1
    )
   )
 :echo $content

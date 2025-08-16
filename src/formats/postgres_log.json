@@ -5,13 +5,13 @@
         "description": "Format for PostgreSQL logs",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?:\\s+\\[queryid=(?<query_id>[^\\]]+)\\])?(?:\\s+\\[(?<host>[a-zA-Z0-9-\\.]+)\\])?(?:\\s+(?<user>[^@ ]+)@(?<db_name>\\S+))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+                "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?:\\s+\\[queryid=(?<query_id>[^\\]]+)\\])?(?:\\s+\\[(?<host>[a-zA-Z0-9-\\.]+)\\])?(?:\\s+(?<user>[^@ ]+)@(?<db_name>\\S+))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):(?: *duration: (?<duration>\\d+\\.\\d+ [^ ]+))? {0,2}(?<body>.*)$"
             },
             "kvp1": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:? db=(?<db_name>[^,]*),user=(?<user>[^,]*),app=(?<app>[^,]*),client=(?<client>[^ ]*) (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:? db=(?<db_name>[^,]*),user=(?<user>[^,]*),app=(?<app>[^,]*),client=(?<client>[^ ]*) (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):(?: *duration: (?<duration>\\d+\\.\\d+ [^ ]+))? {0,2}(?<body>.*)$"
             },
             "kvp2": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:?(?: \\[(?<session_line>\\d+)-1\\])? user=(?<user>[^,]*),db=(?<db_name>[^, ]*)(?:,app=(?<app>[^,]*),client=(?<client>[^ ]*))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:?(?: \\[(?<session_line>\\d+)-1\\])? user=(?<user>[^,]*),db=(?<db_name>[^, ]*)(?:,app=(?<app>[^,]*),client=(?<client>[^ ]*))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT):(?: *duration: (?<duration>\\d+\\.\\d+ [^ ]+))? {0,2}(?<body>.*)$"
             },
             "rds": {
                 "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? [^:]+):(?<client>[^:]*):(?<user>[^@]*)@(?<db_name>[^:]*):\\[(?<pid>\\d+)\\]:(?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"

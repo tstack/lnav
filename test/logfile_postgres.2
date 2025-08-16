@@ -1,0 +1,8 @@
+2025-08-16 13:02:58.095 CEST [885178] ERROR:  invalid input syntax for type json at character 61
+2025-08-16 13:02:58.095 CEST [885178] DETAIL:  Token "'" is invalid.
+2025-08-16 13:02:58.095 CEST [885178] CONTEXT:  JSON data, line 1: '...
+2025-08-16 13:02:58.095 CEST [885178] STATEMENT:      SELECT * FROM net.http_get ('https://google.com'::text, '''{}''::jsonb'::jsonb, ' ''{}''::jsonb'::jsonb, ' 5000'::integer)
+2025-08-16 13:03:36.581 CEST [885341] ERROR:  invalid input syntax for type json at character 61
+2025-08-16 13:03:36.581 CEST [885341] DETAIL:  Token "'" is invalid.
+2025-08-16 13:03:36.581 CEST [885341] CONTEXT:  JSON data, line 1: '...
+2025-08-16 13:03:36.581 CEST [885341] STATEMENT:      SELECT * FROM net.http_get ('https://google.com'::text, '''{}''::jsonb'::jsonb, '''{}''::jsonb'::jsonb, '5000'::integer)
