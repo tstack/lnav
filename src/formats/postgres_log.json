@@ -5,7 +5,16 @@
         "description": "Format for PostgreSQL logs",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?<host>\\s+\\[[^\\]]+\\])?(?:\\s+(?<user>[^@]+)@(?<db_name>\\S+))? (?<level>DEBUG\\d?|DETAIL|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?<body>.*)$"
+                "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? \\S+) \\[(?<pid>[\\d\\-]+)\\](?:\\s+\\[queryid=(?<query_id>[^\\]]+)\\])?(?:\\s+\\[(?<host>[a-zA-Z0-9-\\.]+)\\])?(?:\\s+(?<user>[^@ ]+)@(?<db_name>\\S+))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+            },
+            "kvp1": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:? db=(?<db_name>[^,]*),user=(?<user>[^,]*),app=(?<app>[^,]*),client=(?<client>[^ ]*) (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+            },
+            "kvp2": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?\\s[^ ]+) \\[(?<pid>\\d+)\\]:?(?: \\[(?<session_line>\\d+)-1\\])? user=(?<user>[^,]*),db=(?<db_name>[^, ]*)(?:,app=(?<app>[^,]*),client=(?<client>[^ ]*))? (?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
+            },
+            "rds": {
+                "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? [^:]+):(?<client>[^:]*):(?<user>[^@]*)@(?<db_name>[^:]*):\\[(?<pid>\\d+)\\]:(?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
             }
         },
         "value": {
@@ -28,8 +37,27 @@
                 "kind": "string",
                 "identifier": true
             },
+            "app": {
+                "kind": "string",
+                "identifier": true
+            },
+            "client": {
+                "kind": "string",
+                "identifier": true
+            },
+            "session_line": {
+                "kind": "string"
+            },
+            "duration": {
+                "kind": "string",
+                "collate": "measure_with_units"
+            },
             "timestamp": {
                 "kind": "string"
+            },
+            "query_id": {
+                "kind": "string",
+                "identifier": true
             }
         },
         "sample": [
@@ -38,6 +66,27 @@
             },
             {
                 "line": "2025-06-05 17:10:04 MSK [608647-3] [local] postgres@postgres WARNING: terminating connection because of crash of another server process"
+            },
+            {
+                "line": "2021-02-14 01:34:02 CET [30291]: db=[unknown],user=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]"
+            },
+            {
+                "line": "2017-09-06 08:40:10 UTC [20]: [1-1] user=,db=,app=,client= LOG:  database system was shut down at 2017-09-06 08:40:08 UTC"
+            },
+            {
+                "line": "2017-09-06 08:41:43 UTC [44]: [371-1] user=postgres,db=postgres,app=pgbench,client=172.23.0.1 LOG:  duration: 59.911 ms  statement: UPDATE pgbench_branches SET bbalance = bbalance + 4597 WHERE bid = 1;"
+            },
+            {
+                "line": "2021-12-03 07:14:48.591 UTC [4913] user=user1,db=mydb LOG:  duration: 0.211 ms  statement: SELECT current_setting('nj.maint')"
+            },
+            {
+                "line": "2022-02-17 06:45:10.440 -0800 [691] [queryid=1081270519976314062] postgres@stackoverflow LOG:  duration: 0.140 ms  statement: set log_min_duration_statement to 0;"
+            },
+            {
+                "line": "2020-03-11 20:40:45 CET:[local]:postgres@template1:[12777]:LOG:  duration: 0.038 ms  statement: "
+            },
+            {
+                "line": "2020-03-11 20:40:43 CET::@:[12760]:LOG:  starting PostgreSQL 12.2 (Ubuntu 12.2-2.pgdg18.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
             }
         ]
     }
