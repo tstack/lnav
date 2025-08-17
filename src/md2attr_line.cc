@@ -32,6 +32,7 @@
 #include "md2attr_line.hh"
 
 #include "base/attr_line.builder.hh"
+#include "base/from_trait.hh"
 #include "base/fs_util.hh"
 #include "base/intern_string.hh"
 #include "base/itertools.enumerate.hh"
@@ -300,8 +301,10 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 mda.final();
             }
             tf_opt = std::make_optional(text_format_t::TF_LNAV_SCRIPT);
-        } else if (lang_sf.is_one_of("sql", "sqlite", "prql")) {
-            readline_sqlite_highlighter(block_text, block_text.length());
+        } else if (lang_sf.is_one_of("sql", "sqlite", "prql", "plpgsql")) {
+            auto from_res = from<lnav::sql::dialect>(lang_sf);
+            auto dia = from_res.unwrap();
+            readline_sql_highlighter(block_text, dia, block_text.length());
             tf_opt = std::make_optional(text_format_t::TF_SQL);
         } else if (lang_sf.is_one_of("shell", "bash")) {
             readline_shlex_highlighter(block_text, block_text.length());

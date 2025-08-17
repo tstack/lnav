@@ -47,7 +47,7 @@
 #include "base/intern_string.hh"
 #include "base/time_util.hh"
 
-extern const std::array<const char*, 145> sql_keywords;
+extern const std::array<const char*, 145> sqlite_keywords;
 extern const char* sql_function_names[];
 extern const std::unordered_map<unsigned char, const char*>
     sql_constraint_names;
@@ -134,6 +134,6 @@ namespace lnav::sql {
 
 auto_mem<char, sqlite3_free> mprintf(const char* fmt, ...);
 
-}
+}  // namespace lnav::sql
 
 #endif

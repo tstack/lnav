@@ -373,7 +373,8 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
             readline_regex_highlighter(content, std::nullopt);
             break;
         case filter_lang_t::SQL:
-            readline_sqlite_highlighter(content, std::nullopt);
+            readline_sql_highlighter(
+                content, lnav::sql::dialect::sqlite, std::nullopt);
             break;
         case filter_lang_t::NONE:
             break;

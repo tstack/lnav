@@ -1072,7 +1072,8 @@ com_mark_expr(exec_context& ec,
             = attr_line_t(expr)
                   .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
                   .move();
-        readline_sqlite_highlighter(expr_al, std::nullopt);
+        readline_sql_highlighter(
+            expr_al, lnav::sql::dialect::sqlite, std::nullopt);
         auto um = lnav::console::user_message::error(
                       attr_line_t("invalid mark expression: ").append(expr_al))
                       .with_reason(errmsg)
@@ -1374,7 +1375,8 @@ com_filter_expr(exec_context& ec,
                 = attr_line_t(expr)
                       .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
                       .move();
-            readline_sqlite_highlighter(expr_al, std::nullopt);
+            readline_sql_highlighter(
+                expr_al, lnav::sql::dialect::sqlite, std::nullopt);
             auto um = lnav::console::user_message::error(
                           attr_line_t("invalid filter expression: ")
                               .append(expr_al))

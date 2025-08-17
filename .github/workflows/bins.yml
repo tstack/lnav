@@ -308,6 +308,7 @@ jobs:
             NEWS.md
           if-no-files-found: error
       - name: sign
+        if: ${{ inputs.upload_url != '' }}
         uses: signpath/github-action-submit-signing-request@v1.1
         env:
           # select release-signing policy for main and release branches
@@ -325,12 +326,14 @@ jobs:
           output-artifact-directory: 'lnav-signed'
       - name: upload-signed-artifact
         id: upload-signed-artifact
+        if: ${{ inputs.upload_url != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: lnav-signed-windows-${{ matrix.arch }}.zip
           path: "lnav-signed"
           if-no-files-found: error
       - name: "Produce zip"
+        if: ${{ inputs.upload_url != '' }}
         run: |
           set -x
           cp lnav-signed/bin/* ../lnav-build/${{ env.LNAV_BASENAME }}/bin/

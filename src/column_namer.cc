@@ -56,8 +56,9 @@ column_namer::existing_name(const string_fragment& in_name) const
         case language::SQL: {
             auto upped = toupper(in_name.to_string());
 
-            if (std::binary_search(
-                    std::begin(sql_keywords), std::end(sql_keywords), upped))
+            if (std::binary_search(std::begin(sqlite_keywords),
+                                   std::end(sqlite_keywords),
+                                   upped))
             {
                 return true;
             }

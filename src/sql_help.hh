@@ -54,16 +54,20 @@ extern const string_attr_type<void> SQL_COMMA_ATTR;
 extern const string_attr_type<void> SQL_GARBAGE_ATTR;
 extern const string_attr_type<void> SQL_COMMENT_ATTR;
 
-void annotate_sql_statement(attr_line_t& al_inout);
-
 extern std::multimap<std::string, const help_text*> sqlite_function_help;
 
-std::string sql_keyword_re();
 std::vector<const help_text*> find_sql_help_for_line(const attr_line_t& al,
                                                      size_t x);
 
 namespace lnav {
 namespace sql {
+
+enum class dialect {
+    sql,
+    sqlite,
+    plpgsql,
+    prql,
+};
 
 extern const string_attr_type<void> PRQL_STAGE_ATTR;
 extern const string_attr_type<void> PRQL_TRANSFORM_ATTR;
@@ -96,5 +100,7 @@ std::string quote_ident(std::string id);
 }  // namespace prql
 
 }  // namespace lnav
+
+void annotate_sql_statement(attr_line_t& al_inout, lnav::sql::dialect dia);
 
 #endif

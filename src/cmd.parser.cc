@@ -102,7 +102,7 @@ parsed::arg_at(int x) const
                         auto al = attr_line_t(se.se_value);
                         auto al_x = x - se.se_origin.sf_begin;
 
-                        annotate_sql_statement(al);
+                        annotate_sql_statement(al, lnav::sql::dialect::sqlite);
                         for (const auto& attr : al.al_attrs) {
                             if (al_x < attr.sa_range.lr_start
                                 || attr.sa_range.lr_end < al_x)

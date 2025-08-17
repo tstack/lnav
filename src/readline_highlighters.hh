@@ -33,16 +33,21 @@
 #define readline_highlighters_hh
 
 #include "base/attr_line.hh"
+#include "sql.formatter.hh"
+#include "sql_help.hh"
 #include "text_format.hh"
 
 void readline_regex_highlighter(attr_line_t& line, std::optional<int> x);
 
 void readline_command_highlighter(attr_line_t& line, std::optional<int> x);
 
-void readline_sqlite_highlighter_int(attr_line_t& line,
-                                     std::optional<int> x,
-                                     line_range sub);
-void readline_sqlite_highlighter(attr_line_t& line, std::optional<int> x);
+void readline_sql_highlighter_int(attr_line_t& line,
+                                  lnav::sql::dialect dia,
+                                  std::optional<int> x,
+                                  line_range sub);
+void readline_sql_highlighter(attr_line_t& line,
+                              lnav::sql::dialect dia,
+                              std::optional<int> x);
 
 void readline_shlex_highlighter_int(attr_line_t& al,
                                     std::optional<int> x,

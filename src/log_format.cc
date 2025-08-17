@@ -3706,7 +3706,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                   .with_attr_for_all(
                                       VC_ROLE.value(role_t::VCR_QUOTED_CODE))
                                   .move();
-                readline_sqlite_highlighter(sql_al, std::nullopt);
+                readline_sql_highlighter(
+                    sql_al, lnav::sql::dialect::sqlite, std::nullopt);
                 intern_string_t watch_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/{}/converter/header/expr/{}"),
                                 this->elf_name,
@@ -4323,8 +4324,7 @@ public:
                         return false;
                     }
                     this->elt_container_body.ltrim(line.get_data());
-                    mod_name_range
-                        = find_string_attr_range(sa, &L_MODULE);
+                    mod_name_range = find_string_attr_range(sa, &L_MODULE);
                     if (!mod_name_range.is_valid()) {
                         return false;
                     }

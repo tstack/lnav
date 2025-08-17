@@ -29,6 +29,7 @@
  * @file sql_util.cc
  */
 
+#include <array>
 #include <regex>
 #include <vector>
 
@@ -39,6 +40,7 @@
 #include <string.h>
 
 #include "base/auto_mem.hh"
+#include "base/from_trait.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
@@ -54,10 +56,577 @@
 
 using namespace lnav::roles::literals;
 
+constexpr std::array<const char*, 564> pg_sql_keywords = {
+    "ABORT",
+    "ABS",
+    "ACCESSIBLE",
+    "ACTION",
+    "ADD",
+    "ADMIN",
+    "AFTER",
+    "AGGREGATE",
+    "ALIAS",
+    "ALL",
+    "ALLOCATE",
+    "ALTER",
+    "ALWAYS",
+    "ANALYSE",
+    "ANALYZE",
+    "AND",
+    "ANY",
+    "ARE",
+    "ARRAY",
+    "AS",
+    "ASC",
+    "ASENSITIVE",
+    "ASSERTION",
+    "ASSIGNMENT",
+    "ASYMMETRIC",
+    "AT",
+    "ATOMIC",
+    "ATTRIBUTE",
+    "ATTRIBUTES",
+    "AUDIT",
+    "AUTHORIZATION",
+    "AVG",
+    "BEFORE",
+    "BEGIN",
+    "BERNOULLI",
+    "BETWEEN",
+    "BIGINT",
+    "BINARY",
+    "BIT",
+    "BLOB",
+    "BOOLEAN",
+    "BOTH",
+    "BREADTH",
+    "BY",
+    "CALL",
+    "CALLED",
+    "CARDINALITY",
+    "CASCADE",
+    "CASCADED",
+    "CASE",
+    "CAST",
+    "CATALOG",
+    "CATALOG_NAME",
+    "CEIL",
+    "CEILING",
+    "CHAR",
+    "CHARACTER",
+    "CHARACTER_LENGTH",
+    "CHARACTER_SET_CATALOG",
+    "CHARACTER_SET_NAME",
+    "CHARACTER_SET_SCHEMA",
+    "CHAR_LENGTH",
+    "CHECK",
+    "CLASS",
+    "CLASS_ORIGIN",
+    "CLOB",
+    "CLOSE",
+    "COALESCE",
+    "COLLATE",
+    "COLLATION",
+    "COLLATION_CATALOG",
+    "COLLATION_NAME",
+    "COLLATION_SCHEMA",
+    "COLLECT",
+    "COLUMN",
+    "COLUMN_NAME",
+    "COMMAND_FUNCTION",
+    "COMMAND_FUNCTION_CODE",
+    "COMMIT",
+    "COMMITTED",
+    "CONDITION",
+    "CONDITION_NUMBER",
+    "CONNECT",
+    "CONNECTION",
+    "CONNECTION_NAME",
+    "CONSTRAINT",
+    "CONSTRAINT_CATALOG",
+    "CONSTRAINT_NAME",
+    "CONSTRAINT_SCHEMA",
+    "CONSTRUCTORS",
+    "CONTAINS",
+    "CONTINUE",
+    "CONVERT",
+    "CORR",
+    "CORRESPONDING",
+    "COUNT",
+    "COVAR_POP",
+    "COVAR_SAMP",
+    "CREATE",
+    "CROSS",
+    "CUBE",
+    "CUME_DIST",
+    "CURRENT",
+    "CURRENT_CATALOG",
+    "CURRENT_DATE",
+    "CURRENT_DEFAULT_TRANSFORM_GROUP",
+    "CURRENT_PATH",
+    "CURRENT_ROLE",
+    "CURRENT_ROW",
+    "CURRENT_SCHEMA",
+    "CURRENT_TIME",
+    "CURRENT_TIMESTAMP",
+    "CURRENT_TRANSFORM_GROUP_FOR_TYPE",
+    "CURRENT_USER",
+    "CURSOR",
+    "CURSOR_NAME",
+    "CYCLE",
+    "DATA",
+    "DATABASE",
+    "DATE",
+    "DATETIME_INTERVAL_CODE",
+    "DATETIME_INTERVAL_PRECISION",
+    "DAY",
+    "DEALLOCATE",
+    "DEC",
+    "DECIMAL",
+    "DECLARE",
+    "DEFAULT",
+    "DEFAULTS",
+    "DEFERRABLE",
+    "DEFERRED",
+    "DEFINED",
+    "DEFINER",
+    "DEGREE",
+    "DELETE",
+    "DENSE_RANK",
+    "DEPTH",
+    "DEREF",
+    "DESC",
+    "DESCRIBE",
+    "DESCRIPTOR",
+    "DETERMINISTIC",
+    "DIAGNOSTICS",
+    "DISCONNECT",
+    "DISPATCH",
+    "DISTINCT",
+    "DO",
+    "DOMAIN",
+    "DOUBLE",
+    "DROP",
+    "DYNAMIC",
+    "DYNAMIC_FUNCTION",
+    "DYNAMIC_FUNCTION_CODE",
+    "EACH",
+    "ELEMENT",
+    "ELSE",
+    "END",
+    "END_FRAME",
+    "END_OF_CHAIN",
+    "EQUALS",
+    "ESCAPE",
+    "EVERY",
+    "EXCEPT",
+    "EXCEPTION",
+    "EXCLUDE",
+    "EXCLUDING",
+    "EXEC",
+    "EXECUTE",
+    "EXISTS",
+    "EXP",
+    "EXPLAIN",
+    "EXTEND",
+    "EXTERNAL",
+    "EXTRACT",
+    "FALSE",
+    "FAMILY",
+    "FETCH",
+    "FILE",
+    "FINAL",
+    "FIRST",
+    "FIRST_VALUE",
+    "FLAG",
+    "FLOAT",
+    "FLOOR",
+    "FOLLOWING",
+    "FOR",
+    "FOREIGN",
+    "FORTRAN",
+    "FOUND",
+    "FRAME_ROW",
+    "FREE",
+    "FREEZE",
+    "FROM",
+    "FULL",
+    "FUNCTION",
+    "FUSION",
+    "GENERAL",
+    "GENERATED",
+    "GET",
+    "GLOBAL",
+    "GO",
+    "GOTO",
+    "GRANT",
+    "GRANTED",
+    "GROUP",
+    "GROUPING",
+    "GROUPS",
+    "HAVING",
+    "HOLD",
+    "HOUR",
+    "IDENTITY",
+    "IF",
+    "IGNORE",
+    "ILIKE",
+    "IMMEDIATE",
+    "IMMEDIATELY",
+    "IMPLEMENTATION",
+    "IMPLICIT",
+    "IN",
+    "INCLUDING",
+    "INCREMENT",
+    "INDICATOR",
+    "INHERIT",
+    "INITIALLY",
+    "INNER",
+    "INOUT",
+    "INPUT",
+    "INSENSITIVE",
+    "INSERT",
+    "INSTANCE",
+    "INSTANTIABLE",
+    "INT",
+    "INTEGER",
+    "INTEGRITY",
+    "INTERSECT",
+    "INTERVAL",
+    "INTO",
+    "INVOKER",
+    "IS",
+    "ISNULL",
+    "ISOLATION",
+    "JAVA",
+    "JOIN",
+    "KEY",
+    "KEY_MEMBER",
+    "KEY_TYPE",
+    "LAG",
+    "LANGUAGE",
+    "LARGE",
+    "LAST",
+    "LAST_VALUE",
+    "LATERAL",
+    "LEAD",
+    "LEADING",
+    "LEFT",
+    "LENGTH",
+    "LEVEL",
+    "LIKE",
+    "LIKE_REGEX",
+    "LIMIT",
+    "LN",
+    "LOCAL",
+    "LOCALTIME",
+    "LOCALTIMESTAMP",
+    "LOCATOR",
+    "LOWER",
+    "MAP",
+    "MATCH",
+    "MATCHED",
+    "MAX",
+    "MAX_CARDINALITY",
+    "MEMBER",
+    "MERGE",
+    "MESSAGE_LENGTH",
+    "MESSAGE_OCTET_LENGTH",
+    "MESSAGE_TEXT",
+    "METHOD",
+    "MIN",
+    "MINUTE",
+    "MOD",
+    "MODIFIES",
+    "MODULE",
+    "MONTH",
+    "MULTISET",
+    "NAME",
+    "NAMES",
+    "NATIONAL",
+    "NATURAL",
+    "NCHAR",
+    "NCLOB",
+    "NEW",
+    "NEXT",
+    "NO",
+    "NONE",
+    "NORMALIZE",
+    "NORMALIZED",
+    "NOT",
+    "NOTNULL",
+    "NTH_VALUE",
+    "NULL",
+    "NULLABLE",
+    "NULLIF",
+    "NULLS",
+    "NUMBER",
+    "NUMERIC",
+    "OBJECT",
+    "OCTET_LENGTH",
+    "OF",
+    "OFF",
+    "OFFSET",
+    "OLD",
+    "ON",
+    "ONLY",
+    "OPEN",
+    "OPERATION",
+    "OPTION",
+    "ORDINALITY",
+    "ORDER",
+    "ORDERING",
+    "ORIENTATION",
+    "ORIGIN",
+    "OUT",
+    "OUTER",
+    "OUTPUT",
+    "OVER",
+    "OVERLAPS",
+    "OVERLAY",
+    "PAD",
+    "PARAMETER",
+    "PARAMETER_MODE",
+    "PARAMETER_NAME",
+    "PARAMETER_ORDINAL_POSITION",
+    "PARAMETER_SPECIFIC_CATALOG",
+    "PARAMETER_SPECIFIC_NAME",
+    "PARAMETER_SPECIFIC_SCHEMA",
+    "PARTIAL",
+    "PARTITION",
+    "PASCAL",
+    "PATH",
+    "PERCENT_RANK",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "PERIOD",
+    "PG_CATALOG",
+    "PG_CLIENT",
+    "PG_EXTENSION",
+    "PG_GET_KEYWORDS",
+    "PG_IS_TEMP_SCHEMA",
+    "PG_IS_TEMP_SCHE",
+    "PG_LAST_WAL_RECEIVE_LOCATION",
+    "PG_LAST_WAL_REPLAY_LOCATION",
+    "PG_LISTEN",
+    "PG_NOTIFY",
+    "PG_RELATION_SIZE",
+    "PG_SLEEP",
+    "PG_TABLE_SIZE",
+    "PG_TRY_ADVISORY_LOCK",
+    "PG_TRY_ADVISORY_UNLOCK",
+    "PG_TYPEOF",
+    "PG_UNLISTEN",
+    "PG_WAL_LSN_DIFF",
+    "PG_WAL_REPLAY_PAUSED",
+    "PG_XLOG_LOCATION_DIFF",
+    "PG_XLOG_REPLAY_PAUSED",
+    "PG_XLOG_REPLAY_WAIT",
+    "PLACING",
+    "PLI",
+    "PORTION",
+    "POSITION",
+    "POWER",
+    "PRECEDES",
+    "PRECISION",
+    "PREPARE",
+    "PRESERVE",
+    "PRIMARY",
+    "PRIOR",
+    "PRIVILEGES",
+    "PROCEDURE",
+    "PUBLIC",
+    "RANGE",
+    "RANK",
+    "READ",
+    "READS",
+    "REAL",
+    "RECURSIVE",
+    "REF",
+    "REFERENCES",
+    "REFERENCING",
+    "REGR_AVGX",
+    "REGR_AVGY",
+    "REGR_COUNT",
+    "REGR_INTERCEPT",
+    "REGR_R2",
+    "REGR_SLOPE",
+    "REGR_SXX",
+    "REGR_SXY",
+    "REGR_SYY",
+    "RELATIVE",
+    "RELEASE",
+    "REPEATABLE",
+    "REPLACE",
+    "RESPECT",
+    "RESTART",
+    "RESTRICT",
+    "RETURN",
+    "RETURNED_CARDINALITY",
+    "RETURNED_LENGTH",
+    "RETURNED_OCTET_LENGTH",
+    "RETURNED_SQLSTATE",
+    "RETURNING",
+    "REVOKE",
+    "RIGHT",
+    "ROLLBACK",
+    "ROLLUP",
+    "ROUTINE",
+    "ROUTINE_CATALOG",
+    "ROUTINE_NAME",
+    "ROUTINE_SCHEMA",
+    "ROW",
+    "ROW_COUNT",
+    "ROW_NUMBER",
+    "ROWS",
+    "SAVEPOINT",
+    "SCHEMA",
+    "SCHEMA_NAME",
+    "SCOPE",
+    "SCOPE_CATALOG",
+    "SCOPE_NAME",
+    "SCOPE_SCHEMA",
+    "SCROLL",
+    "SEARCH",
+    "SECOND",
+    "SECTION",
+    "SECURITY",
+    "SELECT",
+    "SELF",
+    "SENSITIVE",
+    "SEQUENCE",
+    "SERIALIZABLE",
+    "SERVER_NAME",
+    "SESSION",
+    "SESSION_USER",
+    "SET",
+    "SETS",
+    "SIMILAR",
+    "SIZE",
+    "SMALLINT",
+    "SOME",
+    "SPACE",
+    "SPECIFIC",
+    "SPECIFIC_NAME",
+    "SPECIFIC_SCHEMA",
+    "SPECIFICTYPE",
+    "SQL",
+    "SQLCODE",
+    "SQLERROR",
+    "SQLEXCEPTION",
+    "SQLSTATE",
+    "SQLWARNING",
+    "SQRT",
+    "START",
+    "STATE",
+    "STATEMENT",
+    "STATIC",
+    "STDDEV_POP",
+    "STDDEV_SAMP",
+    "STRUCTURE",
+    "STYLE",
+    "SUBCLASS_ORIGIN",
+    "SUBMULTISET",
+    "SUBSTRING",
+    "SUM",
+    "SYMMETRIC",
+    "SYSTEM",
+    "SYSTEM_USER",
+    "TABLE",
+    "TABLE_NAME",
+    "TABLESAMPLE",
+    "TEMPORARY",
+    "THEN",
+    "TIES",
+    "TIME",
+    "TIMESTAMP",
+    "TIMESTAMPADD",
+    "TIMESTAMPDIFF",
+    "TIMEZONE_HOUR",
+    "TIMEZONE_MINUTE",
+    "TO",
+    "TOP",
+    "TRAILING",
+    "TRANSACTION",
+    "TRANSACTIONS_COMMITTED",
+    "TRANSACTIONS_ROLLED_BACK",
+    "TRANSACTION_ACTIVE",
+    "TRANSFORM",
+    "TRANSFORMS",
+    "TRANSLATE",
+    "TRANSLATION",
+    "TREAT",
+    "TRIGGER",
+    "TRIGGER_CATALOG",
+    "TRIGGER_NAME",
+    "TRIGGER_SCHEMA",
+    "TRIM",
+    "TRUE",
+    "TRUNCATE",
+    "UNBOUNDED",
+    "UNCOMMITTED",
+    "UNDER",
+    "UNION",
+    "UNIQUE",
+    "UNKNOWN",
+    "UNLISTEN",
+    "UNNAMED",
+    "UNNEST",
+    "UNTIL",
+    "UPDATE",
+    "UPPER",
+    "USAGE",
+    "USER",
+    "USER_DEFINED_TYPE_CATALOG",
+    "USER_DEFINED_TYPE_CODE",
+    "USER_DEFINED_TYPE_NAME",
+    "USER_DEFINED_TYPE_SCHEMA",
+    "USING",
+    "VACUUM",
+    "VALID",
+    "VALUE",
+    "VALUES",
+    "VAR_POP",
+    "VAR_SAMP",
+    "VARCHAR",
+    "VARYING",
+    "VERBOSE",
+    "VERSION",
+    "VIEW",
+    "WHEN",
+    "WHENEVER",
+    "WHERE",
+    "WIDTH_BUCKET",
+    "WINDOW",
+    "WITH",
+    "WITHIN",
+    "WITHOUT",
+    "WORK",
+    "WRITE",
+    "XML",
+    "XMLAGG",
+    "XMLATTRIBUTES",
+    "XMLCONCAT",
+    "XMLELEMENT",
+    "XMLEXISTS",
+    "XMLFOREST",
+    "XMLPARSE",
+    "XMLPI",
+    "XMLQUERY",
+    "XMLROOT",
+    "XMLSERIALIZE",
+    "XMLTABLE",
+    "XMLTEXT",
+    "XMLVALIDATE",
+    "YEAR",
+    "YES",
+    "ZONE",
+};
+
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
  */
-const std::array<const char*, 145> sql_keywords = {
+constexpr std::array<const char*, 145> sqlite_keywords = {
     "ABORT",
     "ACTION",
     "ADD",
@@ -675,7 +1244,8 @@ annotate_sql_with_error(sqlite3* db, const char* sql, const char* tail)
         retval.append("\n");
     }
     retval.with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-    readline_sqlite_highlighter(retval, retval.length());
+    readline_sql_highlighter(
+        retval, lnav::sql::dialect::sqlite, retval.length());
 
     if (erroff != -1) {
         auto line_with_error
@@ -982,22 +1552,38 @@ sqlite3_errmsg_to_attr_line(sqlite3* db)
     return attr_line_t(errmsg);
 }
 
-std::string
-sql_keyword_re()
+static void
+append_kw(std::string& retval, bool& first, const char* kw)
+{
+    if (!first) {
+        retval.append("|");
+    } else {
+        first = false;
+    }
+    retval.append("\\b");
+    retval.append(kw);
+    retval.append("\\b");
+}
+
+static std::string
+sql_keyword_re(lnav::sql::dialect dia)
 {
     std::string retval = "(?:";
-    bool first = true;
+    auto first = true;
 
-    for (const char* kw : sql_keywords) {
-        if (!first) {
-            retval.append("|");
-        } else {
-            first = false;
-        }
-        retval.append("\\b");
-        retval.append(kw);
-        retval.append("\\b");
+    switch (dia) {
+        case lnav::sql::dialect::sqlite:
+            for (const char* kw : sqlite_keywords) {
+                append_kw(retval, first, kw);
+            }
+            break;
+        default:
+            for (const char* kw : pg_sql_keywords) {
+                append_kw(retval, first, kw);
+            }
+            break;
     }
+
     retval += ")";
 
     return retval;
@@ -1017,9 +1603,18 @@ constexpr string_attr_type<void> SQL_GARBAGE_ATTR("sql_garbage");
 constexpr string_attr_type<void> SQL_COMMENT_ATTR("sql_comment");
 
 void
-annotate_sql_statement(attr_line_t& al)
+annotate_sql_statement(attr_line_t& al, lnav::sql::dialect dia)
 {
-    static const std::string keyword_re_str = R"(\A)" + sql_keyword_re();
+    static const std::string sqlite_keyword_re_str
+        = R"(\A)" + sql_keyword_re(lnav::sql::dialect::sqlite);
+    static const auto sqlite_keyword_re
+        = lnav::pcre2pp::code::from(sqlite_keyword_re_str, PCRE2_CASELESS)
+              .unwrap();
+    static const std::string sql_keyword_re_str
+        = R"(\A)" + sql_keyword_re(lnav::sql::dialect::sql);
+    static const auto sql_keyword_re
+        = lnav::pcre2pp::code::from(sql_keyword_re_str, PCRE2_CASELESS)
+              .unwrap();
 
     static const struct {
         lnav::pcre2pp::code re;
@@ -1032,10 +1627,6 @@ annotate_sql_statement(attr_line_t& al)
         {
             lnav::pcre2pp::code::from_const(R"(\A\(|\A\))"),
             &SQL_PAREN_ATTR,
-        },
-        {
-            lnav::pcre2pp::code::from(keyword_re_str, PCRE2_CASELESS).unwrap(),
-            &SQL_KEYWORD_ATTR,
         },
         {
             lnav::pcre2pp::code::from_const(
@@ -1067,7 +1658,7 @@ annotate_sql_statement(attr_line_t& al)
         },
         {
             lnav::pcre2pp::code::from_const(
-                R"(\A(~|\*|\->{1,2}|<=|>=|<<|>>|<>|<|>|={1,2}|!=|!|\-|\+|\|\|))"),
+                R"(\A(~|%|\*|\->{1,2}|<=|>=|<<|>>|<>|<|>|={1,2}|!=|!|\-|\+|\|\|{1,2}|&|::))"),
             &SQL_OPERATOR_ATTR,
         },
         {
@@ -1106,6 +1697,16 @@ annotate_sql_statement(attr_line_t& al)
         auto ws_find_res = ws_pattern.find_in(remaining).ignore_error();
         if (ws_find_res) {
             remaining = ws_find_res->f_remaining;
+            continue;
+        }
+        const auto& kw_pat = dia == lnav::sql::dialect::sqlite
+            ? sqlite_keyword_re
+            : sql_keyword_re;
+        auto kw_pat_find_res = kw_pat.find_in(remaining).ignore_error();
+        if (kw_pat_find_res) {
+            sa.emplace_back(to_line_range(kw_pat_find_res->f_all),
+                            SQL_KEYWORD_ATTR.value());
+            remaining = kw_pat_find_res->f_remaining;
             continue;
         }
         for (const auto& pat : PATTERNS) {
@@ -1275,6 +1876,25 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
     }
 
     return retval;
+}
+
+template<>
+Result<lnav::sql::dialect, std::string>
+from(string_fragment sf)
+{
+    if (sf == "sql"_frag) {
+        return Ok(lnav::sql::dialect::sql);
+    }
+    if (sf == "sqlite"_frag) {
+        return Ok(lnav::sql::dialect::sqlite);
+    }
+    if (sf == "plpgsql"_frag) {
+        return Ok(lnav::sql::dialect::plpgsql);
+    }
+    if (sf == "prql"_frag) {
+        return Ok(lnav::sql::dialect::prql);
+    }
+    return Err(fmt::format(FMT_STRING("unknown SQL dialect: {}"), sf));
 }
 
 namespace lnav {

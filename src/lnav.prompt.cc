@@ -437,7 +437,7 @@ prompt::rl_reformat(textinput_curses& tc)
     switch (tc.tc_prefix.al_string.front()) {
         case ';': {
             auto content = attr_line_t(tc.get_content());
-            annotate_sql_statement(content);
+            annotate_sql_statement(content, lnav::sql::dialect::sqlite);
             auto format_res = lnav::db::format(content, tc.get_cursor_offset());
             tc.set_content(format_res.fr_content);
             if (tc.tc_height == 1) {
@@ -493,7 +493,8 @@ prompt::rl_history(textinput_curses& tc)
                 al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
             case ';':
-                readline_sqlite_highlighter(al, std::nullopt);
+                readline_sql_highlighter(
+                    al, lnav::sql::dialect::sqlite, std::nullopt);
                 al.insert(0, "  ");
                 al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
@@ -1015,7 +1016,9 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     if (parent.empty()) {
                         parent = ".";
                     }
-                    if (!parent.has_root_name() || !parent.root_directory().empty()) {
+                    if (!parent.has_root_name()
+                        || !parent.root_directory().empty())
+                    {
                         log_trace("completing directory: %s", parent.c_str());
                         for (const auto& entry :
                              std::filesystem::directory_iterator(parent, ec))
@@ -1025,14 +1028,16 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             if (entry.is_directory()) {
                                 path_str.push_back('/');
                             } else if (ht->ht_format
-                                       == help_parameter_format_t::HPF_DIRECTORY)
+                                       == help_parameter_format_t::
+                                           HPF_DIRECTORY)
                             {
                                 continue;
                             }
                             path_str = str_as_path.to_native(path_str);
                             poss_paths.emplace(std::move(path_str));
                         }
-                        if (ht->ht_format == help_parameter_format_t::HPF_DIRECTORY
+                        if (ht->ht_format
+                                == help_parameter_format_t::HPF_DIRECTORY
                             && !ec)
                         {
                             auto path_str = parent.string();

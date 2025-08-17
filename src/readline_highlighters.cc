@@ -203,8 +203,11 @@ readline_command_highlighter_int(attr_line_t& al,
                 al, x, line_range{(int) ws_index, sub.lr_end});
         }
         if (SQL_PREFIXES.find_in(in_frag).ignore_error()) {
-            readline_sqlite_highlighter_int(
-                al, x, line_range{(int) ws_index, sub.lr_end});
+            readline_sql_highlighter_int(
+                al,
+                lnav::sql::dialect::sqlite,
+                x,
+                line_range{(int) ws_index, sub.lr_end});
         }
     }
     if (COLOR_PREFIXES.find_in(in_frag).ignore_error()) {
@@ -274,9 +277,10 @@ readline_command_highlighter(attr_line_t& al, std::optional<int> x)
 }
 
 void
-readline_sqlite_highlighter_int(attr_line_t& al,
-                                std::optional<int> x,
-                                line_range sub)
+readline_sql_highlighter_int(attr_line_t& al,
+                             lnav::sql::dialect dia,
+                             std::optional<int> x,
+                             line_range sub)
 {
     static const char* brackets[] = {
         "[]",
@@ -289,7 +293,7 @@ readline_sqlite_highlighter_int(attr_line_t& al,
 
     auto anno_sql = al.subline(sub.lr_start, sub.length());
     anno_sql.get_attrs().clear();
-    annotate_sql_statement(anno_sql);
+    annotate_sql_statement(anno_sql, dia);
 
     for (const auto& attr : anno_sql.al_attrs) {
         auto lr = line_range{
@@ -357,10 +361,12 @@ readline_sqlite_highlighter_int(attr_line_t& al,
 }
 
 void
-readline_sqlite_highlighter(attr_line_t& al, std::optional<int> x)
+readline_sql_highlighter(attr_line_t& al,
+                         lnav::sql::dialect dia,
+                         std::optional<int> x)
 {
-    readline_sqlite_highlighter_int(
-        al, x, line_range{0, (int) al.get_string().length()});
+    readline_sql_highlighter_int(
+        al, dia, x, line_range{0, (int) al.get_string().length()});
 }
 
 void
@@ -468,12 +474,13 @@ readline_lnav_highlighter_int(attr_line_t& al,
             readline_command_highlighter_int(al, x, sub);
             break;
         case ';':
-            readline_sqlite_highlighter_int(al,
-                                            x,
-                                            line_range{
-                                                sub.lr_start + 1,
-                                                sub.lr_end,
-                                            });
+            readline_sql_highlighter_int(al,
+                                         lnav::sql::dialect::sqlite,
+                                         x,
+                                         line_range{
+                                             sub.lr_start + 1,
+                                             sub.lr_end,
+                                         });
             break;
         case '|':
             break;
@@ -564,7 +571,7 @@ highlight_syntax(text_format_t tf, attr_line_t& al, std::optional<int> x)
 {
     switch (tf) {
         case text_format_t::TF_SQL: {
-            readline_sqlite_highlighter(al, x);
+            readline_sql_highlighter(al, lnav::sql::dialect::sqlite, x);
             break;
         }
         case text_format_t::TF_PCRE: {

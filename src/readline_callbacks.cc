@@ -172,7 +172,8 @@ format_sql_example(const char* sql_example_fmt)
         const auto* format_name = lf->get_format()->get_name().get();
 
         retval.with_ansi_string(sql_example_fmt, format_name, format_name);
-        readline_sqlite_highlighter(retval, std::nullopt);
+        readline_sql_highlighter(
+            retval, lnav::sql::dialect::sqlite, std::nullopt);
     }
     return retval;
 }
@@ -214,7 +215,7 @@ rl_sql_help(textinput_curses& rc)
         x -= 1;
     }
 
-    annotate_sql_statement(al);
+    annotate_sql_statement(al, lnav::sql::dialect::sqlite);
 
     auto avail_help = find_sql_help_for_line(al, x);
     auto lang = help_example::language::undefined;
@@ -688,7 +689,7 @@ rl_sql_change(textinput_curses& rc, bool is_req)
         clear_preview();
 
         auto anno_line = rc.tc_lines[rc.tc_cursor.y];
-        annotate_sql_statement(anno_line);
+        annotate_sql_statement(anno_line, lnav::sql::dialect::sqlite);
         auto cursor_offset = anno_line.column_to_byte_index(rc.tc_cursor.x);
 
         auto attr_iter = rfind_string_attr_if(
@@ -1099,7 +1100,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 
                 auto orig_prql_stmt = attr_line_t(term_val);
                 orig_prql_stmt.rtrim("| \r\n\t");
-                annotate_sql_statement(orig_prql_stmt);
+                lnav::sql::annotate_prql_statement(orig_prql_stmt);
 
                 auto cursor_x = rc.get_cursor_offset();
                 if (cursor_x >= orig_prql_stmt.get_string().length()) {

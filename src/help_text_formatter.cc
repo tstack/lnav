@@ -644,7 +644,8 @@ format_example_text_for_term(const help_text& ht,
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
             case help_context_t::HC_PRQL_TRANSFORM:
             case help_context_t::HC_PRQL_FUNCTION:
-                readline_sqlite_highlighter(ex_line, std::nullopt);
+                readline_sql_highlighter(
+                    ex_line, lnav::sql::dialect::sqlite, std::nullopt);
                 prompt = ";";
                 break;
             default:

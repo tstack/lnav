@@ -4,7 +4,7 @@
 #
 
 ;SELECT
-   '```sql' || char(10) || substr(stmt_body, 1, CASE WHEN error_line_end > 0 THEN char_offset + error_line_end ELSE length(stmt_body) END) || char(10) || '```' || char(10) ||
+   '```plpgsql' || char(10) || substr(stmt_body, 1, CASE WHEN error_line_end > 0 THEN char_offset + error_line_end ELSE length(stmt_body) END) || char(10) || '```' || char(10) ||
    '> <span style="white-space: nowrap">' || replicate(' ', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '<span class="-lnav_log-level-styles_error">' || replicate('^', coalesce(length(token), 1)) || '</span> ' || err_body || '</span>' || char(10) AS content
  FROM (
    SELECT

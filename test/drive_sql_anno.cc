@@ -57,7 +57,7 @@ main(int argc, char* argv[])
 
         auto al = attr_line_t(argv[1]);
 
-        annotate_sql_statement(al);
+        annotate_sql_statement(al, lnav::sql::dialect::sqlite);
 
         for (const auto& line_al : al.split_lines()) {
             printf("  %14s %s\n", " ", line_al.al_string.c_str());

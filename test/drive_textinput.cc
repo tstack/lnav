@@ -384,7 +384,8 @@ main(int argc, char** argv)
             auto poss_set = tc.tc_doc_meta.m_words;
             switch (tc.tc_text_format) {
                 case text_format_t::TF_SQL: {
-                    poss_set = lnav::itertools::chain(poss_set, sql_keywords);
+                    poss_set
+                        = lnav::itertools::chain(poss_set, sqlite_keywords);
                     break;
                 }
                 default:

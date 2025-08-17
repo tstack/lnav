@@ -400,7 +400,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             this->fos_row_to_field_meta.emplace(
                 this->fos_lines.size(), row_info{std::nullopt, value_str});
         }
-        readline_sqlite_highlighter_int(al, std::nullopt, hl_range);
+        readline_sql_highlighter_int(
+            al, lnav::sql::dialect::sqlite, std::nullopt, hl_range);
 
         al.append(" = ").append(scrub_ws(value_str.c_str()));
 
@@ -436,7 +437,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                             .append(qname.in())
                             .append(")")
                             .move();
-        readline_sqlite_highlighter(key_line, std::nullopt);
+        readline_sql_highlighter(
+            key_line, lnav::sql::dialect::sqlite, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(extra_pair.second));
         this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
@@ -456,7 +458,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                                 .append(this->fos_log_helper.format_json_getter(
                                     jpairs_map.first, lpc))
                                 .move();
-            readline_sqlite_highlighter(key_line, std::nullopt);
+            readline_sql_highlighter(
+                key_line, lnav::sql::dialect::sqlite, std::nullopt);
             auto key_size = key_line.length();
             key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
             this->fos_row_to_field_meta.emplace(
@@ -479,7 +482,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             this->fos_log_helper.ldh_file->get_format()->get_name().c_str(),
             qname.in());
         auto key_line = attr_line_t("   ").append(xp_call.in()).move();
-        readline_sqlite_highlighter(key_line, std::nullopt);
+        readline_sql_highlighter(
+            key_line, lnav::sql::dialect::sqlite, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(xml_pair.second));
         this->fos_row_to_field_meta.emplace(
