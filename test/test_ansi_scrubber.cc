@@ -49,6 +49,42 @@ main(int argc, char* argv[])
     printf("BEGIN test\n");
 
     {
+        auto input = std::string("\x1b[0;1;38:2:1:2:3mHello");
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == "Hello");
+        assert(sa.size() == 1);
+        assert(sa[0].sa_type == &VC_STYLE);
+        auto ta = sa[0].sa_value.get<text_attrs>();
+        auto rgb = ta.ta_fg_color.cu_value.get<rgb_color>();
+        assert(rgb.rc_r == 1);
+        assert(rgb.rc_g == 2);
+        assert(rgb.rc_b == 3);
+    }
+
+    {
+        auto input = std::string("\x1b[0;1;38:5:245mHello");
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == "Hello");
+        assert(sa.size() == 1);
+        assert(sa[0].sa_type == &VC_STYLE);
+        auto ta = sa[0].sa_value.get<text_attrs>();
+        assert(ta.ta_fg_color.cu_value.get<palette_color>()
+               == palette_color{245});
+    }
+
+    {
+        auto input = std::string("\x1b[0;1;38;5;245mHello");
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == "Hello");
+    }
+
+    {
         auto input = std::string("\x1b[66O\x1b[66O");
         string_attrs_t sa;
         scrub_ansi_string(input, &sa);
