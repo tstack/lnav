@@ -4,7 +4,7 @@
 #
 
 ;SELECT
-   '```plpgsql' || char(10) || substr(stmt_body, 1, CASE WHEN error_line_end > 0 THEN char_offset + error_line_end ELSE length(stmt_body) END) || char(10) || '```' || char(10) ||
+   '```plpgsql' || char(10) || substr(stmt_body, 1, error_line_end) || char(10) || '```' || char(10) ||
    '> <span style="white-space: nowrap">' || replicate(' ', CASE WHEN error_line_start > 1 THEN error_line_start - 2 ELSE char_offset - 1 END) || '<span class="-lnav_log-level-styles_error">' || replicate('^', coalesce(length(token), 1)) || '</span> ' || err_body || '</span>' || char(10) AS content
  FROM (
    SELECT
@@ -12,7 +12,7 @@
      err_body,
      char_offset,
      instr(reverse(substr(stmt_body, 1, char_offset)), char(10)) AS error_line_start,
-     instr(substr(stmt_body, char_offset), char(10)) AS error_line_end,
+     coalesce(char_offset + nullif(instr(substr(stmt_body, char_offset), char(10)), 0) - 1, length(stmt_body)) AS error_line_end,
      stmt_body
    FROM (
      SELECT
