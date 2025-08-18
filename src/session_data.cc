@@ -1940,14 +1940,14 @@ lnav::session::restore_view_states()
                 || tview.get_top() == tview.get_top_for_last_row()))
         {
             log_info("restoring %s view top: %d",
-                     lnav_view_strings[view_index],
+                     lnav_view_strings[view_index].data(),
                      vs.vs_top);
             tview.set_top(vis_line_t(vs.vs_top), true);
             tview.set_selection(-1_vl);
         }
         if (!has_loc && vs.vs_selection) {
             log_info("restoring %s view selection: %d",
-                     lnav_view_strings[view_index],
+                     lnav_view_strings[view_index].data(),
                      vs.vs_selection.value());
             tview.set_selection(vis_line_t(vs.vs_selection.value()));
         }
@@ -1957,7 +1957,7 @@ lnav::session::restore_view_states()
 
             if (!curr_anchor || curr_anchor.value() != vs.vs_anchor.value()) {
                 log_info("%s view anchor mismatch %s != %s",
-                         lnav_view_strings[view_index],
+                         lnav_view_strings[view_index].data(),
                          curr_anchor.value_or("").c_str(),
                          vs.vs_anchor.value().c_str());
 
@@ -1972,7 +1972,7 @@ lnav::session::restore_view_states()
             tview.set_selection(0_vl);
         }
         log_info("%s view actual top/selection: %d/%d",
-                 lnav_view_strings[view_index],
+                 lnav_view_strings[view_index].data(),
                  tview.get_top(),
                  tview.get_selection().value_or(-1_vl));
     }

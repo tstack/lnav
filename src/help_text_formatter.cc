@@ -515,7 +515,7 @@ format_help_text_for_term(const help_text& ht,
                     .append("Values"_h5)
                     .append(": ");
                 auto initial = true;
-                for (const auto* ename : param.ht_enum_values) {
+                for (const auto& ename : param.ht_enum_values) {
                     if (!initial) {
                         alb.append("|");
                     }

@@ -46,9 +46,9 @@ static const json_path_container header_demux_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t demux_output_values[] = {
-    {"not_applicable", demux_output_t::not_applicable},
-    {"signal", demux_output_t::signal},
-    {"invalid", demux_output_t::invalid},
+    {"not_applicable"_frag, demux_output_t::not_applicable},
+    {"signal"_frag, demux_output_t::signal},
+    {"invalid"_frag, demux_output_t::invalid},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

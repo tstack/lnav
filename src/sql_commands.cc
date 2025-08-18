@@ -613,11 +613,15 @@ static readline_context::command_t sql_commands[] = {
             .prql_transform()
             .with_tags({"prql"})
             .with_summary("PRQL transform to add columns from another table")
-            .with_parameter(
-                help_text{"side", "Specifies which rows to include"}
-                    .with_enum_values({"inner", "left", "right", "full"})
-                    .with_default_value("inner")
-                    .optional())
+            .with_parameter(help_text{"side", "Specifies which rows to include"}
+                                .with_enum_values({
+                                    "inner"_frag,
+                                    "left"_frag,
+                                    "right"_frag,
+                                    "full"_frag,
+                                })
+                                .with_default_value("inner")
+                                .optional())
             .with_parameter(
                 {"table", "The other table to join with the current rows"})
             .with_parameter(

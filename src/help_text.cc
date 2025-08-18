@@ -91,7 +91,7 @@ help_text::is_trailing_arg() const
 
 help_text&
 help_text::with_enum_values(
-    const std::initializer_list<const char*>& enum_values) noexcept
+    const std::initializer_list<string_fragment>& enum_values) noexcept
 {
     this->ht_enum_values = enum_values;
     return *this;

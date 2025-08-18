@@ -33,22 +33,22 @@
 
 [1m[36m#include[0m [35m"config.h"[0m
 
-[1m[36mconstexpr[0m std::array<const [1m[36mchar[0m*, [1mLEVEL__MAX[0m> [4mlevel_names[0m = {
-    [35m"unknown"[0m,
-    [35m"trace"[0m,
-    [35m"debug5"[0m,
-    [35m"debug4"[0m,
-    [35m"debug3"[0m,
-    [35m"debug2"[0m,
-    [35m"debug"[0m,
-    [35m"info"[0m,
-    [35m"stats"[0m,
-    [35m"notice"[0m,
-    [35m"warning"[0m,
-    [35m"error"[0m,
-    [35m"critical"[0m,
-    [35m"fatal"[0m,
-    [35m"invalid"[0m,
+[1m[36mconstexpr[0m std::array<string_fragment, [1mLEVEL__MAX[0m> [4mlevel_names[0m = {
+    [35m"unknown"[0m_frag,
+    [35m"trace"[0m_frag,
+    [35m"debug5"[0m_frag,
+    [35m"debug4"[0m_frag,
+    [35m"debug3"[0m_frag,
+    [35m"debug2"[0m_frag,
+    [35m"debug"[0m_frag,
+    [35m"info"[0m_frag,
+    [35m"stats"[0m_frag,
+    [35m"notice"[0m_frag,
+    [35m"warning"[0m_frag,
+    [35m"error"[0m_frag,
+    [35m"critical"[0m_frag,
+    [35m"fatal"[0m_frag,
+    [35m"invalid"[0m_frag,
 };
 
 log_level_t

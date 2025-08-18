@@ -512,13 +512,13 @@ register_fstat_vtab(sqlite3* db)
               .with_result({"st_ino", "The inode number"})
               .with_result(help_text{"st_type", "The type of the entry"}
                                .with_enum_values({
-                                   "reg",
-                                   "blk",
-                                   "chr",
-                                   "dir",
-                                   "fifo",
-                                   "lnk",
-                                   "sock",
+                                   "reg"_frag,
+                                   "blk"_frag,
+                                   "chr"_frag,
+                                   "dir"_frag,
+                                   "fifo"_frag,
+                                   "lnk"_frag,
+                                   "sock"_frag,
                                }))
               .with_result({"st_mode", "The protection mode"})
               .with_result(

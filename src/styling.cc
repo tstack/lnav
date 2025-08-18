@@ -56,9 +56,9 @@ static const json_path_container term_color_handler = {
 };
 
 static const json_path_handler_base::enum_value_t _align_values[] = {
-    {"start", text_align_t::start},
-    {"center", text_align_t::center},
-    {"end", text_align_t::end},
+    {"start"_frag, text_align_t::start},
+    {"center"_frag, text_align_t::center},
+    {"end"_frag, text_align_t::end},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

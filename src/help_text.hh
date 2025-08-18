@@ -35,6 +35,8 @@
 #include <string>
 #include <vector>
 
+#include "base/intern_string.hh"
+
 enum class help_context_t {
     HC_NONE,
     HC_PARAMETER,
@@ -120,7 +122,7 @@ struct help_text {
     std::vector<help_example> ht_example;
     help_nargs_t ht_nargs{help_nargs_t::HN_REQUIRED};
     help_parameter_format_t ht_format{help_parameter_format_t::HPF_STRING};
-    std::vector<const char*> ht_enum_values;
+    std::vector<string_fragment> ht_enum_values;
     std::vector<const char*> ht_tags;
     std::vector<const char*> ht_opposites;
     help_function_type_t ht_function_type{help_function_type_t::HFT_REGULAR};
@@ -274,21 +276,21 @@ struct help_text {
     bool is_trailing_arg() const;
 
     help_text& with_enum_values(
-        const std::initializer_list<const char*>& enum_values) noexcept;
+        const std::initializer_list<string_fragment>& enum_values) noexcept;
 
     template<std::size_t N>
     help_text& with_enum_values(
-        const std::array<const char*, N>& enum_values) noexcept
+        const std::array<string_fragment, N>& enum_values) noexcept
     {
         this->ht_enum_values.reserve(N);
-        for (const auto* val : enum_values) {
+        for (const auto& val : enum_values) {
             this->ht_enum_values.emplace_back(val);
         }
 
         return *this;
     }
 
-    help_text& with_enum_values(const std::vector<const char*>& ev)
+    help_text& with_enum_values(const std::vector<string_fragment>& ev)
     {
         this->ht_enum_values = ev;
         return *this;

@@ -109,17 +109,17 @@ bookmark_type_t::get_all_types()
     return all_types;
 }
 
-std::vector<const char*>
+std::vector<string_fragment>
 bookmark_type_t::get_type_names()
 {
-    std::vector<const char*> retval;
+    std::vector<string_fragment> retval;
 
     for (const auto& bt : get_all_types()) {
-        retval.emplace_back(bt->get_name().data());
+        retval.emplace_back(bt->get_name());
     }
     std::stable_sort(
-        retval.begin(), retval.end(), [](const char* lhs, const char* rhs) {
-            return strcmp(lhs, rhs) < 0;
+        retval.begin(), retval.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs < rhs;
         });
     return retval;
 }

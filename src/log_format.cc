@@ -2575,8 +2575,7 @@ external_log_format::get_subline(const logline& ll,
                                                              str.size(),
                                                              jfe.jfe_max_width);
                                         str.resize(new_size);
-                                        this->json_append(
-                                            jfe, vd, str.data(), str.size());
+                                        this->json_append(jfe, vd, str);
                                         break;
                                     }
                                     case json_format_element::overflow_t::
@@ -2606,16 +2605,14 @@ external_log_format::get_subline(const logline& ll,
                                                             str.size(),
                                                             jfe.jfe_max_width);
                                         str.resize(new_size);
-                                        this->json_append(
-                                            jfe, vd, str.data(), str.size());
+                                        this->json_append(jfe, vd, str);
                                         break;
                                     }
                                 }
                             } else {
                                 sub_offset
                                     += std::count(str.begin(), str.end(), '\n');
-                                this->json_append(
-                                    jfe, vd, str.c_str(), str.size());
+                                this->json_append(jfe, vd, str);
                             }
 
                             if (nl_pos == std::string::npos || full_message) {
@@ -2707,14 +2704,12 @@ external_log_format::get_subline(const logline& ll,
                                    || jfe.jfe_value.pp_value
                                        == this->elf_level_field)
                         {
-                            const auto* level_name = ll.get_level_name();
-                            auto level_len = strlen(level_name);
+                            auto level_name = ll.get_level_name();
                             lr.lr_start = this->jlf_cached_line.size();
-                            this->json_append(
-                                jfe, nullptr, level_name, level_len);
+                            this->json_append(jfe, nullptr, level_name);
                             if (jfe.jfe_auto_width) {
-                                this->json_append_to_cache(MAX_LEVEL_NAME_LEN
-                                                           - level_len);
+                                this->json_append_to_cache(
+                                    MAX_LEVEL_NAME_LEN - level_name.length());
                             }
                             lr.lr_end = this->jlf_cached_line.size();
                             this->jlf_line_attrs.emplace_back(lr,
@@ -2723,10 +2718,8 @@ external_log_format::get_subline(const logline& ll,
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
                             }
-                            this->json_append(jfe,
-                                              nullptr,
-                                              jfe.jfe_default_value.c_str(),
-                                              jfe.jfe_default_value.size());
+                            this->json_append(
+                                jfe, nullptr, jfe.jfe_default_value);
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
                             }
@@ -4582,44 +4575,44 @@ external_log_format::get_value_meta(yajlpp_parse_context* ypc,
 }
 
 void
-external_log_format::json_append(
-    const external_log_format::json_format_element& jfe,
-    const value_def* vd,
-    const char* value,
-    ssize_t len)
+external_log_format::json_append(const json_format_element& jfe,
+                                 const value_def* vd,
+                                 const string_fragment& sf)
 {
-    if (len == -1) {
-        len = strlen(value);
-    }
     if (jfe.jfe_align == json_format_element::align_t::RIGHT) {
-        if (len < jfe.jfe_min_width) {
-            this->json_append_to_cache(jfe.jfe_min_width - len);
+        auto sf_width = sf.column_width();
+        if (sf_width < jfe.jfe_min_width) {
+            this->json_append_to_cache(jfe.jfe_min_width - sf_width);
         } else if (jfe.jfe_auto_width && vd != nullptr
-                   && len < this->lf_value_stats[vd->vd_meta.lvm_values_index
-                                                     .value()]
-                                .lvs_width)
+                   && sf_width
+                       < this->lf_value_stats[vd->vd_meta.lvm_values_index
+                                                  .value()]
+                             .lvs_width)
         {
             this->json_append_to_cache(
                 this->lf_value_stats[vd->vd_meta.lvm_values_index.value()]
                     .lvs_width
-                - len);
+                - sf_width);
         }
     }
-    this->json_append_to_cache(value, len);
-    if (jfe.jfe_align == json_format_element::align_t::LEFT
-        || jfe.jfe_align == json_format_element::align_t::NONE)
+    this->json_append_to_cache(sf.data(), sf.length());
+    if ((jfe.jfe_align == json_format_element::align_t::LEFT
+         || jfe.jfe_align == json_format_element::align_t::NONE)
+        && (jfe.jfe_min_width > 0 || jfe.jfe_auto_width))
     {
-        if (len < jfe.jfe_min_width) {
-            this->json_append_to_cache(jfe.jfe_min_width - len);
+        auto sf_width = sf.column_width();
+        if (sf_width < jfe.jfe_min_width) {
+            this->json_append_to_cache(jfe.jfe_min_width - sf_width);
         } else if (jfe.jfe_auto_width && vd != nullptr
-                   && len < this->lf_value_stats[vd->vd_meta.lvm_values_index
-                                                     .value()]
-                                .lvs_width)
+                   && sf_width
+                       < this->lf_value_stats[vd->vd_meta.lvm_values_index
+                                                  .value()]
+                             .lvs_width)
         {
             this->json_append_to_cache(
                 this->lf_value_stats[vd->vd_meta.lvm_values_index.value()]
                     .lvs_width
-                - len);
+                - sf_width);
         }
     }
 }

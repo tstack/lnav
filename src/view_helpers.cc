@@ -62,16 +62,16 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
-constexpr std::array<const char*, LNV__MAX> lnav_view_strings = {
-    "log",
-    "text",
-    "help",
-    "histogram",
-    "db",
-    "schema",
-    "pretty",
-    "spectro",
-    "timeline",
+constexpr std::array<string_fragment, LNV__MAX> lnav_view_strings = {
+    "log"_frag,
+    "text"_frag,
+    "help"_frag,
+    "histogram"_frag,
+    "db"_frag,
+    "schema"_frag,
+    "pretty"_frag,
+    "spectro"_frag,
+    "timeline"_frag,
 };
 
 const char* const lnav_view_titles[LNV__MAX] = {
@@ -114,11 +114,12 @@ view_from_string(const char* name)
         return std::nullopt;
     }
 
-    auto* view_name_iter
+    auto name_sf = string_fragment::from_c_str(name);
+    auto view_name_iter
         = std::find_if(std::begin(lnav_view_strings),
                        std::end(lnav_view_strings),
-                       [&](const char* v) {
-                           return v != nullptr && strcasecmp(v, name) == 0;
+                       [&](const auto& v) {
+                           return name_sf.iequal(v);
                        });
 
     if (view_name_iter == std::end(lnav_view_strings)) {

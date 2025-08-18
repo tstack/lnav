@@ -282,7 +282,7 @@ extern readline_context::command_map_t lnav_commands;
 constexpr ssize_t ZOOM_COUNT = 10;
 extern const std::chrono::microseconds ZOOM_LEVELS[ZOOM_COUNT];
 
-extern const std::array<const char*, ZOOM_COUNT> lnav_zoom_strings;
+extern const std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings;
 
 #define HELP_MSG_CTRL(x, msg) "Press '" ANSI_BOLD("CTRL-" #x) "' " msg
 

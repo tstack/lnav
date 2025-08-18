@@ -247,15 +247,15 @@ const typed_json_path_container<view_options>&
 get_view_options_handlers()
 {
     static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
-        {"hide", row_details_t::hide},
-        {"show", row_details_t::show},
+        {"hide"_frag, row_details_t::hide},
+        {"show"_frag, row_details_t::show},
 
         json_path_handler_base::ENUM_TERMINATOR,
     };
 
     static const json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
-        {"none", word_wrap_t::none},
-        {"normal", word_wrap_t::normal},
+        {"none"_frag, word_wrap_t::none},
+        {"normal"_frag, word_wrap_t::normal},
 
         json_path_handler_base::ENUM_TERMINATOR,
     };
@@ -328,10 +328,12 @@ CREATE TABLE lnav_views (
 
         tc.get_dimensions(height, width);
         switch (col) {
-            case 0:
+            case 0: {
+                const auto& vs = lnav_view_strings[view_index];
                 sqlite3_result_text(
-                    ctx, lnav_view_strings[view_index], -1, SQLITE_STATIC);
+                    ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
+            }
             case 1:
                 sqlite3_result_int(ctx, (int) tc.get_top());
                 break;
@@ -791,10 +793,11 @@ CREATE TABLE lnav_view_stack (
         auto view = lnav_view_t(tc - lnav_data.ld_views);
 
         switch (col) {
-            case 0:
-                sqlite3_result_text(
-                    ctx, lnav_view_strings[view], -1, SQLITE_STATIC);
+            case 0: {
+                const auto& vs = lnav_view_strings[view];
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
+            }
         }
 
         return SQLITE_OK;
@@ -931,18 +934,17 @@ CREATE TABLE lnav_view_filters (
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
-        textview_curses& tc = lnav_data.ld_views[vc.iter.i_view_index];
-        text_sub_source* tss = tc.get_sub_source();
-        filter_stack& fs = tss->get_filters();
+        auto& tc = lnav_data.ld_views[vc.iter.i_view_index];
+        auto* tss = tc.get_sub_source();
+        auto& fs = tss->get_filters();
         auto tf = *(fs.begin() + vc.iter.i_filter_index);
 
         switch (col) {
-            case 0:
-                sqlite3_result_text(ctx,
-                                    lnav_view_strings[vc.iter.i_view_index],
-                                    -1,
-                                    SQLITE_STATIC);
+            case 0: {
+                const auto& vs = lnav_view_strings[vc.iter.i_view_index];
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
+            }
             case 1:
                 to_sqlite(ctx, tf->get_index());
                 break;
@@ -1257,12 +1259,11 @@ CREATE TABLE lnav_view_filter_stats (
         auto tf = *(fs.begin() + vc.iter.i_filter_index);
 
         switch (col) {
-            case 0:
-                sqlite3_result_text(ctx,
-                                    lnav_view_strings[vc.iter.i_view_index],
-                                    -1,
-                                    SQLITE_STATIC);
+            case 0: {
+                const auto& vs = lnav_view_strings[vc.iter.i_view_index];
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
+            }
             case 1:
                 to_sqlite(ctx, tf->get_index());
                 break;
@@ -1316,10 +1317,11 @@ CREATE TABLE lnav_view_files (
         auto& ld = *vc.iter;
 
         switch (col) {
-            case 0:
-                sqlite3_result_text(
-                    ctx, lnav_view_strings[LNV_LOG], -1, SQLITE_STATIC);
+            case 0: {
+                const auto& vs = lnav_view_strings[LNV_LOG];
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
+            }
             case 1:
                 to_sqlite(ctx,
                           ld->ld_filter_state.lfo_filter_state.tfs_logfile

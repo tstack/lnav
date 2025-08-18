@@ -1846,8 +1846,9 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_level") == 0) {
+            auto lvl = ll->get_level_name();
             sqlite3_bind_text(
-                stmt, lpc + 1, ll->get_level_name(), -1, SQLITE_STATIC);
+                stmt, lpc + 1, lvl.data(), lvl.length(), SQLITE_STATIC);
             continue;
         }
         if (strcmp(name, ":log_time") == 0) {

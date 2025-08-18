@@ -106,10 +106,10 @@ operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
         if constexpr (std::is_same_v<decltype(elem_str), const char*>) {
             estr = elem_str;
         } else {
-            estr = elem_str.c_str();
+            estr = elem_str.data();
         }
 
-        if (!fts::fuzzy_match(st.st_pattern.c_str(), estr, score)) {
+        if (!fts::fuzzy_match(st.st_pattern.data(), estr, score)) {
             continue;
         }
         if (score <= 0) {

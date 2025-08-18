@@ -436,8 +436,7 @@ public:
 
     void json_append(const json_format_element& jfe,
                      const value_def* vd,
-                     const char* value,
-                     ssize_t len);
+                     const string_fragment& sf);
 
     logline_value_meta get_value_meta(intern_string_t field_name,
                                       value_kind_t kind);

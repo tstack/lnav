@@ -33,22 +33,22 @@
 
 #include "config.h"
 
-constexpr std::array<const char*, LEVEL__MAX> level_names = {
-    "unknown",
-    "trace",
-    "debug5",
-    "debug4",
-    "debug3",
-    "debug2",
-    "debug",
-    "info",
-    "stats",
-    "notice",
-    "warning",
-    "error",
-    "critical",
-    "fatal",
-    "invalid",
+constexpr std::array<string_fragment, LEVEL__MAX> level_names = {
+    "unknown"_frag,
+    "trace"_frag,
+    "debug5"_frag,
+    "debug4"_frag,
+    "debug3"_frag,
+    "debug2"_frag,
+    "debug"_frag,
+    "info"_frag,
+    "stats"_frag,
+    "notice"_frag,
+    "warning"_frag,
+    "error"_frag,
+    "critical"_frag,
+    "fatal"_frag,
+    "invalid"_frag,
 };
 
 log_level_t

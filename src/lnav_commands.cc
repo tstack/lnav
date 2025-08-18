@@ -2557,7 +2557,7 @@ com_zoom_to(exec_context& ec,
         bool found = false;
 
         for (size_t lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
-            if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc]) == 0) {
+            if (lnav_zoom_strings[lpc].iequal(args[1])) {
                 auto& ss = *lnav_data.ld_spectro_source;
                 timeval old_time;
 
@@ -3774,11 +3774,11 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Open the given prompt")
             .with_parameter(
                 help_text{"type", "The type of prompt"}.with_enum_values({
-                    "breadcrumb",
-                    "command",
-                    "script",
-                    "search",
-                    "sql",
+                    "breadcrumb"_frag,
+                    "command"_frag,
+                    "script"_frag,
+                    "search"_frag,
+                    "sql"_frag,
                 }))
             .with_parameter(help_text("--alt",
                                       "Perform the alternate action "

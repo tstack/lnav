@@ -164,7 +164,10 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
             .with_summary("Set the display mode for text files")
             .with_parameter(help_text{"mode"}
                                 .with_summary("The display mode")
-                                .with_enum_values({"raw", "rendered"}))
+                                .with_enum_values({
+                                    "raw"_frag,
+                                    "rendered"_frag,
+                                }))
             .with_tags({"display"}),
     },
     {

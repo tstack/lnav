@@ -450,38 +450,38 @@ static const struct json_path_container pattern_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t SUBSECOND_UNIT_ENUM[] = {
-    {"milli", log_format::subsecond_unit::milli},
-    {"micro", log_format::subsecond_unit::micro},
-    {"nano", log_format::subsecond_unit::nano},
+    {"milli"_frag, log_format::subsecond_unit::milli},
+    {"micro"_frag, log_format::subsecond_unit::micro},
+    {"nano"_frag, log_format::subsecond_unit::nano},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
 static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
-    {"left", external_log_format::json_format_element::align_t::LEFT},
-    {"right", external_log_format::json_format_element::align_t::RIGHT},
+    {"left"_frag, external_log_format::json_format_element::align_t::LEFT},
+    {"right"_frag, external_log_format::json_format_element::align_t::RIGHT},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
 static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
-    {"abbrev", external_log_format::json_format_element::overflow_t::ABBREV},
-    {"truncate",
+    {"abbrev"_frag, external_log_format::json_format_element::overflow_t::ABBREV},
+    {"truncate"_frag,
      external_log_format::json_format_element::overflow_t::TRUNCATE},
-    {"dot-dot", external_log_format::json_format_element::overflow_t::DOTDOT},
-    {"last-word",
+    {"dot-dot"_frag, external_log_format::json_format_element::overflow_t::DOTDOT},
+    {"last-word"_frag,
      external_log_format::json_format_element::overflow_t::LASTWORD},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
 static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
-    {"none", external_log_format::json_format_element::transform_t::NONE},
-    {"uppercase",
+    {"none"_frag, external_log_format::json_format_element::transform_t::NONE},
+    {"uppercase"_frag,
      external_log_format::json_format_element::transform_t::UPPERCASE},
-    {"lowercase",
+    {"lowercase"_frag,
      external_log_format::json_format_element::transform_t::LOWERCASE},
-    {"capitalize",
+    {"capitalize"_frag,
      external_log_format::json_format_element::transform_t::CAPITALIZE},
 
     json_path_handler_base::ENUM_TERMINATOR,
@@ -556,22 +556,22 @@ static const struct json_path_container line_format_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
-    {"string", value_kind_t::VALUE_TEXT},
-    {"integer", value_kind_t::VALUE_INTEGER},
-    {"float", value_kind_t::VALUE_FLOAT},
-    {"boolean", value_kind_t::VALUE_BOOLEAN},
-    {"json", value_kind_t::VALUE_JSON},
-    {"struct", value_kind_t::VALUE_STRUCT},
-    {"quoted", value_kind_t::VALUE_QUOTED},
-    {"xml", value_kind_t::VALUE_XML},
+    {"string"_frag, value_kind_t::VALUE_TEXT},
+    {"integer"_frag, value_kind_t::VALUE_INTEGER},
+    {"float"_frag, value_kind_t::VALUE_FLOAT},
+    {"boolean"_frag, value_kind_t::VALUE_BOOLEAN},
+    {"json"_frag, value_kind_t::VALUE_JSON},
+    {"struct"_frag, value_kind_t::VALUE_STRUCT},
+    {"quoted"_frag, value_kind_t::VALUE_QUOTED},
+    {"xml"_frag, value_kind_t::VALUE_XML},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
 static const json_path_handler_base::enum_value_t SCALE_OP_ENUM[] = {
-    {"identity", scale_op_t::SO_IDENTITY},
-    {"multiply", scale_op_t::SO_MULTIPLY},
-    {"divide", scale_op_t::SO_DIVIDE},
+    {"identity"_frag, scale_op_t::SO_IDENTITY},
+    {"multiply"_frag, scale_op_t::SO_MULTIPLY},
+    {"divide"_frag, scale_op_t::SO_DIVIDE},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -724,9 +724,9 @@ static const struct json_path_container sample_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
-    {"text", external_log_format::elf_type_t::ELF_TYPE_TEXT},
-    {"json", external_log_format::elf_type_t::ELF_TYPE_JSON},
-    {"csv", external_log_format::elf_type_t::ELF_TYPE_CSV},
+    {"text"_frag, external_log_format::elf_type_t::ELF_TYPE_TEXT},
+    {"json"_frag, external_log_format::elf_type_t::ELF_TYPE_JSON},
+    {"csv"_frag, external_log_format::elf_type_t::ELF_TYPE_CSV},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

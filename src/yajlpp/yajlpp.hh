@@ -204,12 +204,12 @@ struct typed_json_path_container;
 struct json_path_handler_base {
     struct enum_value_t {
         template<typename T>
-        enum_value_t(const char* name, T value)
+        enum_value_t(string_fragment name, T value)
             : first(name), second((int) value)
         {
         }
 
-        const char* first;
+        string_fragment first;
         int second;
     };
 
@@ -227,18 +227,18 @@ struct json_path_handler_base {
     bool is_array() const { return this->jph_is_array; }
 
     std::optional<int> to_enum_value(const string_fragment& sf) const;
-    const char* to_enum_string(int value) const;
+    string_fragment to_enum_string(int value) const;
 
     template<typename T>
-    std::enable_if_t<!detail::is_optional<T>::value, const char*>
+    std::enable_if_t<!detail::is_optional<T>::value, string_fragment>
     to_enum_string(T value) const
     {
         return this->to_enum_string((int) value);
     }
 
     template<typename T>
-    std::enable_if_t<detail::is_optional<T>::value, const char*> to_enum_string(
-        T value) const
+    std::enable_if_t<detail::is_optional<T>::value, string_fragment>
+    to_enum_string(T value) const
     {
         return this->to_enum_string((int) value.value());
     }

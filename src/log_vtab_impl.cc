@@ -741,10 +741,10 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         }
 
         case VT_COL_LEVEL: {
-            const char* level_name = ll->get_level_name();
+            const auto& level_name = ll->get_level_name();
 
             sqlite3_result_text(
-                ctx, level_name, strlen(level_name), SQLITE_STATIC);
+                ctx, level_name.data(), level_name.length(), SQLITE_STATIC);
             break;
         }
 

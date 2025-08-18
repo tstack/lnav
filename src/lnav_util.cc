@@ -311,11 +311,11 @@ static const json_path_container snippet_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
-    {"raw", lnav::console::user_message::level::raw},
-    {"ok", lnav::console::user_message::level::ok},
-    {"info", lnav::console::user_message::level::info},
-    {"warning", lnav::console::user_message::level::warning},
-    {"error", lnav::console::user_message::level::error},
+    {"raw"_frag, lnav::console::user_message::level::raw},
+    {"ok"_frag, lnav::console::user_message::level::ok},
+    {"info"_frag, lnav::console::user_message::level::info},
+    {"warning"_frag, lnav::console::user_message::level::warning},
+    {"error"_frag, lnav::console::user_message::level::error},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

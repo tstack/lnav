@@ -297,7 +297,7 @@ public:
         return (log_level_t) (this->ll_level & ~LEVEL__FLAGS);
     }
 
-    const char* get_level_name() const
+    const string_fragment& get_level_name() const
     {
         return level_names[this->ll_level & ~LEVEL__FLAGS];
     }

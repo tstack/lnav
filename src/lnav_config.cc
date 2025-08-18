@@ -584,8 +584,8 @@ static const struct json_path_container keymap_defs_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t _movement_values[] = {
-    {"top", config_movement_mode::TOP},
-    {"cursor", config_movement_mode::CURSOR},
+    {"top"_frag, config_movement_mode::TOP},
+    {"cursor"_frag, config_movement_mode::CURSOR},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -601,8 +601,8 @@ static const struct json_path_container movement_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t _mouse_mode_values[] = {
-    {"disabled", lnav_mouse_mode::disabled},
-    {"enabled", lnav_mouse_mode::enabled},
+    {"disabled"_frag, lnav_mouse_mode::disabled},
+    {"enabled"_frag, lnav_mouse_mode::enabled},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -1119,7 +1119,7 @@ static const struct json_path_container theme_log_level_styles_handlers = {
         .with_path_provider<lnav_theme>(
             [](struct lnav_theme* cfg, std::vector<std::string>& paths_out) {
                 for (int lpc = LEVEL_TRACE; lpc < LEVEL__MAX; lpc++) {
-                    paths_out.emplace_back(level_names[lpc]);
+                    paths_out.emplace_back(level_names[lpc].to_string());
                 }
             })
         .with_children(style_config_handlers),
@@ -1224,9 +1224,9 @@ static const struct json_path_container theme_defs_handlers = {
 };
 
 static const json_path_handler_base::enum_value_t _time_column_values[] = {
-    {"disabled", logfile_sub_source_ns::time_column_feature_t::Disabled},
-    {"enabled", logfile_sub_source_ns::time_column_feature_t::Enabled},
-    {"default", logfile_sub_source_ns::time_column_feature_t::Default},
+    {"disabled"_frag, logfile_sub_source_ns::time_column_feature_t::Disabled},
+    {"enabled"_frag, logfile_sub_source_ns::time_column_feature_t::Enabled},
+    {"default"_frag, logfile_sub_source_ns::time_column_feature_t::Default},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

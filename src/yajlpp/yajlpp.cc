@@ -42,7 +42,7 @@
 #include "yajlpp_def.hh"
 
 const json_path_handler_base::enum_value_t
-    json_path_handler_base::ENUM_TERMINATOR((const char*) nullptr, 0);
+    json_path_handler_base::ENUM_TERMINATOR({}, 0);
 
 yajl_gen_status
 yajl_gen_tree(yajl_gen hand, yajl_val val)
@@ -429,7 +429,7 @@ json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
                     schema("enum");
 
                     yajlpp_array enum_array(ygc.ygc_handle);
-                    for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+                    for (int lpc = 0; !this->jph_enum_values[lpc].first.empty(); lpc++) {
                         enum_array.gen(this->jph_enum_values[lpc].first);
                     }
                 }
@@ -563,7 +563,7 @@ json_path_handler_base::walk(
 std::optional<int>
 json_path_handler_base::to_enum_value(const string_fragment& sf) const
 {
-    for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+    for (int lpc = 0; !this->jph_enum_values[lpc].first.empty(); lpc++) {
         const auto& ev = this->jph_enum_values[lpc];
 
         if (sf == ev.first) {
@@ -574,10 +574,10 @@ json_path_handler_base::to_enum_value(const string_fragment& sf) const
     return std::nullopt;
 }
 
-const char*
+string_fragment
 json_path_handler_base::to_enum_string(int value) const
 {
-    for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+    for (int lpc = 0; !this->jph_enum_values[lpc].first.empty(); lpc++) {
         const auto& ev = this->jph_enum_values[lpc];
 
         if (ev.second == value) {
@@ -585,7 +585,7 @@ json_path_handler_base::to_enum_string(int value) const
         }
     }
 
-    return "";
+    return {};
 }
 
 std::vector<json_path_handler_base::schema_type_t>
@@ -1534,7 +1534,7 @@ json_path_handler_base::get_help_text(const std::string& full_path) const
     if (this->jph_enum_values != nullptr) {
         retval.append(lnav::roles::h2("Allowed Values")).append("\n  ");
 
-        for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
+        for (int lpc = 0; !this->jph_enum_values[lpc].first.empty(); lpc++) {
             const auto& ev = this->jph_enum_values[lpc];
 
             retval.append(lpc == 0 ? "" : ", ")

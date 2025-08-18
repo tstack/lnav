@@ -1,7 +1,7 @@
  
 [2013-09-06T16:00:48.124817-0400] [33m⋮[0m <c.e.foo.bar.bazzer  > trace test
  
-[2013-09-06T16:00:49.124817-0400] [33m⋮[0m <com.example.demo    > Starting up [32mservice[0m
+[2013-09-06T16:00:49.124817-0400] [33m⋮[0m <com.example.demoµs  > Starting up [32mservice[0m
  
 [2013-09-06T18:00:49.124817-0400] [33m⋮[0m Shutting down service
   user: steve@example.com

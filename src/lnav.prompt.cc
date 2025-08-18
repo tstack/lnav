@@ -1446,8 +1446,8 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
     } else {
         retval = ht->ht_enum_values | lnav::itertools::similar_to(str, 10)
             | lnav::itertools::map([](const auto& x) {
-                     return attr_line_t(x).with_attr_for_all(
-                         SUBST_TEXT.value(std::string(x) + " "));
+                     return attr_line_t().append(x).with_attr_for_all(
+                         SUBST_TEXT.value(fmt::format(FMT_STRING("{} "), x)));
                  });
     }
 
@@ -1473,7 +1473,7 @@ prompt::get_config_value_completion(const std::string& path,
         for (auto lpc = size_t{0}; jph.jph_enum_values[lpc].first != nullptr;
              lpc++)
         {
-            poss_strs.emplace_back(jph.jph_enum_values[lpc].first);
+            poss_strs.emplace_back(jph.jph_enum_values[lpc].first.to_string());
         }
     } else if (jph.jph_synopsis != nullptr) {
         const auto syno_iter = this->p_config_values.find(jph.jph_synopsis);

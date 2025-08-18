@@ -208,17 +208,17 @@ public:
     constexpr operator const char*() const { return buf; }
 };
 
-constexpr std::array<const char*, ZOOM_COUNT> lnav_zoom_strings = {
-    "1-second",
-    "30-second",
-    "1-minute",
-    "5-minute",
-    "15-minute",
-    "1-hour",
-    "4-hour",
-    "8-hour",
-    "1-day",
-    "1-week",
+constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
+    "1-second"_frag,
+    "30-second"_frag,
+    "1-minute"_frag,
+    "5-minute"_frag,
+    "15-minute"_frag,
+    "1-hour"_frag,
+    "4-hour"_frag,
+    "8-hour"_frag,
+    "1-day"_frag,
+    "1-week"_frag,
 };
 
 static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {

@@ -820,6 +820,8 @@ public:
 
     const char* get() const { return this->is_str.c_str(); };
 
+    const char* data() const { return this->is_str.c_str(); };
+
     size_t size() const { return this->is_str.size(); }
 
     std::string to_string() const { return this->is_str; }
@@ -871,6 +873,8 @@ public:
     }
 
     const char* c_str() const { return this->get(); }
+
+    const char* data() const { return this->get(); }
 
     iterator begin() const { return this->get(); }
 

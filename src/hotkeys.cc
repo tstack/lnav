@@ -344,7 +344,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     INTERNAL_SRC_LOC,
                     fmt::format(
                         FMT_STRING(":zoom-to {}"),
-                        +lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                        lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
@@ -356,7 +356,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     INTERNAL_SRC_LOC,
                     fmt::format(
                         FMT_STRING(":zoom-to {}"),
-                        +lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                        lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 

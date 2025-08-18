@@ -1567,7 +1567,7 @@ com_pipe_to(exec_context& ec,
         sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
         extra_env["log_time"] = tmp_str;
         extra_env["log_path"] = ldh.ldh_file->get_filename();
-        extra_env["log_level"] = ldh.ldh_line->get_level_name();
+        extra_env["log_level"] = ldh.ldh_line->get_level_name().to_string();
         if (ldh.ldh_line_values.lvv_opid_value) {
             extra_env["log_opid"] = ldh.ldh_line_values.lvv_opid_value.value();
         }
@@ -1888,7 +1888,7 @@ static readline_context::command_t IO_COMMANDS[] = {
             .with_parameter(
                 help_text("--view", "The view to use as the source of data")
                     .optional()
-                    .with_enum_values({"log", "db"}))
+                    .with_enum_values({"log"_frag, "db"_frag}))
             .with_parameter(
                 help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(
