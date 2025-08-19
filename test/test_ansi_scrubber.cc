@@ -49,6 +49,22 @@ main(int argc, char* argv[])
     printf("BEGIN test\n");
 
     {
+        auto input = std::string("\0Hello", 6);
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(" Hello" == input);
+    }
+
+    {
+        auto input = std::string("\0Hello", 6);
+        string_attrs_t sa;
+
+        erase_ansi_escapes(input);
+        assert(" Hello" == input);
+    }
+
+    {
         auto input = std::string("\x1b[0;1;38:2:1:2:3mHello");
         string_attrs_t sa;
 

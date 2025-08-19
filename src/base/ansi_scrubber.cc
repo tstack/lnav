@@ -44,7 +44,7 @@ static const lnav::pcre2pp::code&
 ansi_regex()
 {
     static const auto retval = lnav::pcre2pp::code::from_const(
-        R"(\x1b\[([\d=;:\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+|(\x16+))");
+        R"(\x00|\x1b\[([\d=;:\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+|(\x16+))");
 
     return retval;
 }
@@ -71,6 +71,14 @@ erase_ansi_escapes(string_fragment input)
         }
 
         auto sf = md[0].value();
+
+        if (sf == "\x00"_frag) {
+            *input.writable_data(0) = ' ';
+            move_start = sf.sf_end;
+            fill_index += 1;
+            continue;
+        }
+
         auto bs_index_res = sf.codepoint_to_byte_index(1);
 
         if (move_start) {
@@ -135,7 +143,6 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     int erased = 0;
     size_t tmp_sa_open = 0;
 
-    std::replace(str.begin(), str.end(), '\0', ' ');
     auto matcher = regex.capture_from(str).into(md);
     while (true) {
         auto match_res = matcher.matches(PCRE2_NO_UTF_CHECK);
@@ -157,6 +164,13 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             cp_dst += cp_len;
         } else {
             cp_dst = sf.sf_begin;
+        }
+
+        if (sf == "\x00"_frag) {
+            str[cp_dst] = ' ';
+            cp_start = sf.sf_end;
+            cp_dst = sf.sf_end;
+            continue;
         }
 
         if (sf.length() >= 3 && bs_index_res.isOk()
@@ -266,7 +280,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             continue;
         }
 
-        struct line_range lr;
+        line_range lr;
         text_attrs attrs;
         bool has_attrs = false;
         std::optional<role_t> role;
