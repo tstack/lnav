@@ -157,7 +157,7 @@ struct keyword_attrs {
         = always_close_scope;
 };
 
-static constexpr std::array<keyword_attrs, 15> ATTRS_FOR_KW = {{
+static constexpr std::array<keyword_attrs, 16> ATTRS_FOR_KW = {{
     {"CASE"_frag, true, false, never_close_scope},
     {"CREATE"_frag, true, false},
     {"ELSE"_frag, true, false, in_case_close_scope},
@@ -166,6 +166,7 @@ static constexpr std::array<keyword_attrs, 15> ATTRS_FOR_KW = {{
     {"FROM"_frag, true, true},
     {"HAVING"_frag, true, true},
     {"INTERSECT"_frag, true, false},
+    {"LIMIT"_frag, true, true},
     {"SELECT"_frag, true, true},
     {"SET"_frag, true, true},
     {"UNION"_frag, true, false},
@@ -204,13 +205,17 @@ check_for_multi_word_clear(std::string& str,
         const char* padding{""};
     };
 
-    static constexpr auto clear_words = std::array<clear_rules, 7>{
+    static constexpr auto clear_words = std::array<clear_rules, 11>{
         {
             {" GROUP BY", true},
             {"INSERT INTO", true},
             {" ON CONFLICT", false},
             {" ORDER BY", true},
             {" LEFT JOIN", false},
+            {" RIGHT JOIN", false},
+            {" FULL JOIN", false},
+            {" CROSS JOIN", false},
+            {" INNER JOIN", false},
             {" PARTITION BY", false},
             {"REPLACE INTO", true},
         },
@@ -302,16 +307,23 @@ format(const attr_line_t& al, int cursor_offset)
             {
                 retval.pop_back();
             }
-            if (endswith(retval, "OVER")) {
+            if (endswith(retval, "ON")) {
+                // force a clear
                 paren_indents.back() = true;
             }
             add_space(retval, indent);
             retval += sf;
             if (scope_stack.back() == "CREATE") {
-                clear_right(retval);
                 paren_indents.back() = true;
             } else {
                 scope_stack.emplace_back();
+            }
+            if (paren_indents.back()) {
+                clear_right(retval);
+            }
+            if (endswith(retval, "OVER (")) {
+                // clear might not happen
+                paren_indents.back() = true;
             }
         } else if (attr.sa_type == &SQL_PAREN_ATTR && sf.front() == ')') {
             if (scope_stack.size() > 1) {

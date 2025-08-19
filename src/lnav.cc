@@ -418,6 +418,11 @@ handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 
         default:
             prompt.p_editor.handle_key(ch);
+            if (prompt.p_editor.tc_lines.size() > 1
+                && prompt.p_editor.tc_height == 1)
+            {
+                prompt.p_editor.set_height(5);
+            }
             break;
     }
 }

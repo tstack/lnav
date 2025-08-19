@@ -1,0 +1,30 @@
+                 SELECT * FROM customers FULL JOIN all_logs pg_stmt_log ON (pg_stmt_log.log_text LIKE '%STATEMENT:%') LIMIT 1
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---------
+     sql_keyword                         ----
+     sql_keyword                              ----
+       sql_ident                                   --------
+       sql_ident                                            -----------
+     sql_keyword                                                        --
+       sql_paren                                                           -
+       sql_ident                                                            -----------
+     sql_garbage                                                                       -
+       sql_ident                                                                        --------
+     sql_keyword                                                                                 ----
+      sql_string                                                                                      --------------
+       sql_paren                                                                                                    -
+     sql_keyword                                                                                                      -----
+      sql_number                                                                                                            -
+Formatted:
+SELECT
+    *
+FROM
+    customers
+    FULL JOIN all_logs pg_stmt_log ON (
+        pg_stmt_log.log_text LIKE '%STATEMENT:%'
+    )
+LIMIT
+    1
+Cursor offset: 138

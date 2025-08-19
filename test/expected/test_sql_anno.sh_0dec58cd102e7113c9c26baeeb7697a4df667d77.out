@@ -1,0 +1,15 @@
+                 SELECT * FROM customers LIMIT 1
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---------
+     sql_keyword                         -----
+      sql_number                               -
+Formatted:
+SELECT
+    *
+FROM
+    customers
+LIMIT
+    1
+Cursor offset: 43

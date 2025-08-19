@@ -112,3 +112,7 @@ run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by { c_ip }" 23
 
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by cs_uri_stem | take 10"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM customers LIMIT 1"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM customers FULL JOIN all_logs pg_stmt_log ON (pg_stmt_log.log_text LIKE '%STATEMENT:%') LIMIT 1"
