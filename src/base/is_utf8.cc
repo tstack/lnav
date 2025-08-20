@@ -62,11 +62,35 @@
 utf8_scan_result
 is_utf8(string_fragment str, std::optional<unsigned char> terminator)
 {
+    constexpr auto CHUNK_WIDTH = 16;
     const auto* ustr = str.udata();
     utf8_scan_result retval;
     ssize_t i = 0, valid_end = 0;
+    auto in_len = str.length();
+    auto aligned_len = in_len - (in_len % CHUNK_WIDTH);
 
     while (i < str.length()) {
+        // Scan for the common case of just ASCII characters
+        if (i + CHUNK_WIDTH <= aligned_len) {
+            auto found_non_ascii = false;
+            auto found_term = false;
+            // pray to the auto-vectorization gods...
+            for (auto lpc = 0; lpc < CHUNK_WIDTH; lpc++) {
+                if (ustr[i + lpc] < ' ' || ustr[i + lpc] > '~') {
+                    found_non_ascii = true;
+                }
+                if (terminator && ustr[i + lpc] == terminator.value()) {
+                    found_term = true;
+                }
+            }
+            if (!found_term && !found_non_ascii) {
+                i += CHUNK_WIDTH;
+                valid_end = i;
+                retval.usr_column_width_guess += CHUNK_WIDTH;
+                continue;
+            }
+        }
+
         if (terminator && ustr[i] == terminator.value()) {
             retval.usr_remaining = str.substr(i + 1);
             break;
