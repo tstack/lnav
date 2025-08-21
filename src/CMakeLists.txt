@@ -16,6 +16,7 @@ set(VCS_PACKAGE_STRING "lnav ${CMAKE_PROJECT_VERSION}")
 set(PACKAGE_VERSION "${CMAKE_PROJECT_VERSION}")
 
 configure_file(config.cmake.h.in config.h)
+configure_file(help.md.in help.md)
 
 add_subdirectory(base)
 add_subdirectory(pcrepp)
@@ -155,11 +156,21 @@ function(bin2c)
             DEPENDS bin2c "${FILE_TO_LINK}")
 endfunction(bin2c)
 
-foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json help.md init.sql words.json)
+foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json init.sql words.json)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
             OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
             COMMAND bin2c "${DST_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/${FILE_TO_LINK}"
+            DEPENDS bin2c "${FILE_TO_LINK}")
+    list(APPEND GEN_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.h"
+            "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.cc")
+endforeach (FILE_TO_LINK)
+
+foreach (FILE_TO_LINK help.md)
+    string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
+    add_custom_command(
+            OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
+            COMMAND bin2c "${DST_FILE}" "${FILE_TO_LINK}"
             DEPENDS bin2c "${FILE_TO_LINK}")
     list(APPEND GEN_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.h"
             "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.cc")

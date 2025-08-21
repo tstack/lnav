@@ -77,7 +77,7 @@ builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 %-txt.cc: $(srcdir)/%.txt $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-txt $<
 
-%-md.cc: $(srcdir)/%.md $(BIN2C_PATH)
+%-md.cc: %.md $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-md $<
 
 %-sql.cc: $(srcdir)/%.sql $(BIN2C_PATH)
