@@ -38,16 +38,16 @@ small_string_map::lookup(const string_fragment& in)
         return std::nullopt;
     }
 
-    alignas(8) char in_key[MAX_KEY_SIZE]{};
-    memcpy(in_key, in.data(), in.length());
-
     auto index = this->ssm_start_index;
     for (int lpc = 0; lpc < MAP_SIZE; ++lpc) {
-        if (memcmp(&this->ssm_keys[index * MAX_KEY_SIZE], in_key, MAX_KEY_SIZE)
-            == 0)
+        if (memcmp(
+                &this->ssm_keys[index * MAX_KEY_SIZE], in.data(), in.length())
+                == 0
+            && (in.length() == MAX_KEY_SIZE
+                || this->ssm_keys[index * MAX_KEY_SIZE + in.length()] == '\0'))
         {
             this->ssm_start_index = index;
-            return index;
+            return this->ssm_values[index];
         }
         index = (index + 1) % MAP_SIZE;
     }
