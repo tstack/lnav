@@ -70,6 +70,7 @@ noinst_HEADERS = \
     progress.hh \
     result.h \
     short_alloc.h \
+    small_string_map.hh \
     snippet_highlighters.hh \
     string_attr_type.hh \
     string_util.hh \
@@ -102,6 +103,7 @@ libbase_a_SOURCES = \
     network.tcp.cc \
     paths.cc \
     piper.file.cc \
+    small_string_map.cc \
     snippet_highlighters.cc \
     string_attr_type.cc \
     string_util.cc \
@@ -123,6 +125,7 @@ test_base_SOURCES = \
     intern_string.tests.cc \
     lnav.gzip.tests.cc \
     math_util.tests.cc \
+    small_string_map.tests.cc \
     string_util.tests.cc \
     test_base.cc
 

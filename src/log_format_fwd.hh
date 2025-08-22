@@ -45,6 +45,7 @@
 #include "base/intern_string.hh"
 #include "base/log_level_enum.hh"
 #include "base/map_util.hh"
+#include "base/small_string_map.hh"
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
@@ -127,6 +128,7 @@ struct scan_batch_context {
     std::string sbc_cached_level_strings[4];
     log_level_t sbc_cached_level_values[4];
     size_t sbc_cached_level_count{0};
+    lnav::small_string_map sbc_level_cache;
 };
 
 extern const string_attr_type<void> L_PREFIX;

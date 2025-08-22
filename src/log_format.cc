@@ -4494,6 +4494,14 @@ external_log_format::convert_level(string_fragment sf,
     auto retval = LEVEL_INFO;
 
     if (sf.is_valid()) {
+        // std::optional<uint32_t> ssm_res;
+        if (sbc != nullptr) {
+            auto ssm_res = sbc->sbc_level_cache.lookup(sf);
+            if (ssm_res.has_value()) {
+                return static_cast<log_level_t>(ssm_res.value());
+            }
+        }
+#if 0
         if (sbc != nullptr && sbc->sbc_cached_level_count > 0) {
             const auto level_end = std::begin(sbc->sbc_cached_level_strings)
                 + sbc->sbc_cached_level_count;
@@ -4512,6 +4520,7 @@ external_log_format::convert_level(string_fragment sf,
                 return sbc->sbc_cached_level_values[0];
             }
         }
+#endif
 
         if (this->elf_level_patterns.empty()) {
             retval = string2level(sf.data(), sf.length());
@@ -4528,7 +4537,8 @@ external_log_format::convert_level(string_fragment sf,
             }
         }
 
-        if (sbc != nullptr && sf.length() < 10) {
+        if (sbc != nullptr && sf.length() < 8) {
+#if 0
             size_t cache_index;
 
             if (sbc->sbc_cached_level_count == 4) {
@@ -4539,6 +4549,8 @@ external_log_format::convert_level(string_fragment sf,
             }
             sbc->sbc_cached_level_strings[cache_index] = sf.to_string();
             sbc->sbc_cached_level_values[cache_index] = retval;
+#endif
+            sbc->sbc_level_cache.insert(sf, retval);
         }
     }
 
