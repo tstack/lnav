@@ -32,7 +32,7 @@
 namespace lnav {
 
 std::optional<uint32_t>
-small_string_map::lookup(const string_fragment& in) const
+small_string_map::lookup(const string_fragment& in)
 {
     if (in.length() > MAX_KEY_SIZE) {
         return std::nullopt;
@@ -41,26 +41,16 @@ small_string_map::lookup(const string_fragment& in) const
     alignas(8) char in_key[MAX_KEY_SIZE]{};
     memcpy(in_key, in.data(), in.length());
 
+    auto index = this->ssm_start_index;
     for (int lpc = 0; lpc < MAP_SIZE; ++lpc) {
-        auto match = true;
-#if 0
-        for (int index = 0; index < MAX_KEY_SIZE; ++index) {
-            if (this->ssm_keys[lpc * MAX_KEY_SIZE + index] != in_key[index]) {
-                match = false;
-            }
-        }
-#else
-        if (memcmp(&this->ssm_keys[lpc * MAX_KEY_SIZE], in_key, MAX_KEY_SIZE)
-            != 0)
+        if (memcmp(&this->ssm_keys[index * MAX_KEY_SIZE], in_key, MAX_KEY_SIZE)
+            == 0)
         {
-            match = false;
+            this->ssm_start_index = index;
+            return index;
         }
-#endif
-        if (match) {
-            return this->ssm_values[lpc];
-        }
+        index = (index + 1) % MAP_SIZE;
     }
-
     return std::nullopt;
 }
 

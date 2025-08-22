@@ -43,8 +43,9 @@ struct small_string_map {
     char ssm_keys[MAP_SIZE * MAX_KEY_SIZE]{};
     uint32_t ssm_values[MAP_SIZE]{};
     uint32_t ssm_used_keys{0};
+    uint32_t ssm_start_index{0};
 
-    std::optional<uint32_t> lookup(const string_fragment& in) const;
+    std::optional<uint32_t> lookup(const string_fragment& in);
     void insert(const string_fragment& key, uint32_t value);
 };
 
