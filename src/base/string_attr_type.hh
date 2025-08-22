@@ -411,6 +411,7 @@ extern const string_attr_type<int64_t> SA_LEVEL;
 extern const string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 extern const string_attr_type<text_format_t> SA_QUOTED_TEXT;
 
+extern const string_attr_type<std::string> VC_ANCHOR;
 extern const string_attr_type<role_t> VC_ROLE;
 extern const string_attr_type<role_t> VC_ROLE_FG;
 extern const string_attr_type<text_attrs> VC_STYLE;

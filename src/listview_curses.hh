@@ -339,8 +339,7 @@ public:
             }
         }
 
-        this->lv_source->listview_value_for_rows(
-            *this, sel.value(), top_line);
+        this->lv_source->listview_value_for_rows(*this, sel.value(), top_line);
         return func(top_line[0]);
     }
 
@@ -566,7 +565,9 @@ protected:
 
     void update_top_from_selection();
 
-    vis_line_t get_overlay_top(vis_line_t row, size_t count, size_t total);
+    vis_line_t get_overlay_top(vis_line_t row,
+                               size_t count,
+                               const std::vector<attr_line_t>& total);
     vis_line_t get_overlay_height(size_t total, vis_line_t view_height) const;
 
     enum class lv_mode_t {

@@ -18,6 +18,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n -c ':goto #screenshot' \
     ${top_srcdir}/README.md
 
+run_cap_test ${lnav_test} -n -c ':goto #custanchor' \
+    ${srcdir}/textfile_0.md
+
 run_cap_test ${lnav_test} -n ${top_srcdir}/README.md#screenshot
 
 # run_cap_test ${lnav_test} -n ${test_dir}/non-existent:4

@@ -414,16 +414,20 @@ listview_curses::handle_key(const ncinput& ch)
 }
 
 vis_line_t
-listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
+listview_curses::get_overlay_top(
+    vis_line_t row,
+    size_t count,
+    const std::vector<attr_line_t>& overlay_content)
 {
-    if (row == this->get_selection()) {
+    const auto total = overlay_content.size();
+    auto max_top = vis_line_t(total - count);
+    if (row == this->get_selection() && this->lv_overlay_focused) {
         if (this->lv_focused_overlay_selection >= (ssize_t) total) {
             this->lv_focused_overlay_selection = vis_line_t(total) - 1_vl;
         }
         if (this->lv_focused_overlay_selection < 0_vl) {
             this->lv_focused_overlay_selection = 0_vl;
         }
-        auto max_top = vis_line_t(total - count);
         if (this->lv_focused_overlay_selection <= this->lv_focused_overlay_top)
         {
             this->lv_focused_overlay_top = this->lv_focused_overlay_selection;
@@ -444,7 +448,27 @@ listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
         return this->lv_focused_overlay_top;
     }
 
-    return 0_vl;
+    auto retval = 0_vl;
+
+    for (size_t lpc = 0; lpc < total; lpc++) {
+        const auto& oc_line = overlay_content[lpc];
+        auto saw_opt = get_string_attr(oc_line.al_attrs, VC_ANCHOR);
+
+        if (saw_opt && saw_opt.value().get() == "default-focus"_frag) {
+            auto ov_sel = vis_line_t(lpc);
+
+            if (ov_sel >= count) {
+                retval = ov_sel - vis_line_t(count) + 2_vl;
+            }
+
+            break;
+        }
+    }
+    if (retval > max_top) {
+        retval = max_top;
+    }
+
+    return retval;
 }
 
 bool
@@ -593,7 +617,7 @@ listview_curses::do_update()
                             break;
                         }
 
-                        this->lv_display_lines.push_back(overlay_menu{
+                        this->lv_display_lines.emplace_back(overlay_menu{
                             ov_menu_row,
                         });
                         mvwattrline(this->lv_window,
@@ -612,7 +636,7 @@ listview_curses::do_update()
                         row_overlay_content.size(), height);
                     auto ov_height_remaining = overlay_height;
                     auto overlay_top = this->get_overlay_top(
-                        row, overlay_height, row_overlay_content.size());
+                        row, overlay_height, row_overlay_content);
                     auto overlay_row = overlay_top;
                     if (row_overlay_content.size() > 1) {
                         auto hdr
@@ -1450,7 +1474,6 @@ listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
         this->lv_overlay_source->list_value_for_overlay(
             *this, this->get_selection().value(), overlay_content);
         if (!overlay_content.empty()) {
-            this->lv_overlay_focused = true;
             if (sel.value() < 0) {
                 this->lv_focused_overlay_selection = 0_vl;
             } else if (sel.value() >= (ssize_t) overlay_content.size()) {
@@ -1465,6 +1488,11 @@ listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
             auto overlay_height = vis_line_t(
                 this->get_overlay_height(overlay_content.size(), height));
 
+            if (!this->lv_overlay_focused) {
+                this->lv_focused_overlay_top = this->get_overlay_top(
+                    this->lv_selection, overlay_height, overlay_content);
+                this->lv_overlay_focused = true;
+            }
             if (this->lv_selection + overlay_height >= bot) {
                 this->set_top(this->lv_selection, true);
             }

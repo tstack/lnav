@@ -1,0 +1,98 @@
+[32mLoooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn[0m
+
+
+[1m[32m**Nested Markdown**[0m
+
+ ▌[37m[40mfoo bar bar                             [0m
+ ▌[37m[40mbaz "xyz"                               [0m
+
+ ▌[32m[40m/*                                        [0m
+ ▌[32m[40m * This program prints "Hello, World!"    [0m
+ ▌[32m[40m */                                       [0m
+ ▌[37m[40m                                          [0m
+ ▌[1m[36m[40m#include[0m[37m[40m <[0m[37m[40mstdio[0m[37m[40m.[0m[37m[40mh[0m[37m[40m>                        [0m
+ ▌[37m[40m                                          [0m
+ ▌[1m[36m[40mint[0m[37m[40m [0m[37m[40mmain[0m[37m[40m() {                              [0m
+ ▌[37m[40m    [0m[37m[40mprintf[0m[37m[40m([0m[35m[40m"Hello, World!\n"[0m[37m[40m);            [0m
+ ▌[37m[40m}                                         [0m
+
+ ▌[1m[36m[40mdef[0m[37m[40m [0m[37m[40mhw[0m[37m[40m(name):                                   [0m
+ ▌[37m[40m    [0m[35m[40m"""[0m[37m[40m                                         [0m
+ ▌[35m[40m    This function prints "Hello, <[0m[35m[40mname[0m[35m[40m>!"       [0m
+ ▌[35m[40m    """                                         [0m
+ ▌[37m[40m                                                [0m
+ ▌[37m[40m    [0m[37m[40mprint[0m[37m[40m(f[0m[35m[40m"Hello, {name}!"[0m[37m[40m)[0m[32m[40m  # test comment[0m[37m[40m    [0m
+
+ ▌[37m[40m<[0m[37m[40m?xml[0m[37m[40m [0m[4m[37m[40mversion[0m[37m[40m=[0m[35m[40m"1.0"[0m[37m[40m [0m[4m[37m[40mencoding[0m[37m[40m=[0m[35m[40m"utf-8"[0m[37m[40m ?>    [0m
+ ▌[37m[40m<[0m[37m[40mbooks[0m[37m[40m>                                    [0m
+ ▌[37m[40m    [0m[32m[40m<!-- Line comment -->[0m[37m[40m                  [0m
+ ▌[37m[40m    <[0m[37m[40mbook[0m[37m[40m [0m[4m[37m[40mid[0m[37m[40m=[0m[35m[40m"100"[0m[37m[40m>                        [0m
+ ▌[37m[40m        <[0m[37m[40mauthor[0m[37m[40m>Finnegan</[0m[37m[40mauthor[0m[37m[40m>          [0m
+ ▌[37m[40m    </[0m[37m[40mbook[0m[37m[40m>                                [0m
+ ▌[37m[40m</[0m[37m[40mbooks[0m[37m[40m>                                   [0m
+
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m               [0m
+ ▌[37m[40m                                        [0m
+ ▌[37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m spam                        [0m
+
+[1mGithub Alerts[0m
+
+ [34m▌[0m[34mⓘ  Note[0m                                                      
+ [34m▌[0mUseful information that users should know, even when         
+ [34m▌[0mskimming content.                                            
+
+ [1m[32m▌[0m[1m[32m💡 Tip[0m                                                       
+ [1m[32m▌[0mHelpful advice for doing things better or more easily.       
+
+ [1m[35m▌[0m[1m[35m🌟 Important[0m                                                 
+ [1m[35m▌[0mKey information users need to know to achieve their goal.    
+
+ [33m▌[0m[33m⚠️ Warning[0m                                                    
+ [33m▌[0mUrgent info that needs immediate user attention to avoid     
+ [33m▌[0mproblems.                                                    
+
+ [1m[31m▌[0m[1m[31m🔺 Caution[0m                                                   
+ [1m[31m▌[0mAdvises about risks or negative outcomes of certain actions. 
+
+[1mBlockquotes[0m
+
+ ▌                                                                
+ ▌ ▌He said She said                                              
+
+[1mTasks[0m
+
+ [33m[✓][0m Bibimbap
+ [33m[✓][0m Waffles
+ [33m[ ][0m Tacos
+
+[1mTable[0m
+
+ ID   Name         Description   
+═════════════════════════════════
+    1     One      The first     
+    2     Two      The second    
+[1m    3    Three     The third     [0m
+[1m    4     Four     The fourth    [0m
+   ..      ..      ..            
+  100 One Hundred  The hundredth 
+
+ abc        def 
+════════════════
+ foo | bar  ddd 
+
+
+Foo
+
+Foo
+
+Bar
+
+Bar
+
+Foo
+
+Foo
+
+Bar
+
+Bar

@@ -44,6 +44,7 @@ constexpr string_attr_type<int64_t> SA_LEVEL("level");
 constexpr string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
 constexpr string_attr_type<text_format_t> SA_QUOTED_TEXT("quoted-text");
 
+constexpr string_attr_type<std::string> VC_ANCHOR("anchor");
 constexpr string_attr_type<role_t> VC_ROLE("role");
 constexpr string_attr_type<role_t> VC_ROLE_FG("role-fg");
 constexpr string_attr_type<text_attrs> VC_STYLE("style");

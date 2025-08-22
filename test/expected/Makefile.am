@@ -1574,6 +1574,8 @@ dist_noinst_DATA = \
     test_text_file.sh_e088ea61a5382458cc48a2607e2639e52b0be1da.out \
     test_text_file.sh_e556fa91b91579df20d38540a5db9cedbaf68a62.err \
     test_text_file.sh_e556fa91b91579df20d38540a5db9cedbaf68a62.out \
+    test_text_file.sh_f3e73f3195eb24ece0e43cc675d186141d22e365.err \
+    test_text_file.sh_f3e73f3195eb24ece0e43cc675d186141d22e365.out \
     test_text_file.sh_f586ef080a86dfe1f981b345bcf8d7a279b2b247.err \
     test_text_file.sh_f586ef080a86dfe1f981b345bcf8d7a279b2b247.out \
     test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.err \

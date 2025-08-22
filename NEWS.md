@@ -19,8 +19,9 @@ Features:
   query log message (e.g. `query_time`, `lock_time`, ...).
 * Annotation handlers can now be lnav scripts if the "handler"
   field starts with a pipe ("|").
-* The `<span>` tag in a markdown now supports
+* The `<span>` tag in a Markdown now supports
   `white-space: nowrap` in the `style` attribute.
+* Anchors can be added to Markdown using `<a name="...">`.
 
 Interface changes:
 * If all the content in the LOG/TEXT views are filtered out,

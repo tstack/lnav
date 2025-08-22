@@ -48,7 +48,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 <span [4mstyle[0m=[35m"white-space: nowrap"[0m><span [4mstyle[0m=[35m"color: green"[0m>Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span></span>
 
-<span [4mstyle[0m=[35m"color: green"[0m>Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span>
+<a [4mname[0m=[35m"custanchor"[0m><span [4mstyle[0m=[35m"color: green"[0m>Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span></a>
 
 <span [4mstyle[0m=[35m"color: green"[0m>
 [1m**Nested Markdown**[0m

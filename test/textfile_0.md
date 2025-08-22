@@ -48,7 +48,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 <span style="white-space: nowrap"><span style="color: green">Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span></span>
 
-<span style="color: green">Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span>
+<a name="custanchor"><span style="color: green">Loooooooonnnnnnnggggg looooonnnnnnggggg maaaaaannnnnn</span></a>
 
 <span style="color: green">
 **Nested Markdown**

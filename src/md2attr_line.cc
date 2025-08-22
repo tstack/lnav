@@ -469,7 +469,10 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         }
         if (!padded_text.empty()) {
             padded_text.with_attr_for_all(SA_PREFORMATTED.value());
-            last_block.append("\n").append(padded_text);
+            if (!endswith(last_block.al_string, "\n\n")) {
+                last_block.append("\n");
+            }
+            last_block.append(padded_text);
         }
     } else if (bl.is<MD_BLOCK_TABLE_DETAIL*>()) {
         auto* table_detail = bl.get<MD_BLOCK_TABLE_DETAIL*>();
@@ -643,7 +646,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
         text_wrap_settings tws = {0, this->ml_blocks.size() == 1 ? 70 : 10000};
 
-        if (!last_block.empty()) {
+        if (!last_block.empty() && !endswith(last_block.al_string, "\n\n")) {
             last_block.append("\n");
         }
         last_block.append(block_text, &tws);
@@ -849,6 +852,7 @@ span_style_border(border_side side, const string_fragment& value)
 attr_line_t
 md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
 {
+    static constexpr auto NAME_A = "a"_frag;
     static constexpr auto NAME_IMG = "img"_frag;
     static constexpr auto NAME_SPAN = "span"_frag;
     static constexpr auto NAME_PRE = "pre"_frag;
@@ -863,11 +867,30 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
     static const auto& vc = view_colors::singleton();
 
     if (this->ml_source_path) {
-        log_trace("converting HTML to attr_line");
+        log_trace("converting HTML to attr_line: %s", doc.name());
     }
 
     attr_line_t retval;
-    if (doc.name() == NAME_IMG) {
+    if (doc.name() == NAME_A) {
+        auto anc_al = attr_line_t();
+
+        for (const auto& sub : doc.children()) {
+            auto child_al = this->to_attr_line(sub, orig);
+            if (anc_al.empty() && startswith(child_al.get_string(), "\n")) {
+                child_al.erase(0, 1);
+            }
+            anc_al.append(child_al);
+        }
+        auto anchor_id = std::string();
+        if (auto doc_id = doc.attribute("id")) {
+            anchor_id = doc_id.value();
+        }
+        if (auto doc_name = doc.attribute("name")) {
+            anchor_id = doc_name.value();
+        }
+        anc_al.with_attr_for_all(VC_ANCHOR.value(anchor_id));
+        retval.append(anc_al);
+    } else if (doc.name() == NAME_IMG) {
         std::optional<std::string> src_href;
         std::string link_label;
         auto img_src = doc.attribute("src");
@@ -1031,7 +1054,12 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
         pre_al.with_attr_for_all(SA_PREFORMATTED.value());
         retval.append(pre_al);
     } else {
-        retval.append(doc.text().get());
+        auto text_node = doc.text();
+        auto styled_text = text_node.empty()
+            ? attr_line_t()
+            : orig.subline(text_node.data().offset_debug(),
+                           strlen(text_node.get()));
+        retval.append(styled_text);
         for (const auto& child : doc.children()) {
             retval.append(this->to_attr_line(child, orig));
         }

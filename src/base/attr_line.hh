@@ -298,7 +298,7 @@ public:
         size_t start_len = this->al_string.length();
 
         if constexpr (std::is_same_v<S, string_fragment>) {
-            this->al_string.append(str.data(), str.length());
+            this->al_string += str;
         } else {
             this->al_string.append(str);
         }
@@ -316,7 +316,7 @@ public:
         size_t start_len = this->al_string.length();
 
         if constexpr (std::is_same_v<S, string_fragment>) {
-            this->al_string.append(value.first.data(), value.first.length());
+            this->al_string += value.first;
         } else {
             this->al_string.append(std::move(value.first));
         }
@@ -332,7 +332,7 @@ public:
     {
         size_t start_len = this->al_string.length();
 
-        this->al_string.append(value.first.data(), value.first.length());
+        this->al_string += value.first;
 
         line_range lr{(int) start_len, (int) this->al_string.length()};
 
