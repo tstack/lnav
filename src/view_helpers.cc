@@ -454,6 +454,7 @@ open_pretty_view()
                 // TODO: dump more details of the line in the output.
                 pp.append_to(pretty_al);
             } else {
+                log_info("skipping pretty-print of log message with no body");
                 pretty_al = orig_al;
             }
 

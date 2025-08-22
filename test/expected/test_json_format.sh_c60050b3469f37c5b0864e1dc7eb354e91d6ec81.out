@@ -36,14 +36,14 @@
 [31m	at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1720)[0m
 [31m	at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1571)[0m
 [31m	... 33 common frames omitted[0m
-[31m  @version: 1[0m
+[31m  @version: [0m[31m1[0m
 [31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
-[31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
-[31m  level: ERROR[0m
-[31m  customer: foobaz[0m
+[31m  thread_name: [0m[31mhttp-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
+[31m  level: [0m[31mERROR[0m
+[31m  customer: [0m[31mfoobaz[0m
 [31m2016-08-03T17:06:31.009+0000[0m[31m - [0m[31m;Exception initializing page context;[0m[31m [0m
-[31m  @version: 1[0m
+[31m  @version: [0m[31m1[0m
 [31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
-[31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
-[31m  level: ERROR[0m
-[31m  customer: foobaz[0m
+[31m  thread_name: [0m[31mhttp-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
+[31m  level: [0m[31mERROR[0m
+[31m  customer: [0m[31mfoobaz[0m

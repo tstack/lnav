@@ -2802,7 +2802,16 @@ external_log_format::get_subline(const logline& ll,
                     this->json_append_to_cache(
                         lv.lv_meta.lvm_name.to_string_fragment());
                     this->json_append_to_cache(": ", 2);
+                    lr.lr_start = this->jlf_cached_line.size();
                     this->json_append_to_cache(utf_scan_res.usr_valid_frag);
+                    lr.lr_end = this->jlf_cached_line.size();
+                    if (lv.lv_meta.lvm_name == this->elf_body_field) {
+                        this->jlf_line_attrs.emplace_back(lr, SA_BODY.value());
+
+                    } else {
+                        this->jlf_line_attrs.emplace_back(
+                            lr, SA_EXTRA_CONTENT.value());
+                    }
                     this->json_append_to_cache("\n", 1);
                     sub_offset += 1;
                     if (utf_scan_res.usr_remaining) {

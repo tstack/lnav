@@ -17,5 +17,5 @@ panic: foo bar failed baz
 [31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mERROR[0m[31m - [0m[31mlooking bad[0m
 [31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mCRITICAL[0m[31m - [0m[31msooo bad[0m
 [31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mFATAL[0m[31m - [0m[31mshoot[0m
-[31m  obj: { "field1" : "hi", "field2": 2 }[0m
-[31m  arr: ["hi", {"sub1": true}][0m
+[31m  obj: [0m[31m{ "field1" : "hi", "field2": 2 }[0m
+[31m  arr: [0m[31m["hi", {"sub1": true}][0m
