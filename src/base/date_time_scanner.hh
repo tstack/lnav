@@ -93,7 +93,7 @@ struct date_time_scanner {
     struct exttm dts_base_tm;
     int dts_fmt_lock{-1};
     int dts_fmt_len{-1};
-    struct exttm dts_last_tm {};
+    tm dts_last_tm {};
     struct timeval dts_last_tv {};
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};

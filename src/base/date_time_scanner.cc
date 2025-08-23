@@ -197,7 +197,7 @@ date_time_scanner::scan(const char* time_dest,
                     }
                     this->to_localtime(gmt, *tm_out);
                 }
-                const auto& last_tm = this->dts_last_tm.et_tm;
+                const auto& last_tm = this->dts_last_tm;
                 if (last_tm.tm_year == tm_out->et_tm.tm_year
                     && last_tm.tm_mon == tm_out->et_tm.tm_mon
                     && last_tm.tm_mday == tm_out->et_tm.tm_mday
@@ -261,7 +261,7 @@ date_time_scanner::scan(const char* time_dest,
                     }
                     this->to_localtime(gmt, *tm_out);
                 }
-                const auto& last_tm = this->dts_last_tm.et_tm;
+                const auto& last_tm = this->dts_last_tm;
                 if (last_tm.tm_year == tm_out->et_tm.tm_year
                     && last_tm.tm_mon == tm_out->et_tm.tm_mon
                     && last_tm.tm_mday == tm_out->et_tm.tm_mday
@@ -293,7 +293,7 @@ date_time_scanner::scan(const char* time_dest,
     }
 
     if (retval != nullptr) {
-        this->dts_last_tm = *tm_out;
+        this->dts_last_tm = tm_out->et_tm;
         this->dts_last_tv = tv_out;
     }
 
@@ -337,7 +337,7 @@ date_time_scanner::clear()
     this->dts_fmt_lock = -1;
     this->dts_fmt_len = -1;
     this->dts_last_tv = timeval{};
-    this->dts_last_tm = exttm{};
+    this->dts_last_tm = tm{};
     this->dts_localtime_cached_gmt = 0;
     this->dts_localtime_cached_tm = tm{};
 }
@@ -347,7 +347,7 @@ date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
 {
     this->dts_base_time = base_time;
     this->dts_base_tm.et_tm = local_tm;
-    this->dts_last_tm = exttm{};
+    this->dts_last_tm = tm{};
     this->dts_last_tv = timeval{};
 }
 
