@@ -516,7 +516,7 @@ public:
 
     content_line_t at(vis_line_t vl) const
     {
-        return this->lss_index[this->lss_filtered_index[vl]];
+        return this->lss_index[this->lss_filtered_index[vl]].value();
     }
 
     content_line_t at_base(vis_line_t vl)
@@ -558,13 +558,19 @@ public:
               ld_visible(lf->is_indexing())
         {
             lf->set_logline_observer(&this->ld_filter_state);
+            this->ld_file_ptr = lf.get();
         }
 
-        void clear() { this->ld_filter_state.lfo_filter_state.clear(); }
+        void clear()
+        {
+            this->ld_filter_state.lfo_filter_state.clear();
+            this->ld_file_ptr = nullptr;
+        }
 
         void set_file(const std::shared_ptr<logfile>& lf)
         {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
+            this->ld_file_ptr = lf.get();
             lf->set_logline_observer(&this->ld_filter_state);
         }
 
@@ -573,10 +579,7 @@ public:
             return this->ld_filter_state.lfo_filter_state.tfs_logfile;
         }
 
-        logfile* get_file_ptr() const
-        {
-            return this->ld_filter_state.lfo_filter_state.tfs_logfile.get();
-        }
+        logfile* get_file_ptr() const { return this->ld_file_ptr; }
 
         bool is_visible() const
         {
@@ -589,6 +592,7 @@ public:
         line_filter_observer ld_filter_state;
         size_t ld_lines_indexed{0};
         size_t ld_lines_watched{0};
+        logfile* ld_file_ptr{nullptr};
         bool ld_visible;
     };
 
@@ -731,16 +735,43 @@ public:
     void quiesce();
 
     struct __attribute__((__packed__)) indexed_content {
-        indexed_content() = default;
+        enum class level_t : uint8_t {
+            normal,
+            warning,
+            error,
+        };
 
-        indexed_content(content_line_t cl) : ic_value(cl) {}
-
-        operator content_line_t() const
+        static level_t level_from_log(const logfile::iterator iter)
         {
-            return content_line_t(this->ic_value);
+            if (!iter->is_message()) {
+                return level_t::normal;
+            }
+            switch (iter->get_msg_level()) {
+                case log_level_t::LEVEL_WARNING:
+                    return level_t::warning;
+                case log_level_t::LEVEL_ERROR:
+                case log_level_t::LEVEL_FATAL:
+                case log_level_t::LEVEL_CRITICAL:
+                    return level_t::error;
+                default:
+                    return level_t::normal;
+            }
         }
 
-        uint64_t ic_value : 40;
+        indexed_content() = default;
+
+        indexed_content(content_line_t cl, const logfile::iterator iter)
+            : ic_value(cl),
+              ic_level(lnav::enums::to_underlying(level_from_log(iter)))
+        {
+        }
+
+        content_line_t value() const { return content_line_t(this->ic_value); }
+
+        level_t level() const { return static_cast<level_t>(this->ic_level); }
+
+        uint64_t ic_value : 38;
+        uint8_t ic_level : 2;
     };
 
     big_array<indexed_content> lss_index;

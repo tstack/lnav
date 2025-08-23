@@ -191,8 +191,8 @@ struct filtered_logline_cmp {
 
     bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
     {
-        auto cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
-        auto cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
+        auto cl_lhs = llss_controller.lss_index[lhs].value();
+        auto cl_rhs = llss_controller.lss_index[rhs].value();
         auto ll_lhs = this->llss_controller.find_line(cl_lhs);
         auto ll_rhs = this->llss_controller.find_line(cl_rhs);
 
@@ -207,7 +207,7 @@ struct filtered_logline_cmp {
 
     bool operator()(const uint32_t& lhs, const timeval& rhs) const
     {
-        const auto cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        const auto cl_lhs = llss_controller.lss_index[lhs].value();
         const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
 
         if (ll_lhs == nullptr) {
@@ -810,18 +810,19 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 struct logline_cmp {
     logline_cmp(logfile_sub_source& lc) : llss_controller(lc) {}
 
-    bool operator()(const content_line_t& lhs, const content_line_t& rhs) const
+    bool operator()(const logfile_sub_source::indexed_content& lhs,
+                    const logfile_sub_source::indexed_content& rhs) const
     {
-        const auto* ll_lhs = this->llss_controller.find_line(lhs);
-        const auto* ll_rhs = this->llss_controller.find_line(rhs);
+        const auto* ll_lhs = this->llss_controller.find_line(lhs.value());
+        const auto* ll_rhs = this->llss_controller.find_line(rhs.value());
 
         return (*ll_lhs) < (*ll_rhs);
     }
 
     bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
     {
-        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
-        content_line_t cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
+        auto cl_lhs = llss_controller.lss_index[lhs].value();
+        auto cl_rhs = llss_controller.lss_index[rhs].value();
         const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
         const auto* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
@@ -846,9 +847,10 @@ struct logline_cmp {
     }
 #endif
 
-    bool operator()(const content_line_t& lhs, const struct timeval& rhs) const
+    bool operator()(const logfile_sub_source::indexed_content& lhs,
+                    const struct timeval& rhs) const
     {
-        const auto* ll_lhs = this->llss_controller.find_line(lhs);
+        const auto* ll_lhs = this->llss_controller.find_line(lhs.value());
 
         return *ll_lhs < rhs;
     }
@@ -946,7 +948,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             && lf->size() > ld.ld_lines_indexed)
                         {
                             auto& new_file_line = (*lf)[ld.ld_lines_indexed];
-                            content_line_t cl = this->lss_index.back();
+                            auto cl = this->lss_index.back().value();
                             auto* last_indexed_line = this->find_line(cl);
 
                             // If there are new lines that are older than what
@@ -1084,7 +1086,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_start(*this);
             for (const auto row_in_full_index : this->lss_filtered_index) {
-                auto cl = this->lss_index[row_in_full_index];
+                auto cl = this->lss_index[row_in_full_index].value();
                 uint64_t line_number;
                 auto ld_iter = this->find_data(cl, line_number);
                 auto& ld = *ld_iter;
@@ -1167,7 +1169,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                 .insert_once(start_con_line);
                         }
                     }
-                    this->lss_index.push_back(con_line);
+                    this->lss_index.push_back(
+                        indexed_content{con_line, lf_iter});
                 }
             }
 
@@ -1245,7 +1248,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                 .insert_once(start_con_line);
                         }
                     }
-                    this->lss_index.push_back(con_line);
+                    this->lss_index.push_back(
+                        indexed_content{con_line, lf_iter});
                 }
 
                 merge.next();
@@ -1285,7 +1289,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
              index_index < this->lss_index.size();
              index_index++)
         {
-            const auto cl = (content_line_t) this->lss_index[index_index];
+            const auto cl = this->lss_index[index_index].value();
             uint64_t line_number;
             auto ld = this->find_data(cl, line_number);
 
@@ -1373,12 +1377,12 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     }
 
     for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
-        const content_line_t orig_cl = this->at(vl);
-        content_line_t cl = orig_cl;
-        auto lf = this->find_file_ptr(cl);
+        const auto& orig_ic = this->lss_index[this->lss_filtered_index[vl]];
+        auto cl = orig_ic.value();
+        auto* lf = this->find_file_ptr(cl);
 
         for (auto& lss_user_mark : this->lss_user_marks) {
-            if (lss_user_mark.second.bv_tree.exists(orig_cl)) {
+            if (lss_user_mark.second.bv_tree.exists(orig_ic.value())) {
                 bm[lss_user_mark.first].insert_once(vl);
 
                 if (lss_user_mark.first == &textview_curses::BM_USER) {
@@ -1393,22 +1397,17 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
             bm[&BM_FILES].insert_once(vl);
         }
 
-        auto line_iter = lf->begin() + cl;
-        if (line_iter->is_message()) {
-            switch (line_iter->get_msg_level()) {
-                case LEVEL_WARNING:
-                    bm[&textview_curses::BM_WARNINGS].insert_once(vl);
-                    break;
+        switch (orig_ic.level()) {
+            case indexed_content::level_t::warning:
+                bm[&textview_curses::BM_WARNINGS].insert_once(vl);
+                break;
 
-                case LEVEL_FATAL:
-                case LEVEL_ERROR:
-                case LEVEL_CRITICAL:
-                    bm[&textview_curses::BM_ERRORS].insert_once(vl);
-                    break;
+            case indexed_content::level_t::error:
+                bm[&textview_curses::BM_ERRORS].insert_once(vl);
+                break;
 
-                default:
-                    break;
-            }
+            default:
+                break;
         }
 
         last_file = lf;
@@ -1453,7 +1452,7 @@ logfile_sub_source::text_filters_changed()
     for (size_t index_index = 0; index_index < this->lss_index.size();
          index_index++)
     {
-        content_line_t cl = (content_line_t) this->lss_index[index_index];
+        auto cl = this->lss_index[index_index].value();
         uint64_t line_number;
         auto ld = this->find_data(cl, line_number);
 
@@ -2236,8 +2235,8 @@ logfile_sub_source::reload_index_delegate()
     }
 
     this->lss_index_delegate->index_start(*this);
-    for (unsigned int index : this->lss_filtered_index) {
-        content_line_t cl = (content_line_t) this->lss_index[index];
+    for (const auto index : this->lss_filtered_index) {
+        auto cl = this->lss_index[index].value();
         uint64_t line_number;
         auto ld = this->find_data(cl, line_number);
         std::shared_ptr<logfile> lf = (*ld)->get_file();
@@ -3339,7 +3338,7 @@ logfile_sub_source::row_for(const row_info& ri)
     if (lb != this->lss_filtered_index.end()) {
         auto first_lb = lb;
         while (true) {
-            auto cl = this->lss_index[*lb];
+            auto cl = this->lss_index[*lb].value();
             if (content_line_t(ri.ri_id) == cl) {
                 first_lb = lb;
                 break;
