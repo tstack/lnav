@@ -38,12 +38,12 @@
 namespace lnav {
 
 struct small_string_map {
-    static constexpr auto MAP_SIZE = 4;
+    static constexpr auto MAP_SIZE = 8;
     static constexpr auto MAX_KEY_SIZE = 8;
     char ssm_keys[MAP_SIZE * MAX_KEY_SIZE]{};
     uint32_t ssm_values[MAP_SIZE]{};
-    uint32_t ssm_used_keys{0};
     uint32_t ssm_start_index{0};
+    bool ssm_age[MAP_SIZE];
 
     std::optional<uint32_t> lookup(const string_fragment& in);
     void insert(const string_fragment& key, uint32_t value);

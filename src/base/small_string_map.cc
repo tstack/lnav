@@ -29,6 +29,8 @@
 
 #include "small_string_map.hh"
 
+#include "lnav_log.hh"
+
 namespace lnav {
 
 std::optional<uint32_t>
@@ -47,6 +49,7 @@ small_string_map::lookup(const string_fragment& in)
                 || this->ssm_keys[index * MAX_KEY_SIZE + in.length()] == '\0'))
         {
             this->ssm_start_index = index;
+            this->ssm_age[index] = true;
             return this->ssm_values[index];
         }
         index = (index + 1) % MAP_SIZE;
@@ -57,18 +60,27 @@ small_string_map::lookup(const string_fragment& in)
 void
 small_string_map::insert(const string_fragment& key, uint32_t value)
 {
-    if (key.length() >= MAX_KEY_SIZE) {
+    if (key.empty() || key.length() > MAX_KEY_SIZE) {
         return;
     }
 
-    auto key_index = this->ssm_used_keys < MAP_SIZE ? this->ssm_used_keys++
-                                                    : key.hash() % MAP_SIZE;
+    auto key_index = (this->ssm_start_index + 1) % MAP_SIZE;
+    for (auto lpc = 0; lpc < MAP_SIZE; lpc++) {
+        if (!this->ssm_age[lpc]) {
+            key_index = lpc;
+        } else {
+            this->ssm_age[lpc] = false;
+        }
+    }
+    this->ssm_age[this->ssm_start_index] = true;
+    this->ssm_age[key_index] = true;
 
     memset(&this->ssm_keys[key_index * MAX_KEY_SIZE],
            0,
            MAX_KEY_SIZE * sizeof(char));
     memcpy(&this->ssm_keys[key_index * MAX_KEY_SIZE], key.data(), key.length());
     this->ssm_values[key_index] = value;
+    this->ssm_start_index = key_index;
 }
 
 }  // namespace lnav

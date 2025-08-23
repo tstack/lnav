@@ -45,8 +45,10 @@ TEST_CASE("basic lookup")
 {
     auto ssm = lnav::small_string_map{};
 
-    ssm.insert("test"_frag, 123);
-    auto res = ssm.lookup("test"_frag);
+    ssm.insert("info"_frag, 123);
+    ssm.insert("304"_frag, 123);
+    ssm.insert("404"_frag, 123);
+    auto res = ssm.lookup("info"_frag);
     CHECK(res.has_value());
     CHECK(123 == res.value());
 
