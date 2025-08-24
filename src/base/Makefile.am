@@ -34,6 +34,7 @@ noinst_HEADERS = \
     color_spaces.hh \
     date_time_scanner.cfg.hh \
     date_time_scanner.hh \
+    distributed_slice.hh \
     enum_util.hh \
     file_range.hh \
     from_trait.hh \
