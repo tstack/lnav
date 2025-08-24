@@ -133,24 +133,19 @@ bottom_status_source::update_marks(listview_curses* lc)
     status_field& sf = this->bss_fields[BSF_HITS];
     auto retval = false;
 
-    if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
-        const auto& bv = bm[&textview_curses::BM_SEARCH];
+    const auto& bv = bm[&textview_curses::BM_SEARCH];
 
-        if (!bv.empty() || !tc->get_current_search().empty()) {
-            auto vl = tc->get_selection();
-            if (vl) {
-                auto lb = bv.bv_tree.find(vl.value());
-                if (lb != bv.bv_tree.end()) {
-                    retval = sf.set_value("  Hit %'d of %'d for ",
-                                          (lb - bv.bv_tree.begin()) + 1,
-                                          tc->get_match_count());
-                } else {
-                    retval = sf.set_value("  %'d hits for ",
-                                          tc->get_match_count());
-                }
+    if (!bv.empty() || !tc->get_current_search().empty()) {
+        auto vl = tc->get_selection();
+        if (vl) {
+            auto lb = bv.bv_tree.find(vl.value());
+            if (lb != bv.bv_tree.end()) {
+                retval = sf.set_value("  Hit %'d of %'d for ",
+                                      (lb - bv.bv_tree.begin()) + 1,
+                                      tc->get_match_count());
+            } else {
+                retval = sf.set_value("  %'d hits for ", tc->get_match_count());
             }
-        } else {
-            retval = sf.clear();
         }
     } else {
         retval = sf.clear();

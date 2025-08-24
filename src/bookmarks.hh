@@ -33,11 +33,13 @@
 #define bookmarks_hh
 
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "base/distributed_slice.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "tlx/container/btree_set.hpp"
@@ -117,20 +119,11 @@ public:
 
     tlx::btree_set<LineType> bv_tree;
 
-    std::size_t size() const
-    {
-        return this->bv_tree.size();
-    }
+    std::size_t size() const { return this->bv_tree.size(); }
 
-    void clear()
-    {
-        this->bv_tree.clear();
-    }
+    void clear() { this->bv_tree.clear(); }
 
-    bool empty() const
-    {
-        return this->bv_tree.empty();
-    }
+    bool empty() const { return this->bv_tree.empty(); }
 
     /**
      * Insert a bookmark into this vector, but only if it is not already in the
@@ -181,15 +174,12 @@ public:
  */
 class bookmark_type_t {
 public:
-    using type_iterator = std::vector<bookmark_type_t*>::iterator;
+    using type_container = dist_slice_container<bookmark_type_t>;
 
-    static type_iterator type_begin() { return get_all_types().begin(); }
+    static const type_container& get_all_types();
 
-    static type_iterator type_end() { return get_all_types().end(); }
-
-    static std::optional<bookmark_type_t*> find_type(const std::string& name);
-
-    static std::vector<bookmark_type_t*>& get_all_types();
+    static std::optional<const bookmark_type_t*> find_type(
+        const std::string& name);
 
     static std::vector<string_fragment> get_type_names();
 
@@ -197,8 +187,10 @@ public:
     explicit bookmark_type_t(const T (&name)[N])
         : bt_name(string_fragment::from_const(name))
     {
-        get_all_types().push_back(this);
     }
+
+    bookmark_type_t(const bookmark_type_t&) = delete;
+    bookmark_type_t(const bookmark_type_t&&) = delete;
 
     const string_fragment& get_name() const { return this->bt_name; }
 
@@ -248,7 +240,14 @@ bookmark_vector<LineType>::prev(LineType start) const
  */
 template<typename LineType>
 struct bookmarks {
-    using type = std::map<const bookmark_type_t*, bookmark_vector<LineType>>;
+    using type = bookmark_type_t::type_container::slice_indexed_array<
+        bookmark_vector<LineType>>;
+
+    static type create_array()
+    {
+        return bookmark_type_t::get_all_types()
+            .create_array_indexed_by<bookmark_vector<LineType>>();
+    }
 };
 
 #endif

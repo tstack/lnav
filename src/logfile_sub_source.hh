@@ -723,9 +723,10 @@ public:
 
     exec_context* get_exec_context() const { return this->lss_exec_context; }
 
-    static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
-    static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
-    static const uint64_t MAX_FILES = (MAX_CONTENT_LINES / MAX_LINES_PER_FILE);
+    static constexpr uint64_t MAX_CONTENT_LINES = 1ULL << 40;
+    static constexpr uint64_t MAX_LINES_PER_FILE = 1ULL << 27;
+    static constexpr uint64_t MAX_FILES
+        = (MAX_CONTENT_LINES / MAX_LINES_PER_FILE);
 
     std::function<void(logfile_sub_source&, file_off_t, file_size_t)>
         lss_sorting_observer;
@@ -822,7 +823,8 @@ private:
     std::vector<uint32_t> lss_filtered_index;
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
-    bookmarks<content_line_t>::type lss_user_marks;
+    bookmarks<content_line_t>::type lss_user_marks{
+        bookmarks<content_line_t>::create_array()};
     auto_mem<sqlite3_stmt> lss_marker_stmt{sqlite3_finalize};
     std::string lss_marker_stmt_text;
 

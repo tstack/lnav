@@ -32,6 +32,7 @@
 #ifndef textview_curses_hh
 #define textview_curses_hh
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -53,6 +54,7 @@
 
 class textview_curses;
 
+using vis_bookmarks_t = bookmarks<vis_line_t>;
 using vis_bookmarks = bookmarks<vis_line_t>::type;
 
 class logfile_filter_state {
@@ -940,7 +942,7 @@ protected:
     text_sub_source* tc_sub_source{nullptr};
     std::shared_ptr<text_delegate> tc_delegate;
 
-    vis_bookmarks tc_bookmarks;
+    vis_bookmarks tc_bookmarks{vis_bookmarks_t::create_array()};
 
     int tc_searching{0};
     struct timeval tc_follow_deadline{0, 0};

@@ -31,6 +31,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <optional>
 
 #include "listview_curses.hh"
 
@@ -38,6 +39,8 @@
 #include <time.h>
 
 #include "base/func_util.hh"
+#include "base/itertools.enumerate.hh"
+#include "base/itertools.hh"
 #include "base/keycodes.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
@@ -1247,17 +1250,29 @@ listview_curses::layout_for_row(vis_line_t row) const
     {
         auto above_height_avail
             = height - retval.lr_desired_row_height - this->lv_tail_space;
-        auto curr_above_row = row - 1_vl;
-        while (curr_above_row >= 0_vl && above_height_avail > 0_vl) {
+        // scan forwards since that will be nicer to the line_buffer cache
+        auto highest_above_row = std::max(0_vl, row - above_height_avail);
+        for (auto curr_above_row = highest_above_row; curr_above_row < row;
+             ++curr_above_row)
+        {
             auto curr_above_height
                 = this->height_for_row(curr_above_row, height, width);
-
+            retval.lr_above_line_heights.emplace_back(curr_above_height);
+        }
+        std::reverse(retval.lr_above_line_heights.begin(),
+                     retval.lr_above_line_heights.end());
+        auto above_limit = std::optional<size_t>();
+        for (const auto& [index, curr_above_height] :
+             lnav::itertools::enumerate(retval.lr_above_line_heights))
+        {
             above_height_avail -= curr_above_height;
             if (above_height_avail < 0_vl) {
+                above_limit = index;
                 break;
             }
-            curr_above_row -= 1_vl;
-            retval.lr_above_line_heights.emplace_back(curr_above_height);
+        }
+        if (above_limit) {
+            retval.lr_above_line_heights.resize(above_limit.value());
         }
     }
     {

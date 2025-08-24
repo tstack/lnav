@@ -92,21 +92,24 @@ bookmark_metadata::clear()
     this->bm_annotations.la_pairs.clear();
 }
 
-std::optional<bookmark_type_t*>
-bookmark_type_t::find_type(const std::string& name)
-{
-    return get_all_types()
-        | lnav::itertools::find_if(
-               [&name](const auto& elem) { return elem->bt_name == name; })
-        | lnav::itertools::deref();
-}
-
-std::vector<bookmark_type_t*>&
+const bookmark_type_t::type_container&
 bookmark_type_t::get_all_types()
 {
-    static std::vector<bookmark_type_t*> all_types;
+    static auto retval = DIST_SLICE_CONTAINER(bookmark_type_t, bm_types);
 
-    return all_types;
+    return retval;
+}
+
+std::optional<const bookmark_type_t*>
+bookmark_type_t::find_type(const std::string& name)
+{
+    for (const auto& bmt : get_all_types()) {
+        if (bmt.get_name() == name) {
+            return &bmt;
+        }
+    }
+
+    return std::nullopt;
 }
 
 std::vector<string_fragment>
@@ -115,7 +118,7 @@ bookmark_type_t::get_type_names()
     std::vector<string_fragment> retval;
 
     for (const auto& bt : get_all_types()) {
-        retval.emplace_back(bt->get_name());
+        retval.emplace_back(bt.get_name());
     }
     std::stable_sort(
         retval.begin(), retval.end(), [](const auto& lhs, const auto& rhs) {

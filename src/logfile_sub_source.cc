@@ -39,6 +39,7 @@
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
@@ -62,7 +63,7 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
-const bookmark_type_t logfile_sub_source::BM_FILES("file");
+const DIST_SLICE(bm_types) bookmark_type_t logfile_sub_source::BM_FILES("file");
 
 static int
 pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
@@ -1254,7 +1255,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
                 merge.next();
                 index_off += 1;
-                if (index_off % 10000 == 0 && this->lss_sorting_observer) {
+                if (index_off % 100000 == 0 && this->lss_sorting_observer) {
                     this->lss_sorting_observer(*this, index_off, index_size);
                 }
             }
@@ -1264,7 +1265,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-             iter++)
+             ++iter)
         {
             auto* lf = (*iter)->get_file_ptr();
 
@@ -1368,12 +1369,20 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     logfile* last_file = nullptr;
     vis_line_t vl;
 
-    bm[&textview_curses::BM_WARNINGS].clear();
-    bm[&textview_curses::BM_ERRORS].clear();
-    bm[&BM_FILES].clear();
+    auto& bm_warnings = bm[&textview_curses::BM_WARNINGS];
+    auto& bm_errors = bm[&textview_curses::BM_ERRORS];
+    auto& bm_files = bm[&BM_FILES];
 
-    for (auto& lss_user_mark : this->lss_user_marks) {
-        bm[lss_user_mark.first].clear();
+    bm_warnings.clear();
+    bm_errors.clear();
+    bm_files.clear();
+
+    std::vector<const bookmark_type_t*> used_marks;
+    for (const auto& bmt : bookmark_type_t::get_all_types()) {
+        if (!this->lss_user_marks[&bmt].empty()) {
+            bm[&bmt].clear();
+            used_marks.emplace_back(&bmt);
+        }
     }
 
     for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
@@ -1381,11 +1390,12 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
         auto cl = orig_ic.value();
         auto* lf = this->find_file_ptr(cl);
 
-        for (auto& lss_user_mark : this->lss_user_marks) {
-            if (lss_user_mark.second.bv_tree.exists(orig_ic.value())) {
-                bm[lss_user_mark.first].insert_once(vl);
+        for (const auto& bmt : used_marks) {
+            auto& user_mark = this->lss_user_marks[bmt];
+            if (user_mark.bv_tree.exists(orig_ic.value())) {
+                bm[bmt].insert_once(vl);
 
-                if (lss_user_mark.first == &textview_curses::BM_USER) {
+                if (bmt == &textview_curses::BM_USER) {
                     auto ll = lf->begin() + cl;
 
                     ll->set_mark(true);
@@ -1394,16 +1404,16 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
         }
 
         if (lf != last_file) {
-            bm[&BM_FILES].insert_once(vl);
+            bm_files.insert_once(vl);
         }
 
         switch (orig_ic.level()) {
             case indexed_content::level_t::warning:
-                bm[&textview_curses::BM_WARNINGS].insert_once(vl);
+                bm_warnings.insert_once(vl);
                 break;
 
             case indexed_content::level_t::error:
-                bm[&textview_curses::BM_ERRORS].insert_once(vl);
+                bm_errors.insert_once(vl);
                 break;
 
             default:
@@ -2163,11 +2173,10 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
         int file_index = iter - this->lss_files.begin();
 
         (*iter)->clear();
-        for (auto& user_mark : this->lss_user_marks) {
+        for (auto& bv : this->lss_user_marks) {
             auto mark_curr = content_line_t(file_index * MAX_LINES_PER_FILE);
             auto mark_end
                 = content_line_t((file_index + 1) * MAX_LINES_PER_FILE);
-            auto& bv = user_mark.second;
             auto file_range = bv.equal_range(mark_curr, mark_end);
 
             if (file_range.first != file_range.second) {
@@ -3106,15 +3115,10 @@ logfile_sub_source::get_bookmark_metadata_context(
     vis_line_t vl, bookmark_metadata::categories desired) const
 {
     const auto& vb = this->tss_view->get_bookmarks();
-    const auto bv_iter
-        = vb.find(desired == bookmark_metadata::categories::partition
+    const auto& bv
+        = vb[desired == bookmark_metadata::categories::partition
                       ? &textview_curses::BM_PARTITION
-                      : &textview_curses::BM_META);
-    if (bv_iter == vb.end()) {
-        return bookmark_metadata_context{};
-    }
-
-    const auto& bv = bv_iter->second;
+                      : &textview_curses::BM_META];
     auto vl_iter = bv.bv_tree.lower_bound(vl + 1_vl);
 
     std::optional<vis_line_t> next_line;
