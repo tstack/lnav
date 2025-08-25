@@ -105,6 +105,8 @@ struct shared_buffer_ref {
         return (this->sb_data <= ptr && ptr < buffer_end);
     }
 
+    const file_range::metadata& get_metadata() const { return this->sb_metadata; }
+
     file_range::metadata& get_metadata() { return this->sb_metadata; }
 
     char* get_writable_data(size_t length)
