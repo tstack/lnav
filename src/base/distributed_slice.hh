@@ -36,7 +36,8 @@
 
 #if defined(__APPLE__)
 #    define DIST_SLICE(id) \
-        __attribute__((used, \
+        __attribute__((no_sanitize_address, \
+                       used, \
                        section("__DATA,__ds_" DS_STRINGIZE( \
                            id) ",regular,no_dead_strip")))
 #    define DIST_SLICE_BEGIN(id) \
@@ -45,7 +46,8 @@
         __asm("section$end$__DATA$__ds_" DS_STRINGIZE(id))
 #else
 #    define DIST_SLICE(id) \
-        __attribute__((used, section("ds_" DS_STRINGIZE(id))))
+        __attribute__(( \
+            no_sanitize_address, used, section("ds_" DS_STRINGIZE(id))))
 #    define DIST_SLICE_BEGIN(id) __asm("__start_ds_" DS_STRINGIZE(id))
 #    define DIST_SLICE_END(id)   __asm("__stop_ds_" DS_STRINGIZE(id))
 #endif
@@ -91,15 +93,9 @@ struct dist_slice_container {
             return this->sia_array[index];
         }
 
-        iterator begin()
-        {
-            return this->sia_array.begin();
-        }
+        iterator begin() { return this->sia_array.begin(); }
 
-        iterator end()
-        {
-            return this->sia_array.end();
-        }
+        iterator end() { return this->sia_array.end(); }
 
         void clear()
         {

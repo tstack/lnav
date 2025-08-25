@@ -184,13 +184,18 @@ public:
     static std::vector<string_fragment> get_type_names();
 
     template<typename T, std::size_t N>
-    explicit bookmark_type_t(const T (&name)[N])
+    constexpr explicit bookmark_type_t(const T (&name)[N])
         : bt_name(string_fragment::from_const(name))
     {
     }
 
+    ~bookmark_type_t() = default;
+
     bookmark_type_t(const bookmark_type_t&) = delete;
-    bookmark_type_t(const bookmark_type_t&&) = delete;
+    bookmark_type_t(bookmark_type_t&&) = delete;
+
+    bookmark_type_t& operator=(const bookmark_type_t&) = delete;
+    bookmark_type_t& operator=(bookmark_type_t&&) = delete;
 
     const string_fragment& get_name() const { return this->bt_name; }
 

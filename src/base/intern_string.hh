@@ -620,14 +620,15 @@ struct string_fragment {
             if (this->qs_in_escape) {
                 this->qs_in_escape = false;
                 return true;
-            } else if (ch == '\\') {
+            }
+            if (ch == '\\') {
                 this->qs_in_escape = true;
                 return true;
-            } else if (ch == '"') {
-                return false;
-            } else {
-                return true;
             }
+            if (ch == '"') {
+                return false;
+            }
+            return true;
         }
     };
 
@@ -715,7 +716,7 @@ struct string_fragment {
             static_cast<std::string_view::size_type>(this->length())};
     }
 
-    enum class case_style {
+    enum class case_style : uint8_t {
         lower,
         upper,
         camel,
@@ -732,8 +733,8 @@ struct string_fragment {
     }
 
     const char* sf_string;
-    int sf_begin;
-    int sf_end;
+    int32_t sf_begin;
+    int32_t sf_end;
 };
 
 inline bool
