@@ -1,5 +1,4 @@
 #include <windows.h>
-#include "resource.h"
 
 // Application Icon
 IDI_ICON1 ICON "lnav.ico"

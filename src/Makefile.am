@@ -572,9 +572,9 @@ PLUGIN_SRCS = \
 	file_vtab.cc
 
 if HAVE_WINDRES
-WIN_SRCS = lnavres.o
+WIN_OBJS = lnavres.$(OBJEXT)
 else
-WIN_SRCS =
+WIN_OBJS =
 endif
 
 lnav_SOURCES = \
@@ -584,7 +584,7 @@ lnav_SOURCES = \
     lnav.management_cli.cc \
     $(PLUGIN_SRCS)
 
-lnav_LDADD = $(WIN_SRCS)
+lnav_LDADD = $(WIN_OBJS) $(LDADD)
 
 lnav_test_SOURCES = \
     lnav.cc \
@@ -607,6 +607,8 @@ RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
+    lnav.ico \
+    lnavres.rc \
     third-party/prqlc-c/Cargo.lock \
     third-party/prqlc-c/Cargo.toml \
     third-party/prqlc-c/cbindgen.toml \
