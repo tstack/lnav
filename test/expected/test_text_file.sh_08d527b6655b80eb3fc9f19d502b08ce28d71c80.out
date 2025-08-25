@@ -200,3 +200,12 @@ Run [35m`./autogen.sh`[0m if compiling from a cloned repository.
 
 [34m[[0mAngle-grinder[34m]([0mhttps://github.com/rcoh/angle-grinder[34m)[0m is a tool to slice and dice log files on the command-line.
 If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.
+
+[1m## Code Signing Policy[0m
+
+Free code signing provided by [34m[[0mSignPath.io[34m]([0mhttps://about.signpath.io/[34m)[0m,
+certificate by [34m[[0mSignPath Foundation[34m]([0mhttps://signpath.org/[34m)[0m.
+
+This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or
+operating it.

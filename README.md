@@ -200,3 +200,12 @@ $ sudo make install
 
 [Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
 If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.
+
+## Code Signing Policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/),
+certificate by [SignPath Foundation](https://signpath.org/).
+
+This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or
+operating it.
