@@ -1,0 +1,36 @@
+#include <windows.h>
+#include "resource.h"
+
+// Application Icon
+IDI_ICON1 ICON "lnav.ico"
+
+// Version Information
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1, 0, 0, 0
+PRODUCTVERSION  0, 13, 1, 0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0" // U.S. English, Unicode
+        BEGIN
+            VALUE "CompanyName",      "lnav.org\0"
+            VALUE "FileDescription",  "The Logfile Navigator\0"
+            VALUE "FileVersion",      "1.0.0.0\0"
+            VALUE "InternalName",     "lnav\0"
+            VALUE "OriginalFilename", "lnav.exe\0"
+            VALUE "ProductName",      "lnav\0"
+            VALUE "ProductVersion",   "0.13.1\0"
+            VALUE "LegalCopyright",   "© 2025 lnav contributors\0"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
