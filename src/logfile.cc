@@ -1052,7 +1052,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           .map([path = this->get_path(),
                                 this](const shared_buffer_ref& avail_sbr)
                                    -> text_format_t {
+                              constexpr auto DETECT_LIMIT = 16 * 1024;
                               auto sbr_str = to_string(avail_sbr);
+                              if (sbr_str.size() > DETECT_LIMIT) {
+                                  sbr_str.resize(DETECT_LIMIT);
+                              }
 
                               if (this->lf_line_buffer.is_piper()) {
                                   auto lines
