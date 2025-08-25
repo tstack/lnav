@@ -92,7 +92,7 @@ builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 %-json.cc: $(srcdir)/%.json $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-json $<
 
-%.o: %.rc
+%.o: $(srcdir)/%.rc
 	$(WINDRES) $< -O COFF -o $@
 
 include time_formats.am
@@ -572,7 +572,7 @@ PLUGIN_SRCS = \
 	file_vtab.cc
 
 if HAVE_WINDRES
-WIN_SRCS = lnavres.rc
+WIN_SRCS = lnavres.o
 else
 WIN_SRCS =
 endif
@@ -582,8 +582,9 @@ lnav_SOURCES = \
     lnav.events.cc \
     lnav.indexing.cc \
     lnav.management_cli.cc \
-    $(PLUGIN_SRCS) \
-    $(WIN_SRCS)
+    $(PLUGIN_SRCS)
+
+lnav_LDADD = $(WIN_SRCS)
 
 lnav_test_SOURCES = \
     lnav.cc \
