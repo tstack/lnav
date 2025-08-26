@@ -135,7 +135,7 @@ logfile::open(std::filesystem::path filename,
              (int) lf_fd,
              (long long) lf->lf_stat.st_size,
              (long long) lf->lf_stat.st_mtime,
-             lf->lf_filename.c_str());
+             lf->lf_filename_as_string.c_str());
     if (lf->lf_actual_path) {
         log_info("  actual_path=%s", lf->lf_actual_path->c_str());
     }
@@ -155,7 +155,9 @@ logfile::open(std::filesystem::path filename,
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
     if (hdr.valid()) {
-        log_info("%s: has header %d", lf->lf_filename.c_str(), hdr.valid());
+        log_info("%s: has header %d",
+                 lf->lf_filename_as_string.c_str(),
+                 hdr.valid());
         hdr.match(
             [&lf](const lnav::gzip::header& gzhdr) {
                 if (!gzhdr.empty()) {
@@ -212,7 +214,7 @@ logfile::open(std::filesystem::path filename,
     }
 
     lf->file_options_have_changed();
-    lf->lf_content_id = hasher().update(lf->lf_filename).to_string();
+    lf->lf_content_id = hasher().update(lf->lf_filename_as_string).to_string();
 
     ensure(lf->invariant());
 
@@ -221,14 +223,15 @@ logfile::open(std::filesystem::path filename,
 
 logfile::logfile(std::filesystem::path filename,
                  const logfile_open_options& loo)
-    : lf_filename(std::move(filename)), lf_options(loo)
+    : lf_filename(std::move(filename)),
+      lf_filename_as_string(lf_filename.string()), lf_options(loo)
 {
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
 }
 
 logfile::~logfile()
 {
-    log_info("destructing logfile: %s", this->lf_filename.c_str());
+    log_info("destructing logfile: %s", this->lf_filename_as_string.c_str());
 }
 
 bool
@@ -256,7 +259,8 @@ logfile::file_options_have_changed()
         }
 
         this->lf_file_options = new_options;
-        log_info("%s: file options have changed", this->lf_filename.c_str());
+        log_info("%s: file options have changed",
+                 this->lf_filename_as_string.c_str());
         if (this->lf_file_options) {
             log_info(
                 "  tz=%s",
@@ -373,7 +377,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
          * tend to be sufficiently different that there are few ambiguities...
          */
         log_trace("logfile[%s]: scanning line %d (offset: %d; size: %d)",
-                  this->lf_filename.c_str(),
+                  this->lf_filename_as_string.c_str(),
                   this->lf_index.size(),
                   li.li_file_range.fr_offset,
                   li.li_file_range.fr_size);
@@ -391,13 +395,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 continue;
             }
 
-            auto match_res = curr->match_name(this->lf_filename);
+            auto match_res = curr->match_name(this->lf_filename_as_string);
             if (match_res.is<log_format::name_mismatched>()) {
                 auto nm = match_res.get<log_format::name_mismatched>();
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file name: %s",
                               curr->get_name().get(),
-                              this->lf_filename.c_str());
+                              this->lf_filename_as_string.c_str());
                 }
                 auto regex_al = attr_line_t(nm.nm_pattern);
                 lnav::snippets::regex_highlighter(
@@ -539,7 +543,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
         if (!scan_count) {
             log_info("%s: no formats available to scan, no longer detecting",
-                     this->lf_filename.c_str());
+                     this->lf_filename_as_string.c_str());
             this->lf_options.loo_detect_format = false;
         }
 
@@ -552,7 +556,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             auto winner = best_match.value();
             auto* curr = winner.first;
             log_info("%s:%d:log format found -- %s",
-                     this->lf_filename.c_str(),
+                     this->lf_filename_as_string.c_str(),
                      this->lf_index.size(),
                      curr->get_name().get());
 
@@ -577,7 +581,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             for (auto& td_pair : this->lf_format->lf_tag_defs) {
                 bool matches = td_pair.second->ftd_paths.empty();
                 for (const auto& pr : td_pair.second->ftd_paths) {
-                    if (pr.matches(this->lf_filename.c_str())) {
+                    if (pr.matches(this->lf_filename_as_string.c_str())) {
                         matches = true;
                         break;
                     }
@@ -587,7 +591,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 }
 
                 log_info("%s: found applicable tag definition /%s/tags/%s",
-                         this->lf_filename.c_str(),
+                         this->lf_filename_as_string.c_str(),
                          this->lf_format->get_name().get(),
                          td_pair.second->ftd_name.c_str());
                 this->lf_applicable_taggers.emplace_back(td_pair.second);
@@ -597,7 +601,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             for (auto& pd_pair : this->lf_format->lf_partition_defs) {
                 bool matches = pd_pair.second->fpd_paths.empty();
                 for (const auto& pr : pd_pair.second->fpd_paths) {
-                    if (pr.matches(this->lf_filename.c_str())) {
+                    if (pr.matches(this->lf_filename_as_string.c_str())) {
                         matches = true;
                         break;
                     }
@@ -609,7 +613,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 log_info(
                     "%s: found applicable partition definition "
                     "/%s/partitions/%s",
-                    this->lf_filename.c_str(),
+                    this->lf_filename_as_string.c_str(),
                     this->lf_format->get_name().get(),
                     pd_pair.second->fpd_name.c_str());
                 this->lf_applicable_partitioners.emplace_back(pd_pair.second);
@@ -786,7 +790,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 || this->lf_format->format_changed())))
     {
         log_info("%s: format has changed, rebuilding",
-                 this->lf_filename.c_str());
+                 this->lf_filename_as_string.c_str());
         this->lf_index.clear();
         this->lf_index_size = 0;
         this->lf_partial_line = false;
@@ -841,7 +845,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
                 log_info(
                     "%s: overwrite content_id double check: old:%s; now:%s",
-                    this->lf_filename.c_str(),
+                    this->lf_filename_as_string.c_str(),
                     this->lf_content_id.c_str(),
                     curr_content_id.c_str());
                 if (this->lf_content_id == curr_content_id) {
@@ -857,7 +861,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (is_truncated || is_overwritten) {
             log_info("overwritten file detected, closing -- %s  new: %" PRId64
                      "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
-                     this->lf_filename.c_str(),
+                     this->lf_filename_as_string.c_str(),
                      st.st_size,
                      st.st_mtime,
                      this->lf_stat.st_size,
@@ -890,7 +894,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         if (begin_size == 0 && !has_format) {
-            log_debug("scanning file... %s", this->lf_filename.c_str());
+            log_debug("scanning file... %s",
+                      this->lf_filename_as_string.c_str());
         }
 
         if (!this->lf_index.empty()) {
@@ -923,7 +928,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     if (read_result.isErr()) {
                         log_info(
                             "overwritten file detected, closing -- %s (%s)",
-                            this->lf_filename.c_str(),
+                            this->lf_filename_as_string.c_str(),
                             read_result.unwrapErr().c_str());
                         this->close();
                         return rebuild_result_t::INVALID;
@@ -932,7 +937,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     auto sbr = read_result.unwrap();
                     if (!sbr.to_string_fragment().endswith("\n")) {
                         log_info("overwritten file detected, closing -- %s",
-                                 this->lf_filename.c_str());
+                                 this->lf_filename_as_string.c_str());
                         this->close();
                         return rebuild_result_t::INVALID;
                     }
@@ -949,7 +954,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
                 if (read_result.isErr()) {
                     log_info("overwritten file detected, closing -- %s (%s)",
-                             this->lf_filename.c_str(),
+                             this->lf_filename_as_string.c_str(),
                              read_result.unwrapErr().c_str());
                     this->close();
                     return rebuild_result_t::INVALID;
@@ -972,7 +977,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (ui_clock::now() > deadline.value()) {
                 if (has_format) {
                     log_warning("with format ran past deadline! -- %s",
-                                this->lf_filename.c_str());
+                                this->lf_filename_as_string.c_str());
                     limit = 1000;
                 } else {
                     limit = 100;
@@ -984,8 +989,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
         }
         if (!has_format) {
-            log_debug(
-                "loading file... %s:%d", this->lf_filename.c_str(), begin_size);
+            log_debug("loading file... %s:%d",
+                      this->lf_filename_as_string.c_str(),
+                      begin_size);
         }
         scan_batch_context sbc{this->lf_allocator};
         sbc.sbc_opids.los_opid_ranges.reserve(32);
@@ -995,7 +1001,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             if (load_result.isErr()) {
                 log_error("%s: load next line failure -- %s",
-                          this->lf_filename.c_str(),
+                          this->lf_filename_as_string.c_str(),
                           load_result.unwrapErr().c_str());
                 this->close();
                 return rebuild_result_t::INVALID;
@@ -1013,7 +1019,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 && !li.li_utf8_scan_result.is_valid())
             {
                 log_info("file is not utf, hiding: %s",
-                         this->lf_filename.c_str());
+                         this->lf_filename_as_string.c_str());
                 this->lf_indexing = false;
                 this->lf_options.loo_is_visible = false;
                 auto utf8_error_um
@@ -1107,7 +1113,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 = this->lf_line_buffer.read_range(li.li_file_range);
             if (read_result.isErr()) {
                 log_error("%s:read failure -- %s",
-                          this->lf_filename.c_str(),
+                          this->lf_filename_as_string.c_str(),
                           read_result.unwrapErr().c_str());
                 this->close();
                 return rebuild_result_t::INVALID;
@@ -1120,7 +1126,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 attr_line_builder alb(al);
                 log_warning(
                     "%s: invalid UTF-8 detected at L%d:C%d/%d (O:%lld) -- %s",
-                    this->lf_filename.c_str(),
+                    this->lf_filename_as_string.c_str(),
                     this->lf_index.size() + 1,
                     li.li_utf8_scan_result.usr_valid_frag.sf_end,
                     li.li_file_range.fr_size,
@@ -1160,7 +1166,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     log_debug(
                         "%s: rollbacked line %zu matched filter, forcing "
                         "full sort",
-                        this->lf_filename.c_str(),
+                        this->lf_filename_as_string.c_str(),
                         rollback_index_start);
                     sort_needed = true;
                 }
@@ -1273,7 +1279,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             && st.st_size >= this->lf_options.loo_visible_size_limit)
         {
             log_info("file has unknown format and is too large: %s",
-                     this->lf_filename.c_str());
+                     this->lf_filename_as_string.c_str());
             this->lf_indexing = false;
             auto note_um
                 = lnav::console::user_message::warning(
@@ -1302,7 +1308,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                       begin_rusage,
                       this->lf_activity.la_initial_index_rusage);
             log_info("Resource usage for initial indexing of file: %s:%d-%d",
-                     this->lf_filename.c_str(),
+                     this->lf_filename_as_string.c_str(),
                      begin_size,
                      this->lf_index.size());
             log_rusage(lnav_log_level_t::INFO,
@@ -1333,7 +1339,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
             log_debug(
                 "%s: opid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
-                this->lf_filename.c_str(),
+                this->lf_filename_as_string.c_str(),
                 writable_opid_map->los_opid_ranges.size(),
                 sizeof(opid_time_range),
                 this->lf_allocator.getNumBytesAllocated());
@@ -1341,7 +1347,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         if (begin_size > this->lf_index.size()) {
             log_info("overwritten file detected, closing -- %s",
-                     this->lf_filename.c_str());
+                     this->lf_filename_as_string.c_str());
             this->close();
             return rebuild_result_t::INVALID;
         }
@@ -1375,7 +1381,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     if (this->lf_out_of_time_order_count) {
         log_info("Detected %d out-of-time-order lines in file: %s",
                  this->lf_out_of_time_order_count,
-                 this->lf_filename.c_str());
+                 this->lf_filename_as_string.c_str());
         this->lf_out_of_time_order_count = 0;
     }
 
@@ -1456,7 +1462,7 @@ logfile::read_full_message(const_iterator ll,
 
 #if 0
     log_debug(
-        "%s: reading msg at %d", this->lf_filename.c_str(), ll->get_offset());
+        "%s: reading msg at %d", this->lf_filename_as_string.c_str(), ll->get_offset());
 #endif
 
     msg_out.disown();
@@ -1706,6 +1712,7 @@ logfile::set_filename(const std::string& filename)
 {
     if (this->lf_filename != filename) {
         this->lf_filename = filename;
+        this->lf_filename_as_string = this->lf_filename.string();
         std::filesystem::path p(filename);
         this->lf_basename = p.filename();
     }
@@ -1770,7 +1777,8 @@ logfile::dump_stats()
     if (buf_stats.empty()) {
         return;
     }
-    log_info("line buffer stats for file: %s", this->lf_filename.c_str());
+    log_info("line buffer stats for file: %s",
+             this->lf_filename_as_string.c_str());
     log_info("  file_size=%lld", this->lf_line_buffer.get_file_size());
     log_info("  buffer_size=%ld", this->lf_line_buffer.get_buffer_size());
     log_info("  read_hist=[%4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu]",
