@@ -246,14 +246,14 @@ struct view_options {
 const typed_json_path_container<view_options>&
 get_view_options_handlers()
 {
-    static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
+    static constexpr json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
         {"hide"_frag, row_details_t::hide},
         {"show"_frag, row_details_t::show},
 
         json_path_handler_base::ENUM_TERMINATOR,
     };
 
-    static const json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
+    static constexpr json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
         {"none"_frag, word_wrap_t::none},
         {"normal"_frag, word_wrap_t::normal},
 

@@ -33,12 +33,13 @@
 #define lnav_archive_manager_hh
 
 #include <atomic>
+#include <filesystem>
 #include <functional>
+#include <future>
 #include <string>
 
 #include "base/file_range.hh"
 #include "base/result.h"
-#include <filesystem>
 #include "mapbox/variant.hpp"
 
 namespace archive_manager {
@@ -92,7 +93,7 @@ walk_result_t walk_archive_files(
     const std::function<void(const std::filesystem::path&,
                              const std::filesystem::directory_entry&)>&);
 
-void cleanup_cache();
+[[nodiscard]] std::future<void> cleanup_cache();
 
 }  // namespace archive_manager
 

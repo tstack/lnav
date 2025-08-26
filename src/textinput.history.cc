@@ -196,16 +196,6 @@ history::op_guard::~op_guard()
     }
 }
 
-history
-history::for_context(string_fragment name)
-{
-    history retval;
-
-    retval.h_context = name;
-
-    return retval;
-}
-
 constexpr auto INSERT_PLAIN = R"(
 INSERT INTO lnav_history (context, session_id, create_time_us, content)
     VALUES (?, ?, ?, ?)

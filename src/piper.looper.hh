@@ -194,7 +194,8 @@ Result<handle<state::running>, std::string> create_looper(std::string name,
                                                           auto_fd stderr_fd,
                                                           options opts = {});
 
-void cleanup();
+[[nodiscard]]
+std::future<void> cleanup();
 
 }  // namespace lnav::piper
 

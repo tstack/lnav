@@ -583,14 +583,14 @@ static const struct json_path_container keymap_defs_handlers = {
         .with_children(keymap_def_handlers),
 };
 
-static const json_path_handler_base::enum_value_t _movement_values[] = {
+static constexpr json_path_handler_base::enum_value_t _movement_values[] = {
     {"top"_frag, config_movement_mode::TOP},
     {"cursor"_frag, config_movement_mode::CURSOR},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
-static const struct json_path_container movement_handlers = {
+static const json_path_container movement_handlers = {
     yajlpp::property_handler("mode")
         .with_synopsis("top|cursor")
         .with_enum_values(_movement_values)
@@ -600,7 +600,7 @@ static const struct json_path_container movement_handlers = {
         .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
 };
 
-static const json_path_handler_base::enum_value_t _mouse_mode_values[] = {
+static constexpr json_path_handler_base::enum_value_t _mouse_mode_values[] = {
     {"disabled"_frag, lnav_mouse_mode::disabled},
     {"enabled"_frag, lnav_mouse_mode::enabled},
 
@@ -1223,7 +1223,7 @@ static const struct json_path_container theme_defs_handlers = {
         .with_children(theme_def_handlers),
 };
 
-static const json_path_handler_base::enum_value_t _time_column_values[] = {
+static constexpr json_path_handler_base::enum_value_t _time_column_values[] = {
     {"disabled"_frag, logfile_sub_source_ns::time_column_feature_t::Disabled},
     {"enabled"_frag, logfile_sub_source_ns::time_column_feature_t::Enabled},
     {"default"_frag, logfile_sub_source_ns::time_column_feature_t::Default},

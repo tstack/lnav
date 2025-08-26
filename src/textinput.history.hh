@@ -42,7 +42,10 @@
 namespace lnav::textinput {
 
 struct history {
-    static history for_context(string_fragment name);
+    static constexpr history for_context(string_fragment name)
+    {
+        return {name};
+    }
 
     using timestamp_t = std::chrono::system_clock::time_point;
 

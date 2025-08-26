@@ -41,9 +41,6 @@
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
-const json_path_handler_base::enum_value_t
-    json_path_handler_base::ENUM_TERMINATOR({}, 0);
-
 yajl_gen_status
 yajl_gen_tree(yajl_gen hand, yajl_val val)
 {

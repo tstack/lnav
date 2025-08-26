@@ -30,13 +30,14 @@
 #ifndef lnav_file_converter_manager_hh
 #define lnav_file_converter_manager_hh
 
+#include <filesystem>
+#include <future>
 #include <string>
 #include <vector>
 
 #include "base/auto_pid.hh"
 #include "base/result.h"
 #include "file_format.hh"
-#include <filesystem>
 
 namespace file_converter_manager {
 
@@ -49,7 +50,8 @@ struct convert_result {
 Result<convert_result, std::string> convert(const external_file_format& eff,
                                             const std::string& filename);
 
-void cleanup();
+[[nodiscard]]
+std::future<void> cleanup();
 
 }  // namespace file_converter_manager
 

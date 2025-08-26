@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2024, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -45,7 +45,7 @@ static const json_path_container header_demux_handlers = {
         .for_field(&lnav::piper::header::h_demux_meta),
 };
 
-static const json_path_handler_base::enum_value_t demux_output_values[] = {
+static constexpr json_path_handler_base::enum_value_t demux_output_values[] = {
     {"not_applicable"_frag, demux_output_t::not_applicable},
     {"signal"_frag, demux_output_t::signal},
     {"invalid"_frag, demux_output_t::invalid},
@@ -68,4 +68,4 @@ const typed_json_path_container<lnav::piper::header> header_handlers = {
     yajlpp::property_handler("demux_meta").with_children(header_demux_handlers),
 };
 
-}
+}  // namespace lnav::piper

@@ -406,41 +406,42 @@ walk_archive_files(
 #endif
 }
 
-void
+std::future<void>
 cleanup_cache()
 {
-    (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type::clock::now();
-        auto cache_path = archive_cache_path();
-        const auto& cfg = injector::get<const config&>();
-        std::vector<fs::path> to_remove;
+    return std::async(
+        std::launch::async, +[]() {
+            auto now = std::filesystem::file_time_type::clock::now();
+            auto cache_path = archive_cache_path();
+            const auto& cfg = injector::get<const config&>();
+            std::vector<fs::path> to_remove;
 
-        log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());
-        for (const auto& entry : fs::directory_iterator(cache_path)) {
-            if (entry.path().extension() != ".done") {
-                continue;
+            log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());
+            for (const auto& entry : fs::directory_iterator(cache_path)) {
+                if (entry.path().extension() != ".done") {
+                    continue;
+                }
+
+                auto mtime = fs::last_write_time(entry.path());
+                auto exp_time = mtime + cfg.amc_cache_ttl;
+                if (now < exp_time) {
+                    continue;
+                }
+
+                to_remove.emplace_back(entry.path());
             }
 
-            auto mtime = fs::last_write_time(entry.path());
-            auto exp_time = mtime + cfg.amc_cache_ttl;
-            if (now < exp_time) {
-                continue;
+            for (auto& entry : to_remove) {
+                log_debug("removing cached archive: %s", entry.c_str());
+                fs::remove(entry);
+
+                entry.replace_extension(".lck");
+                fs::remove(entry);
+
+                entry.replace_extension();
+                fs::remove_all(entry);
             }
-
-            to_remove.emplace_back(entry.path());
-        }
-
-        for (auto& entry : to_remove) {
-            log_debug("removing cached archive: %s", entry.c_str());
-            fs::remove(entry);
-
-            entry.replace_extension(".lck");
-            fs::remove(entry);
-
-            entry.replace_extension();
-            fs::remove_all(entry);
-        }
-    });
+        });
 }
 
 }  // namespace archive_manager

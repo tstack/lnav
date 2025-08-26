@@ -30,6 +30,7 @@
 #ifndef lnav_tailer_looper_hh
 #define lnav_tailer_looper_hh
 
+#include <filesystem>
 #include <set>
 
 #include <logfile_fwd.hh>
@@ -38,7 +39,6 @@
 #include "base/auto_pid.hh"
 #include "base/isc.hh"
 #include "base/network.tcp.hh"
-#include <filesystem>
 #include "mapbox/variant.hpp"
 
 namespace tailer {
@@ -151,7 +151,7 @@ private:
     std::map<std::string, std::shared_ptr<host_tailer>> l_remotes;
 };
 
-void cleanup_cache();
+[[nodiscard]] std::future<void> cleanup_cache();
 
 }  // namespace tailer
 

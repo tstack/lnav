@@ -670,7 +670,9 @@ load_time_bookmarks()
                                         .to_attr_line()
                                         .get_string()
                                         .c_str());
-                            } else if (bm_meta.find(line_number) == bm_meta.end()) {
+                            } else if (bm_meta.find(line_number)
+                                       == bm_meta.end())
+                            {
                                 lss.set_user_mark(&textview_curses::BM_META,
                                                   line_cl);
                                 bm_meta[line_number].bm_annotations
@@ -864,7 +866,7 @@ read_files(yajlpp_parse_context* ypc,
     return 1;
 }
 
-static const struct json_path_container view_def_handlers = {
+static const json_path_container view_def_handlers = {
     json_path_handler("top_line").for_field(&view_state::vs_top),
     json_path_handler("focused_line").for_field(&view_state::vs_selection),
     json_path_handler("anchor").for_field(&view_state::vs_anchor),

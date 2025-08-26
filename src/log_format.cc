@@ -3064,7 +3064,7 @@ external_log_format::test_line(sample_t& sample,
         auto md = pat.p_pcre.pp_value->create_match_data();
         auto match_res = pat.p_pcre.pp_value->capture_from(lines[0])
                              .into(md)
-                             .matches()
+                             .matches(PCRE2_NO_UTF_CHECK)
                              .ignore_error();
         if (!match_res) {
             continue;
@@ -4230,7 +4230,8 @@ external_log_format::match_samples(const std::vector<sample_t>& samples) const
                 continue;
             }
 
-            if (pat.p_pcre.pp_value->find_in(sample_iter.s_line.pp_value)
+            if (pat.p_pcre.pp_value
+                    ->find_in(sample_iter.s_line.pp_value, PCRE2_NO_UTF_CHECK)
                     .ignore_error())
             {
                 return true;

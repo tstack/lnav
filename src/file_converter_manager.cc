@@ -152,32 +152,33 @@ convert(const external_file_format& eff, const std::string& filename)
     });
 }
 
-void
+std::future<void>
 cleanup()
 {
-    (void) std::async(std::launch::async, []() {
-        const auto& cfg = injector::get<const lnav::piper::config&>();
-        auto now = std::filesystem::file_time_type::clock::now();
-        auto cache_path = cache_dir();
-        std::vector<std::filesystem::path> to_remove;
+    return std::async(
+        std::launch::async, +[]() {
+            const auto& cfg = injector::get<const lnav::piper::config&>();
+            auto now = std::filesystem::file_time_type::clock::now();
+            auto cache_path = cache_dir();
+            std::vector<std::filesystem::path> to_remove;
 
-        for (const auto& entry :
-             std::filesystem::directory_iterator(cache_path))
-        {
-            auto mtime = std::filesystem::last_write_time(entry.path());
-            auto exp_time = mtime + cfg.c_ttl;
-            if (now < exp_time) {
-                continue;
+            for (const auto& entry :
+                 std::filesystem::directory_iterator(cache_path))
+            {
+                auto mtime = std::filesystem::last_write_time(entry.path());
+                auto exp_time = mtime + cfg.c_ttl;
+                if (now < exp_time) {
+                    continue;
+                }
+
+                to_remove.emplace_back(entry);
             }
 
-            to_remove.emplace_back(entry);
-        }
-
-        for (auto& entry : to_remove) {
-            log_debug("removing conversion: %s", entry.c_str());
-            std::filesystem::remove_all(entry);
-        }
-    });
+            for (auto& entry : to_remove) {
+                log_debug("removing conversion: %s", entry.c_str());
+                std::filesystem::remove_all(entry);
+            }
+        });
 }
 
 }  // namespace file_converter_manager

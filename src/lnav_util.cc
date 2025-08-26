@@ -310,7 +310,7 @@ static const json_path_container snippet_handlers = {
         .with_children(attr_line_handlers),
 };
 
-static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
+static constexpr json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
     {"raw"_frag, lnav::console::user_message::level::raw},
     {"ok"_frag, lnav::console::user_message::level::ok},
     {"info"_frag, lnav::console::user_message::level::info},

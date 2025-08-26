@@ -1561,36 +1561,37 @@ line_buffer::enable_cache()
     this->lb_cached_fd = std::move(write_fd);
 }
 
-void
+std::future<void>
 line_buffer::cleanup_cache()
 {
-    (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type::clock::now();
-        auto cache_path = line_buffer_cache_path();
-        std::vector<std::filesystem::path> to_remove;
-        std::error_code ec;
+    return std::async(
+        std::launch::async, +[]() {
+            auto now = std::filesystem::file_time_type::clock::now();
+            auto cache_path = line_buffer_cache_path();
+            std::vector<std::filesystem::path> to_remove;
+            std::error_code ec;
 
-        for (const auto& cache_subdir :
-             std::filesystem::directory_iterator(cache_path, ec))
-        {
-            for (const auto& entry :
-                 std::filesystem::directory_iterator(cache_subdir, ec))
+            for (const auto& cache_subdir :
+                 std::filesystem::directory_iterator(cache_path, ec))
             {
-                auto mtime = std::filesystem::last_write_time(entry.path());
-                auto exp_time = mtime + 1h;
-                if (now < exp_time) {
-                    continue;
+                for (const auto& entry :
+                     std::filesystem::directory_iterator(cache_subdir, ec))
+                {
+                    auto mtime = std::filesystem::last_write_time(entry.path());
+                    auto exp_time = mtime + 1h;
+                    if (now < exp_time) {
+                        continue;
+                    }
+
+                    to_remove.emplace_back(entry.path());
                 }
-
-                to_remove.emplace_back(entry.path());
             }
-        }
 
-        for (auto& entry : to_remove) {
-            log_debug("removing compressed file cache: %s", entry.c_str());
-            std::filesystem::remove_all(entry, ec);
-        }
-    });
+            for (auto& entry : to_remove) {
+                log_debug("removing compressed file cache: %s", entry.c_str());
+                std::filesystem::remove_all(entry, ec);
+            }
+        });
 }
 
 void

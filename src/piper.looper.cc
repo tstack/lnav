@@ -864,46 +864,48 @@ create_looper(std::string name,
         name, std::move(stdout_fd), std::move(stderr_fd), opts)));
 }
 
-void
+std::future<void>
 cleanup()
 {
-    (void) std::async(std::launch::async, []() {
-        const auto& cfg = injector::get<const config&>();
-        const auto now = std::filesystem::file_time_type::clock::now();
-        const auto& cache_path = storage_path();
-        std::vector<std::filesystem::path> to_remove;
+    return std::async(
+        std::launch::async, +[]() {
+            const auto& cfg = injector::get<const config&>();
+            const auto now = std::filesystem::file_time_type::clock::now();
+            const auto& cache_path = storage_path();
+            std::vector<std::filesystem::path> to_remove;
 
-        for (const auto& cache_subdir :
-             std::filesystem::directory_iterator(cache_path))
-        {
-            auto mtime = std::filesystem::last_write_time(cache_subdir.path());
-            auto exp_time = mtime + cfg.c_ttl;
-            if (now < exp_time) {
-                continue;
-            }
-
-            bool is_recent = false;
-
-            for (const auto& entry :
-                 std::filesystem::directory_iterator(cache_subdir))
+            for (const auto& cache_subdir :
+                 std::filesystem::directory_iterator(cache_path))
             {
-                auto mtime = std::filesystem::last_write_time(entry.path());
+                auto mtime
+                    = std::filesystem::last_write_time(cache_subdir.path());
                 auto exp_time = mtime + cfg.c_ttl;
                 if (now < exp_time) {
-                    is_recent = true;
-                    break;
+                    continue;
+                }
+
+                bool is_recent = false;
+
+                for (const auto& entry :
+                     std::filesystem::directory_iterator(cache_subdir))
+                {
+                    auto mtime = std::filesystem::last_write_time(entry.path());
+                    auto exp_time = mtime + cfg.c_ttl;
+                    if (now < exp_time) {
+                        is_recent = true;
+                        break;
+                    }
+                }
+                if (!is_recent) {
+                    to_remove.emplace_back(cache_subdir);
                 }
             }
-            if (!is_recent) {
-                to_remove.emplace_back(cache_subdir);
-            }
-        }
 
-        for (auto& entry : to_remove) {
-            log_info("removing piper directory: %s", entry.c_str());
-            std::filesystem::remove_all(entry);
-        }
-    });
+            for (auto& entry : to_remove) {
+                log_info("removing piper directory: %s", entry.c_str());
+                std::filesystem::remove_all(entry);
+            }
+        });
 }
 
 }  // namespace lnav::piper

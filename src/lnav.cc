@@ -164,6 +164,8 @@ using namespace md4cpp::literals;
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
+static std::vector<std::future<void>> CLEANUP_TASKS;
+
 constexpr std::chrono::microseconds ZOOM_LEVELS[] = {
     1s,
     30s,
@@ -2339,11 +2341,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
 
                 if (!ran_cleanup) {
-                    line_buffer::cleanup_cache();
-                    archive_manager::cleanup_cache();
-                    tailer::cleanup_cache();
-                    lnav::piper::cleanup();
-                    file_converter_manager::cleanup();
+                    CLEANUP_TASKS.emplace_back(line_buffer::cleanup_cache());
+                    CLEANUP_TASKS.emplace_back(
+                        archive_manager::cleanup_cache());
+                    CLEANUP_TASKS.emplace_back(tailer::cleanup_cache());
+                    CLEANUP_TASKS.emplace_back(lnav::piper::cleanup());
+                    CLEANUP_TASKS.emplace_back(
+                        file_converter_manager::cleanup());
                     ran_cleanup = true;
                 }
             }
@@ -3997,11 +4001,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
-                archive_manager::cleanup_cache();
-                tailer::cleanup_cache();
-                line_buffer::cleanup_cache();
-                lnav::piper::cleanup();
-                file_converter_manager::cleanup();
+                CLEANUP_TASKS.emplace_back(line_buffer::cleanup_cache());
+                CLEANUP_TASKS.emplace_back(archive_manager::cleanup_cache());
+                CLEANUP_TASKS.emplace_back(tailer::cleanup_cache());
+                CLEANUP_TASKS.emplace_back(lnav::piper::cleanup());
+                CLEANUP_TASKS.emplace_back(file_converter_manager::cleanup());
                 wait_for_pipers();
                 rescan_files(true);
                 isc::to<curl_looper&, services::curl_streamer_t>()

@@ -1188,31 +1188,32 @@ tailer::looper::report_error(std::string path, std::string msg)
     });
 }
 
-void
+std::future<void>
 tailer::cleanup_cache()
 {
-    (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type::clock::now();
-        auto cache_path = remote_cache_path();
-        const auto& cfg = injector::get<const config&>();
-        std::vector<std::filesystem::path> to_remove;
+    return std::async(
+        std::launch::async, +[]() {
+            auto now = std::filesystem::file_time_type::clock::now();
+            auto cache_path = remote_cache_path();
+            const auto& cfg = injector::get<const config&>();
+            std::vector<std::filesystem::path> to_remove;
 
-        log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
-        for (const auto& entry :
-             std::filesystem::directory_iterator(cache_path))
-        {
-            auto mtime = std::filesystem::last_write_time(entry.path());
-            auto exp_time = mtime + cfg.c_cache_ttl;
-            if (now < exp_time) {
-                continue;
+            log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
+            for (const auto& entry :
+                 std::filesystem::directory_iterator(cache_path))
+            {
+                auto mtime = std::filesystem::last_write_time(entry.path());
+                auto exp_time = mtime + cfg.c_cache_ttl;
+                if (now < exp_time) {
+                    continue;
+                }
+
+                to_remove.emplace_back(entry.path());
             }
 
-            to_remove.emplace_back(entry.path());
-        }
-
-        for (auto& entry : to_remove) {
-            log_debug("removing cached remote: %s", entry.c_str());
-            std::filesystem::remove_all(entry);
-        }
-    });
+            for (auto& entry : to_remove) {
+                log_debug("removing cached remote: %s", entry.c_str());
+                std::filesystem::remove_all(entry);
+            }
+        });
 }

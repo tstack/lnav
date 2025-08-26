@@ -284,7 +284,7 @@ public:
 
     void send_initial_load();
 
-    static void cleanup_cache();
+    [[nodiscard]] static std::future<void> cleanup_cache();
 
 private:
     /**

@@ -204,10 +204,12 @@ struct typed_json_path_container;
 struct json_path_handler_base {
     struct enum_value_t {
         template<typename T>
-        enum_value_t(string_fragment name, T value)
+        constexpr enum_value_t(string_fragment name, T value)
             : first(name), second((int) value)
         {
         }
+
+        constexpr enum_value_t() : second(0) {}
 
         string_fragment first;
         int second;
@@ -326,6 +328,10 @@ struct json_path_handler_base {
     attr_line_t get_help_text(const std::string& full_path) const;
     attr_line_t get_help_text(yajlpp_parse_context* ypc) const;
 };
+
+constexpr json_path_handler_base::enum_value_t
+    json_path_handler_base::ENUM_TERMINATOR
+    = {};
 
 struct json_path_handler;
 

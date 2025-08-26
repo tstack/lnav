@@ -55,7 +55,7 @@ static const json_path_container term_color_handler = {
         .with_children(term_color_rgb_handler),
 };
 
-static const json_path_handler_base::enum_value_t _align_values[] = {
+static constexpr json_path_handler_base::enum_value_t _align_values[] = {
     {"start"_frag, text_align_t::start},
     {"center"_frag, text_align_t::center},
     {"end"_frag, text_align_t::end},
