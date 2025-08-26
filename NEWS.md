@@ -18,10 +18,12 @@ Features:
   that captures the various statistics available in a slow
   query log message (e.g. `query_time`, `lock_time`, ...).
 * Annotation handlers can now be lnav scripts if the "handler"
-  field starts with a pipe ("|").
+  field starts with a pipe (`|`).
 * The `<span>` tag in a Markdown now supports
   `white-space: nowrap` in the `style` attribute.
 * Anchors can be added to Markdown using `<a name="...">`.
+  Anchors show up in the breadcrumb bar and can be addressed
+  using the `:goto` command.
 
 Interface changes:
 * If all the content in the LOG/TEXT views are filtered out,
@@ -34,6 +36,7 @@ Bug Fixes:
 * Fix an issue with completion of script names.
 * Handle abbreviated timezones (e.g. PDT/PST) in timestamps.
 * Improve HTML handling in Markdown files.
+* Minor performance improvements.
 
 ## lnav v0.13.0
 
