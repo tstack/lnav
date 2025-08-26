@@ -297,8 +297,13 @@ listview_curses::handle_key(const ncinput& ch)
             {
                 this->set_selection(0_vl);
             } else {
-                auto shift_amount
-                    = -(this->rows_available(this->lv_top, RD_UP) - 1_vl);
+                auto rows_avail = this->rows_available(this->lv_top, RD_UP);
+                if (rows_avail <= 1_vl) {
+                    // may happen in case of jumping over very long lines
+                    // and we need to garantee at least some movement
+                    rows_avail = 2_vl;
+                }
+                auto shift_amount = -(rows_avail - 1_vl);
                 this->shift_top(shift_amount);
             }
             break;
