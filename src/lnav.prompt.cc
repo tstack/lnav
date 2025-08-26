@@ -1470,7 +1470,7 @@ prompt::get_config_value_completion(const std::string& path,
     if (jph.jph_bool_cb) {
         poss_strs = {"true", "false"};
     } else if (jph.jph_enum_values != nullptr) {
-        for (auto lpc = size_t{0}; jph.jph_enum_values[lpc].first != nullptr;
+        for (auto lpc = size_t{0}; !jph.jph_enum_values[lpc].first.empty();
              lpc++)
         {
             poss_strs.emplace_back(jph.jph_enum_values[lpc].first.to_string());
