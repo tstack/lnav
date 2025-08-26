@@ -125,9 +125,6 @@ struct log_opid_state {
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     log_opid_state sbc_opids;
-    std::string sbc_cached_level_strings[4];
-    log_level_t sbc_cached_level_values[4];
-    size_t sbc_cached_level_count{0};
     lnav::small_string_map sbc_level_cache;
 };
 

@@ -192,7 +192,7 @@ bottom_status_source::update_loading(file_off_t off,
 {
     auto& sf = this->bss_fields[BSF_LOADING];
 
-    require(off >= 0);
+    require_ge(off, 0);
     require_ge(total, off);
 
     if (total == 0) {

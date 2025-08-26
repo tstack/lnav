@@ -104,6 +104,11 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
 
         valid_end = i;
         if (ustr[i] <= 0x7F) /* 00..7F */ {
+            if (ustr[i] == '\x00') {
+                retval.usr_message = "Null bytes are not allowed";
+                retval.usr_faulty_bytes = 1;
+                continue;
+            }
             if (ustr[i] == '\t') {
                 retval.usr_column_width_guess += 7;
             } else if (ustr[i] == '\x1b' || ustr[i] == '\b') {

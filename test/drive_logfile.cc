@@ -39,6 +39,7 @@
 
 #include "base/injector.bind.hh"
 #include "base/injector.hh"
+#include "base/isc.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "log_format.hh"
@@ -118,6 +119,7 @@ main(int argc, char* argv[])
     } else if (argc == 0) {
         fprintf(stderr, "error: expecting log file name\n");
     } else {
+        isc::supervisor root_superv(injector::get<isc::service_list>());
         logfile_open_options default_loo;
         auto open_res = logfile::open(argv[0], default_loo);
 

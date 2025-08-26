@@ -216,6 +216,9 @@ logfile::open(std::filesystem::path filename,
     lf->file_options_have_changed();
     lf->lf_content_id = hasher().update(lf->lf_filename_as_string).to_string();
 
+    lf->lf_line_buffer.set_do_preloading(true);
+    lf->lf_line_buffer.send_initial_load();
+
     ensure(lf->invariant());
 
     return Ok(lf);
@@ -1122,8 +1125,6 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             auto sbr = read_result.unwrap();
 
             if (!li.li_utf8_scan_result.is_valid()) {
-                attr_line_t al;
-                attr_line_builder alb(al);
                 log_warning(
                     "%s: invalid UTF-8 detected at L%d:C%d/%d (O:%lld) -- %s",
                     this->lf_filename_as_string.c_str(),
@@ -1132,8 +1133,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     li.li_file_range.fr_size,
                     li.li_file_range.fr_offset,
                     li.li_utf8_scan_result.usr_message);
-                alb.append_as_hexdump(sbr.to_string_fragment());
-                log_warning("  dump: %s", al.al_string.c_str());
+                if (lnav_log_level <= lnav_log_level_t::TRACE) {
+                    attr_line_t al;
+                    attr_line_builder alb(al);
+                    alb.append_as_hexdump(sbr.to_string_fragment());
+                    log_warning("  dump: %s", al.al_string.c_str());
+                }
             }
 
             sbr.rtrim(is_line_ending);

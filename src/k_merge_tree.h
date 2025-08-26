@@ -436,7 +436,7 @@ void kmerge_tree_c<T, owner_t, iterator_t, comparitor>::compare_nodes(kmerge_tre
 
 /*
 	pop the top node, factor it down the list to find its
-	leaf, replace its leaf and then factor that back up
+	leaf, replace its leaf and then factor that bacck up
 */
 template <class T, class owner_t, class iterator_t, class comparitor> 
 void kmerge_tree_c<T, owner_t, iterator_t, comparitor>::next(void)

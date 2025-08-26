@@ -696,7 +696,7 @@ handle_winch(screen_curses* sc)
 void
 layout_views()
 {
-    static constexpr auto FILES_FOCUSED_WIDTH = 40U;
+    static constexpr auto FILES_FOCUSED_WIDTH = 48U;
     static constexpr auto FILES_BLURRED_WIDTH = 20U;
 
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
@@ -795,6 +795,10 @@ layout_views()
         default:
             filter_height = 0;
             break;
+    }
+
+    if (files_width > width) {
+        files_width = width / 2;
     }
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);

@@ -466,8 +466,7 @@ line_buffer::set_fd(auto_fd& fd)
                     if (this->lb_file_time < 0) {
                         this->lb_file_time = 0;
                     }
-                    this->lb_compressed_offset
-                        = lseek(this->lb_fd, 0, SEEK_CUR);
+                    this->lb_compressed_offset = 0;
                     if (!hdr.empty()) {
                         this->lb_header = std::move(hdr);
                     }
@@ -638,6 +637,7 @@ line_buffer::load_next_buffer()
                           start + this->lb_alt_buffer.value().size(),
                           this->lb_alt_buffer.value().available());
             this->lb_compressed_offset = gi->get_source_offset();
+            ensure(this->lb_compressed_offset >= 0);
             if (rc != -1
                 && rc < (ssize_t) this->lb_alt_buffer.value().available()
                 && (start + (ssize_t) this->lb_alt_buffer.value().size() + rc
@@ -703,7 +703,7 @@ line_buffer::load_next_buffer()
             rc = BZ2_bzread(bz_file,
                             this->lb_alt_buffer->end(),
                             this->lb_alt_buffer->available());
-            this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
+            this->lb_compressed_offset = 0;
             BZ2_bzclose(bz_file);
 
             if (rc != -1
@@ -849,8 +849,8 @@ line_buffer::fill_range(file_off_t start,
     {
         /* Cache already has the data, nothing to do. */
         retval = true;
-        if (!lnav::pid::in_child && this->lb_seekable && this->lb_buffer.full()
-            && !this->lb_loader_file_offset)
+        if (this->lb_do_preloading && !lnav::pid::in_child && this->lb_seekable
+            && this->lb_buffer.full() && !this->lb_loader_file_offset)
         {
             // log_debug("loader available start=%d", start);
             auto last_lf_iter = std::find(
@@ -911,6 +911,7 @@ line_buffer::fill_range(file_off_t start,
                               this->lb_file_offset + this->lb_buffer.size(),
                               this->lb_buffer.available());
                 this->lb_compressed_offset = gi->get_source_offset();
+                ensure(this->lb_compressed_offset >= 0);
                 if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
@@ -974,7 +975,7 @@ line_buffer::fill_range(file_off_t start,
                 rc = BZ2_bzread(bz_file,
                                 this->lb_buffer.end(),
                                 this->lb_buffer.available());
-                this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
+                this->lb_compressed_offset = 0;
                 BZ2_bzclose(bz_file);
 
                 if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
@@ -1063,8 +1064,8 @@ line_buffer::fill_range(file_off_t start,
                 break;
         }
 
-        if (!lnav::pid::in_child && this->lb_seekable && this->lb_buffer.full()
-            && !this->lb_loader_file_offset)
+        if (this->lb_do_preloading && !lnav::pid::in_child && this->lb_seekable
+            && this->lb_buffer.full() && !this->lb_loader_file_offset)
         {
             // log_debug("loader available2 start=%d", start);
             auto last_lf_iter = std::find(
@@ -1590,4 +1591,32 @@ line_buffer::cleanup_cache()
             std::filesystem::remove_all(entry, ec);
         }
     });
+}
+
+void
+line_buffer::send_initial_load()
+{
+    if (!this->lb_seekable) {
+        log_warning("file is not seekable, not doing preload");
+        return;
+    }
+
+    if (this->lb_loader_future.valid()) {
+        log_warning("preload is already active");
+        return;
+    }
+
+    log_debug("sending initial load");
+    if (!this->lb_alt_buffer) {
+        // log_debug("allocating new buffer!");
+        this->lb_alt_buffer = auto_buffer::alloc(this->lb_buffer.capacity());
+    }
+    this->lb_loader_file_offset = 0;
+    auto prom = std::make_shared<std::promise<bool>>();
+    this->lb_loader_future = prom->get_future();
+    this->lb_stats.s_requested_preloads += 1;
+    isc::to<io_looper&, io_looper_tag>().send(
+        [this, prom](auto& ioloop) mutable {
+            prom->set_value(this->load_next_buffer());
+        });
 }

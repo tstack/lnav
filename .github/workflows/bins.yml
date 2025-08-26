@@ -166,8 +166,8 @@ jobs:
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
             "CPPFLAGS=-I$(brew --prefix libunistring)/include" \
-            "CXXFLAGS=-g2 -O2" \
-            'CFLAGS=-O2 -g2' \
+            "CXXFLAGS=-g2 -O3" \
+            'CFLAGS=-O3 -g2' \
             "LDFLAGS=-L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
             --with-libarchive=$(brew --prefix libarchive) \
             "LIBS=-llzma -lexpat -lzstd -liconv -llz4 -lbz2 -lz -lpcre2-8"
@@ -261,7 +261,7 @@ jobs:
           ../lnav/configure \
                       --enable-static \
                       LDFLAGS="-static" \
-                      CPPFLAGS="-O2" \
+                      CPPFLAGS="-O3" \
                       CXXFLAGS="-fPIC" \
                       CFLAGS="-fPIC" \
                       LIBS="-larchive -lssh2 -llzma -lexpat -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \

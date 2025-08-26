@@ -60,6 +60,14 @@ TEST_CASE("endswith")
     CHECK(endswith(hw, "lo") == true);
 }
 
+TEST_CASE("scrub_to_utf8")
+{
+    char buffer[8]{};
+
+    scrub_to_utf8(buffer, sizeof(buffer));
+    CHECK(buffer[0] == '\x00');
+}
+
 TEST_CASE("truncate_to")
 {
     const std::string orig = "0123456789abcdefghijklmnopqrstuvwxyz";

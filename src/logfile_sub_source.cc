@@ -177,7 +177,7 @@ logfile_sub_source::find(const char* fn, content_line_t& line_base)
         if (lf == nullptr) {
             continue;
         }
-        if (strcmp(lf->get_filename().c_str(), fn) == 0) {
+        if (strcmp(lf->get_filename_as_string().c_str(), fn) == 0) {
             retval = ld.get_file();
         } else {
             line_base += content_line_t(MAX_LINES_PER_FILE);
@@ -872,7 +872,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     iterator iter;
     size_t total_lines = 0;
     size_t est_remaining_lines = 0;
-    bool full_sort = false;
+    bool full_sort = this->lss_index.empty();
     int file_count = 0;
     bool force = this->lss_force_rebuild;
     auto retval = rebuild_result::rr_no_change;
@@ -927,7 +927,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         } else {
             if (time_left && deadline && ui_clock::now() > deadline.value()) {
                 log_debug("no time left, skipping %s",
-                          lf->get_filename().c_str());
+                          lf->get_filename_as_string().c_str());
                 time_left = false;
             }
             this->lss_all_timestamp_flags
@@ -943,7 +943,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             retval = rebuild_result::rr_appended_lines;
                         }
                         log_debug("new lines for %s:%d",
-                                  lf->get_filename().c_str(),
+                                  lf->get_filename_as_string().c_str(),
                                   lf->size());
                         if (!this->lss_index.empty()
                             && lf->size() > ld.ld_lines_indexed)
@@ -988,6 +988,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                     log_debug(
                                         "already doing full rebuild, doing "
                                         "full_sort as well");
+                                    force = true;
                                     full_sort = true;
                                 }
                             }
@@ -1208,8 +1209,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(*this, index_off, index_size);
             }
-            log_trace("k-way merge") for (;;)
-            {
+            log_trace("k-way merge");
+            for (;;) {
                 logfile::iterator lf_iter;
                 logfile_data* ld;
 
@@ -3115,10 +3116,9 @@ logfile_sub_source::get_bookmark_metadata_context(
     vis_line_t vl, bookmark_metadata::categories desired) const
 {
     const auto& vb = this->tss_view->get_bookmarks();
-    const auto& bv
-        = vb[desired == bookmark_metadata::categories::partition
-                      ? &textview_curses::BM_PARTITION
-                      : &textview_curses::BM_META];
+    const auto& bv = vb[desired == bookmark_metadata::categories::partition
+                            ? &textview_curses::BM_PARTITION
+                            : &textview_curses::BM_META];
     auto vl_iter = bv.bv_tree.lower_bound(vl + 1_vl);
 
     std::optional<vis_line_t> next_line;

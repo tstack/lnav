@@ -35,6 +35,7 @@
 
 #include "base/injector.bind.hh"
 #include "base/injector.hh"
+#include "base/isc.hh"
 #include "config.h"
 #include "data_parser.hh"
 #include "data_scanner.hh"
@@ -132,6 +133,7 @@ main(int argc, char* argv[])
                         "error: unable to temporary file for writing\n");
                 retval = EXIT_FAILURE;
             } else {
+                isc::supervisor root_superv(injector::get<isc::service_list>());
                 std::shared_ptr<log_format> format;
                 bool found = false;
                 char cmd[2048];

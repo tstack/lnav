@@ -3686,6 +3686,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (mode_flags.mf_check_configs) {
+        isc::supervisor root_superv(injector::get<isc::service_list>());
         rescan_files(true);
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             logfile::rebuild_result_t rebuild_result;
