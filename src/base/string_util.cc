@@ -443,9 +443,9 @@ char_escape_seq(char ch)
             return "\\t";
         case '\n':
             return "\\n";
+        default:
+            return std::nullopt;
     }
-
-    return std::nullopt;
 }
 
 std::string

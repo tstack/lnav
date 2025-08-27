@@ -349,7 +349,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         {
             std::unordered_map<std::string, std::list<std::shared_ptr<logfile>>>
                 id_to_files;
-            bool reload = false;
+            auto reload = false;
 
             for (const auto& lf : lnav_data.ld_active_files.fc_files) {
                 id_to_files[lf->get_content_id()].push_back(lf);
@@ -366,21 +366,24 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 
                 auto dupe_name = pair.second.front()->get_unique_path();
                 pair.second.pop_front();
-                for_each(pair.second.begin(),
-                         pair.second.end(),
-                         [&dupe_name](auto& lf) {
-                             if (lf->mark_as_duplicate(dupe_name)) {
-                                 log_info("Hiding duplicate file: %s",
-                                          lf->get_filename().c_str());
-                                 lnav_data.ld_log_source.find_data(lf) |
-                                     [](auto ld) { ld->set_visibility(false); };
-                             }
-                         });
-                reload = true;
+                std::for_each(pair.second.begin(),
+                              pair.second.end(),
+                              [&dupe_name, &reload](auto& lf) {
+                                  if (lf->mark_as_duplicate(dupe_name)) {
+                                      log_info("Hiding duplicate file: %s",
+                                               lf->get_filename().c_str());
+                                      lnav_data.ld_log_source.find_data(lf) |
+                                          [](auto ld) {
+                                              ld->set_visibility(false);
+                                          };
+                                      reload = true;
+                                  }
+                              });
             }
 
             if (reload) {
-                log_trace("text filters changed");
+                log_trace(
+                    "file visibility changed, calling text_filters_changed");
                 lss.text_filters_changed();
             }
         }

@@ -1795,12 +1795,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     auto next_status_update_time = next_rebuild_time;
     auto next_rescan_time = next_rebuild_time;
     auto got_user_input = true;
-    sig_atomic_t render_counter = 0;
+    auto loop_count = 0;
     std::vector<view_curses*> updated_views;
     updated_views.emplace_back(&lnav_data.ld_view_stack);
 
     while (lnav_data.ld_looping) {
         auto loop_deadline = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
+        loop_count += 1;
 
         std::vector<pollfd> pollfds;
         size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
@@ -1829,8 +1830,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 initial_rescan_completed = true;
 
-                log_debug("initial rescan rebuild");
+                log_debug("%d: BEGIN initial rescan rebuild", loop_count);
                 auto rebuild_res = rebuild_indexes(loop_deadline);
+                log_debug("%d: END initial rescan rebuild", loop_count);
                 changes += rebuild_res.rir_changes;
                 load_session();
                 if (session_data.sd_save_time) {
@@ -1882,7 +1884,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 lnav_data.ld_session_loaded = true;
                 session_stage += 1;
                 loop_deadline = ui_now;
-                log_debug("file count %d",
+                log_debug("initial rescan found %d files",
                           lnav_data.ld_active_files.fc_files.size());
             }
             auto old_gen = lnav_data.ld_active_files.fc_files_generation;
@@ -1940,6 +1942,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     next_rebuild_time = ui_clock::now() + 333ms;
                 }
                 if (rebuild_res.rir_rescan_needed) {
+                    log_trace("%d: rebuild detected a rescan needed",
+                              loop_count);
                     rescan_needed = true;
                     next_rescan_time = loop_deadline = ui_now;
                 }
@@ -2313,7 +2317,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                            file_format_t::SQLITE_DB)
                         > 0))
             {
-                log_debug("initial build completed");
+                log_debug("%d: initial build completed", loop_count);
                 lnav_data.ld_initial_build = true;
             }
 
@@ -2373,7 +2377,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                             ->readAccess()
                             ->empty())
                     {
-                        log_info("switching to paging!");
+                        log_info("%d: switching to paging!", loop_count);
                         set_view_mode(ln_mode_t::PAGING);
                         lnav_data.ld_active_files.fc_files
                             | lnav::itertools::for_each(&logfile::dump_stats);
@@ -2383,6 +2387,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         lnav_data.ld_files_view.set_selection(0_vl);
                     }
                 }
+                log_debug("%d: going interactive", loop_count);
                 session_stage += 1;
                 lnav_data.ld_exec_phase = lnav_exec_phase::INTERACTIVE;
                 load_time_bookmarks();

@@ -118,9 +118,7 @@ view_from_string(const char* name)
     auto view_name_iter
         = std::find_if(std::begin(lnav_view_strings),
                        std::end(lnav_view_strings),
-                       [&](const auto& v) {
-                           return name_sf.iequal(v);
-                       });
+                       [&](const auto& v) { return name_sf.iequal(v); });
 
     if (view_name_iter == std::end(lnav_view_strings)) {
         return std::nullopt;
@@ -900,18 +898,21 @@ layout_views()
         vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                                  + (filters_supported ? 1 : 0));
     }
-    lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_filter_view.set_height(
+        vis_line_t(filter_height) - (filters_supported ? 0_vl : 1_vl));
     lnav_data.ld_filter_view.set_y(bottom + 2);
     lnav_data.ld_filter_view.set_width(width);
     lnav_data.ld_filter_view.set_visible(filters_open && vis);
     filter_source->fss_editor->set_width(width - 26);
 
-    lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_files_view.set_height(
+        vis_line_t(filter_height) - (filters_supported ? 0_vl : 1_vl));
     lnav_data.ld_files_view.set_y(bottom + 2);
     lnav_data.ld_files_view.set_width(files_width);
     lnav_data.ld_files_view.set_visible(files_open && vis);
 
-    lnav_data.ld_file_details_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_file_details_view.set_height(
+        vis_line_t(filter_height) - (filters_supported ? 0_vl : 1_vl));
     lnav_data.ld_file_details_view.set_y(bottom + 2);
     lnav_data.ld_file_details_view.set_x(files_width);
     lnav_data.ld_file_details_view.set_width(
