@@ -1231,8 +1231,129 @@ public:
         intern_string_t fs_struct_name;
     };
 
-    static const std::vector<field_def> KNOWN_FIELDS;
-    const static std::vector<field_to_struct_t> KNOWN_STRUCT_FIELDS;
+    static const std::array<field_def, 16>& get_known_fields()
+    {
+        static size_t KNOWN_FIELD_INDEX = 0;
+        static const std::array<field_def, 16> RETVAL = {
+            field_def{
+                KNOWN_FIELD_INDEX++,
+                "cs-method",
+                value_kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "c-ip",
+                value_kind_t::VALUE_TEXT,
+                true,
+                false,
+                "ipaddress",
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-bytes",
+                value_kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-host",
+                value_kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-uri-stem",
+                value_kind_t::VALUE_TEXT,
+                true,
+                false,
+                "naturalnocase",
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-uri-query",
+                value_kind_t::VALUE_TEXT,
+                false,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-username",
+                value_kind_t::VALUE_TEXT,
+                false,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "cs-version",
+                value_kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "s-ip",
+                value_kind_t::VALUE_TEXT,
+                true,
+                false,
+                "ipaddress",
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "s-port",
+                value_kind_t::VALUE_INTEGER,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "s-computername",
+                value_kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "s-sitename",
+                value_kind_t::VALUE_TEXT,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "sc-bytes",
+                value_kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "sc-status",
+                value_kind_t::VALUE_INTEGER,
+                false,
+                true,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "sc-substatus",
+                value_kind_t::VALUE_INTEGER,
+                false,
+            },
+            {
+                KNOWN_FIELD_INDEX++,
+                "time-taken",
+                value_kind_t::VALUE_FLOAT,
+                false,
+            },
+        };
+
+        return RETVAL;
+    }
+
+    static const std::array<field_to_struct_t, 4>& get_known_struct_fields()
+    {
+        static const std::array<field_to_struct_t, 4> RETVAL = {
+            field_to_struct_t{"cs(", "cs_headers"},
+            {"sc(", "sc_headers"},
+            {"rs(", "rs_headers"},
+            {"sr(", "sr_headers"},
+        };
+
+        return RETVAL;
+    }
 
     w3c_log_format()
     {
@@ -1393,6 +1514,8 @@ public:
     {
         static const auto* W3C_LOG_NAME = intern_string::lookup("w3c_log");
         static const auto* X_FIELDS_NAME = intern_string::lookup("x_fields");
+        static const auto& KNOWN_FIELDS = get_known_fields();
+        static const auto& KNOWN_STRUCT_FIELDS = get_known_struct_fields();
         static auto X_FIELDS_IDX = 0;
 
         if (li.li_partial) {
@@ -1693,7 +1816,7 @@ public:
 
         void get_columns(std::vector<vtab_column>& cols) const override
         {
-            for (const auto& fd : KNOWN_FIELDS) {
+            for (const auto& fd : get_known_fields()) {
                 auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
                     fd.fd_meta.lvm_kind);
 
@@ -1708,7 +1831,7 @@ public:
             cols.back().with_comment(
                 "A JSON-object that contains fields that are not first-class "
                 "columns");
-            for (const auto& fs : KNOWN_STRUCT_FIELDS) {
+            for (const auto& fs : get_known_struct_fields()) {
                 cols.emplace_back(fs.fs_struct_name.to_string());
             }
         };
@@ -1718,7 +1841,7 @@ public:
         {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
-            for (const auto& fd : KNOWN_FIELDS) {
+            for (const auto& fd : get_known_fields()) {
                 if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
                     keys_inout.emplace(fd.fd_meta.lvm_name.to_string());
                 }
@@ -1770,121 +1893,6 @@ std::unordered_map<const intern_string_t, logline_value_meta>
 
 const intern_string_t w3c_log_format::F_DATE = intern_string::lookup("date");
 const intern_string_t w3c_log_format::F_TIME = intern_string::lookup("time");
-
-static size_t KNOWN_FIELD_INDEX = 0;
-const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-method",
-        value_kind_t::VALUE_TEXT,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "c-ip",
-        value_kind_t::VALUE_TEXT,
-        true,
-        false,
-        "ipaddress",
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-bytes",
-        value_kind_t::VALUE_INTEGER,
-        false,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-host",
-        value_kind_t::VALUE_TEXT,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-uri-stem",
-        value_kind_t::VALUE_TEXT,
-        true,
-        false,
-        "naturalnocase",
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-uri-query",
-        value_kind_t::VALUE_TEXT,
-        false,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-username",
-        value_kind_t::VALUE_TEXT,
-        false,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "cs-version",
-        value_kind_t::VALUE_TEXT,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "s-ip",
-        value_kind_t::VALUE_TEXT,
-        true,
-        false,
-        "ipaddress",
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "s-port",
-        value_kind_t::VALUE_INTEGER,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "s-computername",
-        value_kind_t::VALUE_TEXT,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "s-sitename",
-        value_kind_t::VALUE_TEXT,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "sc-bytes",
-        value_kind_t::VALUE_INTEGER,
-        false,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "sc-status",
-        value_kind_t::VALUE_INTEGER,
-        false,
-        true,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "sc-substatus",
-        value_kind_t::VALUE_INTEGER,
-        false,
-    },
-    {
-        KNOWN_FIELD_INDEX++,
-        "time-taken",
-        value_kind_t::VALUE_FLOAT,
-        false,
-    },
-};
-
-const std::vector<w3c_log_format::field_to_struct_t>
-    w3c_log_format::KNOWN_STRUCT_FIELDS = {
-        {"cs(", "cs_headers"},
-        {"sc(", "sc_headers"},
-        {"rs(", "rs_headers"},
-        {"sr(", "sr_headers"},
-};
 
 struct logfmt_pair_handler {
     explicit logfmt_pair_handler(date_time_scanner& dts) : lph_dt_scanner(dts)

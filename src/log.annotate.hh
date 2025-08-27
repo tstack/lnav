@@ -30,22 +30,20 @@
 #ifndef lnav_log_annotate_hh
 #define lnav_log_annotate_hh
 
+#include <vector>
+
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "vis_line.hh"
 
-namespace lnav {
-namespace log {
-namespace annotate {
+namespace lnav::log::annotate {
 
 std::vector<intern_string_t> applicable(vis_line_t vl);
 
 Result<void, lnav::console::user_message> apply(
     vis_line_t vl, std::vector<intern_string_t> annos);
 
-}  // namespace annotate
-}  // namespace log
-}  // namespace lnav
+}  // namespace lnav::log::annotate
 
 #endif

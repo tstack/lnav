@@ -47,8 +47,6 @@ using namespace lnav::roles::literals;
  */
 class loading_observer : public logfile_observer {
 public:
-    loading_observer() : lo_last_offset(0) {}
-
     lnav::progress_result_t logfile_indexing(const logfile* lf,
                                              file_off_t off,
                                              file_ssize_t total) override
@@ -90,7 +88,7 @@ public:
         return retval;
     }
 
-    off_t lo_last_offset;
+    off_t lo_last_offset{0};
 };
 
 lnav::progress_result_t
@@ -119,9 +117,9 @@ do_observer_update(const logfile* lf)
 void
 rebuild_hist()
 {
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    hist_source2& hs = lnav_data.ld_hist_source2;
-    int zoom = lnav_data.ld_zoom_level;
+    auto& lss = lnav_data.ld_log_source;
+    auto& hs = lnav_data.ld_hist_source2;
+    const auto zoom = lnav_data.ld_zoom_level;
 
     hs.set_time_slice(ZOOM_LEVELS[zoom]);
     lss.reload_index_delegate();

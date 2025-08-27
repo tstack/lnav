@@ -1215,7 +1215,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     }
                     lnav_data.ld_preview_status_source[0]
                         .get_description()
-                        .set_value("The following files will be loaded:");
+                        .set_value("The following files will be loaded:"_frag);
                     lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                     lnav_data.ld_preview_view[0].set_sub_source(
                         &lnav_data.ld_preview_source[0]);

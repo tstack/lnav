@@ -45,7 +45,7 @@ bottom_status_source::bottom_status_source()
     this->bss_fields[BSF_LOADING].set_width(13);
     this->bss_fields[BSF_LOADING].right_justify(true);
     this->bss_fields[BSF_HELP].set_width(14);
-    this->bss_fields[BSF_HELP].set_value("?:View Help");
+    this->bss_fields[BSF_HELP].set_value("?:View Help"_frag);
     this->bss_fields[BSF_HELP].right_justify(true);
     this->bss_prompt.set_left_pad(1);
     this->bss_prompt.set_min_width(35);
@@ -65,11 +65,11 @@ bottom_status_source::update_line_number(listview_curses* lc)
     auto sel = lc->get_selection();
 
     if (lc->get_inner_height() == 0) {
-        sf.set_value(" L0");
+        sf.set_value(" L0"_frag);
     } else if (sel) {
         sf.set_value(" L%'d", (int) sel.value());
     } else {
-        sf.set_value(" L-");
+        sf.set_value(" L-"_frag);
     }
 
     this->bss_line_error.set_value(
@@ -199,7 +199,7 @@ bottom_status_source::update_loading(file_off_t off,
         sf.set_cylon(false);
         sf.set_role(role_t::VCR_STATUS);
         if (this->bss_paused) {
-            sf.set_value("\xE2\x80\x96 Paused");
+            sf.set_value("\xE2\x80\x96 Paused"_frag);
         } else {
             sf.clear();
         }

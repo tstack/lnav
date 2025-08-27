@@ -36,8 +36,8 @@
 #include "filter_sub_source.hh"
 #include "lnav.hh"
 
-static constexpr auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
-static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit ";
+static constexpr auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit "_frag;
+static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit "_frag;
 
 static constexpr auto CREATE_HELP
     = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
@@ -141,7 +141,8 @@ filter_status_source::statusview_fields()
 
             auto& fc = lnav_data.ld_active_files;
             if (fc.fc_name_to_errors->readAccess()->size() == 1) {
-                this->tss_error.set_value(" error: a file cannot be opened ");
+                this->tss_error.set_value(
+                    " error: a file cannot be opened "_frag);
             } else {
                 this->tss_error.set_value(
                     " error: %u files cannot be opened ",
@@ -176,7 +177,7 @@ filter_status_source::statusview_fields()
             filter_count += 1;
         }
         if (filter_count == 0) {
-            this->tss_fields[TSF_COUNT].set_value("");
+            this->tss_fields[TSF_COUNT].set_value(""_frag);
         } else {
             this->tss_fields[TSF_COUNT].set_value(
                 " " ANSI_BOLD("%d") " of " ANSI_BOLD("%d") " enabled ",

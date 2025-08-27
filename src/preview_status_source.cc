@@ -36,7 +36,7 @@ preview_status_source::preview_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(14);
     this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
-    this->tss_fields[TSF_TITLE].set_value(" Preview Data ");
+    this->tss_fields[TSF_TITLE].set_value(" Preview Data "_frag);
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
         role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,

@@ -1091,7 +1091,7 @@ com_mark_expr(exec_context& ec,
             return Err(set_res.unwrapErr());
         }
         lnav_data.ld_preview_status_source[0].get_description().set_value(
-            "Matches are highlighted in the text view");
+            "Matches are highlighted in the text view"_frag);
         lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
     } else {
         auto set_res = lss.set_sql_marker(expr, stmt.release());
@@ -1263,7 +1263,7 @@ com_highlight(exec_context& ec,
             hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "Matches are highlighted in the view");
+                "Matches are highlighted in the view"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             retval = "";
@@ -1395,7 +1395,7 @@ com_filter_expr(exec_context& ec,
                 return Err(set_res.unwrapErr());
             }
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "Matches are highlighted in the text view");
+                "Matches are highlighted in the text view"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
         } else {
             lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
@@ -1508,7 +1508,7 @@ com_create_logline_table(exec_context& ec,
             attr_line_t al(ldt->get_table_statement());
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "The following table will be created:");
+                "The following table will be created:"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
@@ -1622,7 +1622,7 @@ com_create_search_table(exec_context& ec,
             attr_line_t al(lst->get_table_statement());
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "The following table will be created:");
+                "The following table will be created:"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             lnav_data.ld_preview_view[0].set_sub_source(
@@ -1914,7 +1914,7 @@ com_comment(exec_context& ec,
                 auto al = parse_res.unwrap();
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
-                    .set_value("Comment rendered as markdown:");
+                    .set_value("Comment rendered as markdown:"_frag);
                 lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
@@ -3085,7 +3085,7 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         auto ec_out = ec.get_output();
         if (ec.ec_dry_run) {
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "The text to output:");
+                "The text to output:"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
@@ -3166,7 +3166,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             attr_line_t al(expanded_cmd);
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "The command to be executed:");
+                "The command to be executed:"_frag);
             lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             lnav_data.ld_preview_view[0].set_sub_source(
@@ -3560,7 +3560,7 @@ command_prompt(std::vector<std::string>& args)
     auto* tc = *lnav_data.ld_view_stack.top();
 
     rollback_lnav_config = lnav_config;
-    lnav_data.ld_doc_status_source.set_title("Command Help");
+    lnav_data.ld_doc_status_source.set_title("Command Help"_frag);
     lnav_data.ld_doc_status_source.set_description(
         " See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
                           "commands.html") " for more details");
@@ -3600,7 +3600,7 @@ search_prompt(std::vector<std::string>& args)
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
     lnav_data.ld_search_start_line = tc->get_selection().value_or(0_vl);
     prompt.focus_for(*tc, '/', args);
-    lnav_data.ld_doc_status_source.set_title("Syntax Help");
+    lnav_data.ld_doc_status_source.set_title("Syntax Help"_frag);
     lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
     lnav_data.ld_bottom_source.set_prompt(
@@ -3671,7 +3671,7 @@ sql_prompt(std::vector<std::string>& args)
     setup_logline_table(lnav_data.ld_exec_context);
     prompt.focus_for(*tc, ';', args);
 
-    lnav_data.ld_doc_status_source.set_title("Query Help");
+    lnav_data.ld_doc_status_source.set_title("Query Help"_frag);
     lnav_data.ld_doc_status_source.set_description(
         "See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
                          "sqlext.html") " for more details");

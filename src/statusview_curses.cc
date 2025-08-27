@@ -49,14 +49,22 @@ status_field::set_value(std::string value)
     if (value == this->sf_value.al_string) {
         return false;
     }
-    auto& sa = this->sf_value.get_attrs();
 
-    sa.clear();
-
-    scrub_ansi_string(value, &sa);
-    this->sf_value.with_string(value);
+    this->sf_value.with_ansi_string(value);
     return true;
 }
+
+bool
+status_field::set_value(const string_fragment& value)
+{
+    if (value == this->sf_value.al_string) {
+        return false;
+    }
+
+    this->sf_value.with_ansi_string(value);
+    return true;
+}
+
 
 void
 status_field::do_cylon()

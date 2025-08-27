@@ -50,7 +50,7 @@ struct compiled_cond_expr {
     bool cce_enabled{true};
 };
 
-struct expressions : public lnav_config_listener {
+struct expressions : lnav_config_listener {
     expressions() : lnav_config_listener(__FILE__) {}
 
     void reload_config(error_reporter& reporter) override

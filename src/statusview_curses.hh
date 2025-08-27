@@ -58,6 +58,8 @@ public:
     /** @param value The new value for this field. */
     bool set_value(std::string value);
 
+    bool set_value(const string_fragment& value);
+
     /**
      * Set the new value for this field using a formatted string.
      *

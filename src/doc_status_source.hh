@@ -64,7 +64,7 @@ public:
         return this->tss_fields[field];
     }
 
-    void set_title(const std::string& title)
+    void set_title(const string_fragment& title)
     {
         this->tss_fields[TSF_TITLE].set_value(title);
     }
