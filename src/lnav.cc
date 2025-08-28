@@ -2324,8 +2324,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 lnav_data.ld_initial_build = true;
             }
             if (rebuild_res.rir_completed
-                && (lnav_data.ld_log_source.text_line_count() > 0
-                    || lnav_data.ld_text_source.text_line_count() > 0
+                && (lnav_data.ld_log_source.size() > 0
+                    || lnav_data.ld_text_source.size() > 0
                     || lnav_data.ld_active_files.other_file_format_count(
                            file_format_t::SQLITE_DB)
                         > 0))
@@ -2371,14 +2371,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
             if (session_stage == 1 && lnav_data.ld_initial_build
                 && (lnav_data.ld_active_files.fc_file_names.empty()
-                    || lnav_data.ld_log_source.text_line_count() > 0
-                    || lnav_data.ld_text_source.text_line_count() > 0
+                    || (rebuild_res.rir_changes == 0
+                        && rebuild_res.rir_completed
+                        && !rebuild_res.rir_rescan_needed)
+                    || lnav_data.ld_log_source.size() > 0
+                    || lnav_data.ld_text_source.size() > 0
                     || !lnav_data.ld_active_files.fc_other_files.empty()))
             {
                 lnav::session::restore_view_states();
                 if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                    if (lnav_data.ld_log_source.text_line_count() == 0
-                        && lnav_data.ld_text_source.text_line_count() > 0
+                    if (lnav_data.ld_log_source.size() == 0
+                        && lnav_data.ld_text_source.size() > 0
                         && lnav_data.ld_view_stack.size() == 1)
                     {
                         log_debug("no logs, just text...");

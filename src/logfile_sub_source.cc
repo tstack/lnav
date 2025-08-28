@@ -2166,9 +2166,7 @@ logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
 void
 logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
 {
-    iterator iter;
-
-    iter = std::find_if(
+    auto iter = std::find_if(
         this->lss_files.begin(), this->lss_files.end(), logfile_data_eq(lf));
     if (iter != this->lss_files.end()) {
         int file_index = iter - this->lss_files.begin();
@@ -2196,6 +2194,13 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
         }
 
         this->lss_force_rebuild = true;
+    }
+    while (!this->lss_files.empty()) {
+        if (this->lss_files.back()->get_file_ptr() == nullptr) {
+            this->lss_files.pop_back();
+        } else {
+            break;
+        }
     }
     this->lss_token_file = nullptr;
 }
@@ -3553,6 +3558,13 @@ logfile_sub_source::update_filter_hash_state(hasher& h) const
 {
     text_sub_source::update_filter_hash_state(h);
 
+    for (const auto& ld : this->lss_files) {
+        if (ld->get_file_ptr() == nullptr || !ld->is_visible()) {
+            h.update(0);
+        } else {
+            h.update(1);
+        }
+    }
     h.update(this->lss_min_log_level);
     h.update(this->lss_marked_only);
 }

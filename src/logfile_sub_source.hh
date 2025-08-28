@@ -600,6 +600,8 @@ public:
     using const_iterator
         = std::vector<std::unique_ptr<logfile_data>>::const_iterator;
 
+    size_t size() const { return this->lss_files.size(); }
+
     iterator begin() { return this->lss_files.begin(); }
 
     iterator end() { return this->lss_files.end(); }

@@ -352,33 +352,33 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             auto reload = false;
 
             for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                if (lf->get_format_ptr() == nullptr) {
+                    continue;
+                }
                 id_to_files[lf->get_content_id()].push_back(lf);
             }
 
-            for (auto& pair : id_to_files) {
-                if (pair.second.size() == 1) {
+            for (auto& [name, lf] : id_to_files) {
+                if (lf.size() == 1) {
                     continue;
                 }
 
-                pair.second.sort([](const auto& left, const auto& right) {
+                lf.sort([](const auto& left, const auto& right) {
                     return right->get_stat().st_size < left->get_stat().st_size;
                 });
 
-                auto dupe_name = pair.second.front()->get_unique_path();
-                pair.second.pop_front();
-                std::for_each(pair.second.begin(),
-                              pair.second.end(),
-                              [&dupe_name, &reload](auto& lf) {
-                                  if (lf->mark_as_duplicate(dupe_name)) {
-                                      log_info("Hiding duplicate file: %s",
-                                               lf->get_filename().c_str());
-                                      lnav_data.ld_log_source.find_data(lf) |
-                                          [](auto ld) {
-                                              ld->set_visibility(false);
-                                          };
-                                      reload = true;
-                                  }
-                              });
+                auto dupe_name = lf.front()->get_unique_path();
+                lf.pop_front();
+                std::for_each(
+                    lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
+                        if (lf->mark_as_duplicate(dupe_name)) {
+                            log_info("Hiding duplicate file: %s",
+                                     lf->get_filename().c_str());
+                            lnav_data.ld_log_source.find_data(lf) |
+                                [](auto ld) { ld->set_visibility(false); };
+                            reload = true;
+                        }
+                    });
             }
 
             if (reload) {

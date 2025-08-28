@@ -788,6 +788,21 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
             {
                 auto msg = lnav::console::user_message::info(
                     "All log messages are currently hidden");
+                auto hidden_file_count = size_t{0};
+                for (const auto& ld : this->fos_lss) {
+                    if (ld->get_file_ptr() == nullptr) {
+                        continue;
+                    }
+                    if (!ld->is_visible()) {
+                        hidden_file_count += 1;
+                    }
+                }
+                if (hidden_file_count > 0) {
+                    msg.with_note(attr_line_t()
+                                      .append(lnav::roles::number(
+                                          fmt::to_string(hidden_file_count)))
+                                      .append(" file(s) are hidden"));
+                }
                 auto min_time = this->fos_lss.get_min_row_time();
                 if (min_time) {
                     msg.with_note(attr_line_t("Logs before ")
