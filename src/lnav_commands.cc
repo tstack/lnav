@@ -2641,6 +2641,7 @@ com_load_session(exec_context& ec,
 {
     if (!ec.ec_dry_run) {
         load_session();
+        load_time_bookmarks();
         lnav::session::restore_view_states();
         lnav_data.ld_views[LNV_LOG].reload_data();
     }

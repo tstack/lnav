@@ -1136,7 +1136,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 if (lnav_log_level <= lnav_log_level_t::TRACE) {
                     attr_line_t al;
                     attr_line_builder alb(al);
-                    alb.append_as_hexdump(sbr.to_string_fragment());
+                    alb.append_as_hexdump(
+                        sbr.to_string_fragment().sub_range(0, 256));
                     log_warning("  dump: %s", al.al_string.c_str());
                 }
             }

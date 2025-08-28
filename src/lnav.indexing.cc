@@ -332,11 +332,11 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         lnav_data.ld_active_files.close_files(closed_files);
     }
 
-    // log_trace("rebuilding logs indexes");
+    log_trace("rebuilding logs indexes");
     auto result = lss.rebuild_index(deadline);
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
-        bool force
+        auto force
             = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
         if ((!scroll_downs[LNV_LOG]
@@ -391,7 +391,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         retval.rir_changes += 1;
     }
 
-    // log_trace("updating top/selections");
+    log_trace("updating top/selections");
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& scroll_view = lnav_data.ld_views[lpc];
 
@@ -425,7 +425,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             lnav_data.ld_scroll_broadcaster(tc);
         }
     };
-    // log_trace("done");
+    log_trace("done");
 
     return retval;
 }

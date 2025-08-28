@@ -404,7 +404,7 @@ scan_sessions()
 void
 load_time_bookmarks()
 {
-    static const char* BOOKMARK_STMT = R"(
+    static const char* const BOOKMARK_STMT = R"(
        SELECT
          log_time,
          log_format,
@@ -423,11 +423,24 @@ load_time_bookmarks()
        ORDER BY same_session DESC, session_time DESC
 )";
 
+    static const char* const TIME_OFFSET_STMT = R"(
+       SELECT
+         *,
+         session_time=? AS same_session
+       FROM time_offset
+       WHERE
+         log_hash = ? AND
+         log_time BETWEEN ? AND ? AND
+         log_format = ?
+       ORDER BY
+         same_session DESC,
+         session_time DESC
+)";
+
     auto& lss = lnav_data.ld_log_source;
     auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-    logfile_sub_source::iterator file_iter;
     bool reload_needed = false;
     auto_mem<char, sqlite3_free> errmsg;
 
@@ -476,6 +489,7 @@ load_time_bookmarks()
         }
     }
 
+    log_info("BEGIN select bookmarks");
     if (sqlite3_prepare_v2(db.in(), BOOKMARK_STMT, -1, stmt.out(), nullptr)
         != SQLITE_OK)
     {
@@ -484,7 +498,7 @@ load_time_bookmarks()
         return;
     }
 
-    for (file_iter = lnav_data.ld_log_source.begin();
+    for (auto file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter)
     {
@@ -715,15 +729,10 @@ load_time_bookmarks()
 
         sqlite3_reset(stmt.in());
     }
+    log_info("END select bookmarks");
 
-    if (sqlite3_prepare_v2(
-            db.in(),
-            "SELECT *,session_time=? as same_session FROM time_offset WHERE "
-            " log_time between ? and ? and log_format = ? "
-            " ORDER BY same_session DESC, session_time DESC",
-            -1,
-            stmt.out(),
-            nullptr)
+    log_info("BEGIN select time_offset");
+    if (sqlite3_prepare_v2(db.in(), TIME_OFFSET_STMT, -1, stmt.out(), nullptr)
         != SQLITE_OK)
     {
         log_error("could not prepare time_offset select statement -- %s",
@@ -731,7 +740,7 @@ load_time_bookmarks()
         return;
     }
 
-    for (file_iter = lnav_data.ld_log_source.begin();
+    for (auto file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter)
     {
@@ -745,7 +754,7 @@ load_time_bookmarks()
             continue;
         }
 
-        lss.find(lf->get_filename().c_str(), base_content_line);
+        lss.find(lf->get_filename_as_string().c_str(), base_content_line);
 
         auto low_line_iter = lf->begin();
         auto high_line_iter = lf->end();
@@ -754,6 +763,7 @@ load_time_bookmarks()
 
         if (bind_values(stmt.in(),
                         lnav_data.ld_session_load_time,
+                        lf->get_content_id(),
                         lf->original_line_time(low_line_iter),
                         lf->original_line_time(high_line_iter),
                         lf->get_format()->get_name())
@@ -763,12 +773,11 @@ load_time_bookmarks()
         }
 
         date_time_scanner dts;
-        bool done = false;
-        std::string line;
+        auto done = false;
         int64_t last_mark_time = -1;
 
         while (!done) {
-            int rc = sqlite3_step(stmt.in());
+            const auto rc = sqlite3_step(stmt.in());
 
             switch (rc) {
                 case SQLITE_OK:
@@ -777,10 +786,8 @@ load_time_bookmarks()
                     break;
 
                 case SQLITE_ROW: {
-                    const char* log_time
+                    const auto* log_time
                         = (const char*) sqlite3_column_text(stmt.in(), 0);
-                    const char* log_hash
-                        = (const char*) sqlite3_column_text(stmt.in(), 2);
                     int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                     timeval log_tv;
                     exttm log_tm;
@@ -817,21 +824,18 @@ load_time_bookmarks()
                             break;
                         }
 
-                        if (lf->get_content_id() == log_hash) {
-                            int file_line
-                                = std::distance(lf->begin(), line_iter);
-                            timeval offset;
+                        int file_line = std::distance(lf->begin(), line_iter);
+                        timeval offset;
 
-                            offset_session_lines.emplace_back(
-                                lf->original_line_time(line_iter),
-                                lf->get_format_ptr()->get_name(),
-                                log_hash);
-                            offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
-                            offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
-                            lf->adjust_content_time(file_line, offset);
+                        offset_session_lines.emplace_back(
+                            lf->original_line_time(line_iter),
+                            lf->get_format_ptr()->get_name(),
+                            lf->get_content_id());
+                        offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
+                        offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
+                        lf->adjust_content_time(file_line, offset);
 
-                            reload_needed = true;
-                        }
+                        reload_needed = true;
 
                         ++line_iter;
                     }
@@ -839,18 +843,18 @@ load_time_bookmarks()
                 }
 
                 default: {
-                    const char* errmsg;
-
-                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    const auto* errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     log_error(
                         "bookmark select error: code %d -- %s", rc, errmsg);
                     done = true;
-                } break;
+                    break;
+                }
             }
         }
 
         sqlite3_reset(stmt.in());
     }
+    log_info("END select time_offset");
 
     if (reload_needed) {
         lnav_data.ld_views[LNV_LOG].reload_data();
@@ -925,13 +929,10 @@ void
 load_session()
 {
     log_info("BEGIN load_session");
-    load_time_bookmarks();
     scan_sessions() | [](const auto pair) {
         lnav_data.ld_session_load_time = pair.first.second;
         const auto& view_info_path = pair.second;
         auto view_info_src = intern_string::lookup(view_info_path.string());
-
-        load_time_bookmarks();
 
         auto open_res = lnav::filesystem::open_file(view_info_path, O_RDONLY);
         if (open_res.isErr()) {

@@ -253,6 +253,7 @@ CREATE TABLE lnav_file (
 
             init_session();
             load_session();
+            load_time_bookmarks();
         }
 
         return SQLITE_OK;

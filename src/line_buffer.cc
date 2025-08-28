@@ -1147,7 +1147,9 @@ line_buffer::load_next_line(file_range prev_line)
             this->lb_buffer.begin(), this->lb_buffer.size()));
         this->lb_is_utf8 = is_utf_res.is_valid();
         if (!this->lb_is_utf8) {
-            log_warning("input is not utf8 -- %s", is_utf_res.usr_message);
+            log_warning("fd(%d): input is not utf8 -- %s",
+                        this->lb_fd.get(),
+                        is_utf_res.usr_message);
         }
     }
     while (!done) {
@@ -1230,7 +1232,8 @@ line_buffer::load_next_line(file_range prev_line)
             }
             retval.li_utf8_scan_result = scan_res;
             if (!scan_res.is_valid()) {
-                log_warning("line is not utf8 -- %lld",
+                log_warning("fd(%d): line is not utf8 -- %lld",
+                            this->lb_fd.get(),
                             retval.li_file_range.fr_offset);
             }
         }

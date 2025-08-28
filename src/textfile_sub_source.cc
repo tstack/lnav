@@ -748,12 +748,15 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
         return retval;
     }
 
+    auto last_aborted = std::exchange(this->tss_last_scan_aborted, false);
+
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
         if (deadline && files_scanned > 0 && ui_clock::now() > deadline.value())
         {
             log_info("rescan_files() deadline reached, breaking...");
             retval.rr_scan_completed = false;
+            this->tss_last_scan_aborted = true;
             break;
         }
 
@@ -767,7 +770,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             continue;
         }
 
-        if (!this->tss_completed_last_scan && lf->size() > 0) {
+        if (last_aborted && lf->size() > 0) {
+            retval.rr_scan_completed = false;
             ++iter;
             continue;
         }
@@ -1099,7 +1103,6 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
     if (retval.rr_new_data) {
         this->tss_view->search_new_data();
     }
-    this->tss_completed_last_scan = retval.rr_scan_completed;
 
     return retval;
 }

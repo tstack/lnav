@@ -1782,7 +1782,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
     std::future<file_collection> rescan_future;
 
-    log_debug("rescan started");
+    log_info("initial rescan started");
     rescan_future = std::async(std::launch::async,
                                &file_collection::rescan_files,
                                lnav_data.ld_active_files.copy(),
@@ -1830,9 +1830,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 initial_rescan_completed = true;
 
-                log_debug("%d: BEGIN initial rescan rebuild", loop_count);
+                log_trace("%d: BEGIN initial rescan rebuild", loop_count);
                 auto rebuild_res = rebuild_indexes(loop_deadline);
-                log_debug("%d: END initial rescan rebuild", loop_count);
+                log_trace("%d: END initial rescan rebuild", loop_count);
                 changes += rebuild_res.rir_changes;
                 load_session();
                 if (session_data.sd_save_time) {
@@ -1915,7 +1915,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                        &file_collection::rescan_files,
                                        lnav_data.ld_active_files.copy(),
                                        false);
-            loop_deadline = ui_clock::now() + 10ms;
+            if (session_stage >= 2) {
+                log_trace("%d: shortening deadline", loop_count);
+                loop_deadline = ui_clock::now() + 10ms;
+            }
         }
 
         {
@@ -1934,11 +1937,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 // skip rebuild while text is selected
             } else if (ui_now >= next_rebuild_time) {
                 auto text_file_count = lnav_data.ld_text_source.size();
-                // log_debug("BEGIN rebuild");
+                log_trace("%d: BEGIN rebuild", loop_count);
                 auto rebuild_res = rebuild_indexes(loop_deadline);
-                // log_debug("END rebuild");
+                log_trace("%d: END rebuild", loop_count);
                 changes += rebuild_res.rir_changes;
-                if (!changes && ui_clock::now() < loop_deadline) {
+                if (!rebuild_res.rir_completed) {
+                    next_rebuild_time = ui_now;
+                } else if (!changes && ui_clock::now() < loop_deadline) {
                     next_rebuild_time = ui_clock::now() + 333ms;
                 }
                 if (rebuild_res.rir_rescan_needed) {
@@ -2132,13 +2137,20 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         ps->update_poll_set(pollfds);
         ui_now = ui_clock::now();
-        auto poll_to
-            = (!changes && ui_now < loop_deadline && session_stage >= 1)
+        auto poll_to = (lnav_data.ld_initial_build && !changes
+                        && ui_now < loop_deadline && session_stage >= 1)
             ? std::chrono::duration_cast<std::chrono::milliseconds>(
                   loop_deadline - ui_now)
             : 0ms;
 
-        // log_debug("poll");
+        if (poll_to.count() > 0) {
+            log_trace(
+                "%d: poll() with timeout %lld ", loop_count, poll_to.count());
+            log_trace("  (changes=%d; before_deadline=%d; session_stage=%d)",
+                      changes,
+                      ui_now < loop_deadline,
+                      session_stage);
+        }
         rc = poll(pollfds.data(), pollfds.size(), poll_to.count());
 
         gettimeofday(&current_time, nullptr);
@@ -2274,8 +2286,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             } else {
                 timer.start_fade(index_counter, 3);
             }
-            // log_debug("initial build rebuild");
+            log_trace("%d: BEGIN initial build rebuild", loop_count);
             auto rebuild_res = rebuild_indexes(loop_deadline);
+            log_trace("%d: END initial build rebuild", loop_count);
             changes += rebuild_res.rir_changes;
             if (lnav_data.ld_view_stack.top().value_or(nullptr)
                     == &lnav_data.ld_views[LNV_TEXT]
@@ -2317,7 +2330,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                            file_format_t::SQLITE_DB)
                         > 0))
             {
-                log_debug("%d: initial build completed", loop_count);
+                log_info("%d: initial build completed", loop_count);
                 lnav_data.ld_initial_build = true;
             }
 
@@ -2387,7 +2400,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         lnav_data.ld_files_view.set_selection(0_vl);
                     }
                 }
-                log_debug("%d: going interactive", loop_count);
+                log_info("%d: going interactive", loop_count);
                 session_stage += 1;
                 lnav_data.ld_exec_phase = lnav_exec_phase::INTERACTIVE;
                 load_time_bookmarks();
