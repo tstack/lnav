@@ -346,7 +346,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             scroll_downs[LNV_LOG] = false;
         }
 
-        {
+        if (retval.rir_completed && !retval.rir_rescan_needed) {
             std::unordered_map<std::string, std::list<std::shared_ptr<logfile>>>
                 id_to_files;
             auto reload = false;
@@ -367,7 +367,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                     return right->get_stat().st_size < left->get_stat().st_size;
                 });
 
-                auto dupe_name = lf.front()->get_unique_path();
+                const auto& dupe_name = lf.front()->get_unique_path();
                 lf.pop_front();
                 std::for_each(
                     lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
