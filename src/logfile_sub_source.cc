@@ -1102,6 +1102,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     if (this->lss_index.empty() && !time_left) {
         log_info("ran out of time, skipping rebuild");
+        // need to make sure we rebuild in case no new data comes in
+        this->lss_force_rebuild = true;
         return rebuild_result::rr_appended_lines;
     }
 
