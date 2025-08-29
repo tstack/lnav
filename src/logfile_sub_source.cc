@@ -1379,10 +1379,16 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     bm_files.clear();
 
     std::vector<const bookmark_type_t*> used_marks;
-    for (const auto& bmt : bookmark_type_t::get_all_types()) {
-        if (!this->lss_user_marks[&bmt].empty()) {
-            bm[&bmt].clear();
-            used_marks.emplace_back(&bmt);
+    for (const auto* bmt : {
+             &textview_curses::BM_USER,
+             &textview_curses::BM_USER_EXPR,
+             &textview_curses::BM_PARTITION,
+             &textview_curses::BM_META,
+         })
+    {
+        bm[bmt].clear();
+        if (!this->lss_user_marks[bmt].empty()) {
+            used_marks.emplace_back(bmt);
         }
     }
 
@@ -2124,7 +2130,7 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
         return;
     }
 
-    content_line_t cl = this->at(line);
+    auto cl = this->at(line);
 
     if (bm == &textview_curses::BM_USER) {
         auto* ll = this->find_line(cl);
@@ -2137,8 +2143,6 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
             this->lss_user_marks[bm].bv_tree.insert(cl);
         }
     } else if (lb != this->lss_user_marks[bm].bv_tree.end() && *lb == cl) {
-        require(lb != this->lss_user_marks[bm].bv_tree.end());
-
         this->lss_user_marks[bm].bv_tree.erase(lb);
     }
     if (bm == &textview_curses::BM_META

@@ -106,7 +106,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto* tss = top_view->get_sub_source();
             auto& fs = tss->get_filters();
 
-            if (fs.empty()) {
+            if (fs.empty() || !lv.get_selection()) {
                 return true;
             }
 
@@ -123,7 +123,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto* tss = top_view->get_sub_source();
             auto& fs = tss->get_filters();
 
-            if (fs.empty()) {
+            if (fs.empty() || !lv.get_selection()) {
                 return true;
             }
 
@@ -145,7 +145,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto* tss = top_view->get_sub_source();
             auto& fs = tss->get_filters();
 
-            if (fs.empty()) {
+            if (fs.empty() || !lv.get_selection()) {
                 return true;
             }
 
@@ -228,7 +228,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto* tss = top_view->get_sub_source();
             auto& fs = tss->get_filters();
 
-            if (fs.empty()) {
+            if (fs.empty() || !lv.get_selection()) {
                 return true;
             }
 

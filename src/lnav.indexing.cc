@@ -364,21 +364,29 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                 }
 
                 lf.sort([](const auto& left, const auto& right) {
-                    return right->get_stat().st_size < left->get_stat().st_size;
+                    const auto& lst = left->get_stat();
+                    const auto& rst = right->get_stat();
+                    return rst.st_size < lst.st_size
+                        || (rst.st_size == lst.st_size
+                            && rst.st_mtime < lst.st_mtime);
                 });
 
                 const auto& dupe_name = lf.front()->get_unique_path();
-                log_debug("Keeping duplicated file: %s; size=%lld; path=%s",
-                          lf.front()->get_content_id().c_str(),
-                          lf.front()->get_stat().st_size,
-                          lf.front()->get_filename_as_string().c_str());
+                log_info(
+                    "Keeping duplicated file: %s; size=%lld; mtime=%d; path=%s",
+                    lf.front()->get_content_id().c_str(),
+                    lf.front()->get_stat().st_size,
+                    lf.front()->get_stat().st_mtime,
+                    lf.front()->get_filename_as_string().c_str());
                 lf.pop_front();
                 std::for_each(
                     lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
                         if (lf->mark_as_duplicate(dupe_name)) {
-                            log_info("  Hiding copy: size=%lld; path=%s",
-                                     lf->get_stat().st_size,
-                                     lf->get_filename_as_string().c_str());
+                            log_info(
+                                "  Hiding copy: size=%lld; mtime=%d; path=%s",
+                                lf->get_stat().st_size,
+                                lf->get_stat().st_mtime,
+                                lf->get_filename_as_string().c_str());
                             lnav_data.ld_log_source.find_data(lf) |
                                 [](auto ld) { ld->set_visibility(false); };
                             reload = true;

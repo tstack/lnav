@@ -143,7 +143,7 @@ add_custom_command(
         DEPENDS ptimec
         COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc)
 
-add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_rt.cc time_fmts.cc)
+add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_spec.hh ptimec_rt.cc time_fmts.cc)
 target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR} third-party/date/include)
 
 function(bin2c)

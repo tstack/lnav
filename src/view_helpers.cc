@@ -1643,6 +1643,9 @@ set_view_mode(ln_mode_t mode)
         case ln_mode_t::FILES:
         case ln_mode_t::FILTER:
         case ln_mode_t::SPECTRO_DETAILS: {
+            if (!lnav_data.ld_filter_view.get_selection()) {
+                lnav_data.ld_filter_view.set_selection(0_vl);
+            }
             lnav_data.ld_files_source.text_selection_changed(
                 lnav_data.ld_files_view);
             breadcrumb_view->set_enabled(false);

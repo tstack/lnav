@@ -182,12 +182,15 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
 }
 
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_ERRORS("error");
-const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_WARNINGS("warning");
+const DIST_SLICE(bm_types)
+    bookmark_type_t textview_curses::BM_WARNINGS("warning");
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_USER("user");
-const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
+const DIST_SLICE(bm_types)
+    bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_SEARCH("search");
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_META("meta");
-const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_PARTITION("partition");
+const DIST_SLICE(bm_types)
+    bookmark_type_t textview_curses::BM_PARTITION("partition");
 
 textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})

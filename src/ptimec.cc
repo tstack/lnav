@@ -36,13 +36,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char* PRELUDE
-    = "\
-#include <time.h>\n\
-#include <sys/types.h>\n\
-#include \"ptimec.hh\"\n\
-\n\
-";
+const char* PRELUDE = R"(
+#include <time.h>
+#include <sys/types.h>
+#include "ptimec.hh"
+#include "ptimec_spec.hh"
+
+)";
+
+template<std::size_t N>
+static bool
+startswith(const char* fmt, const char (&pat)[N])
+{
+    return strncmp(fmt, pat, N - 1) == 0;
+}
 
 char*
 escape_char(char ch)
@@ -121,8 +128,14 @@ main(int argc, char* argv[])
         }
 
         auto checked_pos = std::optional<size_t>(0);
-        for (int index = 0; arg[index]; arg++) {
-            if (arg[index] == '%') {
+        for (int index = 0; arg[index]; index++) {
+            if (startswith(&arg[index], "%Y-%m-%dT%H:%M")) {
+                printf(
+                    "    if (!ptime_YmdTHM(dst, str, off_inout, len)) return "
+                    "false;\n");
+                index += 13;
+                checked_pos = std::nullopt;
+            } else if (arg[index] == '%') {
                 std::optional<size_t> fixed_width_opt;
 
                 if (checked_pos.has_value()) {

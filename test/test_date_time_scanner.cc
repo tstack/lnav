@@ -73,6 +73,34 @@ TEST_CASE("date_time_scanner")
     setenv("TZ", "UTC", 1);
 
     lnav_config.lc_log_date_time.c_zoned_to_local = false;
+
+    {
+        const auto sf = string_fragment::from_const("2022-03-02T10:20:30+");
+        timeval tv;
+        exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        auto matched_size = rc - sf.data();
+        auto rem = sf.substr(matched_size);
+        CHECK(rem == "+");
+    }
+
+    {
+        const auto sf = string_fragment::from_const("2025-04-24T19:51:48.55604564Z");
+        timeval tv;
+        exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        CHECK(rc != nullptr);
+        printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
+        CHECK((tm.et_flags & ETF_NANOS_SET));
+
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
+
+        CHECK(std::string(ts) == std::string("2025-04-24T19:51:48.556045640Z"));
+    }
+
     for (const auto* good_time : GOOD_TIMES) {
         date_time_scanner dts;
         timeval tv;
@@ -107,21 +135,6 @@ TEST_CASE("date_time_scanner")
         dts.ftime(ts, sizeof(ts), nullptr, tm);
 
         CHECK(std::string(ts) == std::string("2014-02-11 16:12:34.123"));
-    }
-
-    {
-        const auto sf = string_fragment::from_const("2025-04-24T19:51:48.55604564Z");
-        timeval tv;
-        exttm tm;
-        date_time_scanner dts;
-        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
-        printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
-        CHECK((tm.et_flags & ETF_NANOS_SET));
-
-        char ts[64];
-        dts.ftime(ts, sizeof(ts), nullptr, tm);
-
-        CHECK(std::string(ts) == std::string("2025-04-24T19:51:48.556045640Z"));
     }
 
     {

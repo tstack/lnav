@@ -329,6 +329,7 @@ noinst_HEADERS = \
 	pretty_printer.hh \
 	preview_status_source.hh \
 	ptimec.hh \
+	ptimec_spec.hh \
 	readline_callbacks.hh \
 	readline_context.hh \
 	readline_highlighters.hh \
