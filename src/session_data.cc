@@ -983,9 +983,10 @@ load_session()
                 continue;
             }
 
-            log_debug("found state for file: %s %d",
+            log_debug("found state for file: %s %d (%s)",
                       lf->get_content_id().c_str(),
-                      iter->second.fs_is_visible);
+                      iter->second.fs_is_visible,
+                      lf->get_filename_as_string().c_str());
             lnav_data.ld_log_source.find_data(lf) |
                 [iter, &log_changes](auto ld) {
                     if (ld->ld_visible != iter->second.fs_is_visible) {

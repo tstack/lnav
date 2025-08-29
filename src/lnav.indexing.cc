@@ -368,12 +368,17 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                 });
 
                 const auto& dupe_name = lf.front()->get_unique_path();
+                log_debug("Keeping duplicated file: %s; size=%lld; path=%s",
+                          lf.front()->get_content_id().c_str(),
+                          lf.front()->get_stat().st_size,
+                          lf.front()->get_filename_as_string().c_str());
                 lf.pop_front();
                 std::for_each(
                     lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
                         if (lf->mark_as_duplicate(dupe_name)) {
-                            log_info("Hiding duplicate file: %s",
-                                     lf->get_filename().c_str());
+                            log_info("  Hiding copy: size=%lld; path=%s",
+                                     lf->get_stat().st_size,
+                                     lf->get_filename_as_string().c_str());
                             lnav_data.ld_log_source.find_data(lf) |
                                 [](auto ld) { ld->set_visibility(false); };
                             reload = true;
