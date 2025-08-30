@@ -272,6 +272,8 @@ public:
 
     void set_force_rebuild() { this->lss_force_rebuild = true; }
 
+    bool is_rebuild_forced() const { return this->lss_force_rebuild; }
+
     void set_min_log_level(log_level_t level)
     {
         if (this->lss_min_log_level != level) {

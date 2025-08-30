@@ -779,7 +779,15 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 {
     const std::vector<attr_line_t>* lines = nullptr;
     if (this->fos_lss.text_line_count() == 0) {
-        if (this->fos_lss.file_count() > 0) {
+        if (this->fos_lss.is_indexing_in_progress()
+            || this->fos_lss.is_rebuild_forced())
+        {
+            auto msg = lnav::console::user_message::info(
+                "Log messages are being indexed...");
+            this->fos_static_lines = msg.to_attr_line().split_lines();
+            this->fos_static_lines_state.clear();
+            lines = &this->fos_static_lines;
+        } else if (this->fos_lss.file_count() > 0) {
             hasher h;
             this->fos_lss.update_filter_hash_state(h);
             auto curr_state = h.to_array();
