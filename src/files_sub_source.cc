@@ -93,8 +93,6 @@ from_selection(std::optional<vis_line_t> sel_vis)
 }
 }  // namespace files_model
 
-files_sub_source::files_sub_source() {}
-
 bool
 files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
@@ -261,11 +259,8 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     role_t cursor_role = lnav_data.ld_mode == ln_mode_t::FILES
         ? role_t::VCR_CURSOR_LINE
         : role_t::VCR_DISABLED_CURSOR_LINE;
-    const auto dim = tc.get_dimensions();
     const auto& fc = lnav_data.ld_active_files;
-    auto filename_width
-        = std::min(fc.fc_largest_path_length,
-                   std::max((size_t) 40, (size_t) dim.second - 30));
+    auto filename_width = std::min(fc.fc_largest_path_length, (size_t) 32);
 
     this->fss_curr_line.clear();
     auto& al = this->fss_curr_line;
@@ -349,7 +344,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     }
     al.append(" ");
     al.appendf(FMT_STRING("{:<{}}"), fn, filename_width);
-    al.append("   ");
+    al.append("  ");
     {
         auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
 

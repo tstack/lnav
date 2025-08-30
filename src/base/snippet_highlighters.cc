@@ -326,13 +326,27 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                     alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                      VC_ROLE.value(role_t::VCR_ERROR));
                     break;
-                case '0':
                 case 'x':
                     if (safe_read(line, lpc + 1) == '{') {
                         alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));
-                    } else if (isdigit(safe_read(line, lpc + 1))
-                               && isdigit(safe_read(line, lpc + 2)))
+                    } else if (isxdigit(safe_read(line, lpc + 1))
+                               && isxdigit(safe_read(line, lpc + 2)))
+                    {
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 3),
+                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
+                    } else {
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_STYLE.value(text_attrs::with_styles(
+                                             text_attrs::style::bold,
+                                             text_attrs::style::reverse)));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_ROLE.value(role_t::VCR_ERROR));
+                    }
+                    break;
+                case '0':
+                    if (isdigit(safe_read(line, lpc + 1))
+                        && isdigit(safe_read(line, lpc + 2)))
                     {
                         alb.overlay_attr(line_range(lpc - 1, lpc + 3),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));

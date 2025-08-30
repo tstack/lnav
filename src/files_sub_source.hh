@@ -31,9 +31,12 @@
 #define files_sub_source_hh
 
 #include <chrono>
+#include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "base/attr_line.hh"
 #include "file_collection.hh"
 #include "plain_text_source.hh"
 #include "textview_curses.hh"
@@ -43,8 +46,6 @@ class files_sub_source
     , public list_input_delegate
     , public text_delegate {
 public:
-    files_sub_source();
-
     bool empty() const override { return false; }
 
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
