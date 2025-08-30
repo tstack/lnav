@@ -872,14 +872,14 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     iterator iter;
     size_t total_lines = 0;
     size_t est_remaining_lines = 0;
-    bool full_sort = this->lss_index.empty();
+    auto all_time_ordered_formats = true;
+    auto full_sort = this->lss_index.empty();
     int file_count = 0;
-    bool force = this->lss_force_rebuild;
+    auto force = std::exchange(this->lss_force_rebuild, false);
     auto retval = rebuild_result::rr_no_change;
     std::optional<timeval> lowest_tv = std::nullopt;
     auto search_start = 0_vl;
 
-    this->lss_force_rebuild = false;
     if (force) {
         log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
@@ -925,6 +925,9 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 full_sort = true;
             }
         } else {
+            if (!lf->get_format_ptr()->lf_time_ordered) {
+                all_time_ordered_formats = false;
+            }
             if (time_left && deadline && ui_clock::now() > deadline.value()) {
                 log_debug("no time left, skipping %s",
                           lf->get_filename_as_string().c_str());
@@ -934,9 +937,20 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 |= lf->get_format_ptr()->lf_timestamp_flags;
 
             if (!this->tss_view->is_paused() && time_left) {
-                switch (lf->rebuild_index(deadline)) {
+                auto log_rebuild_res = lf->rebuild_index(deadline);
+
+                if (ld.ld_lines_indexed < lf->size()
+                    && log_rebuild_res
+                        == logfile::rebuild_result_t::NO_NEW_LINES)
+                {
+                    // This is a bit awkward... if the logfile indexing was
+                    // complete before being added to us, we need to adjust
+                    // the rebuild result to make it look like new lines
+                    // were added.
+                    log_rebuild_res = logfile::rebuild_result_t::NEW_LINES;
+                }
+                switch (log_rebuild_res) {
                     case logfile::rebuild_result_t::NO_NEW_LINES:
-                        // No changes
                         break;
                     case logfile::rebuild_result_t::NEW_LINES:
                         if (retval == rebuild_result::rr_no_change) {
@@ -973,14 +987,13 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                               ->get_time<
                                                   std::chrono::microseconds>()
                                               .count());
-                                if (retval
-                                    <= rebuild_result::rr_partial_rebuild)
+                                if (retval <= rebuild_result::rr_partial_rebuild
+                                    && all_time_ordered_formats)
                                 {
                                     retval = rebuild_result::rr_partial_rebuild;
-                                    if (!lowest_tv) {
-                                        lowest_tv = new_file_line.get_timeval();
-                                    } else if (new_file_line.get_timeval()
-                                               < lowest_tv.value())
+                                    if (!lowest_tv
+                                        || new_file_line.get_timeval()
+                                            < lowest_tv.value())
                                     {
                                         lowest_tv = new_file_line.get_timeval();
                                     }
@@ -1053,34 +1066,36 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
+            require(lf->get_format_ptr()->lf_time_ordered);
+
             auto line_iter = lf->find_from_time(lowest_tv.value());
 
             if (line_iter) {
-                log_debug("%s: lowest line time %ld; line %ld; size %ld",
-                          lf->get_filename().c_str(),
+                log_debug("lowest line time %ld; line %ld; size %ld; path=%s",
                           line_iter.value()->get_timeval().tv_sec,
                           std::distance(lf->cbegin(), line_iter.value()),
-                          lf->size());
+                          lf->size(),
+                          lf->get_filename_as_string().c_str());
             }
             ld.ld_lines_indexed
                 = std::distance(lf->cbegin(), line_iter.value_or(lf->cend()));
             remaining += lf->size() - ld.ld_lines_indexed;
         }
 
-        auto row_iter = std::lower_bound(this->lss_index.begin(),
-                                         this->lss_index.end(),
-                                         *lowest_tv,
-                                         logline_cmp(*this));
+        auto* row_iter = std::lower_bound(this->lss_index.begin(),
+                                          this->lss_index.end(),
+                                          lowest_tv.value(),
+                                          logline_cmp(*this));
         this->lss_index.shrink_to(
             std::distance(this->lss_index.begin(), row_iter));
         log_debug("new index size %ld/%ld; remain %ld",
                   this->lss_index.ba_size,
                   this->lss_index.ba_capacity,
                   remaining);
-        auto filt_row_iter = lower_bound(this->lss_filtered_index.begin(),
-                                         this->lss_filtered_index.end(),
-                                         *lowest_tv,
-                                         filtered_logline_cmp(*this));
+        auto filt_row_iter = std::lower_bound(this->lss_filtered_index.begin(),
+                                              this->lss_filtered_index.end(),
+                                              lowest_tv.value(),
+                                              filtered_logline_cmp(*this));
         this->lss_filtered_index.resize(
             std::distance(this->lss_filtered_index.begin(), filt_row_iter));
         search_start = vis_line_t(this->lss_filtered_index.size());
@@ -1694,7 +1709,6 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
     } else {
         (*existing)->set_file(lf);
     }
-    this->lss_force_rebuild = true;
 
     return true;
 }

@@ -3,7 +3,7 @@
     "access_log": {
         "title": "Common Access Log",
         "description": "The default web access log format for servers like Apache.",
-        "url": "http://en.wikipedia.org/wiki/Common_Log_Format",
+        "url": "https://en.wikipedia.org/wiki/Common_Log_Format",
         "multiline": false,
         "regex": {
             "ts-first-noquotes": {
