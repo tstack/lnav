@@ -1,0 +1,38 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "laravel_log": {
+        "title": "Laravel",
+        "description": "Laravel log format",
+        "url": [
+            "https://laravel.com/docs/12.x/logging"
+        ],
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>[\\d\\-:\\s]+)\\]\\s(?<env>\\w+)\\.(?<level>DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT|EMERGENCY):\\s(?<body>.*?)(?:\\s(?<context>\\{.*\\}|\\[.*\\])\\s*)?$"
+            }
+        },
+        "value": {
+            "context": {
+                "kind": "json"
+            },
+            "env": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[2025-08-31 06:49:00] local.INFO: User logged in. {\"user_id\": 123}"
+            },
+            {
+                "line": "[2025-08-31 12:34:56] local.ERROR: Something bad happened {\"user_id\":123,\"ip\":\"127.0.0.1\"}"
+            }
+        ]
+    }
+}

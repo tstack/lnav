@@ -366,6 +366,8 @@ dist_noinst_DATA = \
 	logfile_json3.json \
 	logfile_json_invalid.json \
 	logfile_json_subsec.json \
+	logfile_laravel.0 \
+	logfile_laravel.1 \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
 	logfile_multiline.0 \

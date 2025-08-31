@@ -774,3 +774,7 @@ cat ${test_dir}/logfile_generic.0 | run_cap_test ${lnav_test} -n \
     -c ':test-comment generic before piper'
 
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_logfmt.0
+
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.0
+
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.1

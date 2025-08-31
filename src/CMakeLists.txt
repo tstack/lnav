@@ -199,6 +199,7 @@ set(FORMAT_FILES
         formats/java_log.json
         formats/journald_json_log.json
         formats/katello_log.json
+        formats/laravel_log.json
         formats/lnav_debug_log.json
         formats/mysql_error_log.json
         formats/mysql_slow_log.json

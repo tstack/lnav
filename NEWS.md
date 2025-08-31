@@ -17,6 +17,7 @@ Features:
   formats.  There is also a `mysql_slow_stats` search table
   that captures the various statistics available in a slow
   query log message (e.g. `query_time`, `lock_time`, ...).
+* Added laravel_log format.
 * Annotation handlers can now be lnav scripts if the "handler"
   field starts with a pipe (`|`).
 * The `<span>` tag in a Markdown now supports
