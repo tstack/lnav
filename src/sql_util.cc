@@ -1658,7 +1658,7 @@ annotate_sql_statement(attr_line_t& al, lnav::sql::dialect dia)
         },
         {
             lnav::pcre2pp::code::from_const(
-                R"(\A(~|%|\*|\->{1,2}|<=|>=|<<|>>|<>|<|>|={1,2}|!=|!|\-|\+|\|\|{1,2}|&|::))"),
+                R"(\A(~|%|\*|\->{1,2}|<=|>=|<<|>>|<>|<|>|={1,2}|!=?|\-|\+|\|\|{1,2}|&|::))"),
             &SQL_OPERATOR_ATTR,
         },
         {

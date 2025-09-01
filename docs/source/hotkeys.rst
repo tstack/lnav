@@ -415,5 +415,29 @@ editing:
 Customizing
 -----------
 
-You can customize the behavior of hotkeys by defining your own keymaps.
+New hotkeys can be defined and existing behaviors changed by updating lnav's
+configuration.  Since most of lnav's functionality is exposed through
+:ref:`SQLite functions<sql-ext>` and :ref:`SQLite virtual tables<sql-tab>`,
+quite a lot is possible.  For example, if you regularly want to find a log
+message with a particular pattern, like "Starting execution".  The following
+command will find the next occurrence after the currently focused message:
+
+.. code-block:: custsqlite
+
+    ;SELECT log_line FROM all_logs WHERE log_line > log_msg_line() AND log_body LIKE '%Starting execution%' LIMIT 1
+
+To then move the focus in the log view to the line found by the above command,
+you can run the following:
+
+.. code-block:: custsqlite
+
+    ;UPDATE lnav_views SET selection = (SELECT log_line FROM all_logs WHERE log_line > log_msg_line() AND log_body LIKE '%Starting execution%' LIMIT 1) WHERE name = 'log'
+
+To bind that command to a key, like F9, you can run the following
+:code:`:config` command:
+
+.. code-block:: lnav
+
+    :config /ui/keymap-defs/default/f9/command ;UPDATE lnav_views SET selection = (SELECT log_line FROM all_logs WHERE log_line > log_msg_line() AND log_body LIKE '%Starting execution%' LIMIT 1) WHERE name = 'log'
+
 Consult the :ref:`Keymaps<keymaps>` configuration section for more information.

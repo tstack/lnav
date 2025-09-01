@@ -203,7 +203,10 @@ keymap.  The :code:`command` value associated with the entry in the keymap is
 then executed.  Note that the "command" can be an **lnav**
 :ref:`command<commands>`, a :ref:`SQL statement/query<sql-ext>`, or an
 **lnav** script.  If an :code:`alt-msg` value is included in the entry, the
-bottom-right section of the UI will be updated with the help text.
+bottom-right section of the UI will be updated with the help text.  See the
+`default keymap <https://github.com/tstack/lnav/blob/master/src/keymaps/default-keymap.json>`_
+for an example of how many of the :ref:`default hotkeys<hotkeys>` are
+implemented.
 
 .. note::
 
