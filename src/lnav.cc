@@ -1711,6 +1711,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         &lnav_data.ld_preview_status_source[1]);
     lnav_data.ld_spectro_status_source
         = std::make_unique<spectro_status_source>();
+    lnav_data.ld_spectro_status_source
+        ->statusview_value_for_field(spectro_status_source::field_t::F_TITLE)
+        .on_click
+        = [](status_field&) { set_view_mode(ln_mode_t::SPECTRO_DETAILS); };
     lnav_data.ld_status[LNS_SPECTRO].set_data_source(
         lnav_data.ld_spectro_status_source.get());
     lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
