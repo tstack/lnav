@@ -182,11 +182,11 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         }
     }
 
-    if (handle_keyseq(keyseq)) {
+    if (tc->handle_key(ch)) {
         return true;
     }
 
-    if (tc->handle_key(ch)) {
+    if (handle_keyseq(keyseq)) {
         return true;
     }
 

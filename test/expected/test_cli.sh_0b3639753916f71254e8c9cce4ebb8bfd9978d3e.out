@@ -722,26 +722,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "Black",
                         "background-color": "Green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "Black",
                         "background-color": "Olive",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "Black",
                         "background-color": "Maroon",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -1602,26 +1602,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$yellow",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$red",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -2429,26 +2429,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$yellow",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$red",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -4116,26 +4116,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#8adf80",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#f3d000",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#ff8f88",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -4943,26 +4943,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$yellow",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$red",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -5296,7 +5296,7 @@
                     },
                     "alt-text": {
                         "color": "",
-                        "background-color": "#1c1c1c",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5769,26 +5769,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$yellow",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$red",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -6604,26 +6604,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$green",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$yellow",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "$red",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -7439,26 +7439,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#c7e600",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#f2b500",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
+                        "color": "$black",
                         "background-color": "#fc3835",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },

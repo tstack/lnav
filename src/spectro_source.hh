@@ -33,6 +33,7 @@
 #define spectro_source_hh
 
 #include <chrono>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -130,6 +131,7 @@ public:
         this->ss_cached_bounds.sb_count = 0;
         this->ss_row_cache.clear();
         this->ss_cursor_column = std::nullopt;
+        this->ss_cursor_details_checksum.clear();
     }
 
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
@@ -175,6 +177,10 @@ public:
                              int row,
                              string_attrs_t& value_out) override;
 
+    void chart_attrs_for_line(textview_curses& tc,
+                              int row,
+                              string_attrs_t& value_out);
+
     void cache_bounds();
 
     std::optional<row_info> time_for_row_int(vis_line_t row);
@@ -183,9 +189,9 @@ public:
 
     void reset_details_source();
 
-    textview_curses* ss_details_view;
-    text_sub_source* ss_no_details_source;
-    exec_context* ss_exec_context;
+    textview_curses* ss_details_view{nullptr};
+    text_sub_source* ss_no_details_source{nullptr};
+    exec_context* ss_exec_context{nullptr};
     std::unique_ptr<text_sub_source> ss_details_source;
     std::chrono::microseconds ss_granularity
         = std::chrono::duration_cast<std::chrono::microseconds>(

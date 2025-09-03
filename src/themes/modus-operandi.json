@@ -247,13 +247,19 @@
             "background-color": "#f3f3f3"
           },
           "spectrogram-low": {
-            "background-color": "#8adf80"
+            "color": "$black",
+            "background-color": "#8adf80",
+            "bold": true
           },
           "spectrogram-medium": {
-            "background-color": "#f3d000"
+            "color": "$black",
+            "background-color": "#f3d000",
+            "bold": true
           },
           "spectrogram-high": {
-            "background-color": "#ff8f88"
+            "color": "$black",
+            "background-color": "#ff8f88",
+            "bold": true
           },
           "file": {
             "color": "$blue"

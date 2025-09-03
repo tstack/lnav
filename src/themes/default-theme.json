@@ -242,13 +242,19 @@
                         "color": "Maroon"
                     },
                     "spectrogram-low": {
-                        "background-color": "Green"
+                        "color": "Black",
+                        "background-color": "Green",
+                        "bold": true
                     },
                     "spectrogram-medium": {
-                        "background-color": "Olive"
+                        "color": "Black",
+                        "background-color": "Olive",
+                        "bold": true
                     },
                     "spectrogram-high": {
-                        "background-color": "Maroon"
+                        "color": "Black",
+                        "background-color": "Maroon",
+                        "bold": true
                     },
                     "file": {
                         "color": "Navy"

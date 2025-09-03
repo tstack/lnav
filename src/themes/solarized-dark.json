@@ -222,13 +222,19 @@
                         "color": "$magenta"
                     },
                     "spectrogram-low": {
-                        "background-color": "$green"
+                        "color": "$black",
+                        "background-color": "$green",
+                        "bold": true
                     },
                     "spectrogram-medium": {
-                        "background-color": "$yellow"
+                        "color": "$black",
+                        "background-color": "$yellow",
+                        "bold": true
                     },
                     "spectrogram-high": {
-                        "background-color": "$red"
+                        "color": "$black",
+                        "background-color": "$red",
+                        "bold": true
                     },
                     "file": {
                         "color": "$blue"

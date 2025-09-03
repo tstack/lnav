@@ -39,6 +39,10 @@
 #include "base/math_util.hh"
 #include "config.h"
 
+static constexpr auto TIME_COLUMN_WIDTH = 22;
+static constexpr auto UNUSABLE_WIDTH = TIME_COLUMN_WIDTH + 2;
+static constexpr auto MINIMUM_WIDTH = UNUSABLE_WIDTH + 20;
+
 std::optional<size_t>
 spectrogram_row::nearest_column(size_t current) const
 {
@@ -77,7 +81,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
             }
 
             auto [height, width] = lv.get_dimensions();
-            width -= 2;
+            width -= UNUSABLE_WIDTH;
 
             auto& sb = this->ss_cached_bounds;
             auto begin_time_opt = this->time_for_row_int(sel.value());
@@ -99,7 +103,10 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                                                 end_time,
                                                 range_min,
                                                 range_max);
+            auto cursor_col = this->ss_cursor_column;
             this->invalidate();
+            this->ss_cursor_column = cursor_col;
+            this->text_selection_changed((textview_curses&) lv);
             lv.reload_data();
             return true;
         }
@@ -125,13 +132,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
         case NCKEY_LEFT:
         case NCKEY_RIGHT: {
             auto sel = lv.get_selection();
-            unsigned long width;
-            vis_line_t height;
             string_attrs_t sa;
-
-            lv.get_dimensions(height, width);
-
-            this->text_attrs_for_line(
+            this->chart_attrs_for_line(
                 (textview_curses&) lv, sel.value_or(0_vl), sa);
 
             if (sa.empty()) {
@@ -143,8 +145,9 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
             if (!this->ss_cursor_column) {
                 lv.set_selection(0_vl);
             }
-            line_range lr(this->ss_cursor_column.value(),
-                          this->ss_cursor_column.value() + 1);
+            line_range lr(
+                TIME_COLUMN_WIDTH + this->ss_cursor_column.value(),
+                TIME_COLUMN_WIDTH + this->ss_cursor_column.value() + 1);
 
             auto current = find_string_attr(sa, lr);
 
@@ -168,7 +171,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                     current = sa.begin();
                 }
             }
-            this->ss_cursor_column = current->sa_range.lr_start;
+            this->ss_cursor_column
+                = current->sa_range.lr_start - TIME_COLUMN_WIDTH;
             this->reset_details_source();
 
             lv.reload_data();
@@ -187,10 +191,12 @@ spectrogram_source::text_handle_mouse(
     mouse_event& me)
 {
     auto sel = tc.get_selection();
-    if (!sel) {
+    if (!sel || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED) {
         return false;
     }
     const auto& s_row = this->load_row(tc, sel.value());
+    std::optional<size_t> closest_column;
+    int closest_distance = INT_MAX;
 
     for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
         int col_value = s_row.sr_values[lpc].rb_counter;
@@ -199,16 +205,19 @@ spectrogram_source::text_handle_mouse(
             continue;
         }
 
-        auto lr = line_range{lpc, lpc + 1};
-        if (me.is_click_in(mouse_button_t::BUTTON_LEFT, lr)) {
-            this->ss_cursor_column = lr.lr_start;
-            this->reset_details_source();
-
-            tc.reload_data();
-            return true;
+        auto distance = std::abs(me.me_x - (TIME_COLUMN_WIDTH + lpc));
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            closest_column = lpc;
         }
     }
 
+    if (closest_column) {
+        this->ss_cursor_column = closest_column;
+        this->reset_details_source();
+        tc.reload_data();
+        return true;
+    }
     return false;
 }
 
@@ -218,7 +227,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                                            std::vector<attr_line_t>& value_out)
 {
     auto [height, width] = lv.get_dimensions();
-    width -= 2;
+    width -= UNUSABLE_WIDTH;
 
     const auto sel = lv.get_selection();
     if (sel && row == sel.value() && this->ss_cursor_column) {
@@ -262,7 +271,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                   .append(lnav::roles::number(
                       fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
                   .append(" ");
-        auto mark_offset = this->ss_cursor_column.value();
+        auto mark_offset = TIME_COLUMN_WIDTH + this->ss_cursor_column.value();
         auto mark_is_before = true;
 
         retval.al_attrs.emplace_back(line_range{0, -1},
@@ -353,7 +362,7 @@ spectrogram_source::time_for_row(vis_line_t row)
 std::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row_int(vis_line_t row)
 {
-    timeval retval{0, 0};
+    auto retval = timeval{0, 0};
 
     this->cache_bounds();
     retval.tv_sec = to_time_t(
@@ -390,9 +399,13 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
                                         std::string& value_out,
                                         text_sub_source::line_flags_t flags)
 {
+    if (tc.get_dimensions().second < MINIMUM_WIDTH) {
+        return {};
+    }
+
     const auto& s_row = this->load_row(tc, row);
     char tm_buffer[128];
-    struct tm tm;
+    tm tm;
 
     auto row_time_opt = this->time_for_row_int(vis_line_t(row));
     if (!row_time_opt) {
@@ -405,11 +418,11 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
     strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S", &tm);
 
     value_out = tm_buffer;
-    value_out.resize(s_row.sr_width, ' ');
+    value_out.resize(TIME_COLUMN_WIDTH + s_row.sr_width, ' ');
 
     for (size_t lpc = 0; lpc <= s_row.sr_width; lpc++) {
         if (s_row.sr_values[lpc].rb_marks) {
-            value_out[lpc] = 'x';
+            value_out[TIME_COLUMN_WIDTH + lpc] = 'x';
         }
     }
 
@@ -417,14 +430,10 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
 }
 
 void
-spectrogram_source::text_attrs_for_line(textview_curses& tc,
-                                        int row,
-                                        string_attrs_t& value_out)
+spectrogram_source::chart_attrs_for_line(textview_curses& tc,
+                                         int row,
+                                         string_attrs_t& value_out)
 {
-    if (this->ss_value_source == nullptr) {
-        return;
-    }
-
     const auto& st = this->ss_cached_thresholds;
     const auto& s_row = this->load_row(tc, row);
 
@@ -444,8 +453,26 @@ spectrogram_source::text_attrs_for_line(textview_curses& tc,
         } else {
             role = role_t::VCR_HIGH_THRESHOLD;
         }
-        value_out.emplace_back(line_range(lpc, lpc + 1), VC_ROLE.value(role));
+        auto lr
+            = line_range{TIME_COLUMN_WIDTH + lpc, TIME_COLUMN_WIDTH + lpc + 1};
+        value_out.emplace_back(lr, VC_ROLE.value(role));
     }
+}
+
+void
+spectrogram_source::text_attrs_for_line(textview_curses& tc,
+                                        int row,
+                                        string_attrs_t& value_out)
+{
+    if (this->ss_value_source == nullptr) {
+        return;
+    }
+
+    if (tc.get_dimensions().second < MINIMUM_WIDTH) {
+        return;
+    }
+
+    this->chart_attrs_for_line(tc, row, value_out);
 
     auto alt_row_index = row % 4;
     if (alt_row_index == 2 || alt_row_index == 3) {
@@ -522,11 +549,8 @@ spectrogram_source::load_row(const listview_curses& tc, int row)
 {
     this->cache_bounds();
 
-    unsigned long width;
-    vis_line_t height;
-
-    tc.get_dimensions(height, width);
-    width -= 2;
+    auto [height, width] = tc.get_dimensions();
+    width -= UNUSABLE_WIDTH;
 
     auto& sb = this->ss_cached_bounds;
     spectrogram_request sr(sb);
@@ -597,13 +621,17 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     if (y != 0) {
         return false;
     }
+    auto [height, width] = lv.get_dimensions();
+
+    if (width < MINIMUM_WIDTH) {
+        value_out = lnav::console::user_message::error(
+                        "window is too narrow, not able to show chart")
+                        .to_attr_line();
+        return true;
+    }
 
     auto& line = value_out.get_string();
-    vis_line_t height;
-    unsigned long width;
     char buf[128];
-
-    lv.get_dimensions(height, width);
     width -= 2;
 
     this->cache_bounds();
@@ -619,8 +647,9 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     auto& sb = this->ss_cached_bounds;
     auto& st = this->ss_cached_thresholds;
 
+    line.append(TIME_COLUMN_WIDTH, ' ');
     snprintf(buf, sizeof(buf), "Min: %'.10lg", sb.sb_min_value_out);
-    line = buf;
+    line.append(buf);
 
     snprintf(buf,
              sizeof(buf),

@@ -30,6 +30,8 @@ Interface changes:
 * If all the content in the LOG/TEXT views are filtered out,
   a notice will be displayed that describes the filters that
   are in effect.
+* The chart in the SPECTRO view is now shifted to the right
+  so it does not cover the timestamp.
 
 Bug Fixes:
 * Fix a crash on startup for some environments.

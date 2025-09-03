@@ -31,7 +31,7 @@
                         "bold": true
                     },
                     "alt-text": {
-                        "background-color": "#1c1c1c"
+                        "background-color": "#15293a"
                     },
                     "ok": {
                         "color": "$green",
@@ -215,13 +215,19 @@
                         "color": "$magenta"
                     },
                     "spectrogram-low": {
-                        "background-color": "$green"
+                        "color": "$black",
+                        "background-color": "$green",
+                        "bold": true
                     },
                     "spectrogram-medium": {
-                        "background-color": "$yellow"
+                        "color": "$black",
+                        "background-color": "$yellow",
+                        "bold": true
                     },
                     "spectrogram-high": {
-                        "background-color": "$red"
+                        "color": "$black",
+                        "background-color": "$red",
+                        "bold": true
                     },
                     "file": {
                         "color": "#82aaff"
