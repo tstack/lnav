@@ -108,6 +108,8 @@ bool moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
 vis_line_t search_forward_from(textview_curses* tc);
 textview_curses* get_textview_for_mode(ln_mode_t mode);
 
+std::vector<view_curses*> all_views();
+
 class lnav_behavior : public mouse_behavior {
 public:
     void mouse_event(

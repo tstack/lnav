@@ -898,15 +898,15 @@ layout_views()
         vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                                  + (filters_supported ? 1 : 0));
     }
-    lnav_data.ld_filter_view.set_height(
-        vis_line_t(filter_height) - (filters_supported ? 0_vl : 1_vl));
+    lnav_data.ld_filter_view.set_height(vis_line_t(filter_height)
+                                        - (filters_supported ? 0_vl : 1_vl));
     lnav_data.ld_filter_view.set_y(bottom + 2);
     lnav_data.ld_filter_view.set_width(width);
     lnav_data.ld_filter_view.set_visible(filters_open && vis);
     filter_source->fss_editor->set_width(width - 26);
 
-    lnav_data.ld_files_view.set_height(
-        vis_line_t(filter_height) - (filters_supported ? 0_vl : 1_vl));
+    lnav_data.ld_files_view.set_height(vis_line_t(filter_height)
+                                       - (filters_supported ? 0_vl : 1_vl));
     lnav_data.ld_files_view.set_y(bottom + 2);
     lnav_data.ld_files_view.set_width(files_width);
     lnav_data.ld_files_view.set_visible(files_open && vis);
@@ -1670,7 +1670,7 @@ set_view_mode(ln_mode_t mode)
     lnav_data.ld_mode = mode;
 }
 
-static std::vector<view_curses*>
+std::vector<view_curses*>
 all_views()
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
@@ -1792,6 +1792,7 @@ lnav_behavior::mouse_event(
                         case ln_mode_t::FILES:
                         case ln_mode_t::FILE_DETAILS:
                         case ln_mode_t::FILTER:
+                        case ln_mode_t::SPECTRO_DETAILS:
                             // Clicking on the main view when the config panels
                             // are open should return us to paging.
                             set_view_mode(ln_mode_t::PAGING);

@@ -181,9 +181,6 @@ public:
     void set_data_source(status_data_source* src) { this->sc_source = src; }
     status_data_source* get_data_source() { return this->sc_source; }
 
-    void set_window(ncplane* win) { this->sc_window = win; }
-    ncplane* get_window() { return this->sc_window; }
-
     void set_enabled(bool value)
     {
         if (this->sc_enabled != value) {
@@ -201,7 +198,6 @@ public:
 
 private:
     status_data_source* sc_source{nullptr};
-    ncplane* sc_window{nullptr};
     bool sc_enabled{true};
 
     struct displayed_field {

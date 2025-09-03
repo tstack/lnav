@@ -47,9 +47,9 @@ public:
 
     using injectable = breadcrumb_curses();
 
-    void set_window(ncplane* win)
+    void set_window(ncplane* win) override
     {
-        this->bc_window = win;
+        view_curses::set_window(win);
         this->bc_match_view.set_window(win);
     }
 
@@ -100,7 +100,6 @@ private:
 
     bool perform_selection(perform_behavior_t behavior);
 
-    ncplane* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
     std::vector<breadcrumb::crumb> bc_focused_crumbs;
     std::optional<size_t> bc_selected_crumb;

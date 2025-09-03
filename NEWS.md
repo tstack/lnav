@@ -37,6 +37,7 @@ Bug Fixes:
 * Fix an issue with completion of script names.
 * Handle abbreviated timezones (e.g. PDT/PST) in timestamps.
 * Improve HTML handling in Markdown files.
+* Fixed various issues in the SPECTRO view.
 * Minor performance improvements.
 
 ## lnav v0.13.0

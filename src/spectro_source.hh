@@ -38,6 +38,7 @@
 
 #include <math.h>
 
+#include "hasher.hh"
 #include "statusview_curses.hh"
 #include "textview_curses.hh"
 
@@ -198,6 +199,8 @@ public:
                        lnav::duration_hasher>
         ss_row_cache;
     std::optional<size_t> ss_cursor_column;
+    attr_line_t ss_cursor_details;
+    hasher::array_t ss_cursor_details_checksum;
 };
 
 class spectro_status_source : public status_data_source {

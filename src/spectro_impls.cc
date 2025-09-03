@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
 #include <optional>
 
 #include "spectro_impls.hh"
@@ -299,11 +300,11 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     logline_value_vector values;
     string_attrs_t sa;
 
-    for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
-        content_line_t cl = lss.at(curr_line);
-        std::shared_ptr<logfile> lf = lss.find(cl);
+    for (auto curr_line = begin_line; curr_line < end_line; ++curr_line) {
+        auto cl = lss.at(curr_line);
+        const auto lf = lss.find(cl);
         auto ll = lf->begin() + cl;
-        auto format = lf->get_format();
+        const auto* format = lf->get_format_ptr();
 
         if (!ll->is_message()) {
             continue;

@@ -131,7 +131,7 @@ listview_curses::get_dimensions(vis_line_t& height_out,
 {
     unsigned int height;
 
-    if (this->lv_window == nullptr) {
+    if (this->vc_window == nullptr) {
         height_out = std::max(this->lv_height, 1_vl);
         if (this->lv_source) {
             width_out = this->lv_source->listview_width(*this);
@@ -141,7 +141,7 @@ listview_curses::get_dimensions(vis_line_t& height_out,
     } else {
         unsigned int width_tmp;
 
-        ncplane_dim_yx(this->lv_window, &height, &width_tmp);
+        ncplane_dim_yx(this->vc_window, &height, &width_tmp);
         width_out = width_tmp;
         if (this->lv_height < 0) {
             height_out
@@ -485,7 +485,7 @@ listview_curses::do_update()
     static auto& vc = view_colors::singleton();
     bool retval = false;
 
-    if (this->lv_window == nullptr || this->lv_height == 0 || !this->vc_visible)
+    if (this->vc_window == nullptr || this->lv_height == 0 || !this->vc_visible)
     {
         return view_curses::do_update();
     }
@@ -555,7 +555,7 @@ listview_curses::do_update()
             al.al_attrs.emplace_back(hline_lr, VC_GRAPHIC.value(NCACS_HLINE));
             al.al_attrs.emplace_back(line_range{(int) width - 1, (int) width},
                                      VC_GRAPHIC.value(NCACS_URCORNER));
-            mvwattrline(this->lv_window,
+            mvwattrline(this->vc_window,
                         y,
                         x,
                         al,
@@ -565,8 +565,8 @@ listview_curses::do_update()
             y += 1;
             for (auto border_y = y; border_y < bottom; border_y++) {
                 ncplane_putstr_yx(
-                    this->lv_window, border_y, this->vc_x, NCACS_VLINE);
-                ncplane_set_cell_yx(this->lv_window,
+                    this->vc_window, border_y, this->vc_x, NCACS_VLINE);
+                ncplane_set_cell_yx(this->vc_window,
                                     border_y,
                                     x,
                                     NCSTYLE_ALTCHARSET,
@@ -583,7 +583,7 @@ listview_curses::do_update()
                     *this, y - this->vc_y, bottom - this->vc_y, overlay_line))
             {
                 this->lv_display_lines.push_back(static_overlay_content{});
-                mvwattrline(this->lv_window, y, x, overlay_line, lr);
+                mvwattrline(this->vc_window, y, x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
             } else if (row < (int) row_count) {
@@ -599,11 +599,11 @@ listview_curses::do_update()
                     this->lv_display_lines.push_back(
                         main_content{row, wrapped_line, lr});
                     if (this->lv_word_wrap) {
-                        // XXX mvwhline(this->lv_window, y, this->vc_x, ' ',
+                        // XXX mvwhline(this->vc_window, y, this->vc_x, ' ',
                         // width);
                     }
                     write_res = mvwattrline(
-                        this->lv_window, y, x, al, lr, this->vc_default_role);
+                        this->vc_window, y, x, al, lr, this->vc_default_role);
                     lr.lr_start = write_res.mr_chars_out;
                     lr.lr_end = write_res.mr_chars_out + width - 1;
                     wrapped_line += 1;
@@ -628,7 +628,7 @@ listview_curses::do_update()
                         this->lv_display_lines.emplace_back(overlay_menu{
                             ov_menu_row,
                         });
-                        mvwattrline(this->lv_window,
+                        mvwattrline(this->vc_window,
                                     y,
                                     x,
                                     ov_menu_line,
@@ -657,7 +657,7 @@ listview_curses::do_update()
                                 VC_STYLE.value(ov_hdr_attrs));
                             this->lv_display_lines.emplace_back(
                                 static_overlay_content{});
-                            mvwattrline(this->lv_window,
+                            mvwattrline(this->vc_window,
                                         y,
                                         x,
                                         ov_hdr,
@@ -683,7 +683,7 @@ listview_curses::do_update()
                             overlay_height,
                             vis_line_t{(int) row_overlay_content.size()},
                         });
-                        mvwattrline(this->lv_window,
+                        mvwattrline(this->vc_window,
                                     y,
                                     x,
                                     row_overlay_content[overlay_row],
@@ -733,9 +733,9 @@ listview_curses::do_update()
                             }
                             attrs = vc.attrs_for_role(role);
                             ncplane_putstr_yx(
-                                this->lv_window, gutter_y, x + width - 2, ch);
+                                this->vc_window, gutter_y, x + width - 2, ch);
                             ncplane_set_cell_yx(
-                                this->lv_window,
+                                this->vc_window,
                                 gutter_y,
                                 x + width - 2,
                                 attrs.ta_attrs | NCSTYLE_ALTCHARSET,
@@ -748,14 +748,14 @@ listview_curses::do_update()
             } else {
                 nccell clear_cell;
                 nccell_init(&clear_cell);
-                nccell_prime(this->lv_window,
+                nccell_prime(this->vc_window,
                              &clear_cell,
                              " ",
                              0,
                              view_colors::to_channels(role_attrs));
-                ncplane_cursor_move_yx(this->lv_window, y, x);
-                ncplane_hline(this->lv_window, &clear_cell, width);
-                nccell_release(this->lv_window, &clear_cell);
+                ncplane_cursor_move_yx(this->vc_window, y, x);
+                ncplane_hline(this->vc_window, &clear_cell, width);
+                nccell_release(this->vc_window, &clear_cell);
 
                 this->lv_display_lines.push_back(empty_space{});
                 ++y;
@@ -811,8 +811,8 @@ listview_curses::do_update()
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
-                ncplane_putstr_yx(this->lv_window, gutter_y, x + width - 1, ch);
-                ncplane_set_cell_yx(this->lv_window,
+                ncplane_putstr_yx(this->vc_window, gutter_y, x + width - 1, ch);
+                ncplane_set_cell_yx(this->vc_window,
                                     gutter_y,
                                     x + width - 1,
                                     attrs.ta_attrs | NCSTYLE_ALTCHARSET,
@@ -824,7 +824,7 @@ listview_curses::do_update()
             auto bottom_y = this->vc_y + height - 1;
             for (size_t lpc = 0; lpc < width - 1; lpc++) {
                 ncplane_on_styles_yx(
-                    this->lv_window, bottom_y, x + lpc, NCSTYLE_UNDERLINE);
+                    this->vc_window, bottom_y, x + lpc, NCSTYLE_UNDERLINE);
             }
         }
 

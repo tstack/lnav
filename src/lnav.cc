@@ -1266,6 +1266,15 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         signal(SIGWINCH, SIG_IGN);
         lnav_data.ld_winched = false;
         lnav_data.ld_window = nullptr;
+        for (auto& tv : lnav_data.ld_views) {
+            tv.set_window(nullptr);
+        }
+        for (auto* view : all_views()) {
+            if (view == nullptr) {
+                continue;
+            }
+            view->set_window(nullptr);
+        }
     });
 
     auto_fd errpipe[2];
@@ -1596,11 +1605,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_spectro_details_view.set_title("spectro-details");
     lnav_data.ld_spectro_details_view.set_window(lnav_data.ld_window);
     lnav_data.ld_spectro_details_view.set_show_scrollbar(true);
+    lnav_data.ld_spectro_details_view.set_selectable(true);
+    lnav_data.ld_spectro_details_view.tc_cursor_role = role_t::VCR_CURSOR_LINE;
+    lnav_data.ld_spectro_details_view.tc_disabled_cursor_role
+        = role_t::VCR_DISABLED_CURSOR_LINE;
     lnav_data.ld_spectro_details_view.set_height(5_vl);
     lnav_data.ld_spectro_details_view.set_sub_source(
         &lnav_data.ld_spectro_no_details_source);
     lnav_data.ld_spectro_details_view.tc_state_event_handler = event_handler;
     lnav_data.ld_spectro_details_view.set_scroll_action(sb);
+
     lnav_data.ld_spectro_no_details_source.replace_with(
         attr_line_t().append(lnav::roles::comment(" No details available")));
     lnav_data.ld_spectro_source->ss_details_view
@@ -1918,7 +1932,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                        lnav_data.ld_active_files.copy(),
                                        false);
             if (session_stage >= 2) {
-                log_trace("%d: shortening deadline", loop_count);
+                // log_trace("%d: shortening deadline", loop_count);
                 loop_deadline = ui_clock::now() + 10ms;
             }
         }
@@ -1939,9 +1953,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 // skip rebuild while text is selected
             } else if (ui_now >= next_rebuild_time) {
                 auto text_file_count = lnav_data.ld_text_source.size();
-                log_trace("%d: BEGIN rebuild", loop_count);
+                // log_trace("%d: BEGIN rebuild", loop_count);
                 auto rebuild_res = rebuild_indexes(loop_deadline);
-                log_trace("%d: END rebuild", loop_count);
+                // log_trace("%d: END rebuild", loop_count);
                 changes += rebuild_res.rir_changes;
                 if (!rebuild_res.rir_completed) {
                     next_rebuild_time = ui_now;
@@ -2095,10 +2109,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             filter_source->fss_editor->focus();
         }
         if (got_user_input || !updated_views.empty()) {
-            for (const auto* view_ptr : updated_views) {
-                log_trace("updated view %s %s",
-                          typeid(*view_ptr).name(),
-                          view_ptr->get_title().c_str());
+            if (true) {
+                for (const auto* view_ptr : updated_views) {
+                    log_trace("updated view %s %s",
+                              typeid(*view_ptr).name(),
+                              view_ptr->get_title().c_str());
+                }
             }
             notcurses_render(sc.get_notcurses());
             updated_views.clear();
@@ -2145,7 +2161,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                   loop_deadline - ui_now)
             : 0ms;
 
-        if (poll_to.count() > 0) {
+        if (false && poll_to.count() > 0) {
             log_trace(
                 "%d: poll() with timeout %lld ", loop_count, poll_to.count());
             log_trace("  (changes=%d; before_deadline=%d; session_stage=%d)",
@@ -2826,10 +2842,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         if (lnav_data.ld_spectro_source != nullptr) {
             delete std::exchange(lnav_data.ld_spectro_source->ss_value_source,
                                  nullptr);
-        }
-
-        for (auto& tv : lnav_data.ld_views) {
-            tv.set_window(nullptr);
         }
 
         lnav_data.ld_child_pollers.clear();

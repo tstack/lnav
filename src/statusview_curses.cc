@@ -114,11 +114,11 @@ statusview_curses::do_update()
     unsigned int width, height;
 
     this->sc_displayed_fields.clear();
-    if (!this->vc_visible || this->sc_window == nullptr) {
+    if (!this->vc_visible || this->vc_window == nullptr) {
         return false;
     }
 
-    ncplane_dim_yx(this->sc_window, &height, &width);
+    ncplane_dim_yx(this->vc_window, &height, &width);
     this->window_change();
 
     int top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
@@ -129,10 +129,10 @@ statusview_curses::do_update()
     nccell clear_cell;
     nccell_init(&clear_cell);
     nccell_prime(
-        this->sc_window, &clear_cell, " ", 0, view_colors::to_channels(attrs));
-    ncplane_cursor_move_yx(this->sc_window, top, 0);
-    ncplane_hline(this->sc_window, &clear_cell, width);
-    nccell_release(this->sc_window, &clear_cell);
+        this->vc_window, &clear_cell, " ", 0, view_colors::to_channels(attrs));
+    ncplane_cursor_move_yx(this->vc_window, top, 0);
+    ncplane_hline(this->vc_window, &clear_cell, width);
+    nccell_release(this->vc_window, &clear_cell);
 
     if (this->sc_source != nullptr) {
         auto field_count = this->sc_source->statusview_fields();
@@ -203,7 +203,7 @@ statusview_curses::do_update()
             }
 
             auto write_res
-                = mvwattrline(this->sc_window, top, x, val, lr, default_role);
+                = mvwattrline(this->vc_window, top, x, val, lr, default_role);
             this->sc_displayed_fields.emplace_back(
                 line_range{x, static_cast<int>(x + write_res.mr_chars_out)},
                 field);
@@ -226,7 +226,7 @@ statusview_curses::window_change()
     double remaining = 0;
     std::vector<status_field*> resizable;
 
-    auto width = ncplane_dim_x(this->sc_window);
+    auto width = ncplane_dim_x(this->vc_window);
     remaining = width - 2;
 
     for (int field = 0; field < field_count; field++) {

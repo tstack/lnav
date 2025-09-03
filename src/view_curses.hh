@@ -356,6 +356,12 @@ class view_curses {
 public:
     virtual ~view_curses() = default;
 
+    /** @param win The curses window this view is attached to. */
+    virtual void set_window(ncplane* win) { this->vc_window = win; }
+
+    /** @return The curses window this view is attached to. */
+    ncplane* get_window() const { return this->vc_window; }
+
     void set_title(const std::string& title) { this->vc_title = title; }
 
     const std::string& get_title() const { return this->vc_title; }
@@ -470,6 +476,7 @@ public:
                                           role_t base_role = role_t::VCR_TEXT);
 
 protected:
+    ncplane* vc_window{nullptr}; /*< The window that contains this view. */
     std::string vc_title;
     bool vc_enabled{true};
     bool vc_visible{true};

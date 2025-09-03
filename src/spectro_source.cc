@@ -29,6 +29,9 @@
  * @file spectro_source.cc
  */
 
+#include <optional>
+#include <vector>
+
 #include "spectro_source.hh"
 
 #include "base/ansi_scrubber.hh"
@@ -73,10 +76,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                 return true;
             }
 
-            unsigned long width;
-            vis_line_t height;
-
-            lv.get_dimensions(height, width);
+            auto [height, width] = lv.get_dimensions();
             width -= 2;
 
             auto& sb = this->ss_cached_bounds;
@@ -88,13 +88,12 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
             auto end_time = to_us(begin_time.ri_time);
 
             end_time += this->ss_granularity;
-            double range_min, range_max, column_size;
 
-            column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
+            double column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
                 / (double) (width - 1);
-            range_min = sb.sb_min_value_out
+            double range_min = sb.sb_min_value_out
                 + this->ss_cursor_column.value_or(0) * column_size;
-            range_max = range_min + column_size;
+            double range_max = range_min + column_size;
             this->ss_value_source->spectro_mark((textview_curses&) lv,
                                                 to_us(begin_time.ri_time),
                                                 end_time,
@@ -136,7 +135,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                 (textview_curses&) lv, sel.value_or(0_vl), sa);
 
             if (sa.empty()) {
-                this->ss_details_source.reset();
+                this->reset_details_source();
                 this->ss_cursor_column = std::nullopt;
                 return true;
             }
@@ -170,7 +169,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                 }
             }
             this->ss_cursor_column = current->sa_range.lr_start;
-            this->ss_details_source.reset();
+            this->reset_details_source();
 
             lv.reload_data();
 
@@ -203,7 +202,7 @@ spectrogram_source::text_handle_mouse(
         auto lr = line_range{lpc, lpc + 1};
         if (me.is_click_in(mouse_button_t::BUTTON_LEFT, lr)) {
             this->ss_cursor_column = lr.lr_start;
-            this->ss_details_source.reset();
+            this->reset_details_source();
 
             tc.reload_data();
             return true;
@@ -221,9 +220,19 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     auto [height, width] = lv.get_dimensions();
     width -= 2;
 
-    auto sel = lv.get_selection();
-
+    const auto sel = lv.get_selection();
     if (sel && row == sel.value() && this->ss_cursor_column) {
+        auto hash = hasher();
+        hash.update(this->ss_cursor_column.value());
+        hash.update(width);
+        hash.update(sel.value());
+        auto checksum = hash.to_array();
+
+        if (checksum == this->ss_cursor_details_checksum) {
+            value_out.push_back(this->ss_cursor_details);
+            return;
+        }
+
         const auto& s_row = this->load_row(lv, sel.value());
         const auto& bucket = s_row.sr_values[this->ss_cursor_column.value()];
         auto& sb = this->ss_cached_bounds;
@@ -294,6 +303,8 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
             }
         }
 
+        this->ss_cursor_details = retval;
+        this->ss_cursor_details_checksum = checksum;
         value_out.emplace_back(retval);
     }
 }
@@ -451,6 +462,7 @@ spectrogram_source::reset_details_source()
         this->ss_details_view->set_overlay_source(nullptr);
     }
     this->ss_details_source.reset();
+    this->ss_cursor_details_checksum.clear();
 }
 
 void
@@ -562,7 +574,7 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
 {
     if (this->ss_value_source == nullptr || this->text_line_count() == 0) {
         this->ss_cursor_column = std::nullopt;
-        this->ss_details_source.reset();
+        this->reset_details_source();
         return;
     }
 
@@ -572,7 +584,8 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
     const auto& s_row = this->load_row(tc, tc.get_selection().value());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));
-    this->ss_details_source.reset();
+    this->ss_cursor_details_checksum.clear();
+    this->reset_details_source();
 }
 
 bool

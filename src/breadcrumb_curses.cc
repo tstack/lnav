@@ -68,7 +68,7 @@ breadcrumb_curses::do_update()
     }
 
     size_t sel_crumb_offset = 0;
-    auto width = ncplane_dim_x(this->bc_window);
+    auto width = ncplane_dim_x(this->vc_window);
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
                                                   : this->bc_focused_crumbs;
     if (this->bc_last_selected_crumb
@@ -127,7 +127,7 @@ breadcrumb_curses::do_update()
     line_range lr{0, static_cast<int>(width)};
     auto default_role = this->vc_enabled ? role_t::VCR_STATUS
                                          : role_t::VCR_INACTIVE_STATUS;
-    mvwattrline(this->bc_window, this->vc_y, 0, crumbs_line, lr, default_role);
+    mvwattrline(this->vc_window, this->vc_y, 0, crumbs_line, lr, default_role);
 
     if (this->bc_selected_crumb) {
         this->bc_match_view.set_x(sel_crumb_offset);

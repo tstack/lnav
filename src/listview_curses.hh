@@ -343,12 +343,6 @@ public:
         return func(top_line[0]);
     }
 
-    /** @param win The curses window this view is attached to. */
-    void set_window(ncplane* win) { this->lv_window = win; }
-
-    /** @return The curses window this view is attached to. */
-    ncplane* get_window() const { return this->lv_window; }
-
     /**
      * Set the line number to be displayed at the top of the view.  If the
      * value is invalid, flash() will be called.  If the value is valid, the
@@ -583,7 +577,6 @@ protected:
     std::list<list_input_delegate*> lv_input_delegates;
     list_overlay_source* lv_overlay_source{nullptr};
     action lv_scroll; /*< The scroll action. */
-    ncplane* lv_window{nullptr}; /*< The window that contains this view. */
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
