@@ -117,6 +117,7 @@ public:
     std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col);
     std::optional<double> get_cell_as_double(vis_line_t row, size_t col);
 
+    void update_time_column(const timeval& tv);
     void update_time_column(const string_fragment& sf);
 
     void reset_user_state();

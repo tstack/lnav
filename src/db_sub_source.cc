@@ -359,7 +359,9 @@ db_label_source::push_header(const std::string& colstr, int type)
 
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
-    if (colstr == "log_time" || colstr == "min(log_time)") {
+    if (colstr == "log_time" || colstr == "min(log_time)"
+        || colstr == "log_time_msecs")
+    {
         this->dls_time_column_index = this->dls_headers.size() - 1;
     }
     if (colstr == "__lnav_style__") {
@@ -372,6 +374,18 @@ db_label_source::push_header(const std::string& colstr, int type)
 }
 
 void
+db_label_source::update_time_column(const timeval& tv)
+{
+    if (!this->dls_time_column.empty() && tv < this->dls_time_column.back()) {
+        this->dls_time_column_invalidated_at = this->dls_time_column.size();
+        this->dls_time_column_index = SIZE_MAX;
+        this->dls_time_column.clear();
+    } else {
+        this->dls_time_column.push_back(tv);
+    }
+}
+
+void
 db_label_source::update_time_column(const string_fragment& sf)
 {
     date_time_scanner dts;
@@ -381,13 +395,7 @@ db_label_source::update_time_column(const string_fragment& sf)
         tv.tv_sec = -1;
         tv.tv_usec = -1;
     }
-    if (!this->dls_time_column.empty() && tv < this->dls_time_column.back()) {
-        this->dls_time_column_invalidated_at = this->dls_time_column.size();
-        this->dls_time_column_index = SIZE_MAX;
-        this->dls_time_column.clear();
-    } else {
-        this->dls_time_column.push_back(tv);
-    }
+    this->update_time_column(tv);
 }
 
 void
@@ -446,9 +454,16 @@ db_label_source::push_column(const column_value_t& sv)
             }
             cv_sf = sf;
         },
-        [this, &width](int64_t i) {
+        [this, col, &width](int64_t i) {
             width = count_digits(i);
             this->dls_cell_container.push_int_cell(i);
+            if (col == this->dls_time_column_index) {
+                auto ms = std::chrono::milliseconds{i};
+                auto us
+                    = std::chrono::duration_cast<std::chrono::microseconds>(ms);
+
+                this->update_time_column(to_timeval(us));
+            }
         },
         [this, &width](double d) {
             char buffer[1];
