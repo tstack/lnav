@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <iostream>
 #include <regex>
 #include <stdexcept>
@@ -155,10 +156,10 @@ ensure_dotlnav()
         "formats/default",
         "formats/installed",
         "staging",
-        "stdin-captures",
         "crash",
     };
 
+    std::error_code ec;
     auto path = lnav::paths::dotlnav();
 
     for (const auto* sub_path : subdirs) {
@@ -179,7 +180,6 @@ ensure_dotlnav()
         auto crash_glob = path / "crash-*";
 
         if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
-            std::error_code ec;
             for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                 auto crash_file = std::filesystem::path(gl->gl_pathv[lpc]);
 
@@ -202,9 +202,10 @@ ensure_dotlnav()
         }
     }
 
-    {
+    auto old_cap_path = path / "stdin-captures";
+    if (std::filesystem::exists(old_cap_path, ec)) {
         static_root_mem<glob_t, globfree> gl;
-        auto cap_glob = path / "stdin-captures/*";
+        auto cap_glob = old_cap_path / "*";
 
         if (glob(cap_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             auto old_time
@@ -226,6 +227,11 @@ ensure_dotlnav()
                 log_info("Removing old stdin capture: %s", gl->gl_pathv[lpc]);
                 log_perror(remove(gl->gl_pathv[lpc]));
             }
+        }
+
+        if (std::filesystem::is_empty(old_cap_path, ec)) {
+            log_info("removing old stdin-captures directory");
+            std::filesystem::remove(old_cap_path, ec);
         }
     }
 }
