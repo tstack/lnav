@@ -65,7 +65,7 @@
     dst[off_inout] = ch; \
     off_inout += 1;
 
-#define ABR_TO_INT(a, b, c) (((a) << 24) | ((b) << 16) | ((c) << 8))
+#define ABR_TO_INT(a, b, c)     (((a) << 24) | ((b) << 16) | ((c) << 8))
 #define ABR_TO_INT4(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | ((d)))
 
 inline bool
@@ -153,7 +153,9 @@ ptime_b_int(struct exttm* dst, const char* str, off_t off)
 }
 
 #define PTIME_CHECK_b(dst, str, off) \
-    if (!ptime_b_int(dst, str, off)) { \
+    if (str[off + 3] == '.' || isalpha(str[off + 3]) \
+        || !ptime_b_int(dst, str, off)) \
+    { \
         off_t tmp_off = off; \
         if (!ptime_b_slow(dst, str, tmp_off, len)) { \
             off_inout = off; \
@@ -166,7 +168,17 @@ ptime_b_int(struct exttm* dst, const char* str, off_t off)
 inline bool
 ptime_b(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    if (off_inout + 3 < len) {
+    // fast path to detect english abbreviated months
+    //
+    // only detect english abbreviated months if they end at a word
+    // boundary. if the abbreviated month in the current locale is longer
+    // than 3 letters, and starts with the same letters as an english locale
+    // month abbreviation, then the computation of off_inout is incorrect.
+    //
+    // Ex: in fr_FR november is `nov.`. Parsing `nov. 29` as `%b %d` fails
+    // if this fast path is taken as later we will attempt to parse `. 29`
+    // as ` %d`.
+    if (off_inout + 3 < len && isspace(str[off_inout + 3])) {
         if (ptime_b_int(dst, str, off_inout)) {
             off_inout += 3;
             return true;

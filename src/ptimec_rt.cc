@@ -48,6 +48,12 @@ ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     zone[zone_len] = '\0';
     if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != NULL) {
         off_inout += end_of_date - zone;
+        // Some formats append a dot, maybe to align a 3 letter abbrev with the
+        // four letter ones?
+        if (off_inout + 1 < len && zone[off_inout] == '.') {
+            off_inout += 1;
+        }
+        dst->et_flags |= ETF_MONTH_SET;
         return true;
     }
 
