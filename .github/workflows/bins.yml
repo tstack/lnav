@@ -285,7 +285,8 @@ jobs:
           export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
           mkdir -p $PREFIX
           make install
-          ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
+          cp ../lnav/release/signed-msys-2.0.dll.gz $PREFIX/bin/msys-2.0.dll.gz
+          gunzip $PREFIX/bin/msys-2.0.dll.gz
           cp ../lnav/README ../lnav/NEWS.md .
           mkdir ../lnav/bin
           cp $PREFIX/bin/* ../lnav/bin/
