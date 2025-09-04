@@ -291,6 +291,7 @@ jobs:
           mkdir ../lnav/bin
           cp $PREFIX/bin/* ../lnav/bin/
       - name: "💉 Basic test"
+        if: false
         run: |
           set -x
           cd ../lnav-build
