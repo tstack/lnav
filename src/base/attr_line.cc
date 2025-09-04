@@ -59,10 +59,11 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
     attr_line_t retval;
     std::string_view replacement;
     int copy_start = 0;
+    const auto* ucontent = content.udata();
 
     retval.al_string.reserve(max_char_width);
     for (int index = 0; index < content.length(); ++index) {
-        const auto ch = content.udata()[index];
+        const auto ch = ucontent[index];
 
         switch (ch) {
             case '\t':
@@ -84,48 +85,105 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
             default:
                 if (ch < 0x80) {
                     char_width += 1;
-                } else if (ch < 0xc0) {
+                } else if (ch < 0xC2) {
                     replacement = REP_SYMBOL;
                     char_width += 1;
-                } else if (ch < 0xe0) {
-                    auto next_ch = content[index + 1];
-                    if (next_ch != 0) {
+                } else if (ch >= 0xC2 && ch <= 0xDF) {
+                    if (index + 1 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0xBF)
+                    {
                         index += 1;
                     } else {
                         replacement = REP_SYMBOL;
                     }
                     char_width += 1;
-                } else if (ch < 0xf0) {
-                    if (content[index + 1] != 0 && content[index + 2] != 0) {
+                } else if (ch == 0xE0) {
+                    if (index + 2 < content.length()
+                        && ucontent[index + 1] >= 0xA0
+                        && ucontent[index + 1] <= 0xBF
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF)
+                    {
                         index += 2;
                     } else {
                         replacement = REP_SYMBOL;
                     }
                     char_width += 1;
-                } else if (ch < 0xf8) {
-                    if (content[index + 1] != 0 && content[index + 2] != 0
-                        && content[index + 3] != 0)
+                } else if (ch >= 0xE1 && ch <= 0xEC) {
+                    if (index + 2 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0xBF
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF)
+                    {
+                        index += 2;
+                    } else {
+                        replacement = REP_SYMBOL;
+                    }
+                    char_width += 1;
+                } else if (ch == 0xED) {
+                    if (index + 2 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0x9F
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF)
+                    {
+                        index += 2;
+                    } else {
+                        replacement = REP_SYMBOL;
+                    }
+                    char_width += 1;
+                } else if (ch >= 0xEE && ch <= 0xEF) {
+                    if (index + 2 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0xBF
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF)
+                    {
+                        index += 2;
+                    } else {
+                        replacement = REP_SYMBOL;
+                    }
+                    char_width += 1;
+                } else if (ch == 0xF0) {
+                    if (index + 3 < content.length()
+                        && ucontent[index + 1] >= 0x90
+                        && ucontent[index + 1] <= 0xBF
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF
+                        && ucontent[index + 3] >= 0x80
+                        && ucontent[index + 3] <= 0xBF)
                     {
                         index += 3;
                     } else {
                         replacement = REP_SYMBOL;
                     }
                     char_width += 1;
-                } else if (ch < 0xfc) {
-                    if (content[index + 1] != 0 && content[index + 2] != 0
-                        && content[index + 3] != 0 && content[index + 4] != 0)
+                } else if (ch >= 0xF1 && ch <= 0xF3) {
+                    if (index + 3 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0xBF
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF
+                        && ucontent[index + 3] >= 0x80
+                        && ucontent[index + 3] <= 0xBF)
                     {
-                        index += 4;
+                        index += 3;
                     } else {
                         replacement = REP_SYMBOL;
                     }
                     char_width += 1;
-                } else if (ch < 0xfe) {
-                    if (content[index + 1] != 0 && content[index + 2] != 0
-                        && content[index + 3] != 0 && content[index + 4] != 0
-                        && content[index + 5] != 0)
+                } else if (ch == 0xF4) {
+                    if (index + 3 < content.length()
+                        && ucontent[index + 1] >= 0x80
+                        && ucontent[index + 1] <= 0x8F
+                        && ucontent[index + 2] >= 0x80
+                        && ucontent[index + 2] <= 0xBF
+                        && ucontent[index + 3] >= 0x80
+                        && ucontent[index + 3] <= 0xBF)
                     {
-                        index += 5;
+                        index += 3;
                     } else {
                         replacement = REP_SYMBOL;
                     }
@@ -331,8 +389,9 @@ attr_line_t::insert(size_t index,
         return *this;
     }
 
-    auto starting_line_index = index == 0 ? std::string::npos
-                                          : this->al_string.rfind('\n', index - 1);
+    auto starting_line_index = index == 0
+        ? std::string::npos
+        : this->al_string.rfind('\n', index - 1);
     if (starting_line_index == std::string::npos) {
         starting_line_index = 0;
     } else {
