@@ -340,11 +340,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
-                ec.execute(
-                    INTERNAL_SRC_LOC,
-                    fmt::format(
-                        FMT_STRING(":zoom-to {}"),
-                        lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                ec.execute(INTERNAL_SRC_LOC,
+                           fmt::format(
+                               FMT_STRING(":zoom-to {}"),
+                               lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
@@ -352,11 +351,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                ec.execute(
-                    INTERNAL_SRC_LOC,
-                    fmt::format(
-                        FMT_STRING(":zoom-to {}"),
-                        lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                ec.execute(INTERNAL_SRC_LOC,
+                           fmt::format(
+                               FMT_STRING(":zoom-to {}"),
+                               lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 
@@ -693,7 +691,16 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 't':
-            if (lnav_data.ld_text_source.current_file() == nullptr) {
+            if (lnav_data.ld_view_stack.size() == 2
+                && lnav_data.ld_log_source.file_count() == 0
+                && lnav_data.ld_view_stack.top().value_or(nullptr)
+                    == &lnav_data.ld_views[LNV_TEXT])
+            {
+                prompt.p_editor.set_inactive_value(
+                    lnav::console::user_message::info(
+                        "Already in the TEXT view")
+                        .to_attr_line());
+            } else if (lnav_data.ld_text_source.current_file() == nullptr) {
                 alerter::singleton().chime("No text files loaded");
                 prompt.p_editor.set_inactive_value(
                     lnav::console::user_message::error("No text files loaded")
