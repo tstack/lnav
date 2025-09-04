@@ -313,8 +313,8 @@ jobs:
         env:
           # select release-signing policy for main and release branches
           SIGNPATH_SIGNING_POLICY_SLUG: |
-            ${{ (startsWith(github.ref, 'refs/heads/release/'))
-              && 'release-signing'
+            ${{ ((inputs.lnav_version_number != '')
+              && 'release-signing')
               || 'test-signing' }}
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
