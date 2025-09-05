@@ -176,6 +176,11 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         return true;
     }
 
+    if (ch.id == NCKEY_EOF) {
+        lnav_data.ld_looping = false;
+        return true;
+    }
+
     if (tc->get_overlay_selection()) {
         if (tc->handle_key(ch)) {
             return true;
