@@ -134,25 +134,25 @@
                         "bold": true
                     },
                     "table-border": {
-                        "color": "#444"
+                        "color": "$blue"
                     },
                     "table-header": {
                         "bold": true
                     },
                     "quote-border": {
-                        "color": "#666",
-                        "background-color": "#444"
+                        "color": "$blue",
+                        "background-color": "#15293a"
                     },
                     "quoted-text": {
-                        "background-color": "#444"
+                        "background-color": "#15293a"
                     },
                     "footnote-border": {
                         "color": "$blue",
-                        "background-color": "#444"
+                        "background-color": "#15293a"
                     },
                     "footnote-text": {
                         "color": "#eee",
-                        "background-color": "#444"
+                        "background-color": "#15293a"
                     },
                     "snippet-border": {
                         "color": "$cyan"
@@ -164,15 +164,15 @@
                 "syntax-styles": {
                     "inline-code": {
                         "color": "$red",
-                        "background-color": "#222"
+                        "background-color": "#15293a"
                     },
                     "quoted-code": {
                         "color": "#eee",
-                        "background-color": "#222"
+                        "background-color": "#15293a"
                     },
                     "code-border": {
-                        "color": "#444",
-                        "background-color": "#222"
+                        "color": "#435362",
+                        "background-color": "#15293a"
                     },
                     "object-key": {
                         "color": "semantic()"

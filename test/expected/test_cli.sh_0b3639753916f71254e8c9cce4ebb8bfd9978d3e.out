@@ -5527,7 +5527,7 @@
                         "strike": false
                     },
                     "table-border": {
-                        "color": "#444",
+                        "color": "$blue",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -5543,8 +5543,8 @@
                         "strike": false
                     },
                     "quote-border": {
-                        "color": "#666",
-                        "background-color": "#444",
+                        "color": "$blue",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5552,7 +5552,7 @@
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "#444",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5560,7 +5560,7 @@
                     },
                     "footnote-border": {
                         "color": "$blue",
-                        "background-color": "#444",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5568,7 +5568,7 @@
                     },
                     "footnote-text": {
                         "color": "#eee",
-                        "background-color": "#444",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5594,7 +5594,7 @@
                 "syntax-styles": {
                     "inline-code": {
                         "color": "$red",
-                        "background-color": "#222",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5602,15 +5602,15 @@
                     },
                     "quoted-code": {
                         "color": "#eee",
-                        "background-color": "#222",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
                     },
                     "code-border": {
-                        "color": "#444",
-                        "background-color": "#222",
+                        "color": "#435362",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
