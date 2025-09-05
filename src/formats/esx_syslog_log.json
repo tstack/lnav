@@ -5,7 +5,7 @@
         "description": "Format specific to the ESXi syslog",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?:\\w+ \\[(?<logger>[^ ]+)(?: op[iI][dD]=(?<opid>[^ \\]]+))?\\]\\s*)?(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?:(?:(?:debug|info|warning|error) )?\\[(?<logger>[^ ]+)(?: sub=(?<sub>[@\\.\\-\\w\\(\\)\\[\\]]+))?(?: op[iI][dD]=(?<opid>[^ \\]]+))?(?: update=(?<update_num>\\d+))?(?: sid=(?<sid>\\w+))?(?: user=(?<user>(?:[^\\]]|<[^>]+>)+))?(?: reason=(?<reason>[^\\]]+))?\\]\\s*)?(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "host": {
                 "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?:host-(?<log_pid>\\d+))?)\\s+(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
@@ -54,7 +54,23 @@
             "log_syslog_tag": {
                 "kind": "string"
             },
+            "logger": {
+                "kind": "string",
+                "identifier": true
+            },
             "opid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "sub": {
+                "kind": "string",
+                "identifier": true
+            },
+            "sid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "user": {
                 "kind": "string",
                 "identifier": true
             },
@@ -63,6 +79,13 @@
             },
             "timestamp": {
                 "kind": "string"
+            },
+            "reason": {
+                "kind": "string"
+            },
+            "update_num": {
+                "kind": "integer",
+                "foreign-key": true
             }
         },
         "sample": [
@@ -86,6 +109,9 @@
             },
             {
                 "line": "2023-11-07T19:17:28.030Z In(14) settingsd[2099680]: [Ticket] Deleted ticket /var/run/vmware/tickets/vmtck-31182534-c078-88"
+            },
+            {
+                "line": "2024-03-26T04:31:17.959Z In(166) Hostd[2098914]: [Originator@6876 sub=Libs opID=539bc6dd-c7-c39c sid=52370179 user=vpxuser:VSPHERE.LOCAL\\vpxd-extension-a86d81ba-5ea8-47e4-ae55-c91f3dc2ece9] notFound(403)"
             }
         ]
     }
