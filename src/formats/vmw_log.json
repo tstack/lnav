@@ -45,8 +45,6 @@
                 "pattern": "^(?<prc>[^:]+): (?<tid>\\d+): (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<file>[^:]+):(?<line>\\d+) (?<level>[a-zA-Z]+)\\s+(?<body>.*)$"
             }
         },
-        "src-file-field": "file",
-        "src-line-field": "line",
         "level-field": "level",
         "level": {
             "info": "^(?i)(?:info|In)$",

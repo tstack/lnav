@@ -1038,14 +1038,6 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the body field in the log message pattern")
         .for_field(&external_log_format::elf_body_field),
-    json_path_handler("src-file-field")
-        .with_description(
-            "The name of the source file field in the log message pattern")
-        .for_field(&external_log_format::elf_src_file_field),
-    json_path_handler("src-line-field")
-        .with_description(
-            "The name of the source line field in the log message pattern")
-        .for_field(&external_log_format::elf_src_line_field),
     json_path_handler("url",
                       lnav::pcre2pp::code::from_const("^url#?").to_shared())
         .add_cb(read_format_field)

@@ -13,8 +13,6 @@
             }
         },
         "level-field": "level",
-        "src-file-field": "src_file",
-        "src-line-field": "src_line",
         "level": {
             "error": "E",
             "warning": "W",

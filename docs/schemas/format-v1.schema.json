@@ -160,16 +160,6 @@
                     "description": "The name of the body field in the log message pattern",
                     "type": "string"
                 },
-                "src-file-field": {
-                    "title": "/<format_name>/src-file-field",
-                    "description": "The name of the source file field in the log message pattern",
-                    "type": "string"
-                },
-                "src-line-field": {
-                    "title": "/<format_name>/src-line-field",
-                    "description": "The name of the source line field in the log message pattern",
-                    "type": "string"
-                },
                 "url": {
                     "title": "/<format_name>/url",
                     "description": "A URL with more information about this log format",

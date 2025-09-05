@@ -2055,23 +2055,12 @@ external_log_format::annotate(logfile* lf,
 
     auto body_cap = md[pat.p_body_field_index];
     auto level_cap = md[pat.p_level_field_index];
-    auto src_file_cap = md[pat.p_src_file_field_index];
-    auto src_line_cap = md[pat.p_src_line_field_index];
 
     if (level_cap
         && (!body_cap
             || (body_cap && level_cap->sf_begin != body_cap->sf_begin)))
     {
         sa.emplace_back(to_line_range(level_cap.value()), L_LEVEL.value());
-    }
-
-    if (src_file_cap) {
-        sa.emplace_back(to_line_range(src_file_cap.value()),
-                        SA_SRC_FILE.value());
-    }
-    if (src_line_cap) {
-        sa.emplace_back(to_line_range(src_line_cap.value()),
-                        SA_SRC_LINE.value());
     }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
@@ -2641,17 +2630,7 @@ external_log_format::get_subline(const logline& ll,
                                        == this->elf_body_field)
                             {
                                 this->jlf_line_attrs.emplace_back(
-                                lr, SA_BODY.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_src_file_field)
-                            {
-                                this->jlf_line_attrs.emplace_back(
-                                lr, SA_SRC_FILE.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_src_line_field)
-                            {
-                                this->jlf_line_attrs.emplace_back(
-                                    lr, SA_SRC_LINE.value());
+                                    lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_level_field)
                             {
@@ -2828,6 +2807,7 @@ external_log_format::get_subline(const logline& ll,
                     lr.lr_end = this->jlf_cached_line.size();
                     if (lv.lv_meta.lvm_name == this->elf_body_field) {
                         this->jlf_line_attrs.emplace_back(lr, SA_BODY.value());
+
                     } else {
                         this->jlf_line_attrs.emplace_back(
                             lr, SA_EXTRA_CONTENT.value());
@@ -3541,34 +3521,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_internal = true;
     }
 
-    if (!this->elf_src_file_field.empty()) {
-        auto& vd = this->elf_value_defs[this->elf_src_file_field];
-        if (vd.get() == nullptr) {
-            vd = std::make_shared<value_def>(
-                this->elf_src_file_field,
-                value_kind_t::VALUE_TEXT,
-                logline_value_meta::internal_column{},
-                this);
-        }
-        vd->vd_meta.lvm_name = this->elf_src_file_field;
-        vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
-        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
-    }
-
-    if (!this->elf_src_line_field.empty()) {
-        auto& vd = this->elf_value_defs[this->elf_src_line_field];
-        if (vd.get() == nullptr) {
-            vd = std::make_shared<value_def>(
-                this->elf_src_line_field,
-                value_kind_t::VALUE_INTEGER,
-                logline_value_meta::internal_column{},
-                this);
-        }
-        vd->vd_meta.lvm_name = this->elf_src_line_field;
-        vd->vd_meta.lvm_kind = value_kind_t::VALUE_INTEGER;
-        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
-    }
-
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(nullptr);
     }
@@ -3610,12 +3562,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             }
             if (name == this->elf_body_field) {
                 pat.p_body_field_index = named_cap.get_index();
-            }
-            if (name == this->elf_src_file_field) {
-                pat.p_src_file_field_index = named_cap.get_index();
-            }
-            if (name == this->elf_src_line_field) {
-                pat.p_src_line_field_index = named_cap.get_index();
             }
 
             auto value_iter = this->elf_value_defs.find(name);

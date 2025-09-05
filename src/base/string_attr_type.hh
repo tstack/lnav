@@ -400,8 +400,6 @@ public:
 
 extern const string_attr_type<void> SA_ORIGINAL_LINE;
 extern const string_attr_type<void> SA_BODY;
-extern const string_attr_type<void> SA_SRC_FILE;
-extern const string_attr_type<void> SA_SRC_LINE;
 extern const string_attr_type<void> SA_EXTRA_CONTENT;
 extern const string_attr_type<ui_icon_t> SA_HIDDEN;
 extern const string_attr_type<void> SA_REPLACED;
