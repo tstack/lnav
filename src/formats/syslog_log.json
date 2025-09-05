@@ -96,6 +96,9 @@
             },
             {
                 "line": "Jan  4 10:23:26 Tims-MacBook-Air Setup Assistant[1173]: Creating connection"
+            },
+            {
+                "line": "2025-08-31T09:36:55.418891-07:00 stack-pc2 rsyslogd: [origin software=\"rsyslogd\" swVersion=\"8.2312.0\" x-pid=\"1186\" x-info=\"https://www.rsyslog.com\"] rsyslogd was HUPed"
             }
         ]
     }
