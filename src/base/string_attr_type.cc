@@ -33,6 +33,8 @@
 
 constexpr string_attr_type<void> SA_ORIGINAL_LINE("original_line");
 constexpr string_attr_type<void> SA_BODY("body");
+constexpr string_attr_type<void> SA_SRC_FILE("src-file");
+constexpr string_attr_type<void> SA_SRC_LINE("src-line");
 constexpr string_attr_type<void> SA_EXTRA_CONTENT("extra-content");
 constexpr string_attr_type<ui_icon_t> SA_HIDDEN("hidden");
 constexpr string_attr_type<void> SA_REPLACED("replaced");

@@ -12,6 +12,8 @@
         "timestamp-format": [
             "%Y-%m-%d %H:%M:%S.%L"
         ],
+        "src-file-field": "src_file",
+        "src-line-field": "src_line",
         "level": {
             "error": "ERROR",
             "warning": "WARN",
