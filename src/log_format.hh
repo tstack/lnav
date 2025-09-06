@@ -524,7 +524,7 @@ public:
 
     virtual void get_subline(const logline& ll,
                              shared_buffer_ref& sbr,
-                             bool full_message = false)
+                             subline_options opts = subline_options{})
     {
     }
 

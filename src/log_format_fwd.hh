@@ -431,4 +431,22 @@ struct format_partition_def {
     log_level_t fpd_level{LEVEL_UNKNOWN};
 };
 
+struct subline_options {
+    friend bool operator==(const subline_options& lhs,
+                           const subline_options& rhs)
+    {
+        return lhs.full_message == rhs.full_message
+            && lhs.hash_hack == rhs.hash_hack;
+    }
+
+    friend bool operator!=(const subline_options& lhs,
+                           const subline_options& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    bool full_message{false};
+    bool hash_hack{false};
+};
+
 #endif

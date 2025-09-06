@@ -170,7 +170,8 @@ bind_line(sqlite3* db,
     sqlite3_clear_bindings(stmt);
 
     auto line_iter = lf->begin() + cl;
-    auto read_result = lf->read_line(line_iter);
+    auto fr = lf->get_file_range(line_iter, false);
+    auto read_result = lf->read_range(fr);
 
     if (read_result.isErr()) {
         return false;
@@ -556,8 +557,8 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 7);
                     const auto annotations = sqlite3_column_text(stmt.in(), 8);
                     const auto log_opid = sqlite3_column_text(stmt.in(), 9);
-                    struct timeval log_tv;
-                    struct exttm log_tm;
+                    timeval log_tv;
+                    exttm log_tm;
 
                     if (last_mark_time == -1) {
                         last_mark_time = mark_time;
@@ -601,7 +602,8 @@ load_time_bookmarks()
 
                         auto cl = content_line_t(
                             std::distance(lf->begin(), line_iter));
-                        auto read_result = lf->read_line(line_iter);
+                        auto fr = lf->get_file_range(line_iter, false);
+                        auto read_result = lf->read_range(fr);
 
                         if (read_result.isErr()) {
                             break;
@@ -616,8 +618,29 @@ load_time_bookmarks()
                                   .to_string();
 
                         if (line_hash != log_hash) {
-                            ++line_iter;
-                            continue;
+                            // Using the formatted line for JSON-lines logs was
+                            // a mistake in earlier versions. To carry forward
+                            // older bookmarks, we need to replicate the bad
+                            // behavior.
+                            auto hack_read_res
+                                = lf->read_line(line_iter, {false, true});
+                            if (hack_read_res.isErr()) {
+                                break;
+                            }
+                            auto hack_sbr = hack_read_res.unwrap();
+                            auto hack_hash = hasher()
+                                                 .update(hack_sbr.get_data(),
+                                                         hack_sbr.length())
+                                                 .update(cl)
+                                                 .to_string();
+                            if (hack_hash == log_hash) {
+                                log_trace("needed hack to match line: %s:%d",
+                                          lf->get_filename_as_string().c_str(),
+                                          cl);
+                            } else {
+                                ++line_iter;
+                                continue;
+                            }
                         }
                         auto& bm_meta = lf->get_bookmark_metadata();
                         auto line_number = static_cast<uint32_t>(
@@ -1037,7 +1060,8 @@ save_user_bookmarks(sqlite3* db,
         sqlite3_clear_bindings(stmt);
 
         const auto line_iter = lf->begin() + cl;
-        auto read_result = lf->read_line(line_iter);
+        auto fr = lf->get_file_range(line_iter, false);
+        auto read_result = lf->read_range(fr);
 
         if (read_result.isErr()) {
             continue;
@@ -1089,7 +1113,8 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
         sqlite3_clear_bindings(stmt);
 
         auto line_iter = lf->begin() + cl;
-        auto read_result = lf->read_line(line_iter);
+        auto fr = lf->get_file_range(line_iter, false);
+        auto read_result = lf->read_range(fr);
 
         if (read_result.isErr()) {
             continue;
@@ -1485,11 +1510,6 @@ save_time_bookmarks()
 
         auto line_iter = lf->begin() + lf->get_time_offset_line();
         auto offset = lf->get_time_offset();
-        auto read_result = lf->read_line(line_iter);
-
-        if (read_result.isErr()) {
-            return;
-        }
 
         bind_values(stmt.in(),
                     lf->original_line_time(line_iter),

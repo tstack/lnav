@@ -1395,12 +1395,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 }
 
 Result<shared_buffer_ref, std::string>
-logfile::read_line(logfile::iterator ll)
+logfile::read_line(iterator ll, subline_options opts)
 {
     try {
         auto get_range_res = this->get_file_range(ll, false);
         return this->lf_line_buffer.read_range(get_range_res)
-            .map([&ll, &get_range_res, this](auto sbr) {
+            .map([&ll, &get_range_res, &opts, this](auto sbr) {
                 sbr.rtrim(is_line_ending);
                 if (!get_range_res.fr_metadata.m_valid_utf) {
                     scrub_to_utf8(sbr.get_writable_data(), sbr.length());
@@ -1408,7 +1408,7 @@ logfile::read_line(logfile::iterator ll)
                 }
 
                 if (this->lf_format != nullptr) {
-                    this->lf_format->get_subline(*ll, sbr);
+                    this->lf_format->get_subline(*ll, sbr, opts);
                 }
 
                 return sbr;
@@ -1531,7 +1531,7 @@ logfile::read_full_message(const_iterator ll,
             msg_out.get_metadata() = range_for_line.fr_metadata;
         }
         if (this->lf_format.get() != nullptr) {
-            this->lf_format->get_subline(*ll, msg_out, true);
+            this->lf_format->get_subline(*ll, msg_out, {true});
         }
     } catch (const line_buffer::error& e) {
         log_error("failed to read line");

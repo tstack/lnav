@@ -274,7 +274,8 @@ public:
 
     struct timeval original_line_time(iterator ll);
 
-    Result<shared_buffer_ref, std::string> read_line(iterator ll);
+    Result<shared_buffer_ref, std::string> read_line(iterator ll,
+                                                     subline_options opts = {});
 
     enum class read_format_t {
         plain,

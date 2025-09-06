@@ -90,7 +90,7 @@ public:
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message) override
+                     subline_options opts) override
     {
         this->plf_cached_line.resize(TIMESTAMP_SIZE);
         auto tlen = sql_strftime(this->plf_cached_line.data(),
@@ -1045,7 +1045,7 @@ public:
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message) override
+                     subline_options opts) override
     {
     }
 
@@ -1879,7 +1879,7 @@ public:
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message) override
+                     subline_options opts) override
     {
     }
 

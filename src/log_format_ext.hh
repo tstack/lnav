@@ -182,7 +182,7 @@ public:
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
-                     bool full_message) override;
+                     subline_options opts) override;
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override;
 
@@ -454,7 +454,7 @@ public:
 
     off_t jlf_cached_offset{-1};
     line_range jlf_cached_sub_range;
-    bool jlf_cached_full{false};
+    subline_options jlf_cached_opts{};
     std::vector<off_t> jlf_line_offsets;
     std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;

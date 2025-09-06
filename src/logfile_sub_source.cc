@@ -2623,7 +2623,8 @@ logline_window::logmsg_info::get_metadata() const
 Result<auto_buffer, std::string>
 logline_window::logmsg_info::get_line_hash() const
 {
-    auto sbr = TRY(this->li_file->read_line(this->li_logline));
+    auto fr = this->li_file->get_file_range(this->li_logline, false);
+    auto sbr = TRY(this->li_file->read_range(fr));
     auto outbuf = auto_buffer::alloc(3 + hasher::STRING_SIZE);
     outbuf.push_back('v');
     outbuf.push_back('1');

@@ -1000,6 +1000,7 @@ struct json_log_userdata {
     std::optional<std::string> jlu_subid;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
+    subline_options jlu_subline_opts;
 };
 
 static int read_json_field(yajlpp_parse_context* ypc,
@@ -1970,7 +1971,7 @@ external_log_format::annotate(logfile* lf,
 
     line.erase_ansi();
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
-        if (this->jlf_cached_full) {
+        if (this->jlf_cached_opts.full_message) {
             values = this->jlf_line_values;
             sa = this->jlf_line_attrs;
         } else {
@@ -2368,13 +2369,15 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                     jlu->jlu_format->lf_date_time.relock(ls);
                 }
             }
-            if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET
-                && jlu->jlu_format->lf_date_time.dts_zoned_to_local)
-            {
-                jlu->jlu_exttm.et_flags &= ~ETF_Z_IS_UTC;
+            if (!jlu->jlu_subline_opts.hash_hack) {
+                if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET
+                    && jlu->jlu_format->lf_date_time.dts_zoned_to_local)
+                {
+                    jlu->jlu_exttm.et_flags &= ~ETF_Z_IS_UTC;
+                }
+                jlu->jlu_exttm.et_gmtoff
+                    = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
             }
-            jlu->jlu_exttm.et_gmtoff
-                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
             jlu->jlu_format->lf_date_time.ftime(
                 time_buf,
                 sizeof(time_buf),
@@ -2429,18 +2432,20 @@ rewrite_json_field(yajlpp_parse_context* ypc,
 void
 external_log_format::get_subline(const logline& ll,
                                  shared_buffer_ref& sbr,
-                                 bool full_message)
+                                 subline_options opts)
 {
     if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
         return;
     }
 
     if (this->jlf_cached_offset != ll.get_offset()
-        || this->jlf_cached_full != full_message)
+        || this->jlf_cached_opts != opts)
     {
         auto& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr, nullptr);
+
+        jlu.jlu_subline_opts = opts;
 
         this->jlf_share_manager.invalidate_refs();
         this->jlf_cached_line.clear();
@@ -2615,7 +2620,7 @@ external_log_format::get_subline(const logline& ll,
                                 this->json_append(jfe, vd, str);
                             }
 
-                            if (nl_pos == std::string::npos || full_message) {
+                            if (nl_pos == std::string::npos || opts.full_message) {
                                 lr.lr_end = this->jlf_cached_line.size();
                             } else {
                                 lr.lr_end = lr.lr_start + nl_pos;
@@ -2838,7 +2843,7 @@ external_log_format::get_subline(const logline& ll,
         }
         this->jlf_line_offsets.push_back(this->jlf_cached_line.size());
         this->jlf_cached_offset = ll.get_offset();
-        this->jlf_cached_full = full_message;
+        this->jlf_cached_opts = opts;
     }
 
     off_t this_off = 0, next_off = 0;
@@ -2861,7 +2866,7 @@ external_log_format::get_subline(const logline& ll,
         }
     }
 
-    if (full_message) {
+    if (opts.full_message) {
         sbr.share(this->jlf_share_manager,
                   &this->jlf_cached_line[0],
                   this->jlf_cached_line.size());

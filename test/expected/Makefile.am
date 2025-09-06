@@ -1218,8 +1218,6 @@ dist_noinst_DATA = \
     test_sql_time_func.sh_b3c00f049fdeb551a9165c281630e36359832d1f.out \
     test_sql_time_func.sh_b5f9ec3ea8b4551fd40017398d74c524fb54ebc9.err \
     test_sql_time_func.sh_b5f9ec3ea8b4551fd40017398d74c524fb54ebc9.out \
-    test_sql_time_func.sh_c1d7dc8a4bd3b8cb86a2f893f58a56f0f6ea1bc3.err \
-    test_sql_time_func.sh_c1d7dc8a4bd3b8cb86a2f893f58a56f0f6ea1bc3.out \
     test_sql_time_func.sh_c5a5fc2edb54d10f1475afa7fed0b62bc05e1dc6.err \
     test_sql_time_func.sh_c5a5fc2edb54d10f1475afa7fed0b62bc05e1dc6.out \
     test_sql_time_func.sh_c7fc60392a2e52b163da1e1dde6978c16f415a9e.err \
