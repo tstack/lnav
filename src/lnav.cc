@@ -1532,24 +1532,26 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto link_iter
             = find_string_attr_containing(al.get_attrs(), &VC_HYPERLINK, x);
         if (link_iter != al.al_attrs.end()) {
-            ec.execute_with(
-                INTERNAL_SRC_LOC,
-                ":xopen $href",
-                std::make_pair("href", link_iter->sa_value.get<std::string>()));
+            auto href = link_iter->sa_value.get<std::string>();
+            if (!startswith(href, "#")) {
+                ec.execute_with(
+                    INTERNAL_SRC_LOC,
+                    ":xopen $href",
+                    std::make_pair("href", href));
+            }
         }
     };
-    for (auto lpc = 0; lpc < LNV__MAX; lpc++) {
-        lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
-        lnav_data.ld_views[lpc].set_y(2);
-        lnav_data.ld_views[lpc].set_height(vis_line_t(-4));
-        lnav_data.ld_views[lpc].set_scroll_action(sb);
-        lnav_data.ld_views[lpc].set_search_action(update_hits);
-        lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
-        lnav_data.ld_views[lpc].tc_disabled_cursor_role
-            = role_t::VCR_DISABLED_CURSOR_LINE;
-        lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
-        lnav_data.ld_views[lpc].tc_on_click = click_handler;
-        lnav_data.ld_views[lpc].tc_interactive = true;
+    for (auto& ld_view : lnav_data.ld_views) {
+        ld_view.set_window(lnav_data.ld_window);
+        ld_view.set_y(2);
+        ld_view.set_height(vis_line_t(-4));
+        ld_view.set_scroll_action(sb);
+        ld_view.set_search_action(update_hits);
+        ld_view.tc_cursor_role = role_t::VCR_CURSOR_LINE;
+        ld_view.tc_disabled_cursor_role = role_t::VCR_DISABLED_CURSOR_LINE;
+        ld_view.tc_state_event_handler = event_handler;
+        ld_view.tc_on_click = click_handler;
+        ld_view.tc_interactive = true;
     }
     lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_HELP].set_supports_marks(true);

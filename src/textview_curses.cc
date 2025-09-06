@@ -424,9 +424,6 @@ textview_curses::listview_value_for_rows(const listview_curses& lv,
 bool
 textview_curses::handle_mouse(mouse_event& me)
 {
-    unsigned long width;
-    vis_line_t height;
-
     if (!this->vc_visible || this->lv_height == 0) {
         return false;
     }
@@ -438,7 +435,7 @@ textview_curses::handle_mouse(mouse_event& me)
     auto mouse_line = (me.me_y < 0 || me.me_y >= this->lv_display_lines.size())
         ? empty_space{}
         : this->lv_display_lines[me.me_y];
-    this->get_dimensions(height, width);
+    auto [height, width] = this->get_dimensions();
 
     if (!mouse_line.is<overlay_menu>()
         && (me.me_button != mouse_button_t::BUTTON_LEFT
@@ -477,6 +474,7 @@ textview_curses::handle_mouse(mouse_event& me)
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+            this->tc_selection_at_press = this->get_selection();
             this->tc_press_line = mouse_line;
             this->tc_press_left = this->lv_left + me.me_press_x;
             if (!this->lv_selectable) {
@@ -690,9 +688,16 @@ textview_curses::handle_mouse(mouse_event& me)
                 }
             }
             this->tc_text_selection_active = false;
-            if (me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX)) {
+            if (this->tc_press_line.is<main_content>()
+                && mouse_line.is<main_content>()
+                && me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX))
+            {
                 auto* lov = this->get_overlay_source();
-                if (lov != nullptr) {
+                if (lov != nullptr
+                    && (!lov->get_show_details_in_overlay()
+                        || this->tc_selection_at_press
+                            == this->get_selection()))
+                {
                     this->set_show_details_in_overlay(
                         !lov->get_show_details_in_overlay());
                 }

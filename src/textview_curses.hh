@@ -905,6 +905,7 @@ public:
     std::optional<selected_text_info> tc_selected_text;
     bool tc_text_selection_active{false};
     display_line_content_t tc_press_line;
+    std::optional<vis_line_t> tc_selection_at_press;
     int tc_press_left{0};
     std::function<void(textview_curses&, const attr_line_t&, int x)>
         tc_on_click;

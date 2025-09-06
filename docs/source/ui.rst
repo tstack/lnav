@@ -310,6 +310,20 @@ Markdown files and rendered separately.
 
    Viewing the **lnav** :file:`README.md` file.
 
+In addition to the standard Markdown syntax, lnav supports the following:
+
+* `GitHub Alerts <https://github.blog/changelog/2023-12-14-new-markdown-extension-alerts-provide-distinctive-styling-for-significant-content/>`_
+* HTML :code:`<span>` tags with the following CSS properties:
+   - :code:`color` and :code:`background-color` with CSS color names
+   - :code:`font-weight` with a value of :code:`bold` or :code:`bolder`
+   - :code:`text-decoration` with :code:`underline`
+   - :code:`border-left` and :code:`border-right` with the :code:`solid`,
+   - :code:`dashed` and :code:`dotted` line styles and colors.
+   - :code:`white-space` with a value of :code:`nowrap`
+* Anchors can be explicitly declared with :code:`<a name="...">`.
+* Internal links can be clicked to move to that section of the document.
+* Code blocks with the language set to :code:`lnav` will have a play
+  button (▶) next to it that can be clicked to execute the given code.
 
 DB
 ^^
