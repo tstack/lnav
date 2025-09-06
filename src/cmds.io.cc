@@ -1378,6 +1378,10 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("expecting file name to open");
     }
 
+    if (ec.ec_dry_run) {
+        return Ok(retval);
+    }
+
     auto pat = trim(remaining_args(cmdline, args));
 
     shlex lexer(pat);
