@@ -68,8 +68,9 @@ input_dispatcher::new_input(const struct timeval& current_time,
     std::string eff_str;
 
     for (size_t lpc = 0; ch.eff_text[lpc]; lpc++) {
-        fmt::format_to(
-            std::back_inserter(eff_str), FMT_STRING("{:02x}"), ch.eff_text[lpc]);
+        fmt::format_to(std::back_inserter(eff_str),
+                       FMT_STRING("{:02x}"),
+                       ch.eff_text[lpc]);
     }
     log_debug("new input %x %d/%x(%c)/%s/%s evtype=%d",
               ch.modifiers,
@@ -110,16 +111,8 @@ input_dispatcher::new_input(const struct timeval& current_time,
         log_debug("nckey %s", keyseq.data());
         handled = this->id_key_handler(nc, ch, keyseq.data());
     } else {
-        auto seq_size = utf::utf8::char_size([&ch]() {
-                            return std::make_pair(ch.eff_text[0], 16);
-                        }).unwrapOr(size_t{1});
-        log_debug("seq_size %d", seq_size);
-        if (seq_size == 1) {
-            snprintf(
-                keyseq.data(), keyseq.size(), "x%02x", ch.eff_text[0] & 0xff);
-            log_debug("key %s", keyseq.data());
-            handled = this->id_key_handler(nc, ch, keyseq.data());
-        }
+        to_key_seq(keyseq, ch.utf8);
+        handled = this->id_key_handler(nc, ch, keyseq.data());
     }
 
     if (handled && !handled.value()) {
