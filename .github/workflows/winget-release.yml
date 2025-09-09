@@ -1,0 +1,19 @@
+name: Publish to WinGet
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version'
+        required: true
+        default: 0.13.1
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: tstack.lnav
+          version: ${{ github.event.inputs.version }}
+          release-tag: "v${{ github.event.inputs.version }}"
+          installers-regex: '(\.exe|\.dll)$'
+          token: ${{ secrets.WINGET_TOKEN }}
