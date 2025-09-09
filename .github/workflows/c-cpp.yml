@@ -12,15 +12,20 @@ on:
     branches: [master]
 
 jobs:
+  brewer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Linuxbrew
+        run: brew install --HEAD lnav
+
   coverage:
-    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get install libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev
+        run: sudo apt-get install automake autoconf g++ libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev pipx
       - name: install cpp-coveralls
         run: pip install --user cpp-coveralls
       - name: autogen
@@ -91,7 +96,7 @@ jobs:
       - name: make
         run: make -j4
       - name: make distcheck
-        run: timeout 15m make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
+        run: timeout 18m make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
