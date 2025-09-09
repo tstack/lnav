@@ -73,6 +73,8 @@
             }
         },
         "level-field": "level",
+        "src-file-field": "srcfile",
+        "src-line-field": "srcline",
         "opid-field": "opid",
         "opid": {
             "description": {

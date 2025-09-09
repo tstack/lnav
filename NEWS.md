@@ -1,4 +1,12 @@
 
+## lnav v0.13.2
+
+Features:
+* Log formats can now specify source file/line with the
+  `src-file-field` and `src-line-field` properties.  These
+  fields can then be accessed in the SQL vtables as
+  `log_src_file` and `log_src_line`, respectively.
+
 ## lnav v0.13.1
 
 Features:

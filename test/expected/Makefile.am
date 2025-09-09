@@ -1420,6 +1420,8 @@ dist_noinst_DATA = \
     test_sql.sh_9aaaa810f883f5dcf8a4d5cda4051fdf4640a65c.out \
     test_sql.sh_9be1bc2ebc2c9f54af02801fb8d0241b90be58d1.err \
     test_sql.sh_9be1bc2ebc2c9f54af02801fb8d0241b90be58d1.out \
+    test_sql.sh_9c9e94b6b63b2451f9f10fa982cfccee5d0c4b0d.err \
+    test_sql.sh_9c9e94b6b63b2451f9f10fa982cfccee5d0c4b0d.out \
     test_sql.sh_9ceccab07fbf7130bffe3c201c710719e4a3e9af.err \
     test_sql.sh_9ceccab07fbf7130bffe3c201c710719e4a3e9af.out \
     test_sql.sh_9e1d05b821822ee40e13fadb24ec558f4bfcff10.err \

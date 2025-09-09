@@ -6,7 +6,7 @@ IDI_ICON1 ICON "lnav.ico"
 // Version Information
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     1, 0, 0, 0
-PRODUCTVERSION  0, 13, 1, 0
+PRODUCTVERSION  0, 13, 2, 0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEFLAGS       0
 FILEOS          VOS_NT_WINDOWS32
@@ -23,7 +23,7 @@ BEGIN
             VALUE "InternalName",     "lnav\0"
             VALUE "OriginalFilename", "lnav.exe\0"
             VALUE "ProductName",      "lnav\0"
-            VALUE "ProductVersion",   "0.13.1\0"
+            VALUE "ProductVersion",   "0.13.2\0"
             VALUE "LegalCopyright",   "© 2025 lnav contributors\0"
         END
     END

@@ -8,6 +8,8 @@
                 "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\s(?<level>\\w+)\\s\\[(?<logger>[^\\]]+)\\]\\s\\[(?<src_file>[^:]+):(?<src_line>\\d+)\\](?:\\s\\[(?<context>[^]]+)\\])?\\s-\\s+(?<body>.*)"
             }
         },
+        "src-file-field": "src_file",
+        "src-line-field": "src_line",
         "value": {
             "context": {
                 "kind": "string"

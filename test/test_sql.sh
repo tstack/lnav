@@ -978,3 +978,7 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_focused_msg SET log_mark = 1" \
     -c ":switch-to-view log" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_src_file, log_src_line FROM all_logs" \
+    ${test_dir}/logfile_glog.0

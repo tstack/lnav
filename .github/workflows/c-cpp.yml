@@ -29,7 +29,10 @@ jobs:
       - name: Install packages
         run: sudo apt-get install automake autoconf g++ libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev pipx
       - name: install cpp-coveralls
-        run: pip install --user cpp-coveralls
+        run: |
+          git clone https://github.com/CrowCpp/cpp-coveralls.git
+          cd cpp-coveralls
+          pip3 install . --no-input
       - name: autogen
         run: ./autogen.sh
       - name: configure

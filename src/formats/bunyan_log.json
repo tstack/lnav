@@ -45,6 +45,8 @@
             }
         ],
         "level-field": "level",
+        "src-file-field": "src/file",
+        "src-line-field": "src/line",
         "level": {
             "fatal": 60,
             "error": 50,

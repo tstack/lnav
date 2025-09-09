@@ -1,0 +1,8 @@
+[1m[4mlog_line[0m[1m[4m [0m[1m[4m   log_src_file    [0m[1m[4m [0m[1m[4mlog_src_line[0m[1m[4m [0m
+       0 logging_unittest.cc          253 
+       1 logging_unittest.cc          259 
+[1m       2[0m[1m [0m[1mlogging_unittest.cc[0m[1m [0m[1m         259 [0m
+[1m       3[0m[1m [0m[1mlogging_unittest.cc[0m[1m [0m[1m         263 [0m
+       4 logging_unittest.cc          267 
+       5 logging_unittest.cc          269 
+[1m       6[0m[1m [0m[1mlogging_unittest.cc[0m[1m [0m[1m         271 [0m
