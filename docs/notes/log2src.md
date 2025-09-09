@@ -45,7 +45,7 @@ Steps:
 Implementation tasks:
 
 - [ ] Make sure log2src's API is usable
-- [ ] Rename lnav's prqlc-c crate since all Rust code will now be
+- [X] Rename lnav's prqlc-c crate since all Rust code will now be
       exposed through this crate
 - [ ] Add FFI interface for log2src's API to the crate
 - [ ] Add an lnav command to add source directories

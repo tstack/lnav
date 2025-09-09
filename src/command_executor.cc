@@ -59,7 +59,7 @@
 #include "vtab_module.hh"
 
 #ifdef HAVE_RUST_DEPS
-#    include "prqlc.cxx.hh"
+#    include "lnav_rs_ext.cxx.hh"
 #endif
 
 using namespace std::literals::chrono_literals;
@@ -285,23 +285,23 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         log_info("compiling PRQL: %s", stmt_str.c_str());
 
 #if HAVE_RUST_DEPS
-        auto opts = prqlc::Options{true, "sql.sqlite", true};
+        auto opts = lnav_rs_ext::Options{true, "sql.sqlite", true};
 
         auto tree = sqlite_extension_prql;
         for (const auto& mod : lnav_prql_modules) {
-            log_debug("prqlc adding mod %s", mod.get_name());
-            tree.emplace_back(prqlc::SourceTreeElement{
+            log_debug("lnav_rs_ext adding mod %s", mod.get_name());
+            tree.emplace_back(lnav_rs_ext::SourceTreeElement{
                 mod.get_name(),
                 mod.to_string_fragment_producer()->to_string(),
             });
         }
-        tree.emplace_back(prqlc::SourceTreeElement{"", stmt_str});
+        tree.emplace_back(lnav_rs_ext::SourceTreeElement{"", stmt_str});
         log_debug("BEGIN compiling tree");
-        auto cr = prqlc::compile_tree(tree, opts);
+        auto cr = lnav_rs_ext::compile_tree(tree, opts);
         log_debug("END compiling tree");
 
         for (const auto& msg : cr.messages) {
-            if (msg.kind != prqlc::MessageKind::Error) {
+            if (msg.kind != lnav_rs_ext::MessageKind::Error) {
                 continue;
             }
 

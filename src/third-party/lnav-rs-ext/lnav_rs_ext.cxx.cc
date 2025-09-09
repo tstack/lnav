@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <iterator>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <string>
@@ -728,7 +729,10 @@ union MaybeUninit {
 } // namespace cxxbridge1
 } // namespace rust
 
-namespace prqlc {
+namespace lnav_rs_ext {
+  struct ExtError;
+  enum class Status : ::std::uint8_t;
+  struct ExtProgress;
   struct Options;
   struct SourceTreeElement;
   enum class MessageKind : ::std::uint8_t;
@@ -736,9 +740,41 @@ namespace prqlc {
   struct CompileResult2;
 }
 
-namespace prqlc {
-#ifndef CXXBRIDGE1_STRUCT_prqlc$Options
-#define CXXBRIDGE1_STRUCT_prqlc$Options
+namespace lnav_rs_ext {
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+struct ExtError final {
+  ::rust::String error;
+  ::rust::String source;
+  ::rust::String help;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+enum class Status : ::std::uint8_t {
+  idle = 0,
+  working = 1,
+};
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+struct ExtProgress final {
+  ::lnav_rs_ext::Status status;
+  ::rust::String current_step;
+  ::std::uint64_t completed;
+  ::std::uint64_t total;
+  ::rust::Vec<::lnav_rs_ext::ExtError> discover_errors;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 struct Options final {
   bool format;
   ::rust::String target;
@@ -746,31 +782,31 @@ struct Options final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$Options
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
-#define CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
 struct SourceTreeElement final {
   ::rust::String path;
   ::rust::String content;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
 
-#ifndef CXXBRIDGE1_ENUM_prqlc$MessageKind
-#define CXXBRIDGE1_ENUM_prqlc$MessageKind
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
 enum class MessageKind : ::std::uint8_t {
   Error = 0,
   Warning = 1,
   Lint = 2,
 };
-#endif // CXXBRIDGE1_ENUM_prqlc$MessageKind
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$Message
-#define CXXBRIDGE1_STRUCT_prqlc$Message
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
 struct Message final {
-  ::prqlc::MessageKind kind;
+  ::lnav_rs_ext::MessageKind kind;
   ::rust::String code;
   ::rust::String reason;
   ::rust::Vec<::rust::String> hints;
@@ -778,114 +814,198 @@ struct Message final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$Message
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$CompileResult2
-#define CXXBRIDGE1_STRUCT_prqlc$CompileResult2
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
 struct CompileResult2 final {
   ::rust::String output;
-  ::rust::Vec<::prqlc::Message> messages;
+  ::rust::Vec<::lnav_rs_ext::Message> messages;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$CompileResult2
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
 
 extern "C" {
-void prqlc$cxxbridge1$compile_tree(::rust::Vec<::prqlc::SourceTreeElement> const &tree, ::prqlc::Options const &options, ::prqlc::CompileResult2 *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
+
+::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$add_src_root(::rust::String *path) noexcept;
+
+void lnav_rs_ext$cxxbridge1$discover_srcs() noexcept;
+
+void lnav_rs_ext$cxxbridge1$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
 } // extern "C"
 
-::prqlc::CompileResult2 compile_tree(::rust::Vec<::prqlc::SourceTreeElement> const &tree, ::prqlc::Options const &options) noexcept {
-  ::rust::MaybeUninit<::prqlc::CompileResult2> return$;
-  prqlc$cxxbridge1$compile_tree(tree, options, &return$.value);
+::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept {
+  ::rust::MaybeUninit<::lnav_rs_ext::CompileResult2> return$;
+  lnav_rs_ext$cxxbridge1$compile_tree(tree, options, &return$.value);
   return ::std::move(return$.value);
 }
-} // namespace prqlc
+
+::std::unique_ptr<::lnav_rs_ext::ExtError> add_src_root(::rust::String path) noexcept {
+  return ::std::unique_ptr<::lnav_rs_ext::ExtError>(lnav_rs_ext$cxxbridge1$add_src_root(&path));
+}
+
+void discover_srcs() noexcept {
+  lnav_rs_ext$cxxbridge1$discover_srcs();
+}
+
+::lnav_rs_ext::ExtProgress get_status() noexcept {
+  ::rust::MaybeUninit<::lnav_rs_ext::ExtProgress> return$;
+  lnav_rs_ext$cxxbridge1$get_status(&return$.value);
+  return ::std::move(return$.value);
+}
+} // namespace lnav_rs_ext
 
 extern "C" {
-void cxxbridge1$rust_vec$prqlc$Message$new(::rust::Vec<::prqlc::Message> const *ptr) noexcept;
-void cxxbridge1$rust_vec$prqlc$Message$drop(::rust::Vec<::prqlc::Message> *ptr) noexcept;
-::std::size_t cxxbridge1$rust_vec$prqlc$Message$len(::rust::Vec<::prqlc::Message> const *ptr) noexcept;
-::std::size_t cxxbridge1$rust_vec$prqlc$Message$capacity(::rust::Vec<::prqlc::Message> const *ptr) noexcept;
-::prqlc::Message const *cxxbridge1$rust_vec$prqlc$Message$data(::rust::Vec<::prqlc::Message> const *ptr) noexcept;
-void cxxbridge1$rust_vec$prqlc$Message$reserve_total(::rust::Vec<::prqlc::Message> *ptr, ::std::size_t new_cap) noexcept;
-void cxxbridge1$rust_vec$prqlc$Message$set_len(::rust::Vec<::prqlc::Message> *ptr, ::std::size_t len) noexcept;
-void cxxbridge1$rust_vec$prqlc$Message$truncate(::rust::Vec<::prqlc::Message> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$new(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$drop(::rust::Vec<::lnav_rs_ext::ExtError> *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtError$len(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtError$capacity(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+::lnav_rs_ext::ExtError const *cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$reserve_total(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t new_cap) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$set_len(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$truncate(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t len) noexcept;
 
-void cxxbridge1$rust_vec$prqlc$SourceTreeElement$new(::rust::Vec<::prqlc::SourceTreeElement> const *ptr) noexcept;
-void cxxbridge1$rust_vec$prqlc$SourceTreeElement$drop(::rust::Vec<::prqlc::SourceTreeElement> *ptr) noexcept;
-::std::size_t cxxbridge1$rust_vec$prqlc$SourceTreeElement$len(::rust::Vec<::prqlc::SourceTreeElement> const *ptr) noexcept;
-::std::size_t cxxbridge1$rust_vec$prqlc$SourceTreeElement$capacity(::rust::Vec<::prqlc::SourceTreeElement> const *ptr) noexcept;
-::prqlc::SourceTreeElement const *cxxbridge1$rust_vec$prqlc$SourceTreeElement$data(::rust::Vec<::prqlc::SourceTreeElement> const *ptr) noexcept;
-void cxxbridge1$rust_vec$prqlc$SourceTreeElement$reserve_total(::rust::Vec<::prqlc::SourceTreeElement> *ptr, ::std::size_t new_cap) noexcept;
-void cxxbridge1$rust_vec$prqlc$SourceTreeElement$set_len(::rust::Vec<::prqlc::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
-void cxxbridge1$rust_vec$prqlc$SourceTreeElement$truncate(::rust::Vec<::prqlc::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$Message$new(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$Message$drop(::rust::Vec<::lnav_rs_ext::Message> *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$Message$len(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$Message$capacity(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+::lnav_rs_ext::Message const *cxxbridge1$rust_vec$lnav_rs_ext$Message$data(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$Message$reserve_total(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t new_cap) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$Message$set_len(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$Message$truncate(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t len) noexcept;
+
+void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$new(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$drop(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$len(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$capacity(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+::lnav_rs_ext::SourceTreeElement const *cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$reserve_total(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t new_cap) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$set_len(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$truncate(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
+
+static_assert(sizeof(::std::unique_ptr<::lnav_rs_ext::ExtError>) == sizeof(void *), "");
+static_assert(alignof(::std::unique_ptr<::lnav_rs_ext::ExtError>) == alignof(void *), "");
+void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$null(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr) noexcept {
+  ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::ExtError>();
+}
+::lnav_rs_ext::ExtError *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$uninit(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr) noexcept {
+  ::lnav_rs_ext::ExtError *uninit = reinterpret_cast<::lnav_rs_ext::ExtError *>(new ::rust::MaybeUninit<::lnav_rs_ext::ExtError>);
+  ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::ExtError>(uninit);
+  return uninit;
+}
+void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$raw(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr, ::lnav_rs_ext::ExtError *raw) noexcept {
+  ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::ExtError>(raw);
+}
+::lnav_rs_ext::ExtError const *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$get(::std::unique_ptr<::lnav_rs_ext::ExtError> const &ptr) noexcept {
+  return ptr.get();
+}
+::lnav_rs_ext::ExtError *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$release(::std::unique_ptr<::lnav_rs_ext::ExtError> &ptr) noexcept {
+  return ptr.release();
+}
+void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$drop(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr) noexcept {
+  ptr->~unique_ptr();
+}
 } // extern "C"
 
 namespace rust {
 inline namespace cxxbridge1 {
 template <>
-Vec<::prqlc::Message>::Vec() noexcept {
-  cxxbridge1$rust_vec$prqlc$Message$new(this);
+Vec<::lnav_rs_ext::ExtError>::Vec() noexcept {
+  cxxbridge1$rust_vec$lnav_rs_ext$ExtError$new(this);
 }
 template <>
-void Vec<::prqlc::Message>::drop() noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$drop(this);
+void Vec<::lnav_rs_ext::ExtError>::drop() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$drop(this);
 }
 template <>
-::std::size_t Vec<::prqlc::Message>::size() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$len(this);
+::std::size_t Vec<::lnav_rs_ext::ExtError>::size() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$len(this);
 }
 template <>
-::std::size_t Vec<::prqlc::Message>::capacity() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$capacity(this);
+::std::size_t Vec<::lnav_rs_ext::ExtError>::capacity() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$capacity(this);
 }
 template <>
-::prqlc::Message const *Vec<::prqlc::Message>::data() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$data(this);
+::lnav_rs_ext::ExtError const *Vec<::lnav_rs_ext::ExtError>::data() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data(this);
 }
 template <>
-void Vec<::prqlc::Message>::reserve_total(::std::size_t new_cap) noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$reserve_total(this, new_cap);
+void Vec<::lnav_rs_ext::ExtError>::reserve_total(::std::size_t new_cap) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$reserve_total(this, new_cap);
 }
 template <>
-void Vec<::prqlc::Message>::set_len(::std::size_t len) noexcept {
-  return cxxbridge1$rust_vec$prqlc$Message$set_len(this, len);
+void Vec<::lnav_rs_ext::ExtError>::set_len(::std::size_t len) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$set_len(this, len);
 }
 template <>
-void Vec<::prqlc::Message>::truncate(::std::size_t len) {
-  return cxxbridge1$rust_vec$prqlc$Message$truncate(this, len);
+void Vec<::lnav_rs_ext::ExtError>::truncate(::std::size_t len) {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$truncate(this, len);
 }
 template <>
-Vec<::prqlc::SourceTreeElement>::Vec() noexcept {
-  cxxbridge1$rust_vec$prqlc$SourceTreeElement$new(this);
+Vec<::lnav_rs_ext::Message>::Vec() noexcept {
+  cxxbridge1$rust_vec$lnav_rs_ext$Message$new(this);
 }
 template <>
-void Vec<::prqlc::SourceTreeElement>::drop() noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$drop(this);
+void Vec<::lnav_rs_ext::Message>::drop() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$drop(this);
 }
 template <>
-::std::size_t Vec<::prqlc::SourceTreeElement>::size() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$len(this);
+::std::size_t Vec<::lnav_rs_ext::Message>::size() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$len(this);
 }
 template <>
-::std::size_t Vec<::prqlc::SourceTreeElement>::capacity() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$capacity(this);
+::std::size_t Vec<::lnav_rs_ext::Message>::capacity() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$capacity(this);
 }
 template <>
-::prqlc::SourceTreeElement const *Vec<::prqlc::SourceTreeElement>::data() const noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$data(this);
+::lnav_rs_ext::Message const *Vec<::lnav_rs_ext::Message>::data() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$data(this);
 }
 template <>
-void Vec<::prqlc::SourceTreeElement>::reserve_total(::std::size_t new_cap) noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$reserve_total(this, new_cap);
+void Vec<::lnav_rs_ext::Message>::reserve_total(::std::size_t new_cap) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$reserve_total(this, new_cap);
 }
 template <>
-void Vec<::prqlc::SourceTreeElement>::set_len(::std::size_t len) noexcept {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$set_len(this, len);
+void Vec<::lnav_rs_ext::Message>::set_len(::std::size_t len) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$set_len(this, len);
 }
 template <>
-void Vec<::prqlc::SourceTreeElement>::truncate(::std::size_t len) {
-  return cxxbridge1$rust_vec$prqlc$SourceTreeElement$truncate(this, len);
+void Vec<::lnav_rs_ext::Message>::truncate(::std::size_t len) {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$truncate(this, len);
+}
+template <>
+Vec<::lnav_rs_ext::SourceTreeElement>::Vec() noexcept {
+  cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$new(this);
+}
+template <>
+void Vec<::lnav_rs_ext::SourceTreeElement>::drop() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$drop(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::SourceTreeElement>::size() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$len(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::SourceTreeElement>::capacity() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$capacity(this);
+}
+template <>
+::lnav_rs_ext::SourceTreeElement const *Vec<::lnav_rs_ext::SourceTreeElement>::data() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data(this);
+}
+template <>
+void Vec<::lnav_rs_ext::SourceTreeElement>::reserve_total(::std::size_t new_cap) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$reserve_total(this, new_cap);
+}
+template <>
+void Vec<::lnav_rs_ext::SourceTreeElement>::set_len(::std::size_t len) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$set_len(this, len);
+}
+template <>
+void Vec<::lnav_rs_ext::SourceTreeElement>::truncate(::std::size_t len) {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$truncate(this, len);
 }
 } // namespace cxxbridge1
 } // namespace rust

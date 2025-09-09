@@ -14,21 +14,18 @@ project(
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
-set(CURSES_NEED_NCURSES TRUE)
 find_package(PkgConfig REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(BZip2 REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(pcre2 CONFIG REQUIRED)
-find_package(Curses REQUIRED)
 find_package(CURL REQUIRED)
 
 set(lnav_LIBS
         CURL::libcurl
         unofficial::sqlite3::sqlite3
         BZip2::BZip2
-        ${CURSES_LIBRARIES}
         PCRE2::8BIT PCRE2::16BIT PCRE2::32BIT PCRE2::POSIX
         LibArchive::LibArchive
         ZLIB::ZLIB

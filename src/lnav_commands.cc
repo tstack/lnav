@@ -95,6 +95,10 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
 
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
+
 using namespace lnav::roles::literals;
 
 inline attr_line_t&
@@ -228,6 +232,65 @@ com_write_debug_log_to(exec_context& ec,
 
     retval = fmt::format(FMT_STRING("info: wrote debug log to -- {}"), args[1]);
 
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_add_src_path(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    static const intern_string_t SRC = intern_string::lookup("path");
+    if (args.size() < 2) {
+        return ec.make_error("expecting file name to open");
+    }
+
+    auto pat = trim(remaining_args(cmdline, args));
+    std::string retval;
+
+    shlex lexer(pat);
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file names")
+                  .with_reason(split_err.se_error.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err.se_error)))
+                  .move();
+
+        return Err(um);
+    }
+
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
+
+    for (const auto& path_str : split_args) {
+        std::error_code err_co;
+        auto path = std::filesystem::canonical(std::filesystem::path(path_str),
+                                               err_co);
+        if (err_co) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("invalid path: ")
+                              .append(lnav::roles::file(path_str)))
+                          .with_reason(err_co.message());
+            return Err(um);
+        }
+
+        if (ec.ec_dry_run) {
+            continue;
+        }
+        auto res = lnav_rs_ext::add_src_root(path.string());
+        if (res != nullptr) {
+            auto um
+                = lnav::console::user_message::error((std::string) res->error);
+
+            return Err(um);
+        }
+    }
+    if (!ec.ec_dry_run) {
+        lnav_rs_ext::discover_srcs();
+    }
     return Ok(retval);
 }
 
@@ -3799,6 +3862,20 @@ readline_context::command_t STD_COMMANDS[] = {
                 "To ask the user a question",
                 "user 'Are you sure? '",
             }),
+    },
+    {
+        "add-source-path",
+        com_add_src_path,
+        help_text(":add-source-path")
+            .with_summary(
+                "Add a path to the source code that generated log messages.  "
+                "Adding source allows lnav to more accurately extract values "
+                "from log messages")
+            .with_parameter(
+                help_text("path")
+                    .with_summary("The path to the source code to index")
+                    .with_format(help_parameter_format_t::HPF_DIRECTORY)
+                    .one_or_more()),
     },
 
     {

@@ -1,4 +1,18 @@
 
+.. _add_source_path:
+
+:add-source-path *path*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Add a path to the source code that generated log messages.  Adding source allows lnav to more accurately extract values from log messages
+
+  **Parameters**
+    * **path** --- The path to the source code to index
+
+
+----
+
+
 .. _adjust_log_time:
 
 :adjust-log-time *timestamp*

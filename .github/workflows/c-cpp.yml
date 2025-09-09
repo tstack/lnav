@@ -12,14 +12,6 @@ on:
     branches: [master]
 
 jobs:
-  brewer:
-    runs-on: ubuntu-latest
-    container:
-      image: homebrew/brew:latest
-    steps:
-      - name: Linuxbrew
-        run: brew install --HEAD lnav
-
   coverage:
     runs-on: ubuntu-latest
     steps:

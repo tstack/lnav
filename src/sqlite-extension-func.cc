@@ -29,13 +29,17 @@
  * @file sqlite-extension-func.c
  */
 
+#include "config.h"
+
+#include <map>
+#include <string>
+
 #include "sqlite-extension-func.hh"
 
 #include "base/auto_mem.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
-#include "config.h"
 #include "help_text.hh"
 #include "sql_help.hh"
 
@@ -49,15 +53,13 @@ int sqlite3_series_init(sqlite3* db,
 }
 
 #ifdef HAVE_RUST_DEPS
-rust::Vec<prqlc::SourceTreeElement> sqlite_extension_prql;
+rust::Vec<lnav_rs_ext::SourceTreeElement> sqlite_extension_prql;
 #endif
 
-namespace lnav {
-namespace sql {
+namespace lnav::sql {
 std::multimap<std::string, const help_text*> prql_functions;
 
 }
-}  // namespace lnav
 
 sqlite_registration_func_t sqlite_registration_funcs[] = {
     common_extension_functions,
@@ -243,7 +245,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             std::string content;
 
             mod_pair.second.to_string(content);
-            sqlite_extension_prql.emplace_back(prqlc::SourceTreeElement{
+            sqlite_extension_prql.emplace_back(lnav_rs_ext::SourceTreeElement{
                 fmt::format(FMT_STRING("{}.prql"), mod_pair.first),
                 content,
             });

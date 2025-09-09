@@ -5,6 +5,14 @@ on:
     tags:
       - '*'
 jobs:
+  brewer:
+    runs-on: ubuntu-latest
+    container:
+      image: homebrew/brew:latest
+    steps:
+      - name: Linuxbrew
+        run: brew install --HEAD lnav
+
   create-release:
     name: create-release
     runs-on: ubuntu-latest

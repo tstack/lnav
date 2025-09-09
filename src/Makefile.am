@@ -133,14 +133,22 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
 
 if HAVE_CARGO
 RUST_DEPS_CPPFLAGS = -DHAVE_RUST_DEPS=1
-PRQLC_DIR = third-party/prqlc-c/target
-RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
-RUST_DEPS_TRIGGER = $(PRQLC_DIR)/release/libprqlc_c.a.dep
+PRQLC_DIR = third-party/lnav-rs-ext/target
+RUST_DEPS_LIBS = $(PRQLC_DIR)/release/liblnav_rs_ext.a
+RUST_DEPS_TRIGGER = $(PRQLC_DIR)/release/liblnav_rs_ext.a.dep
 
-$(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
+if HAVE_CXXBRIDGE
+$(srcdir)/third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh: $(srcdir)/third-party/lnav-rs-ext/src/lib.rs
+	(cd $(srcdir)/third-party/lnav-rs-ext/ && $(CXXBRIDGE) --header src/lib.rs) > $@
+
+$(srcdir)/third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc: $(srcdir)/third-party/lnav-rs-ext/src/lib.rs
+	(cd $(srcdir)/third-party/lnav-rs-ext/ && $(CXXBRIDGE) src/lib.rs) > $@
+endif
+
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
-	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
-	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
+	env CARGO_TARGET_DIR=third-party/lnav-rs-ext/target $(CARGO_CMD) build --manifest-path \
+	    $(srcdir)/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
 	touch $(RUST_DEPS_LIBS)
 
 else
@@ -163,7 +171,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party/base64/include \
 	-I$(srcdir)/third-party/date/include \
 	-I$(srcdir)/third-party/notcurses/include \
-	-I$(srcdir)/third-party/prqlc-c \
+	-I$(srcdir)/third-party/lnav-rs-ext \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(srcdir)/third-party/hat-trie/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
@@ -220,9 +228,9 @@ dist_noinst_DATA = \
 
 noinst_HEADERS = \
     third-party/md4c/md4c.h \
-    third-party/prqlc-c/prqlc.h \
-    third-party/prqlc-c/prqlc.hpp \
-    third-party/prqlc-c/prqlc.cxx.hh \
+    third-party/lnav-rs-ext/lnav_rs_ext.h \
+    third-party/lnav-rs-ext/lnav_rs_ext.hpp \
+    third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh \
     third-party/rapidyaml/ryml_all.hpp \
 	all_logs_vtab.hh \
 	archive_manager.hh \
@@ -427,7 +435,7 @@ THIRD_PARTY_SRCS = \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
     third-party/md4c/md4c.c \
-    third-party/prqlc-c/prqlc.cxx.cc \
+    third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c \
@@ -610,10 +618,10 @@ endif
 EXTRA_DIST = \
     lnav.ico \
     lnavres.rc \
-    third-party/prqlc-c/Cargo.lock \
-    third-party/prqlc-c/Cargo.toml \
-    third-party/prqlc-c/cbindgen.toml \
-    third-party/prqlc-c/src/lib.rs \
+    third-party/lnav-rs-ext/Cargo.lock \
+    third-party/lnav-rs-ext/Cargo.toml \
+    third-party/lnav-rs-ext/cbindgen.toml \
+    third-party/lnav-rs-ext/src/lib.rs \
 	ptimec.cc
 
 CLEANFILES = \
@@ -642,8 +650,8 @@ DISTCLEANFILES = \
 
 if HAVE_CARGO
 clean-local:
-	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) clean --manifest-path \
-    	    $(srcdir)/third-party/prqlc-c/Cargo.toml
+	env CARGO_TARGET_DIR=third-party/lnav-rs-ext/target $(CARGO_CMD) clean --manifest-path \
+    	    $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
 endif
 
 distclean-local:

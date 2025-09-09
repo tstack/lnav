@@ -790,8 +790,8 @@ add_library(
 
         third-party/robin_hood/robin_hood.h
 
-        third-party/prqlc-c/prqlc.cxx.hh
-        third-party/prqlc-c/prqlc.cxx.cc
+        third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh
+        third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc
 
         third-party/tlx/die/core.hpp
         third-party/tlx/container/btree.hpp
@@ -815,12 +815,22 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
         third-party/date/include
-        third-party/prqlc-c
+        third-party/lnav-rs-ext
         third-party/rapidyaml
         third-party/hat-trie/include
         ${CURSES_INCLUDE_DIRS}
 )
 target_compile_options(diag PRIVATE ${CURSES_CFLAGS})
+
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/target/release/liblnav_rs_ext.a
+        COMMAND env CARGO_TARGET_DIR=target cargo build --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
+)
+add_custom_target(
+        lnav_rs_ext
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/target/release/liblnav_rs_ext.a
+)
+add_dependencies(diag lnav_rs_ext)
 
 target_link_libraries(
         diag
@@ -839,6 +849,7 @@ target_link_libraries(
         base64
         spookyhash
         ${lnav_LIBS}
+        ${CMAKE_CURRENT_BINARY_DIR}/target/release/liblnav_rs_ext.a
 )
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 

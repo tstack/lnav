@@ -31,3 +31,5 @@
 #define _XOPEN_SOURCE_EXTENDED 1
 
 #define PACKAGE_BUGREPORT "lnav@googlegroups.com"
+
+#define HAVE_RUST_DEPS 1

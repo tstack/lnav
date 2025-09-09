@@ -703,6 +703,15 @@ For support questions, email:
 
 [1mCommand Reference[0m
 
+[4m:[0m[1m[4madd-source-path[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Add a path to the source code that generated log messages.  Adding
+  source allows lnav to more accurately extract values from log
+  messages
+[4mParameter[0m
+  [4mpath[0m   The path to the source code to index
+
+
 [4m:[0m[1m[4madjust-log-time[0m[4m [0m[4mtimestamp[0m
 ══════════════════════════════════════════════════════════════════════
   Change the timestamps of the focused file to be relative to the

@@ -15,9 +15,9 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 if HAVE_CARGO
-RUST_DEPS_CPPFLAGS = -I$(top_srcdir)/src/third-party/prqlc-c -DHAVE_RUST_DEPS=1
-PRQLC_DIR = ../src/third-party/prqlc-c/target
-RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+RUST_DEPS_CPPFLAGS = -I$(top_srcdir)/src/third-party/lnav-rs-ext -DHAVE_RUST_DEPS=1
+PRQLC_DIR = ../src/third-party/lnav-rs-ext/target
+RUST_DEPS_LIBS = $(PRQLC_DIR)/release/liblnav_rs_ext.a
 else
 RUST_DEPS =
 RUST_DEPS_CPPFLAGS =

@@ -1,5 +1,5 @@
 [package]
-name = "prqlc-c"
+name = "lnav-rs-ext"
 publish = false
 version = "0.11.3"
 
@@ -25,6 +25,8 @@ doc = false
 # Build deterministic:
 prqlc = "0.13.4"
 cxx = "1.0"
+miette = "7.6.0"
+log2src = {path = "/Users/tstack/github/log2src"}
 
 [build-dependencies]
 cxx-build = "1.0"

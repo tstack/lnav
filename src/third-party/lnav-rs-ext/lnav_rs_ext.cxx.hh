@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <iterator>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <string>
@@ -709,7 +710,10 @@ std::size_t align_of() {
 } // namespace cxxbridge1
 } // namespace rust
 
-namespace prqlc {
+namespace lnav_rs_ext {
+  struct ExtError;
+  enum class Status : ::std::uint8_t;
+  struct ExtProgress;
   struct Options;
   struct SourceTreeElement;
   enum class MessageKind : ::std::uint8_t;
@@ -717,9 +721,41 @@ namespace prqlc {
   struct CompileResult2;
 }
 
-namespace prqlc {
-#ifndef CXXBRIDGE1_STRUCT_prqlc$Options
-#define CXXBRIDGE1_STRUCT_prqlc$Options
+namespace lnav_rs_ext {
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+struct ExtError final {
+  ::rust::String error;
+  ::rust::String source;
+  ::rust::String help;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtError
+
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+enum class Status : ::std::uint8_t {
+  idle = 0,
+  working = 1,
+};
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$Status
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+struct ExtProgress final {
+  ::lnav_rs_ext::Status status;
+  ::rust::String current_step;
+  ::std::uint64_t completed;
+  ::std::uint64_t total;
+  ::rust::Vec<::lnav_rs_ext::ExtError> discover_errors;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 struct Options final {
   bool format;
   ::rust::String target;
@@ -727,31 +763,31 @@ struct Options final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$Options
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
-#define CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
 struct SourceTreeElement final {
   ::rust::String path;
   ::rust::String content;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$SourceTreeElement
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceTreeElement
 
-#ifndef CXXBRIDGE1_ENUM_prqlc$MessageKind
-#define CXXBRIDGE1_ENUM_prqlc$MessageKind
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
 enum class MessageKind : ::std::uint8_t {
   Error = 0,
   Warning = 1,
   Lint = 2,
 };
-#endif // CXXBRIDGE1_ENUM_prqlc$MessageKind
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$MessageKind
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$Message
-#define CXXBRIDGE1_STRUCT_prqlc$Message
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
 struct Message final {
-  ::prqlc::MessageKind kind;
+  ::lnav_rs_ext::MessageKind kind;
   ::rust::String code;
   ::rust::String reason;
   ::rust::Vec<::rust::String> hints;
@@ -759,17 +795,23 @@ struct Message final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$Message
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$Message
 
-#ifndef CXXBRIDGE1_STRUCT_prqlc$CompileResult2
-#define CXXBRIDGE1_STRUCT_prqlc$CompileResult2
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
 struct CompileResult2 final {
   ::rust::String output;
-  ::rust::Vec<::prqlc::Message> messages;
+  ::rust::Vec<::lnav_rs_ext::Message> messages;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_prqlc$CompileResult2
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
 
-::prqlc::CompileResult2 compile_tree(::rust::Vec<::prqlc::SourceTreeElement> const &tree, ::prqlc::Options const &options) noexcept;
-} // namespace prqlc
+::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept;
+
+::std::unique_ptr<::lnav_rs_ext::ExtError> add_src_root(::rust::String path) noexcept;
+
+void discover_srcs() noexcept;
+
+::lnav_rs_ext::ExtProgress get_status() noexcept;
+} // namespace lnav_rs_ext
