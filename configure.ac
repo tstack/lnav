@@ -290,7 +290,7 @@ AM_CONDITIONAL(HAVE_CARGO, test x"$CARGO_CMD" != x"")
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
 AM_CONDITIONAL([CROSS_COMPILING], [ test x"$cross_compiling" != x"no" ])
 AM_CONDITIONAL(HAVE_CHECK_JSONSCHEMA, test x"$CHECK_JSONSCHEMA" != x"")
-AM_CONDITIONAL(HAVE_WINDRES, test x"$WINDRES" != x"" && "x$ac_cv_header_windows_h" != x"no")
+AM_CONDITIONAL(HAVE_WINDRES, test x"$WINDRES" != x"" && test "x$ac_cv_header_windows_h" != x"no")
 
 AS_VAR_SET(USER_CXXFLAGS, ["$CXXFLAGS"])
 AC_SUBST(USER_CXXFLAGS)
