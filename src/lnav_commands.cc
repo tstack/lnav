@@ -245,6 +245,9 @@ com_add_src_path(exec_context& ec,
         return ec.make_error("expecting file name to open");
     }
 
+#if !defined(HAVE_RUST_DEPS)
+    return ec.make_error("source paths are not supported in this build");
+#else
     auto pat = trim(remaining_args(cmdline, args));
     std::string retval;
 
@@ -291,6 +294,7 @@ com_add_src_path(exec_context& ec,
     if (!ec.ec_dry_run) {
         lnav_rs_ext::discover_srcs();
     }
+#endif
     return Ok(retval);
 }
 
