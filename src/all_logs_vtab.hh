@@ -59,6 +59,7 @@ private:
     logline_value_meta alv_msg_meta;
     logline_value_meta alv_schema_meta;
     logline_value_meta alv_values_meta;
+    logline_value_meta alv_src_meta;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH

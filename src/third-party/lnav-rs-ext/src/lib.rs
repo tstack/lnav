@@ -1,11 +1,12 @@
 #![cfg(not(target_family = "wasm"))]
 
-use crate::ffi::{ExtError, ExtProgress, Status};
+use crate::ffi::{ExtError, ExtProgress, FindLogResult, Status};
 use cxx::UniquePtr;
-use log2src::{LogError, LogMatcher, ProgressTracker, ProgressUpdate};
+use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
+use serde::Serialize;
 use std::convert::Into;
 use std::error::Error;
 use std::panic;
@@ -121,6 +122,12 @@ mod ffi {
         pub messages: Vec<Message>,
     }
 
+    struct FindLogResult {
+        pub src: String,
+        pub pattern: String,
+        pub variables: String,
+    }
+
     extern "Rust" {
         fn compile_tree(tree: &Vec<SourceTreeElement>, options: &Options) -> CompileResult2;
 
@@ -129,6 +136,8 @@ mod ffi {
         fn discover_srcs();
 
         fn get_status() -> ExtProgress;
+
+        fn find_log_statement(file: &str, line: u32, body: &str) -> UniquePtr<FindLogResult>;
     }
 }
 
@@ -243,4 +252,40 @@ fn discover_srcs() {
 
 fn get_status() -> ExtProgress {
     EXT_PROGRESS.lock().unwrap().clone()
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct SourceDetails {
+    pub file: String,
+    pub line: usize,
+    pub name: String,
+}
+
+fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogResult> {
+    let log_matcher = LOG_MATCHER.lock().unwrap();
+    let log_ref = LogRef::from_parsed(
+        if file.is_empty() { None } else { Some(file) },
+        if file.is_empty() { None } else { Some(lineno) },
+        body,
+    );
+
+    if let Some(LogMapping {
+        variables,
+        src_ref: Some(src_ref),
+        ..
+    }) = log_matcher.match_log_statement(&log_ref)
+    {
+        let src_details = SourceDetails {
+            file: src_ref.source_path,
+            line: src_ref.line_no,
+            name: src_ref.name,
+        };
+        UniquePtr::new(FindLogResult {
+            src: serde_json::to_string(&src_details).unwrap(),
+            pattern: src_ref.pattern,
+            variables: serde_json::to_string(&variables).unwrap(),
+        })
+    } else {
+        UniquePtr::null()
+    }
 }
