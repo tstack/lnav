@@ -26,7 +26,7 @@ doc = false
 prqlc = "0.13.4"
 cxx = "1.0"
 miette = "7.6.0"
-log2src = {path = "/Users/tstack/github/log2src"}
+log2src = {git = "https://github.com/tstack/log2src.git"}
 
 [build-dependencies]
 cxx-build = "1.0"
