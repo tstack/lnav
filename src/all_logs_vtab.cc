@@ -107,6 +107,7 @@ all_logs_vtab::extract(logfile* lf,
     }
     auto line_sf = line.to_string_fragment();
     auto body_sf = line_sf.sub_range(body.lr_start, body.lr_end);
+#ifdef HAVE_RUST_DEPS
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;
     auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
@@ -126,8 +127,6 @@ all_logs_vtab::extract(logfile* lf,
             lineno = scan_res->value();
         }
     }
-    log_debug(
-        "all logs file '%.*s'", file_rust_str.size(), file_rust_str.data());
     auto find_res
         = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
     if (find_res != nullptr) {
@@ -138,7 +137,9 @@ all_logs_vtab::extract(logfile* lf,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,
                                        (std::string) find_res->src);
-    } else {
+    } else
+#endif
+    {
         data_scanner ds(body_sf);
         data_parser dp(&ds);
         std::string str;
