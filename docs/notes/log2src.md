@@ -44,18 +44,17 @@ Steps:
 
 Implementation tasks:
 
-- [ ] Make sure log2src's API is usable
+- [X] Make sure log2src's API is usable
 - [X] Rename lnav's prqlc-c crate since all Rust code will now be
       exposed through this crate
-- [ ] Add FFI interface for log2src's API to the crate
-- [ ] Add an lnav command to add source directories
+- [X] Add FFI interface for log2src's API to the crate
+- [X] Add an lnav command to add source directories
   - [ ] Make the source directories part of the session
-- [ ] Check if a log message is recognized by log2src in the
+- [X] Check if a log message is recognized by log2src in the
       message details overlay and use those results if so.
 - [ ] Show the source code of the log message and surrounding bits
-- [ ] Modify the `all_logs` table to use log2src instead of the
+- [X] Modify the `all_logs` table to use log2src instead of the
       current extraction code.
-
 
 ## Debugger Demo
 
