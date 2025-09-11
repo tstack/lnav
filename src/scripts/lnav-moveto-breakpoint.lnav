@@ -1,0 +1,43 @@
+#
+# @synopsis: lnav-moveto-breakpoint next|prev
+# @description: Move to the prev/next breakpoint
+#
+
+;SELECT
+    CASE
+      WHEN count(*) = 0 THEN raise_error("Cannot move to breakpoint", "No breakpoints have been set yet")
+      ELSE 1
+    END
+  FROM lnav_log_breakpoints
+  UNION ALL
+ SELECT
+    CASE
+      WHEN name != 'log' THEN raise_error("Cannot move to breakpoint", "Breakpoints are only supported in the LOG view")
+      ELSE 1
+    END
+  FROM lnav_top_view;
+
+;SELECT
+    CASE $1
+      WHEN 'next' THEN '>'
+      WHEN 'prev' THEN '<'
+      ELSE raise_error('invalid direction "' || $1 || '", expecting "next" or "prev"')
+    END AS line_cmp,
+    CASE $1
+      WHEN 'next' THEN 'ASC'
+      WHEN 'prev' THEN 'DESC'
+    END AS line_order
+
+:eval ;SELECT
+    log_line
+  FROM all_logs
+  WHERE
+    log_line $line_cmp log_msg_line() AND
+    log_msg_schema IN (SELECT schema_id FROM lnav_log_breakpoints)
+  ORDER BY log_line $line_order
+  LIMIT 1
+
+;SELECT raise_error("No more breakpoints after here")
+  WHERE $log_line IS NULL
+
+:eval :goto $log_line

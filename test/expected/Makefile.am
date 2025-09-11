@@ -1,5 +1,9 @@
 
 dist_noinst_DATA = \
+    test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.err \
+    test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.out \
+    test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.err \
+    test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.out \
     test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.err \
     test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.out \
     test_cli.sh_10c33e465ef7681c6b5519d05d557426b26cd43d.err \

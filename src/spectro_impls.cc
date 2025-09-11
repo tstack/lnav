@@ -35,6 +35,7 @@
 #include "base/itertools.hh"
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
+#include "logline_window.hh"
 #include "textview_curses.hh"
 
 using namespace lnav::roles::literals;
@@ -203,7 +204,8 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
     auto end_line = lss.find_from_time(timeval{to_time_t(sr.sr_end_time), 0})
                         .value_or(vis_line_t(lss.text_line_count()));
 
-    for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
+    auto win = lss.window_at(begin_line, end_line);
+    for (const auto& msg_info : *win) {
         const auto& ll = msg_info.get_logline();
         if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
             break;
@@ -244,7 +246,8 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
         retval->fss_overlay_delegate = nullptr;
-        for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
+        auto win = lss.window_at(begin_line, end_line);
+        for (const auto& msg_info : *win) {
             const auto& ll = msg_info.get_logline();
             if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
                 break;

@@ -33,6 +33,7 @@
 #define yajlpp_def_hh
 
 #include <chrono>
+#include <filesystem>
 
 #include "base/date_time_scanner.hh"
 #include "base/lnav.resolver.hh"
@@ -895,8 +896,12 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename... Args,
-             std::enable_if_t<LastIs<std::string, Args...>::value, bool> = true>
+    template<
+        typename... Args,
+        std::enable_if_t<LastIs<std::string, Args...>::value
+                             || LastIs<std::filesystem::path, Args...>::value,
+                         bool>
+        = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(null_field_cb);

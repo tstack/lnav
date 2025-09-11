@@ -31,12 +31,15 @@
 #define lnav_external_editor_hh
 
 #include <filesystem>
+#include <string>
 
 #include "base/result.h"
 
 namespace lnav::external_editor {
 
-Result<void, std::string> open(std::filesystem::path p);
+Result<void, std::string> open(std::filesystem::path p,
+                               uint32_t line,
+                               uint32_t col);
 
 }  // namespace lnav::external_editor
 

@@ -32,6 +32,7 @@
 #ifndef yajlpp_hh
 #define yajlpp_hh
 
+#include <filesystem>
 #include <functional>
 #include <map>
 #include <memory>
@@ -550,6 +551,11 @@ public:
     yajl_gen_status operator()(const std::string& str)
     {
         return yajl_gen_string(this->yg_handle, str);
+    }
+
+    yajl_gen_status operator()(const std::filesystem::path& path)
+    {
+        return yajl_gen_string(this->yg_handle, path.string());
     }
 
     yajl_gen_status operator()(const char* str)

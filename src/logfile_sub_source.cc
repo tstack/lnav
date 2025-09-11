@@ -51,6 +51,7 @@
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
+#include "logline_window.hh"
 #include "md2attr_line.hh"
 #include "ptimec.hh"
 #include "scn/scan.h"
@@ -735,6 +736,19 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             lr.lr_end = -1;
             value_out.emplace_back(lr, L_META.value(line_meta_opt.value()));
         }
+    }
+
+    auto src_file_attr = get_string_attr(value_out, SA_SRC_FILE);
+    if (src_file_attr) {
+        auto lr = src_file_attr->saw_string_attr->sa_range;
+        lr.lr_end = lr.lr_start + 1;
+        value_out.emplace_back(lr,
+                               VC_STYLE.value(text_attrs::with_underline()));
+        value_out.emplace_back(lr,
+                               VC_COMMAND.value(ui_command{
+                                   source_location{},
+                                   ":toggle-breakpoint",
+                               }));
     }
 
     if (this->lss_time_column_size == 0) {
@@ -2496,241 +2510,6 @@ logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t>& gp,
     this->lmg_source.tss_view->grep_match(gp, line);
 }
 
-logline_window::iterator
-logline_window::begin()
-{
-    if (this->lw_start_line < 0_vl) {
-        return this->end();
-    }
-
-    auto retval = iterator{this->lw_source, this->lw_start_line};
-    while (!retval->is_valid() && retval != this->end()) {
-        ++retval;
-    }
-
-    return retval;
-}
-
-logline_window::iterator
-logline_window::end()
-{
-    auto vl = this->lw_end_line;
-    while (vl < vis_line_t(this->lw_source.text_line_count())) {
-        const auto& line = this->lw_source.find_line(this->lw_source.at(vl));
-        if (line->is_message()) {
-            break;
-        }
-        ++vl;
-    }
-
-    return {this->lw_source, vl};
-}
-
-logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
-    : li_source(lss), li_line(vl)
-{
-    if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
-        while (true) {
-            auto pair_opt = this->li_source.find_line_with_file(vl);
-            if (!pair_opt) {
-                break;
-            }
-
-            auto& [lf, ll] = pair_opt.value();
-            if (ll->is_message()) {
-                this->li_file = lf.get();
-                this->li_logline = ll;
-                this->li_line_number
-                    = std::distance(this->li_file->begin(), this->li_logline);
-                break;
-            }
-            --vl;
-        }
-    }
-}
-
-bool
-logline_window::logmsg_info::is_valid() const
-{
-    return this->li_file != nullptr;
-}
-
-void
-logline_window::logmsg_info::next_msg()
-{
-    this->li_file = nullptr;
-    this->li_logline = logfile::iterator{};
-    this->li_string_attrs.clear();
-    this->li_line_values.clear();
-    ++this->li_line;
-    while (this->li_line < vis_line_t(this->li_source.text_line_count())) {
-        auto pair_opt = this->li_source.find_line_with_file(this->li_line);
-
-        if (!pair_opt) {
-            break;
-        }
-
-        auto line_pair = pair_opt.value();
-        if (line_pair.second->is_message()) {
-            this->li_file = line_pair.first.get();
-            this->li_logline = line_pair.second;
-            this->li_line_number
-                = std::distance(this->li_file->begin(), this->li_logline);
-            break;
-        }
-        ++this->li_line;
-    }
-}
-
-void
-logline_window::logmsg_info::prev_msg()
-{
-    this->li_file = nullptr;
-    this->li_logline = logfile::iterator{};
-    this->li_string_attrs.clear();
-    this->li_line_values.clear();
-    while (this->li_line > 0) {
-        --this->li_line;
-        auto pair_opt = this->li_source.find_line_with_file(this->li_line);
-
-        if (!pair_opt) {
-            break;
-        }
-
-        auto line_pair = pair_opt.value();
-        if (line_pair.second->is_message()) {
-            this->li_file = line_pair.first.get();
-            this->li_logline = line_pair.second;
-            this->li_line_number
-                = std::distance(this->li_file->begin(), this->li_logline);
-            break;
-        }
-    }
-}
-
-std::optional<bookmark_metadata*>
-logline_window::logmsg_info::get_metadata() const
-{
-    auto line_number = std::distance(this->li_file->begin(), this->li_logline);
-    auto& bm = this->li_file->get_bookmark_metadata();
-    auto bm_iter = bm.find(line_number);
-    if (bm_iter == bm.end()) {
-        return std::nullopt;
-    }
-    return &bm_iter->second;
-}
-
-Result<auto_buffer, std::string>
-logline_window::logmsg_info::get_line_hash() const
-{
-    auto fr = this->li_file->get_file_range(this->li_logline, false);
-    auto sbr = TRY(this->li_file->read_range(fr));
-    auto outbuf = auto_buffer::alloc(3 + hasher::STRING_SIZE);
-    outbuf.push_back('v');
-    outbuf.push_back('1');
-    outbuf.push_back(':');
-    hasher line_hasher;
-    line_hasher.update(sbr.get_data(), sbr.length())
-        .update(this->get_file_line_number())
-        .to_string(outbuf);
-
-    return Ok(std::move(outbuf));
-}
-
-logline_window::logmsg_info::metadata_edit_guard::~metadata_edit_guard()
-{
-    auto line_number = std::distance(this->meg_logmsg_info.li_file->begin(),
-                                     this->meg_logmsg_info.li_logline);
-    auto& bm = this->meg_logmsg_info.li_file->get_bookmark_metadata();
-    auto bm_iter = bm.find(line_number);
-    if (bm_iter != bm.end()
-        && bm_iter->second.empty(bookmark_metadata::categories::any))
-    {
-        bm.erase(bm_iter);
-    }
-}
-
-bookmark_metadata&
-logline_window::logmsg_info::metadata_edit_guard::operator*()
-{
-    auto line_number = std::distance(this->meg_logmsg_info.li_file->begin(),
-                                     this->meg_logmsg_info.li_logline);
-    auto& bm = this->meg_logmsg_info.li_file->get_bookmark_metadata();
-    return bm[line_number];
-}
-
-size_t
-logline_window::logmsg_info::get_line_count() const
-{
-    size_t retval = 1;
-    auto iter = std::next(this->li_logline);
-    while (iter != this->li_file->end() && iter->is_continued()) {
-        ++iter;
-        retval += 1;
-    }
-
-    return retval;
-}
-
-void
-logline_window::logmsg_info::load_msg() const
-{
-    if (!this->li_string_attrs.empty()) {
-        return;
-    }
-
-    auto format = this->li_file->get_format();
-    this->li_file->read_full_message(this->li_logline,
-                                     this->li_line_values.lvv_sbr);
-    if (this->li_line_values.lvv_sbr.get_metadata().m_has_ansi) {
-        auto* writable_data = this->li_line_values.lvv_sbr.get_writable_data();
-        auto str
-            = std::string{writable_data, this->li_line_values.lvv_sbr.length()};
-        scrub_ansi_string(str, &this->li_string_attrs);
-        this->li_line_values.lvv_sbr.get_metadata().m_has_ansi = false;
-    }
-    format->annotate(this->li_file,
-                     std::distance(this->li_file->begin(), this->li_logline),
-                     this->li_string_attrs,
-                     this->li_line_values,
-                     false);
-
-    if (!this->li_line_values.lvv_opid_value) {
-        auto bm_opt = this->get_metadata();
-        if (bm_opt && !bm_opt.value()->bm_opid.empty()) {
-            this->li_line_values.lvv_opid_value = bm_opt.value()->bm_opid;
-            this->li_line_values.lvv_opid_provenance
-                = logline_value_vector::opid_provenance::user;
-        }
-    }
-}
-
-std::string
-logline_window::logmsg_info::to_string(const struct line_range& lr) const
-{
-    this->load_msg();
-
-    return this->li_line_values.lvv_sbr
-        .to_string_fragment(lr.lr_start, lr.length())
-        .to_string();
-}
-
-logline_window::iterator&
-logline_window::iterator::operator++()
-{
-    this->i_info.next_msg();
-
-    return *this;
-}
-
-logline_window::iterator&
-logline_window::iterator::operator--()
-{
-    this->i_info.prev_msg();
-
-    return *this;
-}
-
 static std::vector<breadcrumb::possibility>
 timestamp_poss()
 {
@@ -3392,6 +3171,25 @@ logfile_sub_source::row_for(const row_info& ri)
     return std::nullopt;
 }
 
+std::unique_ptr<logline_window>
+logfile_sub_source::window_at(vis_line_t start_vl, vis_line_t end_vl)
+{
+    return std::make_unique<logline_window>(*this, start_vl, end_vl);
+}
+
+std::unique_ptr<logline_window>
+logfile_sub_source::window_at(vis_line_t start_vl)
+{
+    return std::make_unique<logline_window>(*this, start_vl, start_vl + 1_vl);
+}
+
+std::unique_ptr<logline_window>
+logfile_sub_source::window_to_end(vis_line_t start_vl)
+{
+    return std::make_unique<logline_window>(
+        *this, start_vl, vis_line_t(this->text_line_count()));
+}
+
 std::optional<vis_line_t>
 logfile_sub_source::row_for_anchor(const std::string& id)
 {
@@ -3413,7 +3211,7 @@ logfile_sub_source::row_for_anchor(const std::string& id)
                         low_vl.value(),
                         high_vl.value_or(low_vl.value() + 1_vl));
 
-                    for (const auto& li : lw) {
+                    for (const auto& li : *lw) {
                         auto hash_res = li.get_line_hash();
                         if (hash_res.isErr()) {
                             auto errmsg = hash_res.unwrapErr();
@@ -3488,7 +3286,7 @@ logfile_sub_source::anchor_for_row(vis_line_t vl)
     if (!line_meta.bmc_current_metadata) {
         auto lw = window_at(vl);
 
-        for (const auto& li : lw) {
+        for (const auto& li : *lw) {
             auto hash_res = li.get_line_hash();
             if (hash_res.isErr()) {
                 auto errmsg = hash_res.unwrapErr();

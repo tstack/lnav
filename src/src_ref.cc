@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,44 +25,43 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_commands.hh
  */
 
-#ifndef lnav_commands_hh
-#define lnav_commands_hh
+#include <vector>
 
-#include <optional>
-#include <string>
+#include "src_ref.hh"
 
-#include "readline_context.hh"
+#include "base/intern_string.hh"
+#include "base/lnav.console.hh"
+#include "base/result.h"
+#include "lnav_util.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
-/**
- * Initialize the given map with the builtin lnav commands.
- */
-void init_lnav_commands(readline_context::command_map_t& cmd_map);
+namespace lnav {
 
-void init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map);
+static const typed_json_path_container<src_ref> ref_handlers = {
+    yajlpp::property_handler("file")
+        .with_synopsis("<path>")
+        .with_description("The path to the source file")
+        .for_field(&src_ref::sr_path),
+    yajlpp::property_handler("line")
+        .with_synopsis("<line-number>")
+        .with_description("The line number containing the log statement")
+        .for_field(&src_ref::sr_line_number),
+    yajlpp::property_handler("name")
+        .with_synopsis("<function-name>")
+        .with_description(
+            "The name of the function containing the log statement")
+        .for_field(&src_ref::sr_function_name),
+};
 
-void init_lnav_breakpoint_commands(readline_context::command_map_t& cmd_map);
+template<>
+Result<src_ref, std::vector<lnav::console::user_message>>
+from_json(const std::string& frag)
+{
+    static const auto STRING_SRC = intern_string::lookup("string");
+    return ref_handlers.parser_for(STRING_SRC).of(frag);
+}
 
-void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_filtering_commands(readline_context::command_map_t& cmd_map);
-
-std::string remaining_args(const std::string& cmdline,
-                           const std::vector<std::string>& args,
-                           size_t index = 1);
-
-string_fragment remaining_args_frag(const std::string& cmdline,
-                                    const std::vector<std::string>& args,
-                                    size_t index = 1);
-
-std::optional<std::string> find_arg(std::vector<std::string>& args,
-                                    const std::string& flag);
-
-bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks& vb);
-
-#endif
+}  // namespace lnav

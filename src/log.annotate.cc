@@ -131,7 +131,7 @@ applicable(vis_line_t vl)
     auto ld = lss.find_data(cl);
     log_data_helper ldh(lss);
 
-    ldh.parse_line(vl, true);
+    ldh.load_line(vl, true);
     for (auto& expr : exprs.e_cond_exprs) {
         if (!expr.second.cce_enabled) {
             continue;
@@ -164,7 +164,7 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
     logmsg_annotations la;
     log_data_helper ldh(lss);
 
-    if (!ldh.parse_line(vl, true)) {
+    if (!ldh.load_line(vl, true)) {
         log_error("failed to parse line %d", vl);
         return Err(lnav::console::user_message::error("Failed to parse line"));
     }

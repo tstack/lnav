@@ -1601,6 +1601,15 @@ static const json_path_container editor_impl_handlers = {
         .with_description("The command used to open text for editing")
         .with_example("code -")
         .for_field(&lnav::external_editor::impl::i_command),
+    yajlpp::property_handler("config-dir")
+        .with_description(
+            "The name of the directory where editor configuration is stored")
+        .with_example(".idea")
+        .for_field(&lnav::external_editor::impl::i_config_dir),
+    yajlpp::property_handler("prefers")
+        .with_description("")
+        .with_example("^.*(?:\\.cpp)$")
+        .for_field(&lnav::external_editor::impl::i_prefers),
 };
 
 static const json_path_container editor_impls_handlers = {

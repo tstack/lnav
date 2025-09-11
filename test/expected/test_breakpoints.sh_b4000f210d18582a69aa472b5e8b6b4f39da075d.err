@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: Invalid breakpoint: bad
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mbreakpoint[0m[37m[40m bad                         [0m
+[36m =[0m [36mhelp[0m: Expecting an argument of the form: <format>:<file>:<line>

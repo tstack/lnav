@@ -27,18 +27,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
+#include <string>
 #include <thread>
 
 #include "external_opener.hh"
 
+#include <curl/curl.h>
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/result.h"
+#include "base/string_util.hh"
+#include "external_editor.hh"
 #include "external_opener.cfg.hh"
 #include "fmt/format.h"
+#include "pcrepp/pcre2pp.hh"
+#include "scn/scan.h"
+#include "text_format.hh"
 
 namespace lnav::external_opener {
 
@@ -47,26 +58,115 @@ get_impl()
 {
     const auto& cfg = injector::get<const config&>();
 
-    for (const auto& pair : cfg.c_impls) {
+    for (const auto& [name, impl] : cfg.c_impls) {
         const auto full_cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"),
-                                          pair.second.i_test_command);
+                                          impl.i_test_command);
 
-        log_debug("testing opener impl %s using: %s",
-                  pair.first.c_str(),
-                  full_cmd.c_str());
+        log_debug(
+            "testing opener impl %s using: %s", name.c_str(), full_cmd.c_str());
         if (system(full_cmd.c_str()) == 0) {
-            log_info("detected opener: %s", pair.first.c_str());
-            return pair.second;
+            log_info("detected opener: %s", name.c_str());
+            return impl;
         }
     }
 
     return std::nullopt;
 }
 
+#if !CURL_AT_LEAST_VERSION(7, 80, 0)
+extern "C"
+{
+const char* curl_url_strerror(CURLUcode error);
+}
+#endif
+
 Result<void, std::string>
 for_href(const std::string& href)
 {
     static const auto IMPL = get_impl();
+
+    auto_mem<CURLU> cu(curl_url_cleanup);
+    cu = curl_url();
+
+    log_debug("opening href: %s", href.c_str());
+    auto rc = curl_url_set(cu,
+                           CURLUPART_URL,
+                           href.c_str(),
+                           CURLU_NON_SUPPORT_SCHEME | CURLU_PATH_AS_IS);
+    if (rc == CURLUE_OK) {
+        auto_mem<char> scheme_part(curl_free);
+        rc = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
+        if (rc == CURLUE_OK) {
+            auto scheme_sf = string_fragment::from_c_str(scheme_part.in());
+            if (scheme_sf.is_one_of(""_frag, "file"_frag)) {
+                auto_mem<char> path_part(curl_free);
+                if (curl_url_get(
+                        cu, CURLUPART_PATH, path_part.out(), CURLU_URLDECODE)
+                    == CURLUE_OK)
+                {
+                    auto path = std::filesystem::path{path_part.in()};
+
+                    switch (detect_text_format(""_frag, path)) {
+                        case text_format_t::TF_UNKNOWN:
+                        case text_format_t::TF_BINARY:
+                            break;
+                        default: {
+                            auto line = 0UL;
+                            auto col = 0UL;
+
+                            auto_mem<char> frag_part(curl_free);
+                            if (curl_url_get(cu,
+                                             CURLUPART_FRAGMENT,
+                                             frag_part.out(),
+                                             CURLU_URLDECODE)
+                                == CURLUE_OK)
+                            {
+                                static const auto FRAG_RE
+                                    = lnav::pcre2pp::code::from_const(
+                                        R"(^L(\d+)(?:C(\d+))?$)");
+                                thread_local auto match_data
+                                    = lnav::pcre2pp::match_data::unitialized();
+                                auto frag_sf = string_fragment::from_c_str(
+                                    frag_part.in());
+
+                                log_debug(" checking fragment for position: %s",
+                                          frag_part.in());
+                                if (FRAG_RE.capture_from(frag_sf)
+                                        .into(match_data)
+                                        .found_p())
+                                {
+                                    line = scn::scan_int<uint32_t>(
+                                               match_data[1]->to_string_view())
+                                               ->value();
+                                    if (match_data[2]) {
+                                        col = scn::scan_int<uint32_t>(
+                                                  match_data[2]
+                                                      ->to_string_view())
+                                                  ->value();
+                                    }
+                                }
+                            }
+                            log_info(
+                                "Opening href with external editor: %s:%u:%u",
+                                path_part.in(),
+                                line,
+                                col);
+                            return external_editor::open(
+                                path_part.in(), line, col);
+                        }
+                    }
+                }
+            } else {
+                log_trace("not a file href: %s", href.c_str());
+            }
+        } else {
+            log_error("no scheme?");
+        }
+    } else {
+        log_warning("possibly invalid href: %s (%s)",
+                    href.c_str(),
+                    curl_url_strerror(rc));
+    }
 
     if (!IMPL) {
         const static std::string MSG = "no external opener found";

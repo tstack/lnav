@@ -38,6 +38,7 @@
 #include "hasher.hh"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
+#include "logline_window.hh"
 #include "scn/ranges.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -1093,7 +1094,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     case log_footer_columns::line_hash: {
                         auto lw
                             = vt->lss->window_at(vc->log_cursor.lc_curr_line);
-                        for (const auto& li : lw) {
+                        for (const auto& li : *lw) {
                             auto hash_res = li.get_line_hash();
                             if (hash_res.isErr()) {
                                 auto msg = fmt::format(
@@ -2057,10 +2058,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 = vt->lss->row_for_time(log_time_range->vtr_end.value());
             if (vl_max_opt) {
                 p_cur->log_cursor.lc_end_line = vl_max_opt.value();
-                for (const auto& msg_info :
-                     vt->lss->window_at(vl_max_opt.value(),
-                                        vis_line_t(vt->lss->text_line_count())))
-                {
+                auto win = vt->lss->window_at(
+                    vl_max_opt.value(), vis_line_t(vt->lss->text_line_count()));
+                for (const auto& msg_info : *win) {
                     if (log_time_range->vtr_end.value()
                         < msg_info.get_logline().get_timeval())
                     {
@@ -2359,7 +2359,8 @@ vt_update(sqlite3_vtab* tab,
         int val = sqlite3_value_int(
             argv[2 + vt->footer_index(log_footer_columns::mark)]);
         vis_line_t vrowid(rowid);
-        const auto msg_info = *vt->lss->window_at(vrowid).begin();
+        auto win = vt->lss->window_at(vrowid);
+        const auto msg_info = *win->begin();
         const auto* part_name = sqlite3_value_text(
             argv[2 + vt->footer_index(log_footer_columns::partition)]);
         const auto* log_comment = sqlite3_value_text(

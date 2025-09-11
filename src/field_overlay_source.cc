@@ -29,6 +29,9 @@
 
 #include "field_overlay_source.hh"
 
+#include <curl/curl.h>
+
+#include "base/auto_mem.hh"
 #include "base/humanize.time.hh"
 #include "base/snippet_highlighters.hh"
 #include "command_executor.hh"
@@ -84,7 +87,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         return;
     }
 
-    if (!this->fos_log_helper.parse_line(row)) {
+    if (!this->fos_log_helper.load_line(row)) {
         return;
     }
 
@@ -249,6 +252,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         return;
     }
 
+    this->fos_log_helper.parse_body();
     auto anchor_opt = this->fos_lss.anchor_for_row(row);
     if (anchor_opt) {
         auto permalink
@@ -288,18 +292,19 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             = std::max(this->fos_known_key_size, this_key_size);
     }
 
-    for (auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
-         iter != this->fos_log_helper.ldh_parser->dp_pairs.end();
-         ++iter)
-    {
-        std::string colname
-            = this->fos_log_helper.ldh_parser->get_element_string(
+    if (this->fos_log_helper.ldh_parser) {
+        for (auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
+             iter != this->fos_log_helper.ldh_parser->dp_pairs.end();
+             ++iter)
+        {
+            auto colname = this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->front());
 
-        colname
-            = this->fos_log_helper.ldh_namer->add_column(colname).to_string();
-        this->fos_unknown_key_size
-            = std::max(this->fos_unknown_key_size, (int) colname.length());
+            colname = this->fos_log_helper.ldh_namer->add_column(colname)
+                          .to_string();
+            this->fos_unknown_key_size
+                = std::max(this->fos_unknown_key_size, (int) colname.length());
+        }
     }
 
     auto lf = this->fos_log_helper.ldh_file->get_format();
@@ -492,7 +497,48 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->add_key_line_attrs(key_size - 3);
     }
 
-    if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
+    if (this->fos_log_helper.ldh_src_ref) {
+        auto src_link
+            = attr_line_t()
+                  .append(lnav::roles::file(
+                      this->fos_log_helper.ldh_src_ref->sr_path.string()))
+                  .append(":")
+                  .append(lnav::roles::number(fmt::to_string(
+                      this->fos_log_helper.ldh_src_ref->sr_line_number)));
+        auto_mem<char> src_href(curl_free);
+        {
+            auto frag
+                = fmt::format(FMT_STRING("L{}"),
+                              this->fos_log_helper.ldh_src_ref->sr_line_number);
+            auto_mem<CURLU> cu(curl_url_cleanup);
+            cu = curl_url();
+
+            curl_url_set(cu, CURLUPART_SCHEME, "file", CURLU_URLENCODE);
+            curl_url_set(cu,
+                         CURLUPART_PATH,
+                         this->fos_log_helper.ldh_src_ref->sr_path.c_str(),
+                         CURLU_URLENCODE);
+            curl_url_set(cu, CURLUPART_FRAGMENT, frag.c_str(), CURLU_URLENCODE);
+            curl_url_get(cu, CURLUPART_URL, src_href.out(), 0);
+        }
+        auto src_link_with_href = attr_line_t().append(
+            lnav::string::attrs::href(src_link, src_href.in()));
+        this->fos_lines.emplace_back(
+            attr_line_t(" Variables from ")
+                .append(lnav::roles::hyperlink(src_link_with_href)));
+        for (const auto& [name, value] : this->fos_log_helper.ldh_src_vars) {
+            auto al = attr_line_t("   ")
+                          .append(lnav::roles::variable(name))
+                          .append(" = ")
+                          .append(value);
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                row_info{
+                                                    std::nullopt,
+                                                    value,
+                                                });
+            this->fos_lines.emplace_back(al);
+        }
+    } else if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
         this->fos_lines.emplace_back(" No discovered message fields");
     } else {
         this->fos_lines.emplace_back(
@@ -507,27 +553,28 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         al.with_attr(string_attr(line_range(disc_str.length(), -1),
                                  VC_STYLE.value(text_attrs::with_bold())));
         disc_str.append(this->fos_log_helper.ldh_msg_format);
-    }
 
-    auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
-    for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_parser->dp_pairs.size();
-         lpc++, ++iter)
-    {
-        auto name = this->fos_log_helper.ldh_namer->cn_names[lpc];
-        auto val = this->fos_log_helper.ldh_parser->get_element_string(
-            iter->e_sub_elements->back());
-        attr_line_t al(fmt::format(FMT_STRING("   {} = {}"), name, val));
+        auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
+        for (size_t lpc = 0;
+             lpc < this->fos_log_helper.ldh_parser->dp_pairs.size();
+             lpc++, ++iter)
+        {
+            auto name = this->fos_log_helper.ldh_namer->cn_names[lpc];
+            auto val = this->fos_log_helper.ldh_parser->get_element_string(
+                iter->e_sub_elements->back());
+            attr_line_t al(fmt::format(FMT_STRING("   {} = {}"), name, val));
 
-        al.with_attr(
-            string_attr(line_range(3, 3 + name.length()),
-                        VC_STYLE.value(vc.attrs_for_ident(name.to_string()))));
+            al.with_attr(string_attr(
+                line_range(3, 3 + name.length()),
+                VC_STYLE.value(vc.attrs_for_ident(name.to_string()))));
 
-        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
-                                            row_info{std::nullopt, val});
-        this->fos_lines.emplace_back(al);
-        this->add_key_line_attrs(
-            this->fos_unknown_key_size,
-            lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                row_info{std::nullopt, val});
+            this->fos_lines.emplace_back(al);
+            this->add_key_line_attrs(
+                this->fos_unknown_key_size,
+                lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
+        }
     }
 }
 

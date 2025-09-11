@@ -50,6 +50,7 @@
 #include "log_data_table.hh"
 #include "log_format_ext.hh"
 #include "log_search_table.hh"
+#include "logline_window.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "scn/scan.h"
@@ -59,6 +60,7 @@
 #include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "sqlitepp.client.hh"
 #include "tailer/tailer.looper.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -852,6 +854,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                      const help_text* ht,
                                      const std::string& str)
 {
+    static const auto KNOWN_BREAKPOINT_STMT = R"(
+    SELECT description
+      FROM lnav_log_breakpoints
+     WHERE instr(description, ':#:') = 0
+)";
+
     std::vector<attr_line_t> retval;
 
     if (cmd_ht == ht) {
@@ -1323,6 +1331,51 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          });
                 break;
             }
+            case help_parameter_format_t::HPF_BREAKPOINT: {
+                auto* lss
+                    = dynamic_cast<logfile_sub_source*>(tc.get_sub_source());
+
+                if (lss == nullptr) {
+                    return {};
+                }
+                std::set<std::string> poss_strs;
+
+                auto win = lss->window_at(tc.get_top(), tc.get_bottom());
+                for (const auto& msg : *win) {
+                    auto format_name = msg.get_file_ptr()->get_format_name();
+                    auto src_file_sf = msg.get_string_for_attr(SA_SRC_FILE);
+                    auto src_line_sf = msg.get_string_for_attr(SA_SRC_LINE);
+                    if (src_file_sf && src_line_sf) {
+                        poss_strs.emplace(fmt::format(FMT_STRING("{}:{}:{}"),
+                                                      format_name,
+                                                      src_file_sf.value(),
+                                                      src_line_sf.value()));
+                    }
+                }
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
+            }
+            case help_parameter_format_t::HPF_KNOWN_BREAKPOINT: {
+                auto prep_res
+                    = prepare_stmt(lnav_data.ld_db.in(), KNOWN_BREAKPOINT_STMT);
+                std::vector<std::string> poss_strs;
+                auto stmt = prep_res.unwrap();
+                auto loop_res = stmt.for_each_row<std::string>(
+                    [&poss_strs](const std::string& desc) {
+                        poss_strs.emplace_back(desc);
+                        return false;
+                });
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
+            }
             case help_parameter_format_t::HPF_ADJUSTED_TIME: {
                 static const auto symbolic_times = std::vector<std::string>{
                     "-1h",
@@ -1502,10 +1555,10 @@ prompt::rl_external_edit(textinput_curses& tc)
 #   |saved-prompt
 #
 # If you want to save this script for future use, save it with another name
-# since this file will be overwritten the next time a prompt is tranferred.
+# since this file will be overwritten the next time a prompt is transferred.
 #
 
-)";
+)"_frag;
 
     auto content = fmt::format(
         FMT_STRING("{}{}{}"), HEADER, tc.tc_prefix.al_string, tc.get_content());
@@ -1530,7 +1583,8 @@ prompt::rl_external_edit(textinput_curses& tc)
 
     tc.abort();
 
-    auto open_res = lnav::external_editor::open(dst);
+    auto line = HEADER.count('\n') + tc.tc_cursor.y + 1;
+    auto open_res = lnav::external_editor::open(dst, line, tc.tc_cursor.x);
     if (open_res.isErr()) {
         auto errmsg = open_res.unwrapErr();
         auto um = lnav::console::user_message::info(

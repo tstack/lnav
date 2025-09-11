@@ -490,6 +490,7 @@ add_library(
         breadcrumb_curses.cc
         cmd.parser.cc
         cmds.bookmarks.cc
+        cmds.breakpoints.cc
         cmds.display.cc
         cmds.filtering.cc
         cmds.io.cc
@@ -544,6 +545,7 @@ add_library(
         log_search_table.cc
         logfile.cc
         logfile_sub_source.cc
+        logline_window.cc
         md2attr_line.cc
         md4cpp.cc
         msg.text.cc
@@ -570,6 +572,7 @@ add_library(
         sequence_matcher.cc
         shlex.cc
         sqlite-extension-func.cc
+        src_ref.cc
         static_file_vtab.cc
         statusview_curses.cc
         string-extension-functions.cc
@@ -679,6 +682,7 @@ add_library(
         logfile.hh
         logfile_fwd.hh
         logfile_stats.hh
+        logline_window.hh
         md2attr_line.hh
         md4cpp.hh
         msg.text.hh
@@ -714,6 +718,7 @@ add_library(
         sql_execute.hh
         sql_help.hh
         sql_util.hh
+        src_ref.hh
         static_file_vtab.hh
         strong_int.hh
         sysclip.hh

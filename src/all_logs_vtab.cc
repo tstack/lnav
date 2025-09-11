@@ -34,6 +34,7 @@
 #include "config.h"
 #include "data_parser.hh"
 #include "elem_to_json.hh"
+#include "hasher.hh"
 #include "scn/scan.h"
 
 #ifdef HAVE_RUST_DEPS
@@ -105,34 +106,45 @@ all_logs_vtab::extract(logfile* lf,
         body.lr_start = 0;
         body.lr_end = line.length();
     }
-    auto line_sf = line.to_string_fragment();
-    auto body_sf = line_sf.sub_range(body.lr_start, body.lr_end);
+    auto body_sf = line.to_string_fragment(body);
+    auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
+    auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
+    auto src_file_sf = line.to_string_fragment(src_file);
+    auto src_line_sf = line.to_string_fragment(src_line);
+    auto h = hasher();
+    if (src_file_sf.is_valid() && src_line_sf.is_valid()) {
+        h.update(format->get_name().c_str());
+        h.update(src_file_sf);
+        h.update(src_line_sf);
+    }
 #ifdef HAVE_RUST_DEPS
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;
-    auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
-    auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
-    if (src_file.is_valid()) {
-        auto src_file_sf
-            = line_sf.sub_range(src_file.lr_start, src_file.lr_end);
+    if (src_file_sf.is_valid()) {
         file_rust_str = rust::Str(src_file_sf.data(), src_file_sf.length());
     }
-    auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
-    if (src_line.is_valid()) {
-        auto src_line_sf
-            = line_sf.sub_range(src_line.lr_start, src_line.lr_end);
+    if (src_line_sf.is_valid()) {
         auto scan_res
             = scn::scan_int<decltype(lineno)>(src_line_sf.to_string_view());
         if (scan_res) {
             lineno = scan_res->value();
         }
     }
-    auto find_res
-        = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
+    auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
+    auto find_res = lnav_rs_ext::find_log_statement_json(
+        file_rust_str, lineno, body_rust_str);
     if (find_res != nullptr) {
+        if (!src_file_sf.is_valid() || !src_line_sf.is_valid()) {
+            h.update(find_res->src.c_str());
+            h.update(find_res->pattern.c_str());
+        }
+        auto line_iter = lf->begin() + line_number;
+        if (!line_iter->has_schema()) {
+            line_iter->set_schema(h.to_array());
+        }
         values.lvv_values.emplace_back(this->alv_msg_meta,
                                        (std::string) find_res->pattern);
-        values.lvv_values.emplace_back(this->alv_schema_meta, "");
+        values.lvv_values.emplace_back(this->alv_schema_meta, h.to_string());
         values.lvv_values.emplace_back(this->alv_values_meta,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,
@@ -152,9 +164,17 @@ all_logs_vtab::extract(logfile* lf,
 
         elements_to_json(gen, dp, &dp.dp_pairs);
 
+        auto schema_id = (src_file_sf.is_valid() && src_line_sf.is_valid())
+            ? h.to_string()
+            : dp.dp_schema_id.to_string();
+        log_debug("  %s:%s:%s",
+                  format->get_name().c_str(),
+                  src_file_sf.to_string().c_str(),
+                  src_line_sf.to_string().c_str());
+        log_debug("schema id = %s", schema_id.c_str());
+
         values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
-        values.lvv_values.emplace_back(this->alv_schema_meta,
-                                       dp.dp_schema_id.to_string());
+        values.lvv_values.emplace_back(this->alv_schema_meta, schema_id);
         values.lvv_values.emplace_back(
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());

@@ -43,6 +43,7 @@
 #include "crashd.client.hh"
 #include "intervaltree/IntervalTree.h"
 #include "lnav_util.hh"
+#include "logline_window.hh"
 #include "md4cpp.hh"
 #include "sql_util.hh"
 #include "sysclip.hh"
@@ -1005,7 +1006,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
     auto win = this->gs_lss.window_at(low_vl.value(), high_vl);
     auto id_hash = row.or_name.hash();
-    for (const auto& msg_line : win) {
+    for (const auto& msg_line : *win) {
         if (!msg_line.get_logline().match_opid_hash(id_hash)) {
             continue;
         }

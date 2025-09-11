@@ -135,12 +135,14 @@ struct exec_context {
     void clear_output();
 
     struct mouse_input {};
+    struct keyboard_input {};
     struct user {};
     struct file_open {
         std::string fo_name;
     };
 
-    using provenance_t = mapbox::util::variant<user, mouse_input, file_open>;
+    using provenance_t
+        = mapbox::util::variant<user, keyboard_input, mouse_input, file_open>;
 
     struct provenance_guard {
         explicit provenance_guard(exec_context* context, provenance_t prov)

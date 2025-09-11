@@ -4,7 +4,7 @@
 2023-03-24T14:26:16.243Z renovate[7] DEBUG    Found npm package files
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
-2023-03-24T14:26:16.243Z renovate[7] DEBUG   [/Users/trentm/tm/node-bunyan/examples/src.js:20:Wuzzle.woos] Found 3 package file(s)
+2023-03-24T14:26:16.243Z renovate[7] DEBUG   [[4m/[0mUsers/trentm/tm/node-bunyan/examples/src.js:20:Wuzzle.woos] Found 3 package file(s)
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
 2023-03-24T14:26:16.243Z renovate[7] INFO     Dependency extraction complete

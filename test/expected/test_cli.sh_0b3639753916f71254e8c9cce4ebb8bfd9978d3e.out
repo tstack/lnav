@@ -115,17 +115,35 @@
         },
         "external-editor": {
             "impls": {
+                "CLion": {
+                    "test": "command -v clion",
+                    "command": "clion --line ${LINE} --column ${COL} \"$FILE_PATH\"",
+                    "config-dir": ".idea",
+                    "prefers": ""
+                },
+                "RustRover": {
+                    "test": "command -v rustrover",
+                    "command": "rustrover --line ${LINE} --column ${COL} \"$FILE_PATH\"",
+                    "config-dir": ".idea",
+                    "prefers": "^.*(?:Cargo.toml|\\.rs)"
+                },
                 "VSCode": {
                     "test": "command -v code",
-                    "command": "env VSCODE_PWD=\"$PWD\" code \"$FILE_PATH\""
+                    "command": "env VSCODE_PWD=\"$PWD\" code -g \"$FILE_PATH\":$LINE:$COL",
+                    "config-dir": ".vscode",
+                    "prefers": ""
                 },
                 "VSCode.app": {
                     "test": "command -v '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'",
-                    "command": "env VSCODE_PWD=\"$PWD\" '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' \"$FILE_PATH\""
+                    "command": "env VSCODE_PWD=\"$PWD\" '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' -g \"$FILE_PATH\":$LINE:$COL",
+                    "config-dir": ".vscode",
+                    "prefers": ""
                 },
                 "zzz.MacOS": {
                     "test": "command -v open",
-                    "command": "open -t \"$FILE_PATH\""
+                    "command": "open -t \"$FILE_PATH\"",
+                    "config-dir": "",
+                    "prefers": ""
                 }
             }
         },
@@ -7781,6 +7799,21 @@
                     "command": ":help",
                     "alt-msg": ""
                 },
+                "f7": {
+                    "id": "",
+                    "command": "|lnav-moveto-breakpoint prev",
+                    "alt-msg": ""
+                },
+                "f8": {
+                    "id": "",
+                    "command": "|lnav-moveto-breakpoint next",
+                    "alt-msg": ""
+                },
+                "x02": {
+                    "id": "",
+                    "command": ":toggle-breakpoint",
+                    "alt-msg": "${keymap_def_breakpoint}"
+                },
                 "x04": {
                     "id": "",
                     "command": ";UPDATE lnav_top_view SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END)",
@@ -8295,6 +8328,7 @@
     "global": {
         "keymap_def_alt_hour_boundary": "Press ${ansi_bold}6${ansi_bold}/${ansi_bold}^${ansi_norm} to move to the next/previous hour boundary",
         "keymap_def_alt_warning": "Press ${ansi_bold}w${ansi_norm}/${ansi_bold}W${ansi_norm} to move forward/backward through ${ansi_yellow}warning${ansi_norm} messages",
+        "keymap_def_breakpoint": "Press ${ansi_bold}F7${ansi_norm}/${ansi_bold}F8${ansi_norm} to move to the previous/next breakpoint",
         "keymap_def_clear": "Press ${ansi_bold}C${ansi_norm} to clear marked messages",
         "keymap_def_db_view": "Press ${ansi_bold}v${ansi_norm}/${ansi_bold}V${ansi_norm} to switch to the SQL result view",
         "keymap_def_hist_view": "Press ${ansi_bold}i${ansi_norm}/${ansi_bold}I${ansi_norm} to switch to the histogram view",

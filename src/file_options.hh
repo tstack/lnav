@@ -32,6 +32,7 @@
 
 #include <filesystem>
 #include <map>
+#include <optional>
 
 #include "base/lnav.console.hh"
 #include "base/result.h"

@@ -133,6 +133,14 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`}`
      -
      - Previous/next location in history
+   * - :kbd:`F7`
+     - :kbd:`F8`
+     -
+     - Previous/next breakpoint
+   * - :kbd:`CTRL` + :kbd:`b`
+     -
+     -
+     - Toggle a breakpoint for the focused log line
 
 Chronological Navigation
 ------------------------

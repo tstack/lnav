@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,44 +25,22 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_commands.hh
  */
 
-#ifndef lnav_commands_hh
-#define lnav_commands_hh
+#ifndef lnav_src_ref_hh
+#define lnav_src_ref_hh
 
-#include <optional>
 #include <string>
+#include <filesystem>
 
-#include "readline_context.hh"
+namespace lnav {
 
-/**
- * Initialize the given map with the builtin lnav commands.
- */
-void init_lnav_commands(readline_context::command_map_t& cmd_map);
+struct src_ref {
+    std::filesystem::path sr_path;
+    uint32_t sr_line_number;
+    std::string sr_function_name;
+};
 
-void init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_breakpoint_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
-
-void init_lnav_filtering_commands(readline_context::command_map_t& cmd_map);
-
-std::string remaining_args(const std::string& cmdline,
-                           const std::vector<std::string>& args,
-                           size_t index = 1);
-
-string_fragment remaining_args_frag(const std::string& cmdline,
-                                    const std::vector<std::string>& args,
-                                    size_t index = 1);
-
-std::optional<std::string> find_arg(std::vector<std::string>& args,
-                                    const std::string& flag);
-
-bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks& vb);
+}  // namespace lnav
 
 #endif

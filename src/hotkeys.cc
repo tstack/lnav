@@ -43,6 +43,7 @@
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "lnav_config.hh"
+#include "logline_window.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
@@ -69,6 +70,7 @@ handle_keyseq(const char* keyseq)
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
     ec.ec_msg_callback_stack = lnav_data.ld_exec_context.ec_msg_callback_stack;
     ec.ec_ui_callbacks = lnav_data.ld_exec_context.ec_ui_callbacks;
+    auto provguard = ec.with_provenance(exec_context::keyboard_input{});
     var_stack.push(std::map<std::string, scoped_value_t>());
     // XXX push another so it doesn't look like interactive use
     var_stack.push(std::map<std::string, scoped_value_t>());
@@ -633,7 +635,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case 'O':
             if (sel && lss != nullptr && lss->text_line_count() > 0) {
                 auto start_win = lss->window_at(sel.value());
-                auto start_win_iter = start_win.begin();
+                auto start_win_iter = start_win->begin();
                 const auto& opid_opt
                     = start_win_iter->get_values().lvv_opid_value;
                 if (!opid_opt) {
@@ -648,13 +650,13 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     unsigned int opid_hash = start_line.get_opid();
                     auto next_win
                         = lss->window_to_end(start_win_iter->get_vis_line());
-                    auto next_win_iter = next_win.begin();
+                    auto next_win_iter = next_win->begin();
                     bool found = false;
 
                     while (true) {
                         if (ch.id == 'o') {
                             ++next_win_iter;
-                            if (next_win_iter == next_win.end()) {
+                            if (next_win_iter == next_win->end()) {
                                 break;
                             }
                         } else {

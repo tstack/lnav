@@ -317,6 +317,8 @@ public:
 
         if constexpr (std::is_same_v<S, string_fragment>) {
             this->al_string += value.first;
+        } else if constexpr (std::is_same_v<S, attr_line_t>) {
+            this->append(value.first);
         } else {
             this->al_string.append(std::move(value.first));
         }

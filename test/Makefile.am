@@ -200,6 +200,7 @@ scripty_SOURCES = scripty.cc
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
+	test_breakpoints.sh \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \
@@ -509,6 +510,7 @@ TESTS = \
 	test_date_time_scanner \
 	test_format_installer.sh \
 	test_format_loader.sh \
+	test_breakpoints.sh \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \

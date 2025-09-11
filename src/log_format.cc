@@ -1873,6 +1873,16 @@ external_log_format::scan(logfile& lf,
         dst.emplace_back(
             li.li_file_range.fr_offset, log_tv, level, mod_index, opid);
 
+        auto src_file_cap = md[fpat->p_src_file_field_index];
+        auto src_line_cap = md[fpat->p_src_line_field_index];
+        if (src_file_cap && src_line_cap) {
+            auto h = hasher();
+            h.update(this->get_name().c_str());
+            h.update(src_file_cap.value());
+            h.update(src_line_cap.value());
+            dst.back().set_schema(h.to_array());
+        }
+
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
 

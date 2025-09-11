@@ -642,6 +642,10 @@ struct string_fragment {
 
     std::string to_string() const
     {
+        if (!this->is_valid()) {
+            return "<invalid>";
+        }
+
         return {this->data(), (size_t) this->length()};
     }
 

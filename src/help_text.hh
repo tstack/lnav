@@ -96,6 +96,8 @@ enum class help_parameter_format_t {
     HPF_SEARCH_TABLE,
     HPF_VISIBLE_FILES,
     HPF_HIDDEN_FILES,
+    HPF_BREAKPOINT,
+    HPF_KNOWN_BREAKPOINT,
 };
 
 struct help_example {

@@ -1,8 +1,8 @@
 #![cfg(not(target_family = "wasm"))]
 
-use crate::ffi::{ExtError, ExtProgress, FindLogResult, Status};
+use crate::ffi::{ExtError, ExtProgress, FindLogResult, FindLogResultJson, Status, VarPair};
 use cxx::UniquePtr;
-use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate};
+use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, VariablePair};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
@@ -122,10 +122,21 @@ mod ffi {
         pub messages: Vec<Message>,
     }
 
-    struct FindLogResult {
+    struct FindLogResultJson {
         pub src: String,
         pub pattern: String,
         pub variables: String,
+    }
+
+    struct VarPair {
+        pub expr: String,
+        pub value: String,
+    }
+
+    struct FindLogResult {
+        pub src: String,
+        pub pattern: String,
+        pub variables: Vec<VarPair>,
     }
 
     extern "Rust" {
@@ -138,6 +149,11 @@ mod ffi {
         fn get_status() -> ExtProgress;
 
         fn find_log_statement(file: &str, line: u32, body: &str) -> UniquePtr<FindLogResult>;
+        fn find_log_statement_json(
+            file: &str,
+            line: u32,
+            body: &str,
+        ) -> UniquePtr<FindLogResultJson>;
     }
 }
 
@@ -281,6 +297,38 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
             name: src_ref.name,
         };
         UniquePtr::new(FindLogResult {
+            src: serde_json::to_string(&src_details).unwrap(),
+            pattern: src_ref.pattern,
+            variables: variables
+                .into_iter()
+                .map(|VariablePair{expr, value}| VarPair { expr, value })
+                .collect(),
+        })
+    } else {
+        UniquePtr::null()
+    }
+}
+
+fn find_log_statement_json(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogResultJson> {
+    let log_matcher = LOG_MATCHER.lock().unwrap();
+    let log_ref = LogRef::from_parsed(
+        if file.is_empty() { None } else { Some(file) },
+        if file.is_empty() { None } else { Some(lineno) },
+        body,
+    );
+
+    if let Some(LogMapping {
+                    variables,
+                    src_ref: Some(src_ref),
+                    ..
+                }) = log_matcher.match_log_statement(&log_ref)
+    {
+        let src_details = SourceDetails {
+            file: src_ref.source_path,
+            line: src_ref.line_no,
+            name: src_ref.name,
+        };
+        UniquePtr::new(FindLogResultJson {
             src: serde_json::to_string(&src_details).unwrap(),
             pattern: src_ref.pattern,
             variables: serde_json::to_string(&variables).unwrap(),

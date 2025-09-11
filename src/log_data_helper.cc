@@ -29,13 +29,21 @@
  * @file log_data_helper.cc
  */
 
+#include <memory>
+
 #include "log_data_helper.hh"
 
 #include "config.h"
+#include "lnav_util.hh"
 #include "logfile.hh"
 #include "pugixml/pugixml.hpp"
+#include "scn/scan.h"
 #include "sql_util.hh"
 #include "xml_util.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
 
 void
 log_data_helper::clear()
@@ -52,7 +60,7 @@ log_data_helper::clear()
 }
 
 bool
-log_data_helper::parse_line(content_line_t line, bool allow_middle)
+log_data_helper::load_line(content_line_t line, bool allow_middle)
 {
     auto retval = false;
 
@@ -76,7 +84,6 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_line_attrs.clear();
     } else {
         auto format = this->ldh_file->get_format();
-        line_range body;
         auto& sa = this->ldh_line_attrs;
 
         this->ldh_line_attrs.clear();
@@ -88,32 +95,9 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
                          sa,
                          this->ldh_line_values);
 
-        body = find_string_attr_range(sa, &SA_BODY);
-        if (body.lr_start == -1) {
-            body.lr_start = this->ldh_line_values.lvv_sbr.length();
-            body.lr_end = this->ldh_line_values.lvv_sbr.length();
-        }
-        this->ldh_scanner = std::make_unique<data_scanner>(
-            this->ldh_line_values.lvv_sbr.to_string_fragment().sub_range(
-                body.lr_start, body.lr_end));
-        this->ldh_parser
-            = std::make_unique<data_parser>(this->ldh_scanner.get());
-        this->ldh_msg_format.clear();
-        this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
-        if (body.length() < 128 * 1024) {
-            this->ldh_parser->parse();
-        }
-        this->ldh_namer
-            = std::make_unique<column_namer>(column_namer::language::SQL);
         this->ldh_extra_json.clear();
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
-
-        for (const auto& lv : this->ldh_line_values.lvv_values) {
-            this->ldh_namer->cn_builtin_names.emplace_back(
-                lv.lv_meta.lvm_name.get());
-        }
-
         for (auto& ldh_line_value : this->ldh_line_values.lvv_values) {
             if (ldh_line_value.lv_meta.lvm_name == format->lf_timestamp_field) {
                 continue;
@@ -199,6 +183,71 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
     }
 
     return retval;
+}
+
+void
+log_data_helper::parse_body()
+{
+    if (!this->ldh_line->is_message()) {
+        return;
+    }
+
+    auto& sbr = this->ldh_line_values.lvv_sbr;
+    auto& sa = this->ldh_line_attrs;
+    auto body = find_string_attr_range(sa, &SA_BODY);
+    if (body.lr_start == -1) {
+        body.lr_start = this->ldh_line_values.lvv_sbr.length();
+        body.lr_end = this->ldh_line_values.lvv_sbr.length();
+    }
+    auto body_sf = sbr.to_string_fragment(body);
+#ifdef HAVE_RUST_DEPS
+    auto file_rust_str = rust::Str();
+    auto lineno = 0UL;
+    auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
+    auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
+    if (src_file.is_valid()) {
+        auto src_file_sf = sbr.to_string_fragment(src_file);
+        file_rust_str = rust::Str(src_file_sf.data(), src_file_sf.length());
+    }
+    auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
+    if (src_line.is_valid()) {
+        auto src_line_sf = sbr.to_string_fragment(src_line);
+        auto scan_res
+            = scn::scan_int<decltype(lineno)>(src_line_sf.to_string_view());
+        if (scan_res) {
+            lineno = scan_res->value();
+        }
+    }
+    this->ldh_src_ref = std::nullopt;
+    this->ldh_src_vars.clear();
+    auto find_res
+        = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
+    if (find_res != nullptr) {
+        auto from_res
+            = lnav::from_json<lnav::src_ref>((std::string) find_res->src);
+        this->ldh_src_ref = from_res.unwrap();
+        for (const auto& [expr, value] : find_res->variables) {
+            this->ldh_src_vars.emplace_back((std::string) expr,
+                                            (std::string) value);
+        }
+    } else
+#endif
+    {
+        this->ldh_scanner = std::make_unique<data_scanner>(body_sf);
+        this->ldh_parser
+            = std::make_unique<data_parser>(this->ldh_scanner.get());
+        this->ldh_msg_format.clear();
+        this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
+        if (body.length() < 128 * 1024) {
+            this->ldh_parser->parse();
+        }
+        this->ldh_namer
+            = std::make_unique<column_namer>(column_namer::language::SQL);
+        for (const auto& lv : this->ldh_line_values.lvv_values) {
+            this->ldh_namer->cn_builtin_names.emplace_back(
+                lv.lv_meta.lvm_name.get());
+        }
+    }
 }
 
 int

@@ -27,8 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <optional>
 #include <thread>
+#include <vector>
 
 #include "external_editor.hh"
 
@@ -42,49 +44,99 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"
+#include "base/time_util.hh"
 #include "external_editor.cfg.hh"
 #include "fmt/format.h"
 #include "shlex.hh"
 
 namespace lnav::external_editor {
 
+static time64_t
+get_config_dir_mtime(const std::filesystem::path& path,
+                     const std::filesystem::path& config_dir)
+{
+    if (config_dir.empty()) {
+        return 0;
+    }
+
+    auto parent = path.parent_path();
+    std::error_code ec;
+
+    while (!parent.empty()) {
+        auto config_path = parent / config_dir;
+        auto mtime = std::filesystem::last_write_time(config_path, ec);
+        if (!ec) {
+            auto retval = mtime.time_since_epoch().count();
+
+            log_debug("  found editor config dir: %s (%lld)",
+                      config_path.c_str(),
+                      retval);
+            return retval;
+        }
+        auto new_parent = parent.parent_path();
+        if (new_parent == parent) {
+            return 0;
+        }
+        parent = new_parent;
+    }
+    return 0;
+}
+
 static std::optional<impl>
-get_impl()
+get_impl(const std::filesystem::path& path)
 {
     const auto& cfg = injector::get<const config&>();
+    std::vector<std::tuple<time64_t, bool, impl>> candidates;
 
     log_debug("editor impl count: %d", cfg.c_impls.size());
-    for (const auto& pair : cfg.c_impls) {
+    for (const auto& [name, impl] : cfg.c_impls) {
         const auto full_cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"),
-                                          pair.second.i_test_command);
+                                          impl.i_test_command);
 
-        log_debug("testing editor impl %s using: %s",
-                  pair.first.c_str(),
+        log_debug(" testing editor impl %s using: %s",
+                  name.c_str(),
                   full_cmd.c_str());
         if (system(full_cmd.c_str()) == 0) {
-            log_info("detected editor: %s", pair.first.c_str());
-            return pair.second;
+            log_info("  detected editor: %s", name.c_str());
+            auto prefers = impl.i_prefers.pp_value
+                ? impl.i_prefers.pp_value->find_in(path.string())
+                      .ignore_error()
+                      .has_value()
+                : false;
+            candidates.emplace_back(
+                get_config_dir_mtime(path, impl.i_config_dir), prefers, impl);
         }
     }
-    if (cfg.c_impls.empty()) {
-        log_error("no external editor implementations given!");
+
+    std::stable_sort(candidates.begin(),
+                     candidates.end(),
+                     [](const auto& lhs, const auto& rhs) {
+                         const auto& [lmtime, lprefers, limpl] = lhs;
+                         const auto& [rmtime, rprefers, rimpl] = rhs;
+
+                         return lmtime > rmtime ||
+                             (lmtime == rmtime && lprefers);
+                     });
+
+    if (candidates.empty()) {
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    return std::get<2>(candidates.front());
 }
 
 Result<void, std::string>
-open(std::filesystem::path p)
+open(std::filesystem::path p, uint32_t line, uint32_t col)
 {
-    static const auto IMPL = get_impl();
+    const auto impl = get_impl(p);
 
-    if (!IMPL) {
+    if (!impl) {
         const static std::string MSG = "no external editor found";
 
         return Err(MSG);
     }
 
-    log_info("external editor command: %s", IMPL->i_command.c_str());
+    log_info("external editor command: %s", impl->i_command.c_str());
 
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child_pid_res = lnav::pid::from_fork();
@@ -102,8 +154,12 @@ open(std::filesystem::path p)
             fd.copy_to(STDOUT_FILENO);
         });
         setenv("FILE_PATH", p.c_str(), 1);
+        auto line_str = fmt::to_string(line);
+        setenv("LINE", line_str.c_str(), 1);
+        auto col_str = fmt::to_string(col);
+        setenv("COL", col_str.c_str(), 1);
 
-        execlp("sh", "sh", "-c", IMPL->i_command.c_str(), nullptr);
+        execlp("sh", "sh", "-c", impl->i_command.c_str(), nullptr);
         _exit(EXIT_FAILURE);
     }
     log_debug("started external editor, pid: %d", child_pid.in());

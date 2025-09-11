@@ -30,18 +30,24 @@
 #ifndef lnav_external_editor_cfg_hh
 #define lnav_external_editor_cfg_hh
 
+#include <filesystem>
 #include <map>
 #include <string>
+
+#include "pcrepp/pcre2pp.hh"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav::external_editor {
 
 struct impl {
-  std::string i_test_command;
-  std::string i_command;
+    std::string i_test_command;
+    std::string i_command;
+    std::filesystem::path i_config_dir;
+    factory_container<lnav::pcre2pp::code> i_prefers;
 };
 
 struct config {
-  std::map<std::string, impl> c_impls;
+    std::map<std::string, impl> c_impls;
 };
 
 }  // namespace lnav::external_editor

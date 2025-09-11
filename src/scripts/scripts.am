@@ -7,6 +7,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/journald-url-handler.lnav \
     $(srcdir)/scripts/lnav-copy-text.lnav \
     $(srcdir)/scripts/lnav-link-callback.lnav \
+    $(srcdir)/scripts/lnav-moveto-breakpoint.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
     $(srcdir)/scripts/partition-by-boot.lnav \
     $(srcdir)/scripts/pg-annotate-errors.lnav \

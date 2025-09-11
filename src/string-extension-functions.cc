@@ -859,7 +859,7 @@ auto_mem<char>
 sql_unparse_url(string_fragment in)
 {
     static auto* CURL_HANDLE = get_curl_easy();
-    static intern_string_t SRC = intern_string::lookup("arg");
+    static const intern_string_t SRC = intern_string::lookup("arg");
 
     auto parse_res = get_url_parts_handlers().parser_for(SRC).of(in);
     if (parse_res.isErr()) {

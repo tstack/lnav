@@ -470,10 +470,13 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
                     log_error("sqlite3_step error code: %d", retcode);
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
-                                  .with_context_snippets(ec.ec_source)
-                                  .remove_internal_snippets()
                                   .with_note(bound_note)
                                   .move();
+
+                    if (!ec.get_provenance<exec_context::keyboard_input>()) {
+                        um.with_context_snippets(ec.ec_source)
+                            .remove_internal_snippets();
+                    }
 
                     return Err(um);
                 }
@@ -1280,7 +1283,7 @@ exec_context::add_error_context(lnav::console::user_message& um)
             break;
     }
 
-    if (um.um_snippets.empty()) {
+    if (!this->get_provenance<keyboard_input>() && um.um_snippets.empty()) {
         um.with_snippets(this->ec_source);
         um.remove_internal_snippets();
     }

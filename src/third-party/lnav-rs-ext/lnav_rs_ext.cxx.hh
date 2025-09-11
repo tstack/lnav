@@ -766,6 +766,8 @@ namespace lnav_rs_ext {
   enum class MessageKind : ::std::uint8_t;
   struct Message;
   struct CompileResult2;
+  struct FindLogResultJson;
+  struct VarPair;
   struct FindLogResult;
 }
 
@@ -855,12 +857,33 @@ struct CompileResult2 final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
 
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResultJson
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResultJson
+struct FindLogResultJson final {
+  ::rust::String src;
+  ::rust::String pattern;
+  ::rust::String variables;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResultJson
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$VarPair
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$VarPair
+struct VarPair final {
+  ::rust::String expr;
+  ::rust::String value;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$VarPair
+
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 struct FindLogResult final {
   ::rust::String src;
   ::rust::String pattern;
-  ::rust::String variables;
+  ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -875,4 +898,6 @@ void discover_srcs() noexcept;
 ::lnav_rs_ext::ExtProgress get_status() noexcept;
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
+
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
 } // namespace lnav_rs_ext

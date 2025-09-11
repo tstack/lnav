@@ -279,6 +279,21 @@
                                             "examples": [
                                                 "code -"
                                             ]
+                                        },
+                                        "config-dir": {
+                                            "title": "/tuning/external-editor/impls/<editor_impl_name>/config-dir",
+                                            "description": "The name of the directory where editor configuration is stored",
+                                            "type": "string",
+                                            "examples": [
+                                                ".idea"
+                                            ]
+                                        },
+                                        "prefers": {
+                                            "title": "/tuning/external-editor/impls/<editor_impl_name>/prefers",
+                                            "type": "string",
+                                            "examples": [
+                                                "^.*(?:\\.cpp)$"
+                                            ]
                                         }
                                     },
                                     "additionalProperties": false

@@ -129,6 +129,15 @@ struct shared_buffer_ref {
             this->sb_data, (int) offset, (int) (offset + len)};
     }
 
+    string_fragment to_string_fragment(const line_range& lr) const
+    {
+        if (!lr.is_valid()) {
+            return string_fragment::invalid();
+        }
+
+        return this->to_string_fragment(lr.lr_start, lr.length());
+    }
+
     string_fragment to_string_fragment() const
     {
         return string_fragment::from_bytes(this->sb_data, this->length());

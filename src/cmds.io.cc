@@ -27,8 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <regex>
-
 #include <fnmatch.h>
 #include <glob.h>
 
@@ -75,9 +73,9 @@ csv_needs_quoting(const std::string& str)
 static std::string
 csv_quote_string(const std::string& str)
 {
-    static const std::regex csv_column_quoter("\"");
+    static const auto csv_column_quoter = lnav::pcre2pp::code::from_const("\"");
 
-    std::string retval = std::regex_replace(str, csv_column_quoter, "\"\"");
+    auto retval = csv_column_quoter.replace(str, "\"\"");
 
     retval.insert(0, 1, '\"');
     retval.append(1, '\"');
@@ -1400,7 +1398,7 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     auto split_args = split_args_res.unwrap()
         | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
-    for (auto fn : split_args) {
+    for (const auto& fn : split_args) {
         auto open_res = lnav::external_opener::for_href(fn);
         if (open_res.isErr()) {
             auto um = lnav::console::user_message::error(
@@ -1562,7 +1560,8 @@ com_pipe_to(exec_context& ec,
         log_data_helper ldh(lnav_data.ld_log_source);
         char tmp_str[64];
 
-        ldh.parse_line(ec.ec_top_line, true);
+        ldh.load_line(ec.ec_top_line, true);
+        ldh.parse_body();
         auto format = ldh.ldh_file->get_format();
         auto source_path = format->get_source_path();
         path_v.insert(path_v.end(), source_path.begin(), source_path.end());

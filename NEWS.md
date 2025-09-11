@@ -6,6 +6,34 @@ Features:
   `src-file-field` and `src-line-field` properties.  These
   fields can then be accessed in the SQL vtables as
   `log_src_file` and `log_src_line`, respectively.
+* The `:xopen` command will now open text files in an
+  external editor.  To open the file at a particular
+  line/column, add a URL fragment of the form
+  `L<line>C<column>`.
+* When opening the contents of the prompt in an external
+  editor (`CTRL+O`), the cursor position will be preserved,
+  if possible.
+* The `external-editor` configuration has been expanded
+  with extra properties to help lnav choose the right one
+  to use:
+  - The `config-dir` property specifies the name of the
+    directory that stores the editor's configuration in a
+    source tree.  If the directory is found in an ancestor
+    of the path to be opened, and it has the most recent
+    modified time, the associated editor will be used.
+  - The `prefers` property is a regular expression that
+    will be tested against the full path to be opened.
+    If matched, that editor will be chosen.
+* The `:breakpoint`, `:toggle-breakpoint`, and
+  `:clear-breakpoints` commands have been added to support
+  setting/clearing breakpoints for log messages.  The
+  `CTRL-B` shortcut toggles a breakpoint on the focused
+  line in the LOG view.  Also, if the log format specifies
+  source file/line fields, the first character of the
+  source file will be underlined and can be clicked to
+  toggle a breakpoint.  Once breakpoints have been added,
+  you can press `F7`/`F8` to move to the previous/next log
+  message that matches a breakpoint.
 
 ## lnav v0.13.1
 

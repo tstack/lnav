@@ -321,6 +321,7 @@ noinst_HEADERS = \
 	logfile_fwd.hh \
 	logfile_sub_source.hh \
 	logfile_sub_source.cfg.hh \
+	logline_window.hh \
 	mapbox/recursive_wrapper.hpp \
 	mapbox/variant.hpp \
 	mapbox/variant_io.hpp \
@@ -365,6 +366,7 @@ noinst_HEADERS = \
 	sql_help.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
+	src_ref.hh \
 	static_file_vtab.hh \
 	styling.hh \
 	statusview_curses.hh \
@@ -460,6 +462,7 @@ libdiag_a_SOURCES = \
 	breadcrumb_curses.cc \
 	cmd.parser.cc \
 	cmds.bookmarks.cc \
+	cmds.breakpoints.cc \
 	cmds.display.cc \
 	cmds.filtering.cc \
 	cmds.io.cc \
@@ -515,6 +518,7 @@ libdiag_a_SOURCES = \
 	log_search_table.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
+	logline_window.cc \
 	md2attr_line.cc \
 	md4cpp.cc \
 	msg.text.cc \
@@ -556,6 +560,7 @@ libdiag_a_SOURCES = \
 	sql.formatter.cc \
 	sql_commands.cc \
 	sql_util.cc \
+	src_ref.cc \
 	state-extension-functions.cc \
 	sysclip.cc \
 	textinput_curses.cc \

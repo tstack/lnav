@@ -99,6 +99,27 @@
 ----
 
 
+.. _breakpoint:
+
+:breakpoint *point*
+^^^^^^^^^^^^^^^^^^^
+
+  Set a breakpoint for the given [<format>:]<file>:<line> tuples or the current line
+
+  **Parameters**
+    * **point** --- The file and line number of the breakpoint.  If the format is different from the currently focused one, the format name should be used as the prefix
+
+  **Examples**
+    To set a breakpoint for a log message at foo.cc:32:
+
+    .. code-block::  lnav
+
+      :breakpoint foo.cc:32
+
+
+----
+
+
 .. _cd:
 
 :cd *dir*
@@ -121,6 +142,27 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
   Clear the adjusted time for the focused line in the view
+
+
+----
+
+
+.. _clear_breakpoint:
+
+:clear-breakpoint *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Clear the breakpoints that match the given glob pattern
+
+  **Parameters**
+    * **pattern** --- The glob pattern to use when matching the breakpoint definition of the format <format>:<file>:<line>
+
+  **Examples**
+    To clear all breakpoints:
+
+    .. code-block::  lnav
+
+      :clear-breakpoint *
 
 
 ----
@@ -1498,6 +1540,17 @@
 
   **See Also**
     :ref:`annotate`, :ref:`comment`, :ref:`delete_tags`, :ref:`untag`
+
+----
+
+
+.. _toggle_breakpoint:
+
+:toggle-breakpoint
+^^^^^^^^^^^^^^^^^^
+
+  Toggle a breakpoint for the focused line in the LOG view
+
 
 ----
 

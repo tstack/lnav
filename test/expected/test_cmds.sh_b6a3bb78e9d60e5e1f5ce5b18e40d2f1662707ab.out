@@ -262,6 +262,9 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
              the LOG view, this moves through partitions.  In  
              other views, it moves through sections of         
              documents.                                        
+[1m F7/F8       Move to the previous/next breakpoint in the LOG   [0m
+[1m             view.                                             [0m
+[1m CTRL+b      Toggle a breakpoint for the focused log line      [0m
 
 [4mChronological Navigation[0m
 
@@ -767,6 +770,21 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mbreakpoint[0m[4m [0m[4mpoint[0m
+══════════════════════════════════════════════════════════════════════
+  Set a breakpoint for the given [<format>:]<file>:<line> tuples or
+  the current line
+[4mParameter[0m
+  [4mpoint[0m   The file and line number of the breakpoint.  If
+          the format is different from the currently focused one, the
+          format name should be used as the prefix
+
+[4mExample[0m
+#1 To set a breakpoint for a log message at foo.cc:32:
+   [37m[40m:[0m[1m[36m[40mbreakpoint[0m[37m[40m foo.cc:32                             [0m
+   
+
+
 [4m:[0m[1m[4mcd[0m[4m [0m[4mdir[0m
 ══════════════════════════════════════════════════════════════════════
   Change the current directory
@@ -780,6 +798,19 @@ For support questions, email:
 [4m:[0m[1m[4mclear-adjusted-log-time[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the adjusted time for the focused line in the view
+
+
+[4m:[0m[1m[4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Clear the breakpoints that match the given glob pattern
+[4mParameter[0m
+  [4mpattern[0m   The glob pattern to use when matching the
+            breakpoint definition of the format <format>:<file>:<line>
+
+[4mExample[0m
+#1 To clear all breakpoints:
+   [37m[40m:[0m[1m[36m[40mclear-breakpoint[0m[37m[40m *                               [0m
+   
 
 
 [4m:[0m[1m[4mclear-comment[0m
@@ -1670,6 +1701,11 @@ For support questions, email:
 #1 To add the tags '#BUG123' and '#needs-review' to the focused line:
    [37m[40m:[0m[1m[36m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
    
+
+
+[4m:[0m[1m[4mtoggle-breakpoint[0m
+══════════════════════════════════════════════════════════════════════
+  Toggle a breakpoint for the focused line in the LOG view
 
 
 [4m:[0m[1m[4mtoggle-filtering[0m

@@ -14,13 +14,24 @@
         "keymap_def_prev_section": "Press ${ansi_bold}{${ansi_norm} to move to the previous section in the view",
         "keymap_def_next_section": "Press ${ansi_bold}}${ansi_norm} to move to the next section in the view",
         "keymap_def_next_mark": "Press ${ansi_bold}c${ansi_norm} to copy marked lines to the clipboard; press ${ansi_bold}C${ansi_norm} to clear marked lines",
-        "keymap_def_time_offset": "Press ${ansi_bold}s${ansi_norm}/${ansi_bold}S${ansi_norm} to move forward/backward through slow downs"
+        "keymap_def_time_offset": "Press ${ansi_bold}s${ansi_norm}/${ansi_bold}S${ansi_norm} to move forward/backward through slow downs",
+        "keymap_def_breakpoint": "Press ${ansi_bold}F7${ansi_norm}/${ansi_bold}F8${ansi_norm} to move to the previous/next breakpoint"
     },
     "ui": {
         "keymap-defs": {
             "default": {
                 "f1": {
                     "command": ":help"
+                },
+                "f7": {
+                    "command": "|lnav-moveto-breakpoint prev"
+                },
+                "f8": {
+                    "command": "|lnav-moveto-breakpoint next"
+                },
+                "x02": {
+                    "command": ":toggle-breakpoint",
+                    "alt-msg": "${keymap_def_breakpoint}"
                 },
                 "x31": {
                     "command": ":goto next 10 minutes after the hour"
