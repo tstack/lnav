@@ -2,7 +2,9 @@ name: ci-build
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - '*-hotfix'
     paths-ignore:
       - docs
       - README.md

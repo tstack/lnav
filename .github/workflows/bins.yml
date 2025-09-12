@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - '*-hotfix'
     paths-ignore:
       - 'docs/**'
       - 'test/**'
