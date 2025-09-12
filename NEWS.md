@@ -1,4 +1,9 @@
 
+## lnav v0.13.1a
+
+Bug Fixes:
+* Kitty keyboard handling was broken at the last minute.
+
 ## lnav v0.13.1
 
 Features:

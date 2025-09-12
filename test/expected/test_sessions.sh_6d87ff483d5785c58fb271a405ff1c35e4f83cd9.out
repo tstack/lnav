@@ -3,8 +3,8 @@
 # '|/path/to/this/file' in lnav to execute this file and
 # restore the state of the session.
 
-;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.13.1' || ' or later')
-   WHERE lnav_version() < '0.13.1' COLLATE naturalcase
+;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.13.1a' || ' or later')
+   WHERE lnav_version() < '0.13.1a' COLLATE naturalcase
 
 # The files loaded into the session were:
 

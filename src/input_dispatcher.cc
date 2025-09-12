@@ -47,14 +47,16 @@ using namespace ww898;
 
 template<typename A>
 static void
-to_key_seq(A& dst, const char* src)
+to_key_seq(A& dst, uint32_t* src)
 {
     dst[0] = '\0';
     for (size_t lpc = 0; src[lpc]; lpc++) {
-        snprintf(dst.data() + strlen(dst.data()),
-                 dst.size() - strlen(dst.data()),
-                 "x%02x",
-                 src[lpc] & 0xff);
+        ww898::utf::utf8::write(src[lpc], [&dst](uint8_t ch) {
+            snprintf(dst.data() + strlen(dst.data()),
+                     dst.size() - strlen(dst.data()),
+                     "x%02x",
+                     ch & 0xff);
+        });
     }
 }
 
@@ -111,7 +113,7 @@ input_dispatcher::new_input(const struct timeval& current_time,
         log_debug("nckey %s", keyseq.data());
         handled = this->id_key_handler(nc, ch, keyseq.data());
     } else {
-        to_key_seq(keyseq, ch.utf8);
+        to_key_seq(keyseq, ch.eff_text);
         handled = this->id_key_handler(nc, ch, keyseq.data());
     }
 

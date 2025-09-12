@@ -1,4 +1,4 @@
-AC_INIT([lnav],[0.13.1],[lnav@googlegroups.com],[lnav],[http://lnav.org])
+AC_INIT([lnav],[0.13.1a],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -109,7 +109,7 @@ AS_CASE(["$host_os"],
     )
 )
 
-AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h uniwidth.h sys/sysctl.h)
+AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h uniwidth.h sys/sysctl.h windows.h)
 
 AS_IF([test "x$ac_cv_header_uniwidth_h" != "xyes"], [
   AC_MSG_ERROR([uniwidth.h header from libunistring was not found])dnl
@@ -290,7 +290,7 @@ AM_CONDITIONAL(HAVE_CARGO, test x"$CARGO_CMD" != x"")
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
 AM_CONDITIONAL([CROSS_COMPILING], [ test x"$cross_compiling" != x"no" ])
 AM_CONDITIONAL(HAVE_CHECK_JSONSCHEMA, test x"$CHECK_JSONSCHEMA" != x"")
-AM_CONDITIONAL(HAVE_WINDRES, test x"$WINDRES" != x"")
+AM_CONDITIONAL(HAVE_WINDRES, test x"$WINDRES" != x"" && test "x$ac_cv_header_windows_h" != x"no")
 
 AS_VAR_SET(USER_CXXFLAGS, ["$CXXFLAGS"])
 AC_SUBST(USER_CXXFLAGS)
