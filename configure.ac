@@ -134,6 +134,16 @@ AS_IF([test "x$with_system_doctest" != "xyes"], [
     CPPFLAGS="-I\$(top_srcdir)/src/third-party/doctest-root $CPPFLAGS"
 ])
 
+AC_ARG_WITH([cargo],
+    AS_HELP_STRING(
+        [--without-cargo],
+        [Skip the Rust extensions]
+    ),
+    AS_IF([test "x$with_cargo" = "xno"], [
+        CARGO_CMD=""
+    ]),
+    []
+)
 
 LNAV_WITH_JEMALLOC
 

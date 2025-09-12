@@ -474,6 +474,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(std::string());
 }
 
+#ifdef HAVE_RUST_DEPS
 namespace lnav_rs_ext {
 
 ::rust::String
@@ -529,12 +530,14 @@ execute_external_command(::rust::String rs_src, ::rust::String rs_script)
 }
 
 }  // namespace lnav_rs_ext
+#endif
 
 static Result<std::string, lnav::console::user_message>
 com_external_access(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
 {
+#ifdef HAVE_RUST_DEPS
     if (args.size() != 3) {
         return ec.make_error("Expecting port number and API key");
     }
@@ -550,7 +553,8 @@ com_external_access(exec_context& ec,
 
     auto scan_res = scn::scan_int<uint16_t>(args[1]);
     if (!scan_res || !scan_res.value().range().empty()) {
-        return ec.make_error(FMT_STRING("port value is not a number: {}"), args[1]);
+        return ec.make_error(FMT_STRING("port value is not a number: {}"),
+                             args[1]);
     }
     auto port = scan_res->value();
 
@@ -567,6 +571,9 @@ com_external_access(exec_context& ec,
     setenv("LNAV_EXTERNAL_URL", url.c_str(), 1);
 
     return Ok(retval);
+#else
+    return ec.make_error("lnav was compiled without Rust extensions");
+#endif
 }
 
 static readline_context::command_t SCRIPTING_COMMANDS[] = {

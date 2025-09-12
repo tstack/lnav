@@ -315,8 +315,8 @@ com_add_src_path(exec_context& ec,
     if (!ec.ec_dry_run) {
         lnav_rs_ext::discover_srcs();
     }
-#endif
     return Ok(retval);
+#endif
 }
 
 static Result<std::string, lnav::console::user_message>

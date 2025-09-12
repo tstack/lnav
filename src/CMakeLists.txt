@@ -834,6 +834,7 @@ target_compile_options(diag PRIVATE ${CURSES_CFLAGS})
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/target/release/liblnav_rs_ext.a
         COMMAND env CARGO_TARGET_DIR=target cargo build --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
+        DEPENDS third-party/lnav-rs-ext/src/lib.rs third-party/lnav-rs-ext/src/ext_access.rs
 )
 add_custom_target(
         lnav_rs_ext

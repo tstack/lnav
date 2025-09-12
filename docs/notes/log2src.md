@@ -70,3 +70,8 @@ Steps:
 1. Show that the editor has moved to the source code
    containing the breakpoint and the variables passed to
    the log statement are shown.
+
+Implementation tasks:
+
+- [X] Make lnav remotely-controllable
+- [X] Add support for breakpoints

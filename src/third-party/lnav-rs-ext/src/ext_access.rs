@@ -14,6 +14,28 @@ use std::time::Duration;
 static SERVER: LazyLock<Mutex<Option<(JoinHandle<()>, Sender<()>)>>> =
     LazyLock::new(|| None.into());
 
+static LANDING: &'static str = r#"
+<html>
+<head>
+<title>The Logfile Navigator</title>
+</head>
+<body>
+<h1>lnav</h1>
+
+The Logfile Navigator, <b>lnav</b> for short, is a log file viewer for the terminal.
+
+This server provides remote access to an lnav instance.
+
+<ul>
+<li><b>GET</b> /version - Get a JSON object with version information for this instance.</li>
+<li><b>POST</b> /exec - Execute a text/x-lnav-script and return the result.</li>
+</ul>
+
+See <a href="https://lnav.org">lnav.org</a> for more information.
+</body>
+</html>
+"#;
+
 fn do_exec(request: &Request) -> Response {
     let body = try_or_400!(rouille::input::plain_text_body(request));
 
@@ -49,7 +71,7 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
 
         router!(request,
             (GET) (/) => {
-                Response::text("Hello, World!")
+                Response::html(LANDING)
             },
 
             (GET) (/version) => {
