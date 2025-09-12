@@ -34,6 +34,9 @@ Features:
   toggle a breakpoint.  Once breakpoints have been added,
   you can press `F7`/`F8` to move to the previous/next log
   message that matches a breakpoint.
+* The `:external-access` command has been added to open a
+  localhost HTTP port that can be used to remotely control
+  lnav.
 
 ## lnav v0.13.1
 

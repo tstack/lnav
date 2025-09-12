@@ -1,3 +1,4 @@
+#include "lnav_ffi.hh"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -448,6 +449,11 @@ struct unsafe_bitcopy_t final {
 };
 #endif // CXXBRIDGE1_RUST_BITCOPY_T
 
+#ifndef CXXBRIDGE1_RUST_BITCOPY
+#define CXXBRIDGE1_RUST_BITCOPY
+constexpr unsafe_bitcopy_t unsafe_bitcopy{};
+#endif // CXXBRIDGE1_RUST_BITCOPY
+
 #ifndef CXXBRIDGE1_RUST_VEC
 #define CXXBRIDGE1_RUST_VEC
 template <typename T>
@@ -788,6 +794,8 @@ namespace lnav_rs_ext {
   struct FindLogResultJson;
   struct VarPair;
   struct FindLogResult;
+  struct ExecResult;
+  struct StartExtResult;
 }
 
 namespace lnav_rs_ext {
@@ -908,7 +916,39 @@ struct FindLogResult final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
+struct ExecResult final {
+  ::rust::String status;
+  ::rust::String content_type;
+  ::std::int32_t content_fd;
+  ::rust::String error;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
+struct StartExtResult final {
+  ::std::uint16_t port;
+  ::rust::String error;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
+
 extern "C" {
+void lnav_rs_ext$cxxbridge1$version_info(::rust::String *return$) noexcept {
+  ::rust::String (*version_info$)() = ::lnav_rs_ext::version_info;
+  new (return$) ::rust::String(version_info$());
+}
+
+void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::lnav_rs_ext::ExecResult *return$) noexcept {
+  ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String) = ::lnav_rs_ext::execute_external_command;
+  new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd)));
+}
+
 void lnav_rs_ext$cxxbridge1$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
 
 ::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$add_src_root(::rust::String *path) noexcept;
@@ -920,6 +960,10 @@ void lnav_rs_ext$cxxbridge1$get_status(::lnav_rs_ext::ExtProgress *return$) noex
 ::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$find_log_statement(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
 
 ::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
+
+void lnav_rs_ext$cxxbridge1$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
+
+void lnav_rs_ext$cxxbridge1$stop_ext_access() noexcept;
 } // extern "C"
 
 ::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept {
@@ -948,6 +992,16 @@ void discover_srcs() noexcept {
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept {
   return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$find_log_statement_json(file, line, body));
+}
+
+::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {
+  ::rust::MaybeUninit<::lnav_rs_ext::StartExtResult> return$;
+  lnav_rs_ext$cxxbridge1$start_ext_access(port, &api_key, &return$.value);
+  return ::std::move(return$.value);
+}
+
+void stop_ext_access() noexcept {
+  lnav_rs_ext$cxxbridge1$stop_ext_access();
 }
 } // namespace lnav_rs_ext
 

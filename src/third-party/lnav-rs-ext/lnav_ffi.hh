@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,90 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "base/injector.hh"
-#include "bound_tags.hh"
-#include "config.h"
-#include "lnav.hh"
-#include "service_tags.hh"
-#include "spectro_source.hh"
+#include "rust/cxx.h"
 
-struct lnav_data_t lnav_data;
+namespace lnav_rs_ext {
 
-void
-rebuild_hist()
-{
-}
+struct ExecResult;
 
-bool
-setup_logline_table(exec_context& ec)
-{
-    return false;
-}
+::rust::String version_info();
 
-bool
-rescan_files(bool required)
-{
-    return false;
-}
+ExecResult execute_external_command(::rust::String, ::rust::String);
 
-void
-wait_for_children()
-{
-}
-
-size_t
-rebuild_indexes(std::optional<ui_clock::time_point> deadline)
-{
-    return 0;
-}
-
-void
-rebuild_indexes_repeatedly()
-{
-}
-
-void
-wait_for_pipers(std::optional<ui_clock::time_point>)
-{
-}
-
-readline_context::command_map_t lnav_commands;
-
-namespace injector {
-
-template<>
-void
-force_linking(last_relative_time_tag anno)
-{
-}
-
-template<>
-void
-force_linking(lnav_flags_tag anno)
-{
-}
-
-template<>
-void
-force_linking(services::curl_streamer_t anno)
-{
-}
-
-template<>
-void
-force_linking(services::remote_tailer_t anno)
-{
-}
-
-template<>
-void
-force_linking(services::main_t anno)
-{
-}
-}  // namespace injector
-
-bool
-update_active_files(file_collection& new_files)
-{
-    return false;
-}
+}  // namespace lnav_rs_ext

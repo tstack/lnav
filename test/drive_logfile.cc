@@ -191,9 +191,11 @@ main(int argc, char* argv[])
                 break;
             case MODE_LEVELS:
                 for (auto& iter : *lf) {
-                    log_level_t level = iter.get_level_and_flags();
-                    printf("%s 0x%x\n",
-                           level_names[level & ~LEVEL__FLAGS],
+                    auto level = iter.get_level_and_flags();
+                    auto level_sf = level_names[level & ~LEVEL__FLAGS];
+                    printf("%.*s 0x%x\n",
+                           level_sf.length(),
+                           level_sf.data(),
                            level & LEVEL__FLAGS);
                 }
                 break;

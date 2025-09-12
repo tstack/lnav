@@ -130,6 +130,16 @@ struct exec_context {
         return retval;
     }
 
+    void set_output_format(text_format_t tf)
+    {
+        if (!this->ec_output_stack.empty()
+            && this->ec_output_stack.back().od_format
+                == text_format_t::TF_UNKNOWN)
+        {
+            this->ec_output_stack.back().od_format = tf;
+        }
+    }
+
     void set_output(const std::string& name, FILE* file, int (*closer)(FILE*));
 
     void clear_output();

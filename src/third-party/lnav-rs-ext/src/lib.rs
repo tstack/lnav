@@ -1,8 +1,13 @@
 #![cfg(not(target_family = "wasm"))]
 
-use crate::ffi::{ExtError, ExtProgress, FindLogResult, FindLogResultJson, Status, VarPair};
+mod ext_access;
+
+use crate::ext_access::{start_server, stop_server};
+use crate::ffi::{ExtError, ExtProgress, FindLogResult, FindLogResultJson, StartExtResult, Status, VarPair};
 use cxx::UniquePtr;
-use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, VariablePair};
+use log2src::{
+    LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, VariablePair,
+};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
@@ -139,6 +144,26 @@ mod ffi {
         pub variables: Vec<VarPair>,
     }
 
+    struct ExecResult {
+        pub status: String,
+        pub content_type: String,
+        pub content_fd: i32,
+        pub error: String,
+    }
+
+    unsafe extern "C++" {
+        include!("lnav_ffi.hh");
+
+        fn version_info() -> String;
+
+        fn execute_external_command(src: String, cmd: String) -> ExecResult;
+    }
+
+    struct StartExtResult {
+        port: u16,
+        error: String,
+    }
+
     extern "Rust" {
         fn compile_tree(tree: &Vec<SourceTreeElement>, options: &Options) -> CompileResult2;
 
@@ -154,6 +179,10 @@ mod ffi {
             line: u32,
             body: &str,
         ) -> UniquePtr<FindLogResultJson>;
+
+        fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
+
+        fn stop_ext_access();
     }
 }
 
@@ -226,19 +255,19 @@ fn compile_tree_int(
             .and_then(prqlc::pl_to_rq)
             .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
             .and_then(|rq| prqlc::rq_to_sql(rq, &options))?)
-        .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
+            .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
     })
-    .map_err(|p| {
-        ErrorMessages::from(ErrorMessage {
-            kind: prqlc::MessageKind::Error,
-            code: None,
-            reason: format!("internal error: {:#?}", p),
-            hints: vec![],
-            span: None,
-            display: None,
-            location: None,
-        })
-    })?
+        .map_err(|p| {
+            ErrorMessages::from(ErrorMessage {
+                kind: prqlc::MessageKind::Error,
+                code: None,
+                reason: format!("internal error: {:#?}", p),
+                hints: vec![],
+                span: None,
+                display: None,
+                location: None,
+            })
+        })?
 }
 
 pub fn compile_tree(
@@ -286,10 +315,10 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
     );
 
     if let Some(LogMapping {
-        variables,
-        src_ref: Some(src_ref),
-        ..
-    }) = log_matcher.match_log_statement(&log_ref)
+                    variables,
+                    src_ref: Some(src_ref),
+                    ..
+                }) = log_matcher.match_log_statement(&log_ref)
     {
         let src_details = SourceDetails {
             file: src_ref.source_path,
@@ -301,7 +330,7 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
             pattern: src_ref.pattern,
             variables: variables
                 .into_iter()
-                .map(|VariablePair{expr, value}| VarPair { expr, value })
+                .map(|VariablePair { expr, value }| VarPair { expr, value })
                 .collect(),
         })
     } else {
@@ -336,4 +365,15 @@ fn find_log_statement_json(file: &str, lineno: u32, body: &str) -> UniquePtr<Fin
     } else {
         UniquePtr::null()
     }
+}
+
+fn start_ext_access(port: u16, api_key: String) -> StartExtResult {
+    match start_server(port, api_key) {
+        Ok(port) => StartExtResult { port, error: String::new() },
+        Err(err) => StartExtResult { port: 0, error: err.to_string() },
+    }
+}
+
+fn stop_ext_access() {
+    stop_server();
 }

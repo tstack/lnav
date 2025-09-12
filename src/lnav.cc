@@ -153,6 +153,10 @@
 #include "url_loader.hh"
 #include "yajlpp/json_ptr.hh"
 
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
+
 #ifndef SYSCONFDIR
 #    define SYSCONFDIR "/usr/etc"
 #endif
@@ -165,19 +169,6 @@ static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static std::vector<std::future<void>> CLEANUP_TASKS;
-
-constexpr std::chrono::microseconds ZOOM_LEVELS[] = {
-    1s,
-    30s,
-    60s,
-    5min,
-    15min,
-    1h,
-    4h,
-    8h,
-    24h,
-    7 * 24h,
-};
 
 template<std::intmax_t N>
 class to_string_t {
@@ -208,19 +199,6 @@ public:
     }
 
     constexpr operator const char*() const { return buf; }
-};
-
-constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
-    "1-second"_frag,
-    "30-second"_frag,
-    "1-minute"_frag,
-    "5-minute"_frag,
-    "15-minute"_frag,
-    "1-hour"_frag,
-    "4-hour"_frag,
-    "8-hour"_frag,
-    "1-day"_frag,
-    "1-week"_frag,
 };
 
 static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {
@@ -2823,6 +2801,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         log_info("performing cleanup");
 
+#ifdef HAVE_RUST_DEPS
+        lnav_rs_ext::stop_ext_access();
+#endif
+
         {
             auto& dls = lnav_data.ld_db_row_source;
             size_t memory_usage = 0, total_size = 0, cached_chunks = 0;
@@ -3588,6 +3570,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     init_lnav_display_commands(lnav_commands);
     init_lnav_filtering_commands(lnav_commands);
     init_lnav_io_commands(lnav_commands);
+    init_lnav_metadata_commands(lnav_commands);
+    init_lnav_scripting_commands(lnav_commands);
 
     lnav_data.ld_looping = true;
     set_view_mode(ln_mode_t::PAGING);

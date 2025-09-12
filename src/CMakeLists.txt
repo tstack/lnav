@@ -12,7 +12,9 @@ check_include_file("util.h" HAVE_UTIL_H)
 check_include_file("execinfo.h" HAVE_EXECINFO_H)
 check_include_file("libproc.h" HAVE_LIBPROC_H)
 
-set(VCS_PACKAGE_STRING "lnav ${CMAKE_PROJECT_VERSION}")
+set(PACKAGE "${CMAKE_PROJECT_NAME}")
+set(PACKAGE_URL "${CMAKE_PROJECT_HOMEPAGE_URL}")
+set(VCS_PACKAGE_STRING "${CMAKE_PROJECT_NAME} ${CMAKE_PROJECT_VERSION}")
 set(PACKAGE_VERSION "${CMAKE_PROJECT_VERSION}")
 
 configure_file(config.cmake.h.in config.h)
@@ -494,6 +496,8 @@ add_library(
         cmds.display.cc
         cmds.filtering.cc
         cmds.io.cc
+        cmds.metadata.cc
+        cmds.scripting.cc
         collation-functions.cc
         column_namer.cc
         command_executor.cc

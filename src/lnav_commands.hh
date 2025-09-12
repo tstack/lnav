@@ -50,6 +50,10 @@ void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
 
 void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
 
+void init_lnav_metadata_commands(readline_context::command_map_t& cmd_map);
+
+void init_lnav_scripting_commands(readline_context::command_map_t& cmd_map);
+
 void init_lnav_filtering_commands(readline_context::command_map_t& cmd_map);
 
 std::string remaining_args(const std::string& cmdline,
@@ -64,5 +68,10 @@ std::optional<std::string> find_arg(std::vector<std::string>& args,
                                     const std::string& flag);
 
 bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks& vb);
+
+constexpr ssize_t ZOOM_COUNT = 10;
+extern const std::chrono::microseconds ZOOM_LEVELS[ZOOM_COUNT];
+
+extern const std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings;
 
 #endif

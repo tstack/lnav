@@ -502,9 +502,9 @@ run_test ./drive_logfile -v -f tcsh_history ${srcdir}/logfile_tcsh_history.0
 
 check_output "TCSH level interpreted incorrectly?" <<EOF
 info 0x0
+info 0x80
 info 0x0
-info 0x0
-info 0x0
+info 0x80
 EOF
 
 run_test ./drive_logfile -v -f access_log ${srcdir}/logfile_access_log.0

@@ -333,6 +333,8 @@ com_save_to(exec_context& ec,
     if (args[0] == "write-csv-to") {
         bool first = true;
 
+        ec.set_output_format(text_format_t::TF_CSV);
+
         for (auto& dls_header : dls.dls_headers) {
             if (!first) {
                 fprintf(outfile, ",");
@@ -501,6 +503,8 @@ com_save_to(exec_context& ec,
     } else if (args[0] == "write-json-to") {
         yajlpp_gen gen;
 
+        ec.set_output_format(text_format_t::TF_JSON);
+
         yajl_gen_config(gen, yajl_gen_beautify, 1);
         yajl_gen_config(gen, yajl_gen_print_callback, yajl_writer, outfile);
 
@@ -524,6 +528,8 @@ com_save_to(exec_context& ec,
             }
         }
     } else if (args[0] == "write-jsonlines-to") {
+        ec.set_output_format(text_format_t::TF_JSON);
+
         yajlpp_gen gen;
 
         yajl_gen_config(gen, yajl_gen_beautify, 0);

@@ -42,6 +42,7 @@
 #include "field_overlay_source.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
+#include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "logline_window.hh"
 #include "shlex.hh"

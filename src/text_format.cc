@@ -29,16 +29,22 @@
  * @file text_format.cc
  */
 
+#include <filesystem>
+#include <optional>
 #include <set>
+#include <string>
 
 #include "text_format.hh"
 
 #include "base/from_trait.hh"
+#include "base/intern_string.hh"
 #include "base/is_utf8.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
+#include "base/result.h"
 #include "config.h"
+#include "fmt/format.h"
 #include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"
 
@@ -63,6 +69,7 @@ constexpr string_fragment TEXT_FORMAT_STRINGS[text_format_count] = {
     "text/x-lnav-script"_frag,
     "text/x-rst"_frag,
     "text/ini"_frag,
+    "text/csv"_frag,
     "text/plain"_frag,
 };
 

@@ -145,7 +145,7 @@ $(srcdir)/third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc: $(srcdir)/third-party/lnav
 	(cd $(srcdir)/third-party/lnav-rs-ext/ && $(CXXBRIDGE) src/lib.rs) > $@
 endif
 
-$(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs $(srcdir)/third-party/lnav-rs-ext/src/ext_access.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
 	env CARGO_TARGET_DIR=third-party/lnav-rs-ext/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
@@ -231,6 +231,7 @@ noinst_HEADERS = \
     third-party/lnav-rs-ext/lnav_rs_ext.h \
     third-party/lnav-rs-ext/lnav_rs_ext.hpp \
     third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh \
+    third-party/lnav-rs-ext/rust/cxx.h \
     third-party/rapidyaml/ryml_all.hpp \
 	all_logs_vtab.hh \
 	archive_manager.hh \
@@ -466,6 +467,8 @@ libdiag_a_SOURCES = \
 	cmds.display.cc \
 	cmds.filtering.cc \
 	cmds.io.cc \
+	cmds.metadata.cc \
+	cmds.scripting.cc \
 	collation-functions.cc \
 	column_namer.cc \
 	command_executor.cc \
@@ -627,6 +630,7 @@ EXTRA_DIST = \
     third-party/lnav-rs-ext/Cargo.toml \
     third-party/lnav-rs-ext/cbindgen.toml \
     third-party/lnav-rs-ext/src/lib.rs \
+    third-party/lnav-rs-ext/src/ext_access.rs \
 	ptimec.cc
 
 CLEANFILES = \

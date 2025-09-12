@@ -34,6 +34,7 @@
 #include "bound_tags.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
+#include "lnav_commands.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_util.hh"
