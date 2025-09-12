@@ -178,7 +178,9 @@ ptime_b(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     // Ex: in fr_FR november is `nov.`. Parsing `nov. 29` as `%b %d` fails
     // if this fast path is taken as later we will attempt to parse `. 29`
     // as ` %d`.
-    if (off_inout + 3 < len && isspace(str[off_inout + 3])) {
+    if (off_inout + 3 < len
+        || (str[off_inout + 3] != '.' && !isalpha(str[off_inout + 3])))
+    {
         if (ptime_b_int(dst, str, off_inout)) {
             off_inout += 3;
             return true;

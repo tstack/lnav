@@ -75,6 +75,16 @@ TEST_CASE("date_time_scanner")
     lnav_config.lc_log_date_time.c_zoned_to_local = false;
 
     {
+        static const char* ts = "Mar-18 21:41:15";
+        exttm tm;
+        off_t off = 0;
+        ssize_t len = strlen(ts);
+
+        auto rc = ptime_fmt("%b-%d %H:%M:%S", &tm, ts, off, len);
+        CHECK(rc);
+    }
+
+    {
         const auto sf = string_fragment::from_const("2022-03-02T10:20:30+");
         timeval tv;
         exttm tm;
@@ -86,7 +96,8 @@ TEST_CASE("date_time_scanner")
     }
 
     {
-        const auto sf = string_fragment::from_const("2025-04-24T19:51:48.55604564Z");
+        const auto sf
+            = string_fragment::from_const("2025-04-24T19:51:48.55604564Z");
         timeval tv;
         exttm tm;
         date_time_scanner dts;
