@@ -228,6 +228,7 @@ dist_noinst_DATA = \
 
 noinst_HEADERS = \
     third-party/md4c/md4c.h \
+    third-party/lnav-rs-ext/lnav_ffi.hh \
     third-party/lnav-rs-ext/lnav_rs_ext.h \
     third-party/lnav-rs-ext/lnav_rs_ext.hpp \
     third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh \
