@@ -145,30 +145,28 @@ public:
     {
         static const pcre_format log_fmt[] = {
             pcre_format(
-                "^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24}))"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,6})?)?|Z|[+\-]\d{2}:?\d{2}|(?!DBG|ERR|INFO|WARN|NONE)[A-Z]{3,4})+)(?:\s+|[:|])([^:]+))"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,6})?)?|Z|[+\-]\d{2}:?\d{2}|(?!DBG|DEBUG|ERR|INFO|WARN|NONE)[A-Z]{3,4})+)[:|\s]?(trc|trace|dbg|debug|info|warn(?:ing)?|err(?:or)?)[:|\s]\s*)"),
             pcre_format(
-                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) (.*)"),
-            pcre_format(
-                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
-            pcre_format(
-                "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+/\.-]+) \[\w\s+)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+)\s+)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+) -\s+)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+) -\s+)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: "
-                        "\\.,/-]+)\\[[^\\]]+\\](.*)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) (.*)"),
+                        "\\.,/-]+)\\[[^\\]]+\\]\\s+"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+)\s+)"),
 
             pcre_format(
-                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w: \.,+/-]+)\]\s*(\w+):?)"),
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\] \[(trace|debug|info|warn(?:ing)?|error|critical)\]\s+)"),
             pcre_format(
-                "^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] (.*)"),
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\]\s*(\w+):?\s+)"),
+            pcre_format(
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\]\s+)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: "
-                        "\\.,+/-]+)\\] \\[(\\w+)\\]"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: "
-                        "\\.,+/-]+)\\] \\w+ (.*)"),
+                        "\\.,+/-]+)\\] \\w+\\s+"),
             pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] "
-                        "\\(\\d+\\) (.*)"),
+                        "\\(\\d+\\)\\s+"),
 
             pcre_format(),
         };
@@ -273,12 +271,13 @@ public:
                   logline_value_vector& values,
                   bool annotate_module) const override
     {
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
         auto& line = values.lvv_sbr;
         int pat_index = this->pattern_index_for_line(line_number);
         const auto& fmt = get_pcre_log_formats()[pat_index];
         int prefix_len = 0;
-        auto md = fmt.pcre->create_match_data();
-        auto match_res = fmt.pcre->capture_from(line.to_string_fragment())
+        const auto line_sf = line.to_string_fragment();
+        auto match_res = fmt.pcre->capture_from(line_sf)
                              .into(md)
                              .matches(PCRE2_NO_UTF_CHECK)
                              .ignore_error();
@@ -293,14 +292,12 @@ public:
         values.lvv_values.emplace_back(TS_META, line, lr);
         values.lvv_values.back().lv_meta.lvm_format = (log_format*) this;
 
-        prefix_len = ts_cap.sf_end;
+        prefix_len = md[0]->sf_end;
         auto level_cap = md[2];
         if (level_cap) {
             if (string2level(level_cap->data(), level_cap->length(), true)
                 != LEVEL_UNKNOWN)
             {
-                prefix_len = level_cap->sf_end;
-
                 values.lvv_values.emplace_back(
                     LEVEL_META, line, to_line_range(level_cap->trim()));
                 values.lvv_values.back().lv_meta.lvm_format

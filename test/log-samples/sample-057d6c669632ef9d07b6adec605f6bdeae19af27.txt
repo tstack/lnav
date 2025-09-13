@@ -4,8 +4,8 @@ word  55:57                                                         ^^       on
  num  58:62                                                            ^--^  8099
  val  58:62                                                            ^--^  8099
 pair  55:62                                                         ^-----^  on 8099
-msg         ::com.twisted:Site starting on 8099
-format      ::com.twisted:Site starting on #
+msg         :com.twisted:Site starting on 8099
+format      :com.twisted:Site starting on #
 {
     "on": 8099
 }

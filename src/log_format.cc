@@ -817,7 +817,11 @@ log_format::log_scanf(uint32_t line_number,
 
             if (retval) {
                 *ts_out = ts.value();
-                *level_out = md[2];
+                if (md[2]) {
+                    *level_out = md[2];
+                } else {
+                    *level_out = line.substr(md[0]->sf_end);
+                }
                 if (curr_fmt != pat_index) {
                     uint32_t lock_line;
 

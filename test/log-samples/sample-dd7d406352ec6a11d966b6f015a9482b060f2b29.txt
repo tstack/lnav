@@ -12,8 +12,8 @@ pair  92:104                                                                    
  grp  92:104                                                                                             ^----------^   at 0x1de9290
  val  92:104                                                                                             ^----------^   at 0x1de9290
 pair  50:104                                                   ^----------------------------------------------------^   factory <twisted.web.server.Site instance at 0x1de9290
-msg         ::com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
-format      ::com.twisted:# factory <twisted.web.server.Site instance #>
+msg         :com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
+format      :com.twisted:# factory <twisted.web.server.Site instance #>
 {
     "com.twisted": "Starting",
     "factory": [

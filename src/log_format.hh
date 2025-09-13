@@ -700,7 +700,8 @@ protected:
         template<typename T, std::size_t N>
         explicit pcre_format(const T (&regex)[N])
             : name(regex),
-              pcre(lnav::pcre2pp::code::from_const(regex).to_shared()),
+              pcre(lnav::pcre2pp::code::from_const(regex, PCRE2_CASELESS)
+                       .to_shared()),
               pf_timestamp_index(this->pcre->name_index("timestamp"))
         {
         }
