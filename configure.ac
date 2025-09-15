@@ -1,4 +1,4 @@
-AC_INIT([lnav],[0.13.2],[lnav@googlegroups.com],[lnav],[http://lnav.org])
+AC_INIT([lnav],[0.14.0],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -288,7 +288,9 @@ AS_CASE(["$host_os"],
 
 saved_location=$(pwd)
 cd $srcdir
-version=$(echo $(git describe --abbrev=7 --dirty --always --tags 2>/dev/null) | sed -e 's/^v//' 2>/dev/null)
+version=$(echo \
+    $(git describe --abbrev=7 --dirty --always --tags --match="v${PACKAGE_VERSION}*" 2>/dev/null) | \
+    sed -e 's/^\([[0-9a-f]]\)/'${PACKAGE_VERSION}'-\1/g' -e 's/^v//' 2>/dev/null)
 cd $saved_location
 AS_IF([test $? -eq 0],
     [version=$(echo $version | tr -d '\n')

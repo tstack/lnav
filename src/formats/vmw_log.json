@@ -47,6 +47,7 @@
         },
         "src-file-field": "file",
         "src-line-field": "line",
+        "thread-id-field": "tid",
         "level-field": "level",
         "level": {
             "info": "^(?i)(?:info|In)$",

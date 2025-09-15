@@ -20,6 +20,7 @@
         "opid-field": "log_syslog_tag",
         "multiline": true,
         "module-field": "log_procname",
+        "thread-id-field": "log_pid",
         "value": {
             "log_pri": {
                 "kind": "integer",

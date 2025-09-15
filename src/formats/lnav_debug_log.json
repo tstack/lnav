@@ -10,6 +10,7 @@
         },
         "src-file-field": "srcfile",
         "src-line-field": "srcline",
+        "thread-id-field": "thread",
         "value": {
             "srcfile": {
                 "kind": "string",

@@ -41,6 +41,7 @@
 
 #include "view_curses.hh"
 #include "vis_line.hh"
+#include "hasher.hh"
 
 class listview_curses;
 
@@ -504,6 +505,8 @@ public:
     }
 
     vis_line_t get_tail_space() const { return this->lv_tail_space; }
+
+    virtual void update_hash_state(hasher& h) const;
 
     void log_state() override
     {

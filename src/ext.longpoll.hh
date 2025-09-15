@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,40 +27,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_all_logs_vtab_hh
-#define lnav_all_logs_vtab_hh
+#ifndef lnav_ext_longpoll_hh
+#define lnav_ext_longpoll_hh
 
-#include <cstdint>
-#include <vector>
+#include <string>
 
-#include "log_format.hh"
-#include "log_vtab_impl.hh"
-#include "logfile.hh"
+namespace lnav::ext {
 
-/**
- * A virtual table that provides access to all log messages from all formats.
- *
- * @feature f0:sql.tables.all_logs
- */
-class all_logs_vtab : public log_vtab_impl {
-public:
-    all_logs_vtab();
-
-    void get_columns(std::vector<vtab_column>& cols) const override;
-
-    void extract(logfile* lf,
-                 uint64_t line_number,
-                 string_attrs_t& sa,
-                 logline_value_vector& values) override;
-
-    bool next(log_cursor& lc, logfile_sub_source& lss) override;
-
-private:
-    logline_value_meta alv_msg_meta;
-    logline_value_meta alv_schema_meta;
-    logline_value_meta alv_values_meta;
-    logline_value_meta alv_src_meta;
-    logline_value_meta alv_thread_meta;
+struct view_states {
+    std::string vs_log;
+    std::string vs_text;
 };
 
-#endif  // LNAV_ALL_LOGS_VTAB_HH
+void notify_pollers(const view_states& vs);
+
+}  // namespace lnav::ext
+
+#endif

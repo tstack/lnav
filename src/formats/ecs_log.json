@@ -99,6 +99,7 @@
             }
         },
         "level-field": "log.level",
+        "thread-id-field": "process/thread/id",
         "timestamp-field": "@timestamp",
         "convert-to-local-time": true,
         "hide-extra": true

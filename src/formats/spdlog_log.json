@@ -16,6 +16,7 @@
         },
         "src-file-field": "src_file",
         "src-line-field": "src_line",
+        "thread-id-field": "thread_id",
         "value": {
             "level": {
                 "kind": "string"

@@ -887,6 +887,8 @@ public:
                           const line_range& body,
                           const line_range& orig_line);
 
+    void update_hash_state(hasher& h) const;
+
     bool tc_interactive{false};
     std::function<void(textview_curses&)> tc_state_event_handler;
 

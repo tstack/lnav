@@ -1,11 +1,12 @@
 
-## lnav v0.13.2
+## lnav v0.14.0
 
 Features:
-* Log formats can now specify source file/line with the
-  `src-file-field` and `src-line-field` properties.  These
-  fields can then be accessed in the SQL vtables as
-  `log_src_file` and `log_src_line`, respectively.
+* Log formats can now specify source file/line and thread
+  ID with the `src-file-field`, `src-line-field`, and
+  `thread-id-field` properties. These fields can then be
+  accessed in the SQL vtables as `log_src_file`,
+  `log_src_line`, and `log_thread_id`.
 * The `:xopen` command will now open text files in an
   external editor.  To open the file at a particular
   line/column, add a URL fragment of the form
@@ -36,7 +37,8 @@ Features:
   message that matches a breakpoint.
 * The `:external-access` command has been added to open a
   localhost HTTP port that can be used to remotely control
-  lnav.
+  lnav. Requests can be sent to execute commands and poll
+  for changes in the view state.
 
 ## lnav v0.13.1
 

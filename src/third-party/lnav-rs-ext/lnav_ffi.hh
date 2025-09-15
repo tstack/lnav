@@ -32,9 +32,13 @@
 namespace lnav_rs_ext {
 
 struct ExecResult;
+struct PollInput;
+struct ViewStates;
 
 ::rust::String version_info();
 
 ExecResult execute_external_command(::rust::String, ::rust::String);
+
+PollInput longpoll(const PollInput& vs);
 
 }  // namespace lnav_rs_ext

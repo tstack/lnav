@@ -1067,11 +1067,14 @@ com_relative_goto(exec_context& ec,
                 line_offset = (int) value;
             }
 
+            auto new_sel = sel.value() + vis_line_t(line_offset);
             if (ec.ec_dry_run) {
                 retval = "info: shifting top by " + std::to_string(line_offset)
                     + " lines";
+            } else if (new_sel < 0) {
+                retval = "";
             } else {
-                tc->set_selection(sel.value() + vis_line_t(line_offset));
+                tc->set_selection(new_sel);
 
                 retval = "";
             }

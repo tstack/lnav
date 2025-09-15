@@ -110,6 +110,7 @@ public:
         int p_opid_field_index{-1};
         int p_subid_field_index{-1};
         int p_body_field_index{-1};
+        int p_thread_id_field_index{-1};
         int p_src_file_field_index{-1};
         int p_src_line_field_index{-1};
         int p_timestamp_end{-1};
@@ -351,6 +352,7 @@ public:
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
     intern_string_t elf_subid_field;
+    intern_string_t elf_thread_id_field;
     intern_string_t elf_src_file_field;
     intern_string_t elf_src_line_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;

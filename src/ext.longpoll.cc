@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,40 +27,70 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_all_logs_vtab_hh
-#define lnav_all_logs_vtab_hh
+#include <condition_variable>
+#include <list>
 
-#include <cstdint>
-#include <vector>
+#include "ext.longpoll.hh"
 
-#include "log_format.hh"
-#include "log_vtab_impl.hh"
-#include "logfile.hh"
+#include "lnav_rs_ext.cxx.hh"
+#include "safe/safe.h"
 
-/**
- * A virtual table that provides access to all log messages from all formats.
- *
- * @feature f0:sql.tables.all_logs
- */
-class all_logs_vtab : public log_vtab_impl {
-public:
-    all_logs_vtab();
+using namespace std::chrono_literals;
 
-    void get_columns(std::vector<vtab_column>& cols) const override;
+namespace lnav_rs_ext {
 
-    void extract(logfile* lf,
-                 uint64_t line_number,
-                 string_attrs_t& sa,
-                 logline_value_vector& values) override;
-
-    bool next(log_cursor& lc, logfile_sub_source& lss) override;
-
-private:
-    logline_value_meta alv_msg_meta;
-    logline_value_meta alv_schema_meta;
-    logline_value_meta alv_values_meta;
-    logline_value_meta alv_src_meta;
-    logline_value_meta alv_thread_meta;
+struct pollers {
+    std::list<PollInput> p_pollers;
+    lnav::ext::view_states p_latest_state;
+    std::condition_variable p_condvar;
 };
 
-#endif  // LNAV_ALL_LOGS_VTAB_HH
+using safe_pollers_t = safe::Safe<pollers>;
+
+safe_pollers_t POLLERS;
+
+PollInput
+longpoll(const PollInput& pi)
+{
+    auto p = POLLERS.writeAccess<std::unique_lock>();
+
+    if (pi.view_states.log == p->p_latest_state.vs_log
+        && pi.view_states.text == p->p_latest_state.vs_text)
+    {
+        p->p_pollers.emplace_front(pi);
+        auto iter = p->p_pollers.begin();
+
+        p->p_condvar.wait_for(p.lock, 10s);
+        p->p_pollers.erase(iter);
+    }
+
+    return PollInput{
+        0,
+        ViewStates{
+            ::rust::String::lossy(p->p_latest_state.vs_log),
+            ::rust::String::lossy(p->p_latest_state.vs_text),
+        },
+    };
+}
+
+}  // namespace lnav_rs_ext
+
+namespace lnav::ext {
+
+void
+notify_pollers(const view_states& vs)
+{
+    auto p = lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>();
+
+    for (const auto& poller : p->p_pollers) {
+        if (poller.view_states.log != vs.vs_log
+            || poller.view_states.text != vs.vs_text)
+        {
+            p->p_condvar.notify_all();
+            break;
+        }
+    }
+    p->p_latest_state = vs;
+}
+
+}  // namespace lnav::ext

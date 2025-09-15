@@ -507,6 +507,7 @@ add_library(
         dump_internals.cc
         elem_to_json.cc
         environ_vtab.cc
+        ext.longpoll.cc
         extension-functions.cc
         external_editor.cc
         external_opener.cc
@@ -637,6 +638,7 @@ add_library(
         doc_status_source.hh
         dump_internals.hh
         elem_to_json.hh
+        ext.longpoll.hh
         external_editor.hh
         external_editor.cfg.hh
         external_opener.hh

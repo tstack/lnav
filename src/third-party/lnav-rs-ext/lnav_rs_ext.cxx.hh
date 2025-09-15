@@ -770,6 +770,8 @@ namespace lnav_rs_ext {
   struct FindLogResultJson;
   struct VarPair;
   struct FindLogResult;
+  struct ViewStates;
+  struct PollInput;
   struct ExecResult;
   struct StartExtResult;
 }
@@ -891,6 +893,26 @@ struct FindLogResult final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ViewStates
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ViewStates
+struct ViewStates final {
+  ::rust::String log;
+  ::rust::String text;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ViewStates
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
+struct PollInput final {
+  ::std::size_t last_event_id;
+  ::lnav_rs_ext::ViewStates view_states;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult

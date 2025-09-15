@@ -1038,6 +1038,10 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the body field in the log message pattern")
         .for_field(&external_log_format::elf_body_field),
+    json_path_handler("thread-id-field")
+        .with_description(
+            "The name of the thread ID field in the log message pattern")
+        .for_field(&external_log_format::elf_thread_id_field),
     json_path_handler("src-file-field")
         .with_description(
             "The name of the source file field in the log message pattern")

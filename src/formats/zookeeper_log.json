@@ -8,6 +8,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[myid:(?<myid>\\d+)?\\] - (?<level>\\w+)\\s+\\[(?<thread>.*):(?<logger>[\\w\\.\\$]+)@(?<line_number>\\d+)\\] - (?<body>.*)"
             }
         },
+        "thread-id-field": "thread",
         "value": {
             "thread": {
                 "kind": "string",

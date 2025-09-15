@@ -9,6 +9,17 @@
                 "pattern": "^(?<module>[\\w]+):(?<timestamp>\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}:\\d{3} [AP]M \\w+): Thread\\[(?<thread>[^,]+,\\d+,[^,]+)\\]\\n?(?:\\*+|(?<body>.*))$"
             }
         },
+        "thread-id-field": "thread",
+        "value": {
+            "module": {
+                "kind": "string",
+                "identifier": true
+            },
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
         "sample": [
             {
                 "line": "amMonitoring:06/09/2014 02:49:59:447 PM UTC: Thread[http-80-1,5,main]\n**********************************************"

@@ -1174,6 +1174,16 @@ textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
 }
 
 void
+textview_curses::update_hash_state(hasher& h) const
+{
+    listview_curses::update_hash_state(h);
+
+    if (this->tc_sub_source != nullptr) {
+        this->tc_sub_source->update_filter_hash_state(h);
+    }
+}
+
+void
 text_sub_source::scroll_invoked(textview_curses* tc)
 {
     auto* ttt = dynamic_cast<text_time_translator*>(this);

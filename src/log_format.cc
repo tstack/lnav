@@ -2072,6 +2072,7 @@ external_log_format::annotate(logfile* lf,
     auto level_cap = md[pat.p_level_field_index];
     auto src_file_cap = md[pat.p_src_file_field_index];
     auto src_line_cap = md[pat.p_src_line_field_index];
+    auto thread_id_cap = md[pat.p_thread_id_field_index];
 
     if (level_cap
         && (!body_cap
@@ -2087,6 +2088,10 @@ external_log_format::annotate(logfile* lf,
     if (src_line_cap) {
         sa.emplace_back(to_line_range(src_line_cap.value()),
                         SA_SRC_LINE.value());
+    }
+    if (thread_id_cap) {
+        sa.emplace_back(to_line_range(thread_id_cap.value()),
+                        SA_THREAD_ID.value());
     }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
@@ -2645,7 +2650,9 @@ external_log_format::get_subline(const logline& ll,
                                 this->json_append(jfe, vd, str);
                             }
 
-                            if (nl_pos == std::string::npos || opts.full_message) {
+                            if (nl_pos == std::string::npos
+                                || opts.full_message)
+                            {
                                 lr.lr_end = this->jlf_cached_line.size();
                             } else {
                                 lr.lr_end = lr.lr_start + nl_pos;
@@ -2660,17 +2667,22 @@ external_log_format::get_subline(const logline& ll,
                                        == this->elf_body_field)
                             {
                                 this->jlf_line_attrs.emplace_back(
-                                lr, SA_BODY.value());
+                                    lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_file_field)
                             {
                                 this->jlf_line_attrs.emplace_back(
-                                lr, SA_SRC_FILE.value());
+                                    lr, SA_SRC_FILE.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_line_field)
                             {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, SA_SRC_LINE.value());
+                            } else if (lv_iter->lv_meta.lvm_name
+                                       == this->elf_thread_id_field)
+                            {
+                                this->jlf_line_attrs.emplace_back(
+                                    lr, SA_THREAD_ID.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_level_field)
                             {
@@ -3588,6 +3600,20 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
     }
 
+    if (!this->elf_thread_id_field.empty()) {
+        auto& vd = this->elf_value_defs[this->elf_thread_id_field];
+        if (vd.get() == nullptr) {
+            vd = std::make_shared<value_def>(
+                this->elf_thread_id_field,
+                value_kind_t::VALUE_TEXT,
+                logline_value_meta::internal_column{},
+                this);
+        }
+        vd->vd_meta.lvm_name = this->elf_thread_id_field;
+        vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
+    }
+
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(nullptr);
     }
@@ -3635,6 +3661,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             }
             if (name == this->elf_src_line_field) {
                 pat.p_src_line_field_index = named_cap.get_index();
+            }
+            if (name == this->elf_thread_id_field) {
+                pat.p_thread_id_field_index = named_cap.get_index();
             }
 
             auto value_iter = this->elf_value_defs.find(name);

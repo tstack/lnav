@@ -9,6 +9,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/lnav-link-callback.lnav \
     $(srcdir)/scripts/lnav-moveto-breakpoint.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
+    $(srcdir)/scripts/lnav-write-external-access-info-to.lnav \
     $(srcdir)/scripts/partition-by-boot.lnav \
     $(srcdir)/scripts/pg-annotate-errors.lnav \
     $(srcdir)/scripts/piper-url-handler.lnav \

@@ -1,15 +1,17 @@
-use crate::ffi::{execute_external_command, version_info};
+use crate::ffi::{execute_external_command, longpoll, version_info, PollInput};
 use rouille::{accept, input, router, try_or_400, Request, Response, Server};
 use std::convert::Into;
 use std::error::Error;
 use std::fs::File;
+use std::io::Error as IoError;
+use std::io::Read;
 use std::net::Ipv4Addr;
 use std::os::fd::{FromRawFd, OwnedFd, RawFd};
 use std::sync::mpsc::Sender;
 use std::sync::{mpsc, LazyLock, Mutex};
-use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
+use std::{error, fmt, thread};
 
 static SERVER: LazyLock<Mutex<Option<(JoinHandle<()>, Sender<()>)>>> =
     LazyLock::new(|| None.into());
@@ -36,8 +38,97 @@ See <a href="https://lnav.org">lnav.org</a> for more information.
 </html>
 "#;
 
+/// Error that can happen when parsing the request body as plain text.
+#[derive(Debug)]
+pub enum ScriptTextError {
+    /// Can't parse the body of the request because it was already extracted.
+    BodyAlreadyExtracted,
+
+    /// Wrong content type.
+    WrongContentType,
+
+    /// Could not read the body from the request.
+    IoError(IoError),
+
+    /// The limit to the number of bytes has been exceeded.
+    LimitExceeded,
+
+    /// The content-type encoding is not ASCII or UTF-8, or the body is not valid UTF-8.
+    NotUtf8,
+}
+
+impl From<IoError> for ScriptTextError {
+    fn from(err: IoError) -> ScriptTextError {
+        ScriptTextError::IoError(err)
+    }
+}
+
+impl error::Error for ScriptTextError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match *self {
+            ScriptTextError::IoError(ref e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for ScriptTextError {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let description = match *self {
+            ScriptTextError::BodyAlreadyExtracted => {
+                "the body of the request was already extracted"
+            }
+            ScriptTextError::WrongContentType => {
+                "the request didn't have a plain text content type"
+            }
+            ScriptTextError::IoError(_) => {
+                "could not read the body from the request, or could not execute the CGI program"
+            }
+            ScriptTextError::LimitExceeded => "the limit to the number of bytes has been exceeded",
+            ScriptTextError::NotUtf8 => {
+                "the content-type encoding is not ASCII or UTF-8, or the body is not valid UTF-8"
+            }
+        };
+
+        write!(fmt, "{}", description)
+    }
+}
+
+pub fn script_body_with_limit(request: &Request, limit: usize) -> Result<String, ScriptTextError> {
+    // TODO: handle encoding ; return NotUtf8 if a non-utf8 charset is sent
+    // if no encoding is specified by the client, the default is `US-ASCII` which is compatible with UTF8
+
+    if let Some(header) = request.header("Content-Type") {
+        if !header.starts_with("text/x-lnav-script") {
+            return Err(ScriptTextError::WrongContentType);
+        }
+    } else {
+        return Err(ScriptTextError::WrongContentType);
+    }
+
+    let body = match request.data() {
+        Some(b) => b,
+        None => return Err(ScriptTextError::BodyAlreadyExtracted),
+    };
+
+    let mut out = Vec::new();
+    body.take(limit.saturating_add(1) as u64).read_to_end(&mut out)?;
+    if out.len() > limit {
+        return Err(ScriptTextError::LimitExceeded);
+    }
+
+    let out = match String::from_utf8(out) {
+        Ok(o) => o,
+        Err(_) => return Err(ScriptTextError::NotUtf8),
+    };
+
+    Ok(out)
+}
+
 fn do_exec(request: &Request) -> Response {
-    let body = try_or_400!(rouille::input::plain_text_body(request));
+    let body = try_or_400!(script_body_with_limit(request, 1024 * 1024));
 
     let src = format!("{}", request.remote_addr());
     let res = execute_external_command(src, body);
@@ -51,6 +142,13 @@ fn do_exec(request: &Request) -> Response {
     } else {
         Response::text(res.error).with_status_code(500)
     }
+}
+
+fn do_poll(request: &Request) -> Response {
+    let body = try_or_400!(input::json_input::<PollInput>(request));
+    let vs = longpoll(&body);
+
+    Response::json(&vs)
 }
 
 pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + Send + Sync>> {
@@ -81,6 +179,13 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
             (POST) (/exec) => {
                 accept!(request,
                     "text/x-lnav-script" => do_exec(request),
+                    "*/*" => Response::empty_406(),
+                )
+            },
+
+            (POST) (/poll) => {
+                accept!(request,
+                    "application/json" => do_poll(request),
                     "*/*" => Response::empty_406(),
                 )
             },

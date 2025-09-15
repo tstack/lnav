@@ -502,16 +502,19 @@ execute_external_command(::rust::String rs_src, ::rust::String rs_script)
 
     isc::to<main_looper&, services::main_t>().send_and_wait(
         [src, script, &retval](auto& mlooper) {
+            log_debug("executing remote command from: %s", src.c_str());
             auto& ec = lnav_data.ld_exec_context;
             auto* outfile = tmpfile();
             auto ec_out = exec_context::output_t{outfile, fclose};
             auto og = exec_context::output_guard{ec, "default", ec_out};
             auto me = multiline_executor{ec, src};
+            ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
             auto script_frag = string_fragment::from_str(script);
             for (const auto& line : script_frag.split_lines()) {
                 auto res = me.push_back(line);
                 if (res.isErr()) {
                     retval->error = res.unwrapErr().to_attr_line().al_string;
+                    ec.ec_local_vars.pop();
                     return;
                 }
             }
@@ -524,6 +527,7 @@ execute_external_command(::rust::String rs_src, ::rust::String rs_script)
                 retval->content_type = fmt::to_string(ec.get_output_format());
                 retval->content_fd = dup(fileno(ec_out.first));
             }
+            ec.ec_local_vars.pop();
         });
 
     return *retval;

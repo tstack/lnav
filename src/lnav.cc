@@ -82,6 +82,7 @@
 #include "date/tz.h"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
+#include "ext.longpoll.hh"
 #include "file_converter_manager.hh"
 #include "file_options.hh"
 #include "filter_sub_source.hh"
@@ -1512,10 +1513,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (link_iter != al.al_attrs.end()) {
             auto href = link_iter->sa_value.get<std::string>();
             if (!startswith(href, "#")) {
-                ec.execute_with(
-                    INTERNAL_SRC_LOC,
-                    ":xopen $href",
-                    std::make_pair("href", href));
+                ec.execute_with(INTERNAL_SRC_LOC,
+                                ":xopen $href",
+                                std::make_pair("href", href));
             }
         }
     };
@@ -2046,6 +2046,24 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 prompt.p_editor.set_needs_update();
             }
             echo_views_stmt.execute();
+            {
+                lnav::ext::view_states vs;
+
+                {
+                    hasher h;
+
+                    lnav_data.ld_views[LNV_LOG].update_hash_state(h);
+                    vs.vs_log = h.to_uuid_string();
+                }
+
+                {
+                    hasher h;
+
+                    lnav_data.ld_views[LNV_TEXT].update_hash_state(h);
+                    vs.vs_text = h.to_uuid_string();
+                }
+                lnav::ext::notify_pollers(vs);
+            }
             if (top_source->update_user_msg()) {
                 lnav_data.ld_status[LNS_TOP].set_needs_update();
             }

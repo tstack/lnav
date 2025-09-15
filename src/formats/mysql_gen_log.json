@@ -18,7 +18,8 @@
                 "identifier": true
             }
         },
-        "opid-field": "thread_id",
+        "opid-field": "thread",
+        "thread-id-field": "thread",
         "sample": [
             {
                 "line": "2025-08-15T14:04:36.592691Z\t   10 Query\tselect @@version_comment limit 1"

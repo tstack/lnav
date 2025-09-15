@@ -1532,3 +1532,17 @@ listview_curses::get_y_for_selection() const
     return this->get_y()
         + (int) (this->get_selection().value_or(0_vl) - this->get_top());
 }
+
+void
+listview_curses::update_hash_state(hasher& h) const
+{
+    const auto [width, height] = this->get_dimensions();
+
+    h.update(width);
+    h.update(height);
+    h.update(this->lv_top);
+    h.update(this->lv_left);
+    h.update(this->get_selection().value_or(-1_vl));
+    h.update(this->get_inner_height());
+    h.update(this->get_overlay_selection().value_or(-1_vl));
+}

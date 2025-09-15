@@ -15,6 +15,7 @@
         "level-field": "level",
         "src-file-field": "src_file",
         "src-line-field": "src_line",
+        "thread-id-field": "thread",
         "level": {
             "error": "ERROR",
             "debug": "DEBUG",

@@ -11,6 +11,7 @@
                 "pattern": "^(?<timestamp>\\w{3}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(?<thread>[^\\]]+)\\] (?<level>[^ ]+)\\s+(?<module>[^ ]+) - (?<body>.*)"
             }
         },
+        "thread-id-field": "thread",
         "timestamp-format": [
             "%b-%d %H:%M:%S"
         ],
