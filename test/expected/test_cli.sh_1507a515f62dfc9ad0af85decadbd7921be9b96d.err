@@ -1,0 +1,5 @@
+[1m[31m✘[0m [1m[31merror[0m: unable to open file: [1mbadfilename[0m
+ [1m[31mreason[0m: No such file or directory
+[1m[31m✘[0m [1m[31merror[0m: unable to display interactive text UI
+ [1m[31mreason[0m: stdout is not a TTY
+[36m =[0m [36mhelp[0m: pass the [1m-n[0m option to run lnav in headless mode or don't redirect stdout

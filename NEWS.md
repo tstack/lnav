@@ -1,8 +1,12 @@
 
-## lnav v0.13.1a
+## lnav v0.13.2
 
 Bug Fixes:
 * Kitty keyboard handling was broken at the last minute.
+* The TUI no longer opens if a bad file name is passed.
+* The abbreviated month `%b` time-conversion was not
+  always falling back to English locale, which could
+  prevent lnav from starting up.
 
 ## lnav v0.13.1
 
