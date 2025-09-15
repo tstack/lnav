@@ -1,0 +1,7 @@
+#
+# @synopsis: lnav-write-external-access-info-to <path>
+# @description: Write a JSON file with information about how to access lnav externally
+#
+
+;SELECT CAST(value AS INTEGER) AS port FROM environ WHERE name = 'LNAV_EXTERNAL_PORT'
+:write-jsonlines-to $1
