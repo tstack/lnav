@@ -1031,10 +1031,12 @@ struct refresh_status_bars {
         {
             prompt.p_editor.set_inactive_value(cancel_msg);
         }
-
         if (!lnav_data.ld_log_source.is_indexing_in_progress()
-            || lnav_data.ld_log_source.text_line_count() == 0)
+            || lnav_data.ld_log_source.lss_index_generation == 0)
         {
+            if (lnav_data.ld_log_source.lss_index_generation == 0) {
+                lnav_data.ld_view_stack.top().value()->set_needs_update();
+            }
             lnav_data.ld_view_stack.do_update();
         }
         if (this->rsb_top_source->update_time(current_time)) {
@@ -1534,10 +1536,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (link_iter != al.al_attrs.end()) {
             auto href = link_iter->sa_value.get<std::string>();
             if (!startswith(href, "#")) {
-                ec.execute_with(
-                    INTERNAL_SRC_LOC,
-                    ":xopen $href",
-                    std::make_pair("href", href));
+                ec.execute_with(INTERNAL_SRC_LOC,
+                                ":xopen $href",
+                                std::make_pair("href", href));
             }
         }
     };

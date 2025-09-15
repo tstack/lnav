@@ -55,7 +55,7 @@ public:
 
     status_field& statusview_value_for_field(int field) override;
 
-    void update_filtered(text_sub_source* tss);
+    bool update_filtered(text_sub_source* tss);
 
 private:
     status_field tss_fields[TSF__MAX];

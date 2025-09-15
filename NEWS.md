@@ -7,6 +7,10 @@ Bug Fixes:
 * The abbreviated month `%b` time-conversion was not
   always falling back to English locale, which could
   prevent lnav from starting up.
+* The top of the LOG view could move in some cases when
+  filtering was enabled.
+* Some status bar fields were not always showing
+  updates.
 
 ## lnav v0.13.1
 

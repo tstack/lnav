@@ -169,8 +169,8 @@ bottom_status_source::update_hits(textview_curses* tc)
         }
         if (!sf.is_cylon()) {
             sf.set_cylon(true);
-            retval = true;
         }
+        retval = true;
     } else {
         new_role = role_t::VCR_STATUS;
         if (sf.is_cylon()) {
