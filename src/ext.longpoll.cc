@@ -37,6 +37,7 @@
 
 using namespace std::chrono_literals;
 
+#ifdef HAVE_RUST_DEPS
 namespace lnav_rs_ext {
 
 struct pollers {
@@ -74,12 +75,14 @@ longpoll(const PollInput& pi)
 }
 
 }  // namespace lnav_rs_ext
+#endif
 
 namespace lnav::ext {
 
 void
 notify_pollers(const view_states& vs)
 {
+#ifdef HAVE_RUST_DEPS
     auto p = lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>();
 
     for (const auto& poller : p->p_pollers) {
@@ -91,6 +94,7 @@ notify_pollers(const view_states& vs)
         }
     }
     p->p_latest_state = vs;
+#endif
 }
 
 }  // namespace lnav::ext
