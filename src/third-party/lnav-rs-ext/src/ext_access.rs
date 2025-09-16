@@ -133,14 +133,14 @@ fn do_exec(request: &Request) -> Response {
     let src = format!("{}", request.remote_addr());
     let res = execute_external_command(src, body);
 
-    if res.error.is_empty() {
+    if res.error.msg.is_empty() {
         let raw_fd = RawFd::from(res.content_fd);
         let fd = unsafe { OwnedFd::from_raw_fd(raw_fd) };
         let file = File::from(fd);
         Response::from_file(res.content_type, file)
             .with_additional_header("X-lnav-status", res.status)
     } else {
-        Response::text(res.error).with_status_code(500)
+        Response::json(&res.error).with_status_code(500)
     }
 }
 

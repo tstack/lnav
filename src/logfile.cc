@@ -230,6 +230,7 @@ logfile::logfile(std::filesystem::path filename,
       lf_filename_as_string(lf_filename.string()), lf_options(loo)
 {
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
+    this->lf_thread_ids.writeAccess()->ltis_tid_ranges.reserve(64);
 }
 
 logfile::~logfile()
@@ -486,6 +487,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             sm.sm_strikes);
 
                         sbc.sbc_opids = sbc_tmp.sbc_opids;
+                        sbc.sbc_tids = sbc_tmp.sbc_tids;
                         auto match_um
                             = lnav::console::user_message::info(
                                   attr_line_t()
@@ -800,11 +802,16 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_longest_line = 0;
         this->lf_sort_needed = true;
         {
-            safe::WriteAccess<logfile::safe_opid_state> writable_opid_map(
+            safe::WriteAccess<safe_opid_state> writable_opid_map(
                 this->lf_opids);
 
             writable_opid_map->los_opid_ranges.clear();
             writable_opid_map->los_sub_in_use.clear();
+        }
+        {
+            auto tids = this->lf_thread_ids.writeAccess();
+
+            tids->ltis_tid_ranges.clear();
         }
         this->lf_allocator.reset();
     }
@@ -998,6 +1005,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
         scan_batch_context sbc{this->lf_allocator};
         sbc.sbc_opids.los_opid_ranges.reserve(32);
+        sbc.sbc_tids.ltis_tid_ranges.reserve(8);
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -1307,7 +1315,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (record_rusage
             && (prev_range.fr_offset - begin_index_size) > (500 * 1024))
         {
-            struct rusage end_rusage;
+            rusage end_rusage;
 
             getrusage(RUSAGE_SELF, &end_rusage);
             rusagesub(end_rusage,
@@ -1330,7 +1338,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_stat = st;
 
         {
-            safe::WriteAccess<logfile::safe_opid_state> writable_opid_map(
+            safe::WriteAccess<safe_opid_state> writable_opid_map(
                 this->lf_opids);
 
             for (const auto& opid_pair : sbc.sbc_opids.los_opid_ranges) {
@@ -1347,6 +1355,24 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 "%s: opid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
                 this->lf_filename_as_string.c_str(),
                 writable_opid_map->los_opid_ranges.size(),
+                sizeof(opid_time_range),
+                this->lf_allocator.getNumBytesAllocated());
+        }
+        {
+            auto tids = this->lf_thread_ids.writeAccess();
+
+            for (const auto& tid_pair : sbc.sbc_tids.ltis_tid_ranges) {
+                auto tid_iter = tids->ltis_tid_ranges.find(tid_pair.first);
+                if (tid_iter == tids->ltis_tid_ranges.end()) {
+                    tids->ltis_tid_ranges.emplace(tid_pair);
+                } else {
+                    tid_iter->second |= tid_pair.second;
+                }
+            }
+            log_debug(
+                "%s: tid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
+                this->lf_filename_as_string.c_str(),
+                tids->ltis_tid_ranges.size(),
                 sizeof(opid_time_range),
                 this->lf_allocator.getNumBytesAllocated());
         }

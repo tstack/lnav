@@ -36,6 +36,7 @@
 #include <cstdint>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include <sys/types.h>
 #include <time.h>
@@ -47,6 +48,7 @@
 #include "base/map_util.hh"
 #include "base/small_string_map.hh"
 #include "base/string_attr_type.hh"
+#include "base/time_util.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
@@ -94,6 +96,11 @@ struct opid_time_range {
 
     void close_sub_ops(const string_fragment& subid);
 
+    bool operator<(const opid_time_range& rhs) const
+    {
+        return this->otr_range < rhs.otr_range;
+    }
+
     opid_time_range& operator|=(const opid_time_range& rhs);
 };
 
@@ -113,7 +120,7 @@ struct log_opid_state {
 
     log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
                                      const string_fragment& opid,
-                                     const struct timeval& tv);
+                                     const timeval& tv);
 
     opid_sub_time_range* sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
                                        log_opid_map::iterator& op_iter,
@@ -122,9 +129,38 @@ struct log_opid_state {
                                        log_level_t level);
 };
 
+struct thread_id_time_range {
+    time_range titr_range;
+    log_level_stats titr_level_stats;
+
+    void clear();
+
+    bool operator<(const thread_id_time_range& rhs) const
+    {
+        return this->titr_range < rhs.titr_range;
+    }
+
+    thread_id_time_range& operator|=(const thread_id_time_range& rhs);
+};
+
+using log_thread_id_map
+    = robin_hood::unordered_map<string_fragment,
+                                thread_id_time_range,
+                                frag_hasher,
+                                std::equal_to<string_fragment>>;
+
+struct log_thread_id_state {
+    log_thread_id_map ltis_tid_ranges;
+
+    log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
+                                           const string_fragment& tid,
+                                           const timeval& tv);
+};
+
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     log_opid_state sbc_opids;
+    log_thread_id_state sbc_tids;
     lnav::small_string_map sbc_level_cache;
 };
 

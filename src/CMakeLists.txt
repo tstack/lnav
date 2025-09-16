@@ -516,7 +516,6 @@ add_library(
         file_converter_manager.cc
         file_format.cc
         file_options.cc
-        file_vtab.cc
         files_sub_source.cc
         filter_observer.cc
         filter_status_source.cc
@@ -618,6 +617,7 @@ add_library(
         third-party/sqlite/ext/series.c
         third-party/sqlite/ext/dbdump.c
 
+        all_ids_vtabs.hh
         all_logs_vtab.hh
         archive_manager.hh
         archive_manager.cfg.hh
@@ -820,7 +820,7 @@ add_library(
         third-party/hat-trie/include/tsl/array-hash/array_set.h
 )
 
-set(lnav_SRCS lnav.cc)
+set(lnav_SRCS lnav.cc file_vtab.cc all_ids_vtabs.cc)
 
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party

@@ -1,0 +1,21 @@
+ATTACH DATABASE '' AS 'main';
+CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
+CREATE VIRTUAL TABLE lnav_static_files USING lnav_static_file_vtab_impl();
+CREATE VIRTUAL TABLE all_thread_ids USING all_thread_ids_impl();
+CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
+CREATE VIRTUAL TABLE all_opids USING all_opids_impl();
+CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
+CREATE VIRTUAL TABLE lnav_view_files USING lnav_view_files_impl();
+CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
+CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();
+CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
+CREATE VIRTUAL TABLE lnav_file_metadata USING lnav_file_metadata_impl();
+CREATE VIEW lnav_view_filters_and_stats AS
+  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
+CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
+CREATE VIRTUAL TABLE regexp_capture_into_json USING regexp_capture_into_json_impl();
+CREATE VIRTUAL TABLE xpath USING xpath_impl();
+CREATE VIRTUAL TABLE fstat USING fstat_impl();
+CREATE TABLE [1m[35mlnav_events[0m (
+   ts TEXT NOT NULL DEFAULT(strftime('%Y-%m-%dT%H:%M:%f', 'now')),
+   content TEXT

@@ -158,11 +158,18 @@ mod ffi {
         pub view_states: ViewStates,
     }
 
+    #[derive(Serialize)]
+    struct ExecError {
+        pub msg: String,
+        pub reason: String,
+        pub help: String,
+    }
+
     struct ExecResult {
         pub status: String,
         pub content_type: String,
         pub content_fd: i32,
-        pub error: String,
+        pub error: ExecError,
     }
 
     unsafe extern "C++" {

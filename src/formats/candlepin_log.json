@@ -6,9 +6,6 @@
         "regex": {
             "reqorg": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(req=(?<req>[0-9a-f-]+)|=), org=(?<org>\\w*)\\] (?<alert_level>\\w+)  (?<module>[\\w.]+) - (?<body>.*)$"
-            },
-            "other": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[+-]\\d{4}) (?<body>.*)$"
             }
         },
         "value": {
@@ -37,9 +34,6 @@
             },
             {
                 "line": "2015-04-17 09:41:56,320 [req=f91d4a84-020d-4874-9741-3979d0baf58d, org=] INFO  org.candlepin.common.filter.LoggingFilter - Request: verb=GET, uri=/candlepin/status"
-            },
-            {
-                "line": "2015-04-17 09:42:39+0200 principalType=trusteduser principal=admin target=OWNER entityId=8ab219c64cc653a7014cc6545a6c0001 type=CREATED owner=8ab219c64cc653a7014cc6545a6c0001"
             },
             {
                 "line": "2015-04-17 10:49:21,912 [req=ec7867ea-2501-4036-bb08-e2d830720cb5, org=npr_goep_hm_com] INFO  org.candlepin.common.filter.LoggingFilter - Response: status=200, content-type=\"application/json\", time=235ms"

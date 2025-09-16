@@ -561,38 +561,8 @@ check_output "delete environ table does not work" <<EOF
 name,value
 EOF
 
-
-
-schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n21
-}
-
-run_test schema_dump
-
-check_output "schema view is not working" <<EOF
-ATTACH DATABASE '' AS 'main';
-CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
-CREATE VIRTUAL TABLE lnav_static_files USING lnav_static_file_vtab_impl();
-CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
-CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
-CREATE VIRTUAL TABLE lnav_view_files USING lnav_view_files_impl();
-CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
-CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();
-CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
-CREATE VIRTUAL TABLE lnav_file_metadata USING lnav_file_metadata_impl();
-CREATE VIEW lnav_view_filters_and_stats AS
-  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
-CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
-CREATE VIRTUAL TABLE regexp_capture_into_json USING regexp_capture_into_json_impl();
-CREATE VIRTUAL TABLE xpath USING xpath_impl();
-CREATE VIRTUAL TABLE fstat USING fstat_impl();
-CREATE TABLE [1m[35mlnav_events[0m (
-   ts TEXT NOT NULL DEFAULT(strftime('%Y-%m-%dT%H:%M:%f', 'now')),
-   content TEXT
-);
-CREATE TABLE [1m[35mhttp_status_codes[0m
-EOF
-
+${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | \
+    run_cap_test env TEST_NAME=schema_dump head -n21
 
 run_cap_test ${lnav_test} -n \
     -c ";select * from nonexistent_table" \
@@ -982,3 +952,15 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_src_file, log_src_line FROM all_logs" \
     ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM all_thread_ids" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM all_thread_ids" \
+    ${test_dir}/logfile_generic.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM all_opids" \
+    ${test_dir}/logfile_vpxd.0

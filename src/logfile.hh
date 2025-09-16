@@ -423,6 +423,10 @@ public:
 
     safe_opid_state& get_opids() { return this->lf_opids; }
 
+    using safe_thread_id_state = safe::Safe<log_thread_id_state>;
+
+    safe_thread_id_state& get_thread_ids() { return this->lf_thread_ids; }
+
     void set_logline_opid(uint32_t line_number, string_fragment opid);
 
     void clear_logline_opid(uint32_t line_number);
@@ -540,6 +544,7 @@ private:
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     safe_opid_state lf_opids;
+    safe_thread_id_state lf_thread_ids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
     std::optional<time_t> lf_cached_base_time;

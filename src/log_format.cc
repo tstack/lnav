@@ -41,7 +41,9 @@
 #include "base/map_util.hh"
 #include "base/opt_util.hh"
 #include "base/snippet_highlighters.hh"
+#include "base/string_attr_type.hh"
 #include "base/string_util.hh"
+#include "bookmarks.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "fmt/format.h"
@@ -82,6 +84,8 @@ const intern_string_t log_format::LOG_LEVEL_STR
     = intern_string::lookup("log_level");
 const intern_string_t log_format::LOG_OPID_STR
     = intern_string::lookup("log_opid");
+const intern_string_t log_format::LOG_THREAD_ID_STR
+    = intern_string::lookup("log_thread_id");
 
 static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
     | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
@@ -142,6 +146,22 @@ opid_time_range::operator|=(const opid_time_range& rhs)
 }
 
 void
+thread_id_time_range::clear()
+{
+    this->titr_range.invalidate();
+    this->titr_level_stats = {};
+}
+
+thread_id_time_range&
+thread_id_time_range::operator|=(const thread_id_time_range& rhs)
+{
+    this->titr_range |= rhs.titr_range;
+    this->titr_level_stats |= rhs.titr_level_stats;
+
+    return *this;
+}
+
+void
 log_level_stats::update_msg_count(log_level_t lvl, int32_t amount)
 {
     switch (lvl) {
@@ -167,6 +187,24 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
             other_sub.ostr_open = false;
         }
     }
+}
+
+log_thread_id_map::iterator
+log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
+                                const string_fragment& tid,
+                                const timeval& log_tv)
+{
+    auto retval = this->ltis_tid_ranges.find(tid);
+    if (retval == this->ltis_tid_ranges.end()) {
+        auto tid_copy = tid.to_owned(alloc);
+        auto titr = thread_id_time_range{time_range{log_tv, log_tv}};
+        auto emplace_res = this->ltis_tid_ranges.emplace(tid_copy, titr);
+        retval = emplace_res.first;
+    } else {
+        retval->second.titr_range.extend_to(log_tv);
+    }
+
+    return retval;
 }
 
 log_opid_map::iterator
@@ -1001,6 +1039,7 @@ struct json_log_userdata {
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
     std::optional<string_fragment> jlu_opid_frag;
+    std::optional<string_fragment> jlu_tid_frag;
     std::optional<std::string> jlu_subid;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
@@ -1471,6 +1510,20 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 "JSON message does not have expected timestamp property"};
         }
 
+        if (jlu.jlu_tid_frag) {
+            this->jlf_line_values.lvv_thread_id_value
+                = jlu.jlu_tid_frag->to_string();
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_timeval());
+            tid_iter->second.titr_level_stats.update_msg_count(
+                ll.get_msg_level());
+        } else {
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, string_fragment{}, ll.get_timeval());
+            tid_iter->second.titr_level_stats.update_msg_count(
+                ll.get_msg_level());
+        }
+
         if (jlu.jlu_opid_frag) {
             this->jlf_line_values.lvv_opid_value
                 = jlu.jlu_opid_frag->to_string();
@@ -1886,6 +1939,16 @@ external_log_format::scan(logfile& lf,
             h.update(src_line_cap.value());
             dst.back().set_schema(h.to_array());
         }
+        auto thread_id_cap = md[fpat->p_thread_id_field_index];
+        if (thread_id_cap) {
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, thread_id_cap.value(), log_tv);
+            tid_iter->second.titr_level_stats.update_msg_count(level);
+        } else {
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, string_fragment{}, log_tv);
+            tid_iter->second.titr_level_stats.update_msg_count(level);
+        }
 
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
@@ -2009,6 +2072,8 @@ external_log_format::annotate(logfile* lf,
             values.lvv_opid_value = this->jlf_line_values.lvv_opid_value;
             values.lvv_opid_provenance
                 = this->jlf_line_values.lvv_opid_provenance;
+            values.lvv_thread_id_value
+                = this->jlf_line_values.lvv_thread_id_value;
         }
         log_format::annotate(lf, line_number, sa, values, annotate_module);
         return;
@@ -2092,6 +2157,7 @@ external_log_format::annotate(logfile* lf,
     if (thread_id_cap) {
         sa.emplace_back(to_line_range(thread_id_cap.value()),
                         SA_THREAD_ID.value());
+        values.lvv_thread_id_value = thread_id_cap->to_string();
     }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
@@ -2327,6 +2393,15 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_opid_frag = opid_iter->first;
         }
     }
+    if (jlu->jlu_format->elf_thread_id_field == field_name) {
+        auto& sbc = *jlu->jlu_batch_context;
+        auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(frag);
+        if (tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()) {
+            jlu->jlu_tid_frag = frag.to_owned(sbc.sbc_allocator);
+        } else {
+            jlu->jlu_tid_frag = tid_iter->first;
+        }
+    }
     if (!jlu->jlu_format->elf_subid_field.empty()
         && jlu->jlu_format->elf_subid_field == field_name)
     {
@@ -2554,6 +2629,10 @@ external_log_format::get_subline(const logline& ll,
                  ++lv_iter)
             {
                 lv_iter->lv_meta.lvm_format = this;
+            }
+            if (jlu.jlu_tid_frag) {
+                this->jlf_line_values.lvv_thread_id_value
+                    = jlu.jlu_tid_frag->to_string();
             }
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value

@@ -150,9 +150,12 @@ struct exec_context {
     struct file_open {
         std::string fo_name;
     };
+    struct external_access {
+        std::string ea_src;
+    };
 
-    using provenance_t
-        = mapbox::util::variant<user, keyboard_input, mouse_input, file_open>;
+    using provenance_t = mapbox::util::
+        variant<user, keyboard_input, mouse_input, file_open, external_access>;
 
     struct provenance_guard {
         explicit provenance_guard(exec_context* context, provenance_t prov)

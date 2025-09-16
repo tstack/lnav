@@ -49,6 +49,7 @@
 #include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
 #include "sqlite-extension-func.hh"
+#include "sql_util.hh"
 
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
 
@@ -266,6 +267,15 @@ to_sqlite(sqlite3_context* ctx, const string_fragment& sf)
     } else {
         sqlite3_result_null(ctx);
     }
+}
+
+inline void
+to_sqlite(sqlite3_context* ctx, const timeval& tv)
+{
+    char buffer[64];
+
+    sql_strftime(buffer, sizeof(buffer), tv);
+    sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
 }
 
 inline void
@@ -583,7 +593,7 @@ struct vtab_module_base {
 };
 
 template<typename T>
-struct vtab_module : public vtab_module_base {
+struct vtab_module : vtab_module_base {
     struct vtab {
         explicit vtab(sqlite3* db, T& impl) : v_db(db), v_impl(impl) {}
 
@@ -856,13 +866,13 @@ struct tvt_iterator_cursor {
         int eof() { return this->iter == get_handler().end(); }
 
         template<bool cond, typename U>
-        using resolvedType = typename std::enable_if<cond, U>::type;
+        using resolvedType = std::enable_if_t<cond, U>;
 
         template<typename U = int>
         resolvedType<
-            std::is_same<std::random_access_iterator_tag,
+            std::is_same_v<std::random_access_iterator_tag,
                          typename std::iterator_traits<
-                             typename T::iterator>::iterator_category>::value,
+                             typename T::iterator>::iterator_category>,
             U>
         get_rowid(sqlite_int64& rowid_out)
         {
@@ -895,7 +905,7 @@ struct tvt_iterator_cursor {
 };
 
 template<typename T>
-struct tvt_no_update : public T {
+struct tvt_no_update : T {
     using T::T;
 
     int delete_row(sqlite3_vtab* vt, sqlite3_int64 rowid)

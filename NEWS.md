@@ -7,6 +7,9 @@ Features:
   `thread-id-field` properties. These fields can then be
   accessed in the SQL vtables as `log_src_file`,
   `log_src_line`, and `log_thread_id`.
+* The `all_opids` and `all_thread_ids` virtual tables
+  have been added to make it simple to discover all of
+  the operations and threads across all log files.
 * The `:xopen` command will now open text files in an
   external editor.  To open the file at a particular
   line/column, add a URL fragment of the form

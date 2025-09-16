@@ -234,6 +234,7 @@ noinst_HEADERS = \
     third-party/lnav-rs-ext/lnav_rs_ext.cxx.hh \
     third-party/lnav-rs-ext/rust/cxx.h \
     third-party/rapidyaml/ryml_all.hpp \
+	all_ids_vtabs.hh \
 	all_logs_vtab.hh \
 	archive_manager.hh \
 	archive_manager.cfg.hh \
@@ -589,6 +590,7 @@ libdiag_a_SOURCES = \
 	spookyhash/SpookyV2.cpp
 
 PLUGIN_SRCS = \
+	all_ids_vtabs.cc \
 	file_vtab.cc
 
 if HAVE_WINDRES

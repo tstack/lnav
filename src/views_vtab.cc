@@ -288,7 +288,7 @@ get_view_options_handlers()
     return retval;
 }
 
-struct lnav_views : public tvt_iterator_cursor<lnav_views> {
+struct lnav_views : tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's views through this table.
@@ -1371,7 +1371,7 @@ CREATE TABLE lnav_view_files (
     }
 };
 
-static auto a = injector::bind_multiple<vtab_module_base>()
+auto a = injector::bind_multiple<vtab_module_base>()
                     .add<vtab_module<lnav_views>>()
                     .add<vtab_module<lnav_view_stack>>()
                     .add<vtab_module<lnav_view_filters>>()

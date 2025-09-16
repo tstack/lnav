@@ -32,6 +32,9 @@
 #ifndef lnav_injector_bind_hh
 #define lnav_injector_bind_hh
 
+#include <functional>
+#include <memory>
+
 #include "injector.hh"
 
 namespace injector {
@@ -42,7 +45,7 @@ template<typename I, typename R, typename... Args>
 std::function<std::shared_ptr<I>()>
 create_factory(R (*)(Args...))
 {
-    return []() { return std::make_shared<I>(::injector::get<Args>()...); };
+    return [] { return std::make_shared<I>(::injector::get<Args>()...); };
 }
 
 template<typename I, std::enable_if_t<has_injectable<I>::value, bool> = true>
@@ -58,7 +61,7 @@ template<typename I, std::enable_if_t<!has_injectable<I>::value, bool> = true>
 std::function<std::shared_ptr<I>()>
 create_factory() noexcept
 {
-    return []() { return std::make_shared<I>(); };
+    return [] { return std::make_shared<I>(); };
 }
 
 }  // namespace details
@@ -162,7 +165,7 @@ struct bind_multiple : multiple_storage<T> {
         }
         bind<I, Annotations...>::to_instance(single.get());
         multiple_storage<T>::get_factories()[typeid(I).name()]
-            = [single]() { return single; };
+            = [single] { return single; };
 
         return *this;
     }

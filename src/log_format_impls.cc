@@ -258,6 +258,9 @@ public:
                           .count();
             }
 
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, string_fragment{}, log_tv);
+            tid_iter->second.titr_level_stats.update_msg_count(level_val);
             dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
             return scan_match{5};
         }

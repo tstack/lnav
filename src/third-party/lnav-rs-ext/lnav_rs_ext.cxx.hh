@@ -772,6 +772,7 @@ namespace lnav_rs_ext {
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
+  struct ExecError;
   struct ExecResult;
   struct StartExtResult;
 }
@@ -914,13 +915,24 @@ struct PollInput final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
+struct ExecError final {
+  ::rust::String msg;
+  ::rust::String reason;
+  ::rust::String help;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
+
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 struct ExecResult final {
   ::rust::String status;
   ::rust::String content_type;
   ::std::int32_t content_fd;
-  ::rust::String error;
+  ::lnav_rs_ext::ExecError error;
 
   using IsRelocatable = ::std::true_type;
 };

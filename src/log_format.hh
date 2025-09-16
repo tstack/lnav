@@ -285,7 +285,7 @@ public:
     string_fragment lv_frag;
     int lv_sub_offset{0};
     intern_string_t lv_intern_string;
-    struct line_range lv_origin;
+    line_range lv_origin;
 };
 
 struct logline_value_vector {
@@ -301,6 +301,7 @@ struct logline_value_vector {
         this->lvv_sbr.disown();
         this->lvv_opid_value = std::nullopt;
         this->lvv_opid_provenance = opid_provenance::none;
+        this->lvv_thread_id_value = std::nullopt;
     }
 
     logline_value_vector() = default;
@@ -308,7 +309,8 @@ struct logline_value_vector {
     logline_value_vector(const logline_value_vector& other)
         : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
           lvv_opid_value(other.lvv_opid_value),
-          lvv_opid_provenance(other.lvv_opid_provenance)
+          lvv_opid_provenance(other.lvv_opid_provenance),
+          lvv_thread_id_value(other.lvv_thread_id_value)
     {
     }
 
@@ -318,6 +320,7 @@ struct logline_value_vector {
         this->lvv_values = other.lvv_values;
         this->lvv_opid_value = other.lvv_opid_value;
         this->lvv_opid_provenance = other.lvv_opid_provenance;
+        this->lvv_thread_id_value = other.lvv_thread_id_value;
 
         return *this;
     }
@@ -326,6 +329,7 @@ struct logline_value_vector {
     std::vector<logline_value> lvv_values;
     std::optional<std::string> lvv_opid_value;
     opid_provenance lvv_opid_provenance{opid_provenance::none};
+    std::optional<std::string> lvv_thread_id_value;
 };
 
 struct logline_value_stats {
@@ -692,6 +696,7 @@ public:
     static const intern_string_t LOG_TIME_STR;
     static const intern_string_t LOG_LEVEL_STR;
     static const intern_string_t LOG_OPID_STR;
+    static const intern_string_t LOG_THREAD_ID_STR;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;

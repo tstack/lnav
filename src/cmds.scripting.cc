@@ -508,19 +508,26 @@ execute_external_command(::rust::String rs_src, ::rust::String rs_script)
             auto ec_out = exec_context::output_t{outfile, fclose};
             auto og = exec_context::output_guard{ec, "default", ec_out};
             auto me = multiline_executor{ec, src};
+            auto pg = ec.with_provenance(exec_context::external_access{src});
             ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
             auto script_frag = string_fragment::from_str(script);
             for (const auto& line : script_frag.split_lines()) {
                 auto res = me.push_back(line);
                 if (res.isErr()) {
-                    retval->error = res.unwrapErr().to_attr_line().al_string;
+                    auto um = res.unwrapErr();
+                    retval->error.msg = um.um_message.al_string;
+                    retval->error.reason = um.um_reason.al_string;
+                    retval->error.help = um.um_help.al_string;
                     ec.ec_local_vars.pop();
                     return;
                 }
             }
             auto res = me.final();
             if (res.isErr()) {
-                retval->error = res.unwrapErr().to_attr_line().al_string;
+                auto um = res.unwrapErr();
+                retval->error.msg = um.um_message.al_string;
+                retval->error.reason = um.um_reason.al_string;
+                retval->error.help = um.um_help.al_string;
             } else {
                 fseek(ec_out.first, 0, SEEK_SET);
                 retval->status = me.me_last_result;

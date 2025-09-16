@@ -27,9 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+#include <vector>
+
 #include <string.h>
 #include <unistd.h>
 
+#include "base/distributed_slice.hh"
 #include "base/injector.bind.hh"
 #include "base/lnav.gzip.hh"
 #include "base/lnav_log.hh"
@@ -43,8 +47,7 @@
 #include "vtab_module_json.hh"
 
 namespace {
-
-struct lnav_file : public tvt_iterator_cursor<lnav_file> {
+struct lnav_file : tvt_iterator_cursor<lnav_file> {
     using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
 
     static constexpr const char* NAME = "lnav_file";
@@ -367,20 +370,22 @@ CREATE TABLE lnav_file_metadata (
 };
 
 struct injectable_lnav_file : vtab_module<lnav_file> {
-    using vtab_module<lnav_file>::vtab_module;
+    using vtab_module::vtab_module;
     using injectable = injectable_lnav_file(file_collection&);
 };
 
 struct injectable_lnav_file_metadata
     : vtab_module<tvt_no_update<lnav_file_metadata>> {
-    using vtab_module<tvt_no_update<lnav_file_metadata>>::vtab_module;
+    using vtab_module::vtab_module;
     using injectable = injectable_lnav_file_metadata(file_collection&);
 };
 
-static auto file_binder
+auto file_binder
     = injector::bind_multiple<vtab_module_base>().add<injectable_lnav_file>();
 
-static auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
-                                   .add<injectable_lnav_file_metadata>();
+auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
+                            .add<injectable_lnav_file_metadata>();
 
 }  // namespace
+
+DIST_SLICE(inject_bind) int lnav_file_vtab = 1;
