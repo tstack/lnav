@@ -1079,6 +1079,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1181,11 +1190,12 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=integ3#5b950be9bdf878a251c4f47a37c5a7067e8dce85"
+source = "git+https://github.com/tstack/log2src.git?branch=refreshsrc#1b23074b644f9f9e167530a03b3ff6c40bcf4edb"
 dependencies = [
  "cc",
  "clap",
  "indicatif",
+ "itertools 0.14.0",
  "miette",
  "rayon",
  "regex",
@@ -1456,7 +1466,7 @@ dependencies = [
  "csv",
  "enum-as-inner",
  "is-terminal",
- "itertools",
+ "itertools 0.13.0",
  "log",
  "minijinja",
  "notify",
@@ -1483,7 +1493,7 @@ checksum = "1b7cf533685fdc3cd8f16ff1fa57529f53c78872f6d7e0ca3a82057fda89bcae"
 dependencies = [
  "chumsky",
  "enum-as-inner",
- "itertools",
+ "itertools 0.13.0",
  "log",
  "schemars",
  "semver",
