@@ -2,7 +2,9 @@
 ## lnav v0.13.2
 
 Bug Fixes:
-* Kitty keyboard handling was broken at the last minute.
+* Some keys were not recognized correctly because the
+  Kitty keyboard protocol handling was broken at the
+  last minute.
 * The TUI no longer opens if a bad file name is passed.
 * The abbreviated month `%b` time-conversion was not
   always falling back to English locale, which could
