@@ -37,6 +37,8 @@
 #include <thread>
 #include <utility>
 
+#include <unistd.h>
+
 #include "injector.hh"
 #include "safe/safe.h"
 #include "time_util.hh"
@@ -138,6 +140,7 @@ public:
     friend supervisor;
 
     int s_wakeup_fd{-1};
+
 private:
     void start();
 
