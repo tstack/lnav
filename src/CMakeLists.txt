@@ -547,6 +547,7 @@ add_library(
         log_format.cc
         log_format_loader.cc
         log_search_table.cc
+        log_stmt_vtab.cc
         logfile.cc
         logfile_sub_source.cc
         logline_window.cc
@@ -684,6 +685,7 @@ add_library(
         log_gutter_source.hh
         log_search_table.hh
         log_search_table_fwd.hh
+        log_stmt_vtab.hh
         logfile_sub_source.cfg.hh
         logfile.hh
         logfile_fwd.hh

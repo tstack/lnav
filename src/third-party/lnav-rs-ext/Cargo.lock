@@ -1190,7 +1190,7 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=refreshsrc#1b23074b644f9f9e167530a03b3ff6c40bcf4edb"
+source = "git+https://github.com/tstack/log2src.git?branch=integ5#b9b02f8be526a48c85b59526c876240bdab905a7"
 dependencies = [
  "cc",
  "clap",

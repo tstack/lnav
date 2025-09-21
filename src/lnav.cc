@@ -102,6 +102,7 @@
 #include "log_data_table.hh"
 #include "log_format_loader.hh"
 #include "log_gutter_source.hh"
+#include "log_stmt_vtab.hh"
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
@@ -210,7 +211,8 @@ static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {
     "range_stop",  "rowid",         "st_dev",
     "st_gid",      "st_ino",        "st_mode",
     "st_rdev",     "st_uid",        "pattern",
-    "paused",      "filtering",
+    "paused",      "filtering",     "begin_line",
+    "end_line",
 };
 
 static auto bound_pollable_supervisor
@@ -2811,6 +2813,7 @@ main(int argc, char* argv[])
     register_xpath_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
     lnav::events::register_events_tab(lnav_data.ld_db.in());
+    register_log_stmt_vtab(lnav_data.ld_db.in());
 
     auto _vtab_cleanup = finally([] {
         static const char* VIRT_TABLES = R"(

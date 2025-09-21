@@ -769,6 +769,7 @@ namespace lnav_rs_ext {
   struct CompileResult2;
   struct FindLogResultJson;
   struct VarPair;
+  struct SourceDetails;
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
@@ -884,10 +885,23 @@ struct VarPair final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$VarPair
 
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+struct SourceDetails final {
+  ::rust::String file;
+  ::std::size_t begin_line;
+  ::std::size_t end_line;
+  ::rust::String name;
+  ::rust::Str language;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 struct FindLogResult final {
-  ::rust::String src;
+  ::lnav_rs_ext::SourceDetails src;
   ::rust::String pattern;
   ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 
@@ -959,6 +973,8 @@ void discover_srcs() noexcept;
 ::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
+
+::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept;
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept;
 

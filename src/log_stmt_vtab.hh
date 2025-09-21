@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, Timothy Stack
+* Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,21 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rust/cxx.h"
+#ifndef lnav_log_stmt_vtab_hh
+#define lnav_log_stmt_vtab_hh
 
-namespace lnav_rs_ext {
+#include <sqlite3.h>
 
-struct ExecResult;
-struct PollInput;
-struct ViewStates;
-struct VarPair;
+int register_log_stmt_vtab(sqlite3* db);
 
-::rust::String version_info();
-
-ExecResult execute_external_command(::rust::String,
-                                    ::rust::String,
-                                    ::rust::String hdrs);
-
-PollInput longpoll(const PollInput& vs);
-
-}  // namespace lnav_rs_ext
+#endif

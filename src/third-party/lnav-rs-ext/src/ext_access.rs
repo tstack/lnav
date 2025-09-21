@@ -1,5 +1,6 @@
 use crate::ffi::{execute_external_command, longpoll, version_info, PollInput};
 use rouille::{accept, input, router, try_or_400, Request, Response, Server};
+use std::collections::BTreeMap;
 use std::convert::Into;
 use std::error::Error;
 use std::fs::File;
@@ -114,7 +115,8 @@ pub fn script_body_with_limit(request: &Request, limit: usize) -> Result<String,
     };
 
     let mut out = Vec::new();
-    body.take(limit.saturating_add(1) as u64).read_to_end(&mut out)?;
+    body.take(limit.saturating_add(1) as u64)
+        .read_to_end(&mut out)?;
     if out.len() > limit {
         return Err(ScriptTextError::LimitExceeded);
     }
@@ -130,8 +132,15 @@ pub fn script_body_with_limit(request: &Request, limit: usize) -> Result<String,
 fn do_exec(request: &Request) -> Response {
     let body = try_or_400!(script_body_with_limit(request, 1024 * 1024));
 
+    let hdrs = serde_json::to_string(
+        &request
+            .headers()
+            .map(|(name, value)| (name.to_lowercase(), value.to_string()))
+            .collect::<BTreeMap<String, String>>(),
+    )
+    .unwrap();
     let src = format!("{}", request.remote_addr());
-    let res = execute_external_command(src, body);
+    let res = execute_external_command(src, body, hdrs);
 
     if res.error.msg.is_empty() {
         let raw_fd = RawFd::from(res.content_fd);

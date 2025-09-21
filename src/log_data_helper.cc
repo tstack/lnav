@@ -223,9 +223,11 @@ log_data_helper::parse_body()
     auto find_res
         = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
     if (find_res != nullptr) {
-        auto from_res
-            = lnav::from_json<lnav::src_ref>((std::string) find_res->src);
-        this->ldh_src_ref = from_res.unwrap();
+        this->ldh_src_ref = lnav::src_ref{
+            std::filesystem::path((std::string) find_res->src.file),
+            (uint32_t) find_res->src.begin_line,
+            (std::string) find_res->src.name,
+        };
         for (const auto& [expr, value] : find_res->variables) {
             this->ldh_src_vars.emplace_back((std::string) expr,
                                             (std::string) value);

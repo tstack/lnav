@@ -494,14 +494,16 @@ version_info()
 }
 
 ExecResult
-execute_external_command(::rust::String rs_src, ::rust::String rs_script)
+execute_external_command(::rust::String rs_src,
+                         ::rust::String rs_script,
+                         ::rust::String hdrs)
 {
     auto src = (std::string) rs_src;
     auto script = (std::string) rs_script;
     auto retval = std::make_shared<ExecResult>();
 
     isc::to<main_looper&, services::main_t>().send_and_wait(
-        [src, script, &retval](auto& mlooper) {
+        [src, script, hdrs, &retval](auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());
             auto& ec = lnav_data.ld_exec_context;
             auto* outfile = tmpfile();
@@ -509,7 +511,8 @@ execute_external_command(::rust::String rs_src, ::rust::String rs_script)
             auto og = exec_context::output_guard{ec, "default", ec_out};
             auto me = multiline_executor{ec, src};
             auto pg = ec.with_provenance(exec_context::external_access{src});
-            ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
+            ec.ec_local_vars.push(std::map<std::string, scoped_value_t>{
+                {"headers", scoped_value_t{(std::string) hdrs}}});
             auto script_frag = string_fragment::from_str(script);
             for (const auto& line : script_frag.split_lines()) {
                 auto res = me.push_back(line);

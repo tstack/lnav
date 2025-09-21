@@ -4615,6 +4615,26 @@ For support questions, email:
    -1
 
 
+[1m[4msource_log_stmt[0m[4m([0m[4mpath[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued function for getting information about log
+  statements that were found in source code added by the
+  :add-source-path command.
+[4mParameter[0m
+  [4mpath[0m   The source file path
+[4mResults[0m
+  [4mbegin_line[0m      The line number where the
+                  statement begins
+  [4mend_line[0m        The line number where the
+                  statement ends
+  [4mlanguage[0m        The language of the source code
+  [4mfunction_name[0m   The name of the function
+                  containing the log statement
+  [4mpattern[0m         The pattern used to match log
+                  messages from this log statement
+  [4mpath[0m            The path to the source file
+
+
 [1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mupper[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Function used to generate a sparkline bar chart.  The

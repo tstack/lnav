@@ -3980,6 +3980,20 @@ sign(*num*)
 ----
 
 
+.. _source_log_stmt:
+
+source_log_stmt(*path*)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued function for getting information about log statements that were found in source code added by the :add-source-path command.
+
+  **Parameters**
+    * **path\*** --- The source file path
+
+
+----
+
+
 .. _sparkline:
 
 sparkline(*value*, *\[upper\]*)

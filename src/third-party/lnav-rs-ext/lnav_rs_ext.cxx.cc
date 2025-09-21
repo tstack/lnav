@@ -793,6 +793,7 @@ namespace lnav_rs_ext {
   struct CompileResult2;
   struct FindLogResultJson;
   struct VarPair;
+  struct SourceDetails;
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
@@ -908,10 +909,23 @@ struct VarPair final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$VarPair
 
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+struct SourceDetails final {
+  ::rust::String file;
+  ::std::size_t begin_line;
+  ::std::size_t end_line;
+  ::rust::String name;
+  ::rust::Str language;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
+
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 struct FindLogResult final {
-  ::rust::String src;
+  ::lnav_rs_ext::SourceDetails src;
   ::rust::String pattern;
   ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 
@@ -983,9 +997,9 @@ void lnav_rs_ext$cxxbridge1$longpoll(::lnav_rs_ext::PollInput const &poll_inpout
   new (return$) ::lnav_rs_ext::PollInput(longpoll$(poll_inpout));
 }
 
-void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::lnav_rs_ext::ExecResult *return$) noexcept {
-  ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String) = ::lnav_rs_ext::execute_external_command;
-  new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd)));
+void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::lnav_rs_ext::ExecResult *return$) noexcept {
+  ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String, ::rust::String) = ::lnav_rs_ext::execute_external_command;
+  new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs)));
 }
 
 void lnav_rs_ext$cxxbridge1$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
@@ -999,6 +1013,8 @@ void lnav_rs_ext$cxxbridge1$get_status(::lnav_rs_ext::ExtProgress *return$) noex
 ::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$find_log_statement(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
 
 ::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept;
+
+void lnav_rs_ext$cxxbridge1$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
@@ -1031,6 +1047,12 @@ void discover_srcs() noexcept {
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::uint32_t line, ::rust::Str body) noexcept {
   return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$find_log_statement_json(file, line, body));
+}
+
+::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {
+  ::rust::MaybeUninit<::rust::Vec<::lnav_rs_ext::FindLogResult>> return$;
+  lnav_rs_ext$cxxbridge1$get_log_statements_for(file, &return$.value);
+  return ::std::move(return$.value);
 }
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {
@@ -1149,6 +1171,15 @@ void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$raw(::std::unique_ptr<:
 void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$drop(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> *ptr) noexcept {
   ptr->~unique_ptr();
 }
+
+void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$new(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$drop(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$len(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$capacity(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+::lnav_rs_ext::FindLogResult const *cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$reserve_total(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t new_cap) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$set_len(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$truncate(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t len) noexcept;
 } // extern "C"
 
 namespace rust {
@@ -1280,6 +1311,38 @@ void Vec<::lnav_rs_ext::SourceTreeElement>::set_len(::std::size_t len) noexcept 
 template <>
 void Vec<::lnav_rs_ext::SourceTreeElement>::truncate(::std::size_t len) {
   return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$truncate(this, len);
+}
+template <>
+Vec<::lnav_rs_ext::FindLogResult>::Vec() noexcept {
+  cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$new(this);
+}
+template <>
+void Vec<::lnav_rs_ext::FindLogResult>::drop() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$drop(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::FindLogResult>::size() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$len(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::FindLogResult>::capacity() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$capacity(this);
+}
+template <>
+::lnav_rs_ext::FindLogResult const *Vec<::lnav_rs_ext::FindLogResult>::data() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data(this);
+}
+template <>
+void Vec<::lnav_rs_ext::FindLogResult>::reserve_total(::std::size_t new_cap) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$reserve_total(this, new_cap);
+}
+template <>
+void Vec<::lnav_rs_ext::FindLogResult>::set_len(::std::size_t len) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$set_len(this, len);
+}
+template <>
+void Vec<::lnav_rs_ext::FindLogResult>::truncate(::std::size_t len) {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$truncate(this, len);
 }
 } // namespace cxxbridge1
 } // namespace rust

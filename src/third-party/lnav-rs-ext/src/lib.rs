@@ -3,21 +3,16 @@
 mod ext_access;
 
 use crate::ext_access::{start_server, stop_server};
-use crate::ffi::{
-    ExtError, ExtProgress, FindLogResult, FindLogResultJson, StartExtResult, Status, VarPair,
-};
+use crate::ffi::{ExtError, ExtProgress, FindLogResult, FindLogResultJson, SourceDetails, StartExtResult, Status, VarPair};
 use cxx::UniquePtr;
-use log2src::{
-    LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, VariablePair,
-};
+use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, SourceRef, VariablePair};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
-use serde::Serialize;
 use std::convert::Into;
 use std::error::Error;
 use std::panic;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{LazyLock, Mutex};
@@ -140,8 +135,17 @@ mod ffi {
         pub value: String,
     }
 
+    #[derive(Clone, Debug, Serialize)]
+    pub struct SourceDetails {
+        pub file: String,
+        pub begin_line: usize,
+        pub end_line: usize,
+        pub name: String,
+        pub language: &'static str,
+    }
+
     struct FindLogResult {
-        pub src: String,
+        pub src: SourceDetails,
         pub pattern: String,
         pub variables: Vec<VarPair>,
     }
@@ -179,7 +183,7 @@ mod ffi {
 
         fn longpoll(poll_inpout: &PollInput) -> PollInput;
 
-        fn execute_external_command(src: String, cmd: String) -> ExecResult;
+        fn execute_external_command(src: String, cmd: String, hdrs: String) -> ExecResult;
     }
 
     struct StartExtResult {
@@ -202,6 +206,8 @@ mod ffi {
             line: u32,
             body: &str,
         ) -> UniquePtr<FindLogResultJson>;
+
+        fn get_log_statements_for(file: &str) -> Vec<FindLogResult>;
 
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
 
@@ -278,19 +284,19 @@ fn compile_tree_int(
             .and_then(prqlc::pl_to_rq)
             .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
             .and_then(|rq| prqlc::rq_to_sql(rq, &options))?)
-        .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
+            .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
     })
-    .map_err(|p| {
-        ErrorMessages::from(ErrorMessage {
-            kind: prqlc::MessageKind::Error,
-            code: None,
-            reason: format!("internal error: {:#?}", p),
-            hints: vec![],
-            span: None,
-            display: None,
-            location: None,
-        })
-    })?
+        .map_err(|p| {
+            ErrorMessages::from(ErrorMessage {
+                kind: prqlc::MessageKind::Error,
+                code: None,
+                reason: format!("internal error: {:#?}", p),
+                hints: vec![],
+                span: None,
+                display: None,
+                location: None,
+            })
+        })?
 }
 
 pub fn compile_tree(
@@ -322,11 +328,29 @@ fn get_status() -> ExtProgress {
     EXT_PROGRESS.lock().unwrap().clone()
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct SourceDetails {
-    pub file: String,
-    pub line: usize,
-    pub name: String,
+impl From<SourceRef> for FindLogResult {
+    fn from(value: SourceRef) -> Self {
+        Self {
+            src: SourceDetails {
+                file: value.source_path,
+                begin_line: value.line_no,
+                end_line: value.end_line_no,
+                name: value.name,
+                language: value.language.as_str(),
+            },
+            pattern: value.pattern,
+            variables: vec![],
+        }
+    }
+}
+
+impl FindLogResult {
+    pub fn with_variables(mut self, variables: Vec<VariablePair>) -> Self {
+        self.variables = variables.into_iter()
+            .map(|VariablePair { expr, value }| VarPair { expr, value })
+            .collect();
+        self
+    }
 }
 
 fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogResult> {
@@ -338,24 +362,13 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
     );
 
     if let Some(LogMapping {
-        variables,
-        src_ref: Some(src_ref),
-        ..
-    }) = log_matcher.match_log_statement(&log_ref)
+                    variables,
+                    src_ref: Some(src_ref),
+                    ..
+                }) = log_matcher.match_log_statement(&log_ref)
     {
-        let src_details = SourceDetails {
-            file: src_ref.source_path,
-            line: src_ref.line_no,
-            name: src_ref.name,
-        };
-        UniquePtr::new(FindLogResult {
-            src: serde_json::to_string(&src_details).unwrap(),
-            pattern: src_ref.pattern,
-            variables: variables
-                .into_iter()
-                .map(|VariablePair { expr, value }| VarPair { expr, value })
-                .collect(),
-        })
+        let retval: FindLogResult = src_ref.into();
+        UniquePtr::new(retval.with_variables(variables))
     } else {
         UniquePtr::null()
     }
@@ -370,15 +383,17 @@ fn find_log_statement_json(file: &str, lineno: u32, body: &str) -> UniquePtr<Fin
     );
 
     if let Some(LogMapping {
-        variables,
-        src_ref: Some(src_ref),
-        ..
-    }) = log_matcher.match_log_statement(&log_ref)
+                    variables,
+                    src_ref: Some(src_ref),
+                    ..
+                }) = log_matcher.match_log_statement(&log_ref)
     {
         let src_details = SourceDetails {
             file: src_ref.source_path,
-            line: src_ref.line_no,
+            begin_line: src_ref.line_no,
+            end_line: src_ref.end_line_no,
             name: src_ref.name,
+            language: src_ref.language.as_str(),
         };
         UniquePtr::new(FindLogResultJson {
             src: serde_json::to_string(&src_details).unwrap(),
@@ -405,4 +420,17 @@ fn start_ext_access(port: u16, api_key: String) -> StartExtResult {
 
 fn stop_ext_access() {
     stop_server();
+}
+
+fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
+    let matcher = LOG_MATCHER.lock().unwrap();
+    let path = Path::new(path_str);
+
+    if let Some(stmts) = matcher.find_source_file_statements(path) {
+        stmts.log_statements.iter()
+            .map(|src_ref| src_ref.clone().into())
+            .collect()
+    } else {
+        vec![]
+    }
 }
