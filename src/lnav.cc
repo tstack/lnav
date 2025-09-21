@@ -1014,8 +1014,11 @@ struct refresh_status_bars {
         }
 
         if (!lnav_data.ld_log_source.is_indexing_in_progress()
-            || lnav_data.ld_log_source.text_line_count() == 0)
+            || lnav_data.ld_log_source.lss_index_generation == 0)
         {
+            if (lnav_data.ld_log_source.lss_index_generation == 0) {
+                lnav_data.ld_view_stack.top().value()->set_needs_update();
+            }
             lnav_data.ld_view_stack.do_update();
         }
         if (this->rsb_top_source->update_time(current_time)) {

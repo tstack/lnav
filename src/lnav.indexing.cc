@@ -434,7 +434,9 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
 
         auto* tss = tc->get_sub_source();
-        lnav_data.ld_filter_status_source.update_filtered(tss);
+        if (lnav_data.ld_filter_status_source.update_filtered(tss)) {
+            lnav_data.ld_status[LNS_FILTER].set_needs_update();
+        }
         if (retval.rir_changes > 0) {
             lnav_data.ld_scroll_broadcaster(tc);
         }

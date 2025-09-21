@@ -201,18 +201,22 @@ filter_status_source::statusview_value_for_field(int field)
     return this->tss_fields[field];
 }
 
-void
+bool
 filter_status_source::update_filtered(text_sub_source* tss)
 {
     if (tss == nullptr) {
-        return;
+        return false;
     }
 
     auto& sf = this->tss_fields[TSF_FILTERED];
+    auto retval = false;
 
     if (tss->get_filtered_count() == 0) {
         if (tss->tss_apply_filters) {
-            sf.clear();
+            if (!sf.empty()) {
+                sf.clear();
+                retval = true;
+            }
         } else {
             sf.set_value(
                 " \u2718 Filtering disabled, re-enable with " ANSI_BOLD_START
@@ -228,14 +232,18 @@ filter_status_source::update_filtered(text_sub_source* tss)
                 al.with_attr(
                     string_attr(line_range{0, -1},
                                 VC_STYLE.value(text_attrs::with_bold())));
+                retval = true;
             }
         } else {
             this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_ALERT_STATUS);
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
+            sf.set_value("%'9d Lines not shown ", tss->get_filtered_count());
+            retval = true;
         }
-        sf.set_value("%'9d Lines not shown ", tss->get_filtered_count());
     }
+
+    return retval;
 }
 
 filter_help_status_source::filter_help_status_source()

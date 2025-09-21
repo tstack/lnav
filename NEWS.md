@@ -43,6 +43,21 @@ Features:
   lnav. Requests can be sent to execute commands and poll
   for changes in the view state.
 
+## lnav v0.13.2
+
+Bug Fixes:
+* Some keys were not recognized correctly because the
+  Kitty keyboard protocol handling was broken at the
+  last minute.
+* The TUI no longer opens if a bad file name is passed.
+* The abbreviated month `%b` time-conversion was not
+  always falling back to English locale, which could
+  prevent lnav from starting up.
+* The top of the LOG view could move in some cases when
+  filtering was enabled.
+* Some status bar fields were not always showing
+  updates.
+
 ## lnav v0.13.1
 
 Features:
