@@ -32,6 +32,7 @@
 
 #include "ext.longpoll.hh"
 
+#include "config.h"
 #include "lnav_rs_ext.cxx.hh"
 #include "safe/safe.h"
 
