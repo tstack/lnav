@@ -206,14 +206,14 @@ determine_path_type(const std::string& arg)
         return path_type::url;
     }
 
-    switch (arg.find(':')) {
-        case 0:
-            return path_type::normal;
-        case 1:
-            return path_type::windows;
-        default:
-            return path_type::remote;
+    const auto colon_pos = arg.find(':');
+    if (colon_pos == std::string::npos) {
+        return path_type::normal;
     }
+    if (colon_pos == 1) {
+        return path_type::windows;
+    }
+    return path_type::remote;
 }
 
 path_transcoder
