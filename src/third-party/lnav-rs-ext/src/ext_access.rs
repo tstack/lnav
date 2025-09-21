@@ -147,7 +147,6 @@ fn do_exec(request: &Request) -> Response {
         let fd = unsafe { OwnedFd::from_raw_fd(raw_fd) };
         let file = File::from(fd);
         Response::from_file(res.content_type, file)
-            .with_additional_header("X-lnav-status", res.status)
     } else {
         Response::json(&res.error).with_status_code(500)
     }
