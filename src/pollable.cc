@@ -71,7 +71,7 @@ pollable_supervisor::update_poll_set(std::vector<struct pollfd>& pollfds)
 }
 
 void
-pollable_supervisor::check_poll_set(const std::vector<struct pollfd>& pollfds)
+pollable_supervisor::check_poll_set(const std::vector<pollfd>& pollfds)
 {
     std::vector<pollable*> visited;
     auto found_new = false;

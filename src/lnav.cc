@@ -1804,6 +1804,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     std::vector<view_curses*> updated_views;
     updated_views.emplace_back(&lnav_data.ld_view_stack);
 
+    auto wakeup_pair = auto_pipe();
+    wakeup_pair.open();
+    wakeup_pair.read_end().non_blocking();
+
+    static auto& mlooper
+        = injector::get<main_looper&, services::main_t>();
+    mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
+
     while (lnav_data.ld_looping) {
         auto loop_deadline = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
         loop_count += 1;
@@ -1812,6 +1820,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
         size_t changes = 0;
         int rc;
+
+        pollfds.emplace_back(pollfd{wakeup_pair.read_end(), POLLIN, 0});
 
         auto ui_now = ui_clock::now();
         gettimeofday(&current_time, nullptr);
@@ -1926,12 +1936,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
 
-        {
-            static auto& mlooper
-                = injector::get<main_looper&, services::main_t>();
-
-            mlooper.get_port().process_for(0s);
-        }
+        mlooper.get_port().process_for(0s);
 
         ui_now = ui_clock::now();
         if (initial_rescan_completed) {
@@ -2177,6 +2182,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                       session_stage);
         }
         rc = poll(pollfds.data(), pollfds.size(), poll_to.count());
+
+        if (pollfds[0].revents & POLLIN) {
+            char buffer[128];
+
+            while (read(wakeup_pair.read_end(), buffer, sizeof(buffer)) > 0) {
+                // wakeup received
+            }
+        }
 
         gettimeofday(&current_time, nullptr);
         ui_now = ui_clock::now();

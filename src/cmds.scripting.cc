@@ -502,6 +502,7 @@ execute_external_command(::rust::String rs_src,
     auto script = (std::string) rs_script;
     auto retval = std::make_shared<ExecResult>();
 
+    log_debug("sending remote command to main looper");
     isc::to<main_looper&, services::main_t>().send_and_wait(
         [src, script, hdrs, &retval](auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());

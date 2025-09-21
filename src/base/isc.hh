@@ -137,6 +137,7 @@ public:
 
     friend supervisor;
 
+    int s_wakeup_fd{-1};
 private:
     void start();
 
@@ -196,6 +197,10 @@ public:
                 reply_port.send(empty_msg());
             },
         });
+        if (this->s_wakeup_fd != -1) {
+            char bit = 0;
+            write(this->s_wakeup_fd, &bit, 1);
+        }
         reply_port.process_for(rel_time);
     }
 };
