@@ -2091,7 +2091,7 @@ com_summarize(exec_context& ec,
     }
     log_debug("query %s", query.c_str());
 
-    db_label_source& dls = lnav_data.ld_db_row_source;
+    auto& dls = *ec.ec_label_source_stack.back();
 
     dls.clear();
     retcode = sqlite3_prepare_v2(

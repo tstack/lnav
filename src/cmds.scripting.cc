@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -507,7 +508,11 @@ execute_external_command(::rust::String rs_src,
     isc::to<main_looper&, services::main_t>().send_and_wait(
         [src, script, hdrs, &retval](auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());
+            db_label_source ext_db_source;
             auto& ec = lnav_data.ld_exec_context;
+            // XXX we should still allow an external command to update the
+            // regular DB view.
+            auto dsg = ec.enter_db_source(&ext_db_source);
             auto* outfile = tmpfile();
             auto ec_out = exec_context::output_t{outfile, fclose};
             auto og = exec_context::output_guard{ec, "default", ec_out};

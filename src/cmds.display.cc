@@ -79,7 +79,7 @@ com_toggle_field(exec_context& ec,
         retval = "";
     } else {
         if (tc == &lnav_data.ld_views[LNV_DB]) {
-            auto& dls = lnav_data.ld_db_row_source;
+            auto& dls = *ec.ec_label_source_stack.back();
 
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 const auto& name = args[lpc];

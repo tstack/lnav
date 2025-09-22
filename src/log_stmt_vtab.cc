@@ -31,10 +31,12 @@
 
 #include "log_stmt_vtab.hh"
 
+#include "config.h"
 #include "lnav-rs-ext/lnav_rs_ext.cxx.hh"
 #include "sql_help.hh"
 #include "vtab_module.hh"
 
+#ifdef HAVE_RUST_DEPS
 namespace {
 
 enum class log_stmt_col : uint8_t {
@@ -175,10 +177,12 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 }
 
 }  // namespace
+#endif
 
 int
 register_log_stmt_vtab(sqlite3* db)
 {
+#ifdef HAVE_RUST_DEPS
     static vtab_module<tvt_no_update<log_stmt_table>> LOG_STMT_MODULE;
     static auto log_stmt_help
         = help_text("source_log_stmt",
@@ -211,4 +215,7 @@ register_log_stmt_vtab(sqlite3* db)
     ensure(rc == SQLITE_OK);
 
     return rc;
+#else
+    return SQLITE_OK;
+#endif
 }

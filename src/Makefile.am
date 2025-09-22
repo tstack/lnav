@@ -151,10 +151,14 @@ $(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs $(srcdir)/third-
 	    $(srcdir)/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
 	touch $(RUST_DEPS_LIBS)
 
+RUST_CPP = \
+    third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc
+
 else
 RUST_DEPS =
 RUST_DEPS_CPPFLAGS =
 RUST_DEPS_LIBS =
+RUST_CPP =
 endif
 
 AM_LDFLAGS = \
@@ -442,7 +446,6 @@ THIRD_PARTY_SRCS = \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
     third-party/md4c/md4c.c \
-    third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c \
@@ -459,6 +462,7 @@ libdatascanner_a_SOURCES = \
 
 libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \
+	$(RUST_CPP) \
 	all_logs_vtab.cc \
 	archive_manager.cc \
 	bin2c_rt.cc \

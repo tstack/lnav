@@ -118,12 +118,13 @@ write_progress(size_t row, size_t total)
 }
 
 static void
-json_write_row(yajl_gen handle,
+json_write_row(exec_context& ec,
+               yajl_gen handle,
                int row,
                lnav::text_anonymizer& ta,
                bool anonymize)
 {
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *ec.ec_label_source_stack.back();
     yajlpp_map obj_map(handle);
 
     auto cursor = dls.dls_row_cursors[row].sync();
@@ -267,7 +268,7 @@ com_save_to(exec_context& ec,
         mode = "we";
     }
 
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *ec.ec_label_source_stack.back();
     bookmark_vector<vis_line_t> all_user_marks;
     lnav::text_anonymizer ta;
 
@@ -516,7 +517,7 @@ com_save_to(exec_context& ec,
                     break;
                 }
 
-                json_write_row(gen, row, ta, anonymize);
+                json_write_row(ec, gen, row, ta, anonymize);
                 if (row > 0 && row % 1000 == 0) {
                     if (write_progress(row, dls.dls_row_cursors.size())
                         == lnav::progress_result_t::interrupt)
@@ -540,7 +541,7 @@ com_save_to(exec_context& ec,
                 break;
             }
 
-            json_write_row(gen, row, ta, anonymize);
+            json_write_row(ec, gen, row, ta, anonymize);
             yajl_gen_reset(gen, "\n");
             if (row > 0 && row % 1000 == 0) {
                 if (write_progress(row, dls.dls_row_cursors.size())
