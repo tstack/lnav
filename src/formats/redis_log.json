@@ -44,6 +44,7 @@
                 "kind": "string"
             }
         },
+        "thread-id-field": "pid",
         "sample": [
             {
                 "line": "1:M 29 Aug 2023 13:47:38.984 * monotonic clock: POSIX clock_gettime"

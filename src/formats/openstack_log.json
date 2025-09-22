@@ -32,6 +32,7 @@
             "trace": "TRACE",
             "debug": "DEBUG"
         },
+        "thread-id-field": "tid",
         "value": {
             "tid": {
                 "kind": "string",

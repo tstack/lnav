@@ -43,6 +43,9 @@
             "bad_table_regex": {
                 "pattern": "abc(def"
             }
-        }
+        },
+        "thread-id-field": "tid",
+        "src-file-field": "fi",
+        "src-line-field": "li"
     }
 }

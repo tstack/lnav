@@ -173,6 +173,18 @@
  [1m[31mreason[0m: no timestamp capture found in the pattern
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [36m =[0m [36mhelp[0m: all log messages need a timestamp
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1minvalid_props_log[0m”
+ [1m[31mreason[0m: no source file capture found in the pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
+[36m =[0m [36mhelp[0m: at least one pattern needs a source file capture named “fi”
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1minvalid_props_log[0m”
+ [1m[31mreason[0m: no source line capture found in the pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
+[36m =[0m [36mhelp[0m: at least one pattern needs a source line capture named “li”
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1minvalid_props_log[0m”
+ [1m[31mreason[0m: no thread ID capture found in the pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
+[36m =[0m [36mhelp[0m: at least one pattern needs a thread ID capture named “tid”
 [33m⚠[0m [33mwarning[0m: invalid value “[1m/invalid_props_log/value/non-existent[0m”
    [33mreason[0m: no patterns have a capture named “non-existent”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3

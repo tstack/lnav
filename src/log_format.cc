@@ -3696,11 +3696,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(nullptr);
     }
-    for (auto iter = this->elf_patterns.begin();
-         iter != this->elf_patterns.end();
-         ++iter)
-    {
-        pattern& pat = *iter->second;
+    auto src_file_found = 0;
+    auto src_line_found = 0;
+    auto thread_id_found = 0;
+    for (auto& elf_pattern : this->elf_patterns) {
+        pattern& pat = *elf_pattern.second;
 
         if (pat.p_pcre.pp_value == nullptr) {
             continue;
@@ -3737,12 +3737,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             }
             if (name == this->elf_src_file_field) {
                 pat.p_src_file_field_index = named_cap.get_index();
+                src_file_found += 1;
             }
             if (name == this->elf_src_line_field) {
                 pat.p_src_line_field_index = named_cap.get_index();
+                src_line_found += 1;
             }
             if (name == this->elf_thread_id_field) {
                 pat.p_thread_id_field_index = named_cap.get_index();
+                thread_id_found += 1;
             }
 
             auto value_iter = this->elf_value_defs.find(name);
@@ -3816,7 +3819,50 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         this->elf_body_field.get());
         }
 
-        this->elf_pattern_order.push_back(iter->second);
+        this->elf_pattern_order.push_back(elf_pattern.second);
+    }
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+        && !this->elf_src_file_field.empty() && src_file_found == 0)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("invalid pattern: ")
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string())))
+                .with_reason("no source file capture found in the pattern")
+                .with_snippets(this->get_snippets())
+                .with_help(attr_line_t("at least one pattern needs a source "
+                                       "file capture named ")
+                               .append_quoted(this->elf_src_file_field.get())));
+    }
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+        && !this->elf_src_line_field.empty() && src_line_found == 0)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("invalid pattern: ")
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string())))
+                .with_reason("no source line capture found in the pattern")
+                .with_snippets(this->get_snippets())
+                .with_help(attr_line_t("at least one pattern needs a source "
+                                       "line capture named ")
+                               .append_quoted(this->elf_src_line_field.get())));
+    }
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+        && !this->elf_thread_id_field.empty() && thread_id_found == 0)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("invalid pattern: ")
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string())))
+                .with_reason("no thread ID capture found in the pattern")
+                .with_snippets(this->get_snippets())
+                .with_help(
+                    attr_line_t(
+                        "at least one pattern needs a thread ID capture named ")
+                        .append_quoted(this->elf_thread_id_field.get())));
     }
 
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {

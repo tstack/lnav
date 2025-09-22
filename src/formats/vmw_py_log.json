@@ -11,6 +11,7 @@
         },
         "level-field": "level",
         "timestamp-field": "timestamp",
+        "thread-id-field": "pid",
         "level": {
             "error": "ERROR",
             "debug": "DEBUG",

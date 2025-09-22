@@ -12,6 +12,7 @@
             }
         },
         "opid-field": "session_id",
+        "thread-id-field": "pid",
         "value": {
             "db_name": {
                 "kind": "string",

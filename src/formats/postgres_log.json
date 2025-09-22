@@ -17,6 +17,7 @@
                 "pattern": "^(?<timestamp>^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{3})? [^:]+):(?<client>[^:]*):(?<user>[^@]*)@(?<db_name>[^:]*):\\[(?<pid>\\d+)\\]:(?<level>DEBUG\\d?|DETAIL|HINT|CONTEXT|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|STATEMENT): *(?:duration: (?<duration>\\d+\\.\\d+ [^ ]+))? *(?<body>.*)$"
             }
         },
+        "thread-id-field": "pid",
         "value": {
             "level": {
                 "kind": "string"

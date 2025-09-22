@@ -57,6 +57,7 @@
         },
         "timestamp-field": "time",
         "timestamp-divisor": 1000,
-        "body-field": "msg"
+        "body-field": "msg",
+        "thread-id-field": "pid"
     }
 }
