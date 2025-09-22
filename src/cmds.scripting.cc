@@ -37,6 +37,7 @@
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "libbase64.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
@@ -573,7 +574,11 @@ com_external_access(exec_context& ec,
     }
     auto port = scan_res->value();
 
-    auto start_res = lnav_rs_ext::start_ext_access(port, args[2]);
+    auto buf = auto_buffer::alloc((args[2].size() * 5) / 3);
+    auto outlen = buf.capacity();
+    base64_encode(args[2].data(), args[2].size(), buf.in(), &outlen, 0);
+    auto start_res
+        = lnav_rs_ext::start_ext_access(port, ::rust::String(buf.in(), outlen));
     if (start_res.port == 0) {
         return ec.make_error(FMT_STRING("unable to start external access: {}"),
                              (std::string) start_res.error);
