@@ -1191,6 +1191,7 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "log2src"
 version = "0.1.0"
+source = "git+https://github.com/tstack/log2src.git?branch=proglistentimeout#1b241779f89395579eae5a195d552cbadf47c423"
 dependencies = [
  "cc",
  "clap",
