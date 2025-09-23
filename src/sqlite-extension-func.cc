@@ -43,6 +43,10 @@
 #include "help_text.hh"
 #include "sql_help.hh"
 
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
+
 extern "C"
 {
 struct sqlite3_api_routines;

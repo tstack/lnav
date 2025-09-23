@@ -37,10 +37,6 @@
 
 #include "help_text.hh"
 
-#ifdef HAVE_RUST_DEPS
-#    include "lnav_rs_ext.cxx.hh"
-#endif
-
 struct FuncDef {
     const char* zName{nullptr};
     signed char nArg{0};
@@ -104,10 +100,6 @@ int yaml_extension_functions(struct FuncDef** basic_funcs,
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
-
-#ifdef HAVE_RUST_DEPS
-extern rust::Vec<lnav_rs_ext::SourceTreeElement> sqlite_extension_prql;
-#endif
 
 extern "C"
 {

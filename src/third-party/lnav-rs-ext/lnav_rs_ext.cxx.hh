@@ -773,8 +773,10 @@ namespace lnav_rs_ext {
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
+  struct PollResult;
   struct ExecError;
   struct ExecResult;
+  enum class LnavLogLevel : ::std::uint8_t;
   struct StartExtResult;
 }
 
@@ -801,11 +803,13 @@ enum class Status : ::std::uint8_t {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExtProgress
 struct ExtProgress final {
+  ::rust::String id;
   ::lnav_rs_ext::Status status;
+  ::std::size_t version;
   ::rust::String current_step;
   ::std::uint64_t completed;
   ::std::uint64_t total;
-  ::rust::Vec<::lnav_rs_ext::ExtError> discover_errors;
+  ::rust::Vec<::lnav_rs_ext::ExtError> messages;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -924,10 +928,21 @@ struct ViewStates final {
 struct PollInput final {
   ::std::size_t last_event_id;
   ::lnav_rs_ext::ViewStates view_states;
+  ::rust::Vec<::std::size_t> task_states;
 
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$PollResult
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$PollResult
+struct PollResult final {
+  ::lnav_rs_ext::PollInput next_input;
+  ::rust::Vec<::lnav_rs_ext::ExtProgress> background_tasks;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollResult
 
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
@@ -952,6 +967,17 @@ struct ExecResult final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$LnavLogLevel
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$LnavLogLevel
+enum class LnavLogLevel : ::std::uint8_t {
+  trace = 0,
+  debug = 1,
+  info = 2,
+  warning = 3,
+  error = 4,
+};
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$LnavLogLevel
+
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 struct StartExtResult final {
@@ -961,6 +987,8 @@ struct StartExtResult final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
+
+void init_ext() noexcept;
 
 ::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept;
 

@@ -54,6 +54,7 @@
 #include "log_vtab_impl.hh"
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
+#include "progress_source.hh"
 #include "readline_context.hh"
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
@@ -201,6 +202,8 @@ struct lnav_data_t {
     textview_curses ld_example_view;
     plain_text_source ld_preview_source[2];
     textview_curses ld_preview_view[2];
+    progress_source ld_progress_source;
+    textview_curses ld_progress_view;
     plain_text_source ld_user_message_source;
     textview_curses ld_user_message_view;
     std::chrono::time_point<std::chrono::steady_clock>

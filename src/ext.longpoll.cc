@@ -32,6 +32,9 @@
 
 #include "ext.longpoll.hh"
 
+#include "base/injector.hh"
+#include "base/itertools.enumerate.hh"
+#include "base/progress.hh"
 #include "config.h"
 #include "lnav_rs_ext.cxx.hh"
 #include "safe/safe.h"
@@ -51,28 +54,117 @@ using safe_pollers_t = safe::Safe<pollers>;
 
 safe_pollers_t POLLERS;
 
-PollInput
+PollResult
 longpoll(const PollInput& pi)
 {
-    auto p = POLLERS.writeAccess<std::unique_lock>();
+    auto pi_retval = PollInput{
+        0,
+    };
+    auto timeout = 10000ms;
 
-    if (pi.view_states.log == p->p_latest_state.vs_log
-        && pi.view_states.text == p->p_latest_state.vs_text)
     {
-        p->p_pollers.emplace_front(pi);
-        auto iter = p->p_pollers.begin();
+        auto& bts = lnav::progress_tracker::get_tasks();
 
-        p->p_condvar.wait_for(p.lock, 10s);
-        p->p_pollers.erase(iter);
+        for (const auto& bt : **bts.readAccess()) {
+            auto tp = bt();
+            if (tp.tp_status == lnav::progress_status_t::working) {
+                timeout = 333ms;
+                break;
+            }
+        }
     }
 
-    return PollInput{
-        0,
-        ViewStates{
+    {
+        auto p = POLLERS.writeAccess<std::unique_lock>();
+        auto views_are_same = pi.view_states.log == p->p_latest_state.vs_log
+            && pi.view_states.text == p->p_latest_state.vs_text;
+        auto tasks_are_same = true;
+
+        {
+            auto& bts = lnav::progress_tracker::get_tasks();
+            auto* task_cont = *bts.readAccess();
+            tasks_are_same = pi.task_states.size() == task_cont->size();
+            if (tasks_are_same) {
+                for (size_t lpc = 0; lpc < pi.task_states.size(); lpc++) {
+                    if (lpc >= task_cont->size()) {
+                        continue;
+                    }
+
+                    auto tp = (*std::next(task_cont->begin(), lpc))();
+                    if (tp.tp_version != pi.task_states[lpc]) {
+                        tasks_are_same = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (views_are_same && tasks_are_same) {
+            p->p_pollers.emplace_front(pi);
+            auto iter = p->p_pollers.begin();
+
+            p->p_condvar.wait_for(p.lock, timeout);
+            p->p_pollers.erase(iter);
+        }
+        pi_retval.view_states = ViewStates{
             ::rust::String::lossy(p->p_latest_state.vs_log),
             ::rust::String::lossy(p->p_latest_state.vs_text),
-        },
+        };
+    }
+
+    ::rust::Vec<ExtProgress> bt_out;
+    {
+        auto& bts = lnav::progress_tracker::get_tasks();
+        for (const auto& [index, bt] :
+             lnav::itertools::enumerate(**bts.readAccess()))
+        {
+            auto tp = bt();
+            pi_retval.task_states.emplace_back(tp.tp_version);
+            if (tp.tp_version == 0) {
+                continue;
+            }
+            if (tp.tp_status == lnav::progress_status_t::idle
+                && index < pi.task_states.size()
+                && pi.task_states[index] == tp.tp_version)
+            {
+                continue;
+            }
+
+            ::rust::Vec<ExtError> errors_out;
+            for (const auto& msg : tp.tp_messages) {
+                errors_out.emplace_back(ExtError{
+                    msg.um_message.al_string,
+                    msg.um_reason.al_string,
+                    msg.um_help.al_string,
+                });
+            }
+
+            auto ep = ExtProgress{
+                tp.tp_id,
+                tp.tp_status == lnav::progress_status_t::idle ? Status::idle
+                                                              : Status::working,
+                tp.tp_version,
+                tp.tp_step,
+                tp.tp_completed,
+                tp.tp_total,
+            };
+            bt_out.emplace_back(ep);
+        }
+    }
+
+    return PollResult{
+        pi_retval,
+        std::move(bt_out),
     };
+}
+
+void
+notify_pollers()
+{
+#    ifdef HAVE_RUST_DEPS
+    auto p = POLLERS.writeAccess<std::unique_lock>();
+    p->p_condvar.notify_all();
+#    endif
 }
 
 }  // namespace lnav_rs_ext

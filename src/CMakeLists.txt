@@ -564,6 +564,7 @@ add_library(
         plain_text_source.cc
         pretty_printer.cc
         preview_status_source.cc
+        progress_source.cc
         pugixml/pugixml.cpp
         readline_callbacks.cc
         readline_highlighters.cc
@@ -701,6 +702,7 @@ add_library(
         plain_text_source.hh
         pretty_printer.hh
         preview_status_source.hh
+        progress_source.hh
         pugixml/pugiconfig.hpp
         pugixml/pugixml.hpp
         readline_callbacks.hh

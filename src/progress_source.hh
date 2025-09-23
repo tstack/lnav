@@ -27,30 +27,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rust/cxx.h"
+#ifndef lnav_progress_source_hh
+#define lnav_progress_source_hh
 
-namespace lnav_rs_ext {
+#include <string>
+#include <vector>
 
-struct ExecResult;
-struct PollInput;
-struct ViewStates;
-struct VarPair;
-struct PollResult;
-enum class LnavLogLevel : std::uint8_t;
+#include "textview_curses.hh"
 
-::rust::String version_info();
+class progress_source : public text_sub_source {
+public:
+    void poll();
+    bool empty() const override;
+    size_t text_line_count() override;
+    size_t text_line_width(textview_curses& curses) override;
+    line_info text_value_for_line(textview_curses& tc,
+                                  int line,
+                                  std::string& value_out,
+                                  line_flags_t flags) override;
+    size_t text_size_for_line(textview_curses& tc,
+                              int line,
+                              line_flags_t raw) override;
+    void text_attrs_for_line(textview_curses& tc,
+                             int line,
+                             string_attrs_t& value_out) override;
 
-ExecResult execute_external_command(::rust::String,
-                                    ::rust::String,
-                                    ::rust::String hdrs);
+private:
+    std::vector<attr_line_t> ps_lines;
+};
 
-PollResult longpoll(const PollInput& vs);
-
-void notify_pollers();
-
-LnavLogLevel get_lnav_log_level();
-
-void
-log_msg(LnavLogLevel level, ::rust::Str file, uint32_t line, ::rust::Str msg);
-
-}  // namespace lnav_rs_ext
+#endif

@@ -346,6 +346,7 @@ noinst_HEADERS = \
 	pollable.hh \
 	pretty_printer.hh \
 	preview_status_source.hh \
+	progress_source.hh \
 	ptimec.hh \
 	ptimec_spec.hh \
 	readline_callbacks.hh \
@@ -544,6 +545,7 @@ libdiag_a_SOURCES = \
 	pollable.cc \
 	pretty_printer.cc \
 	preview_status_source.cc \
+	progress_source.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \
 	readline_highlighters.cc \

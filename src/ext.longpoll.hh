@@ -39,6 +39,8 @@ struct view_states {
     std::string vs_text;
 };
 
+void notify_pollers();
+
 void notify_pollers(const view_states& vs);
 
 }  // namespace lnav::ext

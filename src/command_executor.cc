@@ -285,6 +285,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         log_info("compiling PRQL: %s", stmt_str.c_str());
 
 #if HAVE_RUST_DEPS
+        extern rust::Vec<lnav_rs_ext::SourceTreeElement> sqlite_extension_prql;
         auto opts = lnav_rs_ext::Options{true, "sql.sqlite", true};
 
         auto tree = sqlite_extension_prql;

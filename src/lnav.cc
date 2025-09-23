@@ -69,11 +69,13 @@
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
+#include "base/injector.hh"
 #include "base/isc.hh"
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "base/progress.hh"
 #include "base/string_util.hh"
 #include "bottom_status_source.hh"
 #include "bound_tags.hh"
@@ -1013,6 +1015,12 @@ struct refresh_status_bars {
             prompt.p_editor.set_inactive_value(cancel_msg);
         }
 
+        lnav_data.ld_progress_source.poll();
+        if (!lnav_data.ld_progress_source.empty()) {
+            layout_views();
+            lnav_data.ld_progress_view.reload_data();
+            lnav_data.ld_progress_view.do_update();
+        }
         if (!lnav_data.ld_log_source.is_indexing_in_progress()
             || lnav_data.ld_log_source.lss_index_generation == 0)
         {
@@ -1585,6 +1593,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_file_details_view.tc_disabled_cursor_role
         = role_t::VCR_DISABLED_CURSOR_LINE;
 
+    lnav_data.ld_progress_view.set_window(lnav_data.ld_window);
     lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
     lnav_data.ld_spectro_details_view.set_title("spectro-details");
@@ -1808,8 +1817,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     wakeup_pair.open();
     wakeup_pair.read_end().non_blocking();
 
-    static auto& mlooper
-        = injector::get<main_looper&, services::main_t>();
+    static auto& mlooper = injector::get<main_looper&, services::main_t>();
     mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
 
     while (lnav_data.ld_looping) {
@@ -2043,6 +2051,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (lnav_data.ld_timeline_details_view.do_update()) {
             updated_views.emplace_back(&lnav_data.ld_timeline_details_view);
         }
+        if (lnav_data.ld_progress_view.do_update()) {
+            updated_views.emplace_back(&lnav_data.ld_progress_view);
+        }
         if (lnav_data.ld_user_message_view.do_update()) {
             updated_views.emplace_back(&lnav_data.ld_user_message_view);
         }
@@ -2081,6 +2092,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 if (sc.do_update()) {
                     updated_views.emplace_back(&sc);
                 }
+            }
+            lnav_data.ld_progress_source.poll();
+            if (!lnav_data.ld_progress_source.empty()) {
+                lnav_data.ld_progress_view.reload_data();
             }
             next_status_update_time = ui_clock::now() + 100ms;
         }
@@ -2831,6 +2846,12 @@ main(int argc, char* argv[])
     lnav::events::register_events_tab(lnav_data.ld_db.in());
     register_log_stmt_vtab(lnav_data.ld_db.in());
 
+#ifdef HAVE_RUST_DEPS
+    {
+        lnav_rs_ext::init_ext();
+    }
+#endif
+
     auto _vtab_cleanup = finally([] {
         static const char* VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
@@ -3510,6 +3531,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         &lnav_data.ld_file_details_source);
     lnav_data.ld_files_source.fss_details_source
         = &lnav_data.ld_file_details_source;
+    lnav_data.ld_progress_view.set_title("progress");
+    lnav_data.ld_progress_view.set_default_role(role_t::VCR_INACTIVE_STATUS);
+    lnav_data.ld_progress_view.set_sub_source(&lnav_data.ld_progress_source);
+    lnav_data.ld_progress_view.set_show_scrollbar(true);
+    lnav_data.ld_progress_view.set_height(2_vl);
     lnav_data.ld_user_message_view.set_sub_source(
         &lnav_data.ld_user_message_source);
 

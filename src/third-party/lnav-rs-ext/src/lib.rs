@@ -3,26 +3,40 @@
 mod ext_access;
 
 use crate::ext_access::{start_server, stop_server};
-use crate::ffi::{ExtError, ExtProgress, FindLogResult, FindLogResultJson, SourceDetails, StartExtResult, Status, VarPair};
+use crate::ffi::{get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair};
 use cxx::UniquePtr;
-use log2src::{LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, SourceRef, VariablePair};
+use log::{Level, Log, Metadata, Record};
+use log2src::{
+    LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, SourceRef,
+    VariablePair, WorkInfo,
+};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
+use serde::{Serialize, Serializer};
 use std::convert::Into;
 use std::error::Error;
 use std::panic;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{channel, Sender};
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Duration;
 
 static LOG_MATCHER: LazyLock<Mutex<LogMatcher>> = LazyLock::new(|| LogMatcher::new().into());
 static TRACKER: LazyLock<Mutex<ProgressTracker>> = LazyLock::new(|| ProgressTracker::new().into());
-static EXT_PROGRESS: LazyLock<Mutex<ExtProgress>> = LazyLock::new(|| ExtProgress::default().into());
+static EXT_PROGRESS: LazyLock<Mutex<ExtProgress>> = LazyLock::new(|| {
+    ExtProgress {
+        id: ":add-source-path".to_string(),
+        ..ExtProgress::default()
+    }
+    .into()
+});
 static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
     let (sender, receiver) = channel();
 
+    let sub = TRACKER.lock().unwrap().subscribe();
     std::thread::spawn(move || {
         for () in receiver {
             let errs = if let Ok(tracker) = TRACKER.lock() {
@@ -40,7 +54,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
 
             if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
                 let _ = std::mem::replace(
-                    &mut ext_prog.discover_errors,
+                    &mut ext_prog.messages,
                     errs.into_iter().map(Into::into).collect(),
                 );
 
@@ -50,18 +64,59 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
     });
 
     std::thread::spawn(move || {
-        let sub = TRACKER.lock().unwrap().subscribe();
-
-        for update in sub {
+        fn handle_update(update: ProgressUpdate) -> Option<Arc<WorkInfo>> {
             let mut ext_prog = EXT_PROGRESS.lock().unwrap();
             match update {
-                ProgressUpdate::Step(msg) => ext_prog.current_step = msg,
-                ProgressUpdate::BeginStep(msg) => ext_prog.current_step = msg,
-                ProgressUpdate::EndStep(_) => ext_prog.current_step.clear(),
+                ProgressUpdate::Step(msg) => {
+                    ext_prog.current_step = msg;
+                    ext_prog.status = Status::idle;
+                    ext_prog.completed = 0;
+                    ext_prog.total = 0;
+                    ext_prog.version += 1;
+                    None
+                }
+                ProgressUpdate::BeginStep(msg) => {
+                    ext_prog.current_step = msg;
+                    ext_prog.status = Status::working;
+                    ext_prog.version += 1;
+                    None
+                }
+                ProgressUpdate::EndStep(_) => {
+                    ext_prog.current_step.clear();
+                    ext_prog.status = Status::idle;
+                    ext_prog.version += 1;
+                    ext_prog.completed = 0;
+                    ext_prog.total = 0;
+                    None
+                }
                 ProgressUpdate::Work(info) => {
+                    ext_prog.status = Status::working;
                     ext_prog.completed = 0;
                     ext_prog.total = info.total;
+                    Some(info)
                 }
+            }
+        }
+
+        let mut curr_info: Option<Arc<WorkInfo>> = None;
+
+        loop {
+            let timeout = if curr_info.is_none() {
+                Duration::from_secs(60)
+            } else {
+                Duration::from_millis(50)
+            };
+            if let Some(update) = sub.try_next_for(timeout) {
+                let was_some = curr_info.is_some();
+                curr_info = handle_update(update);
+                if was_some != curr_info.is_some() {
+                    notify_pollers();
+                }
+            }
+            if let Some(ref info) = curr_info {
+                let mut ext_prog = EXT_PROGRESS.lock().unwrap();
+
+                ext_prog.completed = info.completed.load(Relaxed);
             }
         }
     });
@@ -71,26 +126,28 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
 
 #[cxx::bridge(namespace = "lnav_rs_ext")]
 mod ffi {
-    #[derive(Default, Clone)]
+    #[derive(Debug, Default, Clone, Serialize)]
     struct ExtError {
         pub error: String,
         pub source: String,
         pub help: String,
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Debug, Copy, Clone)]
     enum Status {
         idle,
         working,
     }
 
-    #[derive(Default, Clone)]
+    #[derive(Debug, Default, Clone, Serialize)]
     struct ExtProgress {
+        id: String,
         status: Status,
+        version: usize,
         current_step: String,
         completed: u64,
         total: u64,
-        discover_errors: Vec<ExtError>,
+        messages: Vec<ExtError>,
     }
 
     struct Options {
@@ -160,6 +217,13 @@ mod ffi {
     struct PollInput {
         pub last_event_id: usize,
         pub view_states: ViewStates,
+        pub task_states: Vec<usize>,
+    }
+
+    #[derive(Serialize)]
+    struct PollResult {
+        pub next_input: PollInput,
+        pub background_tasks: Vec<ExtProgress>,
     }
 
     #[derive(Serialize)]
@@ -176,14 +240,28 @@ mod ffi {
         pub error: ExecError,
     }
 
+    enum LnavLogLevel {
+        trace,
+        debug,
+        info,
+        warning,
+        error,
+    }
+
     unsafe extern "C++" {
         include!("lnav_ffi.hh");
 
         fn version_info() -> String;
 
-        fn longpoll(poll_inpout: &PollInput) -> PollInput;
+        fn longpoll(poll_inpout: &PollInput) -> PollResult;
+
+        fn notify_pollers();
 
         fn execute_external_command(src: String, cmd: String, hdrs: String) -> ExecResult;
+
+        fn get_lnav_log_level() -> LnavLogLevel;
+
+        fn log_msg(level: LnavLogLevel, file: &str, line: u32, msg: &str);
     }
 
     struct StartExtResult {
@@ -192,6 +270,8 @@ mod ffi {
     }
 
     extern "Rust" {
+        fn init_ext();
+
         fn compile_tree(tree: &Vec<SourceTreeElement>, options: &Options) -> CompileResult2;
 
         fn add_src_root(path: String) -> UniquePtr<ExtError>;
@@ -212,6 +292,69 @@ mod ffi {
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
 
         fn stop_ext_access();
+    }
+}
+
+struct LnavLogger;
+
+static EXT_LOGGER: LnavLogger = LnavLogger;
+
+impl From<LnavLogLevel> for log::Level {
+    fn from(value: LnavLogLevel) -> Self {
+        match value {
+            LnavLogLevel::trace => log::Level::Trace,
+            LnavLogLevel::debug => log::Level::Debug,
+            LnavLogLevel::info => log::Level::Info,
+            LnavLogLevel::warning => log::Level::Warn,
+            LnavLogLevel::error => log::Level::Error,
+            _ => log::Level::Info,
+        }
+    }
+}
+
+impl From<Level> for LnavLogLevel {
+    fn from(value: Level) -> Self {
+        match value {
+            Level::Error => LnavLogLevel::error,
+            Level::Warn => LnavLogLevel::warning,
+            Level::Info => LnavLogLevel::info,
+            Level::Debug => LnavLogLevel::debug,
+            Level::Trace => LnavLogLevel::trace,
+        }
+    }
+}
+
+impl Log for LnavLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        let curr_level: Level = ffi::get_lnav_log_level().into();
+        metadata.level() <= curr_level
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            let msg = format!("{}", record.args());
+            ffi::log_msg(
+                record.level().into(),
+                record.file().unwrap_or_default(),
+                record.line().unwrap_or_default(),
+                msg.as_str(),
+            );
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+impl Serialize for Status {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match *self {
+            Status::idle => serializer.serialize_str("idle"),
+            Status::working => serializer.serialize_str("working"),
+            _ => serializer.serialize_str("unknown"),
+        }
     }
 }
 
@@ -284,19 +427,19 @@ fn compile_tree_int(
             .and_then(prqlc::pl_to_rq)
             .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
             .and_then(|rq| prqlc::rq_to_sql(rq, &options))?)
-            .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
+        .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
     })
-        .map_err(|p| {
-            ErrorMessages::from(ErrorMessage {
-                kind: prqlc::MessageKind::Error,
-                code: None,
-                reason: format!("internal error: {:#?}", p),
-                hints: vec![],
-                span: None,
-                display: None,
-                location: None,
-            })
-        })?
+    .map_err(|p| {
+        ErrorMessages::from(ErrorMessage {
+            kind: prqlc::MessageKind::Error,
+            code: None,
+            reason: format!("internal error: {:#?}", p),
+            hints: vec![],
+            span: None,
+            display: None,
+            location: None,
+        })
+    })?
 }
 
 pub fn compile_tree(
@@ -325,7 +468,8 @@ fn discover_srcs() {
 }
 
 fn get_status() -> ExtProgress {
-    EXT_PROGRESS.lock().unwrap().clone()
+    let retval = EXT_PROGRESS.lock().unwrap().clone();
+    retval
 }
 
 impl From<SourceRef> for FindLogResult {
@@ -346,7 +490,8 @@ impl From<SourceRef> for FindLogResult {
 
 impl FindLogResult {
     pub fn with_variables(mut self, variables: Vec<VariablePair>) -> Self {
-        self.variables = variables.into_iter()
+        self.variables = variables
+            .into_iter()
             .map(|VariablePair { expr, value }| VarPair { expr, value })
             .collect();
         self
@@ -362,10 +507,10 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
     );
 
     if let Some(LogMapping {
-                    variables,
-                    src_ref: Some(src_ref),
-                    ..
-                }) = log_matcher.match_log_statement(&log_ref)
+        variables,
+        src_ref: Some(src_ref),
+        ..
+    }) = log_matcher.match_log_statement(&log_ref)
     {
         let retval: FindLogResult = src_ref.into();
         UniquePtr::new(retval.with_variables(variables))
@@ -383,10 +528,10 @@ fn find_log_statement_json(file: &str, lineno: u32, body: &str) -> UniquePtr<Fin
     );
 
     if let Some(LogMapping {
-                    variables,
-                    src_ref: Some(src_ref),
-                    ..
-                }) = log_matcher.match_log_statement(&log_ref)
+        variables,
+        src_ref: Some(src_ref),
+        ..
+    }) = log_matcher.match_log_statement(&log_ref)
     {
         let src_details = SourceDetails {
             file: src_ref.source_path,
@@ -427,10 +572,19 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     let path = Path::new(path_str);
 
     if let Some(stmts) = matcher.find_source_file_statements(path) {
-        stmts.log_statements.iter()
+        stmts
+            .log_statements
+            .iter()
             .map(|src_ref| src_ref.clone().into())
             .collect()
     } else {
         vec![]
     }
+}
+
+fn init_ext() {
+    let lnav_level: Level = get_lnav_log_level().into();
+    log::set_logger(&EXT_LOGGER)
+        .map(|()| log::set_max_level(lnav_level.to_level_filter()))
+        .expect("failed to set logger");
 }

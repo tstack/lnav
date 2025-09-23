@@ -477,7 +477,69 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 #ifdef HAVE_RUST_DEPS
+
+static lnav::task_progress
+ext_prog_rep()
+{
+    auto ext = lnav_rs_ext::get_status();
+    auto status = ext.status == lnav_rs_ext::Status::idle
+        ? lnav::progress_status_t::idle
+        : lnav::progress_status_t::working;
+    std::vector<lnav::console::user_message> msgs_out;
+    for (const auto& err : ext.messages) {
+        auto um = lnav::console::user_message::error((std::string) err.error)
+                      .with_reason((std::string) err.source)
+                      .with_help((std::string) err.help);
+        msgs_out.emplace_back(um);
+    }
+    auto retval = lnav::task_progress{
+        (std::string) ext.id,
+        status,
+        ext.version,
+        (std::string) ext.current_step,
+        ext.completed,
+        ext.total,
+        std::move(msgs_out),
+    };
+
+    return retval;
+}
+
+DIST_SLICE(prog_reps) lnav::progress_reporter_t EXT_PROG_REP = ext_prog_rep;
+
 namespace lnav_rs_ext {
+
+LnavLogLevel
+get_lnav_log_level()
+{
+    switch (lnav_log_level) {
+        case lnav_log_level_t::TRACE:
+            return LnavLogLevel::trace;
+        case lnav_log_level_t::DEBUG:
+            return LnavLogLevel::debug;
+        case lnav_log_level_t::INFO:
+            return LnavLogLevel::info;
+        case lnav_log_level_t::WARNING:
+            return LnavLogLevel::warning;
+        case lnav_log_level_t::ERROR:
+            return LnavLogLevel::error;
+    }
+
+    return LnavLogLevel::info;
+}
+
+void
+log_msg(LnavLogLevel level, ::rust::Str file, uint32_t line, ::rust::Str msg)
+{
+    auto ln_level = static_cast<lnav_log_level_t>(level);
+
+    ::log_msg(ln_level,
+              ((std::string) file).c_str(),
+              line,
+              "%.*s",
+              msg.size(),
+              msg.data());
+}
 
 ::rust::String
 version_info()

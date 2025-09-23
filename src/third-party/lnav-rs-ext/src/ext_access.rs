@@ -200,7 +200,8 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
 
             _ => Response::empty_404()
         )
-    })?;
+    })?
+    .pool_size(4);
     let retval = server.server_addr().port();
     let handle = thread::spawn(move || {
         while rx.try_recv().is_err() {

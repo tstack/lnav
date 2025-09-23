@@ -686,6 +686,7 @@ handle_winch(screen_curses* sc)
     lnav_data.ld_file_details_view.set_needs_update();
     lnav_data.ld_spectro_details_view.set_needs_update();
     lnav_data.ld_timeline_details_view.set_needs_update();
+    lnav_data.ld_progress_view.set_needs_update();
     lnav_data.ld_user_message_view.set_needs_update();
 
     return true;
@@ -939,6 +940,15 @@ layout_views()
     lnav_data.ld_status[LNS_SPECTRO].set_visible(vis);
     lnav_data.ld_status[LNS_SPECTRO].set_enabled(lnav_data.ld_mode
                                                  == ln_mode_t::SPECTRO_DETAILS);
+
+    auto prog_view_inner_height = lnav_data.ld_progress_view.get_inner_height();
+    if (prog_view_inner_height > 0) {
+        lnav_data.ld_progress_view.set_height(
+            std::min(prog_view_inner_height, 2_vl));
+        auto vis = bottom.try_consume(lnav_data.ld_progress_view.get_height());
+        lnav_data.ld_progress_view.set_y(bottom);
+        lnav_data.ld_progress_view.set_visible(vis);
+    }
 
     auto bottom_used = bottom - height;
     for (auto& tc : lnav_data.ld_views) {
@@ -1689,6 +1699,7 @@ all_views()
     retval.push_back(&lnav_data.ld_user_message_view);
     retval.push_back(&lnav_data.ld_spectro_details_view);
     retval.push_back(&lnav_data.ld_timeline_details_view);
+    retval.push_back(&lnav_data.ld_progress_view);
     for (auto& sc : lnav_data.ld_status) {
         retval.push_back(&sc);
     }
