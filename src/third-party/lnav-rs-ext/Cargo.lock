@@ -1191,7 +1191,7 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=proglistentimeout#1b241779f89395579eae5a195d552cbadf47c423"
+source = "git+https://github.com/tstack/log2src.git?branch=pylang#f331a324abdd45e28169d35febeb4b37009e737a"
 dependencies = [
  "cc",
  "clap",
@@ -1206,6 +1206,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-cpp",
  "tree-sitter-java",
+ "tree-sitter-python",
  "tree-sitter-rust-orchard",
 ]
 
@@ -2178,6 +2179,16 @@ name = "tree-sitter-language"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4013970217383f67b18aef68f6fb2e8d409bc5755227092d32efb0422ba24b8"
+
+[[package]]
+name = "tree-sitter-python"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bf85fd39652e740bf60f46f4cda9492c3a9ad75880575bf14960f775cb74a1c"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
 
 [[package]]
 name = "tree-sitter-rust-orchard"
