@@ -79,7 +79,7 @@ highlighter::annotate(attr_line_t& al, const line_range& lr) const
     const auto sf = string_fragment::from_str_range(
         str,
         lr.lr_start,
-        std::min(size_t{8192}, std::min((size_t) lr.length(), str.size())));
+        std::min(size_t{8192}, std::min((size_t) lr.lr_end, str.size())));
 
     if (!sf.is_valid()) {
         return;
