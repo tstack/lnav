@@ -145,8 +145,8 @@ See :ref:`ui_mouse` for more details.
 Log Formats
 ^^^^^^^^^^^
 
-In order for **lnav** to understand your log files, it needs to told how to
-parse the log messages using a log format definition.  There are many log
+In order for **lnav** to understand your log files, it needs to be told how
+to parse the log messages using a log format definition.  There are many log
 formats builtin and **lnav** will automatically determine the best format to
 use.  In case your log file is not recognized, consult the :ref:`log_formats`
 section for information on how to create a format.
