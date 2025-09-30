@@ -6,10 +6,7 @@ use crate::ext_access::{start_server, stop_server};
 use crate::ffi::{get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair};
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
-use log2src::{
-    LogError, LogMapping, LogMatcher, LogRef, ProgressTracker, ProgressUpdate, SourceRef,
-    VariablePair, WorkInfo,
-};
+use log2src::{LogError, LogMapping, LogMatcher, LogRef, LogRefBuilder, ProgressTracker, ProgressUpdate, SourceRef, VariablePair, WorkInfo};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
@@ -280,10 +277,10 @@ mod ffi {
 
         fn get_status() -> ExtProgress;
 
-        fn find_log_statement(file: &str, line: u32, body: &str) -> UniquePtr<FindLogResult>;
+        fn find_log_statement(file: &str, line: usize, body: &str) -> UniquePtr<FindLogResult>;
         fn find_log_statement_json(
             file: &str,
-            line: u32,
+            line: usize,
             body: &str,
         ) -> UniquePtr<FindLogResultJson>;
 
@@ -498,13 +495,12 @@ impl FindLogResult {
     }
 }
 
-fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogResult> {
+fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResult> {
     let log_matcher = LOG_MATCHER.lock().unwrap();
-    let log_ref = LogRef::from_parsed(
-        if file.is_empty() { None } else { Some(file) },
-        if file.is_empty() { None } else { Some(lineno) },
-        body,
-    );
+    let log_ref = LogRefBuilder::new()
+        .with_file(if file.is_empty() { None } else { Some(file) })
+        .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .build(body);
 
     if let Some(LogMapping {
         variables,
@@ -519,13 +515,12 @@ fn find_log_statement(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogR
     }
 }
 
-fn find_log_statement_json(file: &str, lineno: u32, body: &str) -> UniquePtr<FindLogResultJson> {
+fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResultJson> {
     let log_matcher = LOG_MATCHER.lock().unwrap();
-    let log_ref = LogRef::from_parsed(
-        if file.is_empty() { None } else { Some(file) },
-        if file.is_empty() { None } else { Some(lineno) },
-        body,
-    );
+    let log_ref = LogRefBuilder::new()
+        .with_file(if file.is_empty() { None } else { Some(file) })
+        .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .build(body);
 
     if let Some(LogMapping {
         variables,

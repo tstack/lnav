@@ -431,6 +431,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored_json"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e35980a1b846f8e3e359fd18099172a0857140ba9230affc4f71348081e039b6"
+dependencies = [
+ "serde",
+ "serde_json",
+ "yansi",
+]
+
+[[package]]
 name = "console"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1191,10 +1202,11 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=pr15feedback#a370dc7c9eafdc1c347a2a43461e4b38cc7f8612"
+source = "git+https://github.com/tstack/log2src.git?branch=backtrace1#0d5612b6100fe26fa780c5ae7ca75bb78256921d"
 dependencies = [
  "cc",
  "clap",
+ "colored_json",
  "indicatif",
  "itertools 0.14.0",
  "miette",
@@ -1227,6 +1239,7 @@ dependencies = [
  "cfg-if",
  "miette-derive",
  "owo-colors",
+ "serde",
  "supports-color",
  "supports-hyperlinks",
  "supports-unicode",

@@ -82,10 +82,22 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
         this->ldh_line_attrs.clear();
+        this->ldh_msg_format.clear();
+#ifdef HAVE_RUST_DEPS
+        this->ldh_src_ref = std::nullopt;
+        this->ldh_src_vars.clear();
+#endif
     } else {
         auto format = this->ldh_file->get_format();
         auto& sa = this->ldh_line_attrs;
 
+#ifdef HAVE_RUST_DEPS
+        this->ldh_src_ref = std::nullopt;
+        this->ldh_src_vars.clear();
+#endif
+        this->ldh_parser.reset();
+        this->ldh_scanner.reset();
+        this->ldh_namer.reset();
         this->ldh_line_attrs.clear();
         this->ldh_line_values.clear();
         this->ldh_file->read_full_message(ll, this->ldh_line_values.lvv_sbr);
@@ -189,6 +201,10 @@ void
 log_data_helper::parse_body()
 {
     if (!this->ldh_line->is_message()) {
+        return;
+    }
+
+    if (!this->ldh_line_values.lvv_sbr.get_metadata().m_valid_utf) {
         return;
     }
 

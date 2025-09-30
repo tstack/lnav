@@ -538,7 +538,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                                                 });
             this->fos_lines.emplace_back(al);
         }
-    } else if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
+    } else if (!this->fos_log_helper.ldh_parser
+               || this->fos_log_helper.ldh_parser->dp_pairs.empty())
+    {
         this->fos_lines.emplace_back(" No discovered message fields");
     } else {
         this->fos_lines.emplace_back(

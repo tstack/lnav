@@ -27,7 +27,7 @@ prqlc = "0.13.4"
 cxx = "1.0"
 log = "0.4"
 miette = "7.6.0"
-log2src = {git = "https://github.com/tstack/log2src.git", branch = "pr15feedback"}
+log2src = {git = "https://github.com/tstack/log2src.git", branch = "backtrace1"}
 # log2src = {path = "/Users/tstack/github/log2src"}
 rouille = "3.6.2"
 serde_json = "1.0.143"
