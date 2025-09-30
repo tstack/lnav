@@ -104,3 +104,4 @@ conan/
 prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
+vcpkg_installed/

@@ -322,6 +322,8 @@ dist_noinst_DATA = \
 	listview_output_cursor.5 \
 	listview_output_cursor.6 \
 	log.clog \
+	log2src/python/log_example.py \
+	log2src/python/python-example.0 \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_ansi.0 \
@@ -549,7 +551,9 @@ TESTS = \
     test_view_colors.sh
 
 if HAVE_CARGO
-TESTS += test_prql.sh
+TESTS += \
+    test_log2src.sh \
+    test_prql.sh
 endif
 
 DISABLED_TESTS = \

@@ -1,0 +1,12 @@
+2025-09-26 21:12:39,384 DEBUG debug message: initializing demo π
+2025-09-26 21:12:39,385 INFO info message:
+processing started -- log_example.py
+2025-09-26 21:12:39,385 WARNING warning message:
+low disk space
+2025-09-26 21:12:39,385 ERROR error message: failed to open resource
+2025-09-26 21:12:39,385 ERROR exception message: caught unexpected error
+Traceback (most recent call last):
+  File "/path/to/log_example.py", line 25, in main
+    1 / 0
+    ~~^~~
+ZeroDivisionError: division by zero

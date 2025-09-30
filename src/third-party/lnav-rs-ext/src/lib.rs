@@ -500,6 +500,7 @@ fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLo
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_body(Some(body))
         .build(body);
 
     if let Some(LogMapping {
@@ -520,6 +521,7 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_body(Some(body))
         .build(body);
 
     if let Some(LogMapping {
