@@ -15,7 +15,7 @@ ${lnav_test} -nN -c ':config /ui/theme monocai'
 
 for fn in ${srcdir}/tui-captures/*; do
     base_fn=`basename $fn`
-    run_test ./scripty -nX -e $fn -- ${lnav_test} -N < /dev/null
+    run_test ./scripty -nX -e $fn -- ${lnav_test} -d /tmp/tui.err -N < /dev/null
 
     case "$base_fn" in
     tui_echo.0)

@@ -44,7 +44,7 @@ terminfo_find_path_for_term(const char* term_name)
         NULL,
     };
 
-    if (!term_name || !term_name[0]) {
+    if (!term_name || !term_name[0] || getenv("NO_EXTERNAL_TERMINFO")) {
         return NULL;
     }
 

@@ -2168,9 +2168,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         view_curses::awaiting_user_input();
                         break;
                     case ln_mode_t::FILTER:
-                        if (!filter_source->fss_editing) {
-                            view_curses::awaiting_user_input();
-                        }
+                        view_curses::awaiting_user_input();
                         break;
                     default:
                         // log_debug("waiting for paging input");

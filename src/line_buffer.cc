@@ -1406,8 +1406,10 @@ line_buffer::read_range(file_range fr, scan_direction dir)
 file_range
 line_buffer::get_available()
 {
-    return {this->lb_file_offset,
-            static_cast<file_ssize_t>(this->lb_buffer.size())};
+    return {
+        this->lb_file_offset,
+        static_cast<file_ssize_t>(this->lb_buffer.size()),
+    };
 }
 
 line_buffer::gz_indexed::indexDict::indexDict(const z_stream& s,

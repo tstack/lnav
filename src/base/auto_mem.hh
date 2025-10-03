@@ -274,6 +274,19 @@ public:
 
     char* next_available() { return &this->ab_buffer[this->ab_size]; }
 
+    void consume(ssize_t amount)
+    {
+        if (amount <= 0) {
+            return;
+        }
+        assert(amount <= this->ab_size);
+        auto remaining = this->ab_size - amount;
+        if (remaining > 0) {
+            memmove(this->ab_buffer, &this->ab_buffer[amount], remaining);
+        }
+        this->ab_size = remaining;
+    }
+
     auto_buffer& push_back(char ch)
     {
         if (this->ab_size == this->ab_capacity) {

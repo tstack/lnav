@@ -498,7 +498,7 @@ format_help_text_for_term(const help_text& ht,
             .append("\n");
 
         for (const auto& param : ht.ht_parameters) {
-            if (!param.ht_summary) {
+            if (!param.ht_summary || !param.ht_summary[0]) {
                 continue;
             }
 
@@ -549,7 +549,7 @@ format_help_text_for_term(const help_text& ht,
             .append("\n");
 
         for (const auto& result : ht.ht_results) {
-            if (!result.ht_summary) {
+            if (!result.ht_summary || !result.ht_summary[0]) {
                 continue;
             }
 
@@ -808,7 +808,7 @@ format_help_text_for_rst(const help_text& ht,
                    fmt::join(ht.ht_prql_path, "."));
     }
 
-    if (ht.ht_description != nullptr) {
+    if (ht.ht_description != nullptr && ht.ht_description[0]) {
         fmt::fprintf(rst_file, "  %s\n", ht.ht_description);
     }
 

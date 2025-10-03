@@ -46,6 +46,7 @@ enum class log_stmt_col : uint8_t {
     function_name,
     pattern,
     path,
+    search_path,
 };
 
 struct log_stmt_table {
@@ -60,7 +61,8 @@ CREATE TABLE source_log_stmt (
     language TEXT,
     function_name TEXT,
     pattern TEXT,
-    path TEXT HIDDEN
+    path TEXT,
+    search_path TEXT HIDDEN
 );
 )";
 
@@ -122,6 +124,9 @@ CREATE TABLE source_log_stmt (
             case log_stmt_col::path:
                 to_sqlite(ctx, (std::string) stmt.src.file);
                 break;
+            case log_stmt_col::search_path:
+                to_sqlite(ctx, vc.c_path);
+                break;
         }
 
         return SQLITE_OK;
@@ -140,7 +145,7 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         }
 
         switch (log_stmt_col(iter->iColumn)) {
-            case log_stmt_col::path:
+            case log_stmt_col::search_path:
                 viu.column_used(iter);
                 break;
             default:
@@ -148,8 +153,8 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
         }
     }
 
-    viu.allocate_args(lnav::enums::to_underlying(log_stmt_col::path),
-                      lnav::enums::to_underlying(log_stmt_col::path),
+    viu.allocate_args(lnav::enums::to_underlying(log_stmt_col::search_path),
+                      lnav::enums::to_underlying(log_stmt_col::search_path),
                       1);
     return SQLITE_OK;
 }

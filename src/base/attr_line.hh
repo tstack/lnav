@@ -400,7 +400,11 @@ public:
 
     attr_line_t& append(const char* str)
     {
-        this->al_string.append(str);
+        if (str == nullptr) {
+            this->append(lnav::roles::keyword("null"));
+        } else {
+            this->al_string.append(str);
+        }
         return *this;
     }
 

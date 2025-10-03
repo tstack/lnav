@@ -1310,7 +1310,7 @@ ptime_at(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
         lnav::time64_t small_secs = secs - 4611686018427387914ULL;
 
-        if (small_secs >= MAX_TIME_T) {
+        if (small_secs < 0 || small_secs >= MAX_TIME_T) {
             return false;
         }
 
@@ -1327,6 +1327,10 @@ ptime_at(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
                 }
             }
         });
+
+        if (dst->et_nsec < 0) {
+            return false;
+        }
     }
 
     dst->et_flags |= ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET

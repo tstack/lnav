@@ -1,28 +1,24 @@
 CTRL bell
 CSI Use alternate screen buffer
 CSI DSR cursor position
+XTVERSION
 S  -1 ┋                                                                                ┋
-A      └ [>u, [=27u, [>0q
-CTRL P
-S  -1 ┋+q544e;524742;687061                                                            ┋
-CTRL \
-S  -1 ┋                                                                                ┋
-A      ····················└ [?u, [?2026$p, [?1016$p, [?1;3;256S, [?1;3;1024S
+A      └ [>u, [=27u, [?u, [?2026$p, [?1016$p, [?1;3;256S, [?1;3;1024S
 CTRL _
-S  -1 ┋                    Gi=1,a=q;                                                   ┋
+S  -1 ┋Gi=1,a=q;                                                                       ┋
 CTRL \
 CSI [14t
 CSI [18t
 CSI send device attributes
 S  -1 ┋                                                                                ┋
-A      ·····························└ [?2;1;0S, [?1;1;0S
+A      ·········└ [?2;1;0S, [?1;1;0S
 CSI Application cursor keys
 CTRL =
 S  -1 ┋                                                                                ┋
-A      ·····························└ normal, normal, [39;49m
+A      ·········└ normal, normal, [39;49m
 CTRL (B
 S  -1 ┋                                                                                ┋
-A      ·····························└ normal
+A      ·········└ normal
 CSI Hide cursor
 CSI Erase all
 S   1 ┋ Hello                                                                          ┋

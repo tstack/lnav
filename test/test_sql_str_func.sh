@@ -113,6 +113,12 @@ run_cap_test ./drive_sql "SELECT encode(null, 'base64')"
 
 run_cap_test ./drive_sql "SELECT encode('hi' || char(10), 'hex')"
 
+run_cap_test ./drive_sql "SELECT decode(encode('Hello, World!', 'hex'), 'hex')"
+
+run_cap_test ./drive_sql "SELECT decode('123', 'hex')"
+
+run_cap_test ./drive_sql "SELECT decode('112g', 'hex')"
+
 run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
 
 #run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'

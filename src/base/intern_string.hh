@@ -649,6 +649,14 @@ struct string_fragment {
         return {this->data(), (size_t) this->length()};
     }
 
+    template<typename OutputIt>
+    void to_hex_string(OutputIt out) const
+    {
+        for (const auto ch : *this) {
+            fmt::format_to(out, FMT_STRING("{:02x}"), ch);
+        }
+    }
+
     std::string to_unquoted_string() const;
 
     void clear()

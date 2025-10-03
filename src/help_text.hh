@@ -106,19 +106,19 @@ struct help_example {
         prql,
     };
 
-    const char* he_description{nullptr};
-    const char* he_cmd{nullptr};
+    const char* he_description{""};
+    const char* he_cmd{""};
     language he_language{language::undefined};
 };
 
 struct help_text {
     help_context_t ht_context{help_context_t::HC_NONE};
-    const char* ht_name{nullptr};
-    const char* ht_summary{nullptr};
+    const char* ht_name{""};
+    const char* ht_summary{""};
     const char* ht_flag_name{nullptr};
     const char* ht_group_start{nullptr};
     const char* ht_group_end{nullptr};
-    const char* ht_description{nullptr};
+    const char* ht_description{""};
     std::vector<help_text> ht_parameters;
     std::vector<help_text> ht_results;
     std::vector<help_example> ht_example;
@@ -134,7 +134,7 @@ struct help_text {
 
     help_text() = default;
 
-    help_text(const char* name, const char* summary = nullptr) noexcept
+    help_text(const char* name, const char* summary = "") noexcept
         : ht_name(name), ht_summary(summary)
     {
         if (name[0] == ':') {

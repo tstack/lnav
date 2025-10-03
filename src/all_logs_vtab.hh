@@ -61,6 +61,7 @@ private:
     logline_value_meta alv_values_meta;
     logline_value_meta alv_src_meta;
     logline_value_meta alv_thread_meta;
+    logline_value_meta alv_exception_meta;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH

@@ -521,7 +521,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
 
                     for (int lpc = 0; lpc < blob_len; lpc++) {
                         fmt::format_to(std::back_inserter(buf),
-                                       FMT_STRING("{:x}"),
+                                       FMT_STRING("{:02x}"),
                                        blob[lpc]);
                     }
 
@@ -591,8 +591,12 @@ sql_decode(string_fragment str, encode_algo algo)
             auto buf = auto_buffer::alloc(str.length() / 2);
             auto sv = str.to_string_view();
 
-            while (!sv.empty()) {
-                auto scan_res = scn::scan<int32_t>(sv, "{:2x}");
+            if (sv.size() % 2 != 0) {
+                throw sqlite_func_error(
+                    "hex input is not a multiple of two characters");
+            }
+            while (sv.size() >= 2) {
+                auto scan_res = scn::scan<uint8_t>(sv.substr(0, 2), "{:2x}");
                 if (!scan_res) {
                     throw sqlite_func_error(
                         "invalid hex input at: {}",
@@ -600,8 +604,7 @@ sql_decode(string_fragment str, encode_algo algo)
                 }
                 auto value = scan_res->value();
                 buf.push_back((char) (value & 0xff));
-                sv = std::string_view{scan_res->range().begin(),
-                                      scan_res->range().size()};
+                sv = sv.substr(2);
             }
 
             return blob_auto_buffer{std::move(buf)};

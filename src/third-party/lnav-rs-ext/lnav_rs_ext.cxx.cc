@@ -898,6 +898,7 @@ struct FindLogResultJson final {
   ::rust::String src;
   ::rust::String pattern;
   ::rust::String variables;
+  ::rust::String exception_trace;
 
   using IsRelocatable = ::std::true_type;
 };

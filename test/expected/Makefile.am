@@ -1062,6 +1062,8 @@ dist_noinst_DATA = \
     test_sql_str_func.sh_3de72fe5c1751dd212a1cd45cf2caa7f3b52bced.out \
     test_sql_str_func.sh_4b402274da152135c6c99456b693e1ecabca0256.err \
     test_sql_str_func.sh_4b402274da152135c6c99456b693e1ecabca0256.out \
+    test_sql_str_func.sh_50f99f943005ddc9933accdd30543baf67709ace.err \
+    test_sql_str_func.sh_50f99f943005ddc9933accdd30543baf67709ace.out \
     test_sql_str_func.sh_51055e40d709332ee772ba5719039314bbf5e411.err \
     test_sql_str_func.sh_51055e40d709332ee772ba5719039314bbf5e411.out \
     test_sql_str_func.sh_51766b600fd158a9e0677f6b0fa31b83537b2e5b.err \
@@ -1092,6 +1094,8 @@ dist_noinst_DATA = \
     test_sql_str_func.sh_6ff984d8ed3e5099376d19f0dd20d5fd1ed42494.out \
     test_sql_str_func.sh_71f37db33504b2c08a7a3323c482556f53d88100.err \
     test_sql_str_func.sh_71f37db33504b2c08a7a3323c482556f53d88100.out \
+    test_sql_str_func.sh_7507f80a78c936a72a39d456c4a723dd92298479.err \
+    test_sql_str_func.sh_7507f80a78c936a72a39d456c4a723dd92298479.out \
     test_sql_str_func.sh_77fc174faeec1eda687a9373dbdbdd1aaef56e20.err \
     test_sql_str_func.sh_77fc174faeec1eda687a9373dbdbdd1aaef56e20.out \
     test_sql_str_func.sh_790da4aab5af901feeff5426790876eb91b967cb.err \
@@ -1116,6 +1120,8 @@ dist_noinst_DATA = \
     test_sql_str_func.sh_84e77dedec887c5e2433dbc5b130000cd88963bd.out \
     test_sql_str_func.sh_887afe94962d958aca2e03f7873d58ca93e190b5.err \
     test_sql_str_func.sh_887afe94962d958aca2e03f7873d58ca93e190b5.out \
+    test_sql_str_func.sh_89c7a8f1e90e3ab7217e81ba10d4192e6886e5ed.err \
+    test_sql_str_func.sh_89c7a8f1e90e3ab7217e81ba10d4192e6886e5ed.out \
     test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.err \
     test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.out \
     test_sql_str_func.sh_8cef54f0617960320b5d3615068eb27333dcf6a3.err \

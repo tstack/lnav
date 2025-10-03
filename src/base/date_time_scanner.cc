@@ -128,27 +128,30 @@ date_time_scanner::scan(const char* time_dest,
             auto epoch_scan_res = scn::scan_value<int64_t>(sv);
             if (epoch_scan_res) {
                 time_t gmt = epoch_scan_res->value();
-
-                if (convert_local
-                    && (this->dts_local_time || this->dts_zoned_to_local))
-                {
-                    localtime_r(&gmt, &tm_out->et_tm);
+                if (gmt > 300000000) {
+                    if (convert_local
+                        && (this->dts_local_time || this->dts_zoned_to_local))
+                    {
+                        localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->et_tm.tm_zone = nullptr;
+                        tm_out->et_tm.tm_zone = nullptr;
 #endif
-                    tm_out->et_tm.tm_isdst = 0;
-                    gmt = tm_out->to_timeval().tv_sec;
-                }
-                tv_out.tv_sec = gmt;
-                tv_out.tv_usec = 0;
-                tm_out->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-                    | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
+                        tm_out->et_tm.tm_isdst = 0;
+                        gmt = tm_out->to_timeval().tv_sec;
+                    }
+                    tv_out.tv_sec = gmt;
+                    tv_out.tv_usec = 0;
+                    tm_out->et_flags = ETF_DAY_SET | ETF_MONTH_SET
+                        | ETF_YEAR_SET | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME
+                        | ETF_ZONE_SET;
 
-                this->dts_fmt_lock = curr_time_fmt;
-                this->dts_fmt_len = sv.length() - epoch_scan_res->range().size();
-                retval = time_dest + this->dts_fmt_len;
-                found = true;
-                break;
+                    this->dts_fmt_lock = curr_time_fmt;
+                    this->dts_fmt_len
+                        = sv.length() - epoch_scan_res->range().size();
+                    retval = time_dest + this->dts_fmt_len;
+                    found = true;
+                    break;
+                }
             }
         } else if (time_fmt == PTIMEC_FORMAT_STR) {
             ptime_func func = PTIMEC_FORMATS[curr_time_fmt].pf_func;
@@ -378,8 +381,7 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
     } else {
         time_t adjust_gmt = t + this->dts_local_offset_cache;
         auto adjust_gmt_min = adjust_gmt / 60;
-        if (this->dts_localtime_cached_gmt == adjust_gmt_min)
-        {
+        if (this->dts_localtime_cached_gmt == adjust_gmt_min) {
             tm_out.et_tm = this->dts_localtime_cached_tm;
             tm_out.et_tm.tm_sec = adjust_gmt % 60;
         } else {

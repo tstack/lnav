@@ -3,10 +3,16 @@
 mod ext_access;
 
 use crate::ext_access::{start_server, stop_server};
-use crate::ffi::{get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair};
+use crate::ffi::{
+    get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson,
+    LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
+};
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
-use log2src::{LogError, LogMapping, LogMatcher, LogRef, LogRefBuilder, ProgressTracker, ProgressUpdate, SourceRef, VariablePair, WorkInfo};
+use log2src::{
+    LogError, LogMapping, LogMatcher, LogRefBuilder, ProgressTracker, ProgressUpdate, SourceRef,
+    VariablePair, WorkInfo,
+};
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
@@ -182,6 +188,7 @@ mod ffi {
         pub src: String,
         pub pattern: String,
         pub variables: String,
+        pub exception_trace: String,
     }
 
     struct VarPair {
@@ -527,6 +534,7 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
     if let Some(LogMapping {
         variables,
         src_ref: Some(src_ref),
+        exception_trace,
         ..
     }) = log_matcher.match_log_statement(&log_ref)
     {
@@ -541,6 +549,7 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
             src: serde_json::to_string(&src_details).unwrap(),
             pattern: src_ref.pattern,
             variables: serde_json::to_string(&variables).unwrap(),
+            exception_trace: serde_json::to_string(&exception_trace).unwrap(),
         })
     } else {
         UniquePtr::null()
@@ -567,16 +576,17 @@ fn stop_ext_access() {
 fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     let matcher = LOG_MATCHER.lock().unwrap();
     let path = Path::new(path_str);
+    let mut retval = vec![];
 
-    if let Some(stmts) = matcher.find_source_file_statements(path) {
-        stmts
-            .log_statements
-            .iter()
-            .map(|src_ref| src_ref.clone().into())
-            .collect()
-    } else {
-        vec![]
+    for stmts in matcher.find_source_file_statements(path) {
+        retval.extend(
+            stmts
+                .log_statements
+                .iter()
+                .map(|src_ref| src_ref.clone().into()),
+        );
     }
+    retval
 }
 
 fn init_ext() {

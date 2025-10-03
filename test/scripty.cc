@@ -63,9 +63,11 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
+#include "base/intern_string.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
 #include "styling.hh"
@@ -79,7 +81,7 @@ tstamp()
 {
     static char buf[64];
 
-    struct timeval tv;
+    timeval tv;
     gettimeofday(&tv, nullptr);
     strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S.", localtime(&tv.tv_sec));
     auto dlen = strlen(buf);
@@ -100,10 +102,10 @@ public:
         int e_err;
     };
 
-    explicit child_term(bool passout, bool passin, const char* term_type)
+    explicit child_term(bool passout, const char* term_type)
         : ct_passout(passout)
     {
-        struct winsize ws;
+        winsize ws;
         auto_fd slave;
 
         memset(&ws, 0, sizeof(ws));
@@ -137,16 +139,16 @@ public:
         if (this->ct_child == 0) {
             this->ct_master.reset();
 
-            if (!passin) {
-                dup2(slave, STDIN_FILENO);
-            }
+            dup2(slave, STDIN_FILENO);
             dup2(slave, STDOUT_FILENO);
+            slave.reset();
 
             unsetenv("TERM_PROGRAM");
             unsetenv("COLORTERM");
             setenv("IN_SCRIPTY", "1", 1);
             setenv("TERM", term_type, 1);
         } else {
+            this->ct_master.non_blocking();
             slave.reset();
         }
     }
@@ -196,10 +198,11 @@ public:
                 timersub(&curr, &start, &diff);
                 if (diff.tv_sec > 0) {
                     fprintf(stderr,
-                            "%s:child %d did not finish, sending SIGTERM...\n",
+                            "%s:child %d did not finish, sending SIGKILL...\n",
                             tstamp(),
                             this->ct_child);
-                    kill(this->ct_child, SIGTERM);
+                    kill(this->ct_child, SIGKILL);
+                    sleep(1);
                 }
             }
 
@@ -291,7 +294,7 @@ static struct {
     auto_mem<FILE> sd_from_child{fclose};
     std::filesystem::path sd_expected_name;
 
-    deque<struct command> sd_replay;
+    deque<command> sd_replay;
 } scripty_data;
 
 static const std::map<std::string, std::string> CSI_TO_DESC = {
@@ -326,6 +329,8 @@ struct term_machine {
         ESCAPE_VARIABLE_LENGTH,
         ESCAPE_OSC,
         ESCAPE_OSC_ST_START,
+        ESCAPE_DCS,
+        ESCAPE_DCS_ST_START,
     };
 
     struct term_attr {
@@ -372,7 +377,7 @@ struct term_machine {
             require(ch);
 
             this->tm_new_data = true;
-            this->tm_line[this->tm_cursor_x++] = (unsigned char) ch;
+            this->tm_line[this->tm_cursor_x++] = (unsigned char) ch & 0xff;
         } else {
             switch (ch) {
                 case '\a':
@@ -408,7 +413,7 @@ struct term_machine {
                 default:
                     require(ch);
                     this->tm_new_data = true;
-                    this->tm_line[this->tm_cursor_x++] = (unsigned char) ch;
+                    this->tm_line[this->tm_cursor_x++] = (unsigned char) ch & 0xff;
                     break;
             }
         }
@@ -427,12 +432,31 @@ struct term_machine {
                         this->tm_user_input.data(),
                         this->tm_user_input.size());
             fprintf(scripty_data.sd_from_child, "\n");
+            fprintf(scripty_data.sd_from_child, "# Key: ");
+            for (const auto ch : this->tm_user_input) {
+                if (isprint(ch)) {
+                    fputc(ch, scripty_data.sd_from_child.in());
+                } else {
+                    switch (ch) {
+                        case '\t':
+                            fprintf(scripty_data.sd_from_child.in(), "<TAB>");
+                            break;
+                    }
+                }
+            }
+            fprintf(scripty_data.sd_from_child, "\n");
             this->tm_user_input.clear();
         }
         if (this->tm_new_data || !this->tm_line_attrs.empty()) {
             // fprintf(scripty_data.sd_from_child, "flush %d\n",
             // this->tm_flush_count);
-            fprintf(stderr, "%s:flush %zu\n", tstamp(), this->tm_flush_count++);
+            fprintf(stderr, "%s:flush %zu -- ", tstamp(), this->tm_flush_count++);
+            for (auto uch : this->tm_line) {
+                ww898::utf::utf8::write(uch, [](auto ch) {
+                    fputc(ch, stderr);
+                });
+            }
+            fprintf(stderr, "\n");
             fprintf(
                 scripty_data.sd_from_child, "S % 3d \u250B", this->tm_cursor_y);
             for (auto uch : this->tm_line) {
@@ -493,6 +517,20 @@ struct term_machine {
         fflush(scripty_data.sd_from_child);
     }
 
+    std::vector<string_fragment> get_t_params()
+    {
+        std::vector<string_fragment> retval;
+        auto sf = string_fragment::from_bytes(this->tm_escape_buffer.data(),
+                                              this->tm_escape_buffer.size());
+
+        while (!sf.empty()) {
+            auto split_res = sf.split_when(string_fragment::tag1{';'});
+            retval.emplace_back(split_res.first);
+            sf = split_res.second;
+        }
+        return retval;
+    }
+
     std::vector<int> get_m_params()
     {
         std::vector<int> retval;
@@ -525,7 +563,7 @@ struct term_machine {
         fprintf(stderr,
                 "%s:new_input %x (%c)\n",
                 tstamp(),
-                ch,
+                ch & 0xff,
                 isprint(ch) ? ch : ' ');
         if (this->tm_unicode_remaining > 0) {
             this->tm_unicode_buffer.push_back(ch);
@@ -533,7 +571,7 @@ struct term_machine {
             if (this->tm_unicode_remaining == 0) {
                 this->tm_new_data = true;
                 this->tm_line[this->tm_cursor_x++]
-                    = ww898::utf::utf8::read([this]() {
+                    = ww898::utf::utf8::read([this] {
                           auto retval = this->tm_unicode_buffer.front();
 
                           this->tm_unicode_buffer.pop_front();
@@ -552,6 +590,7 @@ struct term_machine {
             return;
         }
 
+        auto do_passout = this->tm_child_term.get_passout();
         switch (this->tm_state) {
             case state::NORMAL: {
                 switch (ch) {
@@ -562,6 +601,9 @@ struct term_machine {
                     }
                     default: {
                         this->write_char(ch);
+                        if (do_passout) {
+                            write(STDOUT_FILENO, &ch, 1);
+                        }
                         break;
                     }
                 }
@@ -579,6 +621,11 @@ struct term_machine {
                         this->tm_state = state::ESCAPE_OSC;
                         break;
                     }
+                    case 'P': {
+                        this->tm_escape_buffer.push_back(ch);
+                        this->tm_state = state::ESCAPE_DCS;
+                        break;
+                    }
                     case '(':
                     case ')':
                     case '*':
@@ -589,6 +636,9 @@ struct term_machine {
                         break;
                     }
                     default: {
+                        if (do_passout) {
+                            this->pass_escape_out();
+                        }
                         this->flush_line();
                         switch (ch) {
                             case '7':
@@ -621,6 +671,9 @@ struct term_machine {
                 if (this->tm_escape_buffer.size()
                     == this->tm_escape_expected_size)
                 {
+                    if (do_passout) {
+                        this->pass_escape_out();
+                    }
                     const auto iter = CSI_TO_DESC.find(
                         std::string(this->tm_escape_buffer.data(),
                                     this->tm_escape_buffer.size()));
@@ -642,10 +695,13 @@ struct term_machine {
             case state::ESCAPE_VARIABLE_LENGTH: {
                 this->tm_escape_buffer.push_back(ch);
                 if (isalpha(ch)) {
-                    const auto iter = CSI_TO_DESC.find(
-                        std::string(this->tm_escape_buffer.data(),
-                                    this->tm_escape_buffer.size()));
+                    auto csi_str = std::string(this->tm_escape_buffer.data(),
+                                               this->tm_escape_buffer.size());
+                    const auto iter = CSI_TO_DESC.find(csi_str);
                     if (iter == CSI_TO_DESC.end()) {
+                        auto esc_sf = string_fragment::from_bytes(
+                            this->tm_escape_buffer.data(),
+                            this->tm_escape_buffer.size());
                         this->tm_escape_buffer.push_back('\0');
                         switch (ch) {
                             case 'A': {
@@ -685,20 +741,25 @@ struct term_machine {
                                 break;
                             }
                             case 'c': {
-                                if (this->tm_escape_buffer.size() == 3) {
+                                if (esc_sf == "[c"_frag) {
                                     fprintf(stderr, "%s:got DA1\n", tstamp());
                                     fprintf(scripty_data.sd_from_child,
                                             "CSI send device attributes\n");
-                                    if (!this->tm_child_term.get_passout()) {
-                                        static const auto* DA = "\x1b[?1;2c";
+                                    static const auto* DA = "\x1b[?1;2c";
 
-                                        fprintf(stderr,
-                                                "%s:sending DA1 response\n",
-                                                tstamp());
-                                        write(this->tm_child_term.get_fd(),
-                                              DA,
-                                              strlen(DA));
-                                    }
+                                    fprintf(stderr,
+                                            "%s:sending DA1 response\n",
+                                            tstamp());
+                                    write(this->tm_child_term.get_fd(),
+                                          DA,
+                                          strlen(DA));
+                                    do_passout = false;
+                                } else if (esc_sf == "[>c"_frag) {
+                                    fprintf(stderr, "%s:got DA2\n", tstamp());
+                                    do_passout = false;
+                                } else if (esc_sf == "[=c"_frag) {
+                                    fprintf(stderr, "%s:got DA3\n", tstamp());
+                                    do_passout = false;
                                 }
                                 break;
                             }
@@ -871,13 +932,12 @@ struct term_machine {
                                 if (req.size() == 1 && req[0] == 6) {
                                     fprintf(scripty_data.sd_from_child,
                                             "CSI DSR cursor position\n");
-                                    if (!this->tm_child_term.get_passout()) {
-                                        static const auto CPR = "\x1b[1;1R";
+                                    static const auto CPR = "\x1b[1;1R";
 
-                                        write(this->tm_child_term.get_fd(),
-                                              CPR,
-                                              strlen(CPR));
-                                    }
+                                    write(this->tm_child_term.get_fd(),
+                                          CPR,
+                                          strlen(CPR));
+                                    do_passout = false;
                                 }
                                 break;
                             }
@@ -889,6 +949,23 @@ struct term_machine {
                                         && winops[1] == 0 && winops[2] == 0)
                                     {
                                     } else {
+                                        if (winops[0] == 14) {
+                                            static const auto PIX_RESP
+                                                = "\x1b[4;240;800t"sv;
+
+                                            write(this->tm_child_term.get_fd(),
+                                                  PIX_RESP.data(),
+                                                  PIX_RESP.size());
+                                            do_passout = false;
+                                        } else if (winops[0] == 18) {
+                                            static const auto CELL_RESP
+                                                = "\x1b[8;24;80t"sv;
+
+                                            write(this->tm_child_term.get_fd(),
+                                                  CELL_RESP.data(),
+                                                  CELL_RESP.size());
+                                            do_passout = false;
+                                        }
                                         fprintf(scripty_data.sd_from_child,
                                                 "CSI %s\n",
                                                 this->tm_escape_buffer.data());
@@ -896,7 +973,30 @@ struct term_machine {
                                 }
                                 break;
                             }
-                            default:
+                            case 'q': {
+                                if (csi_str == "[>0q") {
+                                    static const auto* XTVERSION_RESP
+                                        = "\x1bP>|XTerm(scripty)\x1b\\";
+
+                                    fprintf(scripty_data.sd_from_child,
+                                            "XTVERSION\n");
+                                    write(this->tm_child_term.get_fd(),
+                                          XTVERSION_RESP,
+                                          strlen(XTVERSION_RESP));
+
+                                    do_passout = false;
+                                } else {
+                                    fprintf(stderr,
+                                            "%s:missed %c -- %s\n",
+                                            tstamp(),
+                                            ch,
+                                            this->tm_escape_buffer.data());
+                                    this->add_line_attr(
+                                        this->tm_escape_buffer.data());
+                                }
+                                break;
+                            }
+                            default: {
                                 fprintf(stderr,
                                         "%s:missed %c -- %s\n",
                                         tstamp(),
@@ -905,12 +1005,16 @@ struct term_machine {
                                 this->add_line_attr(
                                     this->tm_escape_buffer.data());
                                 break;
+                            }
                         }
                     } else {
                         this->flush_line();
                         fprintf(scripty_data.sd_from_child,
                                 "CSI %s\n",
                                 iter->second.c_str());
+                    }
+                    if (do_passout) {
+                        this->pass_escape_out();
                     }
                     this->tm_state = state::NORMAL;
                 } else {
@@ -986,11 +1090,70 @@ struct term_machine {
                     }
                     this->tm_state = state::NORMAL;
                 } else {
+                    this->tm_escape_buffer.push_back('\x1b');
                     this->tm_state = state::ESCAPE_OSC;
                 }
                 break;
             }
+            case state::ESCAPE_DCS: {
+                if (ch == '\x1b') {
+                    this->tm_state = state::ESCAPE_DCS_ST_START;
+                } else {
+                    this->tm_escape_buffer.push_back(ch);
+                }
+                break;
+            }
+            case state::ESCAPE_DCS_ST_START: {
+                if (ch == '\\') {
+                    this->tm_escape_buffer.push_back('\0');
+                    fprintf(stderr,
+                            "%s:DCS %s\n",
+                            tstamp(),
+                            this->tm_escape_buffer.data());
+                    if (startswith(this->tm_escape_buffer.data(), "P+")) {
+                        auto resp = std::string("\x1bP1+r");
+                        auto params = this->get_t_params();
+                        auto needs_semi = false;
+                        for (const auto& param : params) {
+                            if (needs_semi) {
+                                resp.push_back(';');
+                            }
+                            if (param == "544e"_frag) {
+                                static const auto TN_VAL
+                                    = "xterm-256color"_frag;
+
+                                resp += param;
+                                resp.push_back('=');
+                                TN_VAL.to_hex_string(std::back_inserter(resp));
+                                needs_semi = true;
+                            }
+                        }
+                        resp.append("\x1b\\");
+                    }
+                    this->tm_state = state::NORMAL;
+                } else {
+                    this->tm_escape_buffer.push_back('\x1b');
+                    this->tm_state = state::ESCAPE_OSC;
+                }
+            }
         }
+    }
+
+    void pass_escape_out()
+    {
+        if (this->tm_escape_buffer.back() == '\0') {
+            this->tm_escape_buffer.pop_back();
+        }
+
+        fprintf(stderr,
+                "%s:passing escape %.*s\n",
+                tstamp(),
+                this->tm_escape_buffer.size(),
+                this->tm_escape_buffer.data());
+        write(STDOUT_FILENO, "\x1b", 1);
+        write(STDOUT_FILENO,
+              this->tm_escape_buffer.data(),
+              this->tm_escape_buffer.size());
     }
 
     child_term& tm_child_term;
@@ -1061,7 +1224,7 @@ int
 main(int argc, char* argv[])
 {
     int c, fd, retval = EXIT_SUCCESS;
-    bool passout = true, passin = false, prompt = false;
+    bool passout = true, prompt = false;
     const char* term_type = "xterm";
     auto force_update = getenv("SCRIPTY_FORCE_UPDATE") != nullptr;
 
@@ -1102,9 +1265,6 @@ main(int argc, char* argv[])
             }
             case 'n':
                 passout = false;
-                break;
-            case 'i':
-                passin = true;
                 break;
             case 'p':
                 prompt = true;
@@ -1170,151 +1330,190 @@ main(int argc, char* argv[])
                     fileno(scripty_data.sd_from_child));
         }
 
-        child_term ct(passout, passin, term_type);
+        child_term ct(passout, term_type);
 
         if (ct.is_child()) {
             execvp(argv[0], argv);
             perror("execvp");
             exit(-1);
-        } else {
-            try {
-                int maxfd;
-                struct timeval last, now;
-                fd_set read_fds;
-                term_machine tm(ct);
-                size_t last_replay_size = scripty_data.sd_replay.size();
+        }
+        try {
+            int maxfd;
+            timeval last, now;
+            fd_set read_fds, write_fds;
+            term_machine tm(ct);
+            size_t last_replay_size = scripty_data.sd_replay.size();
+            auto from_stdin_buffer = auto_buffer::alloc(8192);
+            auto from_child_buffer = auto_buffer::alloc(8192);
 
-                scripty_data.sd_child_pid = ct.get_child_pid();
-                signal(SIGINT, sigpass);
-                signal(SIGTERM, sigpass);
+            scripty_data.sd_child_pid = ct.get_child_pid();
+            signal(SIGINT, sigpass);
+            signal(SIGTERM, sigpass);
 
-                signal(SIGCHLD, sigchld);
+            signal(SIGCHLD, sigchld);
 
+            gettimeofday(&now, nullptr);
+            last = now;
+
+            FD_ZERO(&read_fds);
+            FD_ZERO(&write_fds);
+
+            fprintf(stderr, "%s:going in the loop\n", tstamp());
+
+            tty_raw(STDIN_FILENO);
+
+            maxfd = max(STDIN_FILENO, ct.get_fd());
+            while (scripty_data.sd_looping) {
+                if (from_stdin_buffer.empty()) {
+                    fprintf(stderr, "%s:waiting for stdin\n", tstamp());
+                    FD_SET(STDIN_FILENO, &read_fds);
+                    FD_CLR(ct.get_fd(), &write_fds);
+                } else {
+                    fprintf(stderr, "%s:waiting to write stdin\n", tstamp());
+                    FD_CLR(STDIN_FILENO, &read_fds);
+                    FD_SET(ct.get_fd(), &write_fds);
+                }
+                if (from_child_buffer.empty()) {
+                    FD_SET(ct.get_fd(), &read_fds);
+                } else {
+                    FD_CLR(ct.get_fd(), &read_fds);
+                }
+                fd_set ready_rfds = read_fds;
+                fd_set ready_wfds = write_fds;
+                timeval diff, to;
+                int rc;
+
+                to.tv_sec = 0;
+                to.tv_usec = 10000;
+                rc = select(maxfd + 1, &ready_rfds, &ready_wfds, nullptr, &to);
                 gettimeofday(&now, nullptr);
-                last = now;
-
-                FD_ZERO(&read_fds);
-                FD_SET(STDIN_FILENO, &read_fds);
-                FD_SET(ct.get_fd(), &read_fds);
-
-                fprintf(stderr, "%s:going in the loop\n", tstamp());
-
-                tty_raw(STDIN_FILENO);
-
-                maxfd = max(STDIN_FILENO, ct.get_fd());
-                while (scripty_data.sd_looping) {
-                    fd_set ready_rfds = read_fds;
-                    struct timeval diff, to;
-                    int rc;
-
-                    to.tv_sec = 0;
-                    to.tv_usec = 10000;
-                    rc = select(maxfd + 1, &ready_rfds, nullptr, nullptr, &to);
-                    gettimeofday(&now, nullptr);
-                    timersub(&now, &last, &diff);
-                    if (diff.tv_sec > 60) {
-                        fprintf(stderr, "%s:replay timed out!\n", tstamp());
-                        scripty_data.sd_looping = false;
-                        kill(ct.get_child_pid(), SIGKILL);
-                        retval = EXIT_FAILURE;
-                        break;
+                timersub(&now, &last, &diff);
+                if (diff.tv_sec > 60) {
+                    fprintf(stderr, "%s:replay timed out!\n", tstamp());
+                    scripty_data.sd_looping = false;
+                    kill(ct.get_child_pid(), SIGKILL);
+                    retval = EXIT_FAILURE;
+                    break;
+                }
+                if (rc == 0) {
+                    if (diff.tv_sec >= 1 && tm.tm_waiting_on_input) {
+                        fprintf(stderr, "%s:forcing flush\n", tstamp());
+                        tm.flush_line();
                     }
-                    if (rc == 0) {
-                        if (diff.tv_sec >= 1 && tm.tm_waiting_on_input) {
-                            fprintf(stderr, "%s:forcing flush\n", tstamp());
-                            tm.flush_line();
+                } else if (rc < 0) {
+                    switch (errno) {
+                        case EINTR:
+                            break;
+                        default:
+                            fprintf(stderr,
+                                    "%s:select %s\n",
+                                    tstamp(),
+                                    strerror(errno));
+                            kill(ct.get_child_pid(), SIGKILL);
+                            scripty_data.sd_looping = false;
+                            break;
+                    }
+                } else {
+                    fprintf(stderr, "%s:fds ready %d\n", tstamp(), rc);
+                    for (int fd_index = 0; fd_index < maxfd + 1; fd_index++) {
+                        if (FD_ISSET(fd_index, &ready_rfds)) {
+                            fprintf(stderr,
+                                    "%s:fd(%d) ready\n",
+                                    tstamp(),
+                                    fd_index);
+                        } else {
+                            fprintf(stderr,
+                                    "%s:fd(%d) not ready\n",
+                                    tstamp(),
+                                    fd_index);
                         }
-                    } else if (rc < 0) {
-                        switch (errno) {
-                            case EINTR:
-                                break;
-                            default:
-                                fprintf(stderr,
-                                        "%s:select %s\n",
-                                        tstamp(),
-                                        strerror(errno));
-                                kill(ct.get_child_pid(), SIGKILL);
+                    }
+                    if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
+                        fprintf(stderr,
+                                "%s:avail %d\n",
+                                tstamp(),
+                                from_stdin_buffer.available());
+                        rc = read(STDIN_FILENO,
+                                  from_stdin_buffer.next_available(),
+                                  from_stdin_buffer.available());
+                        if (rc < 0) {
+                            if (errno != EAGAIN) {
                                 scripty_data.sd_looping = false;
-                                break;
-                        }
-                    } else {
-                        char buffer[1024];
-
-                        fprintf(stderr, "%s:fds ready %d\n", tstamp(), rc);
-                        for (int fd_index = 0; fd_index < maxfd + 1; fd_index++)
-                        {
-                            if (FD_ISSET(fd_index, &ready_rfds)) {
-                                fprintf(stderr,
-                                        "%s:fd(%d) ready\n",
-                                        tstamp(),
-                                        fd_index);
-                            } else {
-                                fprintf(stderr,
-                                        "%s:fd(%d) not ready\n",
-                                        tstamp(),
-                                        fd_index);
                             }
-                        }
-                        if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
-                            rc = read(STDIN_FILENO, buffer, sizeof(buffer));
+                        } else if (rc == 0) {
+                            FD_CLR(STDIN_FILENO, &read_fds);
+                        } else {
                             fprintf(
                                 stderr, "%s:stdin bytes %d\n", tstamp(), rc);
-                            if (rc < 0) {
-                                scripty_data.sd_looping = false;
-                            } else if (rc == 0) {
-                                FD_CLR(STDIN_FILENO, &read_fds);
-                            } else {
-                                log_perror(write(ct.get_fd(), buffer, rc));
-
-                                for (ssize_t lpc = 0; lpc < rc; lpc++) {
-                                    fprintf(stderr,
-                                            "%s:to-child %02x (%c)\n",
-                                            tstamp(),
-                                            buffer[lpc] & 0xff,
-                                            isprint(buffer[lpc]) ? buffer[lpc]
-                                                                 : ' ');
-                                    tm.new_user_input(buffer[lpc]);
-                                }
-                            }
-                            last = now;
+                            from_stdin_buffer.resize(rc);
                         }
-                        if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
-                            rc = read(ct.get_fd(), buffer, sizeof(buffer));
+                    }
+                    if (!from_stdin_buffer.empty()
+                        && FD_ISSET(ct.get_fd(), &ready_wfds))
+                    {
+                        errno = 0;
+                        auto write_rc = write(ct.get_fd(),
+                                              from_stdin_buffer.data(),
+                                              from_stdin_buffer.size());
+                        fprintf(stderr,
+                                "%s:stdin to-child %d %s\n",
+                                tstamp(),
+                                write_rc,
+                                strerror(errno));
+
+                        for (ssize_t lpc = 0; lpc < write_rc; lpc++) {
                             fprintf(stderr,
-                                    "%s:read(%d) rc %d\n",
+                                    "%s:to-child %02x (%c)\n",
                                     tstamp(),
-                                    ct.get_fd(),
-                                    rc);
-                            if (rc <= 0) {
-                                scripty_data.sd_looping = false;
-                            } else {
-                                if (passout) {
-                                    log_perror(
-                                        write(STDOUT_FILENO, buffer, rc));
-                                }
-                                if (scripty_data.sd_from_child != nullptr) {
-                                    for (size_t lpc = 0; lpc < rc; lpc++) {
+                                    from_stdin_buffer[lpc] & 0xff,
+                                    isprint(from_stdin_buffer[lpc])
+                                        ? from_stdin_buffer[lpc]
+                                        : ' ');
+                            tm.new_user_input(from_stdin_buffer[lpc]);
+                        }
+                        if (write_rc < 0) {
+                        } else {
+                            from_stdin_buffer.consume(write_rc);
+                        }
+                        last = now;
+                        fprintf(stderr, "%s:stdin to-child done\n", tstamp());
+                    }
+                    if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
+                        rc = read(ct.get_fd(),
+                                  from_child_buffer.next_available(),
+                                  from_child_buffer.available());
+                        fprintf(stderr,
+                                "%s:read(%d) rc %d\n",
+                                tstamp(),
+                                ct.get_fd(),
+                                rc);
+                        if (rc <= 0) {
+                            scripty_data.sd_looping = false;
+                        } else {
+                            from_child_buffer.resize(rc);
+                            if (scripty_data.sd_from_child != nullptr) {
+                                for (size_t lpc = 0; lpc < rc; lpc++) {
 #if 0
                                     fprintf(stderr, "%s:from-child %02x\n",
                                             tstamp(),
                                             buffer[lpc] & 0xff);
 #endif
-                                        tm.new_input(buffer[lpc]);
-                                        if (scripty_data.sd_replay.size()
-                                            != last_replay_size)
-                                        {
-                                            last = now;
-                                            last_replay_size
-                                                = scripty_data.sd_replay.size();
-                                        }
+                                    tm.new_input(from_child_buffer[lpc]);
+                                    if (scripty_data.sd_replay.size()
+                                        != last_replay_size)
+                                    {
+                                        last = now;
+                                        last_replay_size
+                                            = scripty_data.sd_replay.size();
                                     }
                                 }
                             }
+                            from_child_buffer.consume(rc);
                         }
                     }
                 }
-            } catch (const std::exception& e) {
             }
+        } catch (const std::exception& e) {
         }
 
         retval = ct.wait_for_child() || retval;

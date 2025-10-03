@@ -312,7 +312,7 @@ namespace lnav::pcre2pp {
 
 std::string quote(string_fragment sf);
 
-}
+}  // namespace lnav::pcre2pp
 
 enum class text_align_t {
     start,

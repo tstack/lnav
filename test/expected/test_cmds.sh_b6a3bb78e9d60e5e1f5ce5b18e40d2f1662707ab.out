@@ -917,6 +917,8 @@ For support questions, email:
   [4mzone[0m   The timezone name
 
 
+
+
 [4m:[0m[1m[4mcreate-logline-table[0m[4m [0m[4mtable-name[0m
 ══════════════════════════════════════════════════════════════════════
   Create an SQL table using the focused line of the log view as a
@@ -1423,6 +1425,8 @@ For support questions, email:
    
 
 
+
+
 [4m:[0m[1m[4mprev-location[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous position in the location history
@@ -1628,6 +1632,8 @@ For support questions, email:
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
+
+
 [4m:[0m[1m[4mshow-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Show log message fields that were previously hidden
@@ -1720,6 +1726,8 @@ For support questions, email:
 #1 To add the tags '#BUG123' and '#needs-review' to the focused line:
    [37m[40m:[0m[1m[36m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
    
+
+
 
 
 [4m:[0m[1m[4mtoggle-breakpoint[0m
@@ -3693,7 +3701,6 @@ For support questions, email:
 [4mParameters[0m
   [4mpath[0m          The path to the shared library
                 containing the extension.
-  [4mentry-point[0m   
 
 
 [1m[4mlog[0m[4m([0m[4mx[0m[4m)[0m

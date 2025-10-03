@@ -561,8 +561,8 @@ DISABLED_TESTS = \
 	test_remote.sh \
 	test_top_status \
 	test_line_buffer2 \
-    test_line_buffer.sh \
-    test_tui.sh
+	test_tui.sh \
+    test_line_buffer.sh
 
 if HAVE_LIBCURL
 TESTS += \
