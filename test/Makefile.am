@@ -213,6 +213,7 @@ dist_noinst_SCRIPTS = \
 	test_timeline.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
+	test_log2src.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
