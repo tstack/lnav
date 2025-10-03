@@ -413,6 +413,7 @@ log_write_ring_to(int fd)
 static void
 sigabrt(int sig, siginfo_t* info, void* ctx)
 {
+    auto dump_crash = getenv("DUMP_CRASH") != nullptr;
     char crash_path[1024], latest_crash_path[1024];
     int fd;
 #ifdef HAVE_EXECINFO_H
@@ -512,7 +513,7 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
                   log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
         write(fd, log_ring.lr_data, log_ring.lr_length);
-        if (getenv("DUMP_CRASH") != nullptr) {
+        if (dump_crash) {
             char buffer[1024];
             int rc;
 
@@ -560,7 +561,7 @@ Or, you can send the following file to {PACKAGE_BUGREPORT}:
                fmt::arg("crash_path", crash_path));
 
 #ifndef ATTACH_ON_SIGNAL
-    if (isatty(STDIN_FILENO)) {
+    if (!dump_crash && isatty(STDIN_FILENO)) {
         char response;
 
         fprintf(stderr, "\nWould you like to attach a debugger? (y/N) ");

@@ -146,6 +146,7 @@ public:
             unsetenv("TERM_PROGRAM");
             unsetenv("COLORTERM");
             setenv("IN_SCRIPTY", "1", 1);
+            setenv("DUMP_CRASH", "1", 1);
             setenv("TERM", term_type, 1);
         } else {
             this->ct_master.non_blocking();
