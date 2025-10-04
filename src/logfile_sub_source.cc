@@ -1038,6 +1038,14 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
+    if (!all_time_ordered_formats
+        && retval == rebuild_result::rr_partial_rebuild)
+    {
+        force = true;
+        full_sort = true;
+        retval = rebuild_result::rr_full_rebuild;
+    }
+
     if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
         // it's been cleared out.

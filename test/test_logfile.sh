@@ -778,3 +778,5 @@ run_cap_test ${lnav_test} -n ${test_dir}/logfile_logfmt.0
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.0
 
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.1
+
+run_cap_test ${lnav_test} -n ${test_dir}/\#with

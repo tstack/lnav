@@ -315,10 +315,8 @@ path_transcoder::to_shell_arg(std::string arg)
 std::pair<std::string, file_location_t>
 split_file_location(const std::string& file_path_str)
 {
-    auto hash_index = file_path_str.rfind('#');
-    if (hash_index != std::string::npos) {
-        return std::make_pair(file_path_str.substr(0, hash_index),
-                              file_path_str.substr(hash_index));
+    if (access(file_path_str.c_str(), R_OK) == 0) {
+        return {file_path_str, file_location_t{mapbox::util::no_init{}}};
     }
 
     auto colon_index = file_path_str.rfind(':');
@@ -334,6 +332,12 @@ split_file_location(const std::string& file_path_str)
         }
         log_info("did not parse line number from file path with colon: %s",
                  file_path_str.c_str());
+    }
+
+    auto hash_index = file_path_str.rfind('#');
+    if (hash_index != std::string::npos) {
+        return std::make_pair(file_path_str.substr(0, hash_index),
+                              file_path_str.substr(hash_index));
     }
 
     return std::make_pair(file_path_str,
