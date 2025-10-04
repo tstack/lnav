@@ -412,6 +412,8 @@ dist_noinst_DATA = \
     test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.out \
     test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.err \
     test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.out \
+    test_log2src.sh_0de731f5cb0dd0fb5138dd4c97d61cc0ec95dde8.err \
+    test_log2src.sh_0de731f5cb0dd0fb5138dd4c97d61cc0ec95dde8.out \
     test_log2src.sh_7afad25dfbecb3e452e744c6bb0999d28f5da258.err \
     test_log2src.sh_7afad25dfbecb3e452e744c6bb0999d28f5da258.out \
     test_logfile.sh_00877d2e9dadab916a02005a068410dfbd85ec74.err \

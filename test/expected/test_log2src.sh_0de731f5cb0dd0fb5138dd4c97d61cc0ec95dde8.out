@@ -1,0 +1,5 @@
+{"begin_line":19,"end_line":19,"language":"Python","function_name":"main","pattern":"(?s)^debug message: initializing demo \\w$","path":"{test_dir}/log2src/python/log_example.py"}
+{"begin_line":20,"end_line":21,"language":"Python","function_name":"main","pattern":"(?s)^info message:\\nprocessing started -- (.+)$","path":"{test_dir}/log2src/python/log_example.py"}
+{"begin_line":22,"end_line":22,"language":"Python","function_name":"main","pattern":"(?s)^warning message:\\nlow disk space$","path":"{test_dir}/log2src/python/log_example.py"}
+{"begin_line":23,"end_line":23,"language":"Python","function_name":"main","pattern":"(?s)^error message: failed to open resource$","path":"{test_dir}/log2src/python/log_example.py"}
+{"begin_line":27,"end_line":27,"language":"Python","function_name":"main","pattern":"(?s)^exception message: caught unexpected error$","path":"{test_dir}/log2src/python/log_example.py"}

@@ -550,6 +550,7 @@ TESTS = \
 	test_sql_yaml_func.sh \
 	test_text_anonymizer \
 	test_text_file.sh \
+	test_tui.sh \
 	test_pretty_print.sh \
     test_view_colors.sh
 
@@ -564,7 +565,6 @@ DISABLED_TESTS = \
 	test_remote.sh \
 	test_top_status \
 	test_line_buffer2 \
-	test_tui.sh \
     test_line_buffer.sh
 
 if HAVE_LIBCURL
