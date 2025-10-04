@@ -60,7 +60,7 @@ public:
         this->tss_fields[TSF_ERRORS].set_role(role_t::VCR_ALERT_STATUS);
         this->tss_fields[TSF_ERRORS].set_width(16);
         this->tss_fields[TSF_TOTAL].right_justify(true);
-        this->tss_fields[TSF_TOTAL].set_width(20);
+        this->tss_fields[TSF_TOTAL].set_width(28);
     }
 
     size_t statusview_fields() override { return TSF__MAX; }

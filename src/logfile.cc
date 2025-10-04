@@ -1369,12 +1369,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     tid_iter->second |= tid_pair.second;
                 }
             }
-            log_debug(
-                "%s: tid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
-                this->lf_filename_as_string.c_str(),
-                tids->ltis_tid_ranges.size(),
-                sizeof(opid_time_range),
-                this->lf_allocator.getNumBytesAllocated());
+            log_debug("%s: tid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
+                      this->lf_filename_as_string.c_str(),
+                      tids->ltis_tid_ranges.size(),
+                      sizeof(opid_time_range),
+                      this->lf_allocator.getNumBytesAllocated());
         }
 
         if (begin_size > this->lf_index.size()) {
@@ -1864,6 +1863,20 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
     ll.set_opid(opid.hash());
     this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
+}
+
+void
+logfile::set_opid_description(string_fragment opid, string_fragment desc)
+{
+    auto opid_guard = this->lf_opids.writeAccess();
+
+    auto opid_iter = opid_guard->los_opid_ranges.find(opid);
+    if (opid_iter == opid_guard->los_opid_ranges.end()) {
+        return;
+    }
+    opid_iter->second.otr_description.lod_id = std::nullopt;
+    opid_iter->second.otr_description.lod_elements.clear();
+    opid_iter->second.otr_description.lod_elements[0] = desc.to_string();
 }
 
 void

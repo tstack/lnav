@@ -185,6 +185,7 @@ listview_curses::reload_data()
             }
 
             this->update_top_from_selection();
+            this->lv_source->listview_selection_changed(*this);
         }
     }
     this->vc_needs_update = true;

@@ -41,7 +41,6 @@
 #include "base/math_util.hh"
 #include "command_executor.hh"
 #include "crashd.client.hh"
-#include "intervaltree/IntervalTree.h"
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "md4cpp.hh"
@@ -68,10 +67,7 @@ static const std::vector<std::chrono::seconds> TIME_SPANS = {
 static constexpr size_t MAX_OPID_WIDTH = 60;
 
 size_t
-abbrev_ftime(char* datebuf,
-             size_t db_size,
-             const struct tm& lb_tm,
-             const struct tm& dt)
+abbrev_ftime(char* datebuf, size_t db_size, const tm& lb_tm, const tm& dt)
 {
     char lb_fmt[32] = " ";
     bool same = true;
@@ -204,9 +200,9 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     }
 
     auto lb = this->gho_src->gs_lower_bound;
-    struct tm lb_tm;
+    tm lb_tm;
     auto ub = this->gho_src->gs_upper_bound;
-    struct tm ub_tm;
+    tm ub_tm;
     auto bounds
         = this->gho_src->get_time_bounds_for(lv.get_selection().value_or(0_vl));
 
@@ -220,9 +216,9 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     secs2tm(lb.tv_sec, &lb_tm);
     secs2tm(ub.tv_sec, &ub_tm);
 
-    struct tm sel_lb_tm;
+    tm sel_lb_tm;
     secs2tm(bounds.first.tv_sec, &sel_lb_tm);
-    struct tm sel_ub_tm;
+    tm sel_ub_tm;
     secs2tm(bounds.second.tv_sec, &sel_ub_tm);
 
     auto width = lv.get_dimensions().second - 1;
@@ -422,10 +418,9 @@ timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 this->gs_preview_focused = false;
                 this->gs_preview_view.set_height(5_vl);
             }
-            this->tss_view->tc_cursor_role = role_t::VCR_CURSOR_LINE;
-            this->gs_preview_view.tc_cursor_role
-                = role_t::VCR_DISABLED_CURSOR_LINE;
             this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
+            this->tss_view->set_enabled(!this->gs_preview_focused);
+            this->gs_preview_view.set_enabled(this->gs_preview_focused);
             break;
         }
         case '\n':
@@ -433,26 +428,21 @@ timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
         case NCKEY_ENTER: {
             this->gs_preview_focused = !this->gs_preview_focused;
             this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
+            this->tss_view->set_enabled(!this->gs_preview_focused);
+            this->gs_preview_view.set_enabled(this->gs_preview_focused);
             if (this->gs_preview_focused) {
                 auto height = this->tss_view->get_dimensions().first;
 
                 if (height > 5) {
-                    this->gs_preview_view.set_height(height - 3_vl);
+                    this->gs_preview_view.set_height(height / 2_vl);
                 }
-                this->tss_view->tc_cursor_role
-                    = role_t::VCR_DISABLED_CURSOR_LINE;
-                this->gs_preview_view.tc_cursor_role = role_t::VCR_CURSOR_LINE;
             } else {
-                this->tss_view->tc_cursor_role = role_t::VCR_CURSOR_LINE;
-                this->gs_preview_view.tc_cursor_role
-                    = role_t::VCR_DISABLED_CURSOR_LINE;
                 this->gs_preview_view.set_height(5_vl);
             }
             return true;
         }
     }
     if (this->gs_preview_focused) {
-        log_debug("to preview");
         return this->gs_preview_view.handle_key(ch);
     }
 
@@ -504,13 +494,13 @@ timeline_source::get_time_bounds_for(int line)
         ? 60
         : ((*span_iter) == 15min ? 60 * 15 : 60 * 60);
     auto span_secs = span_iter->count() - round_to;
-    struct timeval lower_tv = {
+    auto lower_tv = timeval{
         rounddown(low_row.or_value.otr_range.tr_begin.tv_sec, round_to),
         0,
     };
     lower_tv.tv_sec -= span_secs / 2;
-    struct timeval upper_tv = {
-        static_cast<time_t>(roundup(high_tv_sec, round_to)),
+    auto upper_tv = timeval{
+        roundup(high_tv_sec, round_to),
         0,
     };
     upper_tv.tv_sec += span_secs / 2;
@@ -577,7 +567,8 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
         value_out = this->gs_rendered_line.get_attrs();
 
         auto lr = line_range{-1, -1, line_range::unit::codepoint};
-        auto sel_bounds = this->get_time_bounds_for(tc.get_selection().value_or(0_vl));
+        auto sel_bounds
+            = this->get_time_bounds_for(tc.get_selection().value_or(0_vl));
 
         if (row.or_value.otr_range.tr_begin <= sel_bounds.second
             && sel_bounds.first <= row.or_value.otr_range.tr_end)
@@ -737,8 +728,11 @@ timeline_source::rebuild_indexes()
                         curr_desc_m[desc_pair.first] = desc_pair.second;
                     }
                 }
-            } else {
-                ensure(otr.otr_description.lod_elements.empty());
+            } else if (!otr.otr_description.lod_elements.empty()) {
+                auto desc_sf = string_fragment::from_str(
+                    otr.otr_description.lod_elements.front().second);
+                active_iter->second.or_description
+                    = desc_sf.to_owned(this->gs_allocator);
             }
             active_iter->second.or_value.otr_description.lod_elements.clear();
         }
@@ -773,23 +767,27 @@ timeline_source::rebuild_indexes()
     for (auto& pair : this->gs_active_opids) {
         auto& otr = pair.second.or_value;
         std::string full_desc;
-        const auto& desc_defs = pair.second.or_description_defs.odd_defs;
-        for (auto& desc : pair.second.or_descriptions) {
-            auto desc_def_iter = desc_defs.find(desc.first);
-            if (desc_def_iter == desc_defs.end()) {
-                continue;
+        if (pair.second.or_description.empty()) {
+            const auto& desc_defs = pair.second.or_description_defs.odd_defs;
+            for (auto& desc : pair.second.or_descriptions) {
+                auto desc_def_iter = desc_defs.find(desc.first);
+                if (desc_def_iter == desc_defs.end()) {
+                    continue;
+                }
+                const auto& desc_def = desc_def_iter->second;
+                full_desc = desc_def.to_string(desc.second);
             }
-            const auto& desc_def = desc_def_iter->second;
-            full_desc = desc_def.to_string(desc.second);
+            pair.second.or_descriptions.clear();
+            auto full_desc_sf = string_fragment::from_str(full_desc);
+            auto desc_sf_iter = this->gs_descriptions.find(full_desc_sf);
+            if (desc_sf_iter == this->gs_descriptions.end()) {
+                full_desc_sf = string_fragment::from_str(full_desc).to_owned(
+                    this->gs_allocator);
+            }
+            pair.second.or_description = full_desc_sf;
+        } else {
+            full_desc += pair.second.or_description;
         }
-        pair.second.or_descriptions.clear();
-        auto full_desc_sf = string_fragment::from_str(full_desc);
-        auto desc_sf_iter = this->gs_descriptions.find(full_desc_sf);
-        if (desc_sf_iter == this->gs_descriptions.end()) {
-            full_desc_sf = string_fragment::from_str(full_desc).to_owned(
-                this->gs_allocator);
-        }
-        pair.second.or_description = full_desc_sf;
 
         shared_buffer sb_opid;
         shared_buffer_ref sbr_opid;
@@ -881,7 +879,7 @@ timeline_source::rebuild_indexes()
 }
 
 std::optional<vis_line_t>
-timeline_source::row_for_time(struct timeval time_bucket)
+timeline_source::row_for_time(timeval time_bucket)
 {
     auto iter = this->gs_time_order.begin();
     while (true) {
@@ -925,6 +923,37 @@ timeline_source::row_for_time(struct timeval time_bucket)
     }
 
     return vis_line_t(std::distance(this->gs_time_order.begin(), closest_iter));
+}
+
+std::optional<vis_line_t>
+timeline_source::row_for(const row_info& ri)
+{
+    auto vl_opt = this->gs_lss.row_for(ri);
+    if (!vl_opt) {
+        return this->row_for_time(ri.ri_time);
+    }
+
+    auto vl = vl_opt.value();
+    auto win = this->gs_lss.window_at(vl);
+    for (const auto& msg_line : *win) {
+        const auto& lvv = msg_line.get_values();
+
+        if (lvv.lvv_opid_value) {
+            auto opid_iter
+                = this->gs_active_opids.find(lvv.lvv_opid_value.value());
+            if (opid_iter != this->gs_active_opids.end()) {
+                for (const auto& [index, oprow] :
+                     lnav::itertools::enumerate(this->gs_time_order))
+                {
+                    if (&oprow.get() == &opid_iter->second) {
+                        return vis_line_t(index);
+                    }
+                }
+            }
+        }
+    }
+
+    return this->row_for_time(ri.ri_time);
 }
 
 std::optional<text_time_translator::row_info>
@@ -1006,6 +1035,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
     auto win = this->gs_lss.window_at(low_vl.value(), high_vl);
     auto id_hash = row.or_name.hash();
+    auto msg_count = 0;
     for (const auto& msg_line : *win) {
         if (!msg_line.get_logline().match_opid_hash(id_hash)) {
             continue;
@@ -1020,6 +1050,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
         if (opid_sf == row.or_name) {
             std::vector<attr_line_t> rows_al(msg_line.get_line_count());
 
+            msg_count += 1;
             auto cl = this->gs_lss.at(msg_line.get_vis_line());
             this->gs_log_view.listview_value_for_rows(
                 this->gs_log_view, msg_line.get_vis_line(), rows_al);
@@ -1055,9 +1086,17 @@ timeline_source::text_selection_changed(textview_curses& tc)
             .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
             .set_value("%'d error", err_count);
     }
-    this->gs_preview_status_source
-        .statusview_value_for_field(timeline_status_source::TSF_TOTAL)
-        .set_value("%'d messages ", level_stats.lls_total_count);
+    if (msg_count < level_stats.lls_total_count) {
+        this->gs_preview_status_source
+            .statusview_value_for_field(timeline_status_source::TSF_TOTAL)
+            .set_value(
+                "%'d of %'d messages ", msg_count, level_stats.lls_total_count);
+    } else {
+        this->gs_preview_status_source
+            .statusview_value_for_field(timeline_status_source::TSF_TOTAL)
+            .set_value("%'d messages ", level_stats.lls_total_count);
+    }
+    this->gs_preview_status_view.set_needs_update();
 }
 
 void

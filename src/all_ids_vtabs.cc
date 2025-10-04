@@ -38,6 +38,7 @@
 #include "base/itertools.hh"
 #include "base/time_util.hh"
 #include "file_collection.hh"
+#include "log_format.hh"
 #include "logfile.hh"
 #include "robin_hood/robin_hood.h"
 #include "vtab_module.hh"
@@ -52,7 +53,8 @@ CREATE TABLE all_opids (
     latest DATETIME,        -- The latest time this ID was seen
     errors INTEGER,         -- The number of error messages associated with this ID
     warnings INTEGER,       -- The number of warning messages associated with this ID
-    total INTEGER           -- The total number of messages associated with this ID
+    total INTEGER,          -- The total number of messages associated with this ID
+    description TEXT        -- A description of the operation
 );
 )";
 
@@ -60,6 +62,7 @@ CREATE TABLE all_opids (
         struct opid_time_pair {
             std::string otp_opid;
             opid_time_range otp_range;
+            std::string otp_description;
 
             bool operator<(const opid_time_pair& rhs) const
             {
@@ -84,10 +87,30 @@ CREATE TABLE all_opids (
                     auto key_str = key.to_string();
                     auto gather_iter = gather_map.find(key_str);
                     if (gather_iter == gather_map.end()) {
-                        gather_map[key_str].otp_opid = key_str;
-                        gather_map[key_str].otp_range = om;
+                        auto emplace_res = gather_map.emplace(
+                            key_str, opid_time_pair{key_str, om});
+                        gather_iter = emplace_res.first;
                     } else {
                         gather_iter->second.otp_range |= om;
+                    }
+                    if (gather_iter->second.otp_description.empty()) {
+                        auto format = lf->get_format();
+                        if (om.otr_description.lod_id.has_value()) {
+                            auto desc_iter
+                                = format->lf_opid_description_def->find(
+                                    om.otr_description.lod_id.value());
+                            if (desc_iter
+                                != format->lf_opid_description_def->end())
+                            {
+                                gather_iter->second.otp_description
+                                    = desc_iter->second.to_string(
+                                        om.otr_description.lod_elements);
+                            }
+                        } else if (!om.otr_description.lod_elements.empty()) {
+                            gather_iter->second.otp_description
+                                = om.otr_description.lod_elements.front()
+                                      .second;
+                        }
                     }
                 }
             }
@@ -156,8 +179,50 @@ CREATE TABLE all_opids (
                           vc.c_iter->otp_range.otr_level_stats.lls_total_count);
                 break;
             }
+            case 6: {
+                if (vc.c_iter->otp_description.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, vc.c_iter->otp_description);
+                }
+                break;
+            }
         }
 
+        return SQLITE_OK;
+    }
+
+    int delete_row(sqlite3_vtab* tab, sqlite3_int64 rowid)
+    {
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be deleted from the all_opids table");
+        return SQLITE_ERROR;
+    }
+
+    int insert_row(sqlite3_vtab* tab, sqlite3_int64& rowid_out)
+    {
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be inserted into the all_opids table");
+        return SQLITE_ERROR;
+    }
+
+    int update_row(sqlite3_vtab* tab,
+                   sqlite3_int64& index,
+                   string_fragment opid,
+                   string_fragment earliest,
+                   string_fragment latest,
+                   int64_t errors,
+                   int64_t warnings,
+                   int64_t total,
+                   std::optional<string_fragment> description)
+    {
+        if (description) {
+            const auto& active_files = injector::get<file_collection&>();
+
+            for (const auto& lf : active_files.fc_files) {
+                lf->set_opid_description(opid, description.value());
+            }
+        }
         return SQLITE_OK;
     }
 };
@@ -286,7 +351,7 @@ CREATE TABLE all_thread_ids (
 };
 
 auto all_vtabs_binder = injector::bind_multiple<vtab_module_base>()
-                            .add<vtab_module<tvt_no_update<all_opids>>>()
+                            .add<vtab_module<all_opids>>()
                             .add<vtab_module<tvt_no_update<all_thread_ids>>>();
 
 }  // namespace

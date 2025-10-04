@@ -30,7 +30,11 @@
 #ifndef lnav_timeline_source_hh
 #define lnav_timeline_source_hh
 
+#include <array>
 #include <functional>
+#include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -38,6 +42,8 @@
 #include "base/progress.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
+#include "robin_hood/robin_hood.h"
+#include "statusview_curses.hh"
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 #include "timeline_status_source.hh"
@@ -95,7 +101,8 @@ public:
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
 
-    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(timeval time_bucket) override;
+    std::optional<vis_line_t> row_for(const row_info& ri) override;
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
     bool rebuild_indexes();

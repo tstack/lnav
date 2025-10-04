@@ -429,6 +429,8 @@ public:
 
     void set_logline_opid(uint32_t line_number, string_fragment opid);
 
+    void set_opid_description(string_fragment opid, string_fragment desc);
+
     void clear_logline_opid(uint32_t line_number);
 
     void quiesce() { this->lf_line_buffer.quiesce(); }

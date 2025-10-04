@@ -36,7 +36,9 @@ Features:
     matches a breakpoint.
 * The `all_opids` and `all_thread_ids` virtual tables
   have been added to make it simple to discover all of
-  the operations and threads across all log files.
+  the operations and threads across all log files.  The
+  `all_opids` table also supports setting a description
+  for an operation using through an `UPDATE`.
 * The `:xopen` command will now open text files in an
   external editor.  To open the file at a particular
   line/column, add a URL fragment of the form

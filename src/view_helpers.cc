@@ -154,7 +154,7 @@ open_schema_view()
 }
 
 static bool
-open_timeline_view()
+open_timeline_view(textview_curses* last_tc)
 {
     auto* timeline_tc = &lnav_data.ld_views[LNV_TIMELINE];
     auto* timeline_src
@@ -165,6 +165,31 @@ open_timeline_view()
     }
     timeline_tc->reload_data();
     timeline_tc->redo_search();
+    auto sel = timeline_tc->get_selection();
+    if (!sel && last_tc != nullptr) {
+        log_debug("timeline selection not found, trying to match last");
+        auto* ttt
+            = dynamic_cast<text_time_translator*>(last_tc->get_sub_source());
+        if (ttt != nullptr) {
+            auto ri_opt
+                = ttt->time_for_row(last_tc->get_selection().value_or(0_vl));
+            if (ri_opt) {
+                auto vl_opt = timeline_src->row_for(ri_opt.value());
+                if (vl_opt) {
+                    timeline_tc->set_selection(vl_opt.value());
+                } else {
+                    log_debug("timeline does not contain time");
+                }
+            } else {
+                log_debug("could not get time for last view selection");
+            }
+        } else {
+            log_debug("last view is not time-based");
+        }
+        if (!timeline_tc->get_selection()) {
+            timeline_tc->set_selection(0_vl);
+        }
+    }
     return true;
 }
 
@@ -1247,7 +1272,7 @@ toggle_view(textview_curses* toggle_tc)
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_TIMELINE]) {
-            if (!open_timeline_view()) {
+            if (!open_timeline_view(tc)) {
                 auto al = attr_line_t().append(
                     "interrupted while opening timeline view"_warning);
                 lnav::prompt::get().p_editor.set_inactive_value(al);

@@ -233,7 +233,7 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
                 if (src_view != nullptr && dst_view != nullptr && sel) {
                     src_view->time_for_row(sel.value()) |
                         [dst_view, tc](auto top_ri) {
-                            dst_view->row_for_time(top_ri.ri_time) |
+                            dst_view->row_for(top_ri) |
                                 [tc](auto row) { tc->set_selection(row); };
                         };
                 }

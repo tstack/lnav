@@ -281,6 +281,16 @@ The :code:`all_logs` table lets you query the format derived from the **lnav**
 log message parser that is used to automatically extract data, see
 :ref:`data-ext` for more details.
 
+all_opids
+---------
+
+The :code:`all_opids` table contains information about all opids that were
+found in the log files or set via the :code:`log_opid` column on the log
+vtables.  The information in this table is the same as available through the
+:ref:`TIMELINE<timeline>` view.  The :code:`description` column can be
+:code:`SET` in an :code:`UPDATE` statement to customize the description
+shown in the timeline.
+
 lnav_focused_msg
 ----------------
 
