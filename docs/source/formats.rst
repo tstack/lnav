@@ -307,6 +307,10 @@ object with the following fields:
   nested in an object and it MUST be included in the "line-format" for the
   'o' hotkeys to work.
 
+:thread-id-field: The name of the field that contains the identifier for a
+  thread.  Thread identifiers are tracked by lnav and can be accessed through
+  the :code:`all_thread_ids` table.
+
 :module-field: The name of the field that contains the module identifier
   that distinguishes messages from one log source from another.  This field
   should be used if this message format can act as a container for other

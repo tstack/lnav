@@ -244,8 +244,8 @@ dist_noinst_SCRIPTS = \
 	test_pretty_print.sh
 
 dist_noinst_DATA = \
-    #with/bye.txt \
-    #with/hw.txt \
+    \#with/bye.txt \
+    \#with/hw.txt \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.err \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.out \
 	ansi-colors.0.in \

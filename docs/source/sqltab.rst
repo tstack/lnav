@@ -291,6 +291,13 @@ vtables.  The information in this table is the same as available through the
 :code:`SET` in an :code:`UPDATE` statement to customize the description
 shown in the timeline.
 
+all_thread_ids
+--------------
+
+The :code:`all_thread_ids` table contains information about all the thread
+identifiers that were found in logs.  Log formats can specify which field
+is a thread identifier with the :code:`thread-id-field` property.
+
 lnav_focused_msg
 ----------------
 
