@@ -1976,7 +1976,9 @@ lnav::session::restore_view_states()
             tview.set_selection(vis_line_t(vs.vs_selection.value()));
         }
         auto sel = tview.get_selection();
-        if (sel && ta != nullptr && vs.vs_anchor && !vs.vs_anchor->empty()) {
+        if (!has_loc && sel && ta != nullptr && vs.vs_anchor
+            && !vs.vs_anchor->empty())
+        {
             auto curr_anchor = ta->anchor_for_row(sel.value());
 
             if (!curr_anchor || curr_anchor.value() != vs.vs_anchor.value()) {
