@@ -2083,6 +2083,9 @@ void
 load_config(const std::vector<std::filesystem::path>& extra_paths,
             std::vector<lnav::console::user_message>& errors)
 {
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
     for (const auto& bsf : lnav_config_json) {

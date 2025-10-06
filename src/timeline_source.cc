@@ -64,7 +64,8 @@ static const std::vector<std::chrono::seconds> TIME_SPANS = {
     365 * 24h,
 };
 
-static constexpr size_t MAX_OPID_WIDTH = 60;
+static constexpr size_t MAX_OPID_WIDTH = 80;
+static constexpr size_t MAX_DESC_WIDTH = 256;
 
 size_t
 abbrev_ftime(char* datebuf, size_t db_size, const tm& lb_tm, const tm& dt)
@@ -531,8 +532,10 @@ timeline_source::text_value_for_line(textview_curses& tc,
         this->gs_rendered_line.clear();
 
         auto total_msgs = row.or_value.otr_level_stats.lls_total_count;
-        auto truncated_name = row.or_name.to_string();
-        truncate_to(truncated_name, MAX_OPID_WIDTH);
+        auto truncated_name
+            = attr_line_t::from_table_cell_content(row.or_name, MAX_OPID_WIDTH);
+        auto truncated_desc = attr_line_t::from_table_cell_content(
+            row.or_description, MAX_DESC_WIDTH);
         this->gs_rendered_line
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append("  ")
@@ -542,11 +545,10 @@ timeline_source::text_value_for_line(textview_curses& tc,
                 row.or_value.otr_level_stats.lls_warning_count, total_msgs)))
             .append("  ")
             .append(lnav::roles::identifier(truncated_name))
-            .append(this->gs_opid_width
-                        - utf8_string_length(truncated_name)
-                              .unwrapOr(this->gs_opid_width),
-                    ' ')
-            .append(row.or_description);
+            .append(
+                this->gs_opid_width - truncated_name.utf8_length_or_length(),
+                ' ')
+            .append(truncated_desc);
         this->gs_rendered_line.with_attr_for_all(
             VC_ROLE.value(role_t::VCR_COMMENT));
 
@@ -627,6 +629,9 @@ timeline_source::text_size_for_line(textview_curses& tc,
 bool
 timeline_source::rebuild_indexes()
 {
+    static auto op = lnav_operation{"timeline_rebuild"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     auto& bm = this->tss_view->get_bookmarks();
     auto& bm_errs = bm[&textview_curses::BM_ERRORS];
     auto& bm_warns = bm[&textview_curses::BM_WARNINGS];
@@ -651,6 +656,7 @@ timeline_source::rebuild_indexes()
     auto max_log_time_opt = this->get_max_row_time();
     auto max_desc_width = size_t{0};
 
+    log_info("building opid table");
     for (const auto& [index, ld] : lnav::itertools::enumerate(this->gs_lss)) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
@@ -751,6 +757,7 @@ timeline_source::rebuild_indexes()
     if (this->gs_index_progress) {
         this->gs_index_progress(std::nullopt);
     }
+    log_info("active opids: %zu", this->gs_active_opids.size());
 
     size_t filtered_in_count = 0;
     for (const auto& filt : this->tss_filters) {

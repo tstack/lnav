@@ -1478,6 +1478,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
              const breadcrumb::crumb::key_t& key) {
               isc::to<main_looper&, services::main_t>().send(
                   [p, key, &bc](auto& mlooper) {
+                      static auto op = lnav_operation{"crumb_perform"};
+
+                      auto op_guard = lnav_opid_guard::internal(op);
+
                       p(key);
                       bc.reload_data();
                       if (bc.is_focused()) {
@@ -2230,6 +2234,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 log_info("stdin has been closed, exiting...");
                 lnav_data.ld_looping = false;
             } else if (in_revents & POLLIN) {
+                static auto op = lnav_operation{"user_input"};
+
+                auto op_guard = lnav_opid_guard::internal(op);
                 got_user_input = true;
                 ncinput nci;
                 auto old_gen = lnav_data.ld_active_files.fc_files_generation;
@@ -2855,6 +2862,8 @@ main(int argc, char* argv[])
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
+        auto op_guard = lnav_opid_guard::once("cleanup");
+
         log_info("performing cleanup");
 
 #ifdef HAVE_RUST_DEPS
@@ -2889,6 +2898,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
 
         lnav_data.ld_child_pollers.clear();
+
+        for (auto& tc : lnav_data.ld_views) {
+            tc.deinit();
+        }
 
         log_info("marking files as closed");
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
@@ -3510,15 +3523,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_tail_space(4_vl);
     lnav_data.ld_views[LNV_TIMELINE].set_selectable(true);
 
-    auto _timeline_cleanup = finally([] {
-        for (auto& tc : lnav_data.ld_views) {
-            tc.set_window(nullptr);
-        }
-        lnav_data.ld_views[LNV_TEXT].set_overlay_source(nullptr);
-        lnav_data.ld_views[LNV_TIMELINE].set_sub_source(nullptr);
-        lnav_data.ld_views[LNV_TIMELINE].set_overlay_source(nullptr);
-    });
-
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_preview_view[0].set_sub_source(
@@ -3579,34 +3583,37 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    lnav_data.ld_vtab_manager->register_vtab(std::make_shared<all_logs_vtab>());
-    lnav_data.ld_vtab_manager->register_vtab(
-        std::make_shared<log_format_vtab_impl>(
-            *log_format::find_root_format("generic_log")));
-    lnav_data.ld_vtab_manager->register_vtab(
-        std::make_shared<log_format_vtab_impl>(
-            *log_format::find_root_format("lnav_piper_log")));
+    {
+        auto op_guard = lnav_opid_guard::once("register_vtab");
 
-    log_info("BEGIN registering format tables");
-    for (auto& iter : log_format::get_root_formats()) {
-        auto lvi = iter->get_vtab_impl();
+        lnav_data.ld_vtab_manager->register_vtab(
+            std::make_shared<all_logs_vtab>());
+        lnav_data.ld_vtab_manager->register_vtab(
+            std::make_shared<log_format_vtab_impl>(
+                *log_format::find_root_format("generic_log")));
+        lnav_data.ld_vtab_manager->register_vtab(
+            std::make_shared<log_format_vtab_impl>(
+                *log_format::find_root_format("lnav_piper_log")));
 
-        if (lvi != nullptr) {
-            lnav_data.ld_vtab_manager->register_vtab(lvi);
+        for (auto& iter : log_format::get_root_formats()) {
+            auto lvi = iter->get_vtab_impl();
+
+            if (lvi != nullptr) {
+                lnav_data.ld_vtab_manager->register_vtab(lvi);
+            }
         }
-    }
-    log_info("END registering format tables");
 
-    load_format_extra(lnav_data.ld_db.in(),
-                      ec.ec_global_vars,
-                      lnav_data.ld_config_paths,
-                      loader_errors);
-    load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
+        load_format_extra(lnav_data.ld_db.in(),
+                          ec.ec_global_vars,
+                          lnav_data.ld_config_paths,
+                          loader_errors);
+        load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
-    if (!loader_errors.empty()) {
-        if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
-            if (mmode_ops == nullptr) {
-                return EXIT_FAILURE;
+        if (!loader_errors.empty()) {
+            if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
+                if (mmode_ops == nullptr) {
+                    return EXIT_FAILURE;
+                }
             }
         }
     }

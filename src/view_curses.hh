@@ -375,6 +375,11 @@ public:
 
     virtual std::optional<view_curses*> contains(int x, int y);
 
+    virtual void deinit()
+    {
+        this->set_window(nullptr);
+    }
+
     void set_needs_update()
     {
         if (this->is_visible()) {

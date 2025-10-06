@@ -5,9 +5,10 @@
         "description": "Log format for lnav's own debug log",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(-|\\+)\\d{2}:\\d{2}) (?<level>\\w) (?<thread>\\w+) (?<srcfile>[^:]+):(?<srcline>\\d+) (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(-|\\+)\\d{2}:\\d{2}) (?<level>\\w) (?<thread>\\w+)(?: \\[(?<opid>[^\\]]+)\\])? (?<srcfile>[^:]+):(?<srcline>\\d+) (?<body>.*)"
             }
         },
+        "opid-field": "opid",
         "src-file-field": "srcfile",
         "src-line-field": "srcline",
         "thread-id-field": "thread",
@@ -23,12 +24,84 @@
                 "kind": "integer",
                 "identifier": true
             },
+            "opid": {
+                "kind": "string",
+                "identifier": true
+            },
             "thread": {
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
                 "kind": "string"
+            }
+        },
+        "opid": {
+            "description": {
+                "new_input": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^(new input .*)"
+                        }
+                    ]
+                },
+                "watch_file": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^watching new file: (.+)"
+                        }
+                    ]
+                },
+                "grep": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^(?:\\w+): start search for: (.+)"
+                        }
+                    ]
+                },
+                "piper_loop": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^starting loop to capture: (.+)"
+                        }
+                    ]
+                },
+                "execute_prql": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^compiling PRQL: (.+)"
+                        }
+                    ]
+                },
+                "execute_cmd": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^Executing command: (.+)"
+                        }
+                    ]
+                },
+                "execute_file": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^Executing file: (.+)"
+                        }
+                    ]
+                },
+                "execute_sql": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^Executing SQL: (.+)"
+                        }
+                    ]
+                }
             }
         },
         "sample": [

@@ -122,9 +122,12 @@ static Result<std::string, lnav::console::user_message> execute_from_file(
 Result<std::string, lnav::console::user_message>
 execute_command(exec_context& ec, const std::string& cmdline)
 {
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     std::vector<std::string> args;
 
-    log_info("Executing: %s", cmdline.c_str());
+    log_info("Executing command: %s", cmdline.c_str());
 
     split_ws(cmdline, args);
 
@@ -275,6 +278,9 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
@@ -644,6 +650,9 @@ Result<std::string, lnav::console::user_message>
 execute_file(exec_context& ec, const std::string& path_and_args)
 {
     static const intern_string_t SRC = intern_string::lookup("cmdline");
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
 
     std::string retval, msg;
     shlex lexer(path_and_args);

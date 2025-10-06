@@ -44,7 +44,7 @@
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
-    log_debug("detecting format of file: %s", filename.c_str());
+    log_trace("detecting format of file: %s", filename.c_str());
 
     detect_file_format_result retval = {file_format_t::UNKNOWN};
     auto describe_res = archive_manager::describe(filename);

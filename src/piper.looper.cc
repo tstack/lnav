@@ -299,6 +299,9 @@ looper::loop()
     static constexpr auto FILE_TIMEOUT_BACKOFF = 30ms;
     static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 
+    static auto op = lnav_operation{"piper_loop"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     const auto& cfg = injector::get<const config&>();
     pollfd pfd[3];
     struct {

@@ -313,9 +313,11 @@ file_collection::watch_logfile(const std::string& filename,
                                logfile_open_options& loo,
                                bool required)
 {
+    static auto op = lnav_operation{__FUNCTION__};
+
     struct stat st;
     int rc;
-
+    auto op_guard = lnav_opid_guard::internal(op);
     auto filename_key = loo.loo_filename.empty() ? filename : loo.loo_filename;
     if (this->fc_closed_files.count(filename)
         || this->fc_closed_files.count(filename_key))
@@ -410,6 +412,8 @@ file_collection::watch_logfile(const std::string& filename,
                      loo,
                      prog = this->fc_progress,
                      errs = this->fc_name_to_errors]() mutable {
+            static auto inner_op = lnav_operation{"watch_new_file"};
+
             file_collection retval;
 
             {
@@ -420,6 +424,10 @@ file_collection::watch_logfile(const std::string& filename,
                     return retval;
                 }
             }
+
+            auto op_guard = lnav_opid_guard::internal(inner_op);
+
+            log_debug("watching new file: %s", filename.c_str());
 
             auto ff_res = detect_file_format(filename);
 

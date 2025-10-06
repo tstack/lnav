@@ -211,6 +211,10 @@ public:
 rebuild_indexes_result_t
 rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
+    static auto op = lnav_operation{"rebuild_indexes"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
+
     auto& lss = lnav_data.ld_log_source;
     auto& log_view = lnav_data.ld_views[LNV_LOG];
     auto& text_view = lnav_data.ld_views[LNV_TEXT];

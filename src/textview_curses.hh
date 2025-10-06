@@ -652,6 +652,15 @@ public:
 
     ~textview_curses();
 
+    void deinit()
+    {
+        listview_curses::deinit();
+        this->set_sub_source(nullptr);
+        this->tc_delegate.reset();
+        this->tc_search_child.reset();
+        this->tc_source_search_child.reset();
+    }
+
     void reload_config(error_reporter& reporter);
 
     void set_paused(bool paused)
@@ -816,26 +825,9 @@ public:
 
     void redo_search();
 
-    void search_range(vis_line_t start, vis_line_t stop = -1_vl)
-    {
-        if (this->tc_search_child) {
-            this->tc_search_child->get_grep_proc()->queue_request(start, stop);
-        }
-        if (this->tc_source_search_child) {
-            this->tc_source_search_child->queue_request(start, stop);
-        }
-    }
+    void search_range(vis_line_t start, vis_line_t stop = -1_vl);
 
-    void search_new_data(vis_line_t start = -1_vl)
-    {
-        this->search_range(start);
-        if (this->tc_search_child) {
-            this->tc_search_child->get_grep_proc()->start();
-        }
-        if (this->tc_source_search_child) {
-            this->tc_source_search_child->start();
-        }
-    }
+    void search_new_data(vis_line_t start = -1_vl);
 
     std::string get_current_search() const { return this->tc_current_search; }
 
@@ -964,6 +956,7 @@ protected:
 
     std::string tc_current_search;
     std::string tc_previous_search;
+    std::optional<std::string> tc_search_op_id;
     std::shared_ptr<grep_highlighter> tc_search_child;
     std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
     std::optional<std::chrono::steady_clock::time_point> tc_search_start_time;

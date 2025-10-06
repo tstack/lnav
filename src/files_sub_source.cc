@@ -148,6 +148,8 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                           auto& lss = lnav_data.ld_log_source;
                           auto lf = *fs.sb_iter;
 
+                          log_debug("toggling visibility of file: %s",
+                                    lf->get_filename().c_str());
                           lss.find_data(lf) | [](auto ld) {
                               ld->get_file_ptr()->set_indexing(!ld->ld_visible);
                               ld->set_visibility(!ld->ld_visible);

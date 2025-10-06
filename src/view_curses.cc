@@ -684,6 +684,10 @@ public:
 
     void reload_config(error_reporter& reporter) override
     {
+        static auto op = lnav_operation{"reload_theme"};
+
+        auto op_guard = lnav_opid_guard::internal(op);
+
         if (!view_colors::initialized) {
             view_colors::vc_active_palette = ansi_colors();
         }

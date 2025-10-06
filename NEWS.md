@@ -68,6 +68,19 @@ Interface changes:
   each operation will be shown just above the bottom
   status bar.
 
+Bug Fixes:
+* If a file path contains a hash (`#`), check if the path
+  exists before splitting around the hash and treating it
+  as an internal file location.
+
+Internal:
+* Added operation IDs (OpIDs) to lnav's internal logging
+  to make it easier to identify the high level operations
+  that are being performed using the TIMELINE view.
+  While this is mainly useful to the authors of lnav, it
+  can serve as a good example of the benefits of adding
+  OpIDs and the TIMELINE view.
+
 ## lnav v0.13.2
 
 Bug Fixes:

@@ -171,6 +171,12 @@ public:
     listview_curses(const listview_curses&) = delete;
     listview_curses(listview_curses&) = delete;
 
+    void deinit() override
+    {
+        view_curses::deinit();
+        this->lv_overlay_source = nullptr;
+    }
+
     /** @param src The data source delegate. */
     void set_data_source(list_data_source* src)
     {

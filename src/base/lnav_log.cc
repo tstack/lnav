@@ -29,6 +29,8 @@
  * @file lnav_log.cc
  */
 
+#include <random>
+
 #include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -79,7 +81,7 @@ static constexpr size_t MAX_LOG_LINE_SIZE = 2 * 1024;
 std::optional<FILE*> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char* lnav_log_crash_dir;
-std::optional<const struct termios*> lnav_log_orig_termios;
+std::optional<const termios*> lnav_log_orig_termios;
 // NOTE: This mutex is leaked so that it is not destroyed during exit.
 // Otherwise, any attempts to log will fail.
 static std::mutex*
@@ -116,8 +118,206 @@ struct thid {
 
 uint32_t thid::COUNTER = 0;
 
+template<size_t SIZE = 256>
+struct fixed_string {
+    using value_type = char;
+
+    bool empty() const { return this->fs_size == 0; }
+
+    size_t size() const { return this->fs_size; }
+
+    const char* data() const { return this->fs_data; }
+
+    void clear()
+    {
+        this->fs_size = 0;
+    }
+
+    void resize(size_t new_size)
+    {
+        if (new_size < SIZE) {
+            this->fs_size = new_size;
+        }
+    }
+
+    void push_back(char c)
+    {
+        if (this->fs_size < SIZE) {
+            this->fs_data[this->fs_size++] = c;
+        }
+    }
+
+    void append(const char* str)
+    {
+        auto in_len = strlen(str);
+        if (this->fs_size + in_len >= SIZE) {
+            in_len = SIZE - this->fs_size - 1;
+        }
+        memcpy(this->fs_data + this->fs_size, str, in_len);
+        this->fs_size += in_len;
+    }
+
+    void append(const std::string& str)
+    {
+        auto in_len = str.size();
+        if (this->fs_size + in_len >= SIZE) {
+            in_len = SIZE - this->fs_size - 1;
+        }
+        memcpy(this->fs_data + this->fs_size, str.data(), in_len);
+        this->fs_size += in_len;
+    }
+
+    fixed_string& operator=(const char* str)
+    {
+        this->clear();
+        this->append(str);
+        return *this;
+    }
+
+    fixed_string& operator=(const std::string& str)
+    {
+        this->clear();
+        this->append(str);
+        return *this;
+    }
+
+    [[nodiscard]] std::string to_string() const
+    {
+        return std::string(this->fs_data, this->fs_size);
+    }
+
+private:
+    char fs_data[SIZE];
+    size_t fs_size{0};
+};
+
 thread_local thid current_thid;
 thread_local std::string thread_log_prefix;
+thread_local fixed_string lnav_opid;
+
+static const char*
+get_pid_str()
+{
+    static char buffer[32];
+
+    if (!buffer[0]) {
+        snprintf(buffer, sizeof(buffer), "%d", getpid());
+    }
+
+    return buffer;
+}
+
+lnav_opid_guard::lnav_opid_guard() : log_opid_size(lnav_opid.size())
+{
+    static const auto* PID_STR = get_pid_str();
+
+    if (lnav_opid.empty()) {
+        lnav_opid = PID_STR;
+    }
+    lnav_opid.append("::");
+}
+
+lnav_opid_guard
+lnav_opid_guard::once(const char* id)
+{
+    auto retval = lnav_opid_guard();
+    lnav_opid.append(id);
+
+    return retval;
+}
+
+lnav_opid_guard
+lnav_opid_guard::internal(lnav_operation& op)
+{
+    auto retval = lnav_opid_guard();
+    lnav_opid.append(op.lo_name);
+    lnav_opid.push_back('-');
+    auto count = op.lo_count.fetch_add(1, std::memory_order_relaxed);
+    fmt::format_to(std::back_inserter(lnav_opid), FMT_STRING("{}"), count);
+
+    return retval;
+}
+
+lnav_opid_guard
+lnav_opid_guard::async(lnav_operation& op)
+{
+    auto orig = lnav_opid.to_string();
+    lnav_opid.clear();
+    auto retval = internal(op);
+    retval.log_orig_opid = std::move(orig);
+    return retval;
+}
+
+lnav_opid_guard
+lnav_opid_guard::resume(const std::string& opid)
+{
+    auto orig = lnav_opid.to_string();
+    auto retval = lnav_opid_guard();
+    retval.log_orig_opid = std::move(orig);
+    lnav_opid = opid;
+    return retval;
+}
+
+lnav_opid_guard
+lnav_opid_guard::unique()
+{
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<> dis(0, 15);
+    static std::uniform_int_distribution<> dis2(8, 11);
+
+    std::stringstream ss;
+    ss << std::hex;
+
+    // Generate UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    for (int i = 0; i < 8; i++) {
+        ss << dis(gen);
+    }
+    ss << "-";
+    for (int i = 0; i < 4; i++) {
+        ss << dis(gen);
+    }
+    ss << "-4";  // UUID version 4
+    for (int i = 0; i < 3; i++) {
+        ss << dis(gen);
+    }
+    ss << "-";
+    ss << dis2(gen);  // Variant bits (8, 9, a, or b)
+    for (int i = 0; i < 3; i++) {
+        ss << dis(gen);
+    }
+    ss << "-";
+    for (int i = 0; i < 12; i++) {
+        ss << dis(gen);
+    }
+
+    auto retval = lnav_opid_guard();
+    lnav_opid.append(ss.str());
+
+    return retval;
+}
+
+lnav_opid_guard::~lnav_opid_guard()
+{
+    if (this->log_guard_helper.gh_enabled) {
+        if (this->log_orig_opid.empty()) {
+            lnav_opid.resize(this->log_opid_size);
+        } else {
+            lnav_opid.clear();
+            lnav_opid.append(this->log_orig_opid);
+        }
+    }
+}
+
+std::string
+lnav_opid_guard::suspend() &&
+{
+    this->log_guard_helper.gh_enabled = false;
+    auto retval = lnav_opid.to_string();
+    lnav_opid.clear();
+    lnav_opid.append(this->log_orig_opid);
+    return retval;
+}
 
 static struct {
     size_t lr_length;
@@ -313,24 +513,28 @@ log_msg(lnav_log_level_t level,
     localtime_r(&curr_time.tv_sec, &localtm);
     auto line = log_alloc();
     auto gmtoff = std::abs(localtm.tm_gmtoff) / 60;
-    prefix_size
-        = snprintf(line,
-                   MAX_LOG_LINE_SIZE,
-                   "%4d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d:%02d %s t%u %s:%d ",
-                   localtm.tm_year + 1900,
-                   localtm.tm_mon + 1,
-                   localtm.tm_mday,
-                   localtm.tm_hour,
-                   localtm.tm_min,
-                   localtm.tm_sec,
-                   (int) (curr_time.tv_usec / 1000),
-                   localtm.tm_gmtoff < 0 ? '-' : '+',
-                   (int) gmtoff / 60,
-                   (int) gmtoff % 60,
-                   LEVEL_NAMES[lnav::enums::to_underlying(level)],
-                   current_thid.t_id,
-                   src_file,
-                   line_number);
+    prefix_size = snprintf(
+        line,
+        MAX_LOG_LINE_SIZE,
+        "%4d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d:%02d %s t%u%s%.*s%s %s:%d ",
+        localtm.tm_year + 1900,
+        localtm.tm_mon + 1,
+        localtm.tm_mday,
+        localtm.tm_hour,
+        localtm.tm_min,
+        localtm.tm_sec,
+        (int) (curr_time.tv_usec / 1000),
+        localtm.tm_gmtoff < 0 ? '-' : '+',
+        (int) gmtoff / 60,
+        (int) gmtoff % 60,
+        LEVEL_NAMES[lnav::enums::to_underlying(level)],
+        current_thid.t_id,
+        lnav_opid.empty() ? "" : " [",
+        (int) lnav_opid.size(),
+        lnav_opid.data(),
+        lnav_opid.empty() ? "" : "]",
+        src_file,
+        line_number);
 #if 0
     if (!thread_log_prefix.empty()) {
         prefix_size += snprintf(

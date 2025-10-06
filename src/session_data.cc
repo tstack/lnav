@@ -438,6 +438,9 @@ load_time_bookmarks()
          session_time DESC
 )";
 
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     auto& lss = lnav_data.ld_log_source;
     auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
@@ -951,6 +954,9 @@ static const typed_json_path_container<session_data_t> view_info_handlers = {
 void
 load_session()
 {
+    static auto op = lnav_operation{"load_session"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     log_info("BEGIN load_session");
     scan_sessions() | [](const auto pair) {
         lnav_data.ld_session_load_time = pair.first.second;
@@ -1775,6 +1781,10 @@ save_session()
         return;
     }
 
+    static auto op = lnav_operation{"save_session"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
+
     log_debug("BEGIN save_session");
     save_time_bookmarks();
 
@@ -1873,6 +1883,10 @@ reset_session()
 void
 lnav::session::restore_view_states()
 {
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
+
     log_debug("restoring view states");
     for (size_t view_index = 0; view_index < LNV__MAX; view_index++) {
         const auto& vs = session_data.sd_view_states[view_index];

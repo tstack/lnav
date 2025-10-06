@@ -322,6 +322,8 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
 {
     require(this->tc_searching >= 0);
 
+    auto op_guard = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
     this->tc_searching += 1;
     this->tc_search_action(this);
 
@@ -358,6 +360,8 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
 void
 textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 {
+    auto op_guard = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
     if (this->tc_follow_deadline.tv_sec
         && this->tc_follow_selection == this->get_selection())
     {
@@ -381,6 +385,8 @@ textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 void
 textview_curses::grep_end(grep_proc<vis_line_t>& gp)
 {
+    auto op_guard = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
     this->tc_searching -= 1;
     this->grep_end_batch(gp);
     if (this->tc_searching == 0 && this->tc_search_start_time) {
@@ -923,18 +929,24 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 void
 textview_curses::execute_search(const std::string& regex_orig)
 {
+    static auto op = lnav_operation{"grep"};
+
     std::string regex = regex_orig;
 
     if ((this->tc_search_child == nullptr)
         || (regex != this->tc_current_search))
     {
+        auto op_guard = lnav_opid_guard::async(op);
         std::shared_ptr<lnav::pcre2pp::code> code;
         this->match_reset();
 
+        this->tc_search_op_id = std::nullopt;
         this->tc_search_child.reset();
         this->tc_source_search_child.reset();
 
-        log_debug("start search for: '%s'", regex.c_str());
+        log_debug("%s: start search for: '%s'",
+                  this->vc_title.c_str(),
+                  regex.c_str());
 
         if (regex.empty()) {
         } else {
@@ -979,12 +991,16 @@ textview_curses::execute_search(const std::string& regex_orig)
             } else {
                 top -= REVERSE_SEARCH_OFFSET;
             }
+            this->tc_search_op_id = std::move(op_guard).suspend();
             gp->queue_request(top);
             if (top > 0) {
                 gp->queue_request(0_vl, top);
             }
             this->tc_search_start_time = std::chrono::steady_clock::now();
             this->tc_search_duration = std::nullopt;
+
+            auto op_guard
+                = lnav_opid_guard::resume(this->tc_search_op_id.value());
             gp->start();
 
             this->tc_search_child = std::make_shared<grep_highlighter>(
@@ -1102,6 +1118,9 @@ void
 textview_curses::redo_search()
 {
     if (this->tc_search_child) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
         auto* gp = this->tc_search_child->get_grep_proc();
 
         gp->invalidate();
@@ -1113,6 +1132,39 @@ textview_curses::redo_search()
                 .queue_request(0_vl)
                 .start();
         }
+    }
+}
+
+void
+textview_curses::search_range(vis_line_t start, vis_line_t stop)
+{
+    if (this->tc_search_child) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+        this->tc_search_child->get_grep_proc()->queue_request(start, stop);
+    }
+    if (this->tc_source_search_child) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+        this->tc_source_search_child->queue_request(start, stop);
+    }
+}
+
+void
+textview_curses::search_new_data(vis_line_t start)
+{
+    this->search_range(start);
+    if (this->tc_search_child) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
+        this->tc_search_child->get_grep_proc()->start();
+    }
+    if (this->tc_source_search_child) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
+        this->tc_source_search_child->start();
     }
 }
 

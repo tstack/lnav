@@ -1410,9 +1410,11 @@ void
 load_formats(const std::vector<std::filesystem::path>& extra_paths,
              std::vector<lnav::console::user_message>& errors)
 {
+    auto op_guard = lnav_opid_guard::once(__FUNCTION__);
+
     auto default_source = lnav::paths::dotlnav() / "default";
     std::vector<intern_string_t> retval;
-    struct loader_userdata ud;
+    loader_userdata ud;
     yajl_handle handle;
 
     write_sample_file();

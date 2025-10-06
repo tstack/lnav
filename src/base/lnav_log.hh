@@ -32,6 +32,7 @@
 #ifndef lnav_log_hh
 #define lnav_log_hh
 
+#include <atomic>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -39,6 +40,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+
+#include "guard_util.hh"
 
 #ifndef lnav_dead2
 #    define lnav_dead2 __attribute__((noreturn))
@@ -107,6 +110,45 @@ struct log_crash_recoverer {
     virtual ~log_crash_recoverer();
 
     virtual void log_crash_recover() = 0;
+};
+
+struct lnav_operation {
+    lnav_operation(const char* name) : lo_name(name) {}
+
+    const char* lo_name;
+    std::atomic_int32_t lo_count{0};
+};
+
+struct lnav_opid_guard {
+    static lnav_opid_guard once(const char* id);
+    static lnav_opid_guard internal(lnav_operation& op);
+    static lnav_opid_guard async(lnav_operation& op);
+    static lnav_opid_guard resume(const std::string& opid);
+    static lnav_opid_guard unique();
+
+    lnav_opid_guard(lnav_opid_guard&& other) noexcept
+        : log_opid_size(other.log_opid_size),
+          log_guard_helper(std::move(other.log_guard_helper))
+    {
+    }
+    lnav_opid_guard& operator=(lnav_opid_guard&& other) noexcept
+    {
+        this->log_opid_size = other.log_opid_size;
+        this->log_guard_helper = std::move(other.log_guard_helper);
+        return *this;
+    }
+
+    ~lnav_opid_guard();
+
+    std::string suspend() &&;
+
+private:
+    lnav_opid_guard();
+    lnav_opid_guard(const lnav_opid_guard&) = delete;
+
+    size_t log_opid_size;
+    lnav::guard_helper log_guard_helper;
+    std::string log_orig_opid;
 };
 
 extern std::optional<FILE*> lnav_log_file;
