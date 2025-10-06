@@ -18,16 +18,10 @@ Makefile.in
 TESTS_ENVIRONMENT
 aclocal.m4
 aminclude_static.am
-ar-lib
 autom4te.cache
-compile
-config.guess
 config.log
 config.status
-config.sub
 depcomp
-install-sh
-missing
 mkinstalldirs
 test-driver
 docs/build
