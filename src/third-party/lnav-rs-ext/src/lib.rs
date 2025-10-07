@@ -10,8 +10,8 @@ use crate::ffi::{
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
-    LogError, LogMapping, LogMatcher, LogRefBuilder, ProgressTracker, ProgressUpdate, SourceRef,
-    VariablePair, WorkInfo,
+    Cache, LogError, LogMapping, LogMatcher, LogRefBuilder, ProgressTracker, ProgressUpdate,
+    SourceRef, VariablePair, WorkInfo,
 };
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
@@ -41,14 +41,26 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
 
     let sub = TRACKER.lock().unwrap().subscribe();
     std::thread::spawn(move || {
+        let cache_open_res = Cache::open();
         for () in receiver {
             let errs = if let Ok(tracker) = TRACKER.lock() {
                 if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
                     ext_prog.status = Status::working;
                 }
                 let mut matcher = LOG_MATCHER.lock().unwrap();
-                let errs = matcher.discover_sources(&tracker);
-                matcher.extract_log_statements(&tracker);
+                let mut errs: Vec<LogError> = vec![];
+                if let Ok(cache) = &cache_open_res {
+                    errs.extend(matcher.load_from_cache(cache, &tracker));
+                }
+                errs.extend(matcher.discover_sources(&tracker));
+                let summary = matcher.extract_log_statements(&tracker);
+                if summary.changes() > 0 {
+                    if let Ok(cache) = &cache_open_res {
+                        if let Err(err) = matcher.cache_to(cache, &tracker) {
+                            errs.push(err);
+                        }
+                    }
+                }
 
                 errs
             } else {
@@ -486,7 +498,7 @@ impl From<SourceRef> for FindLogResult {
                 name: value.name,
                 language: value.language.as_str(),
             },
-            pattern: value.pattern,
+            pattern: value.pattern_str,
             variables: vec![],
         }
     }
@@ -547,7 +559,7 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
         };
         UniquePtr::new(FindLogResultJson {
             src: serde_json::to_string(&src_details).unwrap(),
-            pattern: src_ref.pattern,
+            pattern: src_ref.pattern_str,
             variables: serde_json::to_string(&variables).unwrap(),
             exception_trace: serde_json::to_string(&exception_trace).unwrap(),
         })
