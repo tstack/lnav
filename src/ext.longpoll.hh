@@ -36,6 +36,7 @@ namespace lnav::ext {
 
 struct view_states {
     std::string vs_log;
+    std::string vs_log_selection;
     std::string vs_text;
 };
 

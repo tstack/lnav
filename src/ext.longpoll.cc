@@ -77,6 +77,8 @@ longpoll(const PollInput& pi)
     {
         auto p = POLLERS.writeAccess<std::unique_lock>();
         auto views_are_same = pi.view_states.log == p->p_latest_state.vs_log
+            && pi.view_states.log_selection
+                == p->p_latest_state.vs_log_selection
             && pi.view_states.text == p->p_latest_state.vs_text;
         auto tasks_are_same = true;
 
@@ -108,6 +110,7 @@ longpoll(const PollInput& pi)
         }
         pi_retval.view_states = ViewStates{
             ::rust::String::lossy(p->p_latest_state.vs_log),
+            ::rust::String::lossy(p->p_latest_state.vs_log_selection),
             ::rust::String::lossy(p->p_latest_state.vs_text),
         };
     }
@@ -180,6 +183,7 @@ notify_pollers(const view_states& vs)
 
     for (const auto& poller : p->p_pollers) {
         if (poller.view_states.log != vs.vs_log
+            || poller.view_states.log_selection != vs.vs_log_selection
             || poller.view_states.text != vs.vs_text)
         {
             p->p_condvar.notify_all();

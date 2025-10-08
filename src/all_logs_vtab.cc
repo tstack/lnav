@@ -60,9 +60,9 @@ all_logs_vtab::all_logs_vtab()
       alv_thread_meta(intern_string::lookup("log_thread_id"),
                       value_kind_t::VALUE_TEXT,
                       logline_value_meta::table_column{4}),
-      alv_exception_meta(intern_string::lookup("log_exception_trace"),
-                         value_kind_t::VALUE_TEXT,
-                         logline_value_meta::table_column{5})
+      alv_stacktrace_meta(intern_string::lookup("log_stack_trace"),
+                          value_kind_t::VALUE_TEXT,
+                          logline_value_meta::table_column{5})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
@@ -95,11 +95,11 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
                       "",
                       false,
                       "The ID of the thread that generated this message");
-    cols.emplace_back(this->alv_exception_meta.lvm_name.get(),
+    cols.emplace_back(this->alv_stacktrace_meta.lvm_name.get(),
                       SQLITE3_TEXT,
                       "",
                       false,
-                      "If there is an exception, the stack trace details");
+                      "If found, the stack trace details");
 }
 
 void
@@ -167,8 +167,10 @@ all_logs_vtab::extract(logfile* lf,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,
                                        (std::string) find_res->src);
-        values.lvv_values.emplace_back(this->alv_exception_meta,
-                                       (std::string) find_res->exception_trace);
+        if (!find_res->stack_trace.empty()) {
+            values.lvv_values.emplace_back(this->alv_stacktrace_meta,
+                                           (std::string) find_res->stack_trace);
+        }
     } else
 #endif
     {

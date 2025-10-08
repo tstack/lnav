@@ -898,7 +898,7 @@ struct FindLogResultJson final {
   ::rust::String src;
   ::rust::String pattern;
   ::rust::String variables;
-  ::rust::String exception_trace;
+  ::rust::String stack_trace;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -942,6 +942,7 @@ struct FindLogResult final {
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ViewStates
 struct ViewStates final {
   ::rust::String log;
+  ::rust::String log_selection;
   ::rust::String text;
 
   using IsRelocatable = ::std::true_type;

@@ -200,7 +200,7 @@ mod ffi {
         pub src: String,
         pub pattern: String,
         pub variables: String,
-        pub exception_trace: String,
+        pub stack_trace: String,
     }
 
     struct VarPair {
@@ -226,6 +226,7 @@ mod ffi {
     #[derive(Serialize, Deserialize)]
     struct ViewStates {
         pub log: String,
+        pub log_selection: String,
         pub text: String,
     }
 
@@ -557,11 +558,16 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
             name: src_ref.name,
             language: src_ref.language.as_str(),
         };
+        let stack_trace = if exception_trace.is_empty() {
+            "".to_string()
+        } else {
+            serde_json::to_string(&exception_trace).unwrap()
+        };
         UniquePtr::new(FindLogResultJson {
             src: serde_json::to_string(&src_details).unwrap(),
             pattern: src_ref.pattern_str,
             variables: serde_json::to_string(&variables).unwrap(),
-            exception_trace: serde_json::to_string(&exception_trace).unwrap(),
+            stack_trace,
         })
     } else {
         UniquePtr::null()

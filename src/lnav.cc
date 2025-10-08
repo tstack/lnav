@@ -108,6 +108,7 @@
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
+#include "logline_window.hh"
 #include "md4cpp.hh"
 #include "piper.looper.hh"
 #include "readline_context.hh"
@@ -2079,6 +2080,20 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
                     lnav_data.ld_views[LNV_LOG].update_hash_state(h);
                     vs.vs_log = h.to_uuid_string();
+                }
+                {
+                    auto sel_opt = lnav_data.ld_views[LNV_LOG].get_selection();
+                    if (sel_opt) {
+                        auto win = lnav_data.ld_log_source.window_at(
+                            sel_opt.value());
+                        for (const auto& msg : *win) {
+                            auto hash_res = msg.get_line_hash();
+                            if (hash_res.isOk()) {
+                                vs.vs_log_selection
+                                    = hash_res.unwrap().to_string();
+                            }
+                        }
+                    }
                 }
 
                 {
