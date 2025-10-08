@@ -2713,14 +2713,6 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
     return retval;
 }
 
-static lnav::task_progress
-dummy_prog_rep()
-{
-    return {
-        "__dummy__",
-    };
-}
-
 verbosity_t verbosity = verbosity_t::standard;
 
 int

@@ -139,3 +139,13 @@ progress_source::text_attrs_for_line(textview_curses& tc,
 
     value_out = this->ps_lines[line].al_attrs;
 }
+
+static lnav::task_progress
+dummy_prog_rep()
+{
+    return {
+        "__dummy__",
+    };
+}
+
+DIST_SLICE(prog_reps) lnav::progress_reporter_t dummy_rep = dummy_prog_rep;
