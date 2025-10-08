@@ -56,6 +56,7 @@
 #include <algorithm>
 #include <mutex>
 #include <optional>
+#include <sstream>
 #include <thread>
 #include <utility>
 #include <vector>
