@@ -1391,6 +1391,7 @@ CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
 )";
 
     auto_mem<char> errmsg(sqlite3_free);
+    log_info("creating filter view: %s", CREATE_FILTER_VIEW);
     if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {

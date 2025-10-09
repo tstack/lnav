@@ -2837,6 +2837,7 @@ main(int argc, char* argv[])
     log_install_handlers();
     sql_install_logger();
 
+    log_info("opening main sqlite3 (%s) DB", sqlite3_version);
     if (sqlite3_open("file:user_db?mode=memory&cache=shared",
                      lnav_data.ld_db.out())
         != SQLITE_OK)
@@ -3196,7 +3197,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         lnav_log_file = make_optional_from_nullable(
             fopen(lnav_data.ld_debug_log_name.c_str(), "ae"));
         lnav_log_file |
-            [](auto* file) { fcntl(fileno(file), F_SETFD, FD_CLOEXEC); };
+            [](auto* file) {
+                fcntl(fileno(file), F_SETFD, FD_CLOEXEC);
+                log_write_ring_to(fileno(file));
+            };
     }
     log_info("lnav started %d", lnav_log_file.has_value());
 

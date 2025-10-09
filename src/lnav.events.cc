@@ -129,9 +129,9 @@ CREATE TABLE lnav_db.lnav_events (
 )
 )";
     static constexpr auto* DELETE_EVENTS_TRIGGER_SQL = R"(
-CREATE TRIGGER lnav_events_cleaner AFTER INSERT ON lnav_db.lnav_events
+CREATE TRIGGER lnav_db.lnav_events_cleaner AFTER INSERT ON lnav_db.lnav_events
 BEGIN
-  DELETE FROM lnav_db.lnav_events WHERE rowid <= NEW.rowid - 1000;
+  DELETE FROM lnav_events WHERE rowid <= NEW.rowid - 1000;
 END
 )";
 
