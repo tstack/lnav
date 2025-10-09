@@ -78,6 +78,7 @@ check_PROGRAMS = \
 	drive_textinput \
 	drive_view_colors \
 	lnav_doctests \
+	pretty_printer.tests \
 	slicer \
 	scripty \
 	test_abbrev \
@@ -167,6 +168,8 @@ test_reltime_SOURCES = test_reltime.cc
 lnav_doctests_SOURCES = lnav_doctests.cc
 
 document_sections_tests_SOURCES = document.sections.tests.cc
+
+pretty_printer_tests_SOURCES = pretty_printer.tests.cc
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 
@@ -507,6 +510,7 @@ dist_noinst_DATA = \
 TESTS = \
     document.sections.tests \
     lnav_doctests \
+    pretty_printer.tests \
     test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \

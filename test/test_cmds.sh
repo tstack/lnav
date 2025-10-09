@@ -450,6 +450,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":switch-to-view pretty" \
+    -c ":goto 0" \
     ${test_dir}/textfile_quoted_json.0
 
 run_cap_test ${lnav_test} -n \

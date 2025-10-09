@@ -31,6 +31,11 @@ target_include_directories(document.sections.tests PUBLIC ../src/third-party/doc
 target_link_libraries(document.sections.tests diag)
 add_test(NAME document.sections.tests COMMAND document.sections.tests)
 
+add_executable(pretty_printer.tests pretty_printer.tests.cc test_stubs.cc)
+target_include_directories(pretty_printer.tests PUBLIC ../src/third-party/doctest-root)
+target_link_libraries(pretty_printer.tests diag)
+add_test(NAME pretty_printer.tests COMMAND pretty_printer.tests)
+
 add_executable(test_bookmarks test_bookmarks.cc test_stubs.cc)
 target_link_libraries(test_bookmarks diag)
 add_test(NAME test_bookmarks COMMAND test_bookmarks)

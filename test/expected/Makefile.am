@@ -254,6 +254,8 @@ dist_noinst_DATA = \
     test_cmds.sh_d76d77ad95b9f120825417a6a8220c13df9541fc.out \
     test_cmds.sh_d836c84398c831c976df46f46fe3bf5983c44c37.err \
     test_cmds.sh_d836c84398c831c976df46f46fe3bf5983c44c37.out \
+    test_cmds.sh_d9310dd09231619f54a2057b96a44c264193b53e.err \
+    test_cmds.sh_d9310dd09231619f54a2057b96a44c264193b53e.out \
     test_cmds.sh_da5f7160b967e60dbd772573614e2da89c5e22b2.err \
     test_cmds.sh_da5f7160b967e60dbd772573614e2da89c5e22b2.out \
     test_cmds.sh_dbdd62995fdefc8318053af05a32416eccfa79fc.err \
