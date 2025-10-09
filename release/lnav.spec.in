@@ -74,7 +74,7 @@ autoreconf -fiv
 %make_build
 
 %install
-make -d install DESTDIR="%{?buildroot}"
+make install DESTDIR="%{?buildroot}"
 
 %if %{defined suse_version}
 install -D -m0644 "%{SOURCE1}" "%{buildroot}%{_datadir}/applications/%{name}.desktop"
