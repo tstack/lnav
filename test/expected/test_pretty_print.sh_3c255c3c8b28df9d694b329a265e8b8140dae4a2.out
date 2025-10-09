@@ -1,7 +1,7 @@
 {
     [35m"wrapper"[0m: [
-            {[35m"message"[0m:""
-            select Id from Account where id [35m= $sfid[0m
+            {[35m"message"[0m:[35m""[0m
+[35m    [0m[35m [0m[35m       select Id from Account where id = $sfid[0m
 [35m    [0m[35m [0m[35m       [0m[35m [0m[35m                                ^[0m
 [35m    [0m[35m [0m[35m       ERROR at Row:1:Column:34[0m
 [35m    [0m[35m [0m[35m       line 1:34 no viable alternative at character '$'[0m

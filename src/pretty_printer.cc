@@ -249,7 +249,10 @@ pretty_printer::write_element(const element& el)
             this->pp_stream << start[el.e_capture.length() - 1]
                             << start[el.e_capture.length() - 1];
             auto post_string_size = this->pp_stream.tellp();
-            auto shift_cover = line_range::empty_at(pre_string_size);
+            auto shift_cover = line_range{
+                (int) pre_string_size,
+                (int) post_string_size,
+            };
             auto pretty_string_size = post_string_size - pre_string_size;
             auto shift_amount = pretty_string_size - el.e_capture.length();
             shift_string_attrs(this->pp_attrs, shift_cover, shift_amount);
