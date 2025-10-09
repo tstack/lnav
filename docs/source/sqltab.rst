@@ -31,6 +31,13 @@ by executing the '.schema' SQL command, like so::
 
     ;.schema
 
+.. note::
+    The tables created by lnav are in the :code:`lnav_db` database.  The
+    :code:`main` SQLite database is left empty for your own use.  If you
+    end up creating any tables while processing your logs, you can use
+    the :ref:`dot_save` SQL command to save the :code:`main` database to
+    a SQLite database file.
+
 environ
 -------
 
