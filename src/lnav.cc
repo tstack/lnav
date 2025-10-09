@@ -4237,7 +4237,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     attr_line_t ov_al;
                     while (los != nullptr && tc->get_inner_height() > 0_vl
                            && los->list_static_overlay(
-                               *tc, y, tc->get_inner_height(), ov_al))
+                               *tc,
+                               list_overlay_source::media_t::file,
+                               y,
+                               tc->get_inner_height(),
+                               ov_al))
                     {
                         write_line_to(stdout, ov_al);
                         ov_al.clear();

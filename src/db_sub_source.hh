@@ -175,6 +175,7 @@ public:
 class db_overlay_source : public list_overlay_source {
 public:
     bool list_static_overlay(const listview_curses& lv,
+                             media_t media,
                              int y,
                              int bottom,
                              attr_line_t& value_out) override;

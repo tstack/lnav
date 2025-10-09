@@ -572,9 +572,12 @@ com_save_to(exec_context& ec,
         attr_line_t ov_al;
 
         auto* los = tc->get_overlay_source();
-        while (
-            los != nullptr
-            && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
+        while (los != nullptr
+               && los->list_static_overlay(*tc,
+                                           list_overlay_source::media_t::file,
+                                           y,
+                                           tc->get_inner_height(),
+                                           ov_al))
         {
             write_line_to(outfile, ov_al);
             ov_al.clear();
@@ -735,9 +738,12 @@ com_save_to(exec_context& ec,
         }
 
         auto y = 0_vl;
-        while (
-            los != nullptr
-            && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
+        while (los != nullptr
+               && los->list_static_overlay(*tc,
+                                           list_overlay_source::media_t::file,
+                                           y,
+                                           tc->get_inner_height(),
+                                           ov_al))
         {
             write_line_to(outfile, ov_al);
             ov_al.clear();

@@ -581,7 +581,11 @@ listview_curses::do_update()
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
                 && this->lv_overlay_source->list_static_overlay(
-                    *this, y - this->vc_y, bottom - this->vc_y, overlay_line))
+                    *this,
+                    list_overlay_source::media_t::display,
+                    y - this->vc_y,
+                    bottom - this->vc_y,
+                    overlay_line))
             {
                 this->lv_display_lines.push_back(static_overlay_content{});
                 mvwattrline(this->vc_window, y, x, overlay_line, lr);

@@ -39,9 +39,9 @@
 
 #include <sys/types.h>
 
+#include "hasher.hh"
 #include "view_curses.hh"
 #include "vis_line.hh"
-#include "hasher.hh"
 
 class listview_curses;
 
@@ -102,7 +102,13 @@ public:
 
     virtual void reset() {}
 
+    enum class media_t : uint8_t {
+        display,
+        file,
+    };
+
     virtual bool list_static_overlay(const listview_curses& lv,
+                                     media_t media,
                                      int y,
                                      int bottom,
                                      attr_line_t& value_out)

@@ -1585,74 +1585,77 @@ textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src,
 
 bool
 textfile_header_overlay::list_static_overlay(const listview_curses& lv,
+                                             media_t media,
                                              int y,
                                              int bottom,
                                              attr_line_t& value_out)
 {
-    const std::vector<attr_line_t>* lines = nullptr;
-    auto curr_file = this->tho_src->current_file();
-    if (curr_file == nullptr) {
-        if (this->tho_log_src->text_line_count() == 0) {
-            lines = lnav::messages::view::no_files();
-        } else {
-            lines = lnav::messages::view::only_log_files();
-        }
-    } else if (curr_file->size() == 0) {
-        lines = lnav::messages::view::empty_file();
-    } else if (this->tho_src->text_line_count() == 0) {
-        hasher h;
-        this->tho_src->update_filter_hash_state(h);
-        auto curr_state = h.to_array();
-        if (this->tho_static_lines.empty()
-            || curr_state != this->tho_filter_state)
-        {
-            auto msg = lnav::console::user_message::info(
-                "All log messages are currently hidden");
-            auto min_time = this->tho_src->get_min_row_time();
-            if (min_time) {
-                msg.with_note(attr_line_t("Logs before ")
-                                  .append_quoted(
-                                      lnav::to_rfc3339_string(min_time.value()))
-                                  .append(" are not being shown"));
+    if (media == media_t::display) {
+        const std::vector<attr_line_t>* lines = nullptr;
+        auto curr_file = this->tho_src->current_file();
+        if (curr_file == nullptr) {
+            if (this->tho_log_src->text_line_count() == 0) {
+                lines = lnav::messages::view::no_files();
+            } else {
+                lines = lnav::messages::view::only_log_files();
             }
-            auto max_time = this->tho_src->get_max_row_time();
-            if (max_time) {
-                msg.with_note(attr_line_t("Logs after ")
-                                  .append_quoted(
-                                      lnav::to_rfc3339_string(max_time.value()))
-                                  .append(" are not being shown"));
-            }
-            auto& fs = this->tho_src->get_filters();
-            for (const auto& filt : fs) {
-                auto hits
-                    = this->tho_src->get_filtered_count_for(filt->get_index());
-                if (filt->get_type() == text_filter::EXCLUDE && hits == 0) {
-                    continue;
+        } else if (curr_file->size() == 0) {
+            lines = lnav::messages::view::empty_file();
+        } else if (this->tho_src->text_line_count() == 0) {
+            hasher h;
+            this->tho_src->update_filter_hash_state(h);
+            auto curr_state = h.to_array();
+            if (this->tho_static_lines.empty()
+                || curr_state != this->tho_filter_state)
+            {
+                auto msg = lnav::console::user_message::info(
+                    "All log messages are currently hidden");
+                auto min_time = this->tho_src->get_min_row_time();
+                if (min_time) {
+                    msg.with_note(attr_line_t("Logs before ")
+                                      .append_quoted(lnav::to_rfc3339_string(
+                                          min_time.value()))
+                                      .append(" are not being shown"));
                 }
-                auto cmd = attr_line_t(":" + filt->to_command());
-                readline_command_highlighter(cmd, std::nullopt);
-                msg.with_note(
-                    attr_line_t("Filter ")
-                        .append_quoted(cmd)
-                        .append(" matched ")
-                        .append(lnav::roles::number(fmt::to_string(hits)))
-                        .append(" message(s) "));
+                auto max_time = this->tho_src->get_max_row_time();
+                if (max_time) {
+                    msg.with_note(attr_line_t("Logs after ")
+                                      .append_quoted(lnav::to_rfc3339_string(
+                                          max_time.value()))
+                                      .append(" are not being shown"));
+                }
+                auto& fs = this->tho_src->get_filters();
+                for (const auto& filt : fs) {
+                    auto hits = this->tho_src->get_filtered_count_for(
+                        filt->get_index());
+                    if (filt->get_type() == text_filter::EXCLUDE && hits == 0) {
+                        continue;
+                    }
+                    auto cmd = attr_line_t(":" + filt->to_command());
+                    readline_command_highlighter(cmd, std::nullopt);
+                    msg.with_note(
+                        attr_line_t("Filter ")
+                            .append_quoted(cmd)
+                            .append(" matched ")
+                            .append(lnav::roles::number(fmt::to_string(hits)))
+                            .append(" message(s) "));
+                }
+                this->tho_static_lines = msg.to_attr_line().split_lines();
+                this->tho_filter_state = curr_state;
             }
-            this->tho_static_lines = msg.to_attr_line().split_lines();
-            this->tho_filter_state = curr_state;
+
+            lines = &this->tho_static_lines;
         }
 
-        lines = &this->tho_static_lines;
-    }
-
-    if (lines != nullptr && y < (ssize_t) lines->size()) {
-        value_out = lines->at(y);
-        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-        if (y == (ssize_t) lines->size() - 1) {
-            value_out.with_attr_for_all(
-                VC_STYLE.value(text_attrs::with_underline()));
+        if (lines != nullptr && y < (ssize_t) lines->size()) {
+            value_out = lines->at(y);
+            value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+            if (y == (ssize_t) lines->size() - 1) {
+                value_out.with_attr_for_all(
+                    VC_STYLE.value(text_attrs::with_underline()));
+            }
+            return true;
         }
-        return true;
     }
 
     if (y != 0) {
@@ -1664,7 +1667,8 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
-    if (lf->get_text_format() != text_format_t::TF_MARKDOWN
+    if (media == media_t::display
+        && lf->get_text_format() != text_format_t::TF_MARKDOWN
         && this->tho_src->get_effective_view_mode()
             == textfile_sub_source::view_mode::rendered)
     {

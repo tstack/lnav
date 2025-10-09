@@ -241,11 +241,11 @@ private:
 
 class textfile_header_overlay : public text_overlay_menu {
 public:
-    explicit textfile_header_overlay(
-        textfile_sub_source* src,
-        text_sub_source* log_src);
+    explicit textfile_header_overlay(textfile_sub_source* src,
+                                     text_sub_source* log_src);
 
     bool list_static_overlay(const listview_curses& lv,
+                             media_t media,
                              int y,
                              int bottom,
                              attr_line_t& value_out) override;

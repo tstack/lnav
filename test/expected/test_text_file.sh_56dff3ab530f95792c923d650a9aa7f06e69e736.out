@@ -1,4 +1,3 @@
-[1m[4m[35mⓘ[0m[4m The following is a rendered view of the content.  Use [0m[4m[37m[40m:set-text-view-mode raw[0m[4m to view the raw version of this text[0m
 {
     [35m"$schema"[0m:[35m"https://lnav.org/schemas/format-v1.schema.json"[0m,
     [35m"syslog_log"[0m:{
