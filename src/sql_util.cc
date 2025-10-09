@@ -856,6 +856,9 @@ const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
 
 std::multimap<std::string, const help_text*> sqlite_function_help;
 
+const char* const LNAV_ATTACH_DB
+    = "ATTACH DATABASE 'file:lnav_db?mode=memory&cache=shared' AS lnav_db";
+
 static int
 handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {

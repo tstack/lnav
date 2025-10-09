@@ -83,6 +83,23 @@ When a dropdown or combobox is selected, you can type part of the desired value
 to filter the list of values.  For example, the first crumb is always the
 current view, typing in "hi" will filter the list down to the "HIST" value.
 
+Background Tasks
+----------------
+
+.. figure:: lnav-progress-1.png
+    :align: center
+    :figwidth: 90%
+
+    Screenshot of the background task list showing a backup in progress
+
+Some long-running tasks can be run in the background without blocking the UI.
+For example, the in-memory SQLite DB can be backed up to a file, which can
+take some time if the DB is large.  The progress of these tasks will be
+displayed between the main view and the status bars at the bottom.  While
+running, an hourglass will be shown with the current status of the progress.
+If the task finishes with some messages, they will be displayed in the same
+area for a short time before being hidden.
+
 Configuration Panels
 --------------------
 

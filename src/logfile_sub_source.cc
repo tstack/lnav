@@ -402,9 +402,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     this->lss_time_column_size = 0;
     if (this->lss_line_context == line_context_t::time_column) {
         if (time_attr != this->lss_token_attrs.end()) {
-            this->lss_token_attrs.emplace_back(time_attr->sa_range,
-                                               SA_REPLACED.value());
-
             const char* fmt;
             if (this->lss_all_timestamp_flags
                 & (ETF_MICROS_SET | ETF_NANOS_SET))
@@ -447,6 +444,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 this->lss_time_column_padding = 0;
             }
             value_out.insert(1, buffer, this->lss_time_column_size);
+            this->lss_token_attrs.emplace_back(time_attr->sa_range,
+                                               SA_REPLACED.value());
+
         }
         if (format->lf_level_hideable) {
             auto level_attr = find_string_attr(this->lss_token_attrs, &L_LEVEL);

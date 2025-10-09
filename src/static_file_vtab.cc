@@ -319,12 +319,13 @@ register_static_file_vtab(sqlite3* db)
     int rc = sqlite3_create_module(
         db, "lnav_static_file_vtab_impl", &static_file_vtab_module, nullptr);
     ensure(rc == SQLITE_OK);
-    if ((rc = sqlite3_exec(db,
-                           "CREATE VIRTUAL TABLE lnav_static_files USING "
-                           "lnav_static_file_vtab_impl()",
-                           nullptr,
-                           nullptr,
-                           errmsg.out()))
+    if ((rc
+         = sqlite3_exec(db,
+                        "CREATE VIRTUAL TABLE lnav_db.lnav_static_files USING "
+                        "lnav_static_file_vtab_impl()",
+                        nullptr,
+                        nullptr,
+                        errmsg.out()))
         != SQLITE_OK)
     {
         fprintf(stderr,

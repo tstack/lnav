@@ -51,6 +51,7 @@ extern const std::array<const char*, 145> sqlite_keywords;
 extern const char* sql_function_names[];
 extern const std::unordered_map<unsigned char, const char*>
     sql_constraint_names;
+extern const char* const LNAV_ATTACH_DB;
 
 inline const char*
 sql_constraint_op_name(unsigned char op)

@@ -48,8 +48,8 @@
 #include "fmt/format.h"
 #include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
-#include "sqlite-extension-func.hh"
 #include "sql_util.hh"
+#include "sqlite-extension-func.hh"
 
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
 
@@ -822,7 +822,9 @@ struct vtab_module : vtab_module_base {
             db, impl_name.c_str(), &this->vm_module, this);
         ensure(rc == SQLITE_OK);
         auto create_stmt = fmt::format(
-            FMT_STRING("CREATE VIRTUAL TABLE {} USING {}()"), name, impl_name);
+            FMT_STRING("CREATE VIRTUAL TABLE lnav_db.{} USING {}()"),
+            name,
+            impl_name);
         return sqlite3_exec(db, create_stmt.c_str(), nullptr, nullptr, nullptr);
     }
 
@@ -871,8 +873,8 @@ struct tvt_iterator_cursor {
         template<typename U = int>
         resolvedType<
             std::is_same_v<std::random_access_iterator_tag,
-                         typename std::iterator_traits<
-                             typename T::iterator>::iterator_category>,
+                           typename std::iterator_traits<
+                               typename T::iterator>::iterator_category>,
             U>
         get_rowid(sqlite_int64& rowid_out)
         {

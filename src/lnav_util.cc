@@ -37,15 +37,29 @@
 #include <sys/stat.h>
 
 #include "base/ansi_scrubber.hh"
+#include "base/injector.bind.hh"
+#include "base/isc.hh"
 #include "base/itertools.hh"
 #include "base/result.h"
 #include "bookmarks.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "log_format_fwd.hh"
+#include "service_tags.hh"
 #include "view_curses.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
+
+static auto bound_bg = injector::bind_multiple<isc::service_base>()
+                           .add_singleton<bg_looper, services::background_t>();
+
+namespace injector {
+template<>
+void
+force_linking(services::background_t anno)
+{
+}
+}  // namespace injector
 
 bool
 change_to_parent_dir()

@@ -27,23 +27,42 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <atomic>
+#include <chrono>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
+#include "base/progress.hh"
+#include "base/result.h"
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "fmt/chrono.h"
 #include "lnav.hh"
+#include "lnav_util.hh"
 #include "readline_context.hh"
+#include "safe/safe.h"
+#include "service_tags.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
+#include "sqlitepp.client.hh"
 #include "sqlitepp.hh"
 #include "view_helpers.hh"
+
+using namespace std::chrono_literals;
 
 static Result<std::string, lnav::console::user_message>
 sql_cmd_dump(exec_context& ec,
@@ -80,15 +99,218 @@ sql_cmd_dump(exec_context& ec,
             "unable to open '{}' for writing: {}", args[1], strerror(errno));
     }
 
+    auto prep_res
+        = prepare_stmt(lnav_db, "SELECT name FROM pragma_database_list");
+    if (prep_res.isErr()) {
+        return ec.make_error("unable to prepare database_list: {}",
+                             prep_res.unwrapErr());
+    }
+    auto stmt = prep_res.unwrap();
+    auto all_db_names = std::vector<std::string>();
+    stmt.for_each_row<std::string>([&all_db_names](auto row) {
+        all_db_names.emplace_back(row);
+        return false;
+    });
+
     for (size_t lpc = 2; lpc < args.size(); lpc++) {
-        sqlite3_db_dump(lnav_db.in(),
-                        "main",
-                        args[lpc].c_str(),
-                        (int (*)(const char*, void*)) fputs,
-                        file.in());
+        auto arg = string_fragment::from_str(args[lpc]);
+        auto [schema_name, table_name]
+            = arg.split_when(string_fragment::tag1{'.'});
+        auto db_names = table_name.empty()
+            ? all_db_names
+            : std::vector{schema_name.to_string()};
+
+        for (const auto& db_name : db_names) {
+            sqlite3_db_dump(lnav_db.in(),
+                            db_name.c_str(),
+                            args[lpc].c_str(),
+                            (int (*)(const char*, void*)) fputs,
+                            file.in());
+        }
     }
 
-    retval = "generated";
+    auto table_count = args.size() - 2;
+    retval = fmt::format(
+        FMT_STRING("info: wrote {} table(s) to {}"), table_count, args[1]);
+    return Ok(retval);
+}
+
+struct backup_progress_t {
+    std::atomic<lnav::progress_status_t> bp_status{
+        lnav::progress_status_t::idle};
+    std::atomic_uint32_t bp_instance{0};
+    std::atomic_uint64_t bp_complete{0};
+    std::atomic_uint64_t bp_total{0};
+    safe::Safe<std::vector<lnav::console::user_message>> bp_messages;
+
+    struct backup_guard {
+        ~backup_guard()
+        {
+            if (bg_helper.gh_enabled) {
+                INSTANCE.bp_status.store(lnav::progress_status_t::idle);
+            }
+        }
+
+        void push_msg(lnav::console::user_message um)
+        {
+            log_info("backup message: %s", um.to_attr_line().al_string.c_str());
+            INSTANCE.bp_messages.writeAccess()->emplace_back(std::move(um));
+        }
+
+        void update(uint64_t complete, uint64_t total)
+        {
+            INSTANCE.bp_complete.store(complete);
+            INSTANCE.bp_total.store(total);
+        }
+
+        lnav::guard_helper bg_helper;
+    };
+
+    static backup_guard begin()
+    {
+        INSTANCE.bp_messages.writeAccess()->clear();
+        INSTANCE.bp_complete.store(0);
+        INSTANCE.bp_total.store(1);
+        INSTANCE.bp_instance.fetch_add(1, std::memory_order_relaxed);
+        INSTANCE.bp_status.store(lnav::progress_status_t::working);
+
+        return {};
+    }
+
+    static backup_progress_t INSTANCE;
+};
+
+backup_progress_t backup_progress_t::INSTANCE;
+
+static lnav::task_progress
+backup_prog_rep()
+{
+    return {
+        ";.save",
+        backup_progress_t::INSTANCE.bp_status.load(),
+        backup_progress_t::INSTANCE.bp_instance.load(),
+        "Backing up DB",
+        backup_progress_t::INSTANCE.bp_complete.load(),
+        backup_progress_t::INSTANCE.bp_total.load(),
+        *backup_progress_t::INSTANCE.bp_messages.readAccess(),
+    };
+}
+
+DIST_SLICE(prog_reps) lnav::progress_reporter_t backup_rep = backup_prog_rep;
+
+static void
+backup_user_db(const std::string& filename)
+{
+    static auto op = lnav_operation{__FUNCTION__};
+    auto op_guard = lnav_opid_guard::internal(op);
+    log_info("starting backup of user DB: %s", filename.c_str());
+    auto bguard = backup_progress_t::begin();
+
+    auto_sqlite3 out_db;
+    if (sqlite3_open(filename.c_str(), out_db.out()) != SQLITE_OK) {
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("unable to open output DB: ")
+                          .append(lnav::roles::file(filename)))
+                      .with_reason(sqlite3_errmsg(out_db.in()));
+        bguard.push_msg(um);
+        return;
+    }
+
+    auto_sqlite3 db;
+    if (sqlite3_open("file:user_db?mode=memory&cache=shared", db.out())
+        != SQLITE_OK)
+    {
+        auto um = lnav::console::user_message::error(
+                      "unable to open lnav's user DB")
+                      .with_reason(sqlite3_errmsg(db.in()));
+        bguard.push_msg(um);
+        return;
+    }
+
+    {
+        auto stmt = prepare_stmt(db, LNAV_ATTACH_DB).unwrap();
+        auto exec_res = stmt.execute();
+        if (exec_res.isErr()) {
+            auto um
+                = lnav::console::user_message::error("unable to attach lnav_db")
+                      .with_reason(sqlite3_errmsg(db.in()));
+            bguard.push_msg(um);
+            return;
+        }
+    }
+
+    auto* backup = sqlite3_backup_init(out_db.in(), "main", db.in(), "main");
+    if (backup == nullptr) {
+        auto um = lnav::console::user_message::error("unable to backup user DB")
+                      .with_reason(sqlite3_errmsg(db.in()));
+        bguard.push_msg(um);
+        return;
+    }
+
+    auto done = false;
+    auto loop_count = 0;
+    while (!done) {
+        auto rc = sqlite3_backup_step(backup, 1);
+        switch (rc) {
+            case SQLITE_DONE:
+                done = true;
+                break;
+            case SQLITE_OK:
+                if (loop_count % 100 == 0) {
+                    std::this_thread::sleep_for(1ms);
+                }
+                break;
+            case SQLITE_BUSY:
+            case SQLITE_LOCKED:
+                std::this_thread::sleep_for(10ms);
+                break;
+            default: {
+                auto um = lnav::console::user_message::error(
+                              "unable to backup user DB")
+                              .with_reason(sqlite3_errmsg(db.in()));
+                bguard.push_msg(um);
+                sqlite3_backup_finish(backup);
+                return;
+            }
+        }
+
+        if (loop_count % 100 == 0) {
+            auto total = sqlite3_backup_pagecount(backup);
+            auto complete = total - sqlite3_backup_remaining(backup);
+            bguard.update(complete, total);
+        }
+
+        loop_count += 1;
+    }
+
+    sqlite3_backup_finish(backup);
+    log_info("backup complete");
+}
+
+static Result<std::string, lnav::console::user_message>
+sql_cmd_save(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
+{
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("filename");
+        return Ok(retval);
+    }
+
+    if (args.size() < 2) {
+        return ec.make_error("expecting a file name to write to");
+    }
+
+    if (lnav_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
+    }
+
+    isc::to<bg_looper&, services::background_t>().send(
+        [filename = args[1]](auto& bg_loop) { backup_user_db(filename); });
+
     return Ok(retval);
 }
 
@@ -423,11 +645,27 @@ static readline_context::command_t sql_commands[] = {
     {
         ".dump",
         sql_cmd_dump,
-        help_text(".dump", "Dump the contents of the database")
+        help_text(
+            ".dump",
+            "Dump one or more tables to a file as a series of SQL statements")
             .sql_command()
-            .with_parameter({"path", "The path to the file to write"})
+            .with_parameter(
+                help_text{"path", "The path to the file to write"}.with_format(
+                    help_parameter_format_t::HPF_LOCAL_FILENAME))
             .with_parameter(help_text{"table", "The name of the table to dump"}
                                 .one_or_more())
+            .with_tags({
+                "io",
+            }),
+    },
+    {
+        ".save",
+        sql_cmd_save,
+        help_text(".save", "Save the current database to a SQLite file")
+            .sql_command()
+            .with_parameter(
+                help_text{"path", "The path to the file to write"}.with_format(
+                    help_parameter_format_t::HPF_LOCAL_FILENAME))
             .with_tags({
                 "io",
             }),
@@ -445,7 +683,9 @@ static readline_context::command_t sql_commands[] = {
         sql_cmd_read,
         help_text(".read", "Execute the SQLite statements in the given file")
             .sql_command()
-            .with_parameter({"path", "The path to the file to write"})
+            .with_parameter(
+                help_text{"path", "The path to the file to write"}.with_format(
+                    help_parameter_format_t::HPF_LOCAL_FILENAME))
             .with_tags({
                 "io",
             }),

@@ -1384,8 +1384,10 @@ int
 register_views_vtab(sqlite3* db)
 {
     static const char* CREATE_FILTER_VIEW = R"(
-CREATE VIEW lnav_view_filters_and_stats AS
-  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
+CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
+  SELECT *
+    FROM lnav_db.lnav_view_filters
+    LEFT NATURAL JOIN lnav_db.lnav_view_filter_stats
 )";
 
     auto_mem<char> errmsg(sqlite3_free);

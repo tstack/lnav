@@ -220,6 +220,13 @@ A SQL command is an internal macro implemented by lnav.
 
 * :code:`.schema` - Open the schema view.  This view contains a dump of the
   schema for the internal tables and any tables in attached databases.
+* :code:`.read` - Execute the SQL statements in the given file.
+* :code:`.dump` - Write a file containing SQL statements that can be used to
+  recreate a table.
+* :code:`.save` - Write the contents of the main DB to a SQLite database file.
+  This command is useful if you have created some tables during your analysis
+  and would like to preserve them.  The command is implemented using the
+  SQLite Backup API, so it can be run in the background.
 * :code:`.msgformats` - Executes a canned query that groups and counts log
   messages by the format of their message bodies.  This command can be useful
   for quickly finding out the types of messages that are most common in a log

@@ -61,6 +61,20 @@ Features:
   localhost HTTP port that can be used to remotely control
   lnav. Requests can be sent to execute commands and poll
   for changes in the view state.
+* The `;.save` SQL command has been added that can save
+  tables you have created to a SQLite database file.  The
+  tables that lnav creates have been moved to a separate
+  in-memory DB, so the main DB should only contain your
+  own tables/views/etc...
+
+Breaking changes:
+* All of lnav's SQLite tables have been moved to a
+  separate in-memory database that is attached as
+  `lnav_db`.  You may need to update some of your SQL
+  statements to qualify table names with `lnav_db.`.
+  This change was made so that the main DB only contains
+  user data that can be easily backed up to a new DB
+  file.
 
 Interface changes:
 * If there are background tasks, like the processing done

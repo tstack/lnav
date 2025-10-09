@@ -50,6 +50,7 @@
 
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
+#include "base/isc.hh"
 #include "base/result.h"
 #include "config.h"
 
@@ -152,5 +153,7 @@ Result<T, std::vector<lnav::console::user_message>> from_json(
     const std::string& json);
 
 }  // namespace lnav
+
+class bg_looper : public isc::service<bg_looper> {};
 
 #endif

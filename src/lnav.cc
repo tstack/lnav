@@ -1016,8 +1016,7 @@ struct refresh_status_bars {
             prompt.p_editor.set_inactive_value(cancel_msg);
         }
 
-        lnav_data.ld_progress_source.poll();
-        if (!lnav_data.ld_progress_source.empty()) {
+        if (lnav_data.ld_progress_source.poll()) {
             layout_views();
             lnav_data.ld_progress_view.reload_data();
             lnav_data.ld_progress_view.do_update();
@@ -2025,6 +2024,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (lnav_data.ld_filter_view.is_visible()) {
                 lnav_data.ld_filter_view.set_needs_update();
             }
+            if (lnav_data.ld_timeline_details_view.is_visible()) {
+                lnav_data.ld_timeline_details_view.set_needs_update();
+            }
             lnav_data.ld_doc_view.set_needs_update();
             lnav_data.ld_example_view.set_needs_update();
             lnav_data.ld_view_stack.set_needs_update();
@@ -2112,8 +2114,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     updated_views.emplace_back(&sc);
                 }
             }
-            lnav_data.ld_progress_source.poll();
-            if (!lnav_data.ld_progress_source.empty()) {
+            if (lnav_data.ld_progress_source.poll()) {
                 lnav_data.ld_progress_view.reload_data();
             }
             next_status_update_time = ui_clock::now() + 100ms;
@@ -2836,9 +2837,23 @@ main(int argc, char* argv[])
     log_install_handlers();
     sql_install_logger();
 
-    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
+    if (sqlite3_open("file:user_db?mode=memory&cache=shared",
+                     lnav_data.ld_db.out())
+        != SQLITE_OK)
+    {
         fprintf(stderr, "error: unable to create sqlite memory database\n");
         exit(EXIT_FAILURE);
+    }
+
+    {
+        auto stmt = prepare_stmt(lnav_data.ld_db, LNAV_ATTACH_DB).unwrap();
+        auto exec_res = stmt.execute();
+        if (exec_res.isErr()) {
+            fprintf(stderr,
+                    "failed to attach memory database: %s\n",
+                    exec_res.unwrapErr().c_str());
+            exit(EXIT_FAILURE);
+        }
     }
 
     {
@@ -4166,6 +4181,25 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             }
                         } else if (!msg.empty()) {
                             printf("%s\n", msg.c_str());
+                            output_view = false;
+                        }
+                    }
+                }
+
+                root_superv.stop_children();
+
+                {
+                    auto& pt = lnav::progress_tracker::get_tasks();
+
+                    for (auto& bt : **pt.readAccess()) {
+                        auto tp = bt();
+
+                        if (tp.tp_messages.empty()) {
+                            continue;
+                        }
+
+                        for (const auto& msg : tp.tp_messages) {
+                            lnav::console::print(stderr, msg);
                             output_view = false;
                         }
                     }

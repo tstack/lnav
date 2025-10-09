@@ -332,7 +332,7 @@ register_environ_vtab(sqlite3* db)
     ensure(rc == SQLITE_OK);
     if ((rc = sqlite3_exec(
              db,
-             "CREATE VIRTUAL TABLE environ USING environ_vtab_impl()",
+             "CREATE VIRTUAL TABLE lnav_db.environ USING environ_vtab_impl()",
              nullptr,
              nullptr,
              errmsg.out()))

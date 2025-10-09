@@ -967,9 +967,10 @@ layout_views()
                                                  == ln_mode_t::SPECTRO_DETAILS);
 
     auto prog_view_inner_height = lnav_data.ld_progress_view.get_inner_height();
+    lnav_data.ld_progress_view.set_visible(prog_view_inner_height > 0);
     if (prog_view_inner_height > 0) {
         lnav_data.ld_progress_view.set_height(
-            std::min(prog_view_inner_height, 2_vl));
+            std::min(prog_view_inner_height, 3_vl));
         auto vis = bottom.try_consume(lnav_data.ld_progress_view.get_height());
         lnav_data.ld_progress_view.set_y(bottom);
         lnav_data.ld_progress_view.set_visible(vis);

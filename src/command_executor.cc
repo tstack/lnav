@@ -40,6 +40,7 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
+#include "breadcrumb_curses.hh"
 #include "config.h"
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
@@ -81,6 +82,11 @@ sql_progress(const log_cursor& lc)
     }
 
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
+        auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+        breadcrumb_view->set_enabled(false);
+        lnav_data.ld_status[LNS_TOP].set_enabled(false);
+        lnav_data.ld_view_stack.top() |
+            [](auto* tc) { tc->set_enabled(false); };
         ssize_t total = lnav_data.ld_log_source.text_line_count();
         off_t off = lc.lc_curr_line;
 
@@ -88,7 +94,12 @@ sql_progress(const log_cursor& lc)
             lnav_data.ld_bottom_source.update_loading(off, total);
             lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
         }
-        lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
+        lnav::prompt::get().p_editor.clear_alt_value();
+        auto refresh_res
+            = lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
+        if (refresh_res == lnav::progress_result_t::interrupt) {
+            return 1;
+        }
     }
 
     return 0;
@@ -107,6 +118,10 @@ sql_progress_finished()
         return;
     }
 
+    auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    breadcrumb_view->set_enabled(true);
+    lnav_data.ld_status[LNS_TOP].set_enabled(true);
+    lnav_data.ld_view_stack.top() | [](auto* tc) { tc->set_enabled(true); };
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     lnav_data.ld_status_refresher(lnav::func::op_type::blocking);

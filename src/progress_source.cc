@@ -32,11 +32,12 @@
 #include "base/progress.hh"
 
 using namespace lnav::roles::literals;
+using namespace std::chrono_literals;
 
-void
+bool
 progress_source::poll()
 {
-    this->ps_lines.clear();
+    auto new_lines = std::vector<attr_line_t>();
 
     {
         auto& pt = lnav::progress_tracker::get_tasks();
@@ -45,6 +46,45 @@ progress_source::poll()
             auto tp = bt();
 
             if (tp.tp_status == lnav::progress_status_t::idle) {
+                auto add_msgs = false;
+                auto up_iter = this->ps_last_updates.find(tp.tp_id);
+                if (up_iter != this->ps_last_updates.end()
+                    && up_iter->second.lu_version == tp.tp_version)
+                {
+                    auto& last_update = up_iter->second;
+                    if (std::chrono::steady_clock::now()
+                        < last_update.lu_expire_time)
+                    {
+                        add_msgs = true;
+                    }
+                } else {
+                    this->ps_last_updates[tp.tp_id] = {
+                        tp.tp_version,
+                        std::chrono::steady_clock::now() + 10s,
+                    };
+                    add_msgs = true;
+                }
+                if (add_msgs && !tp.tp_messages.empty()) {
+                    auto al = attr_line_t().append(tp.tp_step);
+                    new_lines.emplace_back(al);
+                    auto msg_lines = std::vector<attr_line_t>();
+                    for (const auto& um : tp.tp_messages) {
+                        um.to_attr_line().split_lines(msg_lines);
+                    }
+                    auto last_line = msg_lines.back();
+                    msg_lines.pop_back();
+                    for (auto& ml : msg_lines) {
+                        ml.insert(0, 2, ' ');
+                        ml.al_attrs.emplace_back(line_range{0, 1},
+                                                 VC_GRAPHIC.value(NCACS_VLINE));
+                        new_lines.emplace_back(ml);
+                    }
+                    last_line.insert(0, 2, ' ');
+                    last_line.al_attrs.emplace_back(
+                        line_range{0, 1}, VC_GRAPHIC.value(NCACS_LLCORNER));
+
+                    new_lines.emplace_back(last_line);
+                }
                 continue;
             }
 
@@ -78,9 +118,26 @@ progress_source::poll()
             }
             al.pad_to(14).append("] ").append(body);
 
-            this->ps_lines.emplace_back(std::move(al));
+            new_lines.emplace_back(std::move(al));
         }
     }
+
+    auto updated = false;
+    if (new_lines.size() == this->ps_lines.size()) {
+        for (size_t lpc = 0; lpc < new_lines.size(); lpc++) {
+            if (new_lines[lpc].al_string != this->ps_lines[lpc].al_string) {
+                updated = true;
+                break;
+            }
+        }
+    } else {
+        updated = true;
+    }
+    if (updated) {
+        this->ps_lines = std::move(new_lines);
+    }
+
+    return updated;
 }
 
 bool
@@ -139,13 +196,3 @@ progress_source::text_attrs_for_line(textview_curses& tc,
 
     value_out = this->ps_lines[line].al_attrs;
 }
-
-static lnav::task_progress
-dummy_prog_rep()
-{
-    return {
-        "__dummy__",
-    };
-}
-
-DIST_SLICE(prog_reps) lnav::progress_reporter_t dummy_rep = dummy_prog_rep;

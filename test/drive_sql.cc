@@ -10,6 +10,8 @@
 #include "base/injector.hh"
 #include "regexp_vtab.hh"
 #include "sqlite-extension-func.hh"
+#include "sqlitepp.client.hh"
+#include "sql_util.hh"
 #include "xpath_vtab.hh"
 
 struct callback_state {
@@ -50,6 +52,17 @@ main(int argc, char* argv[])
         fprintf(stderr, "error: unable to make sqlite memory database\n");
         retval = EXIT_FAILURE;
     } else {
+        {
+            auto stmt = prepare_stmt(db, LNAV_ATTACH_DB).unwrap();
+            auto exec_res = stmt.execute();
+            if (exec_res.isErr()) {
+                fprintf(stderr,
+                        "failed to attach memory database: %s\n",
+                        exec_res.unwrapErr().c_str());
+                exit(EXIT_FAILURE);
+            }
+        }
+
         auto_mem<char> errmsg(sqlite3_free);
         struct callback_state state;
 

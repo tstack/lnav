@@ -18,6 +18,18 @@ run_cap_test ${lnav_test} -n \
 run_cap_test cat syslog_log.sql
 
 run_cap_test ${lnav_test} -n \
+    -c ";CREATE TABLE syslog_copy AS SELECT * FROM syslog_log" \
+    -c ";.save syslog_copy.db" \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test sqlite3 syslog_copy.db "SELECT * FROM syslog_copy"
+
+run_cap_test ${lnav_test} -n \
+    -c ";CREATE TABLE syslog_copy AS SELECT * FROM syslog_log" \
+    -c ";.save /bad/bad/bad" \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
     -c ";.read nonexistent-file" \
     ${test_dir}/logfile_empty.0
 

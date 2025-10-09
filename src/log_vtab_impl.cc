@@ -2623,7 +2623,7 @@ log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
         vi->get_primary_keys(primary_keys);
 
         sql = sqlite3_mprintf(
-            "CREATE VIRTUAL TABLE %s "
+            "CREATE VIRTUAL TABLE lnav_db.%s "
             "USING %s(%s)",
             vi->get_name().get(),
             primary_keys.empty() ? "log_vtab_impl" : "log_vtab_no_rowid_impl",

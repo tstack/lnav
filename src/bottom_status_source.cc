@@ -45,7 +45,7 @@ bottom_status_source::bottom_status_source()
     this->bss_fields[BSF_LOADING].set_width(13);
     this->bss_fields[BSF_LOADING].right_justify(true);
     this->bss_fields[BSF_HELP].set_width(14);
-    this->bss_fields[BSF_HELP].set_value("?:View Help"_frag);
+    this->bss_fields[BSF_HELP].set_value("?:View Help "_frag);
     this->bss_fields[BSF_HELP].right_justify(true);
     this->bss_prompt.set_left_pad(1);
     this->bss_prompt.set_min_width(35);
@@ -239,7 +239,7 @@ bottom_status_source::statusview_fields()
     if (this->bss_prompt.empty() && this->bss_error.empty()
         && this->bss_line_error.empty())
     {
-        retval = BSF__MAX;
+        retval = BSF__MAX - 1;
     } else {
         retval = 1;
     }
@@ -258,6 +258,12 @@ bottom_status_source::statusview_value_for_field(int field)
     }
     if (!this->bss_line_error.empty()) {
         return this->bss_line_error;
+    }
+    if (field == 4) {
+        if (this->bss_fields[BSF_LOADING].empty()) {
+            return this->bss_fields[BSF_HELP];
+        }
+        return this->bss_fields[BSF_LOADING];
     }
     return this->get_field((field_t) field);
 }

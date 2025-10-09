@@ -30,14 +30,17 @@
 #ifndef lnav_progress_source_hh
 #define lnav_progress_source_hh
 
+#include <map>
+#include <chrono>
 #include <string>
 #include <vector>
 
+#include "base/attr_line.hh"
 #include "textview_curses.hh"
 
 class progress_source : public text_sub_source {
 public:
-    void poll();
+    bool poll();
     bool empty() const override;
     size_t text_line_count() override;
     size_t text_line_width(textview_curses& curses) override;
@@ -54,6 +57,12 @@ public:
 
 private:
     std::vector<attr_line_t> ps_lines;
+
+    struct last_update {
+        size_t lu_version{0};
+        std::chrono::steady_clock::time_point lu_expire_time;
+    };
+    std::map<std::string, last_update> ps_last_updates;
 };
 
 #endif

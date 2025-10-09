@@ -558,6 +558,7 @@ rl_sql_change(textinput_curses& rc, bool is_req)
         = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
     static auto& prompt = lnav::prompt::get();
 
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     const auto line = rc.get_content();
     const auto line_sf = string_fragment::from_str(line);
     std::vector<std::string> args;
@@ -688,74 +689,122 @@ rl_sql_change(textinput_curses& rc, bool is_req)
         // change was not from a completion
         clear_preview();
 
-        auto anno_line = rc.tc_lines[rc.tc_cursor.y];
-        annotate_sql_statement(anno_line, lnav::sql::dialect::sqlite);
-        auto cursor_offset = anno_line.column_to_byte_index(rc.tc_cursor.x);
+        if (line[0] == '.') {
+            auto line_sf = string_fragment::from_str(line);
+            auto [sql_cmd, args_sf]
+                = line_sf.split_when(string_fragment::tag1{' '});
+            auto iter = sql_cmd_map->find(sql_cmd.to_string());
+            if (iter != sql_cmd_map->end()) {
+                auto parsed_cmd = lnav::command::parse_for_prompt(
+                    lnav_data.ld_exec_context, args_sf, iter->second->c_help);
+                auto x = args_sf.column_to_byte_index(rc.tc_cursor.x
+                                                      - args_sf.sf_begin);
+                auto arg_res_opt = parsed_cmd.arg_at(x);
 
-        auto attr_iter = rfind_string_attr_if(
-            anno_line.al_attrs,
-            cursor_offset,
-            [cursor_offset](const string_attr& attr) {
-                return attr.sa_range.lr_start <= cursor_offset
-                    && cursor_offset <= attr.sa_range.lr_end;
-            });
-        if (attr_iter != anno_line.al_attrs.end()) {
-            if (!is_req && attr_iter->sa_type == &SQL_HEX_LIT_ATTR
-                && attr_iter->sa_range.length() == 2)
-            {
-            } else if (is_req
-                       || (attr_iter->sa_type != &SQL_NUMBER_ATTR
-                           && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
-                       || rc.tc_popup_type
-                           == textinput_curses::popup_type_t::completion)
-            {
-                auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
-                auto to_complete = to_complete_sf.to_string();
-                std::vector<std::string> poss_strs;
+                auto arg_res = arg_res_opt.value();
+                log_debug("apair %s [%d:%d) -- %s",
+                          arg_res.aar_help->ht_name,
+                          arg_res.aar_element.se_origin.sf_begin,
+                          arg_res.aar_element.se_origin.sf_end,
+                          arg_res.aar_element.se_value.c_str());
+                auto start_point = rc.get_point_for_offset(
+                    args_sf.sf_begin + arg_res.aar_element.se_origin.sf_begin);
+                auto end_point = rc.get_point_for_offset(
+                    args_sf.sf_begin + arg_res.aar_element.se_origin.sf_end);
+                auto crange = arg_res.aar_element.se_origin.empty()
+                    ? line_range{rc.tc_cursor.x, rc.tc_cursor.x}
+                    : line_range{start_point.x, end_point.x};
+                if (is_req || arg_res.aar_required
+                    || (!arg_res.aar_element.se_origin.empty()
+                        && rc.tc_popup_type
+                            != textinput_curses::popup_type_t::none))
+                {
+                    log_debug(" req %d %d", is_req, arg_res.aar_required);
+                    auto poss = prompt.get_cmd_parameter_completion(
+                        *tc,
+                        &iter->second->c_help,
+                        arg_res.aar_help,
+                        arg_res.aar_element.se_value.empty()
+                            ? arg_res.aar_element.se_origin.to_string()
+                            : arg_res.aar_element.se_value);
+                    rc.open_popup_for_completion(crange, poss);
+                    rc.tc_popup.set_title(arg_res.aar_help->ht_name);
+                }
+            }
+        } else {
+            auto anno_line = rc.tc_lines[rc.tc_cursor.y];
+            annotate_sql_statement(anno_line, lnav::sql::dialect::sqlite);
+            auto cursor_offset = anno_line.column_to_byte_index(rc.tc_cursor.x);
+
+            auto attr_iter = rfind_string_attr_if(
+                anno_line.al_attrs,
+                cursor_offset,
+                [cursor_offset](const string_attr& attr) {
+                    return attr.sa_range.lr_start <= cursor_offset
+                        && cursor_offset <= attr.sa_range.lr_end;
+                });
+            if (attr_iter != anno_line.al_attrs.end()) {
+                if (!is_req && attr_iter->sa_type == &SQL_HEX_LIT_ATTR
+                    && attr_iter->sa_range.length() == 2)
+                {
+                } else if (is_req
+                           || (attr_iter->sa_type != &SQL_NUMBER_ATTR
+                               && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
+                           || rc.tc_popup_type
+                               == textinput_curses::popup_type_t::completion)
+                {
+                    auto to_complete_sf
+                        = anno_line.to_string_fragment(attr_iter);
+                    auto to_complete = to_complete_sf.to_string();
+                    std::vector<std::string> poss_strs;
+                    std::vector<attr_line_t> poss;
+
+                    log_debug("SQL complete: %s -- %s",
+                              attr_iter->sa_type->sat_name,
+                              to_complete.c_str());
+                    poss_strs = prompt.p_sql_completion_terms
+                        | lnav::itertools::similar_to(to_complete, 10);
+                    for (const auto& str : poss_strs) {
+                        auto eq_range
+                            = prompt.p_sql_completions.equal_range(str);
+
+                        for (auto iter = eq_range.first;
+                             iter != eq_range.second;
+                             ++iter)
+                        {
+                            auto al = prompt.get_sql_completion_text(
+                                to_complete, *iter);
+                            poss.emplace_back(al);
+                        }
+                    }
+
+                    auto crange = std::make_from_tuple<line_range>(
+                        line_sf.byte_to_column_index(to_complete_sf.sf_begin,
+                                                     to_complete_sf.sf_end));
+                    log_debug("sql complete range [%d:%d)",
+                              crange.lr_start,
+                              crange.lr_end);
+                    rc.open_popup_for_completion(crange, poss);
+                    rc.tc_popup.set_title("");
+                }
+            } else if (is_req) {
                 std::vector<attr_line_t> poss;
 
-                log_debug("SQL complete: %s -- %s",
-                          attr_iter->sa_type->sat_name,
-                          to_complete.c_str());
-                poss_strs = prompt.p_sql_completion_terms
-                    | lnav::itertools::similar_to(to_complete, 10);
-                for (const auto& str : poss_strs) {
-                    auto eq_range = prompt.p_sql_completions.equal_range(str);
-
-                    for (auto iter = eq_range.first; iter != eq_range.second;
-                         ++iter)
-                    {
-                        auto al = prompt.get_sql_completion_text(to_complete,
-                                                                 *iter);
-                        poss.emplace_back(al);
+                for (const auto& sql_pair : prompt.p_sql_completions) {
+                    const auto& item = sql_pair.second;
+                    auto add = item.is<lnav::prompt::sql_table_t>()
+                        || item.is<lnav::prompt::sql_function_t>()
+                        || item.is<lnav::prompt::sql_format_column_t>();
+                    if (!add) {
+                        continue;
                     }
-                }
 
-                auto crange = std::make_from_tuple<line_range>(
-                    line_sf.byte_to_column_index(to_complete_sf.sf_begin,
-                                                 to_complete_sf.sf_end));
-                log_debug("sql complete range [%d:%d)",
-                          crange.lr_start,
-                          crange.lr_end);
-                rc.open_popup_for_completion(crange, poss);
+                    poss.emplace_back(
+                        prompt.get_sql_completion_text("", sql_pair));
+                }
+                rc.open_popup_for_completion(rc.tc_cursor.x, poss);
                 rc.tc_popup.set_title("");
             }
-        } else if (is_req) {
-            std::vector<attr_line_t> poss;
-
-            for (const auto& sql_pair : prompt.p_sql_completions) {
-                const auto& item = sql_pair.second;
-                auto add = item.is<lnav::prompt::sql_table_t>()
-                    || item.is<lnav::prompt::sql_function_t>()
-                    || item.is<lnav::prompt::sql_format_column_t>();
-                if (!add) {
-                    continue;
-                }
-
-                poss.emplace_back(prompt.get_sql_completion_text("", sql_pair));
-            }
-            rc.open_popup_for_completion(rc.tc_cursor.x, poss);
-            rc.tc_popup.set_title("");
         }
     }
 
@@ -1293,7 +1342,8 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
             }
 
             term_val += ";";
-            if (!sqlite3_complete(term_val.c_str())) {
+            if (startswith(term_val, ".")) {
+            } else if (!sqlite3_complete(term_val.c_str())) {
                 lnav_data.ld_bottom_source.grep_error(
                     "SQL error: incomplete statement");
                 lnav_data.ld_status[LNS_BOTTOM].set_needs_update();

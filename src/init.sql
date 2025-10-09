@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS http_status_codes
+CREATE TABLE IF NOT EXISTS lnav_db.http_status_codes
 (
     status  INTEGER PRIMARY KEY,
     message TEXT
@@ -64,7 +64,7 @@ INSERT INTO http_status_codes VALUES (508, 'Loop Detected');
 INSERT INTO http_status_codes VALUES (510, 'Not Extended');
 INSERT INTO http_status_codes VALUES (511, 'Network Authentication Required');
 
-CREATE TABLE lnav_example_log
+CREATE TABLE lnav_db.lnav_example_log
 (
     log_line        INTEGER PRIMARY KEY,
     log_part        TEXT COLLATE naturalnocase,
@@ -86,13 +86,13 @@ CREATE TABLE lnav_example_log
     log_body        TEXT hidden
 );
 
-CREATE VIEW lnav_top_view AS
+CREATE VIEW lnav_db.lnav_top_view AS
 SELECT *
 FROM lnav_views
 WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
-CREATE TRIGGER lnav_top_view_update
-INSTEAD OF UPDATE ON lnav_top_view
+CREATE TRIGGER lnav_db.lnav_top_view_update
+INSTEAD OF UPDATE ON lnav_db.lnav_top_view
 BEGIN
   UPDATE lnav_views
      SET top = NEW.top,
@@ -107,7 +107,7 @@ BEGIN
    WHERE name = NEW.name;
 END;
 
-CREATE VIEW lnav_focused_msg AS
+CREATE VIEW lnav_db.lnav_focused_msg AS
 SELECT *,
        log_part,
        log_actual_time,
@@ -132,8 +132,8 @@ SELECT *,
 FROM all_logs
 WHERE log_line = log_msg_line();
 
-CREATE TRIGGER lnav_focused_msg_update
-INSTEAD OF UPDATE ON lnav_focused_msg
+CREATE TRIGGER lnav_db.lnav_focused_msg_update
+INSTEAD OF UPDATE ON lnav_db.lnav_focused_msg
 BEGIN
   UPDATE all_logs
      SET log_part = NEW.log_part,
@@ -144,7 +144,7 @@ BEGIN
    WHERE log_line = NEW.log_line;
 END;
 
-CREATE VIEW lnav_file_demux_metadata AS
+CREATE VIEW lnav_db.lnav_file_demux_metadata AS
 SELECT filepath, jget(content, '/demux_meta') AS metadata
 FROM lnav_file_metadata
 WHERE descriptor = 'org.lnav.piper.header';
@@ -163,7 +163,7 @@ VALUES (0, NULL, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
         'debug', 0, NULL, NULL, NULL, 'gw', 10, 1486097706000, '/tmp/log',
         '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');
 
-CREATE TABLE lnav_user_notifications
+CREATE TABLE lnav_db.lnav_user_notifications
 (
     -- A unique identifier for the notification.
     id         TEXT     NOT NULL DEFAULT 'org.lnav.user' PRIMARY KEY,
@@ -187,13 +187,13 @@ INSERT INTO lnav_user_notifications (id, priority, expiration, message)
 VALUES ('org.lnav.breadcrumb.focus', -1, DATETIME('now', '+2 minute'),
         'Press <span class="-lnav_status-styles_hotkey">${org.lnav.key.breadcrumb.focus}</span> to focus on the breadcrumb bar');
 
-CREATE TABLE lnav_views_echo AS
+CREATE TABLE lnav_db.lnav_views_echo AS
 SELECT name, top, "left", height, inner_height, top_time, search, selection
 FROM lnav_views;
 
-CREATE UNIQUE INDEX lnav_views_echo_index ON lnav_views_echo (name);
+CREATE UNIQUE INDEX lnav_db.lnav_views_echo_index ON lnav_views_echo (name);
 
-CREATE TABLE lnav_log_breakpoints (
+CREATE TABLE lnav_db.lnav_log_breakpoints (
     schema_id TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
 
