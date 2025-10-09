@@ -1001,12 +1001,19 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             dst_vl = ttt->row_for_time(tv);
         } else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {
+                if (value < 0) {
+                    return ec.make_error(
+                        "negative percentages are not allowed");
+                }
                 line_number
                     = (int) ((double) tc->get_inner_height() * (value / 100.0));
             } else {
                 line_number = (int) value;
                 if (line_number < 0) {
                     line_number = tc->get_inner_height() + line_number;
+                    if (line_number < 0) {
+                        line_number = 0;
+                    }
                 }
             }
 

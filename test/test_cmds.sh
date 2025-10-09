@@ -4,6 +4,12 @@ export TZ=UTC
 export YES_COLOR=1
 export DUMP_CRASH=1
 
+run_cap_test ${lnav_test} -nN \
+    -c ":goto -1"
+
+run_cap_test ${lnav_test} -nN \
+    -c ":goto -1%"
+
 run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":convert-time-to bad-zone" \

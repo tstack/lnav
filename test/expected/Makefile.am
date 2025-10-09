@@ -134,6 +134,8 @@ dist_noinst_DATA = \
     test_cmds.sh_5630626e6f68c3d4a2c3e5f27d024df5950b88b5.out \
     test_cmds.sh_5bfd08c1639701476d7b9348c36afd46fdbe6f2a.err \
     test_cmds.sh_5bfd08c1639701476d7b9348c36afd46fdbe6f2a.out \
+    test_cmds.sh_5d316a16c23059467b7749a69e71416ebb38e09d.err \
+    test_cmds.sh_5d316a16c23059467b7749a69e71416ebb38e09d.out \
     test_cmds.sh_624a41e152675575f4b07c19b2cf0e3a028429a2.err \
     test_cmds.sh_624a41e152675575f4b07c19b2cf0e3a028429a2.out \
     test_cmds.sh_62d68c0a11757c996f24c8f003e6b4059c3e30b2.err \
@@ -166,6 +168,8 @@ dist_noinst_DATA = \
     test_cmds.sh_8298805f897346b4bb0f14e53c06b4fa28e309e3.out \
     test_cmds.sh_83654557317602d2e00adde1e5cba190d9db0dff.err \
     test_cmds.sh_83654557317602d2e00adde1e5cba190d9db0dff.out \
+    test_cmds.sh_859c9cebe3692779a25f8f275e83f23b65807b6d.err \
+    test_cmds.sh_859c9cebe3692779a25f8f275e83f23b65807b6d.out \
     test_cmds.sh_85ae6ac1eb9a8378f7a6c39659f52671218ce64b.err \
     test_cmds.sh_85ae6ac1eb9a8378f7a6c39659f52671218ce64b.out \
     test_cmds.sh_85ed177028f226e86b1d164eb1a4e18eaf036c9d.err \
@@ -1572,6 +1576,8 @@ dist_noinst_DATA = \
     test_text_file.sh_786c7262f977201af36b0e69ba1a2aba130bbb06.out \
     test_text_file.sh_78f252288519c8f767bb2759ea32959dab2ebc46.err \
     test_text_file.sh_78f252288519c8f767bb2759ea32959dab2ebc46.out \
+    test_text_file.sh_7af88be8d33f9987e46e5fb6e32886807f21e610.err \
+    test_text_file.sh_7af88be8d33f9987e46e5fb6e32886807f21e610.out \
     test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.err \
     test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.out \
     test_text_file.sh_7c6f95ad719eb743a043c58b21e992a742864444.err \

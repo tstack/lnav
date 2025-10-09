@@ -2316,11 +2316,11 @@ logfile_sub_source::get_sql_filter()
 void
 log_location_history::loc_history_append(vis_line_t top)
 {
-    if (top >= vis_line_t(this->llh_log_source.text_line_count())) {
+    if (top < 0_vl || top >= vis_line_t(this->llh_log_source.text_line_count())) {
         return;
     }
 
-    content_line_t cl = this->llh_log_source.at(top);
+    auto cl = this->llh_log_source.at(top);
 
     auto iter = this->llh_history.begin();
     iter += this->llh_history.size() - this->lh_history_position;

@@ -284,6 +284,9 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                         if (vl < 0) {
                             vl += lnav_data.ld_views[LNV_TEXT]
                                       .get_inner_height();
+                            if (vl < 0) {
+                                vl = 0;
+                            }
                         }
                         if (vl
                             < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
