@@ -573,6 +573,8 @@ class logline_observer {
 public:
     virtual ~logline_observer() = default;
 
+    virtual void logline_clear(const logfile& lf) = 0;
+
     virtual void logline_restart(const logfile& lf, file_size_t rollback_size)
         = 0;
 

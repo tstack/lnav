@@ -45,6 +45,8 @@ public:
     {
     }
 
+    void logline_clear(const logfile& lf) override;
+
     void logline_restart(const logfile& lf, file_size_t rollback_size) override
     {
         for (const auto& filter : this->lfo_filter_stack) {

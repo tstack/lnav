@@ -158,6 +158,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_bunyan.0
 
 run_cap_test ${lnav_test} -n \
+    -c ":filter-expr :type = 'PushEvent'" \
+    -c ":hide-fields payload/commits#/message" \
+    ${test_dir}/gharchive_log.jsonl
+
+run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_pino.0
 
 run_cap_test ${lnav_test} -n \

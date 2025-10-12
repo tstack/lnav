@@ -354,6 +354,8 @@ dist_noinst_DATA = \
     test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.out \
     test_json_format.sh_001d1ecc2d007e47880a8850aa901748b2388652.err \
     test_json_format.sh_001d1ecc2d007e47880a8850aa901748b2388652.out \
+    test_json_format.sh_0490eb114fa19ec610692f79d1fe2dc9efee4167.err \
+    test_json_format.sh_0490eb114fa19ec610692f79d1fe2dc9efee4167.out \
     test_json_format.sh_0c6c9368d1a1b525cf00bd3b9e3aa6f6669bc9dc.err \
     test_json_format.sh_0c6c9368d1a1b525cf00bd3b9e3aa6f6669bc9dc.out \
     test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \

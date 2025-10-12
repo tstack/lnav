@@ -37,6 +37,12 @@
 #include "log_format.hh"
 #include "shared_buffer.hh"
 
+void
+line_filter_observer::logline_clear(const logfile& lf)
+{
+    this->lfo_filter_state.clear_for_rebuild();
+}
+
 bool
 line_filter_observer::logline_new_lines(const logfile& lf,
                                         logfile::const_iterator ll_begin,

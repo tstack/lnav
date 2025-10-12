@@ -814,6 +814,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             tids->ltis_tid_ranges.clear();
         }
         this->lf_allocator.reset();
+        if (this->lf_logline_observer) {
+            this->lf_logline_observer->logline_clear(*this);
+        }
     }
     this->lf_zoned_to_local_state = dts_cfg.c_zoned_to_local;
 

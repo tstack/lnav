@@ -4707,7 +4707,8 @@ external_log_format::value_line_count(const value_def* vd,
         retval.vlcr_line_format_count += 1;
         retval.vlcr_count -= 1;
         retval.vlcr_line_format_index = vd->vd_line_format_index;
-    } else if (vd->vd_meta.is_hidden()) {
+    }
+    if (vd->vd_meta.is_hidden()) {
         retval.vlcr_count = 0;
         return retval;
     }
@@ -5019,6 +5020,9 @@ external_log_format::hide_field(const intern_string_t field_name, bool val)
 {
     const auto vd_iter = this->elf_value_defs.find(field_name);
     if (vd_iter == this->elf_value_defs.end()) {
+        log_warning("field to hide not found: %s.%s",
+                    this->elf_name.c_str(),
+                    field_name.c_str());
         return false;
     }
 
@@ -5026,9 +5030,17 @@ external_log_format::hide_field(const intern_string_t field_name, bool val)
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         bool found = false;
 
-        for (const auto& jfe : this->jlf_line_format) {
-            if (jfe.jfe_value.pp_value == field_name) {
-                found = true;
+        if (!field_name.to_string_fragment().find('#')) {
+            for (const auto& jfe : this->jlf_line_format) {
+                if (jfe.jfe_value.pp_value == field_name) {
+                    log_debug(
+                        "hide-field not triggering rebuild since it is in "
+                        "line-format: %s.%s",
+                        this->elf_name.c_str(),
+                        field_name.c_str());
+                    found = true;
+                    break;
+                }
             }
         }
         if (!found) {

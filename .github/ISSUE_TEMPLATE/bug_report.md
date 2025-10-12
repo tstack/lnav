@@ -9,7 +9,7 @@ assignees: ''
 ---
 
 **lnav version**
-v0.12.4 is the latest
+v0.13.2 is the latest
 
 **Describe the bug**
 A clear and concise description of what the bug is.

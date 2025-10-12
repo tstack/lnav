@@ -1503,6 +1503,12 @@ void
 logfile_filter_state::clear()
 {
     this->tfs_logfile = nullptr;
+    this->clear_for_rebuild();
+}
+
+void
+logfile_filter_state::clear_for_rebuild()
+{
     memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
     memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
     memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));

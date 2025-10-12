@@ -63,6 +63,8 @@ public:
 
     void clear();
 
+    void clear_for_rebuild();
+
     void clear_filter_state(size_t index);
 
     void clear_deleted_filter_state(uint32_t used_mask);
