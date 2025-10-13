@@ -231,6 +231,7 @@ dist_noinst_DATA = \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
 	$(PRQL_FILES) \
+	$(STATIC_FILES) \
 	$(TERMINFO_FILES) \
 	words.json \
 	xml-entities.json \
