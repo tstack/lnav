@@ -310,6 +310,23 @@ add_custom_command(
         DEPENDS bin2c ${TERMINFO_FILES})
 list(APPEND GEN_SRCS terminfo-files.h terminfo-files.cc)
 
+set(STATIC_FILES
+        static-files/index.md
+        static-files/assets/js/chart-demo.js
+        static-files/assets/js/lnav-client.js
+        static-files/assets/js/prism-lnav.js
+)
+
+set(STATIC_FILES_PATHS ${STATIC_FILES})
+
+list(TRANSFORM STATIC_FILES_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT static-files.h static-files.cc
+        COMMAND bin2c -n lnav_static_files -p ${CMAKE_CURRENT_SOURCE_DIR}/static-files/ static-files ${STATIC_FILES_PATHS}
+        DEPENDS bin2c ${STATIC_FILES})
+list(APPEND GEN_SRCS static-files.h static-files.cc)
+
 set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
@@ -615,7 +632,9 @@ add_library(
         xpath_vtab.cc
         xterm_mouse.cc
         yaml-extension-functions.cc
+        third-party/md4c/entity.c
         third-party/md4c/md4c.c
+        third-party/md4c/md4c-html.c
         third-party/sqlite/ext/series.c
         third-party/sqlite/ext/dbdump.c
 
@@ -801,7 +820,9 @@ add_library(
 
         third-party/intervaltree/IntervalTree.h
 
+        third-party/md4c/entity.h
         third-party/md4c/md4c.h
+        third-party/md4c/md4c-html.h
 
         third-party/robin_hood/robin_hood.h
 

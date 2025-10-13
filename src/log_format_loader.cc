@@ -1246,7 +1246,7 @@ write_sample_file()
         script_metadata meta;
         auto sf = bsf.to_string_fragment_producer()->to_string();
 
-        meta.sm_name = bsf.get_name();
+        meta.sm_name = bsf.get_name().to_string();
         extract_metadata(sf, meta);
         auto path
             = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);

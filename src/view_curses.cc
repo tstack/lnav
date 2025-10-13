@@ -236,7 +236,7 @@ view_curses::contains(int x, int y)
         }
     }
     if (this->vc_x <= x
-        && (this->vc_width < 0 || x < this->vc_x + this->vc_width)
+        && (this->vc_width < 0 || x <= this->vc_x + this->vc_width)
         && this->vc_y == y)
     {
         return this;
@@ -1572,8 +1572,9 @@ Terminfo*
 terminfo_load_from_internal(const char* term_name)
 {
     log_debug("checking for internal terminfo for: %s", term_name);
+    auto term_name_sf = string_fragment::from_c_str(term_name);
     for (const auto& tf : lnav_terminfo_files) {
-        if (strcmp(tf.get_name(), term_name) != 0) {
+        if (tf.get_name() != term_name_sf) {
             continue;
         }
         log_info("  found internal terminfo!");

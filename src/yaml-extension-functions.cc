@@ -33,8 +33,10 @@
 
 #define RYML_SINGLE_HDR_DEFINE_NOW
 
-#include "base/itertools.hh"
-#include "ryml_all.hpp"
+#include "base/auto_mem.hh"
+#include "base/intern_string.hh"
+#include "base/lnav.console.hh"
+#include "base/lnav.ryml.hh"
 #include "sqlite-extension-func.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
@@ -68,8 +70,7 @@ yaml_to_json(string_fragment in)
     ryml::Callbacks callbacks(&in, nullptr, nullptr, ryml_error_to_um);
 
     ryml::set_callbacks(callbacks);
-    auto tree = ryml::parse_in_arena(
-        "input", ryml::csubstr{in.data(), (size_t) in.length()});
+    auto tree = ryml::parse_in_arena("input", lnav::ryml::to_csubstr(in));
 
     auto output = ryml::emit_json(
         tree, tree.root_id(), ryml::substr{}, /*error_on_excess*/ false);
@@ -84,10 +85,9 @@ yaml_to_json(string_fragment in)
 }
 
 int
-yaml_extension_functions(struct FuncDef** basic_funcs,
-                         struct FuncDefAgg** agg_funcs)
+yaml_extension_functions(FuncDef** basic_funcs, FuncDefAgg** agg_funcs)
 {
-    static struct FuncDef yaml_funcs[] = {
+    static FuncDef yaml_funcs[] = {
         sqlite_func_adapter<decltype(&yaml_to_json), yaml_to_json>::builder(
             help_text("yaml_to_json",
                       "Convert a YAML document to a JSON-encoded string")

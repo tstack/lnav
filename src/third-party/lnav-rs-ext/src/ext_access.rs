@@ -1,6 +1,8 @@
-use crate::ffi::{execute_external_command, longpoll, version_info, PollInput};
+use crate::ffi::{execute_external_command, get_static_file, longpoll, version_info, PollInput};
+use cookie::Cookie;
+use rouille::input::cookies;
 use rouille::{accept, input, router, try_or_400, Request, Response, Server};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::convert::Into;
 use std::error::Error;
 use std::fs::File;
@@ -8,36 +10,48 @@ use std::io::Error as IoError;
 use std::io::Read;
 use std::net::Ipv4Addr;
 use std::os::fd::{FromRawFd, OwnedFd, RawFd};
+use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::sync::{mpsc, LazyLock, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
 use std::{error, fmt, thread};
+use uuid::Uuid;
 
 static SERVER: LazyLock<Mutex<Option<(JoinHandle<()>, Sender<()>)>>> =
     LazyLock::new(|| None.into());
 
-static LANDING: &'static str = r#"
-<html>
-<head>
-<title>The Logfile Navigator</title>
-</head>
-<body>
-<h1>lnav</h1>
+static LOGIN_OTP: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| None.into());
 
-The Logfile Navigator, <b>lnav</b> for short, is a log file viewer for the terminal.
+static SESSIONS: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| HashSet::new().into());
 
-This server provides remote access to an lnav instance.
+pub fn set_login_otp(otp: String) {
+    *LOGIN_OTP.lock().unwrap() = Some(otp);
+}
 
-<ul>
-<li><b>GET</b> /version - Get a JSON object with version information for this instance.</li>
-<li><b>POST</b> /exec - Execute a text/x-lnav-script and return the result.</li>
-</ul>
-
-See <a href="https://lnav.org">lnav.org</a> for more information.
-</body>
-</html>
-"#;
+fn do_login(request: &Request) -> Response {
+    if let Some(expected_otp) = LOGIN_OTP.lock().unwrap().take() {
+        if let Some(actual_otp) = request.get_param("otp") {
+            if expected_otp == actual_otp {
+                log::info!("login otp match");
+                let session_id = Uuid::new_v4().to_string();
+                SESSIONS.lock().unwrap().insert(session_id.clone());
+                let session_cookie = Cookie::build(("lnav_session_id", session_id))
+                    .path("/")
+                    .build();
+                return Response::redirect_302("/")
+                    .with_additional_header("Set-Cookie", session_cookie.to_string());
+            } else {
+                log::info!("login otp mismatch");
+            }
+        } else {
+            log::info!("login param not found");
+        }
+    } else {
+        log::info!("login otp not set");
+    }
+    Response::empty_400().with_status_code(401)
+}
 
 /// Error that can happen when parsing the request body as plain text.
 #[derive(Debug)]
@@ -153,52 +167,86 @@ fn do_exec(request: &Request) -> Response {
 }
 
 fn do_poll(request: &Request) -> Response {
-    let body = try_or_400!(input::json_input::<PollInput>(request));
+    let body = try_or_400!(input::json_input::<Option<PollInput>>(request))
+        .unwrap_or_default();
     let vs = longpoll(&body);
 
     Response::json(&vs)
+}
+
+fn do_static(request: &Request) -> Response {
+    if request.method() == "GET" {
+        let url = request.url();
+        let mut content: Vec<u8> = Vec::new();
+        get_static_file(&url, &mut content);
+        if content.is_empty() {
+            Response::empty_404()
+        } else {
+            let path = Path::new(&url);
+            let extension = path.extension().unwrap_or_default().to_str().unwrap_or("");
+            let extension = if extension.is_empty() {
+                "html"
+            } else {
+                extension
+            };
+            let content_type = rouille::extension_to_mime(extension);
+            Response::from_data(content_type, content)
+        }
+    } else {
+        Response::empty_406()
+    }
 }
 
 pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + Send + Sync>> {
     let (tx, rx) = mpsc::channel();
 
     let server = Server::new((Ipv4Addr::LOCALHOST, port), move |request| {
-        let auth = input::basic_http_auth(request);
-        let req_api_key = if let Some(ref auth) = auth {
-            auth.password.as_str()
-        } else if let Some(hdr) = request.header("X-Api-Key") {
-            hdr
+        log::info!("request: {:?}", request);
+        if request.method() == "GET" && request.url() == "/login" {
+            return do_login(request);
+        }
+
+        if let Some((_cookie_name, session_id)) = cookies(request)
+            .filter(|&(name, _)| name == "lnav_session_id")
+            .next()
+        {
+            log::info!("session cookie found: {:?}", session_id);
+            if !SESSIONS.lock().unwrap().contains(session_id) {
+                log::info!("session cookie not found");
+                return Response::empty_400().with_status_code(401);
+            }
+            log::info!("session cookie found");
         } else {
-            ""
-        };
-        if req_api_key != api_key {
-            return Response::basic_http_auth_login_required("lnav");
+            let req_api_key = if let Some(hdr) = request.header("X-Api-Key") {
+                hdr
+            } else {
+                ""
+            };
+            if req_api_key != api_key {
+                return Response::empty_400().with_status_code(401);
+            }
         }
 
         router!(request,
-            (GET) (/) => {
-                Response::html(LANDING)
-            },
-
             (GET) (/version) => {
                 Response::from_data("application/json; charset=utf-8", version_info())
             },
 
-            (POST) (/exec) => {
+            (POST) (/api/exec) => {
                 accept!(request,
                     "text/x-lnav-script" => do_exec(request),
                     "*/*" => Response::empty_406(),
                 )
             },
 
-            (POST) (/poll) => {
+            (POST) (/api/poll) => {
                 accept!(request,
                     "application/json" => do_poll(request),
                     "*/*" => Response::empty_406(),
                 )
             },
 
-            _ => Response::empty_404()
+            _ => do_static(request)
         )
     })?
     .pool_size(4);

@@ -818,6 +818,11 @@ public:
 
     virtual ~string_fragment_producer() {}
 
+    virtual size_t estimated_size() const
+    {
+        return 1024;
+    }
+
     virtual next_result next() = 0;
 
     std::string to_string();

@@ -1035,6 +1035,11 @@ void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, 
   new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs)));
 }
 
+void lnav_rs_ext$cxxbridge1$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {
+  void (*get_static_file$)(::rust::Str, ::rust::Vec<::std::uint8_t> &) = ::lnav_rs_ext::get_static_file;
+  get_static_file$(path, dst);
+}
+
 ::lnav_rs_ext::LnavLogLevel lnav_rs_ext$cxxbridge1$get_lnav_log_level() noexcept {
   ::lnav_rs_ext::LnavLogLevel (*get_lnav_log_level$)() = ::lnav_rs_ext::get_lnav_log_level;
   return get_lnav_log_level$();
@@ -1062,6 +1067,8 @@ void lnav_rs_ext$cxxbridge1$get_status(::lnav_rs_ext::ExtProgress *return$) noex
 void lnav_rs_ext$cxxbridge1$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
+
+void lnav_rs_ext$cxxbridge1$set_one_time_password(::rust::String *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$stop_ext_access() noexcept;
 } // extern "C"
@@ -1107,6 +1114,12 @@ void discover_srcs() noexcept {
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::StartExtResult> return$;
   lnav_rs_ext$cxxbridge1$start_ext_access(port, &api_key, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String set_one_time_password() noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  lnav_rs_ext$cxxbridge1$set_one_time_password(&return$.value);
   return ::std::move(return$.value);
 }
 

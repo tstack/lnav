@@ -60,7 +60,11 @@ Features:
 * The `:external-access` command has been added to open a
   localhost HTTP port that can be used to remotely control
   lnav. Requests can be sent to execute commands and poll
-  for changes in the view state.
+  for changes in the view state.  When the external port
+  is open, a globe icon (🌐) is displayed in the top-right
+  corner.  Clicking that icon will open a URL in a browser
+  and log you into the server.  The `:external-access-login`
+  command can also be used to login.
 * The `;.save` SQL command has been added that can save
   tables you have created to a SQLite database file.  The
   tables that lnav creates have been moved to a separate
@@ -89,7 +93,7 @@ Bug Fixes:
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging
-  to make it easier to identify the high level operations
+  to make it easier to identify the high-level operations
   that are being performed using the TIMELINE view.
   While this is mainly useful to the authors of lnav, it
   can serve as a good example of the benefits of adding

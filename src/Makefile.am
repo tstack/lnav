@@ -65,11 +65,16 @@ terminfo-files.cc: $(BIN2C_PATH) $(TERMINFO_FILES)
 
 include scripts/scripts.am
 
+include static-files/static-files.am
+
 builtin-scripts.cc: $(BIN2C_PATH) $(BUILTIN_LNAVSCRIPTS)
 	$(BIN2C_V)$(BIN2C_PATH) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
 builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 	$(BIN2C_V)$(BIN2C_PATH) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
+
+static-files.cc: $(BIN2C_PATH) $(STATIC_FILES)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_static_files -p $(srcdir)/static-files/ static-files $(STATIC_FILES)
 
 %-sh.cc: $(srcdir)/%.sh $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-sh $<
@@ -111,6 +116,7 @@ LNAV_BUILT_FILES = \
     ansi-palette-json.cc \
     builtin-scripts.cc \
     builtin-sh-scripts.cc \
+    static-files.cc \
     css-color-names-json.cc \
     default-config.cc \
     default-formats.cc \
@@ -231,7 +237,9 @@ dist_noinst_DATA = \
 	xterm-palette.json
 
 noinst_HEADERS = \
+    third-party/md4c/entity.h \
     third-party/md4c/md4c.h \
+    third-party/md4c/md4c-html.h \
     third-party/lnav-rs-ext/lnav_ffi.hh \
     third-party/lnav-rs-ext/lnav_rs_ext.h \
     third-party/lnav-rs-ext/lnav_rs_ext.hpp \
@@ -446,7 +454,9 @@ THIRD_PARTY_SRCS = \
     third-party/CLI/ConfigFwd.hpp \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
+    third-party/md4c/entity.c \
     third-party/md4c/md4c.c \
+    third-party/md4c/md4c-html.c \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c \

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,48 +25,22 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file bin2c.hh
  */
 
-#ifndef lnav_bin2c_hh
-#define lnav_bin2c_hh
+#ifndef lnav_ryml_hh
+#define lnav_ryml_hh
 
-#include <memory>
+#include "intern_string.hh"
+#include "ryml_all.hpp"
 
-#include <sys/types.h>
+namespace lnav::ryml {
 
-#include "base/intern_string.hh"
-
-struct bin_src_file {
-    template<typename T, std::size_t N>
-    constexpr bin_src_file(const T (&name)[N],
-                           const unsigned char* data,
-                           size_t compressed_size,
-                           size_t size);
-
-    std::unique_ptr<string_fragment_producer> to_string_fragment_producer()
-        const;
-
-    string_fragment get_name() const { return this->bsf_name; }
-
-    size_t get_uncompressed_size() const { return this->bsf_uncompressed_size; }
-
-private:
-    string_fragment bsf_name;
-    const unsigned char* bsf_compressed_data;
-    size_t bsf_compressed_size;
-    size_t bsf_uncompressed_size;
-};
-
-template<typename T, std::size_t N>
-constexpr bin_src_file::bin_src_file(const T (&name)[N],
-                                     const unsigned char* data,
-                                     size_t compressed_size,
-                                     size_t size)
-    : bsf_name(name), bsf_compressed_data(data),
-      bsf_compressed_size(compressed_size), bsf_uncompressed_size(size)
+inline ::ryml::csubstr
+to_csubstr(const string_fragment& sf)
 {
+    return {sf.data(), (size_t) sf.length()};
 }
+
+}  // namespace lnav::ryml
 
 #endif

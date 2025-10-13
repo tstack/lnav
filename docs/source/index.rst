@@ -24,6 +24,7 @@ Contents:
    sqlext
    sqltab
    events
+   extacc
    data
    performance
    howitworks

@@ -27,33 +27,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
+#include "base/lnav.ryml.hh"
 #include "base/result.h"
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "external_opener.hh"
 #include "libbase64.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
 #include "lnav_commands.hh"
+#include "md4c/md4c-html.h"
+#include "md4cpp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "readline_context.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session.export.hh"
 #include "shlex.hh"
+#include "static-files.h"
 #include "sysclip.hh"
+#include "text_format.hh"
+#include "top_status_source.hh"
 #include "yajlpp/yajlpp.hh"
 
 #ifdef HAVE_RUST_DEPS
 #    include "lnav_rs_ext.cxx.hh"
 #endif
+
+using namespace lnav::roles::literals;
+using namespace std::string_view_literals;
 
 static Result<std::string, lnav::console::user_message>
 com_export_session_to(exec_context& ec,
@@ -557,6 +570,145 @@ version_info()
     return gen.to_string_fragment().to_string();
 }
 
+static void
+process_md_out(const MD_CHAR* data, MD_SIZE len, void* user_data)
+{
+    auto& buffer = *((::rust::Vec<uint8_t>*) user_data);
+    auto sv = std::string_view(data, len);
+
+    std::copy(sv.begin(), sv.end(), std::back_inserter(buffer));
+}
+
+struct static_file_not_found_t {};
+
+using static_file_t
+    = mapbox::util::variant<const bin_src_file*, static_file_not_found_t>;
+
+static std::optional<const bin_src_file*>
+find_static_src_file(const std::string& path)
+{
+    for (const auto& file : lnav_static_files) {
+        if (file.get_name() == path) {
+            return &file;
+        }
+    }
+
+    return std::nullopt;
+}
+
+static static_file_t
+find_static_file(const std::string& path)
+{
+    auto exact_match = find_static_src_file(path);
+    if (exact_match) {
+        return static_file_t{exact_match.value()};
+    }
+
+    return static_file_t{static_file_not_found_t{}};
+}
+
+static static_file_t
+resolve_static_src_file(std::string path)
+{
+    static const auto HTML_EXT = lnav::pcre2pp::code::from_const("\\.html$");
+
+    auto exact_match = find_static_file(path);
+    if (!exact_match.is<static_file_not_found_t>()) {
+        return exact_match;
+    }
+
+    if (!path.empty() && !endswith(path, "/")) {
+        path += "/";
+    }
+    path += "index.html";
+    auto index_match = find_static_file(path);
+    if (!index_match.is<static_file_not_found_t>()) {
+        return index_match;
+    }
+
+    path = HTML_EXT.replace(path, ".md");
+    auto md_match = find_static_file(path);
+    if (!md_match.is<static_file_not_found_t>()) {
+        return md_match;
+    }
+
+    return static_file_t{static_file_not_found_t{}};
+}
+
+static void
+render_markdown(const bin_src_file& file, ::rust::Vec<uint8_t>& dst)
+{
+    static const auto HEADER = R"(
+<html>
+<head>
+<title>{title}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
+</head>
+<body>
+)";
+    static const auto FOOTER = R"(
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
+<script src="/assets/js/prism-lnav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="/assets/js/lnav-client.js"></script>
+</body>
+</html>
+)"sv;
+
+    auto content = file.to_string_fragment_producer()->to_string();
+    auto md_file = md4cpp::parse_file(file.get_name().to_string(), content);
+    auto title = fmt::format(FMT_STRING("lnav: {}"), file.get_name());
+
+    if (md_file.f_frontmatter_format == text_format_t::TF_YAML) {
+        auto tree = ryml::parse_in_arena(
+            lnav::ryml::to_csubstr(file.get_name()),
+            lnav::ryml::to_csubstr(md_file.f_frontmatter));
+        tree["title"] >> title;
+    }
+
+    auto head = fmt::format(HEADER, fmt::arg("title", title));
+    std::copy(head.begin(), head.end(), std::back_inserter(dst));
+    md_html(md_file.f_body.data(),
+            md_file.f_body.length(),
+            process_md_out,
+            &dst,
+            MD_DIALECT_GITHUB | MD_FLAG_UNDERLINE | MD_FLAG_STRIKETHROUGH,
+            0);
+    std::copy(FOOTER.begin(), FOOTER.end(), std::back_inserter(dst));
+}
+
+void
+get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
+{
+    auto path_str = (std::string) path;
+
+    if (startswith(path_str, "/")) {
+        path_str.erase(0, 1);
+    }
+    log_info("static file request: %s", path_str.c_str());
+    auto matched_file = resolve_static_src_file(path_str);
+    matched_file.match(
+        [&dst](const bin_src_file* file) {
+            auto name = file->get_name();
+            log_info("  matched static source file: %.*s",
+                     name.length(),
+                     name.data());
+            if (name.endswith(".md")) {
+                render_markdown(*file, dst);
+            } else {
+                auto prod = file->to_string_fragment_producer();
+                prod->for_each([&dst](const auto& sf) {
+                    std::copy(sf.begin(), sf.end(), std::back_inserter(dst));
+                    return Ok();
+                });
+            }
+        },
+        [](const static_file_not_found_t&) {
+            log_info("  static file not found");
+        });
+}
+
 ExecResult
 execute_external_command(::rust::String rs_src,
                          ::rust::String rs_script,
@@ -657,7 +809,60 @@ com_external_access(exec_context& ec,
     auto url = fmt::format(FMT_STRING("http://127.0.0.1:{}"), start_res.port);
     setenv("LNAV_EXTERNAL_URL", url.c_str(), 1);
 
+    {
+        auto top_source = injector::get<std::shared_ptr<top_status_source>>();
+
+        auto& sf = top_source->statusview_value_for_field(
+            top_status_source::TSF_EXT_ACCESS);
+
+        sf.set_width(3);
+        sf.set_value("\xF0\x9F\x8C\x90");
+        sf.on_click = [](auto& top_source) {
+            static const intern_string_t SRC
+                = intern_string::lookup("internal");
+            static const auto LOC = source_location{SRC};
+
+            auto& ec = lnav_data.ld_exec_context;
+            ec.execute(LOC, ":external-access-login");
+        };
+    }
+
     return Ok(retval);
+#else
+    return ec.make_error("lnav was compiled without Rust extensions");
+#endif
+}
+
+static Result<std::string, lnav::console::user_message>
+com_external_access_login(exec_context& ec,
+                          std::string cmdline,
+                          std::vector<std::string>& args)
+{
+#ifdef HAVE_RUST_DEPS
+    auto url = getenv("LNAV_EXTERNAL_URL");
+    if (url == nullptr) {
+        auto um = lnav::console::user_message::error(
+                      "external-access is not enabled")
+                      .with_help(attr_line_t("Use the ")
+                                     .append(":external-access"_keyword)
+                                     .append(" command to enable"));
+
+        return Err(um);
+    }
+
+    auto otp = (std::string) lnav_rs_ext::set_one_time_password();
+    auto url_with_otp = fmt::format(FMT_STRING("{}/login?otp={}"), url, otp);
+    auto open_res = lnav::external_opener::for_href(url_with_otp);
+    if (open_res.isErr()) {
+        auto err = open_res.unwrapErr();
+        auto um = lnav::console::user_message::error(
+                      "unable to open external access URL")
+                      .with_reason(err);
+
+        return Err(um);
+    }
+
+    return Ok(std::string());
 #else
     return ec.make_error("lnav was compiled without Rust extensions");
 #endif
@@ -768,6 +973,14 @@ static readline_context::command_t SCRIPTING_COMMANDS[] = {
             .with_parameter(
                 help_text("api-key", "The API key")
                     .with_format(help_parameter_format_t::HPF_STRING))
+            .with_tags({"scripting"}),
+    },
+    {
+        "external-access-login",
+        com_external_access_login,
+        help_text(":external-access-login")
+            .with_summary("Use the external-opener to open a URL that refers "
+                          "to lnav's external-access server")
             .with_tags({"scripting"}),
     },
 };

@@ -313,7 +313,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         for (const auto& mod : lnav_prql_modules) {
             log_debug("lnav_rs_ext adding mod %s", mod.get_name());
             tree.emplace_back(lnav_rs_ext::SourceTreeElement{
-                mod.get_name(),
+                mod.get_name().data(),
                 mod.to_string_fragment_producer()->to_string(),
             });
         }

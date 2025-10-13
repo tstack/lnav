@@ -1,8 +1,9 @@
 #![cfg(not(target_family = "wasm"))]
+extern crate alloc;
 
 mod ext_access;
 
-use crate::ext_access::{start_server, stop_server};
+use crate::ext_access::{set_login_otp, start_server, stop_server};
 use crate::ffi::{
     get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson,
     LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
@@ -26,6 +27,7 @@ use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
+use uuid::Uuid;
 
 static LOG_MATCHER: LazyLock<Mutex<LogMatcher>> = LazyLock::new(|| LogMatcher::new().into());
 static TRACKER: LazyLock<Mutex<ProgressTracker>> = LazyLock::new(|| ProgressTracker::new().into());
@@ -223,14 +225,14 @@ mod ffi {
         pub variables: Vec<VarPair>,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Default)]
     struct ViewStates {
         pub log: String,
         pub log_selection: String,
         pub text: String,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Default)]
     struct PollInput {
         pub last_event_id: usize,
         pub view_states: ViewStates,
@@ -276,6 +278,8 @@ mod ffi {
 
         fn execute_external_command(src: String, cmd: String, hdrs: String) -> ExecResult;
 
+        fn get_static_file(path: &str, dst: &mut Vec<u8>);
+
         fn get_lnav_log_level() -> LnavLogLevel;
 
         fn log_msg(level: LnavLogLevel, file: &str, line: u32, msg: &str);
@@ -307,6 +311,8 @@ mod ffi {
         fn get_log_statements_for(file: &str) -> Vec<FindLogResult>;
 
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
+
+        fn set_one_time_password() -> String;
 
         fn stop_ext_access();
     }
@@ -612,4 +618,10 @@ fn init_ext() {
     log::set_logger(&EXT_LOGGER)
         .map(|()| log::set_max_level(lnav_level.to_level_filter()))
         .expect("failed to set logger");
+}
+
+fn set_one_time_password() -> String {
+    let retval = Uuid::new_v4().to_string();
+    set_login_otp(retval.clone());
+    retval
 }

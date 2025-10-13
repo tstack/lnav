@@ -843,6 +843,8 @@ layout_views()
     lnav_data.ld_user_message_view.set_y(bottom);
     lnav_data.ld_user_message_view.set_visible(vis);
 
+    lnav_data.ld_status[LNS_TOP].set_width(width);
+
     bottom -= 1;
     lnav_data.ld_status[LNS_BOTTOM].set_y(bottom);
     lnav_data.ld_status[LNS_BOTTOM].set_width(width);

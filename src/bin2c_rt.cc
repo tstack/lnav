@@ -27,15 +27,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+
 #include "bin2c.hh"
 
+#include "base/intern_string.hh"
 #include "base/lnav.gzip.hh"
 
 std::unique_ptr<string_fragment_producer>
 bin_src_file::to_string_fragment_producer() const
 {
-    auto gz_res = lnav::gzip::uncompress_stream(
-        this->bsf_name, this->bsf_compressed_data, this->bsf_compressed_size);
+    auto gz_res = lnav::gzip::uncompress_stream(this->bsf_name,
+                                                this->bsf_compressed_data,
+                                                this->bsf_compressed_size,
+                                                this->bsf_uncompressed_size);
 
     return gz_res.unwrap();
 }

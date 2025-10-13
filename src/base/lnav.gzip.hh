@@ -40,8 +40,7 @@
 #include "intern_string.hh"
 #include "result.h"
 
-namespace lnav {
-namespace gzip {
+namespace lnav::gzip {
 
 struct header {
     timeval h_mtime{};
@@ -65,11 +64,11 @@ Result<auto_buffer, std::string> uncompress(const std::string& src,
                                             size_t size);
 
 Result<std::unique_ptr<string_fragment_producer>, std::string>
-uncompress_stream(const std::string& src,
+uncompress_stream(const string_fragment& src,
                   const unsigned char* buffer,
-                  size_t size);
+                  size_t compressed_size,
+                  size_t uncompressed_size);
 
-}  // namespace gzip
-}  // namespace lnav
+}  // namespace lnav::gzip
 
 #endif

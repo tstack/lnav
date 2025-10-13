@@ -39,6 +39,7 @@ class top_status_source : public status_data_source {
 public:
     enum field_t {
         TSF_TIME,
+        TSF_EXT_ACCESS,
         TSF_USER_MSG,
 
         TSF__MAX

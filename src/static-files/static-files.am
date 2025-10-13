@@ -1,0 +1,8 @@
+
+STATIC_FILES = \
+    $(srcdir)/static-files/index.md \
+    $(srcdir)/static-files/assets/js/chart-demo.js \
+    $(srcdir)/static-files/assets/js/lnav-api-test.js \
+    $(srcdir)/static-files/assets/js/lnav-client.js \
+    $(srcdir)/static-files/assets/js/prism-lnav.js \
+    $()

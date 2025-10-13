@@ -219,7 +219,7 @@ from(string_fragment sf)
         sf));
 }
 
-term_color_palette::term_color_palette(const char* name,
+term_color_palette::term_color_palette(const string_fragment& name,
                                        string_fragment_producer& json)
 {
     intern_string_t iname = intern_string::lookup(name);

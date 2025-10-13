@@ -123,15 +123,24 @@ uncompress(const std::string& src, const void* buffer, size_t size)
 }
 
 struct gunzip_producer : string_fragment_producer {
-    explicit gunzip_producer(const std::string& src) : gp_src(src) {}
+    explicit gunzip_producer(const string_fragment& src, size_t uncompressed_size)
+        : gp_src(src.to_string()), gp_uncompressed_size(uncompressed_size)
+    {
+    }
 
     gunzip_producer(const gunzip_producer&) = delete;
     gunzip_producer& operator=(const gunzip_producer&) = delete;
 
-    ~gunzip_producer() override {
+    ~gunzip_producer() override
+    {
         if (this->strm.next_in) {
             inflateEnd(&this->strm);
         }
+    }
+
+    size_t estimated_size() const override
+    {
+        return this->gp_uncompressed_size;
     }
 
     next_result next() override
@@ -172,17 +181,19 @@ struct gunzip_producer : string_fragment_producer {
     std::string gp_src;
     z_stream strm = {};
     unsigned char gp_buff[2048];
+    size_t gp_uncompressed_size;
 };
 
 Result<std::unique_ptr<string_fragment_producer>, std::string>
-uncompress_stream(const std::string& src,
+uncompress_stream(const string_fragment& src,
                   const unsigned char* buffer,
-                  size_t size)
+                  size_t compressed_size,
+                  size_t uncompressed_size)
 {
     int err;
-    auto gp = std::make_unique<gunzip_producer>(src);
+    auto gp = std::make_unique<gunzip_producer>(src, uncompressed_size);
     gp->strm.next_in = (Bytef*) buffer;
-    gp->strm.avail_in = size;
+    gp->strm.avail_in = compressed_size;
 
     if ((err = inflateInit(&gp->strm)) != Z_OK) {
         return Err(fmt::format(FMT_STRING("invalid gzip data: {} -- {}"),

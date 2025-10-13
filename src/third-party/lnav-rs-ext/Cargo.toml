@@ -30,8 +30,10 @@ miette = "7.6.0"
 log2src = {git = "https://github.com/tstack/log2src.git", branch = "caching1"}
 # log2src = {path = "/Users/tstack/github/log2src"}
 rouille = "3.6.2"
+cookie = "0.18.1"
 serde_json = "1.0.143"
 serde = { version = "1.0.219", features = ["derive"] }
+uuid = { version = "1.18.1", features = ["v4"]}
 
 [build-dependencies]
 cxx-build = "1.0"

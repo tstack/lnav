@@ -41,6 +41,7 @@
 #include "intervaltree/IntervalTree.h"
 #include "mapbox/variant.hpp"
 #include "md4c/md4c.h"
+#include "text_format.hh"
 
 namespace md4cpp {
 
@@ -154,6 +155,14 @@ const xml_entity_map& get_xml_entity_map();
 const emoji_map& get_emoji_map();
 
 std::string escape_html(string_fragment content);
+
+struct file {
+    string_fragment f_frontmatter;
+    text_format_t f_frontmatter_format{text_format_t::TF_UNKNOWN};
+    string_fragment f_body;
+};
+
+file parse_file(const std::filesystem::path& src, const string_fragment& sf);
 
 namespace literals {
 

@@ -1008,5 +1008,7 @@ void discover_srcs() noexcept;
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept;
 
+::rust::String set_one_time_password() noexcept;
+
 void stop_ext_access() noexcept;
 } // namespace lnav_rs_ext

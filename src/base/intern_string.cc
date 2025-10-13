@@ -724,6 +724,7 @@ string_fragment_producer::to_string()
 {
     auto retval = std::string{};
 
+    retval.reserve(this->estimated_size());
     auto for_res = this->for_each(
         [&retval](string_fragment sf) -> Result<void, std::string> {
             retval.append(sf.data(), sf.length());

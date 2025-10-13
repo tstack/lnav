@@ -914,65 +914,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
 
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
                 if (read_res.isOk()) {
-                    static const auto FRONT_MATTER_RE
-                        = lnav::pcre2pp::code::from_const(
-                            R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
-                            PCRE2_MULTILINE | PCRE2_DOTALL);
-                    thread_local auto md = FRONT_MATTER_RE.create_match_data();
-
                     auto read_file_res = read_res.unwrap();
-                    auto content_sf
-                        = string_fragment::from_str(read_file_res.rfr_content);
-                    std::string frontmatter;
-                    auto frontmatter_format = text_format_t::TF_UNKNOWN;
-
-                    auto cap_res = FRONT_MATTER_RE.capture_from(content_sf)
-                                       .into(md)
-                                       .matches()
-                                       .ignore_error();
-                    if (cap_res) {
-                        if (md[1]) {
-                            frontmatter_format = text_format_t::TF_YAML;
-                            frontmatter = md[1]->to_string();
-                        } else if (md[2]) {
-                            frontmatter_format = text_format_t::TF_TOML;
-                            frontmatter = md[2]->to_string();
-                        }
-                        content_sf = cap_res->f_remaining;
-                    } else if (content_sf.startswith("{")) {
-                        yajlpp_parse_context ypc(
-                            intern_string::lookup(lf->get_filename()));
-                        auto handle
-                            = yajlpp::alloc_handle(&ypc.ypc_callbacks, &ypc);
-
-                        yajl_config(
-                            handle.in(), yajl_allow_trailing_garbage, 1);
-                        ypc.with_ignore_unused(true)
-                            .with_handle(handle.in())
-                            .with_error_reporter(
-                                [&lf](const auto& ypc, const auto& um) {
-                                    log_error(
-                                        "%s: failed to parse JSON front matter "
-                                        "-- %s",
-                                        lf->get_filename().c_str(),
-                                        um.um_reason.al_string.c_str());
-                                });
-                        if (ypc.parse_doc(content_sf)) {
-                            ssize_t consumed = ypc.ypc_total_consumed;
-                            if (consumed < content_sf.length()
-                                && content_sf[consumed] == '\n')
-                            {
-                                frontmatter_format = text_format_t::TF_JSON;
-                                frontmatter = string_fragment::from_str_range(
-                                                  read_file_res.rfr_content,
-                                                  0,
-                                                  consumed)
-                                                  .to_string();
-                                content_sf = content_sf.substr(consumed);
-                            }
-                        }
-                    }
-
+                    auto md_file = md4cpp::parse_file(
+                        lf->get_filename(), read_file_res.rfr_content);
                     log_info("%s: rendering markdown content of size %d",
                              lf->get_basename().c_str(),
                              read_file_res.rfr_content.size());
@@ -982,7 +926,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     if (this->tss_view->tc_interactive) {
                         mdal.add_lnav_script_icons();
                     }
-                    auto parse_res = md4cpp::parse(content_sf, mdal);
+                    auto parse_res = md4cpp::parse(md_file.f_body, mdal);
 
                     iter->fvs_mtime = st.st_mtime;
                     iter->fvs_file_indexed_size = lf->get_index_size();
@@ -997,9 +941,12 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
 
                         iter->fvs_text_source->replace_with(parse_res.unwrap());
 
-                        if (!frontmatter.empty()) {
+                        if (!md_file.f_frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
-                                = {frontmatter_format, frontmatter};
+                                = {
+                                    md_file.f_frontmatter_format,
+                                    md_file.f_frontmatter.to_string(),
+                                };
                         }
 
                         lnav::events::publish(

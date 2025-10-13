@@ -267,7 +267,12 @@ Display
    * - :kbd:`i`
      - Switch to/from the histogram view
    * - :kbd:`Shift` + :kbd:`i`
-     - Switch to/from the histogram view
+     - Switch to/from the histogram view while keeping the time of the focused
+       line in sync
+   * - :kbd:`z`
+     - Zoom in to finer-grained times in the HIST or SPECTRO views.
+   * - :kbd:`Shift` + :kbd:`Z`
+     - Zoom out to larger-grained times in the HIST or SPECTRO views.
    * - :kbd:`v`
      - Switch to/from the SQL result view
    * - :kbd:`Shift` + :kbd:`v`

@@ -90,6 +90,10 @@ your liking.  The options can be changed using the :code:`:config` command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/external-editor
 
+.. _config_external_opener:
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/external-opener
+
 .. _themes:
 
 Theme Definitions

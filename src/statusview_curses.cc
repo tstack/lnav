@@ -179,7 +179,7 @@ statusview_curses::do_update()
                 left += sf.get_width();
             }
 
-            if (val.length() > sf.get_width()) {
+            if (val.utf8_length_or_length() > sf.get_width()) {
                 static constexpr auto ELLIPSIS = "\xE2\x8B\xAF"_frag;
 
                 if (sf.get_width() > 11) {

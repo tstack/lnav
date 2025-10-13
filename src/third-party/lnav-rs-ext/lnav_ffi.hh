@@ -44,6 +44,8 @@ ExecResult execute_external_command(::rust::String,
                                     ::rust::String,
                                     ::rust::String hdrs);
 
+void get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t>& dst);
+
 PollResult longpoll(const PollInput& vs);
 
 void notify_pollers();

@@ -167,6 +167,63 @@ escape_html(string_fragment content)
     return retval;
 }
 
+file
+parse_file(const std::filesystem::path& src, const string_fragment& sf)
+{
+    static const auto FRONTMATTER_RE = lnav::pcre2pp::code::from_const(
+        R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
+        PCRE2_MULTILINE | PCRE2_DOTALL);
+    thread_local auto md = FRONTMATTER_RE.create_match_data();
+
+    auto frontmatter_sf = string_fragment{};
+    auto frontmatter_format = text_format_t::TF_UNKNOWN;
+    auto content_sf = sf;
+
+    auto cap_res = FRONTMATTER_RE.capture_from(content_sf)
+                       .into(md)
+                       .matches()
+                       .ignore_error();
+    if (cap_res) {
+        if (md[1]) {
+            frontmatter_format = text_format_t::TF_YAML;
+            frontmatter_sf = md[1].value();
+        } else if (md[2]) {
+            frontmatter_format = text_format_t::TF_TOML;
+            frontmatter_sf = md[2].value();
+        }
+        content_sf = cap_res->f_remaining;
+    } else if (content_sf.startswith("{")) {
+        yajlpp_parse_context ypc(intern_string::lookup(src));
+        auto handle = yajlpp::alloc_handle(&ypc.ypc_callbacks, &ypc);
+
+        yajl_config(handle.in(), yajl_allow_trailing_garbage, 1);
+        ypc.with_ignore_unused(true)
+            .with_handle(handle.in())
+            .with_error_reporter([&src](const auto& ypc, const auto& um) {
+                log_error(
+                    "%s: failed to parse JSON front matter "
+                    "-- %s",
+                    src.c_str(),
+                    um.um_reason.al_string.c_str());
+            });
+        if (ypc.parse_doc(content_sf)) {
+            ssize_t consumed = ypc.ypc_total_consumed;
+            if (consumed < content_sf.length() && content_sf[consumed] == '\n')
+            {
+                frontmatter_format = text_format_t::TF_JSON;
+                frontmatter_sf = sf.sub_range(0, consumed);
+                content_sf = content_sf.substr(consumed);
+            }
+        }
+    }
+
+    return {
+        frontmatter_sf,
+        frontmatter_format,
+        content_sf,
+    };
+}
+
 struct parse_userdata {
     event_handler& pu_handler;
     std::string pu_error_msg;
@@ -178,9 +235,10 @@ event_handler::set_line_number_from(const char* text)
     if (this->eh_fragment.begin() <= text && text < this->eh_fragment.end()) {
         auto off = text - this->eh_fragment.begin();
 
-        this->eh_tree->visit_overlapping(off, off + 1, [this](const auto& cintv) {
-            this->eh_line_number = cintv.value;
-        });
+        this->eh_tree->visit_overlapping(
+            off, off + 1, [this](const auto& cintv) {
+                this->eh_line_number = cintv.value;
+            });
     }
 }
 

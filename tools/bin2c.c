@@ -106,19 +106,23 @@ process(struct file_meta* fm, FILE* ofile)
 void
 usage()
 {
-    fprintf(stderr, "usage: bin2c [-n name] <output_file> [input_file1 ...]\n");
+    fprintf(stderr, "usage: bin2c [-n name] [-p prefix] <output_file> [input_file1 ...]\n");
     exit(1);
 }
 
 int
 main(int argc, char** argv)
 {
+    const char* prefix = NULL;
     int c;
 
-    while ((c = getopt(argc, argv, "hn:")) != -1) {
+    while ((c = getopt(argc, argv, "hn:p:")) != -1) {
         switch (c) {
             case 'n':
                 name = optarg;
+                break;
+            case 'p':
+                prefix = optarg;
                 break;
             default:
                 usage();
@@ -232,9 +236,13 @@ main(int argc, char** argv)
         if (array) {
             fprintf(cfile, "{ ");
         }
+        const char* bin_name = basename((char*) meta[lpc].fm_name);
+        if (prefix != NULL && strstr(meta[lpc].fm_name, prefix)) {
+            bin_name = meta[lpc].fm_name + strlen(prefix);
+        }
         fprintf(cfile,
                 "\"%s\", %s_data, %d, %d",
-                basename((char*) meta[lpc].fm_name),
+                bin_name,
                 sym,
                 meta[lpc].fm_compressed_size,
                 meta[lpc].fm_size);
