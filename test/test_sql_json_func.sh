@@ -1,5 +1,9 @@
 #! /bin/bash
 
+export TZ=UTC
+export YES_COLOR=1
+export DUMP_CRASH=1
+
 run_cap_test ./drive_sql "select json_concat('[null,', 1.0, 2.0)"
 
 run_cap_test ./drive_sql "select json_concat(json('[null, true, 0]'), 1.0, 2.0)"
@@ -132,3 +136,8 @@ EOF
 run_cap_test ./drive_sql "$GROUP_ARRAY_SELECT_2"
 
 run_cap_test ./drive_sql "SELECT json_group_array(column1) FROM (VALUES (1)) WHERE 0"
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM nextcloud" \
+    -c ":write-json-cols-to -" \
+    ${test_dir}/logfile_nextcloud.0

@@ -633,7 +633,6 @@ public:
 
     yajl_gen_status operator()() { return yajl_gen_null(this->yg_handle); }
 
-private:
     yajl_gen yg_handle;
 };
 

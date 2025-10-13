@@ -31,9 +31,11 @@
 #include <glob.h>
 
 #include "base/attr_line.builder.hh"
+#include "base/cell_container.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/paths.hh"
 #include "bound_tags.hh"
@@ -118,6 +120,78 @@ write_progress(size_t row, size_t total)
 }
 
 static void
+json_write_cell(const db_label_source::header_meta& hm,
+                yajlpp_container_base& container,
+                const lnav::cell_container::cursor& cursor,
+                lnav::text_anonymizer& ta,
+                bool anonymize)
+{
+    switch (cursor.get_type()) {
+        case lnav::cell_type::CT_NULL:
+            container.gen();
+            break;
+        case lnav::cell_type::CT_INTEGER:
+            container.gen(cursor.get_int());
+            break;
+        case lnav::cell_type::CT_FLOAT:
+            container.gen(cursor.get_float());
+            break;
+        case lnav::cell_type::CT_TEXT: {
+            if (hm.hm_sub_type == JSON_SUBTYPE) {
+                unsigned char* err;
+                json_ptr jp("");
+                json_op jo(jp);
+
+                jo.jo_ptr_callbacks = json_op::gen_callbacks;
+                jo.jo_ptr_data = container.gen.yg_handle;
+                auto parse_handle
+                    = yajlpp::alloc_handle(&json_op::ptr_callbacks, &jo);
+
+                const auto json_in = cursor.get_text();
+                switch (yajl_parse(
+                    parse_handle.in(), json_in.udata(), json_in.length()))
+                {
+                    case yajl_status_error:
+                    case yajl_status_client_canceled: {
+                        err = yajl_get_error(parse_handle.in(),
+                                             0,
+                                             json_in.udata(),
+                                             json_in.length());
+                        log_error("unable to parse JSON cell: %s", err);
+                        container.gen(cursor.get_text());
+                        yajl_free_error(parse_handle.in(), err);
+                        return;
+                    }
+                    default:
+                        break;
+                }
+
+                switch (yajl_complete_parse(parse_handle.in())) {
+                    case yajl_status_error:
+                    case yajl_status_client_canceled: {
+                        err = yajl_get_error(parse_handle.in(),
+                                             0,
+                                             json_in.udata(),
+                                             json_in.length());
+                        log_error("unable to parse JSON cell: %s", err);
+                        container.gen(cursor.get_text());
+                        yajl_free_error(parse_handle.in(), err);
+                        return;
+                    }
+                    default:
+                        break;
+                }
+            } else if (anonymize) {
+                container.gen(ta.next(cursor.get_text()));
+            } else {
+                container.gen(cursor.get_text());
+            }
+            break;
+        }
+    }
+}
+
+static void
 json_write_row(exec_context& ec,
                yajl_gen handle,
                int row,
@@ -134,70 +208,7 @@ json_write_row(exec_context& ec,
         const auto& hm = dls.dls_headers[col];
 
         obj_map.gen(hm.hm_name);
-
-        switch (cursor->get_type()) {
-            case lnav::cell_type::CT_NULL:
-                obj_map.gen();
-                break;
-            case lnav::cell_type::CT_INTEGER:
-                obj_map.gen(cursor->get_int());
-                break;
-            case lnav::cell_type::CT_FLOAT:
-                obj_map.gen(cursor->get_float());
-                break;
-            case lnav::cell_type::CT_TEXT: {
-                if (hm.hm_sub_type == JSON_SUBTYPE) {
-                    unsigned char* err;
-                    json_ptr jp("");
-                    json_op jo(jp);
-
-                    jo.jo_ptr_callbacks = json_op::gen_callbacks;
-                    jo.jo_ptr_data = handle;
-                    auto parse_handle
-                        = yajlpp::alloc_handle(&json_op::ptr_callbacks, &jo);
-
-                    const auto json_in = cursor->get_text();
-                    switch (yajl_parse(
-                        parse_handle.in(), json_in.udata(), json_in.length()))
-                    {
-                        case yajl_status_error:
-                        case yajl_status_client_canceled: {
-                            err = yajl_get_error(parse_handle.in(),
-                                                 0,
-                                                 json_in.udata(),
-                                                 json_in.length());
-                            log_error("unable to parse JSON cell: %s", err);
-                            obj_map.gen(cursor->get_text());
-                            yajl_free_error(parse_handle.in(), err);
-                            return;
-                        }
-                        default:
-                            break;
-                    }
-
-                    switch (yajl_complete_parse(parse_handle.in())) {
-                        case yajl_status_error:
-                        case yajl_status_client_canceled: {
-                            err = yajl_get_error(parse_handle.in(),
-                                                 0,
-                                                 json_in.udata(),
-                                                 json_in.length());
-                            log_error("unable to parse JSON cell: %s", err);
-                            obj_map.gen(cursor->get_text());
-                            yajl_free_error(parse_handle.in(), err);
-                            return;
-                        }
-                        default:
-                            break;
-                    }
-                } else if (anonymize) {
-                    obj_map.gen(ta.next(cursor->get_text()));
-                } else {
-                    obj_map.gen(cursor->get_text());
-                }
-                break;
-            }
-        }
+        json_write_cell(hm, obj_map, cursor.value(), ta, anonymize);
     }
 }
 
@@ -273,8 +284,8 @@ com_save_to(exec_context& ec,
     lnav::text_anonymizer ta;
 
     if (args[0] == "write-csv-to" || args[0] == "write-json-to"
-        || args[0] == "write-jsonlines-to" || args[0] == "write-cols-to"
-        || args[0] == "write-table-to")
+        || args[0] == "write-json-cols-to" || args[0] == "write-jsonlines-to"
+        || args[0] == "write-cols-to" || args[0] == "write-table-to")
     {
         if (dls.dls_headers.empty()) {
             return ec.make_error(
@@ -528,6 +539,80 @@ com_save_to(exec_context& ec,
                 line_count += 1;
             }
         }
+    } else if (args[0] == "write-json-cols-to") {
+        yajlpp_gen gen;
+
+        ec.set_output_format(text_format_t::TF_JSON);
+
+        yajl_gen_config(gen, yajl_gen_beautify, 0);
+        yajl_gen_config(gen, yajl_gen_print_callback, yajl_writer, outfile);
+
+        {
+            yajlpp_array root_array(gen);
+
+            fprintf(outfile, "\n    ");
+            for (const auto& [curr_col, hdr] :
+                 lnav::itertools::enumerate(dls.dls_headers))
+            {
+                {
+                    yajlpp_map header_map(gen);
+
+                    header_map.gen("name");
+                    header_map.gen(hdr.hm_name);
+
+                    header_map.gen("type");
+                    switch (hdr.hm_column_type) {
+                        case SQLITE_NULL:
+                            header_map.gen("null");
+                            break;
+                        case SQLITE_INTEGER:
+                            header_map.gen("integer");
+                            break;
+                        case SQLITE_FLOAT:
+                            header_map.gen("float");
+                            break;
+                        case SQLITE3_TEXT:
+                            if (hdr.hm_sub_type == JSON_SUBTYPE) {
+                                header_map.gen("any");
+                            } else {
+                                header_map.gen("string");
+                            }
+                            break;
+                    }
+
+                    header_map.gen("width");
+                    header_map.gen(hdr.hm_column_size);
+
+                    header_map.gen("values");
+                    {
+                        yajlpp_array values_array(gen);
+                        for (size_t row = 0; row < dls.dls_row_cursors.size();
+                             row++)
+                        {
+                            if (ec.ec_dry_run && row > 10) {
+                                break;
+                            }
+
+                            auto cursor = dls.dls_row_cursors[row].sync();
+                            for (size_t col = 0; col < curr_col; col++) {
+                                cursor = cursor->next();
+                            }
+
+                            if (cursor) {
+                                json_write_cell(hdr,
+                                                values_array,
+                                                cursor.value(),
+                                                ta,
+                                                anonymize);
+                            }
+                        }
+                    }
+                }
+                line_count += 1;
+                fprintf(outfile, "\n    ");
+            }
+        }
+        fprintf(outfile, "\n");
     } else if (args[0] == "write-jsonlines-to") {
         ec.set_output_format(text_format_t::TF_JSON);
 
@@ -1849,6 +1934,22 @@ static readline_context::command_t IO_COMMANDS[] = {
 
         help_text(":write-json-to")
             .with_summary("Write SQL results to the given file in JSON format")
+            .with_parameter(
+                help_text("--anonymize", "Anonymize the JSON values").flag())
+            .with_parameter(
+                help_text("path", "The path to the file to write")
+                    .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
+            .with_tags({"io", "scripting", "sql"})
+            .with_example({"To write SQL results as JSON to /tmp/table.json",
+                           "/tmp/table.json"}),
+    },
+    {
+        "write-json-cols-to",
+        com_save_to,
+
+        help_text(":write-json-cols-to")
+            .with_summary("Write SQL results to the given file in a "
+                          "column-oriented JSON format")
             .with_parameter(
                 help_text("--anonymize", "Anonymize the JSON values").flag())
             .with_parameter(

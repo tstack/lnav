@@ -70,6 +70,8 @@ Features:
   tables that lnav creates have been moved to a separate
   in-memory DB, so the main DB should only contain your
   own tables/views/etc...
+* The `:write-json-cols-to` command has been added to
+  write JSON output in a column-oriented fashion.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

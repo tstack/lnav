@@ -962,6 +962,8 @@ dist_noinst_DATA = \
     test_sql_json_func.sh_7c01aaf09078aaa3f23d127f9e03a317dca066de.out \
     test_sql_json_func.sh_80c97b22084a06fd765ad22c935616c578968d07.err \
     test_sql_json_func.sh_80c97b22084a06fd765ad22c935616c578968d07.out \
+    test_sql_json_func.sh_81d32556b9674f394f761c6fb1ba3927a40caa14.err \
+    test_sql_json_func.sh_81d32556b9674f394f761c6fb1ba3927a40caa14.out \
     test_sql_json_func.sh_83d8615c9ce5dfab5e4373570c1b68b8608155f5.err \
     test_sql_json_func.sh_83d8615c9ce5dfab5e4373570c1b68b8608155f5.out \
     test_sql_json_func.sh_8cae9740ddfd6ba4c865fca0117b7bea3bb556e5.err \
