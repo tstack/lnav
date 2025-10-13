@@ -666,6 +666,7 @@ DISTCLEANFILES = \
     ansi-palette-json.h \
     builtin-scripts.h \
     builtin-sh-scripts.h \
+    static-files.h \
     css-color-names-json.h \
     default-config.h \
     default-formats.h \
