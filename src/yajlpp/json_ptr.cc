@@ -65,7 +65,7 @@ handle_integer(void* ctx, long long int integerVal)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), integerVal);
+    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), int64_t{integerVal});
     jpw->inc_array_index();
 
     return 1;
