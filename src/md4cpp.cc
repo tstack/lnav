@@ -135,12 +135,11 @@ get_emoji_map()
     return retval;
 }
 
-std::string
+text_auto_buffer
 escape_html(string_fragment content)
 {
-    std::string retval;
+    auto retval = auto_buffer::alloc(content.length());
 
-    retval.reserve(content.length());
     for (const auto ch : content) {
         switch (ch) {
             case '"':
@@ -164,14 +163,14 @@ escape_html(string_fragment content)
         }
     }
 
-    return retval;
+    return text_auto_buffer{std::move(retval)};
 }
 
 file
 parse_file(const std::filesystem::path& src, const string_fragment& sf)
 {
     static const auto FRONTMATTER_RE = lnav::pcre2pp::code::from_const(
-        R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
+        R"((?:^---\n(.*?)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
         PCRE2_MULTILINE | PCRE2_DOTALL);
     thread_local auto md = FRONTMATTER_RE.create_match_data();
 

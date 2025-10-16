@@ -28,12 +28,15 @@
  */
 
 #include <algorithm>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "apps.cfg.hh"
+#include "apps.hh"
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "base/lnav.ryml.hh"
@@ -42,6 +45,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "external_opener.hh"
+#include "itertools.similar.hh"
 #include "libbase64.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
@@ -565,6 +569,8 @@ version_info()
         root.gen(PACKAGE);
         root.gen("version");
         root.gen(PACKAGE_VERSION);
+        root.gen("pid");
+        root.gen(getpid());
     }
 
     return gen.to_string_fragment().to_string();
@@ -581,8 +587,12 @@ process_md_out(const MD_CHAR* data, MD_SIZE len, void* user_data)
 
 struct static_file_not_found_t {};
 
-using static_file_t
-    = mapbox::util::variant<const bin_src_file*, static_file_not_found_t>;
+struct static_app_file {
+    std::filesystem::path saf_path;
+};
+
+using static_file_t = mapbox::util::
+    variant<const bin_src_file*, static_app_file, static_file_not_found_t>;
 
 static std::optional<const bin_src_file*>
 find_static_src_file(const std::string& path)
@@ -599,9 +609,41 @@ find_static_src_file(const std::string& path)
 static static_file_t
 find_static_file(const std::string& path)
 {
+    static const auto APP_PATH = lnav::pcre2pp::code::from_const(
+        "apps/(?<pub>[^/]+)/(?<name>[^/]+)?(?<path>.*)");
+    static const auto app_cfg = injector::get<lnav::apps::config&>();
+    static const auto ROOT_PATH = std::filesystem::path("/");
+    thread_local auto match_data = lnav::pcre2pp::match_data::unitialized();
+
     auto exact_match = find_static_src_file(path);
     if (exact_match) {
         return static_file_t{exact_match.value()};
+    }
+
+    auto matcher = APP_PATH.capture_from(path).into(match_data);
+    if (matcher.found_p()) {
+        auto pub = match_data["pub"]->to_string();
+        auto name = match_data["name"]->to_string();
+        auto path = std::filesystem::path(match_data["path"]->to_string())
+                        .lexically_normal()
+                        .lexically_relative(ROOT_PATH);
+
+        log_info("static file request: %s/%s %s",
+                 pub.c_str(),
+                 name.c_str(),
+                 path.c_str());
+        auto pub_iter = app_cfg.c_publishers.find(pub);
+        if (pub_iter != app_cfg.c_publishers.end()) {
+            auto app_iter = pub_iter->second.pd_apps.find(name);
+            if (app_iter != pub_iter->second.pd_apps.end()) {
+                auto file_path = app_iter->second.get_root_path() / path;
+                log_trace("  full path: %s", file_path.c_str());
+                std::error_code ec;
+                if (std::filesystem::is_regular_file(file_path, ec)) {
+                    return static_app_file{file_path};
+                }
+            }
+        }
     }
 
     return static_file_t{static_file_not_found_t{}};
@@ -636,33 +678,42 @@ resolve_static_src_file(std::string path)
 }
 
 static void
-render_markdown(const bin_src_file& file, ::rust::Vec<uint8_t>& dst)
+render_markdown(const std::filesystem::path& src,
+                const std::string& content,
+                ::rust::Vec<uint8_t>& dst)
 {
     static const auto HEADER = R"(
 <html>
 <head>
 <title>{title}</title>
+<link rel="stylesheet" href="/assets/css/main.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
+<script src="/assets/js/lnav-client.js"></script>
 </head>
 <body>
+<main class="page-content">
+<div class="wrapper">
 )";
     static const auto FOOTER = R"(
+<script src="/assets/js/lnav-markdown-magic.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
 <script src="/assets/js/prism-lnav.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
-<script src="/assets/js/lnav-client.js"></script>
+</div>
+</main>
+<footer class="site-footer">
+</footer>
 </body>
 </html>
 )"sv;
 
-    auto content = file.to_string_fragment_producer()->to_string();
-    auto md_file = md4cpp::parse_file(file.get_name().to_string(), content);
-    auto title = fmt::format(FMT_STRING("lnav: {}"), file.get_name());
+    auto md_file = md4cpp::parse_file(src, content);
+    auto title = fmt::format(FMT_STRING("lnav: {}"), src);
 
     if (md_file.f_frontmatter_format == text_format_t::TF_YAML) {
         auto tree = ryml::parse_in_arena(
-            lnav::ryml::to_csubstr(file.get_name()),
+            lnav::ryml::to_csubstr(src.string()),
             lnav::ryml::to_csubstr(md_file.f_frontmatter));
         tree["title"] >> title;
     }
@@ -695,13 +746,55 @@ get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
                      name.length(),
                      name.data());
             if (name.endswith(".md")) {
-                render_markdown(*file, dst);
+                render_markdown(
+                    file->get_name().to_string(),
+                    file->to_string_fragment_producer()->to_string(),
+                    dst);
             } else {
                 auto prod = file->to_string_fragment_producer();
                 prod->for_each([&dst](const auto& sf) {
                     std::copy(sf.begin(), sf.end(), std::back_inserter(dst));
                     return Ok();
                 });
+            }
+        },
+        [&dst](const static_app_file& file) {
+            log_info("  matched app file: %s", file.saf_path.c_str());
+            if (file.saf_path.extension() == ".md") {
+                auto read_res = lnav::filesystem::read_file(file.saf_path);
+                if (read_res.isOk()) {
+                    render_markdown(file.saf_path, read_res.unwrap(), dst);
+                } else {
+                    log_error("failed to read app file: %s - %s",
+                              file.saf_path.c_str(),
+                              read_res.unwrapErr().c_str());
+                }
+                return;
+            }
+            auto open_res
+                = lnav::filesystem::open_file(file.saf_path, O_RDONLY);
+            if (open_res.isOk()) {
+                auto fd = open_res.unwrap();
+                char buffer[1024];
+
+                while (true) {
+                    auto read_res = read(fd, buffer, sizeof(buffer));
+                    if (read_res < 0) {
+                        log_error("read of app file failed: %s - %s",
+                                  file.saf_path.c_str(),
+                                  strerror(errno));
+                        break;
+                    }
+                    if (read_res == 0) {
+                        break;
+                    }
+                    std::copy(
+                        buffer, buffer + read_res, std::back_inserter(dst));
+                }
+            } else {
+                log_error("failed to open app file: %s - %s",
+                          file.saf_path.c_str(),
+                          open_res.unwrapErr().c_str());
             }
         },
         [](const static_file_not_found_t&) {
@@ -712,7 +805,8 @@ get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
 ExecResult
 execute_external_command(::rust::String rs_src,
                          ::rust::String rs_script,
-                         ::rust::String hdrs)
+                         ::rust::String hdrs,
+                         ::rust::Vec<VarPair> vars)
 {
     auto src = (std::string) rs_src;
     auto script = (std::string) rs_script;
@@ -720,7 +814,7 @@ execute_external_command(::rust::String rs_src,
 
     log_debug("sending remote command to main looper");
     isc::to<main_looper&, services::main_t>().send_and_wait(
-        [src, script, hdrs, &retval](auto& mlooper) {
+        [src, script, hdrs, vars, &retval](auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());
             db_label_source ext_db_source;
             auto& ec = lnav_data.ld_exec_context;
@@ -734,6 +828,18 @@ execute_external_command(::rust::String rs_src,
             auto pg = ec.with_provenance(exec_context::external_access{src});
             ec.ec_local_vars.push(std::map<std::string, scoped_value_t>{
                 {"headers", scoped_value_t{(std::string) hdrs}}});
+            log_trace("var count: %d", vars.size());
+            for (const auto& var : vars) {
+                auto buf = auto_buffer::alloc(var.value.length());
+                auto outlen = buf.capacity();
+                base64_decode(
+                    var.value.data(), var.value.length(), buf.in(), &outlen, 0);
+                buf.resize(outlen);
+                auto key_str = (std::string) var.expr;
+                log_trace("  %s=%.*s", key_str.c_str(), buf.size(), buf.data());
+                ec.ec_local_vars.top()[key_str]
+                    = scoped_value_t{buf.to_string()};
+            }
             auto script_frag = string_fragment::from_str(script);
             for (const auto& line : script_frag.split_lines()) {
                 auto res = me.push_back(line);
@@ -818,12 +924,8 @@ com_external_access(exec_context& ec,
         sf.set_width(3);
         sf.set_value("\xF0\x9F\x8C\x90");
         sf.on_click = [](auto& top_source) {
-            static const intern_string_t SRC
-                = intern_string::lookup("internal");
-            static const auto LOC = source_location{SRC};
-
             auto& ec = lnav_data.ld_exec_context;
-            ec.execute(LOC, ":external-access-login");
+            ec.execute(INTERNAL_SRC_LOC, ":external-access-login");
         };
     }
 
@@ -850,8 +952,48 @@ com_external_access_login(exec_context& ec,
         return Err(um);
     }
 
+    std::string retval;
+    std::string target;
+    if (args.size() == 2) {
+        auto app_sf = string_fragment::from_str(args[1]);
+        auto split_res = app_sf.split_pair(string_fragment::tag1{'/'});
+        if (!split_res) {
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("invalid app name ").append_quoted(app_sf))
+                      .with_reason(
+                          attr_line_t("Expecting an argument of the form ")
+                              .append("publisher"_variable)
+                              .append("/")
+                              .append("app"_variable));
+            return Err(um);
+        }
+
+        auto poss_apps = lnav::apps::get_app_names();
+        auto iter = std::find(poss_apps.begin(), poss_apps.end(), app_sf);
+        if (iter == poss_apps.end()) {
+            auto similar_apps
+                = poss_apps | lnav::itertools::similar_to(app_sf.to_string());
+            auto um = lnav::console::user_message::error(
+                attr_line_t("unknown app ").append_quoted(app_sf));
+            if (!similar_apps.empty()) {
+                auto note = attr_line_t("Did you mean one of the following: ")
+                                .join(similar_apps, ", ");
+                um.with_note(note);
+            }
+            return Err(um);
+        }
+
+        target = fmt::format(FMT_STRING("&target=/apps/{}/"), app_sf);
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(retval);
+    }
+
     auto otp = (std::string) lnav_rs_ext::set_one_time_password();
-    auto url_with_otp = fmt::format(FMT_STRING("{}/login?otp={}"), url, otp);
+    auto url_with_otp
+        = fmt::format(FMT_STRING("{}/login?otp={}{}"), url, otp, target);
     auto open_res = lnav::external_opener::for_href(url_with_otp);
     if (open_res.isErr()) {
         auto err = open_res.unwrapErr();
@@ -862,7 +1004,7 @@ com_external_access_login(exec_context& ec,
         return Err(um);
     }
 
-    return Ok(std::string());
+    return Ok(retval);
 #else
     return ec.make_error("lnav was compiled without Rust extensions");
 #endif
@@ -981,6 +1123,10 @@ static readline_context::command_t SCRIPTING_COMMANDS[] = {
         help_text(":external-access-login")
             .with_summary("Use the external-opener to open a URL that refers "
                           "to lnav's external-access server")
+            .with_parameter(
+                help_text{"app", "The app to launch"}
+                    .with_format(help_parameter_format_t::HPF_KNOWN_APP)
+                    .optional())
             .with_tags({"scripting"}),
     },
 };

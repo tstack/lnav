@@ -36,6 +36,7 @@
 [36m | [0m[37m[40m    "ui": "theme",                      [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
            [1m$schema[0m [4m<schema-uri>[0m
+           [1mapps[0m[1m/[0m 
            [1mtuning[0m[1m/[0m 
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 
@@ -50,6 +51,7 @@
 [36m | [0m[37m[40m    "ui": "theme"                       [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
            [1m$schema[0m [4m<schema-uri>[0m
+           [1mapps[0m[1m/[0m 
            [1mtuning[0m[1m/[0m 
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 

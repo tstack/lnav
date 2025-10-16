@@ -652,8 +652,9 @@ static const struct json_path_container value_def_handlers = {
         .with_description(
             "A command that will rewrite this field when pretty-printing")
         .for_field(&external_log_format::value_def::vd_rewriter)
-        .with_example(";SELECT :sc_status || ' (' || (SELECT message FROM "
-                      "http_status_codes WHERE status = :sc_status) || ') '"),
+        .with_example(
+            ";SELECT :sc_status || ' (' || (SELECT message FROM "
+            "http_status_codes WHERE status = :sc_status) || ') '"_frag),
 
     yajlpp::property_handler("description")
         .with_synopsis("<string>")
@@ -764,7 +765,7 @@ static const struct json_path_container tag_path_handlers = {
     yajlpp::property_handler("glob")
         .with_synopsis("<glob>")
         .with_description("The glob to match against file paths")
-        .with_example("*/system.log*")
+        .with_example("*/system.log*"_frag)
         .for_field(&format_tag_def::path_restriction::p_glob),
 };
 
@@ -777,7 +778,7 @@ static const struct json_path_container format_tag_def_handlers = {
         .with_synopsis("<regex>")
         .with_description("The regular expression to match against the body of "
                           "the log message")
-        .with_example("\\w+ is down")
+        .with_example("\\w+ is down"_frag)
         .for_field(&format_tag_def::ftd_pattern),
     yajlpp::property_handler("description")
         .with_synopsis("<string>")
@@ -806,7 +807,7 @@ static const struct json_path_container format_partition_def_handlers = {
         .with_synopsis("<regex>")
         .with_description("The regular expression to match against the body of "
                           "the log message")
-        .with_example("\\w+ is down")
+        .with_example("\\w+ is down"_frag)
         .for_field(&format_partition_def::fpd_pattern),
     yajlpp::property_handler("description")
         .with_synopsis("<string>")

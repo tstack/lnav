@@ -183,6 +183,12 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    json_path_handler& with_const(string_fragment value)
+    {
+        this->jph_const_str = value;
+        return *this;
+    }
+
     template<typename T, std::size_t N>
     json_path_handler& with_pattern(const T (&re)[N])
     {
@@ -955,6 +961,50 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
+             std::enable_if_t<LastIs<string_fragment, Args...>::value, bool>
+             = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [](yajlpp_parse_context* ypc,
+                              const string_fragment& value_str,
+                              yajl_string_props_t*) {
+            const auto* jph = ypc->ypc_current_handler;
+
+            jph->validate_string(*ypc, value_str);
+            return 1;
+        };
+        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
+                                           const json_path_handler_base& jph,
+                                           yajl_gen handle) {
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
+
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+
+            if (ygc.ygc_depth) {
+                yajl_gen_string(handle, jph.jph_property);
+            }
+
+            yajlpp_generator gen(handle);
+
+            return gen(field);
+        };
+        this->jph_field_getter
+            = [args...](void* root, std::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
+        return *this;
+    }
+
+    template<typename... Args,
              std::enable_if_t<LastIs<timeval, Args...>::value, bool> = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1567,7 +1617,7 @@ struct json_path_handler : public json_path_handler_base {
 
     json_path_handler& with_children(const json_path_container& container);
 
-    json_path_handler& with_example(const std::string& example)
+    json_path_handler& with_example(const string_fragment example)
     {
         this->jph_examples.emplace_back(example);
         return *this;
@@ -1586,7 +1636,7 @@ struct json_path_container {
         return *this;
     }
 
-    json_path_container& with_schema_id(const std::string& id)
+    json_path_container& with_schema_id(string_fragment id)
     {
         this->jpc_schema_id = id;
         return *this;
@@ -1602,7 +1652,7 @@ struct json_path_container {
 
     void gen_properties(yajlpp_gen_context& ygc) const;
 
-    std::string jpc_schema_id;
+    string_fragment jpc_schema_id;
     std::string jpc_definition_id;
     std::string jpc_description;
     std::vector<json_path_handler> jpc_children;
@@ -1718,7 +1768,7 @@ struct typed_json_path_container : json_path_container {
     {
     }
 
-    typed_json_path_container<T>& with_schema_id2(const std::string& id)
+    typed_json_path_container<T>& with_schema_id2(const string_fragment id)
     {
         this->jpc_schema_id = id;
         return *this;

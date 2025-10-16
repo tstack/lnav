@@ -249,6 +249,8 @@ noinst_HEADERS = \
     third-party/rapidyaml/ryml_all.hpp \
 	all_ids_vtabs.hh \
 	all_logs_vtab.hh \
+	apps.cfg.hh \
+	apps.hh \
 	archive_manager.hh \
 	archive_manager.cfg.hh \
 	big_array.hh \
@@ -477,6 +479,7 @@ libdiag_a_SOURCES = \
 	$(RUST_CPP) \
 	all_logs_vtab.cc \
 	archive_manager.cc \
+	apps.cc \
 	bin2c_rt.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \

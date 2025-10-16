@@ -1,0 +1,2 @@
+Row 0:
+  Column encode('abc & def nl1 ' || char(0x1b) || ' eof', 'html'): abc &amp; def nl1  eof

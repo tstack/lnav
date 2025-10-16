@@ -32,7 +32,9 @@
 #ifndef json_ptr_hh
 #define json_ptr_hh
 
+#include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <stdint.h>
@@ -40,8 +42,11 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.resolver.hh"
+#include "base/result.h"
 #include "base/short_alloc.h"
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
@@ -50,7 +55,10 @@ class json_ptr_walk {
 public:
     const static yajl_callbacks callbacks;
 
-    json_ptr_walk()
+    using walk_callback_t
+        = std::function<void(const std::string& ptr, const scoped_value_t&)>;
+
+    json_ptr_walk(walk_callback_t cb) : jpw_callback(cb)
     {
         this->jpw_handle = yajl_alloc(&callbacks, nullptr, this);
     }
@@ -83,38 +91,51 @@ public:
                           const unsigned char* buffer,
                           ssize_t len);
 
-    void clear() { this->jpw_values.clear(); }
+    void inc_array_index();
 
-    void inc_array_index()
+    void pop_component()
     {
-        if (!this->jpw_array_indexes.empty()
-            && this->jpw_array_indexes.back() != -1)
-        {
-            this->jpw_array_indexes.back() += 1;
+        if (!this->jpw_components.empty()) {
+            this->jpw_components.pop_back();
+            if (this->jpw_components.empty()) {
+                this->jpw_ptr_str.clear();
+            } else {
+                this->jpw_ptr_str.resize(this->jpw_components.back());
+            }
         }
     }
 
-    std::string current_ptr();
+    void push_component_verbatim(const string_fragment& in);
 
-    struct walk_triple {
-        walk_triple(std::string ptr, yajl_type type, std::string value)
-            : wt_ptr(std::move(ptr)), wt_type(type), wt_value(std::move(value))
-        {
-        }
+    void push_component(const string_fragment& in);
 
-        std::string wt_ptr;
-        yajl_type wt_type;
-        std::string wt_value;
-    };
-
-    using walk_list_t = std::vector<walk_triple>;
+    const std::string& current_ptr();
 
     auto_mem<yajl_handle_t> jpw_handle{yajl_free};
-    std::string jpw_error_msg;
-    walk_list_t jpw_values;
-    std::vector<std::string> jpw_keys;
+    std::string jpw_ptr_str;
     std::vector<int32_t> jpw_array_indexes;
+    std::vector<size_t> jpw_components;
+    std::string jpw_error_msg;
     size_t jpw_max_ptr_len{0};
+    walk_callback_t jpw_callback;
+};
+
+struct json_walk_collector {
+    static Result<json_walk_collector, std::string> parse_fully(
+        string_fragment in)
+    {
+        json_walk_collector jwc;
+        json_ptr_walk jpw(
+            [&jwc](const std::string& ptr, const scoped_value_t& sv) {
+                jwc.jwc_values.emplace_back(ptr, sv);
+            });
+        if (jpw.parse_fully(in) == yajl_status_ok) {
+            return Ok(jwc);
+        }
+        return Err(jpw.jpw_error_msg);
+    }
+
+    std::vector<std::pair<std::string, scoped_value_t>> jwc_values;
 };
 
 class json_ptr {
@@ -129,6 +150,7 @@ public:
     };
 
     static string_fragment encode(string_fragment in, stack_buf& buf);
+    static void encode_to(string_fragment in, std::string& out);
 
     static string_fragment decode(string_fragment in, stack_buf& buf);
 

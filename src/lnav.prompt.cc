@@ -33,6 +33,7 @@
 
 #include "lnav.prompt.hh"
 
+#include "apps.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/itertools.hh"
@@ -1368,7 +1369,16 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     [&poss_strs](const std::string& desc) {
                         poss_strs.emplace_back(desc);
                         return false;
-                });
+                    });
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
+            }
+            case help_parameter_format_t::HPF_KNOWN_APP: {
+                auto poss_strs = lnav::apps::get_app_names();
                 retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
                              return attr_line_t().append(x).with_attr_for_all(

@@ -81,46 +81,49 @@ static struct _lnav_config lnav_default_config;
 std::map<intern_string_t, source_location> lnav_config_locations;
 
 static auto a = injector::bind<archive_manager::config>::to_instance(
-    +[]() { return &lnav_config.lc_archive_manager; });
+    +[] { return &lnav_config.lc_archive_manager; });
 
 static auto dtc = injector::bind<date_time_scanner_ns::config>::to_instance(
-    +[]() { return &lnav_config.lc_log_date_time; });
+    +[] { return &lnav_config.lc_log_date_time; });
 
 static auto fvc = injector::bind<file_vtab::config>::to_instance(
-    +[]() { return &lnav_config.lc_file_vtab; });
+    +[] { return &lnav_config.lc_file_vtab; });
 
 static auto lc = injector::bind<lnav::logfile::config>::to_instance(
-    +[]() { return &lnav_config.lc_logfile; });
+    +[] { return &lnav_config.lc_logfile; });
 
 static auto p = injector::bind<lnav::piper::config>::to_instance(
-    +[]() { return &lnav_config.lc_piper; });
+    +[] { return &lnav_config.lc_piper; });
 
 static auto tc = injector::bind<tailer::config>::to_instance(
-    +[]() { return &lnav_config.lc_tailer; });
+    +[] { return &lnav_config.lc_tailer; });
 
 static auto scc = injector::bind<sysclip::config>::to_instance(
-    +[]() { return &lnav_config.lc_sysclip; });
+    +[] { return &lnav_config.lc_sysclip; });
 
 static auto oc = injector::bind<lnav::external_opener::config>::to_instance(
-    +[]() { return &lnav_config.lc_opener; });
+    +[] { return &lnav_config.lc_opener; });
 
 static auto ee = injector::bind<lnav::external_editor::config>::to_instance(
-    +[]() { return &lnav_config.lc_external_editor; });
+    +[] { return &lnav_config.lc_external_editor; });
 
 static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
-    +[]() { return &lnav_config.lc_url_handlers; });
+    +[] { return &lnav_config.lc_url_handlers; });
 
 static auto lsc = injector::bind<logfile_sub_source_ns::config>::to_instance(
-    +[]() { return &lnav_config.lc_log_source; });
+    +[] { return &lnav_config.lc_log_source; });
 
 static auto annoc = injector::bind<lnav::log::annotate::config>::to_instance(
-    +[]() { return &lnav_config.lc_log_annotations; });
+    +[] { return &lnav_config.lc_log_annotations; });
 
 static auto tssc = injector::bind<top_status_source_cfg>::to_instance(
-    +[]() { return &lnav_config.lc_top_status_cfg; });
+    +[] { return &lnav_config.lc_top_status_cfg; });
 
 static auto ltc = injector::bind<lnav::textfile::config>::to_instance(
-    +[]() { return &lnav_config.lc_textfile; });
+    +[] { return &lnav_config.lc_textfile; });
+
+static auto appc = injector::bind<lnav::apps::config>::to_instance(
+    +[] { return &lnav_config.lc_apps; });
 
 lnav_config_listener::~lnav_config_listener()
 {
@@ -485,7 +488,7 @@ install_extra_formats()
             if (yajl_parse(jhandle, buffer, rc) != yajl_status_ok) {
                 auto* msg = yajl_get_error(jhandle, 1, buffer, rc);
                 fprintf(
-                    stderr, "Unable to parse remote-config.json -- %s", msg);
+                    stderr, "Unable to parse remote-config.json -- %s\n", msg);
                 yajl_free_error(jhandle, msg);
                 return;
             }
@@ -493,7 +496,7 @@ install_extra_formats()
         if (yajl_complete_parse(jhandle) != yajl_status_ok) {
             auto* msg = yajl_get_error(jhandle, 0, nullptr, 0);
 
-            fprintf(stderr, "Unable to parse remote-config.json -- %s", msg);
+            fprintf(stderr, "Unable to parse remote-config.json -- %s\n", msg);
             yajl_free_error(jhandle, msg);
         }
     }
@@ -529,7 +532,7 @@ static const struct json_path_container key_command_handlers = {
             "The command to execute for the given key sequence.  Use a script "
             "to execute more complicated operations.")
         .with_pattern("^$|^[:|;].*")
-        .with_example(":goto next hour")
+        .with_example(":goto next hour"_frag)
         .for_field(&key_command::kc_cmd),
     yajlpp::property_handler("alt-msg")
         .with_synopsis("<msg>")
@@ -600,8 +603,8 @@ static const json_path_container movement_handlers = {
     yajlpp::property_handler("mode")
         .with_synopsis("top|cursor")
         .with_enum_values(_movement_values)
-        .with_example("top")
-        .with_example("cursor")
+        .with_example("top"_frag)
+        .with_example("cursor"_frag)
         .with_description("The mode of cursor movement to use.")
         .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
 };
@@ -617,8 +620,8 @@ static const struct json_path_container mouse_handlers = {
     yajlpp::property_handler("mode")
         .with_synopsis("enabled|disabled")
         .with_enum_values(_mouse_mode_values)
-        .with_example("enabled")
-        .with_example("disabled")
+        .with_example("enabled"_frag)
+        .with_example("disabled"_frag)
         .with_description("Overall control for mouse support")
         .for_field<>(&_lnav_config::lc_mouse_mode),
 };
@@ -1246,7 +1249,7 @@ static const json_path_container log_view_handlers = {
             "initially scrolling right; default - display the column "
             "initially.")
         .with_enum_values(_time_column_values)
-        .with_example("enabled")
+        .with_example("enabled"_frag)
         .for_field(&_lnav_config::lc_log_source,
                    &logfile_sub_source_ns::config::c_time_column),
 };
@@ -1262,7 +1265,7 @@ static const json_path_container ui_handlers = {
         .with_synopsis("format")
         .with_description("The format for the clock displayed in "
                           "the top-left corner using strftime(3) conversions")
-        .with_example("%a %b %d %H:%M:%S %Z")
+        .with_example("%a %b %d %H:%M:%S %Z"_frag)
         .for_field(&_lnav_config::lc_top_status_cfg,
                    &top_status_source_cfg::tssc_clock_format),
     yajlpp::property_handler("dim-text")
@@ -1318,8 +1321,8 @@ static const struct json_path_container archive_handlers = {
         .with_description(
             "The time-to-live for unpacked archives, expressed as a duration "
             "(e.g. '3d' for three days)")
-        .with_example("3d")
-        .with_example("12h")
+        .with_example("3d"_frag)
+        .with_example("12h"_frag)
         .for_field(&_lnav_config::lc_archive_manager,
                    &archive_manager::config::amc_cache_ttl),
 };
@@ -1396,8 +1399,8 @@ static const struct json_path_container piper_handlers = {
         .with_description(
             "The time-to-live for captured data, expressed as a duration "
             "(e.g. '3d' for three days)")
-        .with_example("3d")
-        .with_example("12h")
+        .with_example("3d"_frag)
+        .with_example("12h"_frag)
         .for_field(&_lnav_config::lc_piper, &lnav::piper::config::c_ttl),
 };
 
@@ -1484,8 +1487,8 @@ static const struct json_path_container remote_handlers = {
         .with_description("The time-to-live for files copied from remote "
                           "hosts, expressed as a duration "
                           "(e.g. '3d' for three days)")
-        .with_example("3d")
-        .with_example("12h")
+        .with_example("3d"_frag)
+        .with_example("12h"_frag)
         .for_field(&_lnav_config::lc_tailer, &tailer::config::c_cache_ttl),
     yajlpp::property_handler("ssh")
         .with_description(
@@ -1498,12 +1501,12 @@ static const struct json_path_container sysclip_impl_cmd_handlers = json_path_co
     yajlpp::property_handler("write")
         .with_synopsis("<command>")
         .with_description("The command used to write to the clipboard")
-        .with_example("pbcopy")
+        .with_example("pbcopy"_frag)
         .for_field(&sysclip::clip_commands::cc_write),
     yajlpp::property_handler("read")
         .with_synopsis("<command>")
         .with_description("The command used to read from the clipboard")
-        .with_example("pbpaste")
+        .with_example("pbpaste"_frag)
         .for_field(&sysclip::clip_commands::cc_read),
 }
     .with_description("Container for the commands used to read from and write to the system clipboard")
@@ -1514,7 +1517,7 @@ static const struct json_path_container sysclip_impl_handlers = {
         .with_synopsis("<command>")
         .with_description(
             "The command that checks if a clipboard command is available")
-        .with_example("command -v pbcopy")
+        .with_example("command -v pbcopy"_frag)
         .for_field(&sysclip::clipboard::c_test_command),
     yajlpp::property_handler("general")
         .with_description("Commands to work with the general clipboard")
@@ -1557,11 +1560,11 @@ static const json_path_container opener_impl_handlers = {
         .with_synopsis("<command>")
         .with_description(
             "The command that checks if an external opener is available")
-        .with_example("command -v open")
+        .with_example("command -v open"_frag)
         .for_field(&lnav::external_opener::impl::i_test_command),
     yajlpp::property_handler("command")
         .with_description("The command used to open a file or URL")
-        .with_example("open")
+        .with_example("open"_frag)
         .for_field(&lnav::external_opener::impl::i_command),
 };
 
@@ -1595,20 +1598,20 @@ static const json_path_container editor_impl_handlers = {
         .with_synopsis("<command>")
         .with_description(
             "The command that checks if an external editor is available")
-        .with_example("command -v open")
+        .with_example("command -v open"_frag)
         .for_field(&lnav::external_editor::impl::i_test_command),
     yajlpp::property_handler("command")
         .with_description("The command used to open text for editing")
-        .with_example("code -")
+        .with_example("code -"_frag)
         .for_field(&lnav::external_editor::impl::i_command),
     yajlpp::property_handler("config-dir")
         .with_description(
             "The name of the directory where editor configuration is stored")
-        .with_example(".idea")
+        .with_example(".idea"_frag)
         .for_field(&lnav::external_editor::impl::i_config_dir),
     yajlpp::property_handler("prefers")
         .with_description("")
-        .with_example("^.*(?:\\.cpp)$")
+        .with_example("^.*(?:\\.cpp)$"_frag)
         .for_field(&lnav::external_editor::impl::i_prefers),
 };
 
@@ -1800,17 +1803,67 @@ static const struct json_path_container tuning_handlers = {
         .with_children(url_handlers),
 };
 
-const char* DEFAULT_CONFIG_SCHEMA
-    = "https://lnav.org/schemas/config-v1.schema.json";
+static const json_path_container app_def_handlers = {
+    yajlpp::property_handler("root")
+        .with_description("The path to use as the root for files that are a "
+                          "part of this application.  The path is relative to "
+                          "the location of the file containing this property.")
+        .with_pattern("[\\w\\-\\.]+")
+        .for_field(&lnav::apps::app_def::ad_root_path),
+    yajlpp::property_handler("description")
+        .with_description("A description of this application")
+        .for_field(&lnav::apps::app_def::ad_description),
+};
 
-static const std::set<std::string> SUPPORTED_CONFIG_SCHEMAS = {
+static const json_path_container app_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<app_name>[\\w\\-]+)")
+        .with_description("The application definition")
+        .with_obj_provider<lnav::apps::app_def, lnav::apps::pub_def>(
+            [](const yajlpp_provider_context& ypc, lnav::apps::pub_def* pd) {
+                auto name = ypc.get_substr("app_name");
+                auto& def = pd->pd_apps[name];
+
+                return &def;
+            })
+        .with_path_provider<lnav::apps::pub_def>(
+            [](lnav::apps::pub_def* pd, std::vector<std::string>& paths_out) {
+                for (const auto& iter : pd->pd_apps) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(app_def_handlers),
+};
+
+static const json_path_container apps_handlers = {
+    yajlpp::pattern_property_handler("(?<publisher>[\\w\\-]+)")
+        .with_description("The publisher of the application")
+        .with_obj_provider<lnav::apps::pub_def, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto pub = ypc.get_substr("publisher");
+                auto& def = root->lc_apps.c_publishers[pub];
+
+                return &def;
+            })
+        .with_path_provider<_lnav_config>(
+            [](_lnav_config* root, std::vector<std::string>& paths_out) {
+                for (const auto& iter : root->lc_apps.c_publishers) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(app_defs_handlers),
+};
+
+const string_fragment DEFAULT_CONFIG_SCHEMA
+    = "https://lnav.org/schemas/config-v1.schema.json"_frag;
+
+static const std::set<string_fragment> SUPPORTED_CONFIG_SCHEMAS = {
     DEFAULT_CONFIG_SCHEMA,
 };
 
-const char* DEFAULT_FORMAT_SCHEMA
-    = "https://lnav.org/schemas/format-v1.schema.json";
+const string_fragment DEFAULT_FORMAT_SCHEMA
+    = "https://lnav.org/schemas/format-v1.schema.json"_frag;
 
-const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS = {
+const std::set<string_fragment> SUPPORTED_FORMAT_SCHEMAS = {
     DEFAULT_FORMAT_SCHEMA,
 };
 
@@ -1820,7 +1873,7 @@ read_id(yajlpp_parse_context* ypc,
         size_t len,
         yajl_string_props_t*)
 {
-    auto file_id = std::string((const char*) str, len);
+    auto file_id = string_fragment::from_bytes(str, len);
 
     if (SUPPORTED_CONFIG_SCHEMAS.count(file_id) == 0) {
         const auto* handler = ypc->ypc_current_handler;
@@ -1849,6 +1902,10 @@ const json_path_container lnav_config_handlers = json_path_container {
         .with_synopsis("<schema-uri>")
         .with_description("The URI that specifies the schema that describes this type of file")
         .with_example(DEFAULT_CONFIG_SCHEMA),
+
+    yajlpp::property_handler("apps")
+        .with_description("Application definitions")
+        .with_children(apps_handlers),
 
     yajlpp::property_handler("tuning")
         .with_description("Internal settings")
@@ -1965,11 +2022,12 @@ detect_config_file_type(const std::filesystem::path& path)
     }
 
     auto* id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
-    if (id_val != nullptr) {
-        if (SUPPORTED_CONFIG_SCHEMAS.count(id_val->u.string)) {
+    if (id_val != nullptr && id_val->u.string != nullptr) {
+        auto id_str = string_fragment::from_c_str(id_val->u.string);
+        if (SUPPORTED_CONFIG_SCHEMAS.count(id_str)) {
             return Ok(config_file_type::CONFIG);
         }
-        if (SUPPORTED_FORMAT_SCHEMAS.count(id_val->u.string)) {
+        if (SUPPORTED_FORMAT_SCHEMAS.count(id_str)) {
             return Ok(config_file_type::FORMAT);
         }
         return Err(fmt::format(

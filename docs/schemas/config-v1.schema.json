@@ -11,6 +11,41 @@
                 "https://lnav.org/schemas/config-v1.schema.json"
             ]
         },
+        "apps": {
+            "description": "Application definitions",
+            "title": "/apps",
+            "type": "object",
+            "patternProperties": {
+                "^([\\w\\-]+)$": {
+                    "description": "The publisher of the application",
+                    "title": "/apps/<publisher>",
+                    "type": "object",
+                    "patternProperties": {
+                        "^([\\w\\-]+)$": {
+                            "description": "The application definition",
+                            "title": "/apps/<publisher>/<app_name>",
+                            "type": "object",
+                            "properties": {
+                                "root": {
+                                    "title": "/apps/<publisher>/<app_name>/root",
+                                    "description": "The path to use as the root for files that are a part of this application.  The path is relative to the location of the file containing this property.",
+                                    "type": "string",
+                                    "pattern": "[\\w\\-\\.]+"
+                                },
+                                "description": {
+                                    "title": "/apps/<publisher>/<app_name>/description",
+                                    "description": "A description of this application",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
         "tuning": {
             "description": "Internal settings",
             "title": "/tuning",

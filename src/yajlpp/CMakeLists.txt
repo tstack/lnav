@@ -12,7 +12,9 @@ add_library(
 )
 
 target_include_directories(yajlpp PUBLIC . .. ../fmtlib
-        ${CMAKE_CURRENT_BINARY_DIR}/..)
+        ${CMAKE_CURRENT_BINARY_DIR}/..
+        ../third-party
+)
 target_link_libraries(yajlpp
         pcrepp
         yajl
@@ -30,3 +32,6 @@ add_test(NAME test_json_ptr COMMAND test_json_ptr)
 
 add_executable(drive_json_op drive_json_op.cc)
 target_link_libraries(drive_json_op base yajlpp ${lnav_LIBS})
+
+add_executable(drive_json_ptr_walk drive_json_ptr_walk.cc)
+target_link_libraries(drive_json_ptr_walk base yajlpp ${lnav_LIBS})

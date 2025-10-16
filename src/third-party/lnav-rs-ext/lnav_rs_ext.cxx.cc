@@ -1030,9 +1030,9 @@ void lnav_rs_ext$cxxbridge1$notify_pollers() noexcept {
   notify_pollers$();
 }
 
-void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::lnav_rs_ext::ExecResult *return$) noexcept {
-  ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String, ::rust::String) = ::lnav_rs_ext::execute_external_command;
-  new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs)));
+void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::rust::Vec<::lnav_rs_ext::VarPair> const *vars, ::lnav_rs_ext::ExecResult *return$) noexcept {
+  ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String, ::rust::String, ::rust::Vec<::lnav_rs_ext::VarPair>) = ::lnav_rs_ext::execute_external_command;
+  new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs), ::rust::Vec<::lnav_rs_ext::VarPair>(::rust::unsafe_bitcopy, *vars)));
 }
 
 void lnav_rs_ext$cxxbridge1$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {

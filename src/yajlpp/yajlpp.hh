@@ -294,11 +294,12 @@ struct json_path_handler_base {
     size_t jph_min_length{0};
     size_t jph_max_length{INT_MAX};
     const enum_value_t* jph_enum_values{nullptr};
+    string_fragment jph_const_str;
     long long jph_min_value{LLONG_MIN};
     bool jph_optional_wrapper{false};
     bool jph_is_array;
     bool jph_is_pattern_property{false};
-    std::vector<std::string> jph_examples;
+    std::vector<string_fragment> jph_examples;
 
     std::function<int(yajlpp_parse_context*)> jph_null_cb;
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;

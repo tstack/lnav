@@ -42,7 +42,7 @@ static const typed_json_path_container<file_options> options_handlers = {
         .with_synopsis("<zone>")
         .with_description("The default zone for log messages if the timestamp "
                           "does not include a zone.")
-        .with_example("America/Los_Angeles")
+        .with_example("America/Los_Angeles"_frag)
         .for_field(&file_options::fo_default_zone),
 };
 

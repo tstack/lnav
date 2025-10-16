@@ -6,15 +6,36 @@ class LnavExecError extends Error {
 }
 
 const lnav = {
-    exec: async function (script) {
+    version: async function () {
         try {
-            const response = await fetch("/api/exec", { // POST to the current URL
+            const response = await fetch("/api/version");
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const jsonResponse = await response.json();
+            console.log('Server response:', jsonResponse);
+            return jsonResponse;
+        } catch (error) {
+            console.error('Error sending data or receiving response:', error);
+            throw error;
+        }
+    },
+    exec: async function (script, vars = {}) {
+        try {
+            let req = { // POST to the current URL
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/x-lnav-script',
                 },
                 body: script,
-            });
+            };
+            for (const [key, value] of Object.entries(vars)) {
+                if (!key.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/)) {
+                    continue;
+                }
+                req.headers[`X-Lnav-Var-${key}`] = btoa(value.toString());
+            }
+            let response = await fetch("/api/exec", req);
 
             const contentType = response.headers.get('Content-Type');
             if (!response.ok) {

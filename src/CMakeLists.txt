@@ -311,9 +311,12 @@ add_custom_command(
 list(APPEND GEN_SRCS terminfo-files.h terminfo-files.cc)
 
 set(STATIC_FILES
+        static-files/apps/lnav/api-test/index.md
+        static-files/apps/lnav/api-test/lnav-api-test.js
         static-files/index.md
-        static-files/assets/js/chart-demo.js
+        static-files/assets/css/main.css
         static-files/assets/js/lnav-client.js
+        static-files/assets/js/lnav-markdown-magic.js
         static-files/assets/js/prism-lnav.js
 )
 
@@ -500,6 +503,7 @@ add_library(
         ${GEN_SRCS}
         config.h.in
         all_logs_vtab.cc
+        apps.cc
         archive_manager.cc
         document.sections.cc
         bin2c.hh
@@ -640,6 +644,8 @@ add_library(
 
         all_ids_vtabs.hh
         all_logs_vtab.hh
+        apps.cfg.hh
+        apps.hh
         archive_manager.hh
         archive_manager.cfg.hh
         document.sections.hh

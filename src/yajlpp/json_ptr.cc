@@ -29,19 +29,21 @@
  * @file json_ptr.cc
  */
 
+#include "yajlpp/json_ptr.hh"
+
+#include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "base/short_alloc.h"
 #include "config.h"
 #include "fmt/format.h"
 #include "yajl/api/yajl_gen.h"
-#include "yajlpp/json_ptr.hh"
 
 static int
 handle_null(void* ctx)
 {
     auto* jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_null, "null");
+    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), null_value_t{});
     jpw->inc_array_index();
 
     return 1;
@@ -52,21 +54,29 @@ handle_boolean(void* ctx, int boolVal)
 {
     auto* jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_values.emplace_back(jpw->current_ptr(),
-                                 boolVal ? yajl_t_true : yajl_t_false,
-                                 boolVal ? "true" : "false");
+    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), static_cast<bool>(boolVal));
     jpw->inc_array_index();
 
     return 1;
 }
 
 static int
-handle_number(void* ctx, const char* numberVal, size_t numberLen)
+handle_integer(void* ctx, long long int integerVal)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_values.emplace_back(
-        jpw->current_ptr(), yajl_t_number, std::string(numberVal, numberLen));
+    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), integerVal);
+    jpw->inc_array_index();
+
+    return 1;
+}
+
+static int
+handle_float(void* ctx, double floatVal)
+{
+    auto jpw = (json_ptr_walk*) ctx;
+
+    jpw->jpw_callback(jpw->jpw_ptr_str.c_str(), floatVal);
     jpw->inc_array_index();
 
     return 1;
@@ -93,7 +103,7 @@ handle_string(void* ctx,
     gen = yajl_gen_alloc(nullptr);
     yajl_gen_config(gen.in(), yajl_gen_print_callback, appender, &str);
     yajl_gen_string(gen.in(), stringVal, len);
-    jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_string, str);
+    jpw->jpw_callback(jpw->current_ptr(), str);
     jpw->inc_array_index();
 
     return 1;
@@ -104,7 +114,8 @@ handle_start_map(void* ctx)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_keys.emplace_back("");
+    jpw->push_component_verbatim("/"_frag);
+    jpw->push_component_verbatim(""_frag);
     jpw->jpw_array_indexes.push_back(-1);
 
     return 1;
@@ -120,9 +131,8 @@ handle_map_key(void* ctx,
     auto jpw = (json_ptr_walk*) ctx;
     stack_buf allocator;
 
-    jpw->jpw_keys.pop_back();
-    auto encoded_frag = json_ptr::encode(frag, allocator);
-    jpw->jpw_keys.emplace_back(encoded_frag.to_string());
+    jpw->pop_component();
+    jpw->push_component(frag);
 
     return 1;
 }
@@ -132,9 +142,9 @@ handle_end_map(void* ctx)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_keys.pop_back();
+    jpw->pop_component();  // last key
+    jpw->pop_component();  // slash
     jpw->jpw_array_indexes.pop_back();
-
     jpw->inc_array_index();
 
     return 1;
@@ -145,8 +155,12 @@ handle_start_array(void* ctx)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_keys.emplace_back("");
+    jpw->push_component_verbatim("/"_frag);
     jpw->jpw_array_indexes.push_back(0);
+    fmt::format_to(std::back_inserter(jpw->jpw_ptr_str),
+                   FMT_STRING("{}"),
+                   jpw->jpw_array_indexes.back());
+    jpw->jpw_components.emplace_back(jpw->jpw_ptr_str.size());
 
     return 1;
 }
@@ -156,7 +170,8 @@ handle_end_array(void* ctx)
 {
     auto jpw = (json_ptr_walk*) ctx;
 
-    jpw->jpw_keys.pop_back();
+    jpw->pop_component();  // last key
+    jpw->pop_component();  // slash
     jpw->jpw_array_indexes.pop_back();
     jpw->inc_array_index();
 
@@ -166,9 +181,9 @@ handle_end_array(void* ctx)
 const yajl_callbacks json_ptr_walk::callbacks = {
     handle_null,
     handle_boolean,
+    handle_integer,
+    handle_float,
     nullptr,
-    nullptr,
-    handle_number,
     handle_string,
     handle_start_map,
     handle_map_key,
@@ -216,6 +231,30 @@ json_ptr::encode(string_fragment in, stack_buf& buf)
     }
 
     return string_fragment::from_bytes(outbuf, outlen);
+}
+
+void
+json_ptr::encode_to(string_fragment in, std::string& out)
+{
+    for (const auto ch : in) {
+        switch (ch) {
+            case '~':
+                out.push_back('~');
+                out.push_back('0');
+                break;
+            case '/':
+                out.push_back('~');
+                out.push_back('1');
+                break;
+            case '#':
+                out.push_back('~');
+                out.push_back('2');
+                break;
+            default:
+                out.push_back(ch);
+                break;
+        }
+    }
 }
 
 string_fragment
@@ -440,25 +479,26 @@ json_ptr::error_msg() const
     return "";
 }
 
-std::string
+void
+json_ptr_walk::push_component(const string_fragment& in)
+{
+    json_ptr::encode_to(in, this->jpw_ptr_str);
+    this->jpw_components.emplace_back(this->jpw_ptr_str.size());
+}
+
+void
+json_ptr_walk::push_component_verbatim(const string_fragment& in)
+{
+    this->jpw_ptr_str += in;
+    this->jpw_components.emplace_back(this->jpw_ptr_str.size());
+}
+
+const std::string&
 json_ptr_walk::current_ptr()
 {
-    std::string retval;
-
-    for (size_t lpc = 0; lpc < this->jpw_array_indexes.size(); lpc++) {
-        retval.append("/");
-        if (this->jpw_array_indexes[lpc] == -1) {
-            retval.append(this->jpw_keys[lpc]);
-        } else {
-            fmt::format_to(std::back_inserter(retval),
-                           FMT_STRING("{}"),
-                           this->jpw_array_indexes[lpc]);
-        }
-    }
-
-    this->jpw_max_ptr_len = std::max(this->jpw_max_ptr_len, retval.size());
-
-    return retval;
+    this->jpw_max_ptr_len
+        = std::max(this->jpw_max_ptr_len, this->jpw_ptr_str.size());
+    return this->jpw_ptr_str;
 }
 
 void
@@ -479,6 +519,21 @@ json_ptr_walk::update_error_msg(yajl_status status,
             yajl_free_error(this->jpw_handle, msg);
             break;
         }
+    }
+}
+
+void
+json_ptr_walk::inc_array_index()
+{
+    if (!this->jpw_array_indexes.empty()
+        && this->jpw_array_indexes.back() != -1)
+    {
+        this->jpw_array_indexes.back() += 1;
+        this->pop_component();
+        fmt::format_to(std::back_inserter(this->jpw_ptr_str),
+                       FMT_STRING("{}"),
+                       this->jpw_array_indexes.back());
+        this->jpw_components.emplace_back(this->jpw_ptr_str.size());
     }
 }
 

@@ -1,3 +1,12 @@
+async function testVersion() {
+    let result = await lnav.version();
+    document.getElementById('version-result').innerHTML =
+        Prism.highlight(JSON.stringify(result, null, 2),
+            Prism.languages.json, 'json');
+}
+
+document.getElementById('doVersion').addEventListener('click', testVersion);
+
 let previousPollState = null;
 
 async function testPoll() {
@@ -10,7 +19,7 @@ async function testPoll() {
     previousPollState = newPollState.next_input;
 }
 
-document.getElementById('poll').addEventListener('click', testPoll);
+document.getElementById('doPoll').addEventListener('click', testPoll);
 
 async function testExec() {
     const script = document.getElementById('exec-input').value;
@@ -28,4 +37,4 @@ async function testExec() {
     }
 }
 
-document.getElementById('exec').addEventListener('click', testExec);
+document.getElementById('doExec').addEventListener('click', testExec);

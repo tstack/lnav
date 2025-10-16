@@ -43,6 +43,7 @@
 #include "base/cell_container.hh"
 #include "base/lnav.resolver.hh"
 #include "hist_source.hh"
+#include "robin_hood/robin_hood.h"
 #include "textview_curses.hh"
 
 class db_label_source
@@ -144,6 +145,15 @@ public:
         text_align_t hm_align{text_align_t::start};
         text_attrs hm_title_attrs{text_attrs::with_underline()};
         stacked_bar_chart<std::string> hm_chart;
+
+        struct json_column_meta {
+            json_column_meta(size_t index) : jcm_column_index(index) {}
+
+            size_t jcm_column_index;
+        };
+        robin_hood::
+            unordered_map<string_fragment, json_column_meta, frag_hasher>
+                hm_json_columns;
     };
 
     struct row_style {
@@ -167,6 +177,7 @@ public:
     bool dls_row_styles_have_errors{false};
     size_t dls_row_style_column{SIZE_MAX};
     ArenaAlloc::Alloc<char> dls_cell_allocator{1024};
+    ArenaAlloc::Alloc<char> dls_header_allocator{1024};
     string_attrs_t dls_ansi_attrs;
 
     static const unsigned char NULL_STR[];

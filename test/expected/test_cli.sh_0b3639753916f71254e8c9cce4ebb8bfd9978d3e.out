@@ -1,4 +1,12 @@
 {
+    "apps": {
+        "lnav": {
+            "api-test": {
+                "root": "",
+                "description": "Examples of using lnav's external APIs"
+            }
+        }
+    },
     "tuning": {
         "archive-manager": {
             "min-free-space": 33554432,

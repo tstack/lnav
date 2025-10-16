@@ -86,7 +86,7 @@ given, followed by a colon, and then the path to the files, like so::
 For example, to open :file:`/var/log/syslog.log` on "host1.example.com" as the
 user "dean", you would write:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav dean@host1.example.com:/var/log/syslog.log
 
@@ -102,7 +102,7 @@ file.
   `ssh-keys plug <https://snapcraft.io/docs/ssh-keys-interface>`_ using the
   following command:
 
-  .. prompt:: bash
+  .. code-block:: bash
 
     sudo snap connect lnav:ssh-keys
 
@@ -176,7 +176,7 @@ the breadcrumb bar and you can jump to a section with the
 You will probably want to pass the :option:`-q` option to suppress the
 message showing the path to the captured input.
 
-.. prompt:: bash
+.. code-block:: bash
 
    export PAGER="lnav -q"
 

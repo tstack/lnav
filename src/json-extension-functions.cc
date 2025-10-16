@@ -32,8 +32,10 @@
 #include <cstring>
 #include <string>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "config.h"
 #include "mapbox/variant.hpp"
+#include "robin_hood/robin_hood.h"
 #include "scn/scan.h"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"
@@ -766,6 +768,105 @@ sql_json_group_array_final(sqlite3_context* context)
     }
 }
 
+struct json_object_num_context {
+    using obj_map
+        = robin_hood::unordered_map<string_fragment, int64_t, frag_hasher>;
+
+    bool initialized{true};
+    obj_map counts;
+    ArenaAlloc::Alloc<char> alloc;
+
+    int64_t& operator[](string_fragment key)
+    {
+        auto iter = this->counts.find(key);
+        if (iter == this->counts.end()) {
+            key = key.to_owned(this->alloc);
+            iter = this->counts.emplace(key, 0).first;
+        }
+
+        return iter->second;
+    }
+};
+
+void
+sql_json_object_count_of_step(sqlite3_context* ctx,
+                              int argc,
+                              sqlite3_value** argv)
+{
+    auto& jctx = *(json_object_num_context*) sqlite3_aggregate_context(
+        ctx, sizeof(json_object_num_context));
+    if (!jctx.initialized) {
+        new (&jctx) json_object_num_context();
+    }
+    auto str = from_sqlite<string_fragment>()(argc, argv, 0);
+    jctx[str] += 1;
+}
+
+void
+sql_json_object_count_of_final(sqlite3_context* ctx)
+{
+    auto& jctx = *(json_object_num_context*) sqlite3_aggregate_context(
+        ctx, sizeof(json_object_num_context));
+    if (!jctx.initialized) {
+        sqlite3_result_text(ctx, "{}", -1, SQLITE_STATIC);
+        return;
+    }
+
+    yajlpp_gen gen;
+    {
+        yajlpp_map root(gen);
+
+        for (const auto& [key, value] : jctx.counts) {
+            root.gen(key);
+            root.gen(value);
+        }
+    }
+
+    to_sqlite(ctx, json_string(gen));
+
+    jctx.~json_object_num_context();
+}
+
+void
+sql_json_object_sum_of_step(sqlite3_context* ctx,
+                            int argc,
+                            sqlite3_value** argv)
+{
+    auto& jctx = *(json_object_num_context*) sqlite3_aggregate_context(
+        ctx, sizeof(json_object_num_context));
+    if (!jctx.initialized) {
+        new (&jctx) json_object_num_context();
+    }
+    auto str = from_sqlite<string_fragment>()(argc, argv, 0);
+    auto val = sqlite3_value_int64(argv[1]);
+    jctx[str] += val;
+}
+
+void
+sql_json_object_sum_of_final(sqlite3_context* ctx)
+{
+    auto& jctx = *(json_object_num_context*) sqlite3_aggregate_context(
+        ctx, sizeof(json_object_num_context));
+    if (!jctx.initialized) {
+        sqlite3_result_text(ctx, "{}", -1, SQLITE_STATIC);
+        return;
+    }
+
+    yajlpp_gen gen;
+    {
+        yajlpp_map root(gen);
+
+        for (const auto& [key, value] : jctx.counts) {
+            root.gen(key);
+            root.gen(value);
+        }
+    }
+
+    to_sqlite(ctx, json_string(gen));
+
+    jctx.~json_object_num_context();
+}
+
 }  // namespace
 
 int
@@ -932,6 +1033,50 @@ json_extension_functions(struct FuncDef** basic_funcs,
                     "SELECT json_group_array(column1) FROM (VALUES "
                     "(1), (2), (3))",
                 }),
+        },
+
+        {
+            "json_object_count_of",
+            1,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC
+
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
+            0,
+            sql_json_object_count_of_step,
+            sql_json_object_count_of_final,
+            help_text("json_object_count_of")
+                .sql_function()
+                .with_prql_path({"json", "object_count_of"})
+                .with_summary(
+                    "Count the number of times the argument has been seen")
+                .with_parameter({"value", "The value to count in the object"})
+                .with_example({
+                    "To count the number of message for each level",
+                    "SELECT json_object_count_of(log_level) FROM "
+                    "lnav_example_log",
+                }),
+        },
+        {
+            "json_object_sum_of",
+            2,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC
+
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
+            0,
+            sql_json_object_sum_of_step,
+            sql_json_object_sum_of_final,
+            help_text("json_object_sum_of")
+                .sql_function()
+                .with_prql_path({"json", "object_sum_of"})
+                .with_summary("Sum values for an associated identifier")
+                .with_parameter({"id", "The identifier to track"})
+                .with_parameter({"value", "The value to sum"}),
         },
 
         {nullptr},

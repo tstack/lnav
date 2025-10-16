@@ -1274,7 +1274,7 @@ encode(*value*, *algorithm*)
 
   **Parameters**
     * **value\*** --- The value to encode
-    * **algorithm\*** --- One of the following encoding algorithms: base64, hex, uri
+    * **algorithm\*** --- One of the following encoding algorithms: base64, hex, uri, html
 
   **Examples**
     To base64-encode 'Hello, World!':
@@ -2312,6 +2312,47 @@ json_object(*N*, *V*)
 
   **See Also**
     :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_object_count_of:
+
+json_object_count_of(*value*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Count the number of times the argument has been seen
+
+  **PRQL Name**: json.object_count_of
+
+  **Parameters**
+    * **value\*** --- The value to count in the object
+
+  **Examples**
+    To count the number of message for each level:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_object_count_of(log_level) FROM lnav_example_log
+      {"info":1,"error":1,"debug":1,"warn":1}
+
+
+----
+
+
+.. _json_object_sum_of:
+
+json_object_sum_of(*id*, *value*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Sum values for an associated identifier
+
+  **PRQL Name**: json.object_sum_of
+
+  **Parameters**
+    * **id\*** --- The identifier to track
+    * **value\*** --- The value to sum
+
 
 ----
 

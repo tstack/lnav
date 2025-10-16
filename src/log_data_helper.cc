@@ -135,15 +135,12 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
                         continue;
                     }
 
-                    json_ptr_walk jpw;
+                    auto parse_res = json_walk_collector::parse_fully(
+                        ldh_line_value.text_value_fragment());
 
-                    if (jpw.parse(ldh_line_value.text_value(),
-                                  ldh_line_value.text_length())
-                            == yajl_status_ok
-                        && jpw.complete_parse() == yajl_status_ok)
-                    {
+                    if (parse_res.isOk()) {
                         this->ldh_json_pairs[ldh_line_value.lv_meta.lvm_name]
-                            = jpw.jpw_values;
+                            = parse_res.unwrap();
                     }
                     break;
                 }
@@ -303,10 +300,10 @@ log_data_helper::format_json_getter(const intern_string_t field, int index)
     std::string retval;
 
     auto qname = sql_quote_ident(field.get());
-    retval
-        = lnav::sql::mprintf("jget(%s,%Q)",
-                             qname.in(),
-                             this->ldh_json_pairs[field][index].wt_ptr.c_str());
+    retval = lnav::sql::mprintf(
+        "jget(%s,%Q)",
+        qname.in(),
+        this->ldh_json_pairs[field].jwc_values[index].first.c_str());
 
     return retval;
 }

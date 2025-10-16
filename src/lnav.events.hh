@@ -30,10 +30,12 @@
 #ifndef lnav_events_hh
 #define lnav_events_hh
 
+#include <map>
 #include <string>
 
 #include <sqlite3.h>
 
+#include "base/intern_string.hh"
 #include "base/lnav.resolver.hh"
 #include "yajlpp/yajlpp.hh"
 
@@ -43,18 +45,18 @@ namespace file {
 
 struct open {
     std::string o_filename;
-    std::string o_schema{SCHEMA_ID};
+    string_fragment o_schema{SCHEMA_ID};
 
-    static const std::string SCHEMA_ID;
+    static const string_fragment SCHEMA_ID;
     static const typed_json_path_container<open> handlers;
 };
 
 struct format_detected {
     std::string fd_filename;
     std::string fd_format;
-    std::string fd_schema{SCHEMA_ID};
+    string_fragment fd_schema{SCHEMA_ID};
 
-    static const std::string SCHEMA_ID;
+    static const string_fragment SCHEMA_ID;
     static const typed_json_path_container<format_detected> handlers;
 };
 
@@ -69,9 +71,9 @@ struct msg_detected {
     uint32_t md_line_number;
     std::string md_timestamp;
     std::map<std::string, scoped_value_t> md_values;
-    std::string md_schema{SCHEMA_ID};
+    string_fragment md_schema{SCHEMA_ID};
 
-    static const std::string SCHEMA_ID;
+    static const string_fragment SCHEMA_ID;
     static const typed_json_path_container<msg_detected> handlers;
 };
 
@@ -80,9 +82,9 @@ struct msg_detected {
 namespace session {
 
 struct loaded {
-    std::string l_schema{SCHEMA_ID};
+    string_fragment l_schema{SCHEMA_ID};
 
-    static const std::string SCHEMA_ID;
+    static const string_fragment SCHEMA_ID;
     static const typed_json_path_container<loaded> handlers;
 };
 

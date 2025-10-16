@@ -413,6 +413,8 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
                     child.term_signal(),
                     err_reader1.get()));
             } else if (child.exit_status() != 0) {
+                auto escaped = md4cpp::escape_html(err_reader1.get());
+                auto escaped_sf = to_string_fragment(escaped.inner);
                 content.append(fmt::format(
                     FMT_STRING(
                         "\n\n<span "
@@ -421,7 +423,7 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
                         "with status {}:</span>\n\n<pre>{}</pre>"),
                     handler,
                     child.exit_status(),
-                    md4cpp::escape_html(err_reader1.get())));
+                    escaped_sf));
             }
             line_anno.la_pairs[anno.to_string()] = content;
             lnav_data.ld_views[LNV_LOG].reload_data();

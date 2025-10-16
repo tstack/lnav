@@ -45,11 +45,16 @@ multiplex_matcher::match(const string_fragment& line)
     const auto& cfg = injector::get<const config&>();
 
     if (line.startswith("{") && line.endswith("}\n")) {
-        json_ptr_walk jpw;
+        auto parse_res = json_walk_collector::parse_fully(line);
 
-        jpw.parse_fully(line);
+        if (parse_res.isErr()) {
+            log_error("unable to parse JSON-line: %s",
+                      parse_res.unwrapErr().c_str());
+            return not_found{};
+        }
 
         log_info("trying JSON demux");
+        auto jwc = parse_res.unwrap();
         for (const auto& demux_pair : cfg.c_demux_json_definitions) {
             log_info(" JSON demuxer: %s", demux_pair.first.c_str());
             const auto& djd = demux_pair.second;
@@ -57,8 +62,8 @@ multiplex_matcher::match(const string_fragment& line)
             auto found_mux_id = false;
             auto found_body = false;
 
-            for (const auto& triple : jpw.jpw_values) {
-                auto ptr = string_fragment::from_str(triple.wt_ptr).substr(1);
+            for (const auto& triple : jwc.jwc_values) {
+                auto ptr = string_fragment::from_str(triple.first).substr(1);
 
                 if (!djd.djd_timestamp.empty() && ptr == djd.djd_timestamp) {
                     found_timestamp = true;

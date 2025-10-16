@@ -42,7 +42,8 @@ enum class LnavLogLevel : std::uint8_t;
 
 ExecResult execute_external_command(::rust::String,
                                     ::rust::String,
-                                    ::rust::String hdrs);
+                                    ::rust::String hdrs,
+                                    ::rust::Vec<VarPair> vars);
 
 void get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t>& dst);
 

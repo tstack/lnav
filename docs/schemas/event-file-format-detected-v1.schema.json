@@ -7,9 +7,7 @@
         "$schema": {
             "title": "/$schema",
             "type": "string",
-            "examples": [
-                "https://lnav.org/event-file-format-detected-v1.schema.json"
-            ]
+            "const": "https://lnav.org/event-file-format-detected-v1.schema.json"
         },
         "filename": {
             "title": "/filename",

@@ -44,6 +44,18 @@
 using scoped_value_t = mapbox::util::
     variant<std::string, string_fragment, int64_t, double, null_value_t, bool>;
 
+inline
+std::optional<double> to_double(const scoped_value_t& sv)
+{
+    std::optional<double> retval;
+    if (sv.is<int64_t>()) {
+        retval = sv.get<int64_t>();
+    } else if (sv.is<double>()) {
+        retval = sv.get<double>();
+    }
+    return retval;
+}
+
 namespace fmt {
 template<>
 struct formatter<scoped_value_t> : formatter<std::string> {

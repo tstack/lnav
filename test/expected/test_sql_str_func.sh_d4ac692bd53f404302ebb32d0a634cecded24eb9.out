@@ -1,0 +1,4 @@
+Row 0:
+  Column decode('abc &amp; def nl1 &#10; nl2 &#x0a; eof', 'html'): abc & def nl1 
+ nl2 
+ eof

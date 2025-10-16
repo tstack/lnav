@@ -98,6 +98,7 @@ enum class help_parameter_format_t {
     HPF_HIDDEN_FILES,
     HPF_BREAKPOINT,
     HPF_KNOWN_BREAKPOINT,
+    HPF_KNOWN_APP,
 };
 
 struct help_example {

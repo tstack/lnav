@@ -345,7 +345,8 @@ parse_for(mode_t mode,
                     case help_parameter_format_t::HPF_VISIBLE_FILES:
                     case help_parameter_format_t::HPF_HIDDEN_FILES:
                     case help_parameter_format_t::HPF_BREAKPOINT:
-                    case help_parameter_format_t::HPF_KNOWN_BREAKPOINT: {
+                    case help_parameter_format_t::HPF_KNOWN_BREAKPOINT:
+                    case help_parameter_format_t::HPF_KNOWN_APP: {
                         if (!param.ht_enum_values.empty()) {
                             auto enum_iter
                                 = std::find(param.ht_enum_values.begin(),

@@ -119,6 +119,14 @@ Options
 Subcommands
 ^^^^^^^^^^^
 
+.. option:: apps create <name>
+
+    Create a new app with the given name.  This command will create the
+    configuration directory, an :file:`app.json` configuration file,
+    and an :file:`app-files` directory with a basic :file:`index.md`.
+    The publisher value will be taken from the :envvar:`USER` environment
+    variable or the current user name.
+
 .. option:: config get
 
    Print out the current configuration as JSON on the standard output.
@@ -206,18 +214,18 @@ Examples
 
 To load and follow the system syslog file:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav
 
 To load all of the files in :file:`/var/log`:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav /var/log
 
 To watch the output of make:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav -e 'make -j4'

@@ -458,7 +458,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     for (const auto& jpairs_map : this->fos_log_helper.ldh_json_pairs) {
         const auto& jpairs = jpairs_map.second;
 
-        for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
+        for (size_t lpc = 0; lpc < jpairs.jwc_values.size(); lpc++) {
             auto key_line = attr_line_t("   ")
                                 .append(this->fos_log_helper.format_json_getter(
                                     jpairs_map.first, lpc))
@@ -466,10 +466,12 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             readline_sql_highlighter(
                 key_line, lnav::sql::dialect::sqlite, std::nullopt);
             auto key_size = key_line.length();
-            key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
+            key_line.append(" = ").append(
+                scrub_ws(fmt::to_string(jpairs.jwc_values[lpc].second)));
             this->fos_row_to_field_meta.emplace(
                 this->fos_lines.size(),
-                row_info{std::nullopt, jpairs[lpc].wt_value});
+                row_info{std::nullopt,
+                         fmt::to_string(jpairs.jwc_values[lpc].second)});
             this->fos_lines.emplace_back(key_line);
             this->add_key_line_attrs(key_size - 3);
         }

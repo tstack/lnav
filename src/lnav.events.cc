@@ -36,25 +36,25 @@ namespace lnav::events {
 
 namespace file {
 
-const std::string open::SCHEMA_ID
-    = "https://lnav.org/event-file-open-v1.schema.json";
+const string_fragment open::SCHEMA_ID
+    = "https://lnav.org/event-file-open-v1.schema.json"_frag;
 
 const typed_json_path_container<open> open::handlers = typed_json_path_container<open>{
     yajlpp::property_handler("$schema").for_field(&open::o_schema)
-        .with_example(open::SCHEMA_ID),
+        .with_const(SCHEMA_ID),
     yajlpp::property_handler("filename")
         .with_description("The path of the file that was opened")
         .for_field(&open::o_filename),
 }
-    .with_schema_id2(open::SCHEMA_ID)
+    .with_schema_id2(SCHEMA_ID)
     .with_description2("Event fired when a file is opened.");
 
-const std::string format_detected::SCHEMA_ID
-    = "https://lnav.org/event-file-format-detected-v1.schema.json";
+const string_fragment format_detected::SCHEMA_ID
+    = "https://lnav.org/event-file-format-detected-v1.schema.json"_frag;
 
 const typed_json_path_container<format_detected> format_detected::handlers = typed_json_path_container<format_detected>{
     yajlpp::property_handler("$schema").for_field(&format_detected::fd_schema)
-        .with_example(format_detected::SCHEMA_ID),
+        .with_const(SCHEMA_ID),
     yajlpp::property_handler("filename")
         .with_description("The path of the file for which a matching format was found")
         .for_field(&format_detected::fd_filename),
@@ -62,15 +62,15 @@ const typed_json_path_container<format_detected> format_detected::handlers = typ
         .with_description("The name of the format")
         .for_field(&format_detected::fd_format),
 }
-    .with_schema_id2(format_detected::SCHEMA_ID)
+    .with_schema_id2(SCHEMA_ID)
     .with_description2("Event fired when a log format is detected for a file.");
 
 }  // namespace file
 
 namespace log {
 
-const std::string msg_detected::SCHEMA_ID
-    = "https://lnav.org/event-log-msg-detected-v1.schema.json";
+const string_fragment msg_detected::SCHEMA_ID
+    = "https://lnav.org/event-log-msg-detected-v1.schema.json"_frag;
 
 static const json_path_container msg_values_handlers = {
     yajlpp::pattern_property_handler("(?<name>[\\w\\-]+)")
@@ -80,7 +80,7 @@ static const json_path_container msg_values_handlers = {
 
 const typed_json_path_container<msg_detected> msg_detected::handlers = typed_json_path_container<msg_detected>{
     yajlpp::property_handler("$schema").for_field(&msg_detected::md_schema)
-        .with_example(msg_detected::SCHEMA_ID),
+        .with_const(SCHEMA_ID),
     yajlpp::property_handler("watch-name")
         .with_description("The name of the watch expression that matched this log message")
         .for_field(&msg_detected::md_watch_name),
@@ -107,14 +107,14 @@ const typed_json_path_container<msg_detected> msg_detected::handlers = typed_jso
 
 namespace session {
 
-const std::string loaded::SCHEMA_ID
-    = "https://lnav.org/event-session-loaded-v1.schema.json";
+const string_fragment loaded::SCHEMA_ID
+    = "https://lnav.org/event-session-loaded-v1.schema.json"_frag;
 
 const typed_json_path_container<loaded> loaded::handlers = typed_json_path_container<loaded>{
     yajlpp::property_handler("$schema").for_field(&loaded::l_schema)
-        .with_example(loaded::SCHEMA_ID),
+        .with_example(SCHEMA_ID),
 }
-    .with_schema_id2(loaded::SCHEMA_ID)
+    .with_schema_id2(SCHEMA_ID)
     .with_description2("Event fired when a session is loaded.");
 
 }  // namespace session

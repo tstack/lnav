@@ -646,10 +646,13 @@
 
 .. _external_access_login:
 
-:external-access-login
-^^^^^^^^^^^^^^^^^^^^^^
+:external-access-login *\[app\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Use the external-opener to open a URL that refers to lnav's external-access server
+
+  **Parameters**
+    * **app** --- The app to launch
 
   **See Also**
     :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
@@ -1710,7 +1713,7 @@
 :write-json-cols-to *\[--anonymize\]* *path*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Write SQL results to the given file in a column-oriented JSON format
+  Write SQL results to the given file in a column-oriented JSON format.  In addition, columns that contain JSON values will be flattened to their own columns.  For example, a column containing values shaped like `{"a": 1, "b": 2}` will be split into two separate columns named 'a' and 'b'. This format can be useful for feeding into charting libraries.
 
   **Parameters**
     * **--anonymize** --- Anonymize the JSON values

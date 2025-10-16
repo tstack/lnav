@@ -38,6 +38,7 @@ static const char* HEADER_FMT
 
 struct file_meta {
     const char* fm_name;
+    const char* fm_internal_path;
     unsigned int fm_compressed_size;
     unsigned int fm_size;
 };
@@ -78,14 +79,14 @@ process(struct file_meta* fm, FILE* ofile)
     }
 
     uLongf destLen = st.st_size + 1024;
-    int cres = compress(dest, &destLen, buf, st.st_size);
+    int cres = compress2(dest, &destLen, buf, st.st_size, Z_BEST_COMPRESSION);
     assert(cres == Z_OK);
     fm->fm_compressed_size = destLen;
 
     int c, col = 1;
     char sym[1024];
 
-    symname(sym, basename((char*) fm->fm_name));
+    symname(sym, fm->fm_internal_path);
     fprintf(ofile, "static const unsigned char %s_data[] = {\n", sym);
     for (int lpc = 0; lpc < destLen; lpc++) {
         c = dest[lpc];
@@ -224,6 +225,13 @@ main(int argc, char** argv)
     memset(meta, 0, sizeof(struct file_meta) * argc);
     for (int lpc = 0; lpc < argc; lpc++) {
         meta[lpc].fm_name = argv[lpc];
+        const char* slash = strrchr(meta[lpc].fm_name, '/');
+        const char* bin_name = slash ? slash + 1 : meta[lpc].fm_name;
+        if (prefix != NULL && strstr(meta[lpc].fm_name, prefix)) {
+            bin_name = meta[lpc].fm_name + strlen(prefix);
+        }
+        meta[lpc].fm_internal_path = bin_name;
+
         process(&meta[lpc], cfile);
     }
 
@@ -231,18 +239,14 @@ main(int argc, char** argv)
     for (int lpc = 0; lpc < argc; lpc++) {
         char sym[1024];
 
-        symname(sym, basename((char*) meta[lpc].fm_name));
+        symname(sym, meta[lpc].fm_internal_path);
         fprintf(cfile, "    ");
         if (array) {
             fprintf(cfile, "{ ");
         }
-        const char* bin_name = basename((char*) meta[lpc].fm_name);
-        if (prefix != NULL && strstr(meta[lpc].fm_name, prefix)) {
-            bin_name = meta[lpc].fm_name + strlen(prefix);
-        }
         fprintf(cfile,
                 "\"%s\", %s_data, %d, %d",
-                bin_name,
+                meta[lpc].fm_internal_path,
                 sym,
                 meta[lpc].fm_compressed_size,
                 meta[lpc].fm_size);

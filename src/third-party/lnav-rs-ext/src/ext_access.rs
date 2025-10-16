@@ -1,4 +1,6 @@
-use crate::ffi::{execute_external_command, get_static_file, longpoll, version_info, PollInput};
+use crate::ffi::{
+    execute_external_command, get_static_file, longpoll, version_info, PollInput, VarPair,
+};
 use cookie::Cookie;
 use rouille::input::cookies;
 use rouille::{accept, input, router, try_or_400, Request, Response, Server};
@@ -39,7 +41,8 @@ fn do_login(request: &Request) -> Response {
                 let session_cookie = Cookie::build(("lnav_session_id", session_id))
                     .path("/")
                     .build();
-                return Response::redirect_302("/")
+                let target = request.get_param("target").unwrap_or_else(|| "/".to_string());
+                return Response::redirect_302(target)
                     .with_additional_header("Set-Cookie", session_cookie.to_string());
             } else {
                 log::info!("login otp mismatch");
@@ -153,8 +156,17 @@ fn do_exec(request: &Request) -> Response {
             .collect::<BTreeMap<String, String>>(),
     )
     .unwrap();
+    let vars: Vec<VarPair> = request
+        .headers()
+        .filter_map(|(name, value)| {
+            Some(VarPair {
+                expr: name.strip_prefix("X-Lnav-Var-")?.to_string(),
+                value: value.to_string(),
+            })
+        })
+        .collect();
     let src = format!("{}", request.remote_addr());
-    let res = execute_external_command(src, body, hdrs);
+    let res = execute_external_command(src, body, hdrs, vars);
 
     if res.error.msg.is_empty() {
         let raw_fd = RawFd::from(res.content_fd);
@@ -167,8 +179,7 @@ fn do_exec(request: &Request) -> Response {
 }
 
 fn do_poll(request: &Request) -> Response {
-    let body = try_or_400!(input::json_input::<Option<PollInput>>(request))
-        .unwrap_or_default();
+    let body = try_or_400!(input::json_input::<Option<PollInput>>(request)).unwrap_or_default();
     let vs = longpoll(&body);
 
     Response::json(&vs)
@@ -228,7 +239,7 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
         }
 
         router!(request,
-            (GET) (/version) => {
+            (GET) (/api/version) => {
                 Response::from_data("application/json; charset=utf-8", version_info())
             },
 

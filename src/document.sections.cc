@@ -559,12 +559,10 @@ public:
                     auto split_res = sf.split_pair(string_fragment::tag1{'\n'});
                     auto file1 = split_res->first.consume_n(4).value();
                     auto file2 = split_res->second.consume_n(4).value();
-                    if ((file1 == "/dev/null" || file1.startswith("a/"))
-                        && file2.startswith("b/"))
-                    {
-                        if (file1 != "/dev/null") {
-                            file1 = file1.consume_n(2).value();
-                        }
+                    if (file1 != "/dev/null") {
+                        file1 = file1.consume_n(2).value();
+                    }
+                    if (file2 != "/dev/null") {
                         file2 = file2.consume_n(2).value();
                     }
                     this->sw_line.get_attrs().emplace_back(
@@ -573,18 +571,18 @@ public:
                             tokenize_res->tr_capture.c_begin,
                         },
                         VC_ROLE.value(role_t::VCR_H1));
-                    if (file1 == "/dev/null" || file1 == file2) {
+                    if (file2 == "/dev/null") {
                         this->sw_line.get_attrs().emplace_back(
                             line_range{
-                                file2.sf_begin,
-                                file2.sf_end,
+                                file1.sf_begin,
+                                file1.sf_end,
                             },
                             VC_ROLE.value(role_t::VCR_H1));
                     } else {
                         this->sw_line.get_attrs().emplace_back(
                             line_range{
-                                inner_cap.c_begin,
-                                inner_cap.c_end,
+                                file2.sf_begin,
+                                file2.sf_end,
                             },
                             VC_ROLE.value(role_t::VCR_H1));
                     }

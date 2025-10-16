@@ -9,8 +9,12 @@ enabled with the :ref:`external_access` command.  Once the port is open,
 HTTP requests can be sent to access static files, execute commands, or
 poll for changes.  When the external port is open, a globe icon (🌐) is
 displayed in the top-right corner.  Clicking that icon will open a URL
-in a browser and log you into the server.  The `:external-access-login`
+in a browser and log you into the server.  The :ref:`external_access_login`
 command can also be used to login.
+
+.. note:: The server only binds to :code:`localhost`, so it will not
+    be accessible over the network.  If you need to access lnav
+    remotely, consider using SSH forwarding.
 
 Authentication
 --------------
@@ -34,10 +38,15 @@ Endpoints
 
 The following routes are available:
 
+* | :code:`GET /api/version`
+
+  Get the version of the lnav instance.
+
 * | :code:`POST /api/exec`
   | :code:`Content-Type: text/x-lnav-script`
 
   Execute an lnav :ref:`script<scripts>` and receive the resulting output.
+
 * | :code:`POST /api/poll`
   | :code:`Content-Type: application/json`
 
@@ -52,8 +61,39 @@ The following routes are available:
     view.
   * :code:`background_tasks` - A list of background task progress updates.
 
+Apps
+----
+
+To support custom user-interfaces on top of lnav, "apps" can be installed
+that are reachable via the external access server.  These browser-based apps
+can provide a rich interface for executing queries and presenting
+their results.  For example, a dashboard for :code:`access_log`
+files can display multiple charts for interesting request statistics.
+Apps are reachable from the landing page for the external access server
+or you can open one directly by passing its ID to the
+:ref:`external_access_login` command.  An app ID has the form
+:code:`<publisher>/<app-name>` (e.g. :code:`lnav/api-test`).
+
+Creating an app can be done using the :ref:`management CLI<management_cli>`,
+like so:
+
+.. code-block:: bash
+
+    lnav -m apps create mydash
+
+This command creates a directory in the :file:`configs` directory and
+populates it with the necessary configuration file and a sample
+:file:`index.md` file.
+
 Test Harness
 ^^^^^^^^^^^^
 
-The landing page for the server contains a test harness to exercise these
-API endpoints.
+The :code:`lnav/api-test` app is included by default as a demonstration of the
+external access server APIs.
+
+Reference
+^^^^^^^^^
+
+The following are the configuration properties necessary to define an app:
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/apps

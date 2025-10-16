@@ -119,6 +119,24 @@ write_progress(size_t row, size_t total)
     return lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
 }
 
+static std::string
+json_ptr_to_title(string_fragment ptr)
+{
+    std::string retval;
+
+    while (!ptr.empty()) {
+        const auto& [left, right] = ptr.split_when(string_fragment::tag1{'/'});
+        stack_buf allocator;
+
+        if (!retval.empty()) {
+            retval.push_back(' ');
+        }
+        retval += json_ptr::decode(left, allocator);
+        ptr = right;
+    }
+    return retval;
+}
+
 static void
 json_write_cell(const db_label_source::header_meta& hm,
                 yajlpp_container_base& container,
@@ -554,7 +572,7 @@ com_save_to(exec_context& ec,
             for (const auto& [curr_col, hdr] :
                  lnav::itertools::enumerate(dls.dls_headers))
             {
-                {
+                if (hdr.hm_json_columns.empty()) {
                     yajlpp_map header_map(gen);
 
                     header_map.gen("name");
@@ -604,6 +622,68 @@ com_save_to(exec_context& ec,
                                                 cursor.value(),
                                                 ta,
                                                 anonymize);
+                            }
+                        }
+                    }
+                } else {
+                    std::vector<std::pair<
+                        string_fragment,
+                        db_label_source::header_meta::json_column_meta>>
+                        json_columns;
+                    for (const auto& json_col : hdr.hm_json_columns) {
+                        json_columns.emplace_back(json_col.first,
+                                                  json_col.second);
+                    }
+                    std::sort(json_columns.begin(),
+                              json_columns.end(),
+                              [](auto& lhs, auto& rhs) {
+                                  return lhs.second.jcm_column_index
+                                      < rhs.second.jcm_column_index;
+                              });
+
+                    for (const auto& [ptr, val] : json_columns) {
+                        yajlpp_map header_map(gen);
+
+                        header_map.gen("name");
+                        header_map.gen(json_ptr_to_title(ptr));
+
+                        header_map.gen("type");
+                        header_map.gen("any");
+
+                        header_map.gen("values");
+                        {
+                            yajlpp_array values_array(gen);
+                            for (size_t row = 0;
+                                 row < dls.dls_row_cursors.size();
+                                 row++)
+                            {
+                                if (ec.ec_dry_run && row > 10) {
+                                    break;
+                                }
+
+                                auto cursor = dls.dls_row_cursors[row].sync();
+                                for (size_t col = 0; col < curr_col; col++) {
+                                    cursor = cursor->next();
+                                }
+
+                                if (cursor
+                                    && cursor->get_type()
+                                        == lnav::cell_type::CT_TEXT)
+                                {
+                                    auto cell_sf = cursor->get_text();
+                                    auto extract_res = extract_json_from(
+                                        values_array.gen.yg_handle,
+                                        cell_sf,
+                                        ptr.data());
+
+                                    if (extract_res.isErr()
+                                        || extract_res.unwrap() == false)
+                                    {
+                                        values_array.gen();
+                                    }
+                                } else {
+                                    values_array.gen();
+                                }
                             }
                         }
                     }
@@ -1949,7 +2029,13 @@ static readline_context::command_t IO_COMMANDS[] = {
 
         help_text(":write-json-cols-to")
             .with_summary("Write SQL results to the given file in a "
-                          "column-oriented JSON format")
+                          "column-oriented JSON format.  In addition, columns "
+                          "that contain JSON values will be flattened to their "
+                          "own columns.  For example, a column containing "
+                          "values shaped like `{\"a\": 1, \"b\": 2}` will be "
+                          "split into two separate columns named 'a' and 'b'. "
+                          "This format can be useful for feeding into charting "
+                          "libraries.")
             .with_parameter(
                 help_text("--anonymize", "Anonymize the JSON values").flag())
             .with_parameter(

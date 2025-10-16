@@ -39,9 +39,11 @@
 #include <string>
 #include <vector>
 
+#include "apps.cfg.hh"
 #include "archive_manager.cfg.hh"
 #include "base/date_time_scanner.cfg.hh"
 #include "base/file_range.hh"
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "external_opener.cfg.hh"
@@ -134,13 +136,14 @@ struct _lnav_config {
     lnav::external_opener::config lc_opener;
     lnav::external_editor::config lc_external_editor;
     lnav::textfile::config lc_textfile;
+    lnav::apps::config lc_apps;
 };
 
-extern struct _lnav_config lnav_config;
-extern struct _lnav_config rollback_lnav_config;
+extern _lnav_config lnav_config;
+extern _lnav_config rollback_lnav_config;
 extern std::map<intern_string_t, source_location> lnav_config_locations;
 
-extern const struct json_path_container lnav_config_handlers;
+extern const json_path_container lnav_config_handlers;
 
 enum class config_file_type {
     FORMAT,
@@ -161,7 +164,8 @@ std::string save_config();
 
 std::string dump_config();
 
-extern const char* DEFAULT_FORMAT_SCHEMA;
-extern const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
+extern const string_fragment DEFAULT_CONFIG_SCHEMA;
+extern const string_fragment DEFAULT_FORMAT_SCHEMA;
+extern const std::set<string_fragment> SUPPORTED_FORMAT_SCHEMAS;
 
 #endif

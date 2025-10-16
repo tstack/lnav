@@ -27,10 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <functional>
+
 #include "lnav.management_cli.hh"
 
 #include <glob.h>
+#include <pwd.h>
 
+#include "apps.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
@@ -53,6 +57,7 @@
 #include "session_data.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace std::string_view_literals;
 using namespace lnav::roles::literals;
 
 namespace lnav::management {
@@ -84,6 +89,169 @@ subcmd_reducer(const CLI::App* app, attr_line_t& accum)
         .append(app->get_description());
 }
 
+static const auto INDEX_MD_TEMPLATE = R"(---
+title: lnav app: {title}
+---
+
+# {title}
+
+The following text was generated dynamically by an lnav code block in this
+Markdown file:
+
+``` {{ .lnav .eval-and-replace }}
+:echo <blockquote>Hello, ${{USER}}!</blockquote>
+```
+
+
+Check out the API test app to learn more about what is possible.  Then,
+edit this file and reload the page to see the results.
+
+)"sv;
+
+struct subcmd_apps_t {
+    using action_t = std::function<perform_result_t(const subcmd_apps_t&)>;
+
+    CLI::App* sa_apps_app{nullptr};
+    action_t sa_action;
+    std::string sa_name;
+
+    static perform_result_t default_action(const subcmd_apps_t& sc)
+    {
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to lnav apps")
+                  .with_help(sc.sa_apps_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
+
+        return {std::move(um)};
+    }
+
+    static perform_result_t create_action(const subcmd_apps_t& sa)
+    {
+        auto configs_dir = lnav::paths::dotlnav() / "configs";
+        std::string publisher;
+
+        auto* user_env = getenv("USER");
+        if (user_env) {
+            publisher = user_env;
+        } else {
+            auto* user_id = getpwuid(getuid());
+            if (user_id) {
+                publisher = user_id->pw_name;
+            }
+        }
+        if (publisher.empty()) {
+            auto um = console::user_message::error(
+                          "Unable to determine the publisher for the app")
+                          .with_help(attr_line_t("Set the ")
+                                         .append("USER"_variable)
+                                         .append(" environment variable"));
+            return {std::move(um)};
+        }
+
+        auto dst_dir = configs_dir / sa.sa_name;
+        if (std::filesystem::exists(dst_dir)) {
+            auto um = console::user_message::error(
+                          attr_line_t("app directory already exists: ")
+                              .append(lnav::roles::file(dst_dir.string())))
+                          .with_help(attr_line_t("Delete the directory or "
+                                                 "choose a different name"));
+            return {std::move(um)};
+        }
+
+        yajlpp_gen gen;
+        {
+            yajlpp_map root_map(gen);
+
+            root_map.gen("$schema");
+            root_map.gen(DEFAULT_CONFIG_SCHEMA);
+
+            root_map.gen("apps");
+            {
+                yajlpp_map apps_map(gen);
+
+                apps_map.gen(publisher);
+                {
+                    yajlpp_map publisher_map(gen);
+
+                    publisher_map.gen(sa.sa_name);
+                    {
+                        yajlpp_map app_map(gen);
+
+                        apps_map.gen("root");
+                        apps_map.gen("app-files");
+
+                        apps_map.gen("description");
+                        apps_map.gen("My fancy new lnav app");
+                    }
+                }
+            }
+        }
+
+        auto app_files_dir = dst_dir / "app-files";
+        std::error_code ec;
+        std::filesystem::create_directories(app_files_dir, ec);
+        if (ec) {
+            auto um = console::user_message::error(
+                          attr_line_t("cannot create app directory: ")
+                              .append(lnav::roles::file(dst_dir.string())))
+                          .with_reason(ec.message());
+
+            return {std::move(um)};
+        }
+
+        auto app_config_path = dst_dir / "app.json";
+        auto config_write_res = lnav::filesystem::write_file(
+            app_config_path, gen.to_string_fragment());
+        if (config_write_res.isErr()) {
+            std::filesystem::remove_all(dst_dir, ec);
+            auto um
+                = console::user_message::error(
+                      attr_line_t("cannot write app config file: ")
+                          .append(lnav::roles::file(app_config_path.string())))
+                      .with_reason(config_write_res.unwrapErr());
+            return {std::move(um)};
+        }
+
+        auto index_md
+            = fmt::format(INDEX_MD_TEMPLATE, fmt::arg("title", sa.sa_name));
+        auto index_write_res = lnav::filesystem::write_file(
+            app_files_dir / "index.md", index_md);
+        if (index_write_res.isErr()) {
+            std::filesystem::remove_all(dst_dir, ec);
+            auto um
+                = console::user_message::error(
+                      attr_line_t("cannot write app config file: ")
+                          .append(lnav::roles::file(app_config_path.string())))
+                      .with_reason(index_write_res.unwrapErr());
+            return {std::move(um)};
+        }
+
+        auto um
+            = lnav::console::user_message::info(
+                  attr_line_t("created app directory: ")
+                      .append(lnav::roles::file(dst_dir.string())))
+                  .with_note(
+                      "edit the app.json file in the directory to configure "
+                      "the app")
+                  .with_note(
+                      "edit the app-files/index.md file to implement the app");
+
+        return {std::move(um)};
+    }
+
+    subcmd_apps_t& set_action(action_t act)
+    {
+        if (!this->sa_action) {
+            this->sa_action = std::move(act);
+        }
+        return *this;
+    }
+};
+
 struct subcmd_config_t {
     using action_t = std::function<perform_result_t(const subcmd_config_t&)>;
 
@@ -95,8 +263,7 @@ struct subcmd_config_t {
     {
         auto um
             = console::user_message::error(
-                  "expecting an operation related to the regex101.com "
-                  "integration")
+                  "expecting an operation related to lnav configuration")
                   .with_help(sc.sc_config_app->get_subcommands({})
                              | lnav::itertools::fold(
                                  subcmd_reducer,
@@ -1361,6 +1528,7 @@ struct subcmd_crash_t {
 };
 
 using operations_v = mapbox::util::variant<no_subcmd_t,
+                                           subcmd_apps_t,
                                            subcmd_config_t,
                                            subcmd_format_t,
                                            subcmd_piper_t,
@@ -1383,11 +1551,28 @@ describe_cli(CLI::App& app, int argc, char* argv[])
 
     app.add_flag("-m", "Switch to the management CLI mode.");
 
+    subcmd_apps_t apps_args;
     subcmd_config_t config_args;
     subcmd_format_t format_args;
     subcmd_piper_t piper_args;
     subcmd_regex101_t regex101_args;
     subcmd_crash_t crash_args;
+
+    {
+        auto* subcmd_apps
+            = app.add_subcommand("apps", "manage lnav apps")->callback([&] {
+                  apps_args.set_action(subcmd_apps_t::default_action);
+                  retval->o_ops = apps_args;
+              });
+        apps_args.sa_apps_app = subcmd_apps;
+        auto* sub_create_options
+            = subcmd_apps->add_subcommand("create", "create a new app")
+                  ->callback([&] {
+                      apps_args.set_action(subcmd_apps_t::create_action);
+                  });
+        sub_create_options->add_option(
+            "name", apps_args.sa_name, "name of the app");
+    }
 
     {
         auto* subcmd_config
@@ -1638,6 +1823,7 @@ perform(std::shared_ptr<operations> opts)
 
             return {std::move(um)};
         },
+        [](const subcmd_apps_t& sa) { return sa.sa_action(sa); },
         [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },
         [](const subcmd_piper_t& sp) { return sp.sp_action(sp); },

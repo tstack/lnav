@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
 #include "intervaltree/IntervalTree.h"
@@ -154,7 +155,7 @@ const xml_entity_map& get_xml_entity_map();
 
 const emoji_map& get_emoji_map();
 
-std::string escape_html(string_fragment content);
+text_auto_buffer escape_html(string_fragment content);
 
 struct file {
     string_fragment f_frontmatter;

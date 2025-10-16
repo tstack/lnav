@@ -33,7 +33,7 @@ Viewing Logs
 The arguments to **lnav** are the log files, directories, or URLs to be viewed.
 For example, to view all of the CUPS logs on your system:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav /var/log/cups
 
@@ -44,7 +44,7 @@ define your own.
 If no arguments are given, **lnav** will try to open the syslog file on your
 system:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav
 
@@ -189,7 +189,7 @@ commands:
 
    Run :code:`./autogen.sh` if compiling from the git repository.
 
-.. prompt:: bash
+.. code-block:: bash
 
    ./configure
    make

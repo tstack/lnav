@@ -29,8 +29,6 @@
  * @file sqlite-extension-func.c
  */
 
-#include "config.h"
-
 #include <map>
 #include <string>
 
@@ -40,6 +38,7 @@
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
+#include "config.h"
 #include "help_text.hh"
 #include "sql_help.hh"
 
@@ -113,7 +112,9 @@ register_help(prql_hier& phier, const help_text& ht)
         if (name_index == ht.ht_prql_path.size() - 1) {
             auto param_names
                 = ht.ht_parameters | lnav::itertools::map([](const auto& elem) {
-                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL
+                          || elem.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE)
+                      {
                           return fmt::format(FMT_STRING("{}:null"),
                                              elem.ht_name);
                       }
@@ -121,7 +122,9 @@ register_help(prql_hier& phier, const help_text& ht)
                   });
             auto func_args
                 = ht.ht_parameters | lnav::itertools::map([](const auto& elem) {
-                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL
+                          || elem.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE)
+                      {
                           return fmt::format(FMT_STRING("{{{}:0}}"),
                                              elem.ht_name);
                       }
@@ -171,6 +174,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
     static bool help_registration_done = false;
     prql_hier phier;
     int lpc;
+
+    phier.ph_modules["sqlite"].ph_declarations["strftime"]
+        = "let strftime = func p_format p_timestring -> "
+          "s\"strftime({p_format:0}, {p_timestring:0})\"";
 
     require(db != nullptr);
     require(reg_funcs != nullptr);
@@ -241,21 +248,6 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             }
         }
     }
-
-#ifdef HAVE_RUST_DEPS
-    if (sqlite_extension_prql.empty()) {
-        require(phier.ph_declarations.empty());
-        for (const auto& mod_pair : phier.ph_modules) {
-            std::string content;
-
-            mod_pair.second.to_string(content);
-            sqlite_extension_prql.emplace_back(lnav_rs_ext::SourceTreeElement{
-                fmt::format(FMT_STRING("{}.prql"), mod_pair.first),
-                content,
-            });
-        }
-    }
-#endif
 
     static help_text builtin_funcs[] = {
         help_text("abs", "Return the absolute value of the argument")
@@ -1254,6 +1246,9 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                     break;
             }
             ht.index_tags();
+            if (!ht.ht_prql_path.empty()) {
+                register_help(phier, ht);
+            }
         }
     }
 
@@ -1463,9 +1458,10 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
             .sql_keyword()
-            .with_parameter(help_text("filter", "Additional processing of rows")
-                                .optional()
-                                .with_enum_values({"DISTINCT"_frag, "ALL"_frag}))
+            .with_parameter(
+                help_text("filter", "Additional processing of rows")
+                    .optional()
+                    .with_enum_values({"DISTINCT"_frag, "ALL"_frag}))
             .with_parameter(
                 help_text(
                     "result-column",
@@ -1737,6 +1733,21 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
     }
 
     help_registration_done = true;
+
+#ifdef HAVE_RUST_DEPS
+    if (sqlite_extension_prql.empty()) {
+        require(phier.ph_declarations.empty());
+        for (const auto& mod_pair : phier.ph_modules) {
+            std::string content;
+
+            mod_pair.second.to_string(content);
+            sqlite_extension_prql.emplace_back(lnav_rs_ext::SourceTreeElement{
+                fmt::format(FMT_STRING("{}.prql"), mod_pair.first),
+                content,
+            });
+        }
+    }
+#endif
 
     return 0;
 }

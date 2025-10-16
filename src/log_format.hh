@@ -270,6 +270,12 @@ public:
         return this->lv_frag.length();
     }
 
+    string_fragment text_value_fragment() const
+    {
+        return string_fragment::from_bytes(this->text_value(),
+                                           this->text_length());
+    }
+
     struct line_range origin_in_full_msg(const char* msg, ssize_t len) const;
 
     logline_value_meta lv_meta;

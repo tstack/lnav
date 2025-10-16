@@ -23,6 +23,7 @@
  * IN THE SOFTWARE.
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -300,7 +301,80 @@ render_open_code_block(MD_HTML* r, const MD_BLOCK_CODE_DETAIL* det)
     RENDER_VERBATIM(r, "<pre><code");
 
     /* If known, output the HTML 5 attribute class="language-LANGNAME". */
-    if(det->lang.text != NULL) {
+    int did_lang = 0;
+    int class_open = 0;
+    int class_closed = 0;
+    if (det->info.text != NULL) {
+        RENDER_VERBATIM(r, " ");
+        for (int i = 0; det->info.substr_offsets[i] < det->info.size; i++) {
+            MD_OFFSET off = det->info.substr_offsets[i];
+            MD_SIZE size = det->info.substr_offsets[i+1] - off;
+            const MD_CHAR* text = det->info.text + off;
+            MD_SIZE curr_off = 0;
+            if (size >= 2) {
+                text += 1;
+                size -= 2;
+            }
+            while (curr_off < size) {
+                for (; curr_off < size && isspace(text[curr_off]); curr_off++) {}
+                if (curr_off >= size) {
+                    break;
+                }
+                MD_SIZE curr_end = curr_off;
+                int in_quote = 0;
+                for (; curr_end < size; curr_end++) {
+                    if (text[curr_end] == '"') {
+                        in_quote = !in_quote;
+                    } else if (!in_quote && isspace(text[curr_end])) {
+                        break;
+                    }
+                }
+                const MD_CHAR* attr = text + curr_off;
+                const MD_SIZE attr_size = curr_end - curr_off;
+                switch (text[curr_off]) {
+                    case '.': {
+                        RENDER_VERBATIM(r, " ");
+                        if (!class_open) {
+                            RENDER_VERBATIM(r, "class=\"");
+                            class_open = 1;
+                        }
+                        if (did_lang) {
+                            render_html_escaped(r, attr + 1, attr_size - 1);
+                        } else {
+                            did_lang = 1;
+                            RENDER_VERBATIM(r, "language-");
+                            render_html_escaped(r, attr + 1, attr_size- 1);
+                        }
+                        break;
+                    }
+                    case '#': {
+                        if (!class_closed) {
+                            RENDER_VERBATIM(r, "\"");
+                            class_closed = 1;
+                        }
+                        RENDER_VERBATIM(r, " id=\"");
+                        render_html_escaped(r, attr + 1, attr_size - 1);
+                        RENDER_VERBATIM(r, "\"");
+                        break;
+                    }
+                    default: {
+                        if (!class_closed) {
+                            RENDER_VERBATIM(r, "\"");
+                            class_closed = 1;
+                        }
+                        RENDER_VERBATIM(r, " ");
+                        render_verbatim(r, attr, attr_size);
+                        break;
+                    }
+                }
+                curr_off = curr_end;
+            }
+            if (!class_closed) {
+                RENDER_VERBATIM(r, "\"");
+                class_closed = 1;
+            }
+        }
+    } else if(det->lang.text != NULL) {
         RENDER_VERBATIM(r, " class=\"language-");
         render_attribute(r, &det->lang, render_html_escaped);
         RENDER_VERBATIM(r, "\"");
@@ -458,7 +532,7 @@ enter_span_callback(MD_SPANTYPE type, void* detail, void* userdata)
         case MD_SPAN_U:                 RENDER_VERBATIM(r, "<u>"); break;
         case MD_SPAN_A:                 render_open_a_span(r, (MD_SPAN_A_DETAIL*) detail); break;
         case MD_SPAN_IMG:               render_open_img_span(r, (MD_SPAN_IMG_DETAIL*) detail); break;
-        case MD_SPAN_CODE:              RENDER_VERBATIM(r, "<code>"); break;
+        case MD_SPAN_CODE:              RENDER_VERBATIM(r, "<code class=\"language-none\">"); break;
         case MD_SPAN_DEL:               RENDER_VERBATIM(r, "<del>"); break;
         case MD_SPAN_LATEXMATH:         RENDER_VERBATIM(r, "<x-equation>"); break;
         case MD_SPAN_LATEXMATH_DISPLAY: RENDER_VERBATIM(r, "<x-equation type=\"display\">"); break;

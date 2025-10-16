@@ -100,6 +100,16 @@ struct bucket_stats_t {
 template<typename T>
 class stacked_bar_chart : public stacked_bar_chart_base {
 public:
+
+    struct chart_ident {
+        explicit chart_ident(const T& ident) : ci_ident(ident) {}
+
+        T ci_ident;
+        text_attrs ci_attrs;
+        bucket_stats_t ci_stats;
+        ssize_t ci_last_seen_row{-1};
+    };
+
     stacked_bar_chart& with_stacking_enabled(bool enabled)
     {
         this->sbc_do_stacking = enabled;
@@ -221,15 +231,17 @@ public:
         this->sbc_max_row_items = 0;
     }
 
-    void add_value(const T& ident, double amount = 1.0)
+    chart_ident& add_value(const T& ident, double amount = 1.0)
     {
-        struct chart_ident& ci = this->find_ident(ident);
+        auto& ci = this->find_ident(ident);
         ci.ci_stats.update(amount);
         this->sbc_row_sum += amount;
         if (ci.ci_last_seen_row != this->sbc_row_counter) {
             ci.ci_last_seen_row = this->sbc_row_counter;
             this->sbc_row_items += 1;
         }
+
+        return ci;
     }
 
     void next_row()
@@ -253,14 +265,6 @@ public:
     }
 
 protected:
-    struct chart_ident {
-        explicit chart_ident(const T& ident) : ci_ident(ident) {}
-
-        T ci_ident;
-        text_attrs ci_attrs;
-        bucket_stats_t ci_stats;
-        ssize_t ci_last_seen_row{-1};
-    };
 
     chart_ident& find_ident(const T& ident)
     {

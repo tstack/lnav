@@ -276,7 +276,12 @@ mod ffi {
 
         fn notify_pollers();
 
-        fn execute_external_command(src: String, cmd: String, hdrs: String) -> ExecResult;
+        fn execute_external_command(
+            src: String,
+            cmd: String,
+            hdrs: String,
+            vars: Vec<VarPair>,
+        ) -> ExecResult;
 
         fn get_static_file(path: &str, dst: &mut Vec<u8>);
 

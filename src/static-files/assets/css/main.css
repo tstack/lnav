@@ -1,0 +1,179 @@
+/** Reset some basic elements */
+body, h1, h2, h3, h4, h5, h6, p, blockquote, pre, dl, dd, ol, ul, figure {
+    margin: 0;
+    padding: 0;
+}
+
+/** Basic styling */
+body {
+    font: 400 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    color: #111;
+    background-color: #fdfdfd;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-feature-settings: "kern" 1;
+    -moz-font-feature-settings: "kern" 1;
+    -o-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
+    font-kerning: normal;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+/** Set `margin-bottom` to maintain vertical rhythm */
+h1, h2, h3, h4, h5, h6, p, blockquote, pre, ul, ol, dl, figure {
+    margin-bottom: 15px;
+}
+
+/** `main` element */
+main {
+    display: block; /* Default value of `display` of `main` element is 'inline' in IE 11. */
+}
+
+.page-content {
+    padding: 30px 0;
+    flex: 1;
+}
+
+/** Images */
+img {
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+/** Figures */
+figure > img {
+    display: block;
+}
+
+figcaption {
+    font-size: 14px;
+}
+
+/** Lists */
+ul, ol {
+    margin-left: 30px;
+}
+
+li > ul, li > ol {
+    margin-bottom: 0;
+}
+
+/** Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 400;
+}
+
+h1 {
+    font-size: 42px;
+}
+
+h2 {
+    font-size: 32px;
+}
+
+h3 {
+    font-size: 26px;
+}
+
+h4 {
+    display: inline-block;
+    font-size: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+h5 {
+    font-size: 18px;
+}
+
+/** Links */
+a {
+    color: #2a7ae2;
+    text-decoration: none;
+}
+
+a:visited {
+    color: #1756a9;
+}
+
+a:hover {
+    color: #111;
+    text-decoration: underline;
+}
+
+/** Blockquotes */
+blockquote {
+    color: #828282;
+    border-left: 4px solid #e8e8e8;
+    padding-left: 15px;
+    font-size: 18px;
+    letter-spacing: -1px;
+    font-style: italic;
+}
+
+blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/** Wrapper */
+.wrapper {
+    max-width: calc(800px - (30px * 2));
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 30px;
+    padding-left: 30px;
+}
+
+textarea {
+    font-size: 14px;
+}
+
+hr {
+    border: 1px solid #ddd;
+    width: 90%;
+    margin-left: 5%;
+}
+
+.loader-container {
+    border-bottom: 3px solid #999;
+    margin-bottom: 10px;
+}
+
+.loader {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 2s linear infinite;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999; /* Ensure it's on top */
+    display: inline-block;
+}
+
+.loader-container + code {
+    background-color: #ddd !important;
+    filter: grayscale(75%);
+    text-shadow: none;
+    display: block;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.content-hidden {
+    display: none;
+}
+
+.site-footer {
+    border-top: 1px solid #e8e8e8;
+    padding: 30px 0;
+}

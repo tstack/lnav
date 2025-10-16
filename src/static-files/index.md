@@ -2,44 +2,33 @@
 title: lnav external-access server
 ---
 
-
-## lnav
+# lnav External Access Server
 
 The Logfile Navigator, *lnav* for short, is a log file viewer for the terminal.
+This server provides a REST API that can be used to execute lnav scripts and
+retrieve information about the current state of lnav's TUI.
+It is intended to be used by other applications to remotely control an lnav
+instance.
+In addition, "apps" can also be installed to provide customized
+interfaces for lnav functionality.
 
-This server provides remote access to an lnav instance.  See
-https://docs.lnav.org for more information.
+See the [External Access](https://docs.lnav.org/en/latest/extacc.html)
+documentation for more details.
 
-### API Test Harness
+### Installed Apps
 
-#### Poll
+The following apps are currently installed:
 
-The `/api/poll` endpoint performs a long-poll that will return when the state of
-the TUI has changed. You can click the "Poll" button to perform a poll and
-see the result.
-
-<button id="poll">Poll</button>
-
-<div id="poll-result-container">
-<p>
-Last Response Time: <div id="poll-time"></div>
-<p>
-Last Response:
-<pre><code id="poll-result" class="language-json">null</code></pre>
-</div>
-
-#### Exec
-
-The `/api/exec` endpoint executes an lnav script and returns the result.
-
-<label for="exec-input">Script:</label>
-<textarea id="exec-input" rows="10" cols="80">
-:echo Hello, World!
-</textarea>
-<button id="exec">Execute</button>
-
-<div id="exec-result-container">
-<pre id="exec-result"></pre>
-</div>
-
-<script src="assets/js/lnav-api-test.js"></script>
+``` { .lnav .eval-and-replace }
+;SELECT
+    group_concat(format('<li><a href="/apps/%s/">%s</a> - %s</li>',
+                        name,
+                        name,
+                        encode(description, 'html')),
+                 char(10)) AS items
+   FROM lnav_apps
+:echo
+<ul>
+${items}
+</ul>
+```

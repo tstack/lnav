@@ -44,59 +44,25 @@ int
 main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
-    yajl_status status;
-    json_ptr_walk jpw;
-
     log_argv(argc, argv);
 
     std::string json_input(std::istreambuf_iterator<char>(std::cin), {});
 
-    status = jpw.parse(json_input.c_str(), json_input.size());
-    if (status == yajl_status_error) {
-        fprintf(stderr,
-                "error:cannot parse JSON input -- %s\n",
-                jpw.jpw_error_msg.c_str());
+    auto parse_res = json_walk_collector::parse_fully(json_input);
+    if (parse_res.isErr()) {
+        fprintf(stderr, "error: %s\n", parse_res.unwrapErr().c_str());
         return EXIT_FAILURE;
     }
 
-    if (status == yajl_status_client_canceled) {
-        fprintf(stderr, "client cancel\n");
-    }
+    auto jwc = parse_res.unwrap();
+    for (const auto& [ptr, value] : jwc.jwc_values) {
+        auto value_str = value.is<null_value_t>() ? "null"
+                                                  : fmt::to_string(value);
+        printf("%s = %s\n", ptr.c_str(), value_str.c_str());
 
-    status = jpw.complete_parse();
-    if (status == yajl_status_error) {
-        fprintf(stderr,
-                "error:cannot parse JSON input -- %s\n",
-                jpw.jpw_error_msg.c_str());
-        return EXIT_FAILURE;
-    } else if (status == yajl_status_client_canceled) {
-        fprintf(stderr, "client cancel\n");
-    }
-
-    for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
-         iter != jpw.jpw_values.end();
-         ++iter)
-    {
-        printf("%s = %s\n", iter->wt_ptr.c_str(), iter->wt_value.c_str());
-
-        {
-            auto_mem<yajl_handle_t> parse_handle(yajl_free);
-            json_ptr jp(iter->wt_ptr.c_str());
-            json_op jo(jp);
-            yajlpp_gen gen;
-
-            jo.jo_ptr_callbacks = json_op::gen_callbacks;
-            jo.jo_ptr_data = gen.get_handle();
-            parse_handle.reset(
-                yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
-
-            yajl_parse(parse_handle.in(),
-                       (const unsigned char*) json_input.c_str(),
-                       json_input.size());
-            yajl_complete_parse(parse_handle.in());
-
-            assert(iter->wt_value == gen.to_string_fragment().to_string());
-        }
+        yajlpp_gen gen;
+        extract_json_from(gen, json_input, ptr.c_str()).unwrap();
+        assert(value_str == gen.to_string_fragment());
     }
 
     return retval;

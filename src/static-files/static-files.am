@@ -1,8 +1,10 @@
 
 STATIC_FILES = \
+    $(srcdir)/static-files/apps/lnav/api-test/index.md \
+    $(srcdir)/static-files/apps/lnav/api-test/lnav-api-test.js \
     $(srcdir)/static-files/index.md \
-    $(srcdir)/static-files/assets/js/chart-demo.js \
-    $(srcdir)/static-files/assets/js/lnav-api-test.js \
+    $(srcdir)/static-files/assets/css/main.css \
     $(srcdir)/static-files/assets/js/lnav-client.js \
+    $(srcdir)/static-files/assets/js/lnav-markdown-magic.js \
     $(srcdir)/static-files/assets/js/prism-lnav.js \
     $()

@@ -28,6 +28,7 @@
 #include "hasher.hh"
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
+#include "md4cpp.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "pretty_printer.hh"
 #include "safe/safe.h"
@@ -50,6 +51,7 @@ enum class encode_algo {
     base64,
     hex,
     uri,
+    html,
 };
 
 template<>
@@ -67,9 +69,12 @@ struct from_sqlite<encode_algo> {
         if (strcasecmp(algo_name, "uri") == 0) {
             return encode_algo::uri;
         }
+        if (strcasecmp(algo_name, "html") == 0) {
+            return encode_algo::html;
+        }
 
-        throw from_sqlite_conversion_error("value of 'base64', 'hex', or 'uri'",
-                                           argi);
+        throw from_sqlite_conversion_error(
+            "value of 'base64', 'hex', 'uri', or 'html'", argi);
     }
 };
 
@@ -535,6 +540,10 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                     return std::move(retval);
                 }
 #endif
+                case encode_algo::html: {
+                    return md4cpp::escape_html(
+                        string_fragment::from_bytes(blob, blob_len));
+                }
             }
         }
         default: {
@@ -569,13 +578,17 @@ sql_encode(sqlite3_value* value, encode_algo algo)
                     return std::move(retval);
                 }
 #endif
+                case encode_algo::html: {
+                    return md4cpp::escape_html(
+                        string_fragment::from_bytes(text, text_len));
+                }
             }
         }
     }
     ensure(false);
 }
 
-mapbox::util::variant<blob_auto_buffer, auto_mem<char>>
+mapbox::util::variant<blob_auto_buffer, text_auto_buffer, auto_mem<char>>
 sql_decode(string_fragment str, encode_algo algo)
 {
     switch (algo) {
@@ -619,6 +632,60 @@ sql_decode(string_fragment str, encode_algo algo)
             return std::move(retval);
         }
 #endif
+        case encode_algo::html: {
+            static const auto ENTITY_RE = lnav::pcre2pp::code::from_const(
+                R"(&(?:([a-z0-9]+)|#([0-9]{1,6})|#x([0-9a-fA-F]{1,6}));)",
+                PCRE2_CASELESS);
+            static const auto ENTITIES = md4cpp::get_xml_entity_map();
+
+            auto buf = auto_buffer::alloc(str.length());
+            auto res = ENTITY_RE.capture_from(str).for_each(
+                [&buf](const auto& match) {
+                    buf.append(match.leading().to_string_view());
+                    auto named = match[1];
+                    if (named) {
+                        auto iter
+                            = ENTITIES.xem_entities.find(match[0]->to_string());
+                        if (iter != ENTITIES.xem_entities.end()) {
+                            buf.append(iter->second.xe_chars);
+                        } else {
+                            buf.append(match[0]->to_string_view());
+                        }
+                        return;
+                    }
+                    auto dec = match[2];
+                    if (dec) {
+                        auto scan_res
+                            = scn::scan_int<uint32_t>(dec->to_string_view());
+                        if (scan_res) {
+                            ww898::utf::utf8::write(
+                                scan_res.value().value(),
+                                [&buf](uint8_t c) { buf.push_back(c); });
+                        } else {
+                            buf.append(match[0]->to_string_view());
+                        }
+                        return;
+                    }
+                    auto hex = match[3];
+                    if (hex) {
+                        auto scan_res = scn::scan_int<uint32_t>(
+                            hex->to_string_view(), 16);
+                        if (scan_res) {
+                            ww898::utf::utf8::write(
+                                scan_res.value().value(),
+                                [&buf](uint8_t c) { buf.push_back(c); });
+                        } else {
+                            buf.append(match[0]->to_string_view());
+                        }
+                        return;
+                    }
+                });
+            if (res.isOk()) {
+                auto remaining = res.unwrap();
+                buf.append(remaining.to_string_view());
+            }
+            return text_auto_buffer{std::move(buf)};
+        }
     }
     ensure(false);
 }
@@ -1244,7 +1311,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
                 .with_parameter(help_text("value", "The value to encode"))
                 .with_parameter(help_text("algorithm",
                                           "One of the following encoding "
-                                          "algorithms: base64, hex, uri"))
+                                          "algorithms: base64, hex, uri, html"))
                 .with_tags({"string"})
                 .with_example({
                     "To base64-encode 'Hello, World!'",

@@ -121,6 +121,10 @@ run_cap_test ./drive_sql "SELECT decode('112g', 'hex')"
 
 run_cap_test ./drive_sql "SELECT gunzip(decode(encode(gzip('Hello, World!'), 'base64'), 'base64'))"
 
+run_cap_test ./drive_sql "SELECT encode('abc & def nl1 ' || char(0x1b) || ' eof', 'html')"
+
+run_cap_test ./drive_sql "SELECT decode('abc &amp; def nl1 &#10; nl2 &#x0a; eof', 'html')"
+
 #run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'
 #SELECT parse_url('https://bad@[fe::')
 #EOF

@@ -65,13 +65,23 @@ Features:
   corner.  Clicking that icon will open a URL in a browser
   and log you into the server.  The `:external-access-login`
   command can also be used to login.
+* Custom "Apps" can be added to the "external access"
+  server to provide custom browser-based user interfaces
+  to lnav.  See the "External Access" documentation online
+  for more details.
 * The `;.save` SQL command has been added that can save
   tables you have created to a SQLite database file.  The
   tables that lnav creates have been moved to a separate
   in-memory DB, so the main DB should only contain your
   own tables/views/etc...
+* The `json_object_count_of()` SQL aggregate function has
+  been added to make it easy to create a JSON object
+  where the values are the number of times a value has
+  been seen.
 * The `:write-json-cols-to` command has been added to
   write JSON output in a column-oriented fashion.
+* The `encode()` and `decode()` SQL functions now accept
+  `html` as an algorithm.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

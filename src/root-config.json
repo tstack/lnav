@@ -1,5 +1,12 @@
 {
     "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "apps": {
+        "lnav": {
+            "api-test": {
+                "description": "Examples of using lnav's external APIs"
+            }
+        }
+    },
     "ui": {
         "clock-format": "%Y-%m-%dT%H:%M:%S %Z",
         "dim-text": false,

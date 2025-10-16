@@ -39,6 +39,28 @@
 int
 main(int argc, const char* argv[])
 {
+    {
+        auto coll = json_walk_collector::parse_fully("{}"_frag).unwrap();
+
+        assert(coll.jwc_values.size() == 0);
+    }
+
+    {
+        auto coll = json_walk_collector::parse_fully(R"(
+[
+    {"error": 1, "info": 2},
+    {"error": 5}
+])"_frag).unwrap();
+
+        assert(coll.jwc_values.size() == 3);
+        assert(coll.jwc_values[0].first == "/0/error");
+        assert(coll.jwc_values[0].second.get<int64_t>() == 1);
+        assert(coll.jwc_values[1].first == "/0/info");
+        assert(coll.jwc_values[1].second.get<int64_t>() == 2);
+        assert(coll.jwc_values[2].first == "/1/error");
+        assert(coll.jwc_values[2].second.get<int64_t>() == 5);
+    }
+
     int32_t depth, index;
 
     {

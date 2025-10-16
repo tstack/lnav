@@ -324,3 +324,26 @@ json_op::handle_end_array(void* ctx)
 
     return retval;
 }
+
+Result<bool, yajl_status>
+extract_json_from(yajl_gen gen, string_fragment in, const char* ptr)
+{
+    auto_mem<yajl_handle_t> parse_handle(yajl_free);
+    json_ptr jp(ptr);
+    json_op jo(jp);
+
+    jo.jo_ptr_callbacks = json_op::gen_callbacks;
+    jo.jo_ptr_data = gen;
+    parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+
+    auto rc = yajl_parse(parse_handle.in(), in.udata(), in.length());
+    if (rc != yajl_status_ok) {
+        return Err(rc);
+    }
+    rc = yajl_complete_parse(parse_handle.in());
+    if (rc != yajl_status_ok) {
+        return Err(rc);
+    }
+
+    return Ok(jo.jo_found);
+}

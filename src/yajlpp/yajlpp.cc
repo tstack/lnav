@@ -422,11 +422,17 @@ json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
                     schema("pattern");
                     schema(this->jph_pattern_re);
                 }
+                if (!this->jph_const_str.empty()) {
+                    schema("const");
+                    schema(this->jph_const_str);
+                }
                 if (this->jph_enum_values) {
                     schema("enum");
 
                     yajlpp_array enum_array(ygc.ygc_handle);
-                    for (int lpc = 0; !this->jph_enum_values[lpc].first.empty(); lpc++) {
+                    for (int lpc = 0; !this->jph_enum_values[lpc].first.empty();
+                         lpc++)
+                    {
                         enum_array.gen(this->jph_enum_values[lpc].first);
                     }
                 }
@@ -599,7 +605,7 @@ json_path_handler_base::get_types() const
     if (this->jph_callbacks.yajl_double || this->jph_callbacks.yajl_number) {
         retval.push_back(schema_type_t::NUMBER);
     }
-    if (this->jph_callbacks.yajl_string) {
+    if (this->jph_callbacks.yajl_string || !this->jph_const_str.empty()) {
         retval.push_back(schema_type_t::STRING);
     }
     if (this->jph_children) {
@@ -1438,6 +1444,21 @@ void
 json_path_handler_base::validate_string(yajlpp_parse_context& ypc,
                                         string_fragment sf) const
 {
+    if (!this->jph_const_str.empty()) {
+        if (sf != this->jph_const_str) {
+            ypc.report_error(
+                lnav::console::user_message::error(
+                    attr_line_t("invalid value for option ")
+                        .append_quoted(lnav::roles::symbol(
+                            ypc.get_full_path().to_string())))
+                    .with_reason(attr_line_t("value must be set to ")
+                                     .append_quoted(this->jph_const_str))
+                    .with_snippet(ypc.get_snippet())
+                    .with_help(this->get_help_text(&ypc)));
+        }
+        return;
+    }
+
     if (this->jph_pattern) {
         if (!this->jph_pattern->find_in(sf).ignore_error()) {
             this->report_pattern_error(&ypc, sf.to_string());
@@ -1537,6 +1558,7 @@ json_path_handler_base::get_help_text(const std::string& full_path) const
             retval.append(lpc == 0 ? "" : ", ")
                 .append(lnav::roles::symbol(ev.first));
         }
+        retval.append("\n");
     }
 
     if (!this->jph_examples.empty()) {
@@ -1692,8 +1714,9 @@ dump_schema_to(const json_path_container& jpc, const char* internals_dir)
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
     auto internals_dir_path = std::filesystem::path(internals_dir);
-    auto schema_file_name = std::filesystem::path(jpc.jpc_schema_id).filename();
-    auto schema_path = internals_dir_path / schema_file_name;
+    auto schema_file_name
+        = jpc.jpc_schema_id.rsplit_pair(string_fragment::tag1{'/'})->second;
+    auto schema_path = internals_dir_path / schema_file_name.to_string();
     auto file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(schema_path.c_str(), "w+"), fclose);
 

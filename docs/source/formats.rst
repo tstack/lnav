@@ -102,7 +102,7 @@ string, along with any unit tests, will be added to the "samples" list.  The
 "regex101 import" management command is used to create the skeleton and has
 the following form:
 
-.. prompt:: bash
+.. code-block:: bash
 
    lnav -m regex101 import <regex101-url> <format-name> [<regex-name>]
 
@@ -535,7 +535,7 @@ clone URL.  A standard set of repositories is maintained at
 (https://github.com/tstack/lnav-config) and can be installed by passing 'extra'
 on the command line, like so:
 
-.. prompt:: bash
+.. code-block:: bash
 
     lnav -i extra
 
@@ -575,7 +575,7 @@ will match its own samples and those in the more specific format.  You can
 see the order of the format by enabling debugging and checking the **lnav**
 log file for the "Format order" message:
 
-.. prompt:: bash
+.. code-block:: bash
 
     lnav -d /tmp/lnav.log
 
