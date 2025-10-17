@@ -287,6 +287,6 @@ lab_color::sufficient_contrast(const lab_color& other) const
 
 namespace styling {
 
-const color_unit color_unit::EMPTY = color_unit{transparent{}};
+constexpr color_unit color_unit::EMPTY = color_unit{transparent{}};
 
 }  // namespace styling

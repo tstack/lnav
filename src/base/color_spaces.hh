@@ -31,10 +31,11 @@
 #define color_spaces_hh
 
 #include <string>
+#include <variant>
 
-#include "result.h"
 #include "intern_string.hh"
 #include "mapbox/variant.hpp"
+#include "result.h"
 
 using palette_color = uint8_t;
 
@@ -49,14 +50,14 @@ enum class ansi_color : uint8_t {
     white,
 };
 
-#define COLOR_BLACK 0
-#define COLOR_RED 1
-#define COLOR_GREEN 2
-#define COLOR_YELLOW 3
-#define COLOR_BLUE 4
+#define COLOR_BLACK   0
+#define COLOR_RED     1
+#define COLOR_GREEN   2
+#define COLOR_YELLOW  3
+#define COLOR_BLUE    4
 #define COLOR_MAGENTA 5
-#define COLOR_CYAN 6
-#define COLOR_WHITE 7
+#define COLOR_CYAN    6
+#define COLOR_WHITE   7
 
 struct rgb_color {
     static constexpr rgb_color from(ansi_color color);
@@ -130,17 +131,11 @@ ansi_color to_ansi_color(const rgb_color& rgb);
 namespace styling {
 
 struct semantic {
-    bool operator==(const semantic& rhs) const
-    {
-        return true;
-    }
+    bool operator==(const semantic& rhs) const { return true; }
 };
 
 struct transparent {
-    bool operator==(const transparent& rhs) const
-    {
-        return true;
-    }
+    bool operator==(const transparent& rhs) const { return true; }
 };
 
 class color_unit {
@@ -149,10 +144,7 @@ public:
 
     static const color_unit EMPTY;
 
-    static color_unit from_rgb(const rgb_color& rgb)
-    {
-        return color_unit{rgb};
-    }
+    static color_unit from_rgb(const rgb_color& rgb) { return color_unit{rgb}; }
 
     static color_unit from_palette(const palette_color& indexed)
     {
@@ -175,22 +167,33 @@ public:
     {
         return this->cu_value == rhs.cu_value;
     }
+    template<class... Ts>
+    struct overload : Ts... {
+        using Ts::operator()...;
+    };
+    template<class... Ts>
+    overload(Ts...) -> overload<Ts...>;
 
     bool empty() const
     {
-        return this->cu_value.match(
-            [](transparent) { return true; },
-            [](semantic) { return false; },
-            [](const palette_color& pc) { return false; },
-            [](const rgb_color& rc) { return rc.empty(); });
+        return std::visit(overload{
+                              [](transparent) { return true; },
+                              [](semantic) { return false; },
+                              [](const palette_color& pc) { return false; },
+                              [](const rgb_color& rc) { return rc.empty(); },
+                          },
+                          this->cu_value);
     }
 
-    using variants_t = mapbox::util::variant<transparent, semantic, palette_color, rgb_color>;
+    using variants_t
+        = std::variant<transparent, semantic, palette_color, rgb_color>;
 
     variants_t cu_value;
 
 private:
-    explicit color_unit(variants_t value) : cu_value(std::move(value)) {}
+    explicit constexpr color_unit(variants_t value) : cu_value(std::move(value))
+    {
+    }
 };
 
 }  // namespace styling

@@ -67,7 +67,9 @@ public:
                 mixed_style.ta_fg_color = rgb_color{255, 0, 0};
                 mixed_style.ta_bg_color = rgb_color{0, 255, 0};
                 mixed_style.ta_bg_color = palette_color{COLOR_GREEN};
-                if (mixed_style.ta_bg_color.cu_value.is<palette_color>()) {
+                if (std::holds_alternative<palette_color>(
+                        mixed_style.ta_bg_color.cu_value))
+                {
                     log_debug("is palette_color ?");
                 }
                 value_out.al_string += "World!";

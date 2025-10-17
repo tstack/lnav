@@ -280,56 +280,57 @@ user_message::to_attr_line(std::set<render_flags> flags) const
 static std::optional<fmt::terminal_color>
 color_to_terminal_color(const styling::color_unit& curses_color)
 {
-    return curses_color.cu_value.match(
-        [](const styling::semantic& s) -> std::optional<fmt::terminal_color> {
-            return std::nullopt;
-        },
-        [](const styling::transparent& s)
-            -> std::optional<fmt::terminal_color> { return std::nullopt; },
-        [](const palette_color& pc) -> std::optional<fmt::terminal_color> {
-            switch (pc) {
-                case COLOR_BLACK:
-                    return fmt::terminal_color::black;
-                case COLOR_RED:
-                    return fmt::terminal_color::red;
-                case COLOR_GREEN:
-                    return fmt::terminal_color::green;
-                case COLOR_YELLOW:
-                    return fmt::terminal_color::yellow;
-                case COLOR_BLUE:
-                    return fmt::terminal_color::blue;
-                case COLOR_MAGENTA:
-                    return fmt::terminal_color::magenta;
-                case COLOR_CYAN:
-                    return fmt::terminal_color::cyan;
-                case COLOR_WHITE:
-                    return fmt::terminal_color::white;
-                default:
-                    return std::nullopt;
-            }
-        },
-        [](const rgb_color& rgb) -> std::optional<fmt::terminal_color> {
-            switch (to_ansi_color(rgb)) {
-                case ansi_color::black:
-                    return fmt::terminal_color::black;
-                case ansi_color::cyan:
-                    return fmt::terminal_color::cyan;
-                case ansi_color::white:
-                    return fmt::terminal_color::white;
-                case ansi_color::magenta:
-                    return fmt::terminal_color::magenta;
-                case ansi_color::blue:
-                    return fmt::terminal_color::blue;
-                case ansi_color::yellow:
-                    return fmt::terminal_color::yellow;
-                case ansi_color::green:
-                    return fmt::terminal_color::green;
-                case ansi_color::red:
-                    return fmt::terminal_color::red;
-                default:
-                    return std::nullopt;
-            }
-        });
+    return std::visit(
+        styling::color_unit::overload{
+            [](const styling::semantic& s)
+                -> std::optional<fmt::terminal_color> { return std::nullopt; },
+            [](const styling::transparent& s)
+                -> std::optional<fmt::terminal_color> { return std::nullopt; },
+            [](const palette_color& pc) -> std::optional<fmt::terminal_color> {
+                switch (pc) {
+                    case COLOR_BLACK:
+                        return fmt::terminal_color::black;
+                    case COLOR_RED:
+                        return fmt::terminal_color::red;
+                    case COLOR_GREEN:
+                        return fmt::terminal_color::green;
+                    case COLOR_YELLOW:
+                        return fmt::terminal_color::yellow;
+                    case COLOR_BLUE:
+                        return fmt::terminal_color::blue;
+                    case COLOR_MAGENTA:
+                        return fmt::terminal_color::magenta;
+                    case COLOR_CYAN:
+                        return fmt::terminal_color::cyan;
+                    case COLOR_WHITE:
+                        return fmt::terminal_color::white;
+                    default:
+                        return std::nullopt;
+                }
+            },
+            [](const rgb_color& rgb) -> std::optional<fmt::terminal_color> {
+                switch (to_ansi_color(rgb)) {
+                    case ansi_color::black:
+                        return fmt::terminal_color::black;
+                    case ansi_color::cyan:
+                        return fmt::terminal_color::cyan;
+                    case ansi_color::white:
+                        return fmt::terminal_color::white;
+                    case ansi_color::magenta:
+                        return fmt::terminal_color::magenta;
+                    case ansi_color::blue:
+                        return fmt::terminal_color::blue;
+                    case ansi_color::yellow:
+                        return fmt::terminal_color::yellow;
+                    case ansi_color::green:
+                        return fmt::terminal_color::green;
+                    case ansi_color::red:
+                        return fmt::terminal_color::red;
+                    default:
+                        return std::nullopt;
+                }
+            }},
+        curses_color.cu_value);
 }
 
 static bool

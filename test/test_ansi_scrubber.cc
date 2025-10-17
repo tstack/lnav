@@ -73,10 +73,10 @@ main(int argc, char* argv[])
         assert(sa.size() == 1);
         assert(sa[0].sa_type == &VC_STYLE);
         auto ta = sa[0].sa_value.get<text_attrs>();
-        auto rgb = ta.ta_fg_color.cu_value.get<rgb_color>();
-        assert(rgb.rc_r == 1);
-        assert(rgb.rc_g == 2);
-        assert(rgb.rc_b == 3);
+        auto rgb = std::get_if<rgb_color>(&ta.ta_fg_color.cu_value);
+        assert(rgb->rc_r == 1);
+        assert(rgb->rc_g == 2);
+        assert(rgb->rc_b == 3);
     }
 
     {
@@ -88,7 +88,7 @@ main(int argc, char* argv[])
         assert(sa.size() == 1);
         assert(sa[0].sa_type == &VC_STYLE);
         auto ta = sa[0].sa_value.get<text_attrs>();
-        assert(ta.ta_fg_color.cu_value.get<palette_color>()
+        assert(*std::get_if<palette_color>(&ta.ta_fg_color.cu_value)
                == palette_color{245});
     }
 

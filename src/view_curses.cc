@@ -541,11 +541,15 @@ view_curses::mvwattrline(ncplane* window,
             }
 
             if (graphic || !attrs.empty()) {
-                if (attrs.ta_fg_color.cu_value.is<styling::semantic>()) {
+                if (std::holds_alternative<styling::semantic>(
+                        attrs.ta_fg_color.cu_value))
+                {
                     attrs.ta_fg_color
                         = vc.color_for_ident(al.to_string_fragment(iter));
                 }
-                if (attrs.ta_bg_color.cu_value.is<styling::semantic>()) {
+                if (std::holds_alternative<styling::semantic>(
+                        attrs.ta_bg_color.cu_value))
+                {
                     attrs.ta_bg_color
                         = vc.color_for_ident(al.to_string_fragment(iter));
                 }
@@ -725,8 +729,9 @@ public:
 std::optional<lab_color>
 view_colors::to_lab_color(const styling::color_unit& color)
 {
-    if (color.cu_value.is<palette_color>()) {
-        auto pal_index = color.cu_value.get<palette_color>();
+    auto* pal_color = std::get_if<palette_color>(&color.cu_value);
+    if (pal_color != nullptr) {
+        auto pal_index = *pal_color;
         if (pal_index < vc_active_palette->tc_palette.size()) {
             if (this->vc_notcurses != nullptr && pal_index == COLOR_BLACK) {
                 // We use this as the default background, so try to get the
@@ -743,10 +748,11 @@ view_colors::to_lab_color(const styling::color_unit& color)
 
             return vc_active_palette->tc_palette[pal_index].xc_lab_color;
         }
-    } else if (color.cu_value.is<rgb_color>()) {
-        auto rgb = color.cu_value.get<rgb_color>();
-
-        return lab_color{rgb};
+    } else {
+        auto* col = std::get_if<rgb_color>(&color.cu_value);
+        if (col != nullptr) {
+            return lab_color{*col};
+        }
     }
 
     return std::nullopt;
@@ -756,40 +762,45 @@ uint64_t
 view_colors::to_channels(const text_attrs& ta)
 {
     uint64_t retval = 0;
-    ta.ta_fg_color.cu_value.match(
-        [&retval](styling::transparent) {
-            ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
-        },
-        [&retval](styling::semantic) {
-            ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
-        },
-        [&retval](const palette_color& pc) {
-            if (pc == COLOR_WHITE) {
-                ncchannels_set_fg_default(&retval);
-            } else {
-                ncchannels_set_fg_palindex(&retval, pc);
-            }
-        },
-        [&retval](const rgb_color& rc) {
-            ncchannels_set_fg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
-        });
-    ta.ta_bg_color.cu_value.match(
-        [&retval](styling::transparent) {
-            ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
-        },
-        [&retval](styling::semantic) {
-            ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
-        },
-        [&retval](const palette_color& pc) {
-            if (pc == COLOR_BLACK) {
-                ncchannels_set_bg_default(&retval);
-            } else {
-                ncchannels_set_bg_palindex(&retval, pc);
-            }
-        },
-        [&retval](const rgb_color& rc) {
-            ncchannels_set_bg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
-        });
+    std::visit(styling::color_unit::overload{
+                   [&retval](styling::transparent) {
+                       ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
+                   },
+                   [&retval](styling::semantic) {
+                       ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
+                   },
+                   [&retval](const palette_color& pc) {
+                       if (pc == COLOR_WHITE) {
+                           ncchannels_set_fg_default(&retval);
+                       } else {
+                           ncchannels_set_fg_palindex(&retval, pc);
+                       }
+                   },
+                   [&retval](const rgb_color& rc) {
+                       ncchannels_set_fg_rgb8(
+                           &retval, rc.rc_r, rc.rc_g, rc.rc_b);
+                   }},
+               ta.ta_fg_color.cu_value);
+    std::visit(styling::color_unit::overload{
+                   [&retval](styling::transparent) {
+                       ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
+                   },
+                   [&retval](styling::semantic) {
+                       ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
+                   },
+                   [&retval](const palette_color& pc) {
+                       if (pc == COLOR_BLACK) {
+                           ncchannels_set_bg_default(&retval);
+                       } else {
+                           ncchannels_set_bg_palindex(&retval, pc);
+                       }
+                   },
+                   [&retval](const rgb_color& rc) {
+                       ncchannels_set_bg_rgb8(
+                           &retval, rc.rc_r, rc.rc_g, rc.rc_b);
+                   },
+               },
+               ta.ta_bg_color.cu_value);
 
     return retval;
 }
@@ -837,15 +848,15 @@ view_colors::match_color(styling::color_unit cu) const
         return cu;
     }
 
-    if (cu.cu_value.is<rgb_color>()) {
-        auto rgb = cu.cu_value.get<rgb_color>();
-        auto lab = lab_color{rgb};
+    auto* rgb = std::get_if<rgb_color>(&cu.cu_value);
+    if (rgb != nullptr) {
+        auto lab = lab_color{*rgb};
         auto pal = vc_active_palette->match_color(lab);
 
         log_trace("mapped RGB (%d, %d, %d) to palette %d",
-                  rgb.rc_r,
-                  rgb.rc_g,
-                  rgb.rc_b,
+                  rgb->rc_r,
+                  rgb->rc_g,
+                  rgb->rc_b,
                   pal);
         return styling::color_unit::from_palette(palette_color{pal});
     }
@@ -1500,10 +1511,12 @@ view_colors::attrs_for_ident(const char* str, size_t len) const
 {
     auto retval = this->attrs_for_role(role_t::VCR_IDENTIFIER);
 
-    if (retval.ta_fg_color.cu_value.is<styling::semantic>()) {
+    if (std::holds_alternative<styling::semantic>(retval.ta_fg_color.cu_value))
+    {
         retval.ta_fg_color = this->color_for_ident(str, len);
     }
-    if (retval.ta_bg_color.cu_value.is<styling::semantic>()) {
+    if (std::holds_alternative<styling::semantic>(retval.ta_bg_color.cu_value))
+    {
         retval.ta_bg_color = this->color_for_ident(str, len);
     }
 
@@ -1513,9 +1526,9 @@ view_colors::attrs_for_ident(const char* str, size_t len) const
 styling::color_unit
 view_colors::ansi_to_theme_color(styling::color_unit ansi_fg) const
 {
-    if (ansi_fg.cu_value.is<palette_color>()) {
-        auto pal
-            = static_cast<ansi_color>(ansi_fg.cu_value.get<palette_color>());
+    auto* palp = std::get_if<palette_color>(&ansi_fg.cu_value);
+    if (palp != nullptr) {
+        auto pal = static_cast<ansi_color>(*palp);
 
         if (pal >= ansi_color::black && pal <= ansi_color::white) {
             return this->vc_ansi_to_theme[lnav::enums::to_underlying(pal)];
