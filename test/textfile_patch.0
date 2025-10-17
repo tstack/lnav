@@ -1,0 +1,73 @@
+diff --git a/src/old_module.py b/src/old_module.py
+deleted file mode 100644
+index 3f2a4d1..0000000
+--- a/src/old_module.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-def old_function():
+-    print("This function is deprecated")
+-
+-if __name__ == "__main__":
+-    old_function()
+
+diff --git a/src/new_module.py b/src/new_module.py
+new file mode 100644
+index 0000000..c12f7b9
+--- /dev/null
++++ b/src/new_module.py
+@@ -0,0 +1,7 @@
++def new_function():
++    print("This is a brand new file!")
++
++
++if __name__ == "__main__":
++    new_function()
++
+
+diff --git a/src/utils/helpers.py b/src/helpers.py
+similarity index 85%
+rename from src/utils/helpers.py
+rename to src/helpers.py
+index 91c34aa..7ac56bf 100644
+--- a/src/utils/helpers.py
++++ b/src/helpers.py
+@@ -5,7 +5,8 @@ def format_path(path):
+     return path.strip().lower()
+
+ def join_paths(base, sub):
+-    return base + "/" + sub
++    import os
++    return os.path.join(base, sub)
+
+diff --git a/src/config/settings.json b/src/config/settings.json
+old mode 100644
+new mode 100755
+index 83c02b5..83c02b5
+--- a/src/config/settings.json
++++ b/src/config/settings.json
+
+diff --git a/src/main.py b/src/main.py
+index 92bcdde..a2d8e19 100644
+--- a/src/main.py
++++ b/src/main.py
+@@ -1,6 +1,8 @@
+ import sys
+-from utils.helpers import format_path
++from helpers import format_path
++
++# Added a comment for testing
+
+ def main():
+     print(format_path(sys.argv[1]))
+
+diff --git a/tests/test_old_module.py b/tests/test_old_module.py
+deleted file mode 100644
+index 6a9a24c..0000000
+--- a/tests/test_old_module.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-import old_module
+-
+-def test_old_function(capsys):
+-    old_module.old_function()
+-    assert "deprecated" in capsys.readouterr().out

@@ -445,6 +445,7 @@ dist_noinst_DATA = \
 	textfile_json_long.0 \
 	textfile_json_one_line.0 \
 	textfile_nonl.txt \
+	textfile_patch.0 \
 	textfile_plain.0 \
 	textfile_quoted_json.0 \
 	toplevel.lnav \

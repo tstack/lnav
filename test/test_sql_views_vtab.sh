@@ -232,3 +232,8 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT json(row_details) as row_details FROM row_deets" \
     -c ":write-json-to -" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_top_view" \
+    -c ":write-json-to -" \
+    ${test_dir}/textfile_patch.0
