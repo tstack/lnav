@@ -97,6 +97,18 @@ Interface changes:
   by `:add-source-path`, a panel with progress bars for
   each operation will be shown just above the bottom
   status bar.
+* The first line of a multi-line log message will now be
+  shown at the top of the LOG view if the message has
+  scrolled off the screen.  When scrolled to the
+  beginning of the content, the top line will indicate
+  if any log messages were filtered out before the first
+  message.
+* The `{` hotkey and `:prev-section` command will now
+  move to the first line of a multi-line log message if
+  the focused line is in the middle of the message.
+* The `}` hotkey and `:next-section` command will now
+  move to the next log message if the focused line is
+  in the middle of a multi-line message.
 
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path

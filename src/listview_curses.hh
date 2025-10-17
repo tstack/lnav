@@ -319,6 +319,7 @@ public:
     vis_line_t rows_available(vis_line_t line, row_direction_t dir) const;
 
     struct layout_result_t {
+        vis_line_t lr_actual_height{0_vl};
         vis_line_t lr_desired_row{0_vl};
         std::vector<vis_line_t> lr_above_line_heights;
         vis_line_t lr_desired_row_height{0_vl};

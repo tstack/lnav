@@ -587,7 +587,7 @@ listview_curses::do_update()
                     bottom - this->vc_y,
                     overlay_line))
             {
-                this->lv_display_lines.push_back(static_overlay_content{});
+                this->lv_display_lines.emplace_back(static_overlay_content{});
                 mvwattrline(this->vc_window, y, x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
@@ -601,7 +601,7 @@ listview_curses::do_update()
                 mvwattrline_result write_res;
                 auto wrapped_line = size_t{0};
                 do {
-                    this->lv_display_lines.push_back(
+                    this->lv_display_lines.emplace_back(
                         main_content{row, wrapped_line, lr});
                     if (this->lv_word_wrap) {
                         // XXX mvwhline(this->vc_window, y, this->vc_x, ' ',
@@ -1170,6 +1170,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             } else if (layout.lr_below_line_heights.size() < 2) {
                 this->set_selection_without_context(this->lv_top);
             } else {
+                auto [height, width] = this->get_dimensions();
                 auto sel_location = selection_location_t::middle;
 
                 if (this->lv_top - 5_vl <= this->lv_selection
@@ -1182,6 +1183,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                     sel_location = selection_location_t::lower;
                 }
 
+                auto height_diff = height - layout.lr_actual_height;
                 switch (sel_location) {
                     case selection_location_t::upper: {
                         this->set_selection_without_context(this->lv_top
@@ -1196,7 +1198,13 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                         break;
                     }
                     case selection_location_t::lower: {
-                        this->set_selection_without_context(last_row);
+                        if (height_diff == 1
+                            && this->lv_selection == last_row + 1_vl)
+                        {
+                            this->lv_top += 1_vl;
+                        } else {
+                            this->set_selection_without_context(last_row);
+                        }
                         break;
                     }
                 }
@@ -1255,6 +1263,23 @@ listview_curses::layout_for_row(vis_line_t row) const
     const auto inner_height = this->get_inner_height();
     layout_result_t retval;
 
+    if (this->lv_overlay_source != nullptr) {
+        attr_line_t overlay_content;
+
+        for (int y = 0; y < height; y++) {
+            if (this->lv_overlay_source->list_static_overlay(
+                    *this,
+                    list_overlay_source::media_t::display,
+                    y,
+                    y + 1,
+                    overlay_content))
+            {
+                height -= 1_vl;
+            }
+        }
+    }
+
+    retval.lr_actual_height = height;
     retval.lr_desired_row = row;
     retval.lr_desired_row_height = this->height_for_row(row, height, width);
     {

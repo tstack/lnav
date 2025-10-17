@@ -446,7 +446,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             value_out.insert(1, buffer, this->lss_time_column_size);
             this->lss_token_attrs.emplace_back(time_attr->sa_range,
                                                SA_REPLACED.value());
-
         }
         if (format->lf_level_hideable) {
             auto level_attr = find_string_attr(this->lss_token_attrs, &L_LEVEL);
@@ -2316,7 +2315,8 @@ logfile_sub_source::get_sql_filter()
 void
 log_location_history::loc_history_append(vis_line_t top)
 {
-    if (top < 0_vl || top >= vis_line_t(this->llh_log_source.text_line_count())) {
+    if (top < 0_vl || top >= vis_line_t(this->llh_log_source.text_line_count()))
+    {
         return;
     }
 
@@ -3262,10 +3262,38 @@ logfile_sub_source::row_for_anchor(const std::string& id)
 std::optional<vis_line_t>
 logfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
 {
+    if (vl < this->lss_filtered_index.size()) {
+        auto file_and_line_pair = this->find_line_with_file(vl);
+        if (file_and_line_pair) {
+            const auto& [lf, line] = file_and_line_pair.value();
+            if (line->is_continued()) {
+                auto retval = vl;
+                switch (dir) {
+                    case direction::prev: {
+                        auto first_line = line;
+                        while (first_line->is_continued()) {
+                            --first_line;
+                            retval -= 1_vl;
+                        }
+                        return retval;
+                    }
+                    case direction::next: {
+                        auto first_line = line;
+                        while (first_line->is_continued()) {
+                            ++first_line;
+                            retval += 1_vl;
+                        }
+                        return retval;
+                    }
+                }
+            }
+        }
+    }
+
     auto bmc = this->get_bookmark_metadata_context(
         vl, bookmark_metadata::categories::partition);
     switch (dir) {
-        case text_anchors::direction::prev: {
+        case direction::prev: {
             if (bmc.bmc_current && bmc.bmc_current.value() != vl) {
                 return bmc.bmc_current;
             }
@@ -3280,7 +3308,7 @@ logfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
             }
             return prev_bmc.bmc_current;
         }
-        case text_anchors::direction::next:
+        case direction::next:
             return bmc.bmc_next_line;
     }
     return std::nullopt;

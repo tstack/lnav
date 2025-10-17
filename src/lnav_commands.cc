@@ -1238,16 +1238,16 @@ com_next_section(exec_context& ec,
             return ec.make_error("view does not support sections");
         }
 
-        auto adj_opt = ta->adjacent_anchor(tc->get_selection().value_or(0_vl),
-                                           text_anchors::direction::next);
+        auto old_sel = tc->get_selection().value_or(0_vl);
+        auto adj_opt
+            = ta->adjacent_anchor(old_sel, text_anchors::direction::next);
         if (!adj_opt) {
             return ec.make_error("no next section found");
         }
 
+        tc->get_sub_source()->get_location_history() |
+            [old_sel](auto lh) { lh->loc_history_append(old_sel); };
         tc->set_selection(adj_opt.value());
-        if (tc->is_selectable() && adj_opt.value() >= 2_vl) {
-            tc->set_top(adj_opt.value() - 2_vl, false);
-        }
     }
 
     return Ok(retval);
@@ -1269,16 +1269,16 @@ com_prev_section(exec_context& ec,
             return ec.make_error("view does not support sections");
         }
 
-        auto adj_opt = ta->adjacent_anchor(tc->get_selection().value_or(0_vl),
-                                           text_anchors::direction::prev);
+        auto old_sel = tc->get_selection().value_or(0_vl);
+        auto adj_opt
+            = ta->adjacent_anchor(old_sel, text_anchors::direction::prev);
         if (!adj_opt) {
             return ec.make_error("no previous section found");
         }
 
+        tc->get_sub_source()->get_location_history() |
+            [old_sel](auto lh) { lh->loc_history_append(old_sel); };
         tc->set_selection(adj_opt.value());
-        if (tc->is_selectable() && adj_opt.value() >= 2_vl) {
-            tc->set_top(adj_opt.value() - 2_vl, false);
-        }
     }
 
     return Ok(retval);

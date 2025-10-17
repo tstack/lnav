@@ -409,6 +409,11 @@ public:
         return this->lss_index[this->lss_filtered_index[vl]].value();
     }
 
+    size_t get_filtered_before() const
+    {
+         return this->lss_filtered_index[0];
+    }
+
     content_line_t at_base(vis_line_t vl)
     {
         while (vl > 0_vl

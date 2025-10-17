@@ -113,6 +113,7 @@ public:
     hasher::array_t fos_static_lines_state;
     std::vector<attr_line_t> fos_lines;
     std::vector<attr_line_t> fos_meta_lines;
+    std::optional<content_line_t> fos_header_line;
 
     struct row_info {
         std::optional<logline_value_meta> ri_meta;

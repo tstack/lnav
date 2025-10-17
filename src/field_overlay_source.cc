@@ -822,6 +822,16 @@ field_overlay_source::list_value_for_overlay(
     this->build_meta_line(lv, value_out, row);
 }
 
+static void
+apply_status_attrs(std::vector<attr_line_t>& lines)
+{
+    for (auto& al : lines) {
+        al.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+    }
+    lines.back().with_attr_for_all(
+        VC_STYLE.value(text_attrs::with_underline()));
+}
+
 bool
 field_overlay_source::list_static_overlay(const listview_curses& lv,
                                           media_t media,
@@ -829,6 +839,10 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                                           int bottom,
                                           attr_line_t& value_out)
 {
+    if (media != media_t::display) {
+        return false;
+    }
+
     const std::vector<attr_line_t>* lines = nullptr;
     if (this->fos_lss.text_line_count() == 0) {
         if (this->fos_lss.is_indexing_in_progress()
@@ -838,7 +852,6 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                 "Log messages are being indexed...");
             this->fos_static_lines = msg.to_attr_line().split_lines();
             this->fos_static_lines_state.clear();
-            lines = &this->fos_static_lines;
         } else if (this->fos_lss.file_count() > 0) {
             hasher h;
             this->fos_lss.update_filter_hash_state(h);
@@ -913,23 +926,75 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                 this->fos_static_lines_state = curr_state;
             }
 
-            lines = &this->fos_static_lines;
         } else if (this->fos_tss.empty()) {
-            lines = lnav::messages::view::no_files();
+            this->fos_static_lines = *lnav::messages::view::no_files();
         } else {
-            lines = lnav::messages::view::only_text_files();
+            this->fos_static_lines = *lnav::messages::view::only_text_files();
         }
-    } else {
-        this->fos_static_lines.clear();
+        apply_status_attrs(this->fos_static_lines);
+        lines = &this->fos_static_lines;
+    } else if (y == 0) {
+        lines = &this->fos_static_lines;
+        auto top = lv.get_top();
+        if (top < this->fos_lss.text_line_count()) {
+            auto cl = this->fos_lss.at(top);
+            if (!this->fos_header_line || this->fos_header_line.value() != cl) {
+                auto file_and_line_pair
+                    = this->fos_lss.find_line_with_file(top);
+                if (file_and_line_pair) {
+                    const auto& [lf, line] = file_and_line_pair.value();
+                    auto first_line = line;
+                    auto header_top = top;
+                    while (first_line->is_continued()) {
+                        --first_line;
+                        header_top -= 1_vl;
+                    }
+                    if (header_top == top) {
+                        header_top -= 1_vl;
+                    }
+                    this->fos_static_lines.clear();
+                    if (header_top < 0_vl) {
+                        auto al = attr_line_t();
+                        auto filtered_before
+                            = this->fos_lss.get_filtered_before();
+                        if (filtered_before > 0) {
+                            al.append(" ")
+                                .append(lnav::roles::number(
+                                    fmt::to_string(filtered_before)))
+                                .append(
+                                    " message(s) above here have been filtered "
+                                    "out");
+                        } else {
+                            al.append(" No messages above here");
+                        }
+                        al.with_attr_for_all(
+                            VC_STYLE.value(text_attrs::with_italic()));
+                        this->fos_static_lines.emplace_back(al);
+                        apply_status_attrs(this->fos_static_lines);
+                    } else {
+                        this->fos_static_lines.resize(1);
+                        auto& al = this->fos_static_lines.front();
+                        auto& tc = dynamic_cast<textview_curses&>(
+                            const_cast<listview_curses&>(lv));
+                        this->fos_lss.text_value_for_line(
+                            tc, header_top, al.al_string, 0);
+                        this->fos_lss.text_attrs_for_line(
+                            tc, header_top, al.al_attrs);
+                        if ((top - header_top) > 1 && line->is_continued()) {
+                            apply_status_attrs(this->fos_static_lines);
+                        }
+                    }
+                    this->fos_header_line = cl;
+                }
+            }
+        } else {
+            this->fos_static_lines.resize(1);
+            this->fos_static_lines[0].clear();
+        }
     }
 
     if (lines != nullptr && y < (ssize_t) lines->size()) {
         value_out = lines->at(y);
-        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-        if (y == (ssize_t) lines->size() - 1) {
-            value_out.with_attr_for_all(
-                VC_STYLE.value(text_attrs::with_underline()));
-        }
         return true;
     }
 
