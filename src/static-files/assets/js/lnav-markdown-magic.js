@@ -6,8 +6,7 @@ function updateElementFromResponse(element, result) {
         return;
     }
 
-    if (typeof result === 'object' || (Array.isArray(
-        result) && result.length === 1)) {
+    if (typeof result === 'object') {
         let found = false;
         for (const [key, value] of Object.entries(result)) {
             for (let element of document.getElementsByName(key)) {
@@ -109,7 +108,7 @@ async function evalLnavCode() {
                     const datasets = result.slice(1).map(col => ({
                         label: col.name,
                         data: col.values,
-                    }))
+                    }));
                     new chartlib.Chart(canvas, {
                         type: 'bar',
                         data: {
