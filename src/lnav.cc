@@ -173,7 +173,7 @@ using namespace md4cpp::literals;
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-static std::vector<std::future<void>> CLEANUP_TASKS;
+static std::vector<std::pair<const char*, std::future<void>>> CLEANUP_TASKS;
 
 template<std::intmax_t N>
 class to_string_t {
@@ -1143,6 +1143,18 @@ ui_execute_init_commands(
                 HELP_MSG_1(X, "to close the file"));
         }
     }
+}
+
+static void
+run_cleanup_tasks()
+{
+    CLEANUP_TASKS.emplace_back("line_buffer", line_buffer::cleanup_cache());
+    CLEANUP_TASKS.emplace_back("archive_manager",
+                               archive_manager::cleanup_cache());
+    CLEANUP_TASKS.emplace_back("tailer", tailer::cleanup_cache());
+    CLEANUP_TASKS.emplace_back("piper", lnav::piper::cleanup());
+    CLEANUP_TASKS.emplace_back("file_converter_manager",
+                               file_converter_manager::cleanup());
 }
 
 static void
@@ -2432,13 +2444,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
 
                 if (!ran_cleanup) {
-                    CLEANUP_TASKS.emplace_back(line_buffer::cleanup_cache());
-                    CLEANUP_TASKS.emplace_back(
-                        archive_manager::cleanup_cache());
-                    CLEANUP_TASKS.emplace_back(tailer::cleanup_cache());
-                    CLEANUP_TASKS.emplace_back(lnav::piper::cleanup());
-                    CLEANUP_TASKS.emplace_back(
-                        file_converter_manager::cleanup());
+                    run_cleanup_tasks();
                     ran_cleanup = true;
                 }
             }
@@ -3004,6 +3010,15 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
 
         lnav_data.ld_db.reset();
+
+        log_info("waiting for cleanup tasks");
+        while (!CLEANUP_TASKS.empty()) {
+            auto& [name, task] = CLEANUP_TASKS.back();
+            if (task.wait_for(10ms) != std::future_status::ready) {
+                log_warning("cleanup task '%s' is not yet ready", name);
+            }
+            CLEANUP_TASKS.pop_back();
+        }
 
         log_info("cleanup finished");
     });
@@ -4131,11 +4146,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
-                CLEANUP_TASKS.emplace_back(line_buffer::cleanup_cache());
-                CLEANUP_TASKS.emplace_back(archive_manager::cleanup_cache());
-                CLEANUP_TASKS.emplace_back(tailer::cleanup_cache());
-                CLEANUP_TASKS.emplace_back(lnav::piper::cleanup());
-                CLEANUP_TASKS.emplace_back(file_converter_manager::cleanup());
+                run_cleanup_tasks();
                 wait_for_pipers();
                 rescan_files(true);
                 isc::to<curl_looper&, services::curl_streamer_t>()
