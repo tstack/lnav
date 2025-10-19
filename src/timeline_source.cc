@@ -28,6 +28,8 @@
  */
 
 #include <chrono>
+#include <utility>
+#include <vector>
 
 #include "timeline_source.hh"
 
@@ -51,7 +53,17 @@ using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 using namespace md4cpp::literals;
 
-static const std::vector<std::chrono::seconds> TIME_SPANS = {
+static const std::vector<std::chrono::microseconds> TIME_SPANS = {
+    500us,
+    1ms,
+    100ms,
+    500ms,
+    1s,
+    5s,
+    10s,
+    15s,
+    30s,
+    1min,
     5min,
     15min,
     1h,
@@ -214,6 +226,8 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     if (ub < bounds.second) {
         ub = bounds.second;
     }
+    auto whole_span = to_us(ub - lb);
+    auto use_small_span = whole_span < 5min;
 
     secs2tm(lb.tv_sec, &lb_tm);
     secs2tm(ub.tv_sec, &ub_tm);
@@ -269,10 +283,12 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         abbrev_ftime(datebuf, sizeof(datebuf), lb_tm, sel_lb_tm);
         value_out.appendf(FMT_STRING(" {}"), datebuf);
 
-        auto duration_str
-            = humanize::time::duration::from_tv(bounds.second - bounds.first)
-                  .with_resolution(1min)
-                  .to_string();
+        auto bound_dur
+            = humanize::time::duration::from_tv(bounds.second - bounds.first);
+        if (!use_small_span) {
+            bound_dur.with_resolution(1min);
+        }
+        auto duration_str = bound_dur.to_string();
         auto duration_pos = width / 2 - duration_str.size() / 2;
         value_out.pad_to(duration_pos).append(duration_str);
 
@@ -419,10 +435,10 @@ timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             if (this->gs_preview_focused) {
                 this->gs_preview_focused = false;
                 this->gs_preview_view.set_height(5_vl);
+                this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
+                this->tss_view->set_enabled(!this->gs_preview_focused);
+                return true;
             }
-            this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
-            this->tss_view->set_enabled(!this->gs_preview_focused);
-            this->gs_preview_view.set_enabled(this->gs_preview_focused);
             break;
         }
         case '\n':
@@ -431,7 +447,6 @@ timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->gs_preview_focused = !this->gs_preview_focused;
             this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
             this->tss_view->set_enabled(!this->gs_preview_focused);
-            this->gs_preview_view.set_enabled(this->gs_preview_focused);
             if (this->gs_preview_focused) {
                 auto height = this->tss_view->get_dimensions().first;
 
@@ -476,36 +491,29 @@ timeline_source::get_time_bounds_for(int line)
                    vis_line_t((int) this->gs_time_order.size() - 1));
     const auto& low_row = this->gs_time_order[low_index].get();
     const auto& high_row = this->gs_time_order[high_index].get();
-    auto low_tv_sec = low_row.or_value.otr_range.tr_begin.tv_sec;
-    auto high_tv_sec = high_row.or_value.otr_range.tr_begin.tv_sec;
+    auto low_tv = low_row.or_value.otr_range.tr_begin;
+    auto high_tv = high_row.or_value.otr_range.tr_begin;
 
     for (auto index = low_index; index <= high_index; index += 1_vl) {
         const auto& row = this->gs_time_order[index].get();
 
-        if (row.or_value.otr_range.tr_end.tv_sec > high_tv_sec) {
-            high_tv_sec = row.or_value.otr_range.tr_end.tv_sec;
+        if (high_tv < row.or_value.otr_range.tr_end) {
+            high_tv = row.or_value.otr_range.tr_end;
         }
     }
-    auto duration = std::chrono::seconds{high_tv_sec - low_tv_sec};
+    auto duration = to_us(high_tv - low_tv);
     auto span_iter
         = std::upper_bound(TIME_SPANS.begin(), TIME_SPANS.end(), duration);
     if (span_iter == TIME_SPANS.end()) {
         --span_iter;
     }
-    auto round_to = (*span_iter) == 5min
-        ? 60
-        : ((*span_iter) == 15min ? 60 * 15 : 60 * 60);
-    auto span_secs = span_iter->count() - round_to;
-    auto lower_tv = timeval{
-        rounddown(low_row.or_value.otr_range.tr_begin.tv_sec, round_to),
-        0,
-    };
-    lower_tv.tv_sec -= span_secs / 2;
-    auto upper_tv = timeval{
-        roundup(high_tv_sec, round_to),
-        0,
-    };
-    upper_tv.tv_sec += span_secs / 2;
+    auto span_portion = *span_iter / 8;
+    auto lower_dur = to_us(low_tv);
+    lower_dur = rounddown(lower_dur, span_portion);
+    auto upper_dur = to_us(high_tv);
+    upper_dur = roundup(upper_dur, span_portion);
+    auto lower_tv = to_timeval(lower_dur);
+    auto upper_tv = to_timeval(upper_dur);
 
     return {lower_tv, upper_tv};
 }
@@ -583,25 +591,28 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
             if (width > INDENT) {
                 width -= INDENT;
                 double span
-                    = sel_bounds.second.tv_sec - sel_bounds.first.tv_sec;
+                    = (to_us(sel_bounds.second) - to_us(sel_bounds.first))
+                          .count();
                 double per_ch = span / (double) width;
 
                 if (row.or_value.otr_range.tr_begin <= sel_bounds.first) {
                     lr.lr_start = INDENT;
                 } else {
-                    auto start_diff = row.or_value.otr_range.tr_begin.tv_sec
-                        - sel_bounds.first.tv_sec;
+                    double start_diff = (to_us(row.or_value.otr_range.tr_begin)
+                                         - to_us(sel_bounds.first))
+                                            .count();
 
-                    lr.lr_start = INDENT + start_diff / per_ch;
+                    lr.lr_start = INDENT + floor(start_diff / per_ch);
                 }
 
                 if (sel_bounds.second < row.or_value.otr_range.tr_end) {
                     lr.lr_end = -1;
                 } else {
-                    auto end_diff = row.or_value.otr_range.tr_end.tv_sec
-                        - sel_bounds.first.tv_sec;
+                    double end_diff = (to_us(row.or_value.otr_range.tr_end)
+                                       - to_us(sel_bounds.first))
+                                          .count();
 
-                    lr.lr_end = INDENT + end_diff / per_ch;
+                    lr.lr_end = INDENT + ceil(end_diff / per_ch);
                     if (lr.lr_start == lr.lr_end) {
                         lr.lr_end += 1;
                     }

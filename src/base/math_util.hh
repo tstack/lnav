@@ -54,7 +54,7 @@ template<typename Size, typename Step>
 auto
 roundup(Size size, Step step)
 {
-    auto retval = size + (step - 1);
+    auto retval = size + (step - Step{1});
 
     retval -= (retval % step);
 

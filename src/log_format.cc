@@ -1039,8 +1039,10 @@ struct json_log_userdata {
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
     std::optional<string_fragment> jlu_opid_frag;
+    std::optional<string_fragment> jlu_opid_desc_frag;
     std::optional<string_fragment> jlu_tid_frag;
     std::optional<std::string> jlu_subid;
+    hasher jlu_opid_hasher;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
     subline_options jlu_subline_opts;
@@ -1201,13 +1203,9 @@ json_array_start(void* ctx)
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
 
     if (ypc->ypc_path_index_stack.size() == 2) {
-        const intern_string_t field_name = ypc->get_path_fragment_i(0);
+        intern_string_t field_name;
+        const auto* vd = jlu->get_field_def(ypc);
 
-        external_log_format::value_def* vd = nullptr;
-        auto iter = jlu->jlu_format->elf_value_defs.find(field_name);
-        if (iter != jlu->jlu_format->elf_value_defs.end()) {
-            vd = iter->second.get();
-        }
         jlu->add_sub_lines_for(vd, true, std::nullopt, nullptr, -1, nullptr);
         jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
     }
@@ -1218,18 +1216,40 @@ json_array_start(void* ctx)
 static int
 json_array_end(void* ctx)
 {
-    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    auto* ypc = (yajlpp_parse_context*) ctx;
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
 
     if (ypc->ypc_path_index_stack.size() == 1) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
+        auto json_frag = string_fragment::from_byte_range(
+            jlu->jlu_shared_buffer.get_data(), jlu->jlu_sub_start, sub_end);
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_JSON),
-            string_fragment::from_byte_range(jlu->jlu_shared_buffer.get_data(),
-                                             jlu->jlu_sub_start,
-                                             sub_end));
+            json_frag);
+        if (field_name == jlu->jlu_format->elf_opid_field) {
+            jlu->jlu_opid_desc_frag = json_frag;
+        }
+    }
+
+    return 1;
+}
+
+static int
+read_array_end(void* ctx)
+{
+    auto* ypc = (yajlpp_parse_context*) ctx;
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+
+    if (ypc->ypc_path_index_stack.size() == 1) {
+        const intern_string_t field_name = ypc->get_path_fragment_i(0);
+        size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
+        auto json_frag = string_fragment::from_byte_range(
+            jlu->jlu_shared_buffer.get_data(), jlu->jlu_sub_start, sub_end);
+        if (field_name == jlu->jlu_format->elf_opid_field) {
+            jlu->jlu_opid_desc_frag = json_frag;
+        }
     }
 
     return 1;
@@ -1484,8 +1504,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
     ypc.ypc_ignore_unused = true;
     ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
     ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
-    ypc.ypc_alt_callbacks.yajl_end_array = nullptr;
-    ypc.ypc_alt_callbacks.yajl_end_map = nullptr;
+    ypc.ypc_alt_callbacks.yajl_end_array = read_array_end;
+    ypc.ypc_alt_callbacks.yajl_end_map = read_array_end;
     jlu.jlu_format = this;
     jlu.jlu_base_line = &ll;
     jlu.jlu_line_value = sbr.get_data();
@@ -1524,6 +1544,19 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_msg_level());
         }
 
+        if (jlu.jlu_opid_desc_frag) {
+            char buf[hasher::STRING_SIZE];
+            jlu.jlu_opid_hasher.to_string(buf);
+            auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
+            jlu.jlu_base_line->set_opid(opid_frag.hash());
+            auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_frag);
+            if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
+                jlu.jlu_opid_frag = opid_frag.to_owned(sbc.sbc_allocator);
+            } else {
+                jlu.jlu_opid_frag = opid_iter->first;
+            }
+        }
+
         if (jlu.jlu_opid_frag) {
             this->jlf_line_values.lvv_opid_value
                 = jlu.jlu_opid_frag->to_string();
@@ -1533,6 +1566,14 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 sbc.sbc_allocator, jlu.jlu_opid_frag.value(), ll.get_timeval());
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
+            if (jlu.jlu_opid_desc_frag
+                && opid_iter->second.otr_description.lod_elements[0].empty())
+            {
+                opid_iter->second.otr_description.lod_elements[0].push_back(
+                    ' ');
+                opid_iter->second.otr_description.lod_elements[0]
+                    += jlu.jlu_opid_desc_frag.value();
+            }
 
             if (jlu.jlu_subid) {
                 auto subid_frag
@@ -2333,6 +2374,13 @@ read_json_field(yajlpp_parse_context* ypc,
     }
 
     if (field_name.empty()) {
+        if (!jlu->jlu_format->elf_opid_field.empty()) {
+            auto path_sf = ypc->get_path_as_string_fragment();
+            if (path_sf.startswith(jlu->jlu_format->elf_opid_field.c_str())) {
+                jlu->jlu_opid_hasher.update(path_sf);
+                jlu->jlu_opid_hasher.update(frag);
+            }
+        }
     } else if (jlu->jlu_format->lf_timestamp_field == field_name) {
         const auto* last = jlu->jlu_format->lf_date_time.scan(
             (const char*) str,
@@ -2429,8 +2477,16 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
     intern_string_t field_name;
     const auto* vd = jlu->get_field_def(ypc);
+    auto frag = string_fragment::from_bytes(str, len);
 
     if (!ypc->is_level(1) && vd == nullptr) {
+        if (!jlu->jlu_format->elf_opid_field.empty()) {
+            auto path_sf = ypc->get_path_as_string_fragment();
+            if (path_sf.startswith(jlu->jlu_format->elf_opid_field.c_str())) {
+                jlu->jlu_opid_hasher.update(path_sf);
+                jlu->jlu_opid_hasher.update(frag);
+            }
+        }
         return 1;
     }
     if (vd != nullptr) {
@@ -2440,7 +2496,6 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     }
 
     if (jlu->jlu_format->elf_opid_field == field_name) {
-        auto frag = string_fragment::from_bytes(str, len);
         jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
         jlu->jlu_format->jlf_line_values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
@@ -2633,6 +2688,13 @@ external_log_format::get_subline(const logline& ll,
             if (jlu.jlu_tid_frag) {
                 this->jlf_line_values.lvv_thread_id_value
                     = jlu.jlu_tid_frag->to_string();
+            }
+
+            if (jlu.jlu_opid_desc_frag) {
+                this->jlf_line_values.lvv_opid_value
+                    = jlu.jlu_opid_hasher.to_string();
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
             }
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value

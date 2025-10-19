@@ -306,7 +306,7 @@ time_t
 to_time_t(T dur)
 {
     return static_cast<time_t>(
-        std::chrono::duration_cast<std::chrono::seconds>(dur).count());
+        std::chrono::ceil<std::chrono::seconds>(dur).count());
 }
 
 inline std::chrono::microseconds

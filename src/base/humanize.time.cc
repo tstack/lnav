@@ -36,8 +36,7 @@
 #include "math_util.hh"
 #include "time_util.hh"
 
-namespace humanize {
-namespace time {
+namespace humanize::time {
 
 using namespace std::chrono_literals;
 
@@ -151,10 +150,8 @@ duration::to_string() const
     };
 
     const auto* curr_interval = intervals;
-    auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(
-                     std::chrono::seconds(this->d_timeval.tv_sec))
-        + std::chrono::microseconds(this->d_timeval.tv_usec);
-    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(usecs);
+    auto usecs = to_us(this->d_timeval);
+    auto millis = std::chrono::ceil<std::chrono::milliseconds>(usecs);
     std::string retval;
     bool neg = false;
 
@@ -214,5 +211,4 @@ duration::to_string() const
     return retval;
 }
 
-}  // namespace time
-}  // namespace humanize
+}  // namespace humanize::time
