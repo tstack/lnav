@@ -291,7 +291,9 @@ types of information can be saved:
   next/previous marked line.  A regular search will also match the
   comment text.
 
-:partitions: The log view can be partitioned to provide some context
+.. _partitions:
+
+:partitions: The LOG view can be partitioned to provide some context
   about where you are in a collection of logs.  For example, in logs
   for a test run, partitions could be created with the name for each
   test.  The current partition is shown in the breadcrumb bar and

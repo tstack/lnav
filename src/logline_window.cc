@@ -67,7 +67,7 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
 {
     if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
         while (true) {
-            auto pair_opt = this->li_source.find_line_with_file(vl);
+            auto pair_opt = this->li_source.find_line_with_file(this->li_line);
             if (!pair_opt) {
                 break;
             }
@@ -80,7 +80,7 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
                     = std::distance(this->li_file->begin(), this->li_logline);
                 break;
             }
-            --vl;
+            --this->li_line;
         }
     }
 }

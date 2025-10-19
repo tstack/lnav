@@ -132,7 +132,12 @@ The majority of these hotkeys should be available in all views.
    * - :kbd:`{`
      - :kbd:`}`
      -
-     - Previous/next location in history
+     - Previous/next section in the view.  For the LOG view, if the cursor
+       is in the middle of a multi-line log message, this will move to the
+       start of the message or the next message.  Otherwise, it will move
+       to the adjacent :ref:`partition<partitions>`.  For the TEXT view,
+       the following document types have recognizable sections: JSON, man,
+       diff, and Markdown.
    * - :kbd:`F7`
      - :kbd:`F8`
      -

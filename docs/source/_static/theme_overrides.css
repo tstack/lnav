@@ -22,7 +22,6 @@ table.query-results p {
     font-size: 0.9em !important;
 }
 
-
 DL DT {
     border-bottom: 1px solid #333 !important;
 }
@@ -33,4 +32,22 @@ DL DT {
 
 .lb-outerContainer {
     background-color: rgba(128, 128, 128, .4) !important;
+}
+
+.caption-text {
+    font-size: 0.8em !important;
+    filter: brightness(80%);
+}
+
+.log-level-error {
+    color: #ef5350;
+}
+
+.log-level-warning {
+    color: #b39554;
+}
+
+.search-match {
+    background-color: teal;
+    color: white;
 }

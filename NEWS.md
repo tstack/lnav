@@ -98,11 +98,12 @@ Interface changes:
   each operation will be shown just above the bottom
   status bar.
 * The first line of a multi-line log message will now be
-  shown at the top of the LOG view if the message has
+  shown in the header of the LOG view if the message has
   scrolled off the screen.  When scrolled to the
   beginning of the content, the top line will indicate
   if any log messages were filtered out before the first
-  message.
+  message.  Left-clicking on the header will scroll the
+  view to the displayed line.
 * The `{` hotkey and `:prev-section` command will now
   move to the first line of a multi-line log message if
   the focused line is in the middle of the message.

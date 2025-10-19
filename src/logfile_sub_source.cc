@@ -3371,6 +3371,19 @@ logfile_sub_source::text_handle_mouse(
     const listview_curses::display_line_content_t& mouse_line,
     mouse_event& me)
 {
+    if (mouse_line.is<listview_curses::static_overlay_content>() &&
+        this->text_line_count() > 0) {
+        auto top = tc.get_top();
+        if (top > 0) {
+            auto win = this->window_at(top - 1_vl);
+            for (const auto& li : *win) {
+                tc.set_top(li.get_vis_line());
+                tc.set_selection(li.get_vis_line());
+                return true;
+            }
+        }
+    }
+
     if (tc.get_overlay_selection()) {
         auto nci = ncinput{};
         if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4)) {

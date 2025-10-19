@@ -1,5 +1,9 @@
 .. _ui:
 
+.. role:: log_level_error
+.. role:: log_level_warning
+.. role:: search_match
+
 User Interface
 ==============
 
@@ -205,6 +209,16 @@ The accessible content within lnav is separated into the following views.
 LOG
 ^^^
 
+.. figure:: lnav-log-multi-line-msg.png
+    :align: center
+    :figwidth: 90%
+
+    Screenshot of the **lnav** LOG view displaying a PostgreSQL log.
+    Since the log message at the top of the view is partially scrolled
+    off the screen, the first line of the message is displayed at the
+    top.  You can left-click the header to scroll to the first line of
+    the message or press :kbd:`{`.
+
 The log view displays the log messages from any loaded log files in time
 order.  This view will be shown by default if any log files were detected.
 If plain text files were also loaded, they will be available in the TEXT
@@ -212,15 +226,15 @@ view, which you can switch to by pressing :kbd:`t`.
 
 On color displays, the log messages will be highlighted as follows:
 
-* Errors will be colored in red;
-* warnings will be yellow;
-* search hits are reverse video;
+* Errors will be colored in :log_level_error:`red`;
+* warnings will be :log_level_warning:`yellow`;
+* search hits are :search_match:`reverse video`;
 * various color highlights will be applied to: IP addresses, SQL keywords,
   XML tags, file and line numbers in Java backtraces, and quoted strings;
 * "identifiers" in the messages will be randomly assigned colors based on their
   content (works best on "xterm-256color" terminals).
 
-.. note::
+.. tip::
 
   If the coloring is too much for your tastes, you can change to the
   "grayscale" theme by entering the following command:
@@ -245,6 +259,7 @@ to use for these types of files using the
   time" is the original textual timestamp.  The "received time" is the time
   of an earlier message that is larger than this log message's time.
 
+
 To get more details about a log message, move to the starting line of the
 message and press :kbd:`p` to open an overlay with information about the
 timestamp and individual fields.  You then can focus into the overlay panel
@@ -256,11 +271,12 @@ message.  Inside the overlay, the following hotkeys are supported:
 * :kbd:`#` to open the SQL prompt with a query to create a chart of this
   field's values over time.
 
-The "Permalink" line in the details overlay contains a string that you
-can use to reference this particular message.  It can be used as an
-argument to the :ref:`:goto<goto>` command, the target of a Markdown
-link in a log message comment, or compared to the :code:`log_line_link`
-link in log tables.
+.. tip::
+    The "Permalink" line in the details overlay contains a string that you
+    can use to reference this particular message.  It can be used as an
+    argument to the :ref:`:goto<goto>` command, the target of a Markdown
+    link in a log message comment, or compared to the :code:`log_line_link`
+    link in log tables.
 
 The source file name for each message can be displayed by scrolling left.
 Scrolling left once will show the shortened version of the file name relative
@@ -293,10 +309,11 @@ Press :kbd:`t` to switch to the text view.  While in the text view, you can
 press :kbd:`f` or :kbd:`Shift` + :kbd:`F` to switch to the next / previous
 text file.
 
-The breadcrumb bar will show the name of the file and any structure that was
-discovered in the content.  The file crumb will show a "↻" icon if the file
-is from the output of a FIFO, :code:`:sh` command, or data that was piped
-into the standard input.  When the pipe is closed, the icon will disappear.
+The breadcrumb bar will show the name of the file currently displayed file.
+To switch to a different file, you can select the file crumb and search for
+the file you want to focus on.  If the file is the output of a FIFO,
+:code:`:sh` command, or data that was piped into the standard input, the file
+crumb will show a "↻" icon.  When the pipe is closed, the icon will disappear.
 
 If the content is piped into lnav through standard input, a FIFO, or a
 :code:`:sh` command, the time that lines are received are recorded.  You
@@ -315,6 +332,10 @@ SIGINT to the child process without killing **lnav** itself.
    possible to view how long each test is taking to run.  The "↻" icon
    next to the file name in the breadcrumb bar means that the make is
    still running.
+
+If the document has some recognizable structure, the breadcrumb bar will
+be updated with the path to the focused line.  The following document types
+are recognized: JSON, XML, TOML, man, diff, and Markdown.
 
 Markdown
 """"""""
