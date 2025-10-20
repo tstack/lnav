@@ -2897,6 +2897,9 @@ main(int argc, char* argv[])
     }
 #endif
 
+    auto log_fos = std::make_unique<field_overlay_source>(
+        lnav_data.ld_log_source, lnav_data.ld_text_source);
+
     auto _vtab_cleanup = finally([] {
         static const char* VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
@@ -3497,8 +3500,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_HELP]
         .set_sub_source(&lnav_data.ld_help_source)
         .set_word_wrap(false);
-    auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
-                                            lnav_data.ld_text_source);
     log_fos->fos_contexts.emplace("", false, true, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
@@ -3516,7 +3517,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(lnav_data.ld_log_source)
         .set_head_space(0_vl)
         .set_tail_space(2_vl)
-        .set_overlay_source(log_fos);
+        .set_overlay_source(log_fos.get());
     auto sel_reload_delegate = [](textview_curses& tc) {
         if (!(lnav_data.ld_flags & LNF_HEADLESS)
             && lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR)
