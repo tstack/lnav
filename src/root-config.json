@@ -192,6 +192,9 @@
             },
             "podman": {
                 "handler": "docker-url-handler"
+            },
+            "strace": {
+                "handler": "strace-url-handler"
             }
         }
     }

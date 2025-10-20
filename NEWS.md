@@ -97,6 +97,13 @@ Features:
   to the operation that the message refers to, either:
   start or send.  This is used in conjunction with the
   message duration to determine the time span.
+* The `strace_log` format has been improved to handle
+  more output formats and the syscalls will now show
+  up in the TIMELINE view.
+* The `strace://` URL-handler has been added to make it
+  easier to run `strace` on an existing process.  A
+  host must be given and the path should be the PID,
+  such as `strace://localhost/1234`.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

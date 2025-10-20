@@ -16,6 +16,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/rename-stdin.lnav \
     $(srcdir)/scripts/report-access-log.lnav \
     $(srcdir)/scripts/search-for.lnav \
+    $(srcdir)/scripts/strace-url-handler.lnav \
     $(srcdir)/scripts/zk-set-ops.lnav \
     $()
 

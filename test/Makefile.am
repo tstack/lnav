@@ -401,6 +401,8 @@ dist_noinst_DATA = \
 	logfile_shop_access_log.0 \
 	logfile_spark.0 \
 	logfile_strace_log.0 \
+	logfile_strace_log.1 \
+	logfile_strace_log.2 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
 	logfile_syslog.2 \

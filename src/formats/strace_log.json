@@ -7,19 +7,19 @@
         "multiline": false,
         "regex": {
             "std": {
-                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+|\\?)(?<rc_extra>\\s?\\([^)]+\\)|\\?|<[^>]+>)?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+                "pattern": "^(?:(?:\\[pid )?(?<pid>\\d+)\\]? )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+|\\?)(?<rc_extra>\\s?\\([^)]+\\)|\\?|<[^>]+>)?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             },
             "unfinished": {
-                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\s<unfinished ...>$"
+                "pattern": "^(?:(?:\\[pid )?(?<pid>\\d+)\\]? )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\s<unfinished ...>$"
             },
             "resumed": {
-                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) <... (?<syscall>\\w+) resumed>\\s*(?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\((?<rc_extra>.+)\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+                "pattern": "^(?:(?:\\[pid )?(?<pid>\\d+)\\]? )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) <... (?<syscall>\\w+) resumed>\\s*(?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\((?<rc_extra>.+)\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             },
             "signal": {
-                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) --- (?<signame>\\w+) (?<siginfo>.*) ---$"
+                "pattern": "^(?:(?:\\[pid )?(?<pid>\\d+)\\]? )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) --- (?<signame>\\w+) (?<siginfo>.*) ---$"
             },
             "exit": {
-                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) \\+\\+\\+ .* \\+\\+\\+$"
+                "pattern": "^(?:(?:\\[pid )?(?<pid>\\d+)\\]? )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) \\+\\+\\+ .* \\+\\+\\+$"
             }
         },
         "timestamp-format": [

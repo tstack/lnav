@@ -1,0 +1,14 @@
+#
+# @synopsis: strace-url-handler
+# @description: Internal script to handle opening strace URLs
+#
+
+;SELECT
+    regexp_match('/(\d+)', jget(url, '/path')) AS pid
+    FROM (SELECT parse_url($1) AS url)
+
+;SELECT
+    printf(':sh --name="strace %s" strace -f -ttt -T -p %s', $pid, $pid)
+    AS cmds
+
+:eval ${cmds}

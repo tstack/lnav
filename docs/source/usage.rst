@@ -144,6 +144,20 @@ command.  If a path is added to the URL, then **lnav** will execute
 :code:`docker exec <container> tail -F -n +0 /path/to/file` to try and
 tail the file in the container.
 
+strace
+^^^^^^
+
+The default output of :code:`strace` does not have enough information for
+lnav to make use of it.  The :code:`-ttt -T` flags need to be passed to
+add a high-resolution timestamp and the duration of the call.  The
+timestamp is needed for lnav to recognize the content as a log file and
+the duration is useful for visualizing how long it takes a syscall to
+run in the TIMELINE view.  It is also advisable to use the :code:`-f`
+flag so all of the threads/sub-processes are traced.
+
+You can use the :code:`strace://localhost/<pid>` URL to run strace on an
+existing process and have the appropriate flags passed.
+
 Custom URL Schemes
 ^^^^^^^^^^^^^^^^^^
 

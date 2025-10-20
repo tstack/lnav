@@ -88,6 +88,7 @@
 /tuning/url-scheme/journald/handler -> root-config.json:188
 /tuning/url-scheme/piper/handler -> root-config.json:191
 /tuning/url-scheme/podman/handler -> root-config.json:194
+/tuning/url-scheme/strace/handler -> root-config.json:197
 /ui/clock-format -> root-config.json:11
 /ui/default-colors -> root-config.json:13
 /ui/dim-text -> root-config.json:12
