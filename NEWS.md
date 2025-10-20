@@ -82,6 +82,21 @@ Features:
   write JSON output in a column-oriented fashion.
 * The `encode()` and `decode()` SQL functions now accept
   `html` as an algorithm.
+* The `opid-field` can now be set to a JSON array/object
+  for JSON-lines logs.  For example, the `spans` array in
+  a Rust tracing log message.  The OPID for the message
+  will be computed by hashing the contents of the array
+  or object and the description will be the container
+  itself.
+* The `duration-field` log format property has been added
+  to specify the field that contains a duration in the
+  log message.  If a duration is available, it will be
+  used to calculate time spans in the TIMELINE view.
+* The `timestamp-point-of-reference` log format property
+  has been added to specify the related of the timestamp
+  to the operation that the message refers to, either:
+  start or send.  This is used in conjunction with the
+  message duration to determine the time span.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

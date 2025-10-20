@@ -644,6 +644,8 @@ public:
     intern_string_t lf_time_field;
     std::vector<const char*> lf_timestamp_format;
     unsigned int lf_timestamp_flags{0};
+    timestamp_point_of_reference_t lf_timestamp_point_of_reference{
+        timestamp_point_of_reference_t::send};
     std::map<std::string, action_def> lf_action_defs;
     std::vector<logline_value_stats> lf_value_stats;
     std::vector<highlighter> lf_highlighters;

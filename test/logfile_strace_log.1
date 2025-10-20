@@ -1,0 +1,66 @@
+10000 1697048351.000001 execve("./webserver", ["./webserver"], 0x7ffd10f5bfe0 /* 42 vars */) = 0 <0.000421>
+10000 1697048351.000541 brk(NULL)                 = 0x55b1f2e94000 <0.000009>
+10000 1697048351.000561 arch_prctl(ARCH_SET_FS, 0x7fb7a64c5740) = 0 <0.000003>
+10000 1697048351.000575 set_tid_address(0x7fb7a64c59d0) = 10000 <0.000002>
+10000 1697048351.000588 socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = 3 <0.000015>
+10000 1697048351.000604 setsockopt(3, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0 <0.000004>
+10000 1697048351.000615 bind(3, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("0.0.0.0")}, 16) = 0 <0.000042>
+10000 1697048351.000668 listen(3, 128)           = 0 <0.000008>
+10000 1697048351.000682 clone(child_stack=0, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_THREAD|SIGCHLD, child_tidptr=0x7fb7a64c59d0) = 10001 <0.000055>
+10001 1697048351.000755 set_robust_list(0x7fb7a64c59e0, 24) = 0 <0.000004>
+10001 1697048351.000769 futex(0x55b1f2e93210, FUTEX_WAIT_PRIVATE, 0, NULL) = 0 <0.000513>
+10000 1697048351.001298 accept4(3, {sa_family=AF_INET, sin_port=htons(51234), sin_addr=inet_addr("127.0.0.1")}, [16], SOCK_CLOEXEC) = 4 <0.002312>
+10000 1697048351.003635 clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fb7a5cc67d0) = 10002 <0.000086>
+10002 1697048351.003743 set_robust_list(0x7fb7a5cc67e0, 24) = 0 <0.000005>
+10002 1697048351.003759 read(4, "GET /index.html HTTP/1.1\r\nHost: "..., 4096) = 152 <0.000212>
+10002 1697048351.003995 openat(AT_FDCWD, "/var/www/html/index.html", O_RDONLY) = 5 <0.000044>
+10002 1697048351.004059 read(5, "<html><body>Hello!</body></html>"..., 4096) = 34 <0.000012>
+10002 1697048351.004083 write(4, "HTTP/1.1 200 OK\r\nContent-Length:"..., 128) = 128 <0.000053>
+10002 1697048351.004158 close(5)                 = 0 <0.000007>
+10002 1697048351.004173 close(4)                 = 0 <0.000006>
+10002 1697048351.004188 exit_group(0)            = ?
+10002 1697048351.004200 +++ exited with 0 +++
+10000 1697048351.004236 wait4(10002, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 10002 <0.000177>
+10000 1697048351.004442 accept4(3,  <unfinished ...>
+10001 1697048351.004445 futex(0x55b1f2e93214, FUTEX_WAIT_PRIVATE, 1, NULL) = -1 EAGAIN (Resource temporarily unavailable) <0.000021>
+10001 1697048351.004471 clock_nanosleep(CLOCK_REALTIME, 0, {tv_sec=0, tv_nsec=50000000}, NULL) = 0 <0.050015>
+10003 1697048351.010612 <... accept4 resumed> {sa_family=AF_INET, sin_port=htons(51235), sin_addr=inet_addr("127.0.0.1")}, [16], SOCK_CLOEXEC) = 4 <0.006157>
+10000 1697048351.010792 clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fb7a54c57d0) = 10003 <0.000083>
+10003 1697048351.010880 set_robust_list(0x7fb7a54c57e0, 24) = 0 <0.000004>
+10003 1697048351.010892 read(4, "GET /missing.html HTTP/1.1\r\nHost"..., 4096) = 158 <0.000186>
+10003 1697048351.011099 openat(AT_FDCWD, "/var/www/html/missing.html", O_RDONLY) = -1 ENOENT (No such file or directory) <0.000017>
+10003 1697048351.011125 write(4, "HTTP/1.1 404 Not Found\r\nContent-"..., 144) = 144 <0.000045>
+10003 1697048351.011196 close(4)                 = 0 <0.000007>
+10003 1697048351.011208 exit_group(0)            = ?
+10003 1697048351.011219 +++ exited with 0 +++
+10000 1697048351.011236 wait4(10003, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 10003 <0.000144>
+10000 1697048351.011390 gettimeofday({tv_sec=1697048351, tv_usec=11390}, NULL) = 0 <0.000004>
+10000 1697048351.011403 futex(0x55b1f2e93210, FUTEX_WAKE_PRIVATE, 1) = 1 <0.000006>
+10001 1697048351.011418 futex(0x55b1f2e93210, FUTEX_WAIT_PRIVATE, 0, NULL) = 0 <0.000034>
+10001 1697048351.011457 write(1, "[thread] maintenance cycle\n", 27) = 27 <0.000009>
+10001 1697048351.011469 openat(AT_FDCWD, "/tmp/webserver.log", O_WRONLY|O_APPEND|O_CREAT, 0666) = 6 <0.000023>
+10001 1697048351.011503 write(6, "2025-10-19T20:39:11 maintenance\n", 32) = 32 <0.000011>
+10001 1697048351.011523 fsync(6)                 = 0 <0.001082>
+10001 1697048351.012619 close(6)                 = 0 <0.000007>
+10001 1697048351.012633 nanosleep({tv_sec=0, tv_nsec=100000000}, NULL) = 0 <0.100113>
+10000 1697048351.112801 accept4(3, {sa_family=AF_INET, sin_port=htons(51236), sin_addr=inet_addr("127.0.0.1")}, [16], SOCK_CLOEXEC) = 4 <0.102032>
+10000 1697048351.214864 clone(child_stack=0, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fb7a4cc47d0) = 10004 <0.000091>
+10004 1697048351.214986 set_robust_list(0x7fb7a4cc47e0, 24) = 0 <0.000004>
+10004 1697048351.215004 read(4, "POST /data HTTP/1.1\r\nHost: local"..., 4096) = 104 <0.000178>
+10004 1697048351.215221 openat(AT_FDCWD, "/tmp/upload.bin", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 7 <0.000037>
+10004 1697048351.215279 write(7, "\x89PNG\r\n\x1a\n\0\0\0\rIHDR\0\0\0\x80", 16) = 16 <0.000010>
+10004 1697048351.215301 close(7)                 = 0 <0.000006>
+10004 1697048351.215312 write(4, "HTTP/1.1 201 Created\r\n\r\n", 24) = 24 <0.000018>
+10004 1697048351.215339 close(4)                 = 0 <0.000006>
+10004 1697048351.215350 exit_group(0)            = ?
+10004 1697048351.215361 +++ exited with 0 +++
+10000 1697048351.215379 wait4(10004, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 10004 <0.000182>
+10000 1697048351.215577 futex(0x55b1f2e93210, FUTEX_WAKE_PRIVATE, 1) = 1 <0.000005>
+10001 1697048351.215589 futex(0x55b1f2e93210, FUTEX_WAIT_PRIVATE, 0, NULL) = 0 <0.000029>
+10001 1697048351.215623 write(1, "[thread] cleanup complete\n", 26) = 26 <0.000009>
+10001 1697048351.215636 close(3)                 = 0 <0.000007>
+10001 1697048351.215648 exit(0)                  = ?
+10001 1697048351.215658 +++ exited with 0 +++
+10000 1697048351.215671 close(3)                 = 0 <0.000006>
+10000 1697048351.215680 exit_group(0)            = ?
+10000 1697048351.215691 +++ exited with 0 +++

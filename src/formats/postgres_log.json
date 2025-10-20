@@ -18,6 +18,7 @@
             }
         },
         "thread-id-field": "pid",
+        "duration-field": "duration",
         "value": {
             "level": {
                 "kind": "string"

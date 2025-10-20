@@ -1,0 +1,117 @@
+478760 12:21:46.284771 execve("/usr/bin/firefox", ["firefox"], 0x7ffff36a51f0 /* 84 vars */) = 0 <0.014202>
+478760 12:21:46.308556 brk(NULL)        = 0x5584b006b000 <0.007753>
+478760 12:21:46.321796 arch_prctl(0x3001 /* ARCH_??? */, 0x7ffc016a2eb0) = -1 EINVAL (Invalid argument) <0.022486>
+478760 12:21:46.348361 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f5516bc0000 <0.004218>
+478760 12:21:46.353059 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory) <0.004874>
+478760 12:21:46.359506 openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache> <0.000015>
+478760 12:21:46.359581 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=287334, ...}) = 0 <0.000009>
+478760 12:21:46.359614 mmap(NULL, 287334, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f5516b79000 <0.000017>
+478760 12:21:46.359672 close(3</etc/ld.so.cache>) = 0 <0.000011>
+478760 12:21:46.359738 openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libc-2.31.so> <0.000019>
+478760 12:21:46.359948 fstat(3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, {st_mode=S_IFREG|0755, st_size=2029224, ...}) = 0 <0.000009>
+478760 12:21:46.360319 mmap(NULL, 2036952, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0) = 0x7f5516987000 <0.000081>
+478760 12:21:46.360433 mprotect(0x7f55169ac000, 1847296, PROT_NONE) = 0 <0.000032>
+478760 12:21:46.360490 mmap(0x7f55169ac000, 1540096, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x25000) = 0x7f55169ac000 <0.000022>
+478760 12:21:46.360545 mmap(0x7f5516b24000, 303104, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x19d000) = 0x7f5516b24000 <0.000013>
+478760 12:21:46.360582 mmap(0x7f5516b6f000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x1e7000) = 0x7f5516b6f000 <0.000018>
+478760 12:21:46.360632 mmap(0x7f5516b75000, 13528, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f5516b75000 <0.000013>
+478760 12:21:46.360676 close(3</usr/lib/x86_64-linux-gnu/libc-2.31.so>) = 0 <0.000010>
+478760 12:21:46.360734 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f5516985000 <0.000011>
+478760 12:21:46.360767 arch_prctl(ARCH_SET_FS, 0x7f5516bc1640) = 0 <0.000011>
+478760 12:21:46.360900 mprotect(0x7f5516b6f000, 12288, PROT_READ) = 0 <0.000017>
+478760 12:21:46.360981 mprotect(0x5584af7ac000, 8192, PROT_READ) = 0 <0.000014>
+478760 12:21:46.361018 mprotect(0x7f5516bef000, 4096, PROT_READ) = 0 <0.000024>
+478760 12:21:46.361062 munmap(0x7f5516b79000, 287334) = 0 <0.000029>
+478760 12:21:46.361188 getuid()         = 801359 <0.000011>
+478760 12:21:46.361220 getgid()         = 99943 <0.000010>
+478760 12:21:46.361251 getpid()         = 478760 <0.000010>
+478760 12:21:46.361284 rt_sigaction(SIGCHLD, {sa_handler=0x5584af7a1c30, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7f55169cd210}, NULL, 8) = 0 <0.000011>
+478760 12:21:46.361350 geteuid()        = 801359 <0.000010>
+478760 12:21:46.361430 brk(NULL)        = 0x5584b006b000 <0.000011>
+478760 12:21:46.361464 brk(0x5584b008c000) = 0x5584b008c000 <0.000012>
+478760 12:21:46.361516 getppid()        = 3603484 <0.000012>
+478760 12:21:46.361680 stat(".", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0 <0.000012>
+478760 12:21:46.361731 openat(AT_FDCWD, "/usr/bin/firefox", O_RDONLY) = 3</usr/lib/firefox/firefox.sh> <0.000020>
+478760 12:21:46.361788 fcntl(3</usr/lib/firefox/firefox.sh>, F_DUPFD, 10) = 10</usr/lib/firefox/firefox.sh> <0.000012>
+478760 12:21:46.361834 close(3</usr/lib/firefox/firefox.sh>) = 0 <0.000010>
+478760 12:21:46.361866 fcntl(10</usr/lib/firefox/firefox.sh>, F_SETFD, FD_CLOEXEC) = 0 <0.000010>
+478760 12:21:46.361897 geteuid()        = 801359 <0.000009>
+478760 12:21:46.361923 getegid()        = 99943 <0.000009>
+478760 12:21:46.361950 rt_sigaction(SIGINT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000011>
+478760 12:21:46.361982 rt_sigaction(SIGINT, {sa_handler=0x5584af7a1c30, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7f55169cd210}, NULL, 8) = 0 <0.000010>
+478760 12:21:46.362014 rt_sigaction(SIGQUIT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000009>
+478760 12:21:46.362044 rt_sigaction(SIGQUIT, {sa_handler=SIG_DFL, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7f55169cd210}, NULL, 8) = 0 <0.000010>
+478760 12:21:46.362076 rt_sigaction(SIGTERM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000009>
+478760 12:21:46.362105 rt_sigaction(SIGTERM, {sa_handler=SIG_DFL, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7f55169cd210}, NULL, 8) = 0 <0.000010>
+478760 12:21:46.362137 read(10</usr/lib/firefox/firefox.sh>, "#!/bin/sh\n\nset -e\n\n# Firefox launcher containing a Profile migration helper for\n# temporary profiles used during alpha and beta phases.\n\n# Authors:\n#  Alexander Sack <asac@jwsdot.com>\n#  Fabien Tassin <fta@sofaraway.org>\n#  Steve Langasek <steve.langasek@canonical.com>\n#  Chris Coulson <chris.coulson@canonical.com>\n# License: GPLv2 or later\n\nMOZ_LIBDIR=/usr/lib/firefox\nMOZ_APP_LAUNCHER=`which $0`\nMOZ_APP_NAME=firefox\n\nexport MOZ_APP_LAUNCHER\n\nwhile [ ! -x $MOZ_LIBDIR/$MOZ_APP_NAME ] ; do\n    if [ -L \"$MOZ_APP_LAUNCHER\" ] ; then\n        MOZ_APP_LAUNCHER=`readlink -f $MOZ_APP_LAUNCHER`\n        MOZ_LIBDIR=`dirname $MOZ_APP_LAUNCHER`\n    else\n        echo \"Can't find $MOZ_LIBDIR/$MOZ_APP_NAME\"\n        exit 1\n    fi\ndone\n\nusage () {\n    $MOZ_LIBDIR/$MOZ_APP_NAME -h | sed -e 's,/.*/,,'\n    echo\n    echo \"      -g or --debug          Start within debugger\"\n    echo \"      -d or --debugger       Specify debugger to start with (eg, gdb or valgrind)\"\n    echo \"      -a or --debugger-args  Specify arguments for debugger\"\n}\n\nmoz_debug=0\nmoz_debugger_args=\"\"\nmoz_debugger=\"gdb\"\n\nwhile [ $# -gt 0 ]; do\n    case \"$1\" in\n        -h | --help )\n            usage\n            exit 0\n            ;;\n        -g | --debug )\n            moz_debug=1\n            shift\n            ;;\n        -d | --debugger)\n            moz_debugger=$2;\n            if [ \"${moz_debugger}\" != \"\" ]; then\n\t      shift 2\n            else\n              echo \"-d requires an argument\"\n              exit 1\n            fi\n            ;;\n        -a | --debugger-args )\n            moz_debugger_args=$2;\n            if [ \"${moz_debugger_args}\" != \"\" ] ; then\n                shift 2\n            else\n                echo \"-a requires an argument\"\n                exit 1\n            fi\n            ;;\n        -- ) # Stop option processing\n            shift\n            break\n            ;;\n        * )\n            break\n            ;;\n    esac\ndone\n\nif [ $moz_debug -eq 1 ] ; then\n    case $moz_debugger in\n        memcheck)\n            debugger=\"valgrind\"\n            ;;\n        *"..., 8192) = 2667 <0.000015>
+478760 12:21:46.362221 pipe([3<pipe:[347379059]>, 4<pipe:[347379059]>]) = 0 <0.000023>
+478760 12:21:46.362278 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f5516bc1910) = 478765 <0.000143>
+478760 12:21:46.362454 close(4<pipe:[347379059]>) = 0 <0.000011>
+478760 12:21:46.362492 read(3<pipe:[347379059]>,  <unfinished ...>
+478765 12:21:46.376439 close(10</usr/lib/firefox/firefox.sh>) = 0 <0.000560>
+478765 12:21:46.377278 close(3<pipe:[347379059]>) = 0 <0.000006>
+478765 12:21:46.377331 dup2(4<pipe:[347379059]>, 1</dev/pts/14<char 136:14>>) = 1<pipe:[347379059]> <0.000005>
+478765 12:21:46.377365 close(4<pipe:[347379059]>) = 0 <0.000019>
+478765 12:21:46.377532 stat("/usr/local/sbin/which", 0x7ffc016a28a0) = -1 ENOENT (No such file or directory) <0.000006>
+478765 12:21:46.377552 stat("/usr/local/bin/which", 0x7ffc016a28a0) = -1 ENOENT (No such file or directory) <0.000005>
+478765 12:21:46.377572 stat("/usr/sbin/which", 0x7ffc016a28a0) = -1 ENOENT (No such file or directory) <0.000005>
+478765 12:21:46.377591 stat("/usr/bin/which", {st_mode=S_IFREG|0755, st_size=946, ...}) = 0 <0.000006>
+478765 12:21:46.377630 execve("/usr/bin/which", ["which", "/usr/bin/firefox"], 0x5584b006c4f8 /* 84 vars */) = 0 <0.000808>
+478765 12:21:46.378782 brk(NULL)        = 0x55ea9d8e2000 <0.000304>
+478765 12:21:46.379416 arch_prctl(0x3001 /* ARCH_??? */, 0x7ffd72859c60) = -1 EINVAL (Invalid argument) <0.000080>
+478765 12:21:46.379787 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca845c3000 <0.000304>
+478765 12:21:46.380441 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory) <0.000101>
+478765 12:21:46.383263 openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache> <0.000017>
+478765 12:21:46.383328 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=287334, ...}) = 0 <0.000010>
+478765 12:21:46.383369 mmap(NULL, 287334, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7fca8457c000 <0.000013>
+478765 12:21:46.383406 close(3</etc/ld.so.cache>) = 0 <0.000029>
+478765 12:21:46.383486 openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libc-2.31.so> <0.000016>
+478765 12:21:46.383836 fstat(3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, {st_mode=S_IFREG|0755, st_size=2029224, ...}) = 0 <0.000010>
+478765 12:21:46.383987 mmap(NULL, 2036952, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0) = 0x7fca8438a000 <0.000018>
+478765 12:21:46.384029 mprotect(0x7fca843af000, 1847296, PROT_NONE) = 0 <0.000029>
+478765 12:21:46.384084 mmap(0x7fca843af000, 1540096, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x25000) = 0x7fca843af000 <0.000017>
+478765 12:21:46.384125 mmap(0x7fca84527000, 303104, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x19d000) = 0x7fca84527000 <0.000012>
+478765 12:21:46.384161 mmap(0x7fca84572000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc-2.31.so>, 0x1e7000) = 0x7fca84572000 <0.000018>
+478765 12:21:46.384212 mmap(0x7fca84578000, 13528, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7fca84578000 <0.000014>
+478765 12:21:46.384261 close(3</usr/lib/x86_64-linux-gnu/libc-2.31.so>) = 0 <0.000024>
+478765 12:21:46.384344 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fca84388000 <0.000011>
+478765 12:21:46.384383 arch_prctl(ARCH_SET_FS, 0x7fca845c4640) = 0 <0.000010>
+478765 12:21:46.384544 mprotect(0x7fca84572000, 12288, PROT_READ) = 0 <0.000017>
+478765 12:21:46.384620 mprotect(0x55ea9ba23000, 8192, PROT_READ) = 0 <0.000015>
+478765 12:21:46.384664 mprotect(0x7fca845f2000, 4096, PROT_READ) = 0 <0.000021>
+478765 12:21:46.384706 munmap(0x7fca8457c000, 287334) = 0 <0.000025>
+478765 12:21:46.384827 getuid()         = 801359 <0.000011>
+478765 12:21:46.384860 getgid()         = 99943 <0.000011>
+478765 12:21:46.384893 getpid()         = 478765 <0.000012>
+478765 12:21:46.384926 rt_sigaction(SIGCHLD, {sa_handler=0x55ea9ba18c30, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7fca843d0210}, NULL, 8) = 0 <0.000010>
+478765 12:21:46.384968 geteuid()        = 801359 <0.000009>
+478765 12:21:46.385044 brk(NULL)        = 0x55ea9d8e2000 <0.000011>
+478765 12:21:46.385081 brk(0x55ea9d903000) = 0x55ea9d903000 <0.000012>
+478765 12:21:46.385131 getppid()        = 478760 <0.000011>
+478765 12:21:46.385232 stat(".", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0 <0.000011>
+478765 12:21:46.385276 openat(AT_FDCWD, "/usr/bin/which", O_RDONLY) = 3</usr/bin/which> <0.000017>
+478765 12:21:46.385324 fcntl(3</usr/bin/which>, F_DUPFD, 10) = 10</usr/bin/which> <0.000010>
+478765 12:21:46.385366 close(3</usr/bin/which>) = 0 <0.000009>
+478765 12:21:46.385396 fcntl(10</usr/bin/which>, F_SETFD, FD_CLOEXEC) = 0 <0.000010>
+478765 12:21:46.385428 geteuid()        = 801359 <0.000011>
+478765 12:21:46.385465 getegid()        = 99943 <0.000010>
+478765 12:21:46.385495 rt_sigaction(SIGINT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000011>
+478765 12:21:46.385529 rt_sigaction(SIGINT, {sa_handler=0x55ea9ba18c30, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7fca843d0210}, NULL, 8) = 0 <0.000010>
+478765 12:21:46.385573 rt_sigaction(SIGQUIT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000010>
+478765 12:21:46.385616 rt_sigaction(SIGQUIT, {sa_handler=SIG_DFL, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7fca843d0210}, NULL, 8) = 0 <0.000520>
+478765 12:21:46.386172 rt_sigaction(SIGTERM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0 <0.000012>
+478765 12:21:46.386215 rt_sigaction(SIGTERM, {sa_handler=SIG_DFL, sa_mask=~[RTMIN RT_1], sa_flags=SA_RESTORER, sa_restorer=0x7fca843d0210}, NULL, 8) = 0 <0.000010>
+478765 12:21:46.386377 stat("/usr/bin/firefox", {st_mode=S_IFREG|0755, st_size=2667, ...}) = 0 <0.000016>
+478765 12:21:46.386423 faccessat(AT_FDCWD, "/usr/bin/firefox", X_OK) = 0 <0.000015>
+478765 12:21:46.386470 write(1<pipe:[347379059]>, "/usr/bin/firefox\n", 17) = 17 <0.000019>
+478760 12:21:46.386512 <... read resumed>"/usr/bin/firefox\n", 128) = 17 <0.024012>
+478765 12:21:46.386528 exit_group(0 <unfinished ...>
+478760 12:21:46.386546 read(3<pipe:[347379059]>,  <unfinished ...>
+478765 12:21:46.386561 <... exit_group resumed>) = ?
+478760 12:21:46.386689 <... read resumed>"", 128) = 0 <0.000132>
+478765 12:21:46.386704 +++ exited with 0 +++
+478760 12:21:46.386710 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=478765, si_uid=801359, si_status=0, si_utime=0, si_stime=0} ---
+478760 12:21:46.386744 rt_sigreturn({mask=[]}) = 0 <0.000011>
+478760 12:21:46.386780 close(3<pipe:[347379059]>) = 0 <0.000017>
+478760 12:21:46.386825 wait4(-1, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 478765 <0.000030>
+478760 12:21:46.386913 faccessat(AT_FDCWD, "/usr/lib/firefox/firefox", X_OK) = 0 <0.000024>

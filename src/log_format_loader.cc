@@ -32,7 +32,7 @@
 #include <map>
 #include <string>
 
-#include "log_format_loader.hh"
+#include "log_format.hh"
 
 #include <glob.h>
 #include <libgen.h>
@@ -52,7 +52,9 @@
 #include "fmt/format.h"
 #include "format.scripts.hh"
 #include "lnav_config.hh"
+#include "log_format.hh"
 #include "log_format_ext.hh"
+#include "log_format_loader.hh"
 #include "sql_execute.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -453,6 +455,13 @@ static constexpr json_path_handler_base::enum_value_t SUBSECOND_UNIT_ENUM[] = {
     {"milli"_frag, log_format::subsecond_unit::milli},
     {"micro"_frag, log_format::subsecond_unit::micro},
     {"nano"_frag, log_format::subsecond_unit::nano},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static constexpr json_path_handler_base::enum_value_t TS_POR_ENUM[] = {
+    {"send"_frag, timestamp_point_of_reference_t::send},
+    {"start"_frag, timestamp_point_of_reference_t::start},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -1035,6 +1044,11 @@ const struct json_path_container format_handlers = {
             "field should only be specified if the timestamp field only "
             "contains a date.")
         .for_field(&log_format::lf_time_field),
+    json_path_handler("timestamp-point-of-reference")
+        .with_description("The relation of the timestamp to the operation that "
+                          "the message refers to.")
+        .with_enum_values(TS_POR_ENUM)
+        .for_field(&external_log_format::lf_timestamp_point_of_reference),
     json_path_handler("body-field")
         .with_description(
             "The name of the body field in the log message pattern")
@@ -1051,6 +1065,10 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the source line field in the log message pattern")
         .for_field(&external_log_format::elf_src_line_field),
+    json_path_handler("duration-field")
+        .with_description(
+            "The name of the duration field in the log message pattern")
+        .for_field(&external_log_format::elf_duration_field),
     json_path_handler("url",
                       lnav::pcre2pp::code::from_const("^url#?").to_shared())
         .add_cb(read_format_field)

@@ -5,6 +5,7 @@
         "description": "",
         "file-type": "json",
         "timestamp-field": "ts",
+        "duration-field": "duration",
         "line-format": [
             {
                 "field": "__timestamp__"

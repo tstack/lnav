@@ -72,3 +72,7 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     -c ':hide-lines-after 2011-11-03 00:20:30' \
     ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_strace_log.1

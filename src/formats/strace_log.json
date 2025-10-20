@@ -7,13 +7,19 @@
         "multiline": false,
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\((?<rc_extra>.+)\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+|\\?)(?<rc_extra>\\s?\\([^)]+\\)|\\?|<[^>]+>)?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+            },
+            "unfinished": {
+                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\s<unfinished ...>$"
+            },
+            "resumed": {
+                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) <... (?<syscall>\\w+) resumed>\\s*(?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\((?<rc_extra>.+)\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             },
             "signal": {
-                "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) --- (?<signame>\\w+) (?<siginfo>.*) ---$"
+                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) --- (?<signame>\\w+) (?<siginfo>.*) ---$"
             },
             "exit": {
-                "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) \\+\\+\\+ .* \\+\\+\\+$"
+                "pattern": "^(?:(?<pid>\\d+) )?(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) \\+\\+\\+ .* \\+\\+\\+$"
             }
         },
         "timestamp-format": [
@@ -21,15 +27,33 @@
             "%H:%M:%S",
             "%H:%M:%S.%f"
         ],
+        "timestamp-point-of-reference": "start",
+        "duration-field": "duration",
         "level-field": "errno",
+        "thread-id-field": "pid",
         "level": {
             "error": ".+"
         },
+        "opid": {
+            "description": {
+                "syscall": {
+                    "format": [
+                        {
+                            "field": "syscall"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
+            "pid": {
+                "kind": "integer",
+                "foreign-key": true,
+                "identifier": true
+            },
             "syscall": {
                 "kind": "string",
-                "identifier": true,
-                "rewriter": ":pipe-line-to explain-syscall.sh ${syscall}"
+                "identifier": true
             },
             "rc": {
                 "kind": "integer",
@@ -77,6 +101,21 @@
             },
             {
                 "line": "1743339626.018554 +++ exited with 0 +++"
+            },
+            {
+                "line": "10000 1697048351.000561 arch_prctl(ARCH_SET_FS, 0x7fb7a64c5740) = 0 <0.000003>"
+            },
+            {
+                "line": "10000 1697048351.004442 accept4(3,  <unfinished ...>"
+            },
+            {
+                "line": "10003 1697048351.010612 <... accept4 resumed> {sa_family=AF_INET, sin_port=htons(51235), sin_addr=inet_addr(\"127.0.0.1\")}, [16], SOCK_CLOEXEC) = 4 <0.006157>"
+            },
+            {
+                "line": "478760 12:21:46.359506 openat(AT_FDCWD, \"/etc/ld.so.cache\", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache> <0.000015>"
+            },
+            {
+                "line": "478760 12:21:46.386512 <... read resumed>\"/usr/bin/firefox\\n\", 128) = 17 <0.024012>"
             }
         ]
     }

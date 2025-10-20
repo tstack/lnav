@@ -40,6 +40,7 @@
 
 #include "base/injector.bind.hh"
 #include "base/opt_util.hh"
+#include "base/string_attr_type.hh"
 #include "config.h"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "log_vtab_impl.hh"
@@ -144,8 +145,7 @@ public:
     static const pcre_format* get_pcre_log_formats()
     {
         static const pcre_format log_fmt[] = {
-            pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24}))"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24}))"),
             pcre_format(
                 R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,6})?)?|Z|[+\-]\d{2}:?\d{2}|(?!DBG|DEBUG|ERR|INFO|WARN|NONE)[A-Z]{3,4})+)[:|\s]?(trc|trace|dbg|debug|info|warn(?:ing)?|err(?:or)?)[:|\s]\s*)"),
             pcre_format(
@@ -153,8 +153,7 @@ public:
             pcre_format(
                 R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) -- (trace|debug|info|warn(?:ing)?|error|critical) --\s+)"),
 
-            pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+/\.-]+) \[\w\s+)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+/\.-]+) \[\w\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+)\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+) -\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+) -\s+)"),
@@ -528,6 +527,7 @@ struct separated_string {
 class bro_log_format : public log_format {
 public:
     static const intern_string_t TS;
+    static const intern_string_t DURATION;
     struct field_def {
         logline_value_meta fd_meta;
         logline_value_meta* fd_root_meta;
@@ -579,6 +579,8 @@ public:
         this->lf_structured = true;
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
+        this->lf_timestamp_point_of_reference
+            = timestamp_point_of_reference_t::start;
 
         auto desc_v = std::make_shared<std::vector<opid_descriptor>>();
         desc_v->emplace({});
@@ -612,13 +614,14 @@ public:
             = intern_string::lookup("bro_id_orig_h");
 
         separated_string ss(sbr.get_data(), sbr.length());
-        struct timeval tv;
-        struct exttm tm;
-        bool found_ts = false;
+        timeval tv;
+        exttm tm;
+        auto found_ts = false;
         log_level_t level = LEVEL_INFO;
-        uint8_t opid = 0;
+        uint16_t opid = 0;
         auto opid_cap = string_fragment::invalid();
         auto host_cap = string_fragment::invalid();
+        auto duration = std::chrono::microseconds{0};
 
         ss.with_separator(this->blf_separator.get());
 
@@ -652,9 +655,16 @@ public:
             } else if (UID == fd.fd_meta.lvm_name) {
                 opid_cap = *iter;
 
-                opid = hash_str(opid_cap.data(), opid_cap.length());
+                opid = opid_cap.hash();
             } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
                 host_cap = *iter;
+            } else if (DURATION == fd.fd_meta.lvm_name) {
+                const auto sf = *iter;
+                auto scan_res = scn::scan<double>("{}", sf.to_string_view());
+                if (scan_res) {
+                    duration = std::chrono::microseconds{
+                        static_cast<long long>(scan_res->value() * 1000000)};
+                }
             }
 
             if (fd.fd_numeric_index) {
@@ -683,8 +693,12 @@ public:
             }
 
             if (opid_cap.is_valid()) {
-                auto opid_iter
-                    = sbc.sbc_opids.insert_op(sbc.sbc_allocator, opid_cap, tv);
+                auto opid_iter = sbc.sbc_opids.insert_op(
+                    sbc.sbc_allocator,
+                    opid_cap,
+                    tv,
+                    this->lf_timestamp_point_of_reference,
+                    duration);
                 opid_iter->second.otr_level_stats.update_msg_count(level);
 
                 auto& otr = opid_iter->second;
@@ -697,6 +711,7 @@ public:
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
+            dst.back().set_opid(opid);
             return scan_match{2000};
         }
         return scan_no_match{"no header found"};
@@ -917,6 +932,9 @@ public:
                 sa.emplace_back(lr, L_TIMESTAMP.value());
             } else if (fd.fd_meta.lvm_name == UID) {
                 sa.emplace_back(lr, L_OPID.value());
+                values.lvv_opid_value = sf.to_string();
+                values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
             }
 
             if (lr.is_valid()) {
@@ -1066,6 +1084,8 @@ std::unordered_map<const intern_string_t, logline_value_meta>
     bro_log_format::FIELD_META;
 
 const intern_string_t bro_log_format::TS = intern_string::lookup("bro_ts");
+const intern_string_t bro_log_format::DURATION
+    = intern_string::lookup("bro_duration");
 
 struct ws_separated_string {
     const char* ss_str;

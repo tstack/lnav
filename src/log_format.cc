@@ -28,13 +28,17 @@
  */
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
+#include <vector>
 
 #include <fnmatch.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
+#include "base/intern_string.hh"
 #include "base/is_utf8.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
@@ -54,7 +58,6 @@
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "scn/scan.h"
-#include "spookyhash/SpookyV2.h"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlitepp.hh"
@@ -62,6 +65,7 @@
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
+using namespace std::chrono_literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -210,7 +214,9 @@ log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
 log_opid_map::iterator
 log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
                           const string_fragment& opid,
-                          const struct timeval& log_tv)
+                          const timeval& log_tv,
+                          timestamp_point_of_reference_t poref,
+                          std::chrono::microseconds duration)
 {
     auto retval = this->los_opid_ranges.find(opid);
     if (retval == this->los_opid_ranges.end()) {
@@ -220,6 +226,19 @@ log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
         retval = emplace_res.first;
     } else {
         retval->second.otr_range.extend_to(log_tv);
+    }
+    if (duration > 0us) {
+        auto other_tv = log_tv;
+        auto duration_tv = to_timeval(duration);
+        switch (poref) {
+            case timestamp_point_of_reference_t::send:
+                other_tv = other_tv - duration_tv;
+                break;
+            case timestamp_point_of_reference_t::start:
+                other_tv = other_tv + duration_tv;
+                break;
+        }
+        retval->second.otr_range.extend_to(other_tv);
     }
 
     return retval;
@@ -1043,6 +1062,7 @@ struct json_log_userdata {
     std::optional<string_fragment> jlu_tid_frag;
     std::optional<std::string> jlu_subid;
     hasher jlu_opid_hasher;
+    std::chrono::microseconds jlu_duration{0};
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
     subline_options jlu_subline_opts;
@@ -1183,6 +1203,10 @@ read_json_number(yajlpp_parse_context* ypc,
                 return 0;
             }
             val = scan_res.value().value();
+            if (jlu->jlu_format->elf_duration_field == field_name) {
+                jlu->jlu_duration = std::chrono::microseconds(
+                    static_cast<int64_t>(val.value() * 1000000));
+            }
         }
     }
 
@@ -1562,8 +1586,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = jlu.jlu_opid_frag->to_string();
             this->jlf_line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
-            auto opid_iter = sbc.sbc_opids.insert_op(
-                sbc.sbc_allocator, jlu.jlu_opid_frag.value(), ll.get_timeval());
+            auto opid_iter
+                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                          jlu.jlu_opid_frag.value(),
+                                          ll.get_timeval(),
+                                          this->lf_timestamp_point_of_reference,
+                                          jlu.jlu_duration);
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
             if (jlu.jlu_opid_desc_frag
@@ -1698,6 +1726,7 @@ external_log_format::scan(logfile& lf,
     int pat_index = orig_lock;
     auto line_sf = sbr.to_string_fragment();
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    char tmp_opid_buf[hasher::STRING_SIZE];
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
@@ -1814,9 +1843,30 @@ external_log_format::scan(logfile& lf,
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
+        auto duration_cap = md[fpat->p_duration_field_index];
+        if (duration_cap && !opid_cap) {
+            hasher h;
+            h.update(line_sf);
+            h.to_string(tmp_opid_buf);
+            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
+                                                   sizeof(tmp_opid_buf) - 1);
+        }
         if (opid_cap && !opid_cap->empty()) {
-            auto opid_iter = sbc.sbc_opids.insert_op(
-                sbc.sbc_allocator, opid_cap.value(), log_tv);
+            auto duration = std::chrono::microseconds{0};
+            if (duration_cap) {
+                auto from_res
+                    = humanize::try_from<double>(duration_cap.value());
+                if (from_res) {
+                    duration = std::chrono::microseconds(
+                        static_cast<int64_t>(from_res.value() * 1000000));
+                }
+            }
+            auto opid_iter
+                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                          opid_cap.value(),
+                                          log_tv,
+                                          this->lf_timestamp_point_of_reference,
+                                          duration);
             auto& otr = opid_iter->second;
 
             otr.otr_level_stats.update_msg_count(level);
@@ -2128,6 +2178,7 @@ external_log_format::annotate(logfile* lf,
 
     int pat_index = this->pattern_index_for_line(line_number);
     const auto& pat = *this->elf_pattern_order[pat_index];
+    char tmp_opid_buf[hasher::STRING_SIZE];
 
     sa.reserve(pat.p_pcre.pp_value->get_capture_count());
     auto match_res
@@ -2150,6 +2201,8 @@ external_log_format::annotate(logfile* lf,
         return;
     }
 
+    auto duration_cap = md[pat.p_duration_field_index];
+
     std::optional<string_fragment> module_cap;
     if (!pat.p_module_format) {
         auto ts_cap = md[pat.p_timestamp_field_index];
@@ -2166,6 +2219,13 @@ external_log_format::annotate(logfile* lf,
         }
 
         auto opid_cap = md[pat.p_opid_field_index];
+        if (duration_cap && !opid_cap) {
+            hasher h;
+            h.update(line.to_string_fragment());
+            h.to_string(tmp_opid_buf);
+            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
+                                                   sizeof(tmp_opid_buf) - 1);
+        }
         if (opid_cap && !opid_cap->empty()) {
             sa.emplace_back(to_line_range(opid_cap.value()), L_OPID.value());
             values.lvv_opid_value = opid_cap->to_string();
@@ -2199,6 +2259,10 @@ external_log_format::annotate(logfile* lf,
         sa.emplace_back(to_line_range(thread_id_cap.value()),
                         SA_THREAD_ID.value());
         values.lvv_thread_id_value = thread_id_cap->to_string();
+    }
+    if (duration_cap) {
+        sa.emplace_back(to_line_range(duration_cap.value()),
+                        SA_DURATION.value());
     }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
@@ -2454,6 +2518,13 @@ read_json_field(yajlpp_parse_context* ypc,
         && jlu->jlu_format->elf_subid_field == field_name)
     {
         jlu->jlu_subid = frag.to_string();
+    }
+    if (jlu->jlu_format->elf_duration_field == field_name) {
+        auto from_res = humanize::try_from<double>(frag);
+        if (from_res) {
+            jlu->jlu_duration = std::chrono::microseconds(
+                static_cast<int64_t>(from_res.value() * 1000000));
+        }
     }
 
     if (vd != nullptr && vd->vd_is_desc_field) {
@@ -2824,6 +2895,11 @@ external_log_format::get_subline(const logline& ll,
                             {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, SA_THREAD_ID.value());
+                            } else if (lv_iter->lv_meta.lvm_name
+                                       == this->elf_duration_field)
+                            {
+                                this->jlf_line_attrs.emplace_back(
+                                    lr, SA_DURATION.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_level_field)
                             {
@@ -3755,14 +3831,29 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
     }
 
+    if (!this->elf_duration_field.empty()) {
+        auto& vd = this->elf_value_defs[this->elf_duration_field];
+        if (vd.get() == nullptr) {
+            vd = std::make_shared<value_def>(
+                this->elf_duration_field,
+                value_kind_t::VALUE_FLOAT,
+                logline_value_meta::internal_column{},
+                this);
+        }
+        vd->vd_meta.lvm_name = this->elf_duration_field;
+        vd->vd_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
+    }
+
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(nullptr);
     }
     auto src_file_found = 0;
     auto src_line_found = 0;
     auto thread_id_found = 0;
+    auto duration_found = 0;
     for (auto& elf_pattern : this->elf_patterns) {
-        pattern& pat = *elf_pattern.second;
+        auto& pat = *elf_pattern.second;
 
         if (pat.p_pcre.pp_value == nullptr) {
             continue;
@@ -3808,6 +3899,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             if (name == this->elf_thread_id_field) {
                 pat.p_thread_id_field_index = named_cap.get_index();
                 thread_id_found += 1;
+            }
+            if (name == this->elf_duration_field) {
+                pat.p_duration_field_index = named_cap.get_index();
+                duration_found += 1;
             }
 
             auto value_iter = this->elf_value_defs.find(name);
@@ -3925,6 +4020,21 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     attr_line_t(
                         "at least one pattern needs a thread ID capture named ")
                         .append_quoted(this->elf_thread_id_field.get())));
+    }
+    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+        && !this->elf_duration_field.empty() && duration_found == 0)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("invalid pattern: ")
+                    .append_quoted(
+                        lnav::roles::symbol(this->elf_name.to_string())))
+                .with_reason("no duration capture found in the pattern")
+                .with_snippets(this->get_snippets())
+                .with_help(
+                    attr_line_t(
+                        "at least one pattern needs a duration capture named ")
+                        .append_quoted(this->elf_duration_field.get())));
     }
 
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {

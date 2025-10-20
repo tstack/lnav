@@ -58,6 +58,11 @@
 
 class log_format;
 
+enum class timestamp_point_of_reference_t {
+    send,
+    start,
+};
+
 struct log_level_stats {
     uint32_t lls_error_count{0};
     uint32_t lls_warning_count{0};
@@ -121,7 +126,10 @@ struct log_opid_state {
 
     log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
                                      const string_fragment& opid,
-                                     const timeval& tv);
+                                     const timeval& tv,
+                                     timestamp_point_of_reference_t poref,
+                                     std::chrono::microseconds duration
+                                     = std::chrono::microseconds(0));
 
     opid_sub_time_range* sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
                                        log_opid_map::iterator& op_iter,

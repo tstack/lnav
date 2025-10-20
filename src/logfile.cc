@@ -1860,7 +1860,8 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 
     auto& ll = this->lf_index[line_number];
     auto log_tv = ll.get_timeval();
-    auto opid_iter = write_opids->insert_op(this->lf_allocator, opid, log_tv);
+    auto opid_iter = write_opids->insert_op(
+        this->lf_allocator, opid, log_tv, timestamp_point_of_reference_t::send);
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
