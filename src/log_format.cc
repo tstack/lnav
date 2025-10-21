@@ -1420,6 +1420,9 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
                     break;
             }
             jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
+        } else if (jlu->jlu_format->elf_duration_field == field_name) {
+            jlu->jlu_duration = std::chrono::microseconds(
+                static_cast<int64_t>(val * 1000000.0));
         }
     }
 
@@ -1568,7 +1571,13 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_msg_level());
         }
 
-        if (jlu.jlu_opid_desc_frag) {
+        if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
+            && jlu.jlu_duration > 0us)
+        {
+            jlu.jlu_opid_hasher.update(sbr.to_string_fragment());
+        }
+
+        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration > 0us) {
             char buf[hasher::STRING_SIZE];
             jlu.jlu_opid_hasher.to_string(buf);
             auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
@@ -2490,11 +2499,11 @@ read_json_field(yajlpp_parse_context* ypc,
                 jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
         }
     }
-    if (jlu->jlu_format->elf_level_field == field_name) {
+    if (!field_name.empty() && jlu->jlu_format->elf_level_field == field_name) {
         jlu->jlu_base_line->set_level(
             jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
     }
-    if (jlu->jlu_format->elf_opid_field == field_name) {
+    if (!field_name.empty() && jlu->jlu_format->elf_opid_field == field_name) {
         jlu->jlu_base_line->set_opid(frag.hash());
 
         auto& sbc = *jlu->jlu_batch_context;
@@ -2505,7 +2514,9 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_opid_frag = opid_iter->first;
         }
     }
-    if (jlu->jlu_format->elf_thread_id_field == field_name) {
+    if (!field_name.empty()
+        && jlu->jlu_format->elf_thread_id_field == field_name)
+    {
         auto& sbc = *jlu->jlu_batch_context;
         auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(frag);
         if (tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()) {
@@ -2519,7 +2530,9 @@ read_json_field(yajlpp_parse_context* ypc,
     {
         jlu->jlu_subid = frag.to_string();
     }
-    if (jlu->jlu_format->elf_duration_field == field_name) {
+    if (!field_name.empty()
+        && jlu->jlu_format->elf_duration_field == field_name)
+    {
         auto from_res = humanize::try_from<double>(frag);
         if (from_res) {
             jlu->jlu_duration = std::chrono::microseconds(
@@ -2761,6 +2774,15 @@ external_log_format::get_subline(const logline& ll,
                     = jlu.jlu_tid_frag->to_string();
             }
 
+            if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
+                && jlu.jlu_duration > 0us)
+            {
+                jlu.jlu_opid_hasher.update(line_frag);
+                this->jlf_line_values.lvv_opid_value
+                    = jlu.jlu_opid_hasher.to_string();
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
+            }
             if (jlu.jlu_opid_desc_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_hasher.to_string();

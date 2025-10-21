@@ -6,6 +6,17 @@
         "file-type": "json",
         "timestamp-field": "ts",
         "duration-field": "duration",
+        "opid": {
+            "description": {
+                "request": {
+                    "format": [
+                        {
+                            "field": "request/uri"
+                        }
+                    ]
+                }
+            }
+        },
         "line-format": [
             {
                 "field": "__timestamp__"

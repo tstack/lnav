@@ -1537,7 +1537,8 @@ logfile::read_full_message(const_iterator ll,
                 this->lf_plain_msg_buffer.append(curr_buf.to_string_view());
 
                 ++curr_ll;
-            } while (curr_ll != this->end() && curr_ll->is_continued());
+            } while (curr_ll != this->end() && curr_ll->is_continued()
+                     && curr_ll->get_sub_offset() == 0);
             msg_out.share(this->lf_plain_msg_shared,
                           this->lf_plain_msg_buffer.data(),
                           this->lf_plain_msg_buffer.size());
