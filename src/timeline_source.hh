@@ -116,6 +116,7 @@ public:
     statusview_curses& gs_preview_status_view;
     timeline_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
+    bool ts_rebuild_in_progress{false};
 
     struct opid_description_def_key {
         intern_string_t oddk_format_name;

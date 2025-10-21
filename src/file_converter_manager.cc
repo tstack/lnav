@@ -161,9 +161,10 @@ cleanup()
             auto now = std::filesystem::file_time_type::clock::now();
             auto cache_path = cache_dir();
             std::vector<std::filesystem::path> to_remove;
+            std::error_code ec;
 
             for (const auto& entry :
-                 std::filesystem::directory_iterator(cache_path))
+                 std::filesystem::directory_iterator(cache_path, ec))
             {
                 auto mtime = std::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + cfg.c_ttl;
@@ -176,7 +177,10 @@ cleanup()
 
             for (auto& entry : to_remove) {
                 log_debug("removing conversion: %s", entry.c_str());
-                std::filesystem::remove_all(entry);
+                std::filesystem::remove_all(entry, ec);
+                if (ec) {
+                    log_error("  failed to remove: %s", ec.message().c_str());
+                }
             }
         });
 }

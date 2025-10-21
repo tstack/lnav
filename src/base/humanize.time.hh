@@ -30,6 +30,7 @@
 #ifndef lnav_humanize_time_hh
 #define lnav_humanize_time_hh
 
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -78,7 +79,7 @@ public:
         return *this;
     }
 
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
 private:
     explicit duration(const timeval& tv) : d_timeval(tv) {}

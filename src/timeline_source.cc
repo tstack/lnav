@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <utility>
 #include <vector>
@@ -60,6 +61,7 @@ static const std::vector<std::chrono::microseconds> TIME_SPANS = {
 
 static constexpr size_t MAX_OPID_WIDTH = 80;
 static constexpr size_t MAX_DESC_WIDTH = 256;
+static constexpr int CHART_INDENT = 22;
 
 size_t
 abbrev_ftime(char* datebuf, size_t db_size, const tm& lb_tm, const tm& dt)
@@ -182,7 +184,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
                                              int bottom,
                                              attr_line_t& value_out)
 {
-    if (y >= 3) {
+    if (y >= 1) {
         return false;
     }
 
@@ -195,104 +197,77 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
-    auto lb = this->gho_src->gs_lower_bound;
-    tm lb_tm;
-    auto ub = this->gho_src->gs_upper_bound;
-    tm ub_tm;
-    auto bounds
-        = this->gho_src->get_time_bounds_for(lv.get_selection().value_or(0_vl));
-
-    if (bounds.first < lb) {
-        lb = bounds.first;
-    }
-    if (ub < bounds.second) {
-        ub = bounds.second;
-    }
-    auto whole_span = to_us(ub - lb);
-    auto use_small_span = whole_span < 5min;
-
-    secs2tm(lb.tv_sec, &lb_tm);
-    secs2tm(ub.tv_sec, &ub_tm);
+    auto sel = lv.get_selection().value_or(0_vl);
+    const auto& row = this->gho_src->gs_time_order[sel].get();
+    auto tr = row.or_value.otr_range;
+    auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
+    auto sel_begin_us = to_us(tr.tr_begin - lb);
+    auto sel_end_us = to_us(tr.tr_end - lb);
 
     tm sel_lb_tm;
-    secs2tm(bounds.first.tv_sec, &sel_lb_tm);
+    secs2tm(lb.tv_sec, &sel_lb_tm);
     tm sel_ub_tm;
-    secs2tm(bounds.second.tv_sec, &sel_ub_tm);
+    secs2tm(ub.tv_sec, &sel_ub_tm);
 
-    auto width = lv.get_dimensions().second - 1;
-
-    char datebuf[64];
-
-    if (y == 0) {
-        double span = ub.tv_sec - lb.tv_sec;
-        double per_ch = span / (double) width;
-        strftime(datebuf, sizeof(datebuf), " %Y-%m-%dT%H:%M", &lb_tm);
-        value_out.append(datebuf);
-
-        auto duration_str = humanize::time::duration::from_tv(ub - lb)
-                                .with_resolution(1min)
-                                .to_string();
-        auto duration_pos = width / 2 - duration_str.size() / 2;
-        value_out.pad_to(duration_pos).append(duration_str);
-
-        auto upper_size
-            = strftime(datebuf, sizeof(datebuf), "%Y-%m-%dT%H:%M ", &ub_tm);
-        auto upper_pos = width - upper_size;
-
-        value_out.pad_to(upper_pos).append(datebuf);
-
-        auto lr = line_range{};
-        if (lb.tv_sec < bounds.first.tv_sec) {
-            auto start_diff = bounds.first.tv_sec - lb.tv_sec;
-            lr.lr_start = start_diff / per_ch;
-        } else {
-            lr.lr_start = 0;
-        }
-        if (lb.tv_sec < bounds.second.tv_sec) {
-            auto start_diff = bounds.second.tv_sec - lb.tv_sec;
-            lr.lr_end = start_diff / per_ch;
-        } else {
-            lr.lr_end = 1;
-        }
-        if (lr.lr_start == lr.lr_end) {
-            lr.lr_end += 1;
-        }
-
-        value_out.get_attrs().emplace_back(
-            lr, VC_ROLE.value(role_t::VCR_CURSOR_LINE));
-        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
-    } else if (y == 1) {
-        abbrev_ftime(datebuf, sizeof(datebuf), lb_tm, sel_lb_tm);
-        value_out.appendf(FMT_STRING(" {}"), datebuf);
-
-        auto bound_dur
-            = humanize::time::duration::from_tv(bounds.second - bounds.first);
-        if (!use_small_span) {
-            bound_dur.with_resolution(1min);
-        }
-        auto duration_str = bound_dur.to_string();
-        auto duration_pos = width / 2 - duration_str.size() / 2;
-        value_out.pad_to(duration_pos).append(duration_str);
-
-        auto upper_size
-            = abbrev_ftime(datebuf, sizeof(datebuf), ub_tm, sel_ub_tm);
-        auto upper_pos = width - upper_size - 1;
-        value_out.pad_to(upper_pos).append(datebuf);
-        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_CURSOR_LINE));
-    } else {
-        value_out.append("   Duration   "_h1)
-            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-            .append(" ")
-            .append("\u2718"_error)
-            .append("\u25b2"_warning)
-            .append(" ")
-            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-            .append(" Operation"_h1);
-        auto hdr_attrs = text_attrs::with_underline();
-        value_out.get_attrs().emplace_back(line_range{0, -1},
-                                           VC_STYLE.value(hdr_attrs));
-        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
+    auto [height, width] = lv.get_dimensions();
+    if (width <= CHART_INDENT) {
+        return true;
     }
+
+    value_out.append("   Duration   "_h1)
+        .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+        .append(" ")
+        .append("\u2718"_error)
+        .append("\u25b2"_warning)
+        .append(" ")
+        .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+        .append(" Operation"_h1);
+    auto line_width = CHART_INDENT;
+    auto mark_width = (double) (width - line_width);
+    double span = to_us(ub - lb).count();
+    auto us_per_ch = std::chrono::microseconds{(int64_t) (span / mark_width)};
+    auto us_per_inc = us_per_ch * 10;
+    auto lr = line_range{
+        static_cast<int>(CHART_INDENT + floor(sel_begin_us / us_per_ch)),
+        static_cast<int>(CHART_INDENT + ceil(sel_end_us / us_per_ch)),
+        line_range::unit::codepoint,
+    };
+    if (lr.lr_start == lr.lr_end) {
+        lr.lr_end += 1;
+    }
+    value_out.get_attrs().emplace_back(lr,
+                                       VC_ROLE.value(role_t::VCR_CURSOR_LINE));
+    auto total_us = std::chrono::microseconds{0};
+    std::vector<std::string> durations;
+    auto remaining_width = mark_width - 10;
+    auto max_width = size_t{0};
+    while (remaining_width > 0) {
+        total_us += us_per_inc;
+        auto dur = humanize::time::duration::from_tv(to_timeval(total_us));
+        if (us_per_inc > 24 * 1h) {
+            dur.with_resolution(24 * 1h);
+        } else if (us_per_inc > 1h) {
+            dur.with_resolution(1h);
+        } else if (us_per_inc > 1min) {
+            dur.with_resolution(1min);
+        } else if (us_per_inc > 2s) {
+            dur.with_resolution(1s);
+        }
+        durations.emplace_back(dur.to_string());
+        max_width = std::max(durations.back().size(), max_width);
+        remaining_width -= 10;
+    }
+    for (auto& label : durations) {
+        line_width += 10;
+        value_out.pad_to(line_width)
+            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+            .append(max_width - label.size(), ' ')
+            .append(label);
+    }
+
+    auto hdr_attrs = text_attrs::with_underline();
+    value_out.with_attr_for_all(VC_STYLE.value(hdr_attrs))
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
 
     return true;
 }
@@ -511,9 +486,11 @@ line_info
 timeline_source::text_value_for_line(textview_curses& tc,
                                      int line,
                                      std::string& value_out,
-                                     text_sub_source::line_flags_t flags)
+                                     line_flags_t flags)
 {
-    if (line < (ssize_t) this->gs_time_order.size()) {
+    if (!this->ts_rebuild_in_progress
+        && line < (ssize_t) this->gs_time_order.size())
+    {
         const auto& row = this->gs_time_order[line].get();
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
@@ -555,47 +532,44 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                                      int line,
                                      string_attrs_t& value_out)
 {
-    if (line < (ssize_t) this->gs_time_order.size()) {
+    if (!this->ts_rebuild_in_progress
+        && line < (ssize_t) this->gs_time_order.size())
+    {
         const auto& row = this->gs_time_order[line].get();
 
         value_out = this->gs_rendered_line.get_attrs();
 
         auto lr = line_range{-1, -1, line_range::unit::codepoint};
-        auto sel_bounds
+        auto [sel_lb, sel_ub]
             = this->get_time_bounds_for(tc.get_selection().value_or(0_vl));
 
-        if (row.or_value.otr_range.tr_begin <= sel_bounds.second
-            && sel_bounds.first <= row.or_value.otr_range.tr_end)
+        if (row.or_value.otr_range.tr_begin <= sel_ub
+            && sel_lb <= row.or_value.otr_range.tr_end)
         {
-            static const int INDENT = 22;
-
             auto width = tc.get_dimensions().second;
 
-            if (width > INDENT) {
-                width -= INDENT;
-                double span
-                    = (to_us(sel_bounds.second) - to_us(sel_bounds.first))
-                          .count();
-                double per_ch = span / (double) width;
+            if (width > CHART_INDENT) {
+                width -= CHART_INDENT;
+                double span = to_us(sel_ub - sel_lb).count();
+                auto us_per_ch = std::chrono::microseconds{
+                    static_cast<int64_t>(span / (double) width)};
 
-                if (row.or_value.otr_range.tr_begin <= sel_bounds.first) {
-                    lr.lr_start = INDENT;
+                if (row.or_value.otr_range.tr_begin <= sel_lb) {
+                    lr.lr_start = CHART_INDENT;
                 } else {
-                    double start_diff = (to_us(row.or_value.otr_range.tr_begin)
-                                         - to_us(sel_bounds.first))
-                                            .count();
+                    auto start_diff
+                        = to_us(row.or_value.otr_range.tr_begin - sel_lb);
 
-                    lr.lr_start = INDENT + floor(start_diff / per_ch);
+                    lr.lr_start = CHART_INDENT + floor(start_diff / us_per_ch);
                 }
 
-                if (sel_bounds.second < row.or_value.otr_range.tr_end) {
+                if (sel_ub < row.or_value.otr_range.tr_end) {
                     lr.lr_end = -1;
                 } else {
-                    double end_diff = (to_us(row.or_value.otr_range.tr_end)
-                                       - to_us(sel_bounds.first))
-                                          .count();
+                    auto end_diff
+                        = to_us(row.or_value.otr_range.tr_end - sel_lb);
 
-                    lr.lr_end = INDENT + ceil(end_diff / per_ch);
+                    lr.lr_end = CHART_INDENT + ceil(end_diff / us_per_ch);
                     if (lr.lr_start == lr.lr_end) {
                         lr.lr_end += 1;
                     }
@@ -631,6 +605,7 @@ timeline_source::rebuild_indexes()
     auto& bm_errs = bm[&textview_curses::BM_ERRORS];
     auto& bm_warns = bm[&textview_curses::BM_WARNINGS];
 
+    this->ts_rebuild_in_progress = true;
     bm_errs.clear();
     bm_warns.clear();
 
@@ -745,6 +720,8 @@ timeline_source::rebuild_indexes()
                 case lnav::progress_result_t::ok:
                     break;
                 case lnav::progress_result_t::interrupt:
+                    log_debug("timeline rebuild interrupted");
+                    this->ts_rebuild_in_progress = false;
                     return false;
             }
         }
@@ -876,6 +853,9 @@ timeline_source::rebuild_indexes()
                            1 + 16 + 5 + 8 + 5 + 16 + 1 /* header */);
 
     this->tss_view->set_needs_update();
+    this->ts_rebuild_in_progress = false;
+
+    ensure(this->gs_time_order.empty() || this->gs_opid_width > 0);
 
     return true;
 }

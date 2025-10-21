@@ -132,6 +132,14 @@ Interface changes:
 * The `}` hotkey and `:next-section` command will now
   move to the next log message if the focused line is
   in the middle of a multi-line message.
+* The TIMELINE view header has been redesigned to be
+  one line that shows the time increments at the
+  current scale.  This approach should more clearly
+  convey the spans of time shown in the main part of the
+  view.  The previous design tried to show the overall
+  time and the current time frame.  But, the multi-line
+  header was hard to interpret and didn't make it clear
+  how large the time increments were.
 
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path

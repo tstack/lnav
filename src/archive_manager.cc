@@ -268,7 +268,7 @@ extract(const std::string& filename, const extract_cb& cb)
     if (fs::exists(done_path)) {
         size_t file_count = 0;
         if (fs::is_directory(tmp_path)) {
-            for (const auto& entry : fs::directory_iterator(tmp_path)) {
+            for (const auto& entry : fs::directory_iterator(tmp_path, ec)) {
                 (void) entry;
                 file_count += 1;
             }
@@ -415,9 +415,10 @@ cleanup_cache()
             auto cache_path = archive_cache_path();
             const auto& cfg = injector::get<const config&>();
             std::vector<fs::path> to_remove;
+            std::error_code ec;
 
             log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());
-            for (const auto& entry : fs::directory_iterator(cache_path)) {
+            for (const auto& entry : fs::directory_iterator(cache_path, ec)) {
                 if (entry.path().extension() != ".done") {
                     continue;
                 }

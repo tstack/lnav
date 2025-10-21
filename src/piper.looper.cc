@@ -876,9 +876,10 @@ cleanup()
             const auto now = std::filesystem::file_time_type::clock::now();
             const auto& cache_path = storage_path();
             std::vector<std::filesystem::path> to_remove;
+            std::error_code ec;
 
             for (const auto& cache_subdir :
-                 std::filesystem::directory_iterator(cache_path))
+                 std::filesystem::directory_iterator(cache_path, ec))
             {
                 auto mtime
                     = std::filesystem::last_write_time(cache_subdir.path());
@@ -890,7 +891,7 @@ cleanup()
                 bool is_recent = false;
 
                 for (const auto& entry :
-                     std::filesystem::directory_iterator(cache_subdir))
+                     std::filesystem::directory_iterator(cache_subdir, ec))
                 {
                     auto mtime = std::filesystem::last_write_time(entry.path());
                     auto exp_time = mtime + cfg.c_ttl;

@@ -1197,10 +1197,11 @@ tailer::cleanup_cache()
             auto cache_path = remote_cache_path();
             const auto& cfg = injector::get<const config&>();
             std::vector<std::filesystem::path> to_remove;
+            std::error_code ec;
 
             log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
             for (const auto& entry :
-                 std::filesystem::directory_iterator(cache_path))
+                 std::filesystem::directory_iterator(cache_path, ec))
             {
                 auto mtime = std::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + cfg.c_cache_ttl;

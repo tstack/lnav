@@ -151,24 +151,31 @@ duration::to_string() const
 
     const auto* curr_interval = intervals;
     auto usecs = to_us(this->d_timeval);
-    auto millis = std::chrono::ceil<std::chrono::milliseconds>(usecs);
     std::string retval;
     bool neg = false;
 
-    if (millis < 0s) {
-        neg = true;
-        millis = -millis;
+    if (usecs == 0us) {
+        return retval;
     }
 
-    uint64_t remaining = millis.count();
+    if (usecs < 0s) {
+        neg = true;
+        usecs = -usecs;
+    }
+
+    if (usecs < 1ms) {
+        return fmt::format(FMT_STRING("{}us"), usecs.count());
+    }
+
+    uint64_t remaining = usecs.count() / 1000;
     uint64_t scale = 1;
     if (this->d_msecs_resolution > 0) {
         remaining = roundup(remaining, this->d_msecs_resolution);
     }
-    if (millis >= 10min) {
+    if (usecs >= 10min) {
         remaining /= curr_interval->length;
         scale *= curr_interval->length;
-        curr_interval += 1;
+        ++curr_interval;
     }
 
     for (; curr_interval != std::end(intervals); curr_interval++) {
