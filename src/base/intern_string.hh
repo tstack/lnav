@@ -36,6 +36,7 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <vector>
 
@@ -818,10 +819,7 @@ public:
 
     virtual ~string_fragment_producer() {}
 
-    virtual size_t estimated_size() const
-    {
-        return 1024;
-    }
+    virtual size_t estimated_size() const { return 1024; }
 
     virtual next_result next() = 0;
 
@@ -979,8 +977,17 @@ struct formatter<intern_string_t> : formatter<string_view> {
     template<typename FormatContext>
     auto format(const intern_string_t& is, FormatContext& ctx)
     {
-        return formatter<string_view>::format(
-            string_view{is.get(), (size_t) is.size()}, ctx);
+        return formatter<string_view>::format(string_view{is.get(), is.size()},
+                                              ctx);
+    }
+};
+
+template<>
+struct formatter<std::error_code> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const std::error_code& ec, FormatContext& ctx)
+    {
+        return formatter<string_view>::format(ec.message(), ctx);
     }
 };
 }  // namespace fmt
@@ -988,7 +995,7 @@ struct formatter<intern_string_t> : formatter<string_view> {
 namespace std {
 template<>
 struct hash<const intern_string_t> {
-    std::size_t operator()(const intern_string_t& ist) const
+    std::size_t operator()(const intern_string_t& ist) const noexcept
     {
         return ist.hash();
     }
@@ -1035,7 +1042,7 @@ operator==(const string_fragment& left, const intern_string_t& right)
 }
 
 constexpr string_fragment
-operator"" _frag(const char* str, std::size_t len)
+operator""_frag(const char* str, std::size_t len)
 {
     return string_fragment{str, 0, (int) len};
 }
@@ -1091,5 +1098,13 @@ struct intern_hasher {
         return hash_str(is.c_str(), is.size());
     }
 };
+
+namespace lnav {
+inline std::error_code
+from_errno()
+{
+    return std::error_code{errno, std::generic_category()};
+}
+}  // namespace lnav
 
 #endif

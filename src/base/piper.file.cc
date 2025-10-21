@@ -35,6 +35,7 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "intern_string.hh"
 
 namespace lnav::piper {
 
@@ -69,7 +70,8 @@ read_header(int fd, const char* first8)
     }
     auto meta_prc = pread(fd, meta_buf.in(), meta_size, 8);
     if (meta_prc != meta_size) {
-        log_error("failed to read piper header: %s", strerror(errno));
+        log_error("failed to read piper header: %s",
+                  lnav::from_errno().message().c_str());
         return std::nullopt;
     }
     meta_buf.resize(meta_size);

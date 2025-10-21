@@ -118,7 +118,7 @@ struct user_message {
 
     user_message& with_errno_reason()
     {
-        this->um_reason = strerror(errno);
+        this->um_reason = lnav::from_errno().message();
         return *this;
     }
 

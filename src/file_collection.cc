@@ -369,16 +369,16 @@ file_collection::watch_logfile(const std::string& filename,
     }
     if (rc == -1) {
         if (required) {
+            auto ec = lnav::from_errno();
             log_error("failed to open required file: %s -- %s",
                       filename.c_str(),
-                      strerror(errno));
+                      ec.message().c_str());
             file_collection retval;
-            retval.fc_name_to_errors->writeAccess()->emplace(
-                filename,
-                file_error_info{
-                    time(nullptr),
-                    std::string(strerror(errno)),
-                });
+            retval.fc_name_to_errors->writeAccess()->emplace(filename,
+                                                             file_error_info{
+                                                                 time(nullptr),
+                                                                 ec.message(),
+                                                             });
             return lnav::futures::make_ready_future(std::move(retval));
         }
         return std::nullopt;

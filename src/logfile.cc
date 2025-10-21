@@ -104,7 +104,7 @@ logfile::open(std::filesystem::path filename,
         if (lnav::filesystem::statp(resolved_path, &lf->lf_stat) == -1) {
             return Err(fmt::format(FMT_STRING("stat({}) failed with: {}"),
                                    lf->lf_filename,
-                                   strerror(errno)));
+                                   lnav::from_errno()));
         }
 
         if (!S_ISREG(lf->lf_stat.st_mode)) {
@@ -122,7 +122,7 @@ logfile::open(std::filesystem::path filename,
     {
         return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
                                lf->lf_filename,
-                               strerror(errno)));
+                               lnav::from_errno()));
     } else {
         lf->lf_actual_path = lf->lf_filename;
         lf->lf_valid_filename = true;
@@ -1442,7 +1442,7 @@ logfile::read_line(iterator ll, subline_options opts)
                 return sbr;
             });
     } catch (const line_buffer::error& e) {
-        return Err(std::string(strerror(e.e_err)));
+        return Err(std::error_code{e.e_err, std::generic_category()}.message());
     }
 }
 

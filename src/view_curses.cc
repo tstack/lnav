@@ -1544,7 +1544,7 @@ screen_curses::create(const notcurses_options& options)
     auto* nc = notcurses_core_init(&options, stdout);
     if (nc == nullptr) {
         return Err(fmt::format(FMT_STRING("unable to initialize notcurses {}"),
-                               strerror(errno)));
+                               lnav::from_errno()));
     }
 
     auto& mouse_i = injector::get<xterm_mouse&>();

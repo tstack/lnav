@@ -762,7 +762,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         extract_metadata_from_file(meta);
         paths_to_exec.push_back(meta);
     } else if (errno != ENOENT) {
-        open_error = strerror(errno);
+        open_error = lnav::from_errno().message();
     } else {
         auto script_path = std::filesystem::path(script_name);
 
@@ -777,7 +777,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
             extract_metadata_from_file(meta);
             paths_to_exec.push_back(meta);
         } else if (errno != ENOENT) {
-            open_error = strerror(errno);
+            open_error = lnav::from_errno().message();
         }
     }
 

@@ -1846,7 +1846,7 @@ com_pipe_to(exec_context& ec,
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
-                                             strerror(errno));
+                                             lnav::from_errno());
                     }
                     log_perror(write(child_fds[0].write_end(), "\n", 1));
                 } else {
@@ -1856,7 +1856,7 @@ com_pipe_to(exec_context& ec,
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
-                                             strerror(errno));
+                                             lnav::from_errno());
                     }
                     log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }
@@ -1870,7 +1870,7 @@ com_pipe_to(exec_context& ec,
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
-                                             strerror(errno));
+                                             lnav::from_errno());
                     }
                     log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }

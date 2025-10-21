@@ -29,12 +29,17 @@
  * @file auto_fd.cc
  */
 
+#include <string>
+
 #include "auto_fd.hh"
 
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "fmt/format.h"
+#include "intern_string.hh"
 #include "lnav_log.hh"
+#include "result.h"
 
 int
 auto_fd::pipe(auto_fd* af)
@@ -73,24 +78,18 @@ auto_fd::openpt(int flags)
     auto rc = posix_openpt(flags);
     if (rc == -1) {
         return Err(fmt::format(FMT_STRING("posix_openpt() failed: {}"),
-                               strerror(errno)));
+                               lnav::from_errno()));
     }
 
     return Ok(auto_fd{rc});
 }
 
-auto_fd::
-auto_fd(int fd)
-    : af_fd(fd)
+auto_fd::auto_fd(int fd) : af_fd(fd)
 {
     require(fd >= -1);
 }
 
-auto_fd::
-auto_fd(auto_fd&& af) noexcept
-    : af_fd(af.release())
-{
-}
+auto_fd::auto_fd(auto_fd&& af) noexcept : af_fd(af.release()) {}
 
 auto_fd
 auto_fd::dup() const
@@ -104,8 +103,7 @@ auto_fd::dup() const
     return auto_fd{new_fd};
 }
 
-auto_fd::~
-auto_fd()
+auto_fd::~auto_fd()
 {
     this->reset();
 }
@@ -191,14 +189,13 @@ auto_pipe::for_child_fd(int child_fd)
     auto_pipe retval(child_fd);
 
     if (retval.open() == -1) {
-        return Err(std::string(strerror(errno)));
+        return Err(lnav::from_errno().message());
     }
 
     return Ok(std::move(retval));
 }
 
-auto_pipe::
-auto_pipe(int child_fd, int child_flags)
+auto_pipe::auto_pipe(int child_fd, int child_flags)
     : ap_child_flags(child_flags), ap_child_fd(child_fd)
 {
     switch (child_fd) {

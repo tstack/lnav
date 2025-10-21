@@ -29,6 +29,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
+#include <string>
 #include <utility>
 
 #include "fs_util.hh"
@@ -84,7 +86,8 @@ self_path()
 
     auto rc = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
     if (rc <= 0) {
-        log_error("unable to determine self path: %s", strerror(errno));
+        log_error("unable to determine self path: %s",
+                  lnav::from_errno().message().c_str());
     } else {
         log_info("self path: %s", pathbuf);
         return std::filesystem::path(pathbuf);
@@ -351,7 +354,7 @@ realpath(const std::filesystem::path& path)
     auto rc = ::realpath(path.c_str(), resolved);
 
     if (rc == nullptr) {
-        return Err(std::string(strerror(errno)));
+        return Err(lnav::from_errno().message());
     }
 
     return Ok(std::filesystem::path(resolved));
@@ -365,7 +368,7 @@ create_file(const std::filesystem::path& path, int flags, mode_t mode)
     if (fd == -1) {
         return Err(fmt::format(FMT_STRING("Failed to open: {} -- {}"),
                                path.string(),
-                               strerror(errno)));
+                               lnav::from_errno()));
     }
 
     return Ok(auto_fd(fd));
@@ -379,7 +382,7 @@ open_file(const std::filesystem::path& path, int flags)
     if (fd == -1) {
         return Err(fmt::format(FMT_STRING("Failed to open: {} -- {}"),
                                path.string(),
-                               strerror(errno)));
+                               lnav::from_errno()));
     }
 
     return Ok(auto_fd(fd));
@@ -406,7 +409,7 @@ open_temp_file(const std::filesystem::path& pattern)
         return Err(
             fmt::format(FMT_STRING("unable to create temporary file: {} -- {}"),
                         pattern.string(),
-                        strerror(errno)));
+                        lnav::from_errno()));
     }
 
     return Ok(std::make_pair(std::filesystem::path(pattern_copy), auto_fd(fd)));
@@ -419,7 +422,7 @@ read_file(const std::filesystem::path& path)
         std::ifstream file_stream(path);
 
         if (!file_stream) {
-            return Err(std::string(strerror(errno)));
+            return Err(lnav::from_errno().message());
         }
 
         std::string retval;
@@ -449,7 +452,7 @@ write_file(const std::filesystem::path& path,
                 return Err(fmt::format(
                     FMT_STRING("unable to write to temporary file {}: {}"),
                     tmp_pair.first.string(),
-                    strerror(errno)));
+                    lnav::from_errno()));
             }
 
             if (bytes_written != sf.length()) {
@@ -535,7 +538,7 @@ stat_file(const std::filesystem::path& path)
 
     return Err(fmt::format(FMT_STRING("failed to find file: {} -- {}"),
                            path.string(),
-                           strerror(errno)));
+                           lnav::from_errno()));
 }
 
 file_lock::file_lock(const std::filesystem::path& archive_path)

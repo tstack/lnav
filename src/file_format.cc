@@ -69,7 +69,7 @@ detect_file_format(const std::filesystem::path& filename)
                       filename.c_str(),
                       strerror(errno));
         } else {
-            static auto SQLITE3_HEADER = "SQLite format 3";
+            static const auto* SQLITE3_HEADER = "SQLite format 3";
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
