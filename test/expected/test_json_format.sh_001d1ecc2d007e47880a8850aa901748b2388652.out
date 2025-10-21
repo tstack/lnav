@@ -3,21 +3,21 @@
 parse error: premature EOF
                                        {"ts": "2013-09-06T22:00:59.124
                      (right here) ------^
-2013-09-06T22:00:59.124817Z - "- -- -" - - Details...
+2013-09-06T22:00:59.124817Z Details...
   lvl: DEBUG3
-2013-09-06T22:00:59.124817Z - "- -- -" - - Details...
+2013-09-06T22:00:59.124817Z Details...
   lvl: DEBUG2
-2013-09-06 22:01:00Z - "- -- -" - - Details...
+2013-09-06 22:01:00Z Details...
   lvl: DEBUG
-2013-09-06T22:01:49.124817Z - "- -- -" - - 1 beat per second
+2013-09-06T22:01:49.124817Z 1 beat per second
   lvl: STATS
-2013-09-06T22:01:49.124817Z - "- -- -" - - not looking good
+2013-09-06T22:01:49.124817Z not looking good
   lvl: WARNING
-2013-09-06T22:01:49.124817Z - "- -- -" - - looking bad
+2013-09-06T22:01:49.124817Z looking bad
   lvl: ERROR
-2013-09-06T22:01:49.124817Z - "- -- -" - - sooo bad
+2013-09-06T22:01:49.124817Z sooo bad
   lvl: CRITICAL
-2013-09-06T22:01:49.124817Z - "- -- -" - - shoot
+2013-09-06T22:01:49.124817Z shoot
   lvl: FATAL
   obj: { "field1" : "hi", "field2": 2 }
   arr: ["hi", {"sub1": true}]

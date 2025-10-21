@@ -23,7 +23,8 @@
             },
             {
                 "prefix": " ",
-                "field": "request/client_ip"
+                "field": "request/client_ip",
+                "default-value": ""
             },
             {
                 "prefix": " ",
@@ -32,27 +33,33 @@
             },
             {
                 "prefix": " \"",
-                "field": "request/method"
+                "field": "request/method",
+                "default-value": ""
             },
             {
                 "prefix": " ",
-                "field": "request/host"
+                "field": "request/host",
+                "default-value": ""
             },
             {
-                "field": "request/uri"
+                "field": "request/uri",
+                "default-value": ""
             },
             {
                 "prefix": " ",
                 "field": "request/proto",
-                "suffix": "\""
+                "suffix": "\"",
+                "default-value": ""
             },
             {
                 "prefix": " ",
-                "field": "status"
+                "field": "status",
+                "default-value": ""
             },
             {
                 "prefix": " ",
-                "field": "size"
+                "field": "size",
+                "default-value": ""
             },
             {
                 "prefix": " ",

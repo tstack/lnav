@@ -1636,6 +1636,8 @@ dist_noinst_DATA = \
     test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.out \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.err \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.out \
+    test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.err \
+    test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.out \
     test_timeline.sh_1a611c8752ca85361f436768a9982051530a5d2a.err \
     test_timeline.sh_1a611c8752ca85361f436768a9982051530a5d2a.out \
     test_timeline.sh_2875db9da7bf74161babf4e315a85787616f3507.err \
@@ -1662,4 +1664,6 @@ dist_noinst_DATA = \
     test_timeline.sh_c59a35537a919d78245edf21b83f9c0f3e0693dc.out \
     test_timeline.sh_ced7291b2185772065e32d1add9ce5d4894482a0.err \
     test_timeline.sh_ced7291b2185772065e32d1add9ce5d4894482a0.out \
+    test_timeline.sh_dd6798d9efae830ad3a53473144f3b991e58b78b.err \
+    test_timeline.sh_dd6798d9efae830ad3a53473144f3b991e58b78b.out \
     $()
