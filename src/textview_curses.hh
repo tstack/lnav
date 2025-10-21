@@ -32,6 +32,7 @@
 #ifndef textview_curses_hh
 #define textview_curses_hh
 
+#include <chrono>
 #include <memory>
 #include <utility>
 #include <vector>

@@ -423,6 +423,38 @@ textview_curses::listview_value_for_rows(const listview_curses& lv,
 {
     for (auto& al : rows_out) {
         this->textview_value_for_row(row, al);
+
+        auto& sa = al.al_attrs;
+        if (this->is_selectable() && this->tc_cursor_role
+            && this->tc_disabled_cursor_role)
+        {
+            auto sel_end = this->get_selection().value_or(0_vl);
+            auto sel_start = sel_end;
+            if (this->tc_selection_start) {
+                if (this->tc_selection_start.value() < sel_end) {
+                    sel_start = this->tc_selection_start.value();
+                } else {
+                    sel_end = this->tc_selection_start.value();
+                }
+            }
+
+            if (sel_start <= row && row <= sel_end) {
+                auto role = (this->get_overlay_selection() || !this->vc_enabled)
+                    ? this->tc_disabled_cursor_role.value()
+                    : this->tc_cursor_role.value();
+
+                sa.emplace_back(line_range{0, -1}, VC_ROLE.value(role));
+            }
+        }
+
+        if (this->tc_selected_text) {
+            const auto& sti = this->tc_selected_text.value();
+            if (sti.sti_line == row) {
+                sa.emplace_back(sti.sti_range,
+                                VC_ROLE.value(role_t::VCR_SELECTED_TEXT));
+            }
+        }
+
         ++row;
     }
 }
@@ -879,29 +911,6 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         orig_line.lr_end = str.size();
     }
 
-    if (this->is_selectable() && this->tc_cursor_role
-        && this->tc_disabled_cursor_role)
-    {
-        vis_line_t sel_start, sel_end;
-
-        sel_start = sel_end = this->get_selection().value_or(0_vl);
-        if (this->tc_selection_start) {
-            if (this->tc_selection_start.value() < sel_end) {
-                sel_start = this->tc_selection_start.value();
-            } else {
-                sel_end = this->tc_selection_start.value();
-            }
-        }
-
-        if (sel_start <= row && row <= sel_end) {
-            auto role = (this->get_overlay_selection() || !this->vc_enabled)
-                ? this->tc_disabled_cursor_role.value()
-                : this->tc_cursor_role.value();
-
-            sa.emplace_back(line_range{0, -1}, VC_ROLE.value(role));
-        }
-    }
-
     if (!body.empty() || !orig_line.empty()) {
         this->apply_highlights(value_out, body, orig_line);
     }
@@ -915,14 +924,6 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     if (user_marks.bv_tree.exists(row) || user_expr_marks.bv_tree.exists(row)) {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         VC_STYLE.value(text_attrs::with_reverse()));
-    }
-
-    if (this->tc_selected_text) {
-        const auto& sti = this->tc_selected_text.value();
-        if (sti.sti_line == row) {
-            sa.emplace_back(sti.sti_range,
-                            VC_ROLE.value(role_t::VCR_SELECTED_TEXT));
-        }
     }
 }
 

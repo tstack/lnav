@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "base/lrucache.hpp"
+#include "hasher.hh"
 #include "listview_curses.hh"
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
@@ -114,6 +115,7 @@ public:
     std::vector<attr_line_t> fos_lines;
     std::vector<attr_line_t> fos_meta_lines;
     std::optional<content_line_t> fos_header_line;
+    std::optional<logfile_sub_source::line_context_t> fos_header_line_context;
 
     struct row_info {
         std::optional<logline_value_meta> ri_meta;

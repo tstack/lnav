@@ -938,7 +938,11 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
         auto top = lv.get_top();
         if (top < this->fos_lss.text_line_count()) {
             auto cl = this->fos_lss.at(top);
-            if (!this->fos_header_line || this->fos_header_line.value() != cl) {
+            if (!this->fos_header_line || this->fos_header_line.value() != cl
+                || !this->fos_header_line_context
+                || this->fos_header_line_context.value()
+                    != this->fos_lss.get_line_context())
+            {
                 auto file_and_line_pair
                     = this->fos_lss.find_line_with_file(top);
                 if (file_and_line_pair) {
@@ -976,15 +980,14 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         auto& al = this->fos_static_lines.front();
                         auto& tc = dynamic_cast<textview_curses&>(
                             const_cast<listview_curses&>(lv));
-                        this->fos_lss.text_value_for_line(
-                            tc, header_top, al.al_string, 0);
-                        this->fos_lss.text_attrs_for_line(
-                            tc, header_top, al.al_attrs);
+                        tc.textview_value_for_row(header_top, al);
                         if ((top - header_top) > 1 && line->is_continued()) {
                             apply_status_attrs(this->fos_static_lines);
                         }
                     }
                     this->fos_header_line = cl;
+                    this->fos_header_line_context
+                        = this->fos_lss.get_line_context();
                 }
             }
         } else {

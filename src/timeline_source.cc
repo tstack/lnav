@@ -54,26 +54,8 @@ using namespace lnav::roles::literals;
 using namespace md4cpp::literals;
 
 static const std::vector<std::chrono::microseconds> TIME_SPANS = {
-    500us,
-    1ms,
-    100ms,
-    500ms,
-    1s,
-    5s,
-    10s,
-    15s,
-    30s,
-    1min,
-    5min,
-    15min,
-    1h,
-    2h,
-    4h,
-    8h,
-    24h,
-    7 * 24h,
-    30 * 24h,
-    365 * 24h,
+    500us, 1ms,   100ms, 500ms, 1s, 5s, 10s, 15s,     30s,      1min,
+    5min,  15min, 1h,    2h,    4h, 8h, 24h, 7 * 24h, 30 * 24h, 365 * 24h,
 };
 
 static constexpr size_t MAX_OPID_WIDTH = 80;
@@ -435,7 +417,8 @@ timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             if (this->gs_preview_focused) {
                 this->gs_preview_focused = false;
                 this->gs_preview_view.set_height(5_vl);
-                this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
+                this->gs_preview_status_view.set_enabled(
+                    this->gs_preview_focused);
                 this->tss_view->set_enabled(!this->gs_preview_focused);
                 return true;
             }
@@ -1067,19 +1050,17 @@ timeline_source::text_selection_changed(textview_curses& tc)
         auto opid_sf = lvv.lvv_opid_value.value();
 
         if (opid_sf == row.or_name) {
-            std::vector<attr_line_t> rows_al(msg_line.get_line_count());
-
-            msg_count += 1;
-            auto cl = this->gs_lss.at(msg_line.get_vis_line());
-            this->gs_log_view.listview_value_for_rows(
-                this->gs_log_view, msg_line.get_vis_line(), rows_al);
-
-            for (const auto& row_al : rows_al) {
+            for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
+                auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
+                auto cl = this->gs_lss.at(vl);
+                auto row_al = attr_line_t();
+                this->gs_log_view.textview_value_for_row(vl, row_al);
+                preview_content.append(row_al).append("\n");
                 this->gs_preview_rows.emplace_back(
                     msg_line.get_logline().get_timeval(), cl);
                 ++cl;
-                preview_content.append(row_al).append("\n");
             }
+            msg_count += 1;
             msgs_remaining -= 1;
             if (msgs_remaining == 0) {
                 break;
