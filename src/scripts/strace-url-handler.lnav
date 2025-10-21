@@ -8,7 +8,7 @@
     FROM (SELECT parse_url($1) AS url)
 
 ;SELECT
-    printf(':sh --name="strace %s" strace -f -ttt -T -p %s', $pid, $pid)
+    printf(':sh --name="strace %s" sudo -A strace -f -ttt -T -p %s', $pid, $pid)
     AS cmds
 
 :eval ${cmds}
