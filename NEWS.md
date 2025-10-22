@@ -105,6 +105,9 @@ Features:
   to the operation that the message refers to, either:
   start or send.  This is used in conjunction with the
   message duration to determine the time span.
+* The OPID for log messages is now shown in the parser
+  details overlay (revealed by pressing `p`) in the
+  LOG view.
 * The `strace_log` format has been improved to handle
   more output formats and the syscalls will now show
   up in the TIMELINE view.

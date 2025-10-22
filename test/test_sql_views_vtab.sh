@@ -205,6 +205,10 @@ run_cap_test ${lnav_test} -n -I ${test_dir} \
     -c ":goto 9" \
     ${test_dir}/logfile_bunyan.0
 
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET options = json_object('row-time-offset', 'show') WHERE name = 'log'" \
     ${test_dir}/logfile_w3c_big.0

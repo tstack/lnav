@@ -307,6 +307,26 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
     }
 
+    if (this->fos_log_helper.ldh_line_values.lvv_opid_value) {
+        auto opid_al = attr_line_t(" Operation ID: ");
+
+        auto opid_str = this->fos_log_helper.ldh_line_values.lvv_opid_value.value();
+        opid_al.append(opid_str);
+        switch (this->fos_log_helper.ldh_line_values.lvv_opid_provenance) {
+            case logline_value_vector::opid_provenance::none:
+                break;
+            case logline_value_vector::opid_provenance::file:
+                opid_al.append(" (extracted from log message)"_comment);
+                break;
+            case logline_value_vector::opid_provenance::user:
+                opid_al.append(" (user-provided)"_comment);
+                break;
+        }
+        this->fos_row_to_field_meta.emplace(
+            this->fos_lines.size(), row_info{std::nullopt, opid_str});
+        this->fos_lines.emplace_back(opid_al);
+    }
+
     auto lf = this->fos_log_helper.ldh_file->get_format();
     if (!lf->get_pattern_regex(cl).empty()) {
         attr_line_t pattern_al;
