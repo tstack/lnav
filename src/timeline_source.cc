@@ -225,7 +225,8 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     auto line_width = CHART_INDENT;
     auto mark_width = (double) (width - line_width);
     double span = to_us(ub - lb).count();
-    auto us_per_ch = std::chrono::microseconds{(int64_t) (span / mark_width)};
+    auto us_per_ch
+        = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
     auto us_per_inc = us_per_ch * 10;
     auto lr = line_range{
         static_cast<int>(CHART_INDENT + floor(sel_begin_us / us_per_ch)),
@@ -551,7 +552,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                 width -= CHART_INDENT;
                 double span = to_us(sel_ub - sel_lb).count();
                 auto us_per_ch = std::chrono::microseconds{
-                    static_cast<int64_t>(span / (double) width)};
+                    static_cast<int64_t>(ceil(span / (double) width))};
 
                 if (row.or_value.otr_range.tr_begin <= sel_lb) {
                     lr.lr_start = CHART_INDENT;
