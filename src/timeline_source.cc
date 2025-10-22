@@ -235,6 +235,9 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     if (lr.lr_start == lr.lr_end) {
         lr.lr_end += 1;
     }
+    if (lr.lr_end > width) {
+        lr.lr_end = -1;
+    }
     value_out.get_attrs().emplace_back(lr,
                                        VC_ROLE.value(role_t::VCR_CURSOR_LINE));
     auto total_us = std::chrono::microseconds{0};
@@ -447,18 +450,14 @@ timeline_source::get_time_bounds_for(int line)
     auto high_index
         = std::min(this->tss_view->get_bottom(),
                    vis_line_t((int) this->gs_time_order.size() - 1));
+    if (high_index == low_index) {
+        high_index = vis_line_t(this->gs_time_order.size() - 1);
+    }
     const auto& low_row = this->gs_time_order[low_index].get();
     const auto& high_row = this->gs_time_order[high_index].get();
     auto low_tv = low_row.or_value.otr_range.tr_begin;
     auto high_tv = high_row.or_value.otr_range.tr_begin;
 
-    for (auto index = low_index; index <= high_index; index += 1_vl) {
-        const auto& row = this->gs_time_order[index].get();
-
-        if (high_tv < row.or_value.otr_range.tr_end) {
-            high_tv = row.or_value.otr_range.tr_end;
-        }
-    }
     auto duration = to_us(high_tv - low_tv);
     auto span_iter
         = std::upper_bound(TIME_SPANS.begin(), TIME_SPANS.end(), duration);

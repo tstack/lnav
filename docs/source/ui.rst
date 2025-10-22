@@ -409,33 +409,37 @@ TIMELINE
    are received and processed.
 
 The timeline view [#]_ visualizes operations over time.  The operations
-are identified by the "opid" field defined in the log format.  If the
-format does not define an OP ID, you can set one manually by doing an
-:code:`UPDATE` of the :code:`log_opid` column on the log vtable.
+are ordered top-to-bottom by their start time.  So, scrolling down will
+move forward in time.  An operation is identified by the "opid" field
+defined in the log format.  If the format does not define an OP ID, you
+can set one manually by doing an :code:`UPDATE` of the :code:`log_opid`
+column on the log vtable.  In addition, if a log format defines a
+duration and no OP ID, an ID will be generated automatically as a hash
+over the log message.
 
-In the view, there is a header that shows the overall time span, the
-narrowed time span around the focused line, and the column headers.
-Each row in the view shows the following:
+The time span of an operation is determined by the earliest and latest
+timestamps of messages that have the same OP ID.  If the log messages
+contain a duration, that will also be used in the calculation.  The
+span is shown in the view using a reverse-video bar.  The time
+scale of the view is automatically adjusted to fit the operations at
+the top and bottom.  The current scale is shown in the header.
+
+Each row in the view shows:
 
 * The duration of the operation
 * Sparklines showing the number of errors and warnings relative to the
-  total number of messages associated with the OPID.
-* The OPID itself.
-* A description of the operation as captured from the log messages.
-
-The rows are sorted by the start time of each operation.
-
-If an operation row is in the focused time span, a reverse-video
-bar will show when the operation started and finished (unless it
-extends outside the time span).  As you move the focused line, the
-focused time span will be adjusted to keep the preceding and following
-five operations within the span.
+  total number of messages associated with the OP ID.
+* The OP ID itself.
+* A description of the operation as captured from the log messages or
+  as set by doing an :code:`UPDATE` of the :code:`all_opids` table.
 
 The preview panel at the bottom of the display will show the
 messages associated with the focused operation.
 
 The following hotkeys can be useful in this view:
 
+* :kbd:`ENTER` -- Focus on the preview panel.  Pressing :kbd:`q` or
+  :kbd:`Escape` will change the focus back to the main view.
 * :kbd:`p` -- If the log format defined sub-operations with the
   :code:`opid/subid` property, this will toggle an overlay panel
   that displays the sub-operation descriptions.
