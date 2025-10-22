@@ -647,8 +647,8 @@ external_log_format::update_op_description(
                 {
                     continue;
                 }
-                auto desc_cap_opt = md[desc_field_index_iter->second];
 
+                auto desc_cap_opt = md[desc_field_index_iter->second];
                 if (!desc_cap_opt) {
                     continue;
                 }
@@ -656,6 +656,7 @@ external_log_format::update_op_description(
                 desc_elem_str = desc_def.matches(desc_cap_opt.value());
                 if (desc_elem_str) {
                     lod.lod_id = desc_def_pair.first;
+                    break;
                 }
             }
         }
@@ -727,6 +728,7 @@ external_log_format::update_op_description(
                 desc_elem_str = desc_def.matches(desc_cap_iter->second);
                 if (desc_elem_str) {
                     lod.lod_id = desc_def_pair.first;
+                    break;
                 }
             }
         }
@@ -1571,13 +1573,30 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_msg_level());
         }
 
-        if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
-            && jlu.jlu_duration > 0us)
+        auto found_opid_desc = false;
+        if (this->elf_opid_field.empty()
+            && this->lf_opid_description_def->size() == 1)
+        {
+            const auto& od = this->lf_opid_description_def->begin()->second;
+            for (const auto& desc : *od.od_descriptors) {
+                auto desc_iter
+                    = this->lf_desc_captures.find(desc.od_field.pp_value);
+                if (desc_iter == this->lf_desc_captures.end()) {
+                    continue;
+                }
+                jlu.jlu_opid_hasher.update(desc_iter->second);
+                found_opid_desc = true;
+            }
+
+        } else if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
+                   && jlu.jlu_duration > 0us)
         {
             jlu.jlu_opid_hasher.update(sbr.to_string_fragment());
         }
 
-        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration > 0us) {
+        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration > 0us
+            || (found_opid_desc && this->lf_opid_description_def->size() == 1))
+        {
             char buf[hasher::STRING_SIZE];
             jlu.jlu_opid_hasher.to_string(buf);
             auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
@@ -1850,6 +1869,19 @@ external_log_format::scan(logfile& lf,
               && (log_time_tm.et_flags & ETF_YEAR_SET)))
         {
             this->check_for_new_year(dst, log_time_tm, log_tv);
+        }
+
+        if (!fpat->p_opid_description_field_indexes.empty()) {
+            hasher h;
+            for (auto& fidx : fpat->p_opid_description_field_indexes) {
+                auto desc_cap = md[fidx];
+                if (desc_cap) {
+                    h.update(desc_cap.value());
+                }
+            }
+            h.to_string(tmp_opid_buf);
+            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
+                                                   sizeof(tmp_opid_buf) - 1);
         }
 
         auto duration_cap = md[fpat->p_duration_field_index];
@@ -2228,7 +2260,19 @@ external_log_format::annotate(logfile* lf,
         }
 
         auto opid_cap = md[pat.p_opid_field_index];
-        if (duration_cap && !opid_cap) {
+
+        if (!pat.p_opid_description_field_indexes.empty()) {
+            hasher h;
+            for (auto& fidx : pat.p_opid_description_field_indexes) {
+                auto desc_cap = md[fidx];
+                if (desc_cap) {
+                    h.update(desc_cap.value());
+                }
+            }
+            h.to_string(tmp_opid_buf);
+            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
+                                                   sizeof(tmp_opid_buf) - 1);
+        } else if (duration_cap && !opid_cap) {
             hasher h;
             h.update(line.to_string_fragment());
             h.to_string(tmp_opid_buf);
@@ -2669,6 +2713,13 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_TEXT),
             std::string{(const char*) str, len});
     }
+    if (vd != nullptr && vd->vd_is_desc_field
+        && jlu->jlu_format->elf_opid_field.empty())
+    {
+        auto frag_copy = frag.to_owned(jlu->jlu_format->lf_desc_allocator);
+
+        jlu->jlu_format->lf_desc_captures.emplace(field_name, frag_copy);
+    }
 
     return 1;
 }
@@ -2691,6 +2742,8 @@ external_log_format::get_subline(const logline& ll,
 
         jlu.jlu_subline_opts = opts;
 
+        this->lf_desc_captures.clear();
+        this->lf_desc_allocator.reset();
         this->jlf_share_manager.invalidate_refs();
         this->jlf_cached_line.clear();
         this->jlf_line_values.clear();
@@ -2774,8 +2827,28 @@ external_log_format::get_subline(const logline& ll,
                     = jlu.jlu_tid_frag->to_string();
             }
 
-            if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
-                && jlu.jlu_duration > 0us)
+            if (this->elf_opid_field.empty()
+                && this->lf_opid_description_def->size() == 1)
+            {
+                auto found_opid_desc = false;
+                const auto& od = this->lf_opid_description_def->begin()->second;
+                for (const auto& desc : *od.od_descriptors) {
+                    auto desc_iter
+                        = this->lf_desc_captures.find(desc.od_field.pp_value);
+                    if (desc_iter == this->lf_desc_captures.end()) {
+                        continue;
+                    }
+                    found_opid_desc = true;
+                    jlu.jlu_opid_hasher.update(desc_iter->second);
+                }
+                if (found_opid_desc) {
+                    this->jlf_line_values.lvv_opid_value
+                        = jlu.jlu_opid_hasher.to_string();
+                    this->jlf_line_values.lvv_opid_provenance
+                        = logline_value_vector::opid_provenance::file;
+                }
+            } else if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
+                       && jlu.jlu_duration > 0us)
             {
                 jlu.jlu_opid_hasher.update(line_frag);
                 this->jlf_line_values.lvv_opid_value
@@ -3885,6 +3958,25 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->elf_has_module_format = true;
         }
 
+        if (pat.p_opid_field_index == -1
+            && this->lf_opid_description_def->size() == 1)
+        {
+            const auto& opid_def
+                = this->lf_opid_description_def->begin()->second;
+            for (const auto& desc : *opid_def.od_descriptors) {
+                for (auto named_cap : pat.p_pcre.pp_value->get_named_captures())
+                {
+                    const intern_string_t name
+                        = intern_string::lookup(named_cap.get_name());
+
+                    if (name == desc.od_field.pp_value) {
+                        pat.p_opid_description_field_indexes.emplace_back(
+                            named_cap.get_index());
+                    }
+                }
+            }
+        }
+
         for (auto named_cap : pat.p_pcre.pp_value->get_named_captures()) {
             const intern_string_t name
                 = intern_string::lookup(named_cap.get_name());
@@ -4291,6 +4383,21 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         "tag definitions must have a non-empty pattern")
                     .with_snippets(this->get_snippets()));
         }
+    }
+
+    if (this->elf_opid_field.empty()
+        && this->lf_opid_description_def->size() > 1)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("too many opid descriptions")
+                    .append_quoted(lnav::roles::symbol(fmt::format(
+                        FMT_STRING("/{}/opid/description"), this->elf_name))))
+                .with_reason(attr_line_t("when no ")
+                                 .append("opid-field"_symbol)
+                                 .append(" is specified, only a single "
+                                         "description is supported"))
+                .with_snippets(this->get_snippets()));
     }
 
     for (const auto& opid_desc_pair : *this->lf_opid_description_def) {

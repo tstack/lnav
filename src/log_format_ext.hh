@@ -116,6 +116,7 @@ public:
         int p_duration_field_index{-1};
         int p_timestamp_end{-1};
         bool p_module_format{false};
+        std::vector<int> p_opid_description_field_indexes;
         std::set<size_t> p_matched_samples;
     };
 

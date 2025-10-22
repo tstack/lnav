@@ -1648,6 +1648,10 @@ dist_noinst_DATA = \
     test_timeline.sh_3fb943420cd43a6540bcac4702e257dcbbf00cc6.out \
     test_timeline.sh_403bc375071bc26f955b317d751a7d65fb433bc7.err \
     test_timeline.sh_403bc375071bc26f955b317d751a7d65fb433bc7.out \
+    test_timeline.sh_416579af0d855692f94bbf764cb0c2c3dfcb4233.err \
+    test_timeline.sh_416579af0d855692f94bbf764cb0c2c3dfcb4233.out \
+    test_timeline.sh_756a4cbdb6383b6886db722dad62a52f2bce019a.err \
+    test_timeline.sh_756a4cbdb6383b6886db722dad62a52f2bce019a.out \
     test_timeline.sh_7ca3ea6e830dfc159b6a722e5d37ed4aef6681a1.err \
     test_timeline.sh_7ca3ea6e830dfc159b6a722e5d37ed4aef6681a1.out \
     test_timeline.sh_7f300bf5f67f7ac2b0929990ed2670eea74062d1.err \

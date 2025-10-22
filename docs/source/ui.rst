@@ -410,12 +410,25 @@ TIMELINE
 
 The timeline view [#]_ visualizes operations over time.  The operations
 are ordered top-to-bottom by their start time.  So, scrolling down will
-move forward in time.  An operation is identified by the "opid" field
-defined in the log format.  If the format does not define an OP ID, you
-can set one manually by doing an :code:`UPDATE` of the :code:`log_opid`
-column on the log vtable.  In addition, if a log format defines a
-duration and no OP ID, an ID will be generated automatically as a hash
-over the log message.
+move forward in time.  An operation is identified by an ID that can come
+from multiple sources:
+
+* If the ID is in the log message, the log format can set the
+  :code:`opid-field` property.  This option is useful if the software
+  explicitly keeps track of the operations.
+* If an ID should be generated from multiple parts of the log message,
+  the log format should create an :code:`opid/description`.  This
+  description contains a :code:`format` array that specifies the fields
+  in the message to hash together.  For example, web log formats can
+  use the client IP and User-Agent that will roughly correspond to a
+  unique visitor.
+* If a log format defines a duration, an ID will be generated
+  from a hash of the entire log message.  This option is useful for
+  low-level logs where there is no overarching operation to tie them
+  together.
+* If an ID cannot be generated through these simple methods, one
+  can be set manually by doing an :code:`UPDATE` of the :code:`log_opid`
+  column on the log vtable.
 
 The time span of an operation is determined by the earliest and latest
 timestamps of messages that have the same OP ID.  If the log messages

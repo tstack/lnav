@@ -11,6 +11,24 @@
                 "timestamp-format": ""
             }
         ],
+        "opid": {
+            "description": {
+                "bad": {
+                    "format": [
+                        {
+                            "field": "non-existent"
+                        }
+                    ]
+                },
+                "also-bad": {
+                    "format": [
+                        {
+                            "field": "non-existent2"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
         }
     }

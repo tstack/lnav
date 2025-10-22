@@ -307,9 +307,25 @@ object with the following fields:
   nested in an object and it MUST be included in the "line-format" for the
   'o' hotkeys to work.
 
+:opid: This object contains further options related to OP IDs:
+
+  :description: This object contains definitions for how to construct a
+    description of an operation.  Each definition should contain a
+    :code:`format` array with objects that have the following fields:
+
+      :field: The field in the log message to capture as part of the
+        description.
+      :extractor: An optional regular expression used to extract portions
+        of the :code:`field`.
+      :prefix: A prefix to insert before this field in the description.
+      :suffix: A suffix to insert after this field in the description.
+
 :thread-id-field: The name of the field that contains the identifier for a
   thread.  Thread identifiers are tracked by lnav and can be accessed through
   the :code:`all_thread_ids` table.
+
+:duration-field: The name of the field that contains the duration of an
+  operation.
 
 :module-field: The name of the field that contains the module identifier
   that distinguishes messages from one log source from another.  This field

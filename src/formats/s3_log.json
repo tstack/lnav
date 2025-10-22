@@ -17,7 +17,20 @@
         "level": {
             "error": "^[^123].*"
         },
-        "opid-field": "c_ip",
+        "opid": {
+            "description": {
+                "std": {
+                    "format": [
+                        {
+                            "field": "c_ip"
+                        },
+                        {
+                            "field": "cs_user_agent"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "owner": {
                 "kind": "string",

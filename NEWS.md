@@ -88,6 +88,14 @@ Features:
   will be computed by hashing the contents of the array
   or object and the description will be the container
   itself.
+* An OPID can now be constructed from multiple fields by
+  leaving the `opid-field` blank and creating a single
+  `opid/description` definition with a format.  The
+  content of the format fields will then be hashed to
+  create the OPID.  The builtin log formats have been
+  updated to use this when appropriate.  For example,
+  access_log now uses `c_ip` and `cs_user_agent` as the
+  OPID.
 * The `duration-field` log format property has been added
   to specify the field that contains a duration in the
   log message.  If a duration is available, it will be

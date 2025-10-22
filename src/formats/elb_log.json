@@ -13,7 +13,20 @@
         "level": {
             "error": "^[^123].*"
         },
-        "opid-field": "client_ip",
+        "opid": {
+            "description": {
+                "std": {
+                    "format": [
+                        {
+                            "field": "client_ip"
+                        },
+                        {
+                            "field": "user_agent"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "elb": {
                 "kind": "string",

@@ -11,7 +11,10 @@
                 "request": {
                     "format": [
                         {
-                            "field": "request/uri"
+                            "field": "request/client_ip"
+                        },
+                        {
+                            "field": "request/headers/User-Agent#"
                         }
                     ]
                 }
@@ -88,6 +91,10 @@
             "request/client_ip": {
                 "kind": "string",
                 "collate": "ipaddress",
+                "identifier": true
+            },
+            "request/headers/User-Agent#": {
+                "kind": "string",
                 "identifier": true
             },
             "request/host": {

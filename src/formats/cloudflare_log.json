@@ -53,7 +53,20 @@
             }
         ],
         "timestamp-field": "EdgeStartTimestamp",
-        "opid-field": "ClientIP",
+        "opid": {
+            "description": {
+                "std": {
+                    "format": [
+                        {
+                            "field": "ClientIP"
+                        },
+                        {
+                            "field": "ClientRequestUserAgent"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "ClientIP": {
                 "kind": "string",
