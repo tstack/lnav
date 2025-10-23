@@ -445,6 +445,8 @@ object with the following fields:
   :underline: If true, underline the part of the message that matched the
     pattern.
   :blink: If true, blink the part of the message that matched the pattern.
+  :nestable: If true, this highlight can be applied to text contained within
+    another highlight.  Defaults to :code:`true`.
 
 Example format:
 

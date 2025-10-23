@@ -856,6 +856,11 @@
                                     "title": "/<format_name>/highlights/<highlight_name>/blink",
                                     "description": "Highlight this pattern by blinking.",
                                     "type": "boolean"
+                                },
+                                "nestable": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/nestable",
+                                    "description": "This highlight can be nested in another highlight.",
+                                    "type": "boolean"
                                 }
                             },
                             "additionalProperties": false

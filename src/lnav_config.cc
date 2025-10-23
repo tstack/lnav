@@ -1140,6 +1140,11 @@ static const struct json_path_container highlighter_handlers = {
         .with_description("The regular expression to highlight")
         .for_field(&highlighter_config::hc_regex),
 
+    yajlpp::property_handler("nestable")
+        .with_synopsis("<enabled>")
+        .with_description("This highlight can be nested in another highlight.")
+        .for_field(&highlighter_config::hc_nestable),
+
     yajlpp::property_handler("style")
         .with_description(
             "The styling for the text that matches the associated pattern")

@@ -4715,7 +4715,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->lf_highlighters.back()
                 .with_name(hd_pair.first.to_string())
                 .with_format_name(this->elf_name)
-                .with_attrs(attrs);
+                .with_attrs(attrs)
+                .with_nestable(hd.hd_nestable);
         }
     }
 

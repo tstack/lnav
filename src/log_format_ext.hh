@@ -275,6 +275,7 @@ public:
         positioned_property<std::string> hd_background_color;
         bool hd_underline{false};
         bool hd_blink{false};
+        bool hd_nestable{true};
     };
 
     struct value_line_count_result {

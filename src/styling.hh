@@ -78,6 +78,7 @@ struct style_config {
 struct highlighter_config {
     factory_container<lnav::pcre2pp::code> hc_regex;
     style_config hc_style;
+    bool hc_nestable{false};
 };
 
 struct icon_config {

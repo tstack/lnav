@@ -1006,6 +1006,7 @@
                 "highlights": {
                     "colors": {
                         "pattern": "(?:#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}\\b)",
+                        "nestable": false,
                         "style": {
                             "color": "${semantic_highlight_color}",
                             "background-color": "",
@@ -1017,6 +1018,7 @@
                     },
                     "ipv4": {
                         "pattern": "\\b(?<!\\d\\.)\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b(?!\\.\\d)",
+                        "nestable": false,
                         "style": {
                             "color": "${semantic_highlight_color}",
                             "background-color": "",
@@ -1028,6 +1030,7 @@
                     },
                     "xml": {
                         "pattern": "</?([^ >=!]+)[^>]*>",
+                        "nestable": false,
                         "style": {
                             "color": "${semantic_highlight_color}",
                             "background-color": "",
@@ -1039,6 +1042,7 @@
                     },
                     "xml-decl": {
                         "pattern": "<!([^ >=!]+)[^>]*>",
+                        "nestable": false,
                         "style": {
                             "color": "${semantic_highlight_color}",
                             "background-color": "",

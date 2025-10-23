@@ -698,6 +698,10 @@ static const struct json_path_container highlighter_def_handlers = {
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
         .for_field(&external_log_format::highlighter_def::hd_blink),
+    yajlpp::property_handler("nestable")
+        .with_synopsis("<enabled>")
+        .with_description("This highlight can be nested in another highlight.")
+        .for_field(&external_log_format::highlighter_def::hd_nestable),
 };
 
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {

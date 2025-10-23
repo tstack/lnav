@@ -279,7 +279,7 @@ textview_curses::reload_config(error_reporter& reporter)
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
                 = highlighter(hl_pair.second.hc_regex.pp_value)
                       .with_attrs(attrs)
-                      .with_nestable(false);
+                      .with_nestable(hl_pair.second.hc_nestable);
         }
     }
 

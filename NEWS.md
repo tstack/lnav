@@ -115,6 +115,10 @@ Features:
   easier to run `strace` on an existing process.  A
   host must be given and the path should be the PID,
   such as `strace://localhost/1234`.
+* Added the `nestable` flag to the log format and
+  theme highlight configurations to control whether a
+  highlight can be applied to text that is covered by
+  another highlight.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

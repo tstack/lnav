@@ -976,6 +976,11 @@
                                                     "description": "The regular expression to highlight",
                                                     "type": "string"
                                                 },
+                                                "nestable": {
+                                                    "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>/nestable",
+                                                    "description": "This highlight can be nested in another highlight.",
+                                                    "type": "boolean"
+                                                },
                                                 "style": {
                                                     "description": "The styling for the text that matches the associated pattern",
                                                     "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>/style",
