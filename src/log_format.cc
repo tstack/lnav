@@ -666,7 +666,9 @@ external_log_format::update_op_description(
             = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
         auto& desc_v = lod.lod_elements;
 
-        if (desc_def_v.size() == desc_v.size()) {
+        if (desc_def_v.size() == desc_v.size()
+            || (this->elf_opid_field.empty() && !desc_v.empty()))
+        {
             return;
         }
         for (size_t desc_def_index = 0; desc_def_index < desc_def_v.size();
@@ -738,38 +740,40 @@ external_log_format::update_op_description(
             = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
         auto& desc_v = lod.lod_elements;
 
-        if (desc_def_v.size() != desc_v.size()) {
-            for (size_t desc_def_index = 0; desc_def_index < desc_def_v.size();
-                 desc_def_index++)
-            {
-                const auto& desc_def = desc_def_v[desc_def_index];
-                auto found_desc = desc_v.begin();
+        if (desc_def_v.size() == desc_v.size()
+            || (this->elf_opid_field.empty() && !desc_v.empty()))
+        {
+            return;
+        }
+        for (size_t desc_def_index = 0; desc_def_index < desc_def_v.size();
+             desc_def_index++)
+        {
+            const auto& desc_def = desc_def_v[desc_def_index];
+            auto found_desc = desc_v.begin();
 
-                for (; found_desc != desc_v.end(); ++found_desc) {
-                    if (found_desc->first == desc_def_index) {
-                        break;
-                    }
+            for (; found_desc != desc_v.end(); ++found_desc) {
+                if (found_desc->first == desc_def_index) {
+                    break;
                 }
-                auto desc_cap_iter
-                    = this->lf_desc_captures.find(desc_def.od_field.pp_value);
-                if (desc_cap_iter == this->lf_desc_captures.end()) {
-                    continue;
-                }
-
-                if (!desc_elem_str) {
-                    desc_elem_str = desc_def.matches(desc_cap_iter->second);
-                }
-                if (desc_elem_str) {
-                    if (found_desc == desc_v.end()) {
-                        desc_v.emplace_back(desc_def_index,
-                                            desc_elem_str.value());
-                    } else if (!desc_elem_str->empty()) {
-                        found_desc->second.append(desc_def.od_joiner);
-                        found_desc->second.append(desc_elem_str.value());
-                    }
-                }
-                desc_elem_str = std::nullopt;
             }
+            auto desc_cap_iter
+                = this->lf_desc_captures.find(desc_def.od_field.pp_value);
+            if (desc_cap_iter == this->lf_desc_captures.end()) {
+                continue;
+            }
+
+            if (!desc_elem_str) {
+                desc_elem_str = desc_def.matches(desc_cap_iter->second);
+            }
+            if (desc_elem_str) {
+                if (found_desc == desc_v.end()) {
+                    desc_v.emplace_back(desc_def_index, desc_elem_str.value());
+                } else if (!desc_elem_str->empty()) {
+                    found_desc->second.append(desc_def.od_joiner);
+                    found_desc->second.append(desc_elem_str.value());
+                }
+            }
+            desc_elem_str = std::nullopt;
         }
     }
 }
