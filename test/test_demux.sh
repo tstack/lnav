@@ -30,5 +30,5 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_muxed_syslog.0
 
 run_cap_test ${lnav_test} -n \
-    -c ";SELECT * FROM lnav_file_demux_metadata" \
+    -c ";SELECT * FROM lnav_file_demux_metadata ORDER BY filepath ASC" \
     ${test_dir}/logfile_muxed_syslog.0

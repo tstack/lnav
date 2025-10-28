@@ -322,6 +322,8 @@ dist_noinst_DATA = \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.out \
     test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.err \
     test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.out \
+    test_demux.sh_c83822fde99c2c8e1cc575f77a0d905706338d57.err \
+    test_demux.sh_c83822fde99c2c8e1cc575f77a0d905706338d57.out \
     test_demux.sh_e36b696993549ce6aa0ed6f3c2908f1410a8b467.err \
     test_demux.sh_e36b696993549ce6aa0ed6f3c2908f1410a8b467.out \
     test_demux.sh_f8cbb968fccbc0442a831c0f69c6dbdfe5413339.err \
