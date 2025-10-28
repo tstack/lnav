@@ -45,12 +45,14 @@ namespace lnav {
 
 ssize_t
 strftime_rfc3339(
-    char* buffer, size_t buffer_size, lnav::time64_t tim, int millis, char sep)
+    char* buffer, size_t buffer_size, std::chrono::microseconds micros, char sep)
 {
     struct tm gmtm;
     int year, month, index = 0;
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(micros);
+    auto micros_count = micros.count() % 1000000;
 
-    secs2tm(tim, &gmtm);
+    secs2tm(secs.count(), &gmtm);
     year = gmtm.tm_year + 1900;
     month = gmtm.tm_mon + 1;
     buffer[index++] = '0' + ((year / 1000) % 10);
@@ -73,20 +75,23 @@ strftime_rfc3339(
     buffer[index++] = '0' + ((gmtm.tm_sec / 10) % 10);
     buffer[index++] = '0' + ((gmtm.tm_sec / 1) % 10);
     buffer[index++] = '.';
-    buffer[index++] = '0' + ((millis / 100) % 10);
-    buffer[index++] = '0' + ((millis / 10) % 10);
-    buffer[index++] = '0' + ((millis / 1) % 10);
+    buffer[index++] = '0' + ((micros_count / 100000) % 10);
+    buffer[index++] = '0' + ((micros_count / 10000) % 10);
+    buffer[index++] = '0' + ((micros_count / 1000) % 10);
+    buffer[index++] = '0' + ((micros_count / 100) % 10);
+    buffer[index++] = '0' + ((micros_count / 10) % 10);
+    buffer[index++] = '0' + ((micros_count / 1) % 10);
     buffer[index] = '\0';
 
     return index;
 }
 
 std::string
-to_rfc3339_string(time64_t tim, int millis, char sep)
+to_rfc3339_string(std::chrono::microseconds micros, char sep)
 {
     char buf[64];
 
-    strftime_rfc3339(buf, sizeof(buf), tim, millis, sep);
+    strftime_rfc3339(buf, sizeof(buf), micros, sep);
 
     return buf;
 }
@@ -416,7 +421,7 @@ time_range::operator|=(const time_range& rhs)
 }
 
 void
-time_range::extend_to(const timeval& tv)
+time_range::extend_to(const std::chrono::microseconds& tv)
 {
     if (tv < this->tr_begin) {
         // logs aren't always in time-order
@@ -426,19 +431,14 @@ time_range::extend_to(const timeval& tv)
     }
 }
 
-std::chrono::milliseconds
+std::chrono::microseconds
 time_range::duration() const
 {
-    auto diff = this->tr_end - this->tr_begin;
-
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::seconds(diff.tv_sec))
-        + std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::microseconds(diff.tv_usec));
+    return this->tr_end - this->tr_begin;
 }
 
 bool
-time_range::contains_inclusive(const timeval& tv) const
+time_range::contains_inclusive(const std::chrono::microseconds& tv) const
 {
     return (this->tr_begin <= tv) && (tv <= this->tr_end);
 }

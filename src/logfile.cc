@@ -775,7 +775,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
 
             auto& ll = this->lf_index[bm_pair.first];
-            opid_iter->second.otr_range.extend_to(ll.get_timeval());
+            opid_iter->second.otr_range.extend_to(
+                ll.get_time<std::chrono::microseconds>());
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
         }
@@ -1861,9 +1862,9 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     }
 
     auto& ll = this->lf_index[line_number];
-    auto log_tv = ll.get_timeval();
+    auto log_us = ll.get_time<std::chrono::microseconds>();
     auto opid_iter = write_opids->insert_op(
-        this->lf_allocator, opid, log_tv, timestamp_point_of_reference_t::send);
+        this->lf_allocator, opid, log_us, timestamp_point_of_reference_t::send);
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
@@ -1916,8 +1917,10 @@ logfile::clear_logline_opid(uint32_t line_number)
             return;
         }
 
-        if (otr_iter->second.otr_range.tr_begin != ll.get_timeval()
-            && otr_iter->second.otr_range.tr_end != ll.get_timeval())
+        if (otr_iter->second.otr_range.tr_begin
+                != ll.get_time<std::chrono::microseconds>()
+            && otr_iter->second.otr_range.tr_end
+                != ll.get_time<std::chrono::microseconds>())
         {
             otr_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level(), -1);

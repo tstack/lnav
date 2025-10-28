@@ -279,6 +279,15 @@ to_sqlite(sqlite3_context* ctx, const timeval& tv)
 }
 
 inline void
+to_sqlite(sqlite3_context* ctx, const std::chrono::microseconds& micros)
+{
+    char buffer[64];
+
+    sql_strftime(buffer, sizeof(buffer), micros);
+    sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
+}
+
+inline void
 to_sqlite(sqlite3_context* ctx, bool val)
 {
     sqlite3_result_int(ctx, val);

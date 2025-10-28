@@ -5,19 +5,19 @@
         "left": 0,
         "height": 24,
         "inner_height": 3,
-        "top_time": "2009-07-20 22:59:26.000",
+        "top_time": "2009-07-20 22:59:26.000000",
         "top_file": "{test_dir}/logfile_access_log.0",
         "paused": 0,
         "search": "",
         "filtering": 1,
         "movement": "top",
         "top_meta": {
-            "time": "2009-07-20 22:59:26.000",
+            "time": "2009-07-20 22:59:26.000000",
             "file": "{test_dir}/logfile_access_log.0",
             "anchor": "#msg00046f2b16f0cf80-v1:3f7e0f10f2473f83b2b4eacccfc9b4e2",
             "breadcrumbs": [
                 {
-                    "display_value": "2009-07-20T22:59:26.000",
+                    "display_value": "2009-07-20T22:59:26.000000",
                     "search_placeholder": "(Enter an absolute or relative time)",
                     "possibilities": [
                         {
@@ -147,14 +147,14 @@
         "left": 0,
         "height": 1,
         "inner_height": 1,
-        "top_time": "2009-07-20 22:55:00.000",
+        "top_time": "2009-07-20 22:55:00.000000",
         "top_file": null,
         "paused": 0,
         "search": "",
         "filtering": 0,
         "movement": "top",
         "top_meta": {
-            "time": "2009-07-20 22:55:00.000",
+            "time": "2009-07-20 22:55:00.000000",
             "breadcrumbs": [
 
             ]

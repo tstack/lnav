@@ -1485,18 +1485,18 @@ log_cursor::string_constraint::matches(const std::string& sf) const
 }
 
 struct vtab_time_range {
-    std::optional<timeval> vtr_begin;
-    std::optional<timeval> vtr_end;
+    std::optional<std::chrono::microseconds> vtr_begin;
+    std::optional<std::chrono::microseconds> vtr_end;
 
     bool empty() const { return !this->vtr_begin && !this->vtr_end; }
 
-    void add(const timeval& tv)
+    void add(const std::chrono::microseconds& us)
     {
-        if (!this->vtr_begin || tv < this->vtr_begin) {
-            this->vtr_begin = tv;
+        if (!this->vtr_begin || us < this->vtr_begin) {
+            this->vtr_begin = us;
         }
-        if (!this->vtr_end || this->vtr_end < tv) {
-            this->vtr_end = tv;
+        if (!this->vtr_end || this->vtr_end < us) {
+            this->vtr_end = us;
         }
     }
 };
@@ -1599,11 +1599,12 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         = (const char*) sqlite3_value_text(argv[lpc]);
                     auto datelen = sqlite3_value_bytes(argv[lpc]);
                     date_time_scanner dts;
-                    struct timeval tv;
-                    struct exttm mytm;
+                    timeval tv;
+                    exttm mytm;
 
                     const auto* date_end
                         = dts.scan(datestr, datelen, nullptr, &mytm, tv);
+                    auto us = to_us(tv);
                     if (date_end != (datestr + datelen)) {
                         log_warning(
                             "  log_time constraint is not a valid datetime, "
@@ -1616,21 +1617,21 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 if (!log_time_range) {
                                     log_time_range = vtab_time_range{};
                                 }
-                                log_time_range->add(tv);
+                                log_time_range->add(us);
                                 break;
                             case SQLITE_INDEX_CONSTRAINT_GT:
                             case SQLITE_INDEX_CONSTRAINT_GE:
                                 if (!log_time_range) {
                                     log_time_range = vtab_time_range{};
                                 }
-                                log_time_range->vtr_begin = tv;
+                                log_time_range->vtr_begin = us;
                                 break;
                             case SQLITE_INDEX_CONSTRAINT_LT:
                             case SQLITE_INDEX_CONSTRAINT_LE:
                                 if (!log_time_range) {
                                     log_time_range = vtab_time_range{};
                                 }
-                                log_time_range->vtr_end = tv;
+                                log_time_range->vtr_end = us;
                                 break;
                         }
                     }
@@ -1649,32 +1650,29 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
                     switch (footer_column) {
                         case log_footer_columns::time_msecs: {
-                            auto msecs = sqlite3_value_int64(argv[lpc]);
-                            struct timeval tv;
-
-                            tv.tv_sec = msecs / 1000;
-                            tv.tv_usec = (msecs - tv.tv_sec * 1000) * 1000;
+                            auto msecs = std::chrono::milliseconds{
+                                sqlite3_value_int64(argv[lpc])};
                             switch (op) {
                                 case SQLITE_INDEX_CONSTRAINT_EQ:
                                 case SQLITE_INDEX_CONSTRAINT_IS:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->add(tv);
+                                    log_time_range->add(msecs);
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_GT:
                                 case SQLITE_INDEX_CONSTRAINT_GE:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->vtr_begin = tv;
+                                    log_time_range->vtr_begin = msecs;
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_LT:
                                 case SQLITE_INDEX_CONSTRAINT_LE:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->vtr_end = tv;
+                                    log_time_range->vtr_end = msecs;
                                     break;
                             }
                             break;
@@ -1752,9 +1750,13 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 if (fn_constraint.matches(lf->get_filename())) {
                                     found = true;
                                     log_time_range->add(
-                                        lf->front().get_timeval());
+                                        lf->front()
+                                            .get_time<
+                                                std::chrono::microseconds>());
                                     log_time_range->add(
-                                        lf->back().get_timeval());
+                                        lf->back()
+                                            .get_time<
+                                                std::chrono::microseconds>());
                                 }
                             }
                             if (found) {
@@ -1787,9 +1789,13 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 {
                                     found = true;
                                     log_time_range->add(
-                                        lf->front().get_timeval());
+                                        lf->front()
+                                            .get_time<
+                                                std::chrono::microseconds>());
                                     log_time_range->add(
-                                        lf->back().get_timeval());
+                                        lf->back()
+                                            .get_time<
+                                                std::chrono::microseconds>());
                                 }
                             }
                             if (found) {
@@ -2036,8 +2042,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
     } else {
         if (log_time_range->vtr_begin) {
-            auto vl_opt
-                = vt->lss->row_for_time(log_time_range->vtr_begin.value());
+            auto vl_opt = vt->lss->row_for_time(
+                to_timeval(log_time_range->vtr_begin.value()));
             if (!vl_opt) {
 #ifdef DEBUG_INDEXING
                 log_warning("cannot find row with begin time: %d",
@@ -2054,15 +2060,16 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             }
         }
         if (log_time_range->vtr_end) {
-            auto vl_max_opt
-                = vt->lss->row_for_time(log_time_range->vtr_end.value());
+            auto vl_max_opt = vt->lss->row_for_time(
+                to_timeval(log_time_range->vtr_end.value()));
             if (vl_max_opt) {
                 p_cur->log_cursor.lc_end_line = vl_max_opt.value();
                 auto win = vt->lss->window_at(
                     vl_max_opt.value(), vis_line_t(vt->lss->text_line_count()));
                 for (const auto& msg_info : *win) {
                     if (log_time_range->vtr_end.value()
-                        < msg_info.get_logline().get_timeval())
+                        < msg_info.get_logline()
+                              .get_time<std::chrono::microseconds>())
                     {
                         break;
                     }

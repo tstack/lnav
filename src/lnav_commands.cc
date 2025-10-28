@@ -755,15 +755,11 @@ com_convert_time_to(exec_context& ec,
                 ll->get_time<std::chrono::seconds>()};
             auto cz_time = lnav::to_sys_time(utime);
             auto dz_time = date::make_zoned(dst_tz, cz_time);
-            auto etime = std::chrono::duration_cast<std::chrono::seconds>(
+            auto etime = std::chrono::duration_cast<std::chrono::microseconds>(
                 dz_time.get_local_time().time_since_epoch());
+            etime += ll->get_subsecond_time<std::chrono::milliseconds>();
             char ftime[128];
-            sql_strftime(
-                ftime,
-                sizeof(ftime),
-                etime.count(),
-                ll->get_subsecond_time<std::chrono::milliseconds>().count(),
-                'T');
+            sql_strftime(ftime, sizeof(ftime), etime, 'T');
             retval = ftime;
 
             off_t off = 0;

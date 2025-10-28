@@ -5043,22 +5043,22 @@ For support questions, email:
 [4mExamples[0m
 #1 To get the timestamp rounded down to the start of the ten minute slice:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[35m[40m'2017-01-01T05:05:00'[0m[37m[40m, [0m[35m[40m'10m'[0m[37m[40m)    [0m
-   2017-01-01 05:00:00.000
+   2017-01-01 05:00:00.000000
 
 #2 To group log messages into five minute buckets and count them:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
    [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
-   2017-02[33m⋯[0m:00.000 [7m         2[0m 
-   2017-02[33m⋯[0m:00.000 [7m [0m        1 
-   [1m2017-02[0m[1m[33m⋯[0m[1m:00.000[0m[1m [0m[1m[7m [0m[1m        1 [0m
+   2017-02[33m⋯[0m.000000 [7m         2[0m 
+   2017-02[33m⋯[0m.000000 [7m [0m        1 
+   [1m2017-02[0m[1m[33m⋯[0m[1m.000000[0m[1m [0m[1m[7m [0m[1m        1 [0m
 
 #3 To group log messages by those before 4:30am and after:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
             <NULL> [7m [0m        1 
-   2017-02[33m⋯[0m:00.000 [7m         3[0m 
+   2017-02[33m⋯[0m.000000 [7m         3[0m 
 
 
 [1m[4mtimezone[0m[4m([0m[4mtz[0m[4m, [0m[4mts[0m[4m)[0m

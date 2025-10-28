@@ -3,7 +3,7 @@
         "row_details": {
             "value": {
                 "log_line": 0,
-                "log_time": "2009-07-20 22:59:26.000",
+                "log_time": "2009-07-20 22:59:26.000000",
                 "log_level": "info",
                 "c_ip": "192.168.202.254",
                 "cs_method": "GET",

@@ -1,6 +1,6 @@
 [
     {"name":"log_line","type":"integer","width":8,"values":[0,1,2,3,4]}
-    ,{"name":"log_time","type":"string","width":23,"values":["2023-10-01 02:39:09.000","2023-10-01 02:39:09.000","2023-10-01 02:50:03.000","2023-10-16 01:47:44.000","2023-10-16 01:50:18.000"]}
+    ,{"name":"log_time","type":"string","width":26,"values":["2023-10-01 02:39:09.000000","2023-10-01 02:39:09.000000","2023-10-01 02:50:03.000000","2023-10-16 01:47:44.000000","2023-10-16 01:50:18.000000"]}
     ,{"name":"log_level","type":"string","width":9,"values":["info","info","info","info","info"]}
     ,{"name":"exception","type":"null","width":9,"values":[null,null,null,null,null]}
     ,{"name":"exception/Exception","type":"null","width":19,"values":[null,null,null,null,null]}

@@ -1055,8 +1055,8 @@ struct json_path_handler : public json_path_handler_base {
             yajlpp_generator gen(handle);
             char buf[64];
 
-            auto buf_len = lnav::strftime_rfc3339(
-                buf, sizeof(buf), field.tv_sec, field.tv_usec, 'T');
+            auto buf_len
+                = lnav::strftime_rfc3339(buf, sizeof(buf), to_us(field), 'T');
 
             return gen(string_fragment::from_bytes(buf, buf_len));
         };

@@ -196,16 +196,16 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
 log_thread_id_map::iterator
 log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
                                 const string_fragment& tid,
-                                const timeval& log_tv)
+                                const std::chrono::microseconds& us)
 {
     auto retval = this->ltis_tid_ranges.find(tid);
     if (retval == this->ltis_tid_ranges.end()) {
         auto tid_copy = tid.to_owned(alloc);
-        auto titr = thread_id_time_range{time_range{log_tv, log_tv}};
+        auto titr = thread_id_time_range{time_range{us, us}};
         auto emplace_res = this->ltis_tid_ranges.emplace(tid_copy, titr);
         retval = emplace_res.first;
     } else {
-        retval->second.titr_range.extend_to(log_tv);
+        retval->second.titr_range.extend_to(us);
     }
 
     return retval;
@@ -214,31 +214,30 @@ log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
 log_opid_map::iterator
 log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
                           const string_fragment& opid,
-                          const timeval& log_tv,
+                          const std::chrono::microseconds& us,
                           timestamp_point_of_reference_t poref,
                           std::chrono::microseconds duration)
 {
     auto retval = this->los_opid_ranges.find(opid);
     if (retval == this->los_opid_ranges.end()) {
         auto opid_copy = opid.to_owned(alloc);
-        auto otr = opid_time_range{time_range{log_tv, log_tv}};
+        auto otr = opid_time_range{time_range{us, us}};
         auto emplace_res = this->los_opid_ranges.emplace(opid_copy, otr);
         retval = emplace_res.first;
     } else {
-        retval->second.otr_range.extend_to(log_tv);
+        retval->second.otr_range.extend_to(us);
     }
     if (duration > 0us) {
-        auto other_tv = log_tv;
-        auto duration_tv = to_timeval(duration);
+        auto other_us = us;
         switch (poref) {
             case timestamp_point_of_reference_t::send:
-                other_tv = other_tv - duration_tv;
+                other_us -= duration;
                 break;
             case timestamp_point_of_reference_t::start:
-                other_tv = other_tv + duration_tv;
+                other_us += duration;
                 break;
         }
-        retval->second.otr_range.extend_to(other_tv);
+        retval->second.otr_range.extend_to(other_us);
     }
 
     return retval;
@@ -248,7 +247,7 @@ opid_sub_time_range*
 log_opid_state::sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
                               log_opid_map::iterator& op_iter,
                               const string_fragment& subid,
-                              const timeval& tv,
+                              const std::chrono::microseconds& us,
                               log_level_t level)
 {
     const auto& opid = op_iter->first;
@@ -280,13 +279,13 @@ log_opid_state::sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
     if (sub_op_iter == otr.otr_sub_ops.rend()) {
         otr.otr_sub_ops.emplace_back(opid_sub_time_range{
             retval,
-            time_range{tv, tv},
+            time_range{us, us},
         });
         otr.otr_sub_ops.back().ostr_level_stats.update_msg_count(level);
 
         return &otr.otr_sub_ops.back();
     } else {
-        sub_op_iter->ostr_range.extend_to(tv);
+        sub_op_iter->ostr_range.extend_to(us);
         sub_op_iter->ostr_level_stats.update_msg_count(level);
         return &(*sub_op_iter);
     }
@@ -1567,12 +1566,16 @@ external_log_format::scan_json(std::vector<logline>& dst,
             this->jlf_line_values.lvv_thread_id_value
                 = jlu.jlu_tid_frag->to_string();
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_timeval());
+                sbc.sbc_allocator,
+                jlu.jlu_tid_frag.value(),
+                ll.get_time<std::chrono::microseconds>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
         } else {
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, ll.get_timeval());
+                sbc.sbc_allocator,
+                string_fragment{},
+                ll.get_time<std::chrono::microseconds>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
         }
@@ -1618,12 +1621,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = jlu.jlu_opid_frag->to_string();
             this->jlf_line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
-            auto opid_iter
-                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
-                                          jlu.jlu_opid_frag.value(),
-                                          ll.get_timeval(),
-                                          this->lf_timestamp_point_of_reference,
-                                          jlu.jlu_duration);
+            auto opid_iter = sbc.sbc_opids.insert_op(
+                sbc.sbc_allocator,
+                jlu.jlu_opid_frag.value(),
+                ll.get_time<std::chrono::microseconds>(),
+                this->lf_timestamp_point_of_reference,
+                jlu.jlu_duration);
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
             if (jlu.jlu_opid_desc_frag
@@ -1639,11 +1642,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 auto subid_frag
                     = string_fragment::from_str(jlu.jlu_subid.value());
 
-                auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
-                                                         opid_iter,
-                                                         subid_frag,
-                                                         ll.get_timeval(),
-                                                         ll.get_msg_level());
+                auto* ostr = sbc.sbc_opids.sub_op_in_use(
+                    sbc.sbc_allocator,
+                    opid_iter,
+                    subid_frag,
+                    ll.get_time<std::chrono::microseconds>(),
+                    ll.get_msg_level());
                 if (ostr != nullptr && ostr->ostr_description.empty()) {
                     log_op_description sub_desc;
                     this->update_op_description(*this->lf_subid_description_def,
@@ -1875,6 +1879,7 @@ external_log_format::scan(logfile& lf,
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
+        auto log_us = to_us(log_tv);
         if (!fpat->p_opid_description_field_indexes.empty()) {
             hasher h;
             for (auto& fidx : fpat->p_opid_description_field_indexes) {
@@ -1909,7 +1914,7 @@ external_log_format::scan(logfile& lf,
             auto opid_iter
                 = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
                                           opid_cap.value(),
-                                          log_tv,
+                                          log_us,
                                           this->lf_timestamp_point_of_reference,
                                           duration);
             auto& otr = opid_iter->second;
@@ -1921,7 +1926,7 @@ external_log_format::scan(logfile& lf,
                     auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
                                                              opid_iter,
                                                              subid_cap.value(),
-                                                             log_tv,
+                                                             log_us,
                                                              level);
                     if (ostr != nullptr && ostr->ostr_description.empty()) {
                         log_op_description sub_desc;
@@ -2064,7 +2069,7 @@ external_log_format::scan(logfile& lf,
         }
 
         dst.emplace_back(
-            li.li_file_range.fr_offset, log_tv, level, mod_index, opid);
+            li.li_file_range.fr_offset, log_us, level, mod_index, opid);
 
         auto src_file_cap = md[fpat->p_src_file_field_index];
         auto src_line_cap = md[fpat->p_src_line_field_index];
@@ -2078,11 +2083,11 @@ external_log_format::scan(logfile& lf,
         auto thread_id_cap = md[fpat->p_thread_id_field_index];
         if (thread_id_cap) {
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, thread_id_cap.value(), log_tv);
+                sbc.sbc_allocator, thread_id_cap.value(), log_us);
             tid_iter->second.titr_level_stats.update_msg_count(level);
         } else {
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, log_tv);
+                sbc.sbc_allocator, string_fragment{}, log_us);
             tid_iter->second.titr_level_stats.update_msg_count(level);
         }
 

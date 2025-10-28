@@ -1429,11 +1429,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                     }
                                     lines_remaining -= 1;
 
+                                    auto mtime_secs
+                                        = std::chrono::seconds{entry.e_mtime};
                                     char timebuf[64];
                                     sql_strftime(timebuf,
                                                  sizeof(timebuf),
-                                                 entry.e_mtime,
-                                                 0,
+                                                 mtime_secs,
                                                  'T');
                                     al.append("    ")
                                         .append(entry.e_mode)

@@ -31,6 +31,7 @@
 #define lnav_time_util_hh
 
 #include <chrono>
+#include <cstdint>
 #include <string>
 
 #include <inttypes.h>
@@ -44,19 +45,29 @@
 #include "date/tz.h"
 #include "humanize.time.hh"
 
+inline std::chrono::microseconds
+to_us(const timeval& tv)
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::seconds{tv.tv_sec})
+        + std::chrono::microseconds{tv.tv_usec};
+}
+
 namespace lnav {
 
 using time64_t = uint64_t;
 
-ssize_t strftime_rfc3339(
-    char* buffer, size_t buffer_size, time64_t tim, int millis, char sep = ' ');
+ssize_t strftime_rfc3339(char* buffer,
+                         size_t buffer_size,
+                         std::chrono::microseconds micros,
+                         char sep = ' ');
 
-std::string to_rfc3339_string(time64_t tim, int millis, char sep = ' ');
+std::string to_rfc3339_string(std::chrono::microseconds micros, char sep = ' ');
 
 inline std::string
 to_rfc3339_string(timeval tv, char sep = ' ')
 {
-    return to_rfc3339_string(tv.tv_sec, tv.tv_usec / 1000, sep);
+    return to_rfc3339_string(to_us(tv), sep);
 }
 
 date::sys_info sys_time_to_info(date::sys_seconds secs);
@@ -275,17 +286,13 @@ hour_num(time_t ti)
 }
 
 struct time_range {
-    timeval tr_begin;
-    timeval tr_end;
-
-    bool valid() const { return this->tr_end.tv_sec == 0; }
+    std::chrono::microseconds tr_begin;
+    std::chrono::microseconds tr_end;
 
     void invalidate()
     {
-        this->tr_begin.tv_sec = INT_MAX;
-        this->tr_begin.tv_usec = 0;
-        this->tr_end.tv_sec = 0;
-        this->tr_end.tv_usec = 0;
+        this->tr_begin = std::chrono::microseconds::max();
+        this->tr_end = std::chrono::microseconds::zero();
     }
 
     bool operator<(const time_range& rhs) const
@@ -295,10 +302,10 @@ struct time_range {
 
     time_range& operator|=(const time_range& rhs);
 
-    bool contains_inclusive(const timeval& tv) const;
+    bool contains_inclusive(const std::chrono::microseconds& tv) const;
 
-    void extend_to(const timeval& tv);
-    std::chrono::milliseconds duration() const;
+    void extend_to(const std::chrono::microseconds& tv);
+    std::chrono::microseconds duration() const;
 };
 
 template<typename T>
@@ -307,14 +314,6 @@ to_time_t(T dur)
 {
     return static_cast<time_t>(
         std::chrono::ceil<std::chrono::seconds>(dur).count());
-}
-
-inline std::chrono::microseconds
-to_us(const timeval& tv)
-{
-    return std::chrono::duration_cast<std::chrono::microseconds>(
-               std::chrono::seconds{tv.tv_sec})
-        + std::chrono::microseconds{tv.tv_usec};
 }
 
 inline timeval

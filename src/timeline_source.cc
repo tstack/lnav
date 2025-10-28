@@ -264,19 +264,17 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     }
 
     auto sel = lv.get_selection().value_or(0_vl);
+    if (sel < this->gho_src->tss_view->get_top()) {
+        return true;
+    }
     const auto& row = *this->gho_src->gs_time_order[sel];
     auto tr = row.or_value.otr_range;
     auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
-    auto sel_begin_us = to_us(tr.tr_begin - lb);
-    auto sel_end_us = to_us(tr.tr_end - lb);
+    auto sel_begin_us = tr.tr_begin - lb;
+    auto sel_end_us = tr.tr_end - lb;
 
     require(sel_begin_us > 0us);
     require(sel_end_us > 0us);
-
-    tm sel_lb_tm;
-    secs2tm(lb.tv_sec, &sel_lb_tm);
-    tm sel_ub_tm;
-    secs2tm(ub.tv_sec, &sel_ub_tm);
 
     auto [height, width] = lv.get_dimensions();
     if (width <= CHART_INDENT) {
@@ -293,7 +291,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         .append(" Operation"_h1);
     auto line_width = CHART_INDENT;
     auto mark_width = (double) (width - line_width);
-    double span = to_us(ub - lb).count();
+    double span = (ub - lb).count();
     auto us_per_ch
         = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
     require(us_per_ch > 0us);
@@ -389,7 +387,8 @@ timeline_header_overlay::list_value_for_overlay(
         auto duration = sub.ostr_range.tr_end - sub.ostr_range.tr_begin;
         auto duration_str = fmt::format(
             FMT_STRING(" {: >13}"),
-            humanize::time::duration::from_tv(duration).to_string());
+            humanize::time::duration::from_tv(to_timeval(duration))
+                .to_string());
         al.pad_to(14)
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append(" ")
@@ -406,10 +405,12 @@ timeline_header_overlay::list_value_for_overlay(
             .append(sub.ostr_description);
         al.with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
 
-        auto start_diff = (double) to_mstime(sub.ostr_range.tr_begin
-                                             - row.or_value.otr_range.tr_begin);
-        auto end_diff = (double) to_mstime(sub.ostr_range.tr_end
-                                           - row.or_value.otr_range.tr_begin);
+        auto start_diff = (double) (sub.ostr_range.tr_begin
+                                    - row.or_value.otr_range.tr_begin)
+                              .count();
+        auto end_diff
+            = (double) (sub.ostr_range.tr_end - row.or_value.otr_range.tr_begin)
+                  .count();
 
         auto lr = line_range{
             (int) (32 + (start_diff / per_ch)),
@@ -515,7 +516,7 @@ timeline_source::text_handle_mouse(
     return false;
 }
 
-std::pair<timeval, timeval>
+std::pair<std::chrono::microseconds, std::chrono::microseconds>
 timeline_source::get_time_bounds_for(int line)
 {
     const auto low_index = this->tss_view->get_top();
@@ -527,25 +528,23 @@ timeline_source::get_time_bounds_for(int line)
     }
     const auto& low_row = *this->gs_time_order[low_index];
     const auto& high_row = *this->gs_time_order[high_index];
-    auto low_tv = low_row.or_value.otr_range.tr_begin;
-    auto high_tv = high_row.or_value.otr_range.tr_begin;
+    auto low_us = low_row.or_value.otr_range.tr_begin;
+    auto high_us = high_row.or_value.otr_range.tr_begin;
 
-    auto duration = to_us(high_tv - low_tv);
+    auto duration = high_us - low_us;
     auto span_iter
         = std::upper_bound(TIME_SPANS.begin(), TIME_SPANS.end(), duration);
     if (span_iter == TIME_SPANS.end()) {
         --span_iter;
     }
     auto span_portion = *span_iter / 8;
-    auto lower_dur = to_us(low_tv);
-    lower_dur = rounddown(lower_dur, span_portion);
-    auto upper_dur = to_us(high_tv);
-    upper_dur = roundup(upper_dur, span_portion);
-    auto lower_tv = to_timeval(lower_dur);
-    auto upper_tv = to_timeval(upper_dur);
+    auto lb = low_us;
+    lb = rounddown(lb, span_portion);
+    auto ub = high_us;
+    ub = roundup(ub, span_portion);
 
-    ensure(lower_tv <= upper_tv);
-    return {lower_tv, upper_tv};
+    ensure(lb <= ub);
+    return {lb, ub};
 }
 
 size_t
@@ -568,7 +567,8 @@ timeline_source::text_value_for_line(textview_curses& tc,
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
         auto duration_str = fmt::format(
             FMT_STRING(" {: >13}"),
-            humanize::time::duration::from_tv(duration).to_string());
+            humanize::time::duration::from_tv(to_timeval(duration))
+                .to_string());
 
         this->gs_rendered_line.clear();
 
@@ -622,7 +622,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
 
             if (width > CHART_INDENT) {
                 width -= CHART_INDENT;
-                double span = to_us(sel_ub - sel_lb).count();
+                double span = (sel_ub - sel_lb).count();
                 auto us_per_ch = std::chrono::microseconds{
                     static_cast<int64_t>(ceil(span / (double) width))};
 
@@ -630,7 +630,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                     lr.lr_start = CHART_INDENT;
                 } else {
                     auto start_diff
-                        = to_us(row.or_value.otr_range.tr_begin - sel_lb);
+                        = (row.or_value.otr_range.tr_begin - sel_lb);
 
                     lr.lr_start = CHART_INDENT + floor(start_diff / us_per_ch);
                 }
@@ -638,8 +638,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                 if (sel_ub < row.or_value.otr_range.tr_end) {
                     lr.lr_end = -1;
                 } else {
-                    auto end_diff
-                        = to_us(row.or_value.otr_range.tr_end - sel_lb);
+                    auto end_diff = (row.or_value.otr_range.tr_end - sel_lb);
 
                     lr.lr_end = CHART_INDENT + ceil(end_diff / us_per_ch);
                     if (lr.lr_start == lr.lr_end) {
@@ -695,9 +694,18 @@ timeline_source::rebuild_indexes()
     this->gs_preview_rows.clear();
     this->gs_preview_status_source.get_description().clear();
 
-    auto min_log_time_opt = this->get_min_row_time();
-    auto max_log_time_opt = this->get_max_row_time();
+    auto min_log_time_tv_opt = this->get_min_row_time();
+    auto max_log_time_tv_opt = this->get_max_row_time();
+    std::optional<std::chrono::microseconds> min_log_time_opt;
+    std::optional<std::chrono::microseconds> max_log_time_opt;
     auto max_desc_width = size_t{0};
+
+    if (min_log_time_tv_opt) {
+        min_log_time_opt = to_us(min_log_time_tv_opt.value());
+    }
+    if (max_log_time_tv_opt) {
+        max_log_time_opt = to_us(max_log_time_tv_opt.value());
+    }
 
     log_info("building opid table");
     for (const auto& [index, ld] : lnav::itertools::enumerate(this->gs_lss)) {
@@ -896,20 +904,17 @@ timeline_source::rebuild_indexes()
             max_desc_width = full_desc.size();
         }
 
-        if (this->gs_lower_bound.tv_sec == 0
+        if (this->gs_lower_bound == 0us
             || pair.second.or_value.otr_range.tr_begin < this->gs_lower_bound)
         {
             this->gs_lower_bound = pair.second.or_value.otr_range.tr_begin;
         }
-        if (this->gs_upper_bound.tv_sec == 0
+        if (this->gs_upper_bound == 0us
             || this->gs_upper_bound < pair.second.or_value.otr_range.tr_end)
         {
             this->gs_upper_bound = pair.second.or_value.otr_range.tr_end;
         }
 
-        ensure(!max_log_time_opt
-               || pair.second.or_value.otr_range.tr_begin
-                   <= max_log_time_opt.value());
         this->gs_time_order.emplace_back(&pair.second);
     }
     std::stable_sort(
@@ -941,40 +946,41 @@ timeline_source::rebuild_indexes()
 std::optional<vis_line_t>
 timeline_source::row_for_time(timeval time_bucket)
 {
+    auto time_bucket_us = to_us(time_bucket);
     auto iter = this->gs_time_order.begin();
     while (true) {
         if (iter == this->gs_time_order.end()) {
             return std::nullopt;
         }
 
-        if ((*iter)->or_value.otr_range.contains_inclusive(time_bucket)) {
+        if ((*iter)->or_value.otr_range.contains_inclusive(time_bucket_us)) {
             break;
         }
         ++iter;
     }
 
     auto closest_iter = iter;
-    auto closest_diff = time_bucket - (*iter)->or_value.otr_range.tr_begin;
+    auto closest_diff = time_bucket_us - (*iter)->or_value.otr_range.tr_begin;
     for (; iter != this->gs_time_order.end(); ++iter) {
-        if (time_bucket < (*iter)->or_value.otr_range.tr_begin) {
+        if (time_bucket_us < (*iter)->or_value.otr_range.tr_begin) {
             break;
         }
-        if (!(*iter)->or_value.otr_range.contains_inclusive(time_bucket)) {
+        if (!(*iter)->or_value.otr_range.contains_inclusive(time_bucket_us)) {
             continue;
         }
 
-        auto diff = time_bucket - (*iter)->or_value.otr_range.tr_begin;
+        auto diff = time_bucket_us - (*iter)->or_value.otr_range.tr_begin;
         if (diff < closest_diff) {
             closest_iter = iter;
             closest_diff = diff;
         }
 
         for (const auto& sub : (*iter)->or_value.otr_sub_ops) {
-            if (!sub.ostr_range.contains_inclusive(time_bucket)) {
+            if (!sub.ostr_range.contains_inclusive(time_bucket_us)) {
                 continue;
             }
 
-            diff = time_bucket - sub.ostr_range.tr_begin;
+            diff = time_bucket_us - sub.ostr_range.tr_begin;
             if (diff < closest_diff) {
                 closest_iter = iter;
                 closest_diff = diff;
@@ -1030,7 +1036,7 @@ timeline_source::time_for_row(vis_line_t row)
 
         if (ov_sel && ov_sel.value() < otr.otr_sub_ops.size()) {
             return row_info{
-                otr.otr_sub_ops[ov_sel.value()].ostr_range.tr_begin,
+                to_timeval(otr.otr_sub_ops[ov_sel.value()].ostr_range.tr_begin),
                 row,
             };
         }
@@ -1045,7 +1051,7 @@ timeline_source::time_for_row(vis_line_t row)
     }
 
     return row_info{
-        otr.otr_range.tr_begin,
+        to_timeval(otr.otr_range.tr_begin),
         row,
     };
 }
@@ -1070,22 +1076,22 @@ timeline_source::text_selection_changed(textview_curses& tc)
     }
 
     const auto& row = *this->gs_time_order[sel.value()];
-    auto low_tv = row.or_value.otr_range.tr_begin;
-    auto high_tv = row.or_value.otr_range.tr_end;
+    auto low_us = row.or_value.otr_range.tr_begin;
+    auto high_us = row.or_value.otr_range.tr_end;
     auto id_sf = row.or_name;
     auto level_stats = row.or_value.otr_level_stats;
     auto ov_sel = tc.get_overlay_selection();
     if (ov_sel) {
         const auto& sub = row.or_value.otr_sub_ops[ov_sel.value()];
         id_sf = sub.ostr_subid;
-        low_tv = sub.ostr_range.tr_begin;
-        high_tv = sub.ostr_range.tr_end;
+        low_us = sub.ostr_range.tr_begin;
+        high_us = sub.ostr_range.tr_end;
         level_stats = sub.ostr_level_stats;
     }
-    high_tv.tv_sec += 1;
-    auto low_vl = this->gs_lss.row_for_time(low_tv);
-    auto high_vl = this->gs_lss.row_for_time(high_tv).value_or(
-        vis_line_t(this->gs_lss.text_line_count()));
+    high_us += 1s;
+    auto low_vl = this->gs_lss.row_for_time(to_timeval(low_us));
+    auto high_vl = this->gs_lss.row_for_time(to_timeval(high_us))
+                       .value_or(vis_line_t(this->gs_lss.text_line_count()));
 
     if (!low_vl) {
         return;

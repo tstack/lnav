@@ -126,7 +126,7 @@ struct log_opid_state {
 
     log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
                                      const string_fragment& opid,
-                                     const timeval& tv,
+                                     const std::chrono::microseconds& us,
                                      timestamp_point_of_reference_t poref,
                                      std::chrono::microseconds duration
                                      = std::chrono::microseconds(0));
@@ -134,7 +134,7 @@ struct log_opid_state {
     opid_sub_time_range* sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
                                        log_opid_map::iterator& op_iter,
                                        const string_fragment& subid,
-                                       const timeval& tv,
+                                       const std::chrono::microseconds& us,
                                        log_level_t level);
 };
 
@@ -163,7 +163,7 @@ struct log_thread_id_state {
 
     log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
                                            const string_fragment& tid,
-                                           const timeval& tv);
+                                           const std::chrono::microseconds& us);
 };
 
 struct scan_batch_context {

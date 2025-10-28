@@ -1,7 +1,7 @@
 [
     {
         "log_line": 0,
-        "log_time": "2013-09-06 20:00:48.124",
+        "log_time": "2013-09-06 20:00:48.124817",
         "log_level": "trace",
         "arr": null,
         "obj": null,
@@ -18,7 +18,7 @@
     },
     {
         "log_line": 2,
-        "log_time": "2013-09-06 20:00:49.124",
+        "log_time": "2013-09-06 20:00:49.124817",
         "log_level": "info",
         "arr": null,
         "obj": null,
@@ -35,7 +35,7 @@
     },
     {
         "log_line": 4,
-        "log_time": "2013-09-06 22:00:49.124",
+        "log_time": "2013-09-06 22:00:49.124817",
         "log_level": "info",
         "arr": null,
         "obj": null,
@@ -52,7 +52,7 @@
     },
     {
         "log_line": 7,
-        "log_time": "2013-09-06 22:00:59.124",
+        "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug5",
         "arr": null,
         "obj": null,
@@ -69,7 +69,7 @@
     },
     {
         "log_line": 9,
-        "log_time": "2013-09-06 22:00:59.124",
+        "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug4",
         "arr": null,
         "obj": null,
@@ -86,7 +86,7 @@
     },
     {
         "log_line": 11,
-        "log_time": "2013-09-06 22:00:59.124",
+        "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug3",
         "arr": null,
         "obj": null,
@@ -103,7 +103,7 @@
     },
     {
         "log_line": 13,
-        "log_time": "2013-09-06 22:00:59.124",
+        "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug2",
         "arr": null,
         "obj": null,
@@ -120,7 +120,7 @@
     },
     {
         "log_line": 15,
-        "log_time": "2013-09-06 22:01:00.000",
+        "log_time": "2013-09-06 22:01:00.000000",
         "log_level": "debug",
         "arr": null,
         "obj": null,
@@ -137,7 +137,7 @@
     },
     {
         "log_line": 17,
-        "log_time": "2013-09-06 22:01:49.124",
+        "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "stats",
         "arr": null,
         "obj": null,
@@ -154,7 +154,7 @@
     },
     {
         "log_line": 19,
-        "log_time": "2013-09-06 22:01:49.124",
+        "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "warning",
         "arr": null,
         "obj": null,
@@ -171,7 +171,7 @@
     },
     {
         "log_line": 21,
-        "log_time": "2013-09-06 22:01:49.124",
+        "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "error",
         "arr": null,
         "obj": null,
@@ -188,7 +188,7 @@
     },
     {
         "log_line": 23,
-        "log_time": "2013-09-06 22:01:49.124",
+        "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "critical",
         "arr": null,
         "obj": null,
@@ -205,7 +205,7 @@
     },
     {
         "log_line": 25,
-        "log_time": "2013-09-06 22:01:49.124",
+        "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "fatal",
         "arr": [
             "hi",

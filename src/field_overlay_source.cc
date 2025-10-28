@@ -119,8 +119,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     line_range time_lr;
-    off_t ts_len = sql_strftime(
-        curr_timestamp, sizeof(curr_timestamp), ll->get_timeval(), 'T');
+    off_t ts_len = sql_strftime(curr_timestamp,
+                                sizeof(curr_timestamp),
+                                ll->get_time<std::chrono::microseconds>(),
+                                'T');
     {
         exttm tmptm;
 
@@ -169,9 +171,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         const char* time_src
             = this->fos_log_helper.ldh_line_values.lvv_sbr.get_data()
             + time_range.lr_start;
-        struct timeval actual_tv;
+        timeval actual_tv;
         date_time_scanner dts;
-        struct exttm tm;
+        exttm tm;
 
         dts.set_base_time(format->lf_date_time.dts_base_time,
                           format->lf_date_time.dts_base_tm.et_tm);
@@ -205,11 +207,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
     timersub(&curr_tv, &offset_tv, &orig_tv);
-    sql_strftime(old_timestamp,
-                 sizeof(old_timestamp),
-                 orig_tv.tv_sec,
-                 orig_tv.tv_usec / 1000,
-                 'T');
+    sql_strftime(old_timestamp, sizeof(old_timestamp), to_us(orig_tv), 'T');
     if (offset_tv.tv_sec || offset_tv.tv_usec) {
         time_str.append("  Pre-adjust Time: ");
         time_str.append(old_timestamp);
@@ -869,8 +867,8 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 
     const std::vector<attr_line_t>* lines = nullptr;
     if (exec_phase.spinning_up()) {
-        auto msg = lnav::console::user_message::info(
-            "Files are being indexed...");
+        auto msg
+            = lnav::console::user_message::info("Files are being indexed...");
         this->fos_static_lines = msg.to_attr_line().split_lines();
         this->fos_static_lines_state.clear();
         apply_status_attrs(this->fos_static_lines);

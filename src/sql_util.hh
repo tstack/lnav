@@ -88,20 +88,19 @@ void attach_sqlite_db(sqlite3* db, const std::string& filename);
 inline ssize_t
 sql_strftime(char* buffer,
              size_t buffer_size,
-             lnav::time64_t tim,
-             int millis,
+             std::chrono::microseconds micros,
              char sep = ' ')
 {
-    return lnav::strftime_rfc3339(buffer, buffer_size, tim, millis, sep);
+    return lnav::strftime_rfc3339(buffer, buffer_size, micros, sep);
 }
 
 inline ssize_t
 sql_strftime(char* buffer,
              size_t buffer_size,
-             const struct timeval& tv,
+             const timeval& tv,
              char sep = ' ')
 {
-    return sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
+    return sql_strftime(buffer, buffer_size, to_us(tv), sep);
 }
 
 void sql_install_logger();

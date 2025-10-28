@@ -51,20 +51,20 @@ if test x"${TSHARK_CMD}" != x""; then
   run_test env TZ=UTC ${lnav_test} -n ${test_dir}/dhcp.pcapng
 
   check_output "pcap file is not recognized" <<EOF
-2004-12-05T19:16:24.317 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
-2004-12-05T19:16:24.317 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
-2004-12-05T19:16:24.387 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
-2004-12-05T19:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
+2004-12-05T19:16:24.317000 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
+2004-12-05T19:16:24.317000 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
+2004-12-05T19:16:24.387000 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
+2004-12-05T19:16:24.387000 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
 EOF
 
   # make sure piped binary data is left alone
   run_test cat ${test_dir}/dhcp.pcapng | env TZ=UTC ${lnav_test} -n
 
   check_output "pcap file is not recognized" <<EOF
-2004-12-05T19:16:24.317 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
-2004-12-05T19:16:24.317 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
-2004-12-05T19:16:24.387 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
-2004-12-05T19:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
+2004-12-05T19:16:24.317000 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Discover - Transaction ID 0x3d1d
+2004-12-05T19:16:24.317000 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP Offer    - Transaction ID 0x3d1d
+2004-12-05T19:16:24.387000 0.0.0.0 → 255.255.255.255 DHCP 314 DHCP Request  - Transaction ID 0x3d1e
+2004-12-05T19:16:24.387000 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
 EOF
 
   run_cap_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
@@ -98,7 +98,7 @@ if locale -a | grep fr_FR; then
 
     check_output "french locale is not recognized" <<EOF
 log_time
-2007-08-19 11:08:37.000
+2007-08-19 11:08:37.000000
 EOF
 fi
 

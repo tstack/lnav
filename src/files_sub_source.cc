@@ -551,16 +551,14 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                     .right_justify(NAME_WIDTH)
                     .append(": ")
                     .append(fmt::to_string(lf->get_text_format())));
+            auto ltime = std::chrono::seconds{
+                convert_log_time_to_local(lf->get_stat().st_mtime)};
+            auto ltime_str = lnav::to_rfc3339_string(ltime, 'T');
             details.emplace_back(attr_line_t()
                                      .append("Last Modified"_h3)
                                      .right_justify(NAME_WIDTH)
                                      .append(": ")
-                                     .append(lnav::to_rfc3339_string(
-                                         convert_log_time_to_local(
-
-                                             lf->get_stat().st_mtime),
-                                         0,
-                                         'T')));
+                                     .append(ltime_str));
             details.emplace_back(
                 attr_line_t()
                     .append("Size"_h3)

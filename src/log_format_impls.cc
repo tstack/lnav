@@ -262,10 +262,11 @@ public:
                           .count();
             }
 
+            auto log_us = to_us(log_tv);
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, log_tv);
+                sbc.sbc_allocator, string_fragment{}, log_us);
             tid_iter->second.titr_level_stats.update_msg_count(level_val);
-            dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
+            dst.emplace_back(li.li_file_range.fr_offset, log_us, level_val);
             return scan_match{5};
         }
 
@@ -692,11 +693,12 @@ public:
                 }
             }
 
+            auto log_us = to_us(tv);
             if (opid_cap.is_valid()) {
                 auto opid_iter = sbc.sbc_opids.insert_op(
                     sbc.sbc_allocator,
                     opid_cap,
-                    tv,
+                    log_us,
                     this->lf_timestamp_point_of_reference,
                     duration);
                 opid_iter->second.otr_level_stats.update_msg_count(level);
@@ -710,7 +712,8 @@ public:
                         0, host_cap.to_string());
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
+            dst.emplace_back(
+                li.li_file_range.fr_offset, log_us, level, 0, opid);
             dst.back().set_opid(opid);
             return scan_match{2000};
         }

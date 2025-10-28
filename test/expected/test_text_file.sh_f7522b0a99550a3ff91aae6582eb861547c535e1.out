@@ -1,7 +1,7 @@
 [
     {
         "top_meta": {
-            "time": "2013-06-06 19:13:20.123",
+            "time": "2013-06-06 19:13:20.123456",
             "file": "stdin",
             "breadcrumbs": [
                 {
@@ -14,7 +14,7 @@
                     ]
                 },
                 {
-                    "display_value": "2013-06-06T19:13:20.123",
+                    "display_value": "2013-06-06T19:13:20.123456",
                     "search_placeholder": "",
                     "possibilities": [
 

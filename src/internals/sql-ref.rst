@@ -4456,7 +4456,7 @@ timeslice(*time*, *slice*)
     .. code-block::  custsqlite
 
       ;SELECT timeslice('2017-01-01T05:05:00', '10m')
-      2017-01-01 05:00:00.000
+      2017-01-01 05:00:00.000000
 
     To group log messages into five minute buckets and count them:
 
@@ -4465,9 +4465,9 @@ timeslice(*time*, *slice*)
       ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1)
     FROM lnav_example_log GROUP BY slice
            slice       count(1)  
-      2017-02⋯:00.000          2 
-      2017-02⋯:00.000          1 
-      2017-02⋯:00.000          1 
+      2017-02⋯.000000          2 
+      2017-02⋯.000000          1 
+      2017-02⋯.000000          1 
 
     To group log messages by those before 4:30am and after:
 
@@ -4476,7 +4476,7 @@ timeslice(*time*, *slice*)
       ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
            slice       count(1)  
                <NULL>          1 
-      2017-02⋯:00.000          3 
+      2017-02⋯.000000          3 
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timezone`
@@ -5204,7 +5204,7 @@ stats.hist *col* *\[slice:'1h'\]* *\[top:10\]*
 
       ;from lnav_example_log | stats.hist ex_procname
           tslice             v        
-      2017-02⋯:00.000 {"gw":3,"hw":1} 
+      2017-02⋯.000000 {"gw":3,"hw":1} 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`

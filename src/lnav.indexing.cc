@@ -233,14 +233,12 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             auto inner_height = view.get_inner_height();
 
             if (inner_height > 0_vl) {
-                log_debug("scroll down %d %d", sel_opt.value(), inner_height);
                 scroll_downs[lpc]
                     = (sel_opt == inner_height - 1_vl) && !is_headless;
             } else {
                 scroll_downs[lpc] = !is_headless;
             }
         } else {
-            log_debug("scroll down no sel");
             scroll_downs[lpc] = (view.get_top() >= view.get_top_for_last_row())
                 && !is_headless;
         }

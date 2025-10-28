@@ -54,12 +54,16 @@ public:
                                                vis_line_t line) override;
 };
 
+class timeline_header_overlay;
+
 class timeline_source
     : public text_sub_source
     , public list_input_delegate
     , public text_time_translator
     , public text_delegate {
 public:
+    friend timeline_header_overlay;
+
     explicit timeline_source(textview_curses& log_view,
                              logfile_sub_source& lss,
                              textview_curses& preview_view,
@@ -107,7 +111,8 @@ public:
 
     bool rebuild_indexes();
 
-    std::pair<timeval, timeval> get_time_bounds_for(int line);
+    std::pair<std::chrono::microseconds, std::chrono::microseconds>
+    get_time_bounds_for(int line);
 
     textview_curses& gs_log_view;
     logfile_sub_source& gs_lss;
@@ -191,8 +196,8 @@ public:
     timeline_opid_row_map gs_active_opids;
     timeline_desc_map gs_descriptions;
     std::vector<const opid_row*> gs_time_order;
-    timeval gs_lower_bound{};
-    timeval gs_upper_bound{};
+    std::chrono::microseconds gs_lower_bound{};
+    std::chrono::microseconds gs_upper_bound{};
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
     exec_context* gs_exec_context{nullptr};

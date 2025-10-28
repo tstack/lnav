@@ -311,8 +311,8 @@ CREATE TABLE fstat (
                 break;
             case FSTAT_COL_ATIME:
                 if (vc.c_error.empty()) {
-                    sql_strftime(
-                        time_buf, sizeof(time_buf), vc.c_stat.st_atime, 0);
+                    auto atime = std::chrono::seconds{vc.c_stat.st_atime};
+                    sql_strftime(time_buf, sizeof(time_buf), atime);
                     sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
                 } else {
                     sqlite3_result_null(ctx);
@@ -320,8 +320,8 @@ CREATE TABLE fstat (
                 break;
             case FSTAT_COL_MTIME:
                 if (vc.c_error.empty()) {
-                    sql_strftime(
-                        time_buf, sizeof(time_buf), vc.c_stat.st_mtime, 0);
+                    auto mtime = std::chrono::seconds{vc.c_stat.st_mtime};
+                    sql_strftime(time_buf, sizeof(time_buf), mtime);
                     sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
                 } else {
                     sqlite3_result_null(ctx);
@@ -329,8 +329,8 @@ CREATE TABLE fstat (
                 break;
             case FSTAT_COL_CTIME:
                 if (vc.c_error.empty()) {
-                    sql_strftime(
-                        time_buf, sizeof(time_buf), vc.c_stat.st_ctime, 0);
+                    auto ctime = std::chrono::seconds{vc.c_stat.st_ctime};
+                    sql_strftime(time_buf, sizeof(time_buf), ctime);
                     sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
                 } else {
                     sqlite3_result_null(ctx);
