@@ -1,0 +1,88 @@
+{
+  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+  "rust_tracing_log": {
+    "title": "Rust Tracing crate formatting. Expects a tracing subscribed like so `tracing_subscriber::fmt().json().init()` (or compatibile)",
+    "description": "",
+    "file-type": "json",
+    "timestamp-field": "timestamp",
+    "level-field": "level",
+    "body-field": "fields/message",
+    "hide-extra": true,
+    "opid-field": "spans",
+    "level": {
+      "trace": "TRACE",
+      "debug": "DEBUG",
+      "info": "INFO",
+      "warning": "WARN",
+      "error": "ERROR"
+    },
+    "value": {
+      "timestamp": {
+        "kind": "string",
+        "description": "ISO 8601 timestamp with timezone"
+      },
+      "level": {
+        "kind": "string",
+        "description": "Log level"
+      },
+      "target": {
+        "kind": "string",
+        "description": "Rust module that generated the log",
+        "identifier": true
+      },
+      "message": {
+        "kind": "string",
+        "description": "Log message content"
+      }
+    },
+    "line-format": [
+      {
+        "field": "__timestamp__",
+        "timestamp-format": "%H:%M:%S"
+      },
+      " ",
+      {
+        "field": "level",
+        "align": "left",
+        "min-width": 5,
+        "max-width": 5,
+        "overflow": "truncate",
+        "prefix": "[",
+        "suffix": "]"
+      },
+      " ",
+      {
+        "field": "target",
+        "min-width": 10,
+        "max-width": 10,
+        "overflow": "abbrev",
+        "prefix": "(",
+        "suffix": ")"
+      },
+      " ",
+      {
+        "field": "fields/message"
+      }
+    ],
+    "partitions": {
+        
+    },
+    "sample": [
+      {
+        "description": "Info level log with scenario loading",
+        "line": "{\"timestamp\":\"2025-10-17T22:09:20.139141Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"Loading test scenario from file: \\\"_data/tests/kill.txt\\\"\"},\"target\":\"mapf::testlib\",\"span\":{\"name\":\"new_from_file\"},\"spans\":[{\"name\":\"run_scenarios\"},{\"name\":\"new_from_file\"}]}",
+        "level": "info"
+      },
+      {
+        "description": "Debug level log with AI move selection",
+        "line": "{\"timestamp\":\"2025-10-17T22:09:20.140743Z\",\"level\":\"DEBUG\",\"fields\":{\"message\":\"Greedy AI chose move: Move((1, 1), (1, 2))\"},\"target\":\"mapf::ai::greedy\",\"span\":{\"playing\":\"1\",\"name\":\"next\"},\"spans\":[{\"name\":\"run_scenarios\"},{\"scenario_path\":\"\\\"_data/tests/kill.txt\\\"\",\"name\":\"run_scenario\"},{\"playing\":\"1\",\"name\":\"next\"}]}",
+        "level": "debug"
+      },
+      {
+        "description": "Trace level log with action evaluation",
+        "line": "{\"timestamp\":\"2025-10-17T22:09:20.140015Z\",\"level\":\"TRACE\",\"fields\":{\"message\":\"Evaluating move from (1,1) to (1,2) with distance 0\"},\"target\":\"mapf::ai::greedy\",\"span\":{\"playing\":\"1\",\"name\":\"next\"},\"spans\":[{\"name\":\"run_scenarios\"},{\"scenario_path\":\"\\\"_data/tests/kill.txt\\\"\",\"name\":\"run_scenario\"},{\"playing\":\"1\",\"name\":\"next\"}]}",
+        "level": "trace"
+      }
+    ]
+  }
+}
