@@ -382,7 +382,8 @@ hasher::to_string(char out[STRING_SIZE])
 {
 #if defined(__x86_64__) || defined(_M_X64)
     // ---------- x86-64 SSE4.1 version ----------
-    __m128i input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes));
+    auto bytes = this->to_array();
+    __m128i input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes.ba_data));
 
     __m128i high = _mm_and_si128(_mm_srli_epi16(input, 4), _mm_set1_epi8(0x0F));
     __m128i low = _mm_and_si128(input, _mm_set1_epi8(0x0F));
