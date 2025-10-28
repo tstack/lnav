@@ -9,13 +9,7 @@
     "body-field": "fields/message",
     "hide-extra": true,
     "opid-field": "spans",
-    "level": {
-      "trace": "TRACE",
-      "debug": "DEBUG",
-      "info": "INFO",
-      "warning": "WARN",
-      "error": "ERROR"
-    },
+    "thread-id-field": "thread/id",
     "value": {
       "timestamp": {
         "kind": "string",
@@ -33,12 +27,20 @@
       "message": {
         "kind": "string",
         "description": "Log message content"
+      },
+      "thread/name": {
+        "kind": "string",
+        "description": "Thread Name"
+      },
+      "thread/id": {
+        "kind": "integer",
+        "description": "Thread ID",
+        "hidden": true
       }
     },
     "line-format": [
       {
-        "field": "__timestamp__",
-        "timestamp-format": "%H:%M:%S"
+        "field": "__timestamp__"
       },
       " ",
       {
@@ -59,14 +61,20 @@
         "prefix": "(",
         "suffix": ")"
       },
+      {
+        "field": "thread/name",
+        "min-width": 10,
+        "max-width": 10,
+        "overflow": "abbrev",
+        "prefix": "[",
+        "suffix": "]",
+        "default-value": ""
+      },
       " ",
       {
         "field": "fields/message"
       }
     ],
-    "partitions": {
-        
-    },
     "sample": [
       {
         "description": "Info level log with scenario loading",

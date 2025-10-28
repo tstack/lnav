@@ -92,3 +92,15 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_opid FROM all_logs" \
     ${test_dir}/logfile_caddy_log.1
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_opid FROM all_logs" \
+    ${test_dir}/logfile_rust_tracing.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_thread_id FROM all_logs" \
+    ${test_dir}/logfile_rust_tracing.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":switch-to-view timeline" \
+    ${test_dir}/logfile_rust_tracing.0

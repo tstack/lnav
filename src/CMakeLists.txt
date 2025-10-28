@@ -216,6 +216,7 @@ set(FORMAT_FILES
         formats/procstate_log.json
         formats/proxifier_log.json
         formats/redis_log.json
+        formats/rust_tracing_log.json
         formats/snaplogic_log.json
         formats/sssd_log.json
         formats/strace_log.json

@@ -1638,6 +1638,8 @@ dist_noinst_DATA = \
     test_text_file.sh_f586ef080a86dfe1f981b345bcf8d7a279b2b247.out \
     test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.err \
     test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.out \
+    test_timeline.sh_070a540e6ae8971dec18b4b69dee2e550a1db20e.err \
+    test_timeline.sh_070a540e6ae8971dec18b4b69dee2e550a1db20e.out \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.err \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.out \
     test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.err \
@@ -1648,6 +1650,8 @@ dist_noinst_DATA = \
     test_timeline.sh_2875db9da7bf74161babf4e315a85787616f3507.out \
     test_timeline.sh_3c2669075d0636fab98e2a67a72613420f22c322.err \
     test_timeline.sh_3c2669075d0636fab98e2a67a72613420f22c322.out \
+    test_timeline.sh_3c4a607b8e943eb9c25ea1de8ad4ebbce40b4d33.err \
+    test_timeline.sh_3c4a607b8e943eb9c25ea1de8ad4ebbce40b4d33.out \
     test_timeline.sh_3fb943420cd43a6540bcac4702e257dcbbf00cc6.err \
     test_timeline.sh_3fb943420cd43a6540bcac4702e257dcbbf00cc6.out \
     test_timeline.sh_403bc375071bc26f955b317d751a7d65fb433bc7.err \
@@ -1664,6 +1668,8 @@ dist_noinst_DATA = \
     test_timeline.sh_914fe85f1f8df69c70cd26348759df8604591106.out \
     test_timeline.sh_92bccfbb9fb45d7ab03934d662cc99ce50c77d8b.err \
     test_timeline.sh_92bccfbb9fb45d7ab03934d662cc99ce50c77d8b.out \
+    test_timeline.sh_a1f7ada1c7d3e39c607c5eb66b1b0f1908e90a08.err \
+    test_timeline.sh_a1f7ada1c7d3e39c607c5eb66b1b0f1908e90a08.out \
     test_timeline.sh_a3af66b778018a11f912ce81bf8b4437b0ffddd0.err \
     test_timeline.sh_a3af66b778018a11f912ce81bf8b4437b0ffddd0.out \
     test_timeline.sh_c54de09ae2633ee461ff92fdede81e2b36623c27.err \

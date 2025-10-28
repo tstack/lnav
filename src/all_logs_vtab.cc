@@ -66,6 +66,8 @@ all_logs_vtab::all_logs_vtab()
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
+    this->alv_thread_meta.lvm_identifier = true;
+    this->alv_thread_meta.lvm_foreign_key = true;
 }
 
 void
@@ -125,10 +127,8 @@ all_logs_vtab::extract(logfile* lf,
     auto body_sf = line.to_string_fragment(body);
     auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
     auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
-    auto thread_id = find_string_attr_range(sa, &SA_THREAD_ID);
     auto src_file_sf = line.to_string_fragment(src_file);
     auto src_line_sf = line.to_string_fragment(src_line);
-    auto thread_id_sf = line.to_string_fragment(thread_id);
     auto h = hasher();
     if (src_file_sf.is_valid() && src_line_sf.is_valid()) {
         h.update(format->get_name().c_str());
@@ -195,10 +195,11 @@ all_logs_vtab::extract(logfile* lf,
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());
     }
-    if (thread_id_sf.empty()) {
-        values.lvv_values.emplace_back(this->alv_thread_meta);
+    if (sub_values.lvv_thread_id_value) {
+        values.lvv_values.emplace_back(this->alv_thread_meta,
+                                       sub_values.lvv_thread_id_value.value());
     } else {
-        values.lvv_values.emplace_back(this->alv_thread_meta, thread_id_sf);
+        values.lvv_values.emplace_back(this->alv_thread_meta);
     }
     values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
     values.lvv_opid_provenance = sub_values.lvv_opid_provenance;

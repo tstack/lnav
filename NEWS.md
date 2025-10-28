@@ -119,6 +119,7 @@ Features:
   theme highlight configurations to control whether a
   highlight can be applied to text that is covered by
   another highlight.
+* Added `rust_tracing_log` from @richard-hajek.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a
@@ -128,6 +129,8 @@ Breaking changes:
   This change was made so that the main DB only contains
   user data that can be easily backed up to a new DB
   file.
+* Timestamp columns and results from lnav time functions
+  now have microsecond precision instead of millisecond.
 
 Interface changes:
 * If there are background tasks, like the processing done

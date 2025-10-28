@@ -1065,6 +1065,7 @@ struct json_log_userdata {
     std::optional<string_fragment> jlu_opid_frag;
     std::optional<string_fragment> jlu_opid_desc_frag;
     std::optional<string_fragment> jlu_tid_frag;
+    std::optional<int64_t> jlu_tid_number;
     std::optional<std::string> jlu_subid;
     hasher jlu_opid_hasher;
     std::chrono::microseconds jlu_duration{0};
@@ -1197,6 +1198,15 @@ read_json_number(yajlpp_parse_context* ypc,
             }
         }
     } else if (vd != nullptr) {
+        if (jlu->jlu_format->elf_thread_id_field == field_name) {
+            auto& sbc = *jlu->jlu_batch_context;
+            auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(number_frag);
+            if (tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()) {
+                jlu->jlu_tid_frag = number_frag.to_owned(sbc.sbc_allocator);
+            } else {
+                jlu->jlu_tid_frag = tid_iter->first;
+            }
+        }
         if ((vd->vd_meta.lvm_kind == value_kind_t::VALUE_INTEGER
              || vd->vd_meta.lvm_kind == value_kind_t::VALUE_FLOAT)
             && !vd->vd_meta.lvm_foreign_key && !vd->vd_meta.lvm_identifier)
@@ -1375,6 +1385,11 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
 
     if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
+    }
+    if (vd != nullptr
+        && vd->vd_meta.lvm_name == jlu->jlu_format->elf_thread_id_field)
+    {
+        jlu->jlu_tid_number = val;
     }
     jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_INTEGER),
@@ -2831,7 +2846,11 @@ external_log_format::get_subline(const logline& ll,
             {
                 lv_iter->lv_meta.lvm_format = this;
             }
-            if (jlu.jlu_tid_frag) {
+
+            if (jlu.jlu_tid_number) {
+                this->jlf_line_values.lvv_thread_id_value
+                    = fmt::to_string(jlu.jlu_tid_number.value());
+            } else if (jlu.jlu_tid_frag) {
                 this->jlf_line_values.lvv_thread_id_value
                     = jlu.jlu_tid_frag->to_string();
             }

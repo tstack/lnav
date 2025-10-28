@@ -245,6 +245,7 @@ log_vtab_impl::get_foreign_keys(
     keys_inout.emplace("log_top_line()");
     keys_inout.emplace("log_msg_line()");
     keys_inout.emplace("log_src_line");
+    keys_inout.emplace("log_thread_id");
 }
 
 void

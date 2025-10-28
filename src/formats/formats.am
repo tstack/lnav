@@ -43,6 +43,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/proxifier_log.json \
     $(srcdir)/%reldir%/rails_log.json \
     $(srcdir)/%reldir%/redis_log.json \
+    $(srcdir)/%reldir%/rust_tracing_log.json \
     $(srcdir)/%reldir%/simple_rs_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
     $(srcdir)/%reldir%/spdlog_log.json \
