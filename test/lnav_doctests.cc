@@ -37,14 +37,14 @@
 #include "cmd.parser.hh"
 #include "data_scanner.hh"
 #include "doctest/doctest.h"
+#include "hasher.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "ptimec.hh"
 #include "relative_time.hh"
 #include "shlex.hh"
-#include "unique_path.hh"
-
 #include "terminfo/terminfo.h"
+#include "unique_path.hh"
 
 using namespace std;
 
@@ -384,7 +384,8 @@ TEST_CASE("data_scanner quote3")
         CHECK(tok_res->tr_token == DT_LINE);
         tok_res = ds.tokenize2();
         CHECK(tok_res->tr_token == DT_SYMBOL);
-        printf(" %d:%d\n", tok_res->tr_capture.c_begin, tok_res->tr_capture.c_end);
+        printf(
+            " %d:%d\n", tok_res->tr_capture.c_begin, tok_res->tr_capture.c_end);
         tok_res = ds.tokenize2();
         CHECK(tok_res->tr_token == DT_LINE);
         tok_res = ds.tokenize2();
@@ -392,4 +393,14 @@ TEST_CASE("data_scanner quote3")
         tok_res = ds.tokenize2();
         CHECK(tok_res->tr_token == DT_QUOTED_STRING);
     }
+}
+
+TEST_CASE("hasher to_string")
+{
+    char buf[33];
+    hasher h;
+
+    h.update("hello");
+    h.to_string(buf);
+    CHECK(string(buf) == "cae682d36a82683743e01ac7d11e945c");
 }

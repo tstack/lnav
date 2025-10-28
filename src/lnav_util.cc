@@ -384,11 +384,12 @@ hasher::to_string(char out[STRING_SIZE])
     // ---------- x86-64 SSE4.1 version ----------
     auto bytes = this->to_array();
     // ---------- x86-64 SSE2 version ----------
-    __m128i input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes));
+    __m128i input
+        = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes.ba_data));
 
     // Split into high/low nibbles
     __m128i high = _mm_and_si128(_mm_srli_epi16(input, 4), _mm_set1_epi8(0x0F));
-    __m128i low  = _mm_and_si128(input, _mm_set1_epi8(0x0F));
+    __m128i low = _mm_and_si128(input, _mm_set1_epi8(0x0F));
 
     // Interleave [h0,l0,h1,l1,...]
     __m128i lozip = _mm_unpacklo_epi8(high, low);
@@ -400,18 +401,15 @@ hasher::to_string(char out[STRING_SIZE])
 
     // ASCII bases: '0' (0x30), 'a'-10 (0x57)
     __m128i base0 = _mm_set1_epi8(0x30);
-    __m128i basea = _mm_set1_epi8(0x57);
-
     // offset = base0 + (mask ? (basea - base0) : 0)
-    __m128i diff = _mm_sub_epi8(basea, base0);
+    __m128i basediff = _mm_set1_epi8(0x57 - 0x30);
 
-    __m128i off_lo = _mm_or_si128(_mm_and_si128(cmp_lo, diff), base0);
-    __m128i off_hi = _mm_or_si128(_mm_and_si128(cmp_hi, diff), base0);
+    __m128i off_lo = _mm_add_epi8(_mm_and_si128(cmp_lo, basediff), base0);
+    __m128i off_hi = _mm_add_epi8(_mm_and_si128(cmp_hi, basediff), base0);
 
     __m128i out_lo = _mm_add_epi8(lozip, off_lo);
     __m128i out_hi = _mm_add_epi8(hizip, off_hi);
 
-    alignas(16) char out[32];
     _mm_storeu_si128(reinterpret_cast<__m128i*>(out), out_lo);
     _mm_storeu_si128(reinterpret_cast<__m128i*>(out + 16), out_hi);
     out[32] = '\0';
@@ -443,10 +441,22 @@ hasher::to_string(char out[STRING_SIZE])
     vst1q_u8(reinterpret_cast<uint8_t*>(out + 16), out_hi);
     out[32] = '\0';
 #else
-    static const char HEX_DIGITS[] = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-    };
+    static const char HEX_DIGITS[] = {'0',
+                                      '1',
+                                      '2',
+                                      '3',
+                                      '4',
+                                      '5',
+                                      '6',
+                                      '7',
+                                      '8',
+                                      '9',
+                                      'a',
+                                      'b',
+                                      'c',
+                                      'd',
+                                      'e',
+                                      'f'};
 
     auto bits = this->to_array();
 
