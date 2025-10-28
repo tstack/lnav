@@ -32,6 +32,7 @@
 
 #include "view_helpers.hh"
 
+#include "base/injector.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "bound_tags.hh"
@@ -42,6 +43,7 @@
 #include "hasher.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
+#include "lnav.exec-phase.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
@@ -106,6 +108,8 @@ const char* const
         "USER",
         "BUSY",
 };
+
+static std::optional<uint32_t> db_generation;
 
 std::optional<lnav_view_t>
 view_from_string(const char* name)
@@ -1251,6 +1255,10 @@ toggle_view(textview_curses* toggle_tc)
     lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
     lnav_data.ld_status[LNS_PREVIEW1].set_needs_update();
 
+    if (!lnav_data.ld_exec_context.ec_label_source_stack.empty()) {
+        db_generation = lnav_data.ld_exec_context.ec_label_source_stack.back()
+                            ->dls_generation;
+    }
     if (tc == toggle_tc) {
         if (lnav_data.ld_view_stack.size() == 1) {
             return false;
@@ -1269,8 +1277,10 @@ toggle_view(textview_curses* toggle_tc)
         if (toggle_tc == &lnav_data.ld_views[LNV_LOG]
             || toggle_tc == &lnav_data.ld_views[LNV_TEXT])
         {
-            rescan_files(true);
-            rebuild_indexes_repeatedly();
+            if (lnav_data.ld_flags & LNF_HEADLESS) {
+                rescan_files(true);
+                rebuild_indexes_repeatedly();
+            }
         } else if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
             open_schema_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
@@ -1310,8 +1320,22 @@ ensure_view(textview_curses* expected_tc)
     auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
     auto retval = true;
 
+    if (!lnav_data.ld_exec_context.ec_label_source_stack.empty()) {
+        db_generation = lnav_data.ld_exec_context.ec_label_source_stack.back()
+                            ->dls_generation;
+    }
     if (tc != expected_tc) {
-        toggle_view(expected_tc);
+        if (std::find(lnav_data.ld_view_stack.begin(),
+                      lnav_data.ld_view_stack.end(),
+                      expected_tc)
+            == lnav_data.ld_view_stack.end())
+        {
+            toggle_view(expected_tc);
+        } else {
+            while (lnav_data.ld_view_stack.top().value() != expected_tc) {
+                lnav_data.ld_view_stack.pop_back();
+            }
+        }
         retval = false;
     }
     return retval;
@@ -1578,12 +1602,9 @@ lnav_crumb_source()
         view_performer);
 
     auto* tss = top_view->get_sub_source();
-    auto sel = top_view->get_selection();
-    if (!sel) {
-        return retval;
-    }
     if (tss != nullptr) {
-        tss->text_crumbs_for_line(sel.value(), retval);
+        tss->text_crumbs_for_line(top_view->get_selection().value_or(0_vl),
+                                  retval);
     }
 
     return retval;
@@ -1607,7 +1628,7 @@ clear_preview()
 void
 set_view_mode(ln_mode_t mode)
 {
-    if (mode == lnav_data.ld_mode) {
+    if (mode == lnav_data.ld_mode || lnav_data.ld_view_stack.empty()) {
         return;
     }
 
@@ -1685,6 +1706,7 @@ set_view_mode(ln_mode_t mode)
             if (!lnav_data.ld_filter_view.get_selection()) {
                 lnav_data.ld_filter_view.set_selection(0_vl);
             }
+            lnav_data.ld_files_view.set_needs_update();
             lnav_data.ld_files_source.text_selection_changed(
                 lnav_data.ld_files_view);
             breadcrumb_view->set_enabled(false);
@@ -1707,6 +1729,8 @@ set_view_mode(ln_mode_t mode)
              lnav_mode_strings[lnav::enums::to_underlying(lnav_data.ld_mode)],
              lnav_mode_strings[lnav::enums::to_underlying(mode)]);
     lnav_data.ld_mode = mode;
+
+    layout_views();
 }
 
 std::vector<view_curses*>
@@ -1883,4 +1907,66 @@ lnav_behavior::tick(const timeval& now)
     this->lb_last_event.me_x -= this->lb_last_view->get_x();
     this->lb_last_event.me_time = now;
     this->lb_last_view->handle_mouse(this->lb_last_event);
+}
+
+void
+setup_initial_view_stack()
+{
+    static std::optional<size_t> log_file_count;
+    static std::optional<size_t> text_file_count;
+    static bool showed_schema = false;
+
+    auto& exec_phase = injector::get<lnav::exec_phase&>();
+
+    if (!exec_phase.spinning_up()) {
+        return;
+    }
+
+    textview_curses* new_top_view = nullptr;
+    if (lnav_data.ld_show_help_view) {
+        new_top_view = &lnav_data.ld_views[LNV_HELP];
+    } else if (!lnav_data.ld_exec_context.ec_label_source_stack.back()->empty()
+               && !lnav_data.ld_exec_context.ec_label_source_stack.back()
+                       ->is_error()
+               && db_generation
+                   != lnav_data.ld_exec_context.ec_label_source_stack.back()
+                          ->dls_generation)
+    {
+        new_top_view = &lnav_data.ld_views[LNV_DB];
+    } else if (lnav_data.ld_log_source.file_count() > 0
+               && lnav_data.ld_log_source.file_count() != log_file_count)
+    {
+        new_top_view = &lnav_data.ld_views[LNV_LOG];
+    } else if (!lnav_data.ld_text_source.empty()
+               && lnav_data.ld_text_source.size() != text_file_count)
+    {
+        new_top_view = &lnav_data.ld_views[LNV_TEXT];
+    } else if (std::any_of(lnav_data.ld_active_files.fc_other_files.begin(),
+                           lnav_data.ld_active_files.fc_other_files.end(),
+                           [](const auto& af) {
+                               return af.second.ofd_format
+                                   == file_format_t::SQLITE_DB;
+                           })
+               && !showed_schema)
+    {
+        new_top_view = &lnav_data.ld_views[LNV_SCHEMA];
+        showed_schema = true;
+    }
+
+    text_file_count = lnav_data.ld_text_source.size();
+    log_file_count = lnav_data.ld_log_source.file_count();
+    db_generation = lnav_data.ld_exec_context.ec_label_source_stack.back()
+                        ->dls_generation;
+    if (new_top_view != nullptr
+        && lnav_data.ld_view_stack.top().value() != new_top_view)
+    {
+        while (lnav_data.ld_view_stack.size() > 1) {
+            log_info(
+                "recalculating view stack, popping view: %s",
+                lnav_data.ld_view_stack.top().value()->get_title().c_str());
+            lnav_data.ld_view_stack.pop_back();
+        }
+        log_info("new top view: %s", new_top_view->get_title().c_str());
+        ensure_view(new_top_view);
+    }
 }

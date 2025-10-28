@@ -43,12 +43,14 @@
 #include "auto_fd.hh"
 #include "fmt/format.h"
 #include "intern_string.hh"
+#include "mapbox/variant.hpp"
 #include "result.h"
 
+struct default_for_text_format {};
 struct file_location_tail {};
 
-using file_location_t
-    = mapbox::util::variant<file_location_tail, int, std::string>;
+using file_location_t = mapbox::util::
+    variant<default_for_text_format, file_location_tail, int, std::string>;
 
 namespace lnav::filesystem {
 

@@ -94,49 +94,7 @@ public:
         bits.to_string(std::back_inserter(buf));
     }
 
-    void to_string(char buf[STRING_SIZE])
-    {
-        static const char HEX_DIGITS[] = {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-        };
-
-        auto bits = this->to_array();
-
-        buf[0] = HEX_DIGITS[bits.ba_data[0] >> 4U];
-        buf[1] = HEX_DIGITS[bits.ba_data[0] & 0x0fU];
-        buf[2] = HEX_DIGITS[bits.ba_data[1] >> 4U];
-        buf[3] = HEX_DIGITS[bits.ba_data[1] & 0x0fU];
-        buf[4] = HEX_DIGITS[bits.ba_data[2] >> 4U];
-        buf[5] = HEX_DIGITS[bits.ba_data[2] & 0x0fU];
-        buf[6] = HEX_DIGITS[bits.ba_data[3] >> 4U];
-        buf[7] = HEX_DIGITS[bits.ba_data[3] & 0x0fU];
-        buf[8] = HEX_DIGITS[bits.ba_data[4] >> 4U];
-        buf[9] = HEX_DIGITS[bits.ba_data[4] & 0x0fU];
-        buf[10] = HEX_DIGITS[bits.ba_data[5] >> 4U];
-        buf[11] = HEX_DIGITS[bits.ba_data[5] & 0x0fU];
-        buf[12] = HEX_DIGITS[bits.ba_data[6] >> 4U];
-        buf[13] = HEX_DIGITS[bits.ba_data[6] & 0x0fU];
-        buf[14] = HEX_DIGITS[bits.ba_data[7] >> 4U];
-        buf[15] = HEX_DIGITS[bits.ba_data[7] & 0x0fU];
-        buf[16] = HEX_DIGITS[bits.ba_data[8] >> 4U];
-        buf[17] = HEX_DIGITS[bits.ba_data[8] & 0x0fU];
-        buf[18] = HEX_DIGITS[bits.ba_data[9] >> 4U];
-        buf[19] = HEX_DIGITS[bits.ba_data[9] & 0x0fU];
-        buf[20] = HEX_DIGITS[bits.ba_data[10] >> 4U];
-        buf[21] = HEX_DIGITS[bits.ba_data[10] & 0x0fU];
-        buf[22] = HEX_DIGITS[bits.ba_data[11] >> 4U];
-        buf[23] = HEX_DIGITS[bits.ba_data[11] & 0x0fU];
-        buf[24] = HEX_DIGITS[bits.ba_data[12] >> 4U];
-        buf[25] = HEX_DIGITS[bits.ba_data[12] & 0x0fU];
-        buf[26] = HEX_DIGITS[bits.ba_data[13] >> 4U];
-        buf[27] = HEX_DIGITS[bits.ba_data[13] & 0x0fU];
-        buf[28] = HEX_DIGITS[bits.ba_data[14] >> 4U];
-        buf[29] = HEX_DIGITS[bits.ba_data[14] & 0x0fU];
-        buf[30] = HEX_DIGITS[bits.ba_data[15] >> 4U];
-        buf[31] = HEX_DIGITS[bits.ba_data[15] & 0x0fU];
-        buf[32] = '\0';
-    }
+    void to_string(char buf[STRING_SIZE]);
 
     std::string to_string() const
     {

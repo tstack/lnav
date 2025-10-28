@@ -552,6 +552,7 @@ add_library(
         json-extension-functions.cc
         listview_curses.cc
         lnav.events.cc
+        lnav.exec-phase.cc
         lnav.indexing.cc
         lnav.management_cli.cc
         lnav.prompt.cc
@@ -691,6 +692,7 @@ add_library(
         itertools.similar.hh
         k_merge_tree.h
         lnav.events.hh
+        lnav.exec-phase.hh
         lnav.indexing.hh
         lnav.management_cli.hh
         lnav.prompt.hh

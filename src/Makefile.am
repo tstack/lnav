@@ -311,6 +311,7 @@ noinst_HEADERS = \
 	listview_curses.hh \
 	lnav.hh \
 	lnav.events.hh \
+	lnav.exec-phase.hh \
 	lnav.indexing.hh \
 	lnav.management_cli.hh \
     lnav.prompt.hh \
@@ -527,6 +528,7 @@ libdiag_a_SOURCES = \
 	json-extension-functions.cc \
 	line_buffer.cc \
 	listview_curses.cc \
+	lnav.exec-phase.cc \
 	lnav.prompt.cc \
 	lnav.script.parser.cc \
 	lnav_commands.cc \

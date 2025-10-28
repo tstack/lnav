@@ -32,8 +32,13 @@
 #ifndef lnav_hh
 #define lnav_hh
 
+#include <atomic>
+#include <chrono>
 #include <list>
 #include <map>
+#include <memory>
+#include <optional>
+#include <string>
 #include <unordered_map>
 
 #include <signal.h>
@@ -83,48 +88,15 @@ typedef enum {
 using ppid_time_pair_t = std::pair<int, int>;
 using session_pair_t = std::pair<ppid_time_pair_t, std::filesystem::path>;
 
-class input_state_tracker : public log_state_dumper {
-public:
-    input_state_tracker()
-    {
-        memset(this->ist_recent_key_presses,
-               0,
-               sizeof(this->ist_recent_key_presses));
-    }
-
-    void log_state() override
-    {
-        log_info("recent_key_presses: index=%d", this->ist_index);
-        for (int lpc = 0; lpc < COUNT; lpc++) {
-            log_msg_extra(" 0x%x (%c)",
-                          this->ist_recent_key_presses[lpc],
-                          this->ist_recent_key_presses[lpc]);
-        }
-        log_msg_extra_complete();
-    }
-
-    void push_back(int ch)
-    {
-        this->ist_recent_key_presses[this->ist_index % COUNT] = ch;
-        this->ist_index = (this->ist_index + 1) % COUNT;
-    }
-
-private:
-    static const int COUNT = 10;
-
-    int ist_recent_key_presses[COUNT];
-    size_t ist_index{0};
-};
-
 struct key_repeat_history {
     int krh_key{0};
     int krh_count{0};
     vis_line_t krh_start_line{0_vl};
-    struct timeval krh_last_press_time{0, 0};
+    timeval krh_last_press_time{0, 0};
 
     void update(int ch, vis_line_t top)
     {
-        struct timeval now, diff;
+        timeval now, diff;
 
         gettimeofday(&now, nullptr);
         timersub(&now, &this->krh_last_press_time, &diff);
@@ -142,13 +114,6 @@ struct key_repeat_history {
             this->krh_start_line = top;
         }
     };
-};
-
-enum class lnav_exec_phase : int {
-    INIT,
-    PRELOAD,
-    LOADING,
-    INTERACTIVE,
 };
 
 struct lnav_data_t {
@@ -245,7 +210,6 @@ struct lnav_data_t {
 
     std::list<pid_t> ld_children;
 
-    input_state_tracker ld_input_state;
     input_dispatcher ld_input_dispatcher;
 
     exec_context ld_exec_context;
@@ -254,10 +218,8 @@ struct lnav_data_t {
 
     key_repeat_history ld_key_repeat_history;
 
-    bool ld_initial_build{false};
     bool ld_show_help_view{false};
     bool ld_treat_stdin_as_log{false};
-    lnav_exec_phase ld_exec_phase{lnav_exec_phase::INIT};
 
     lnav::func::scoped_cb ld_status_refresher;
 

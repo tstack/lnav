@@ -27,12 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
 #include <unordered_map>
 
 #include "lnav.indexing.hh"
 
 #include "bound_tags.hh"
 #include "lnav.events.hh"
+#include "lnav.exec-phase.hh"
 #include "lnav.hh"
 #include "lnav_commands.hh"
 #include "service_tags.hh"
@@ -95,8 +97,10 @@ public:
 lnav::progress_result_t
 do_observer_update(const logfile* lf)
 {
+    static auto& exec_phase = injector::get<lnav::exec_phase&>();
+
     if (lf != nullptr && lnav_data.ld_mode == ln_mode_t::FILES
-        && lnav_data.ld_exec_phase < lnav_exec_phase::INTERACTIVE)
+        && exec_phase.spinning_up())
     {
         const auto& fc = lnav_data.ld_active_files;
         size_t index = 0;
@@ -192,7 +196,6 @@ public:
                 || ftf.front() == lf->get_open_options().loo_filename))
         {
             this->front_file = lf;
-            this->front_top = lf->get_open_options().loo_init_location;
 
             lnav_data.ld_files_to_front.pop_front();
         }
@@ -204,7 +207,6 @@ public:
     }
 
     std::shared_ptr<logfile> front_file;
-    file_location_t front_top;
     bool did_promotion{false};
 };
 
@@ -213,6 +215,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
     static auto op = lnav_operation{"rebuild_indexes"};
 
+    static auto& exec_phase = injector::get<lnav::exec_phase&>();
     auto op_guard = lnav_opid_guard::internal(op);
 
     auto& lss = lnav_data.ld_log_source;
@@ -220,23 +223,26 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     auto& text_view = lnav_data.ld_views[LNV_TEXT];
     bool scroll_downs[LNV__MAX];
     rebuild_indexes_result_t retval;
+    bool is_headless = lnav_data.ld_flags & LNF_HEADLESS;
 
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
+        auto sel_opt = view.get_selection();
 
-        if (view.is_selectable()) {
+        if (view.is_selectable() && sel_opt.has_value()) {
             auto inner_height = view.get_inner_height();
 
             if (inner_height > 0_vl) {
+                log_debug("scroll down %d %d", sel_opt.value(), inner_height);
                 scroll_downs[lpc]
-                    = (view.get_selection() == inner_height - 1_vl)
-                    && !(lnav_data.ld_flags & LNF_HEADLESS);
+                    = (sel_opt == inner_height - 1_vl) && !is_headless;
             } else {
-                scroll_downs[lpc] = !(lnav_data.ld_flags & LNF_HEADLESS);
+                scroll_downs[lpc] = !is_headless;
             }
         } else {
+            log_debug("scroll down no sel");
             scroll_downs[lpc] = (view.get_top() >= view.get_top_for_last_row())
-                && !(lnav_data.ld_flags & LNF_HEADLESS);
+                && !is_headless;
         }
     }
 
@@ -259,61 +265,6 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 
             if (tss->current_file() != cb.front_file) {
                 tss->to_front(cb.front_file);
-            }
-
-            std::optional<vis_line_t> new_top_opt;
-            if (cb.front_top.valid()) {
-                cb.front_top.match(
-                    [&new_top_opt, &cb](file_location_tail tail) {
-                        switch (cb.front_file->get_text_format()) {
-                            case text_format_t::TF_UNKNOWN:
-                            case text_format_t::TF_LOG:
-                                log_info("file open request to tail");
-                                break;
-                            default:
-                                log_info("file open is %s, moving to top",
-                                         fmt::to_string(
-                                             cb.front_file->get_text_format())
-                                             .c_str());
-                                new_top_opt = 0_vl;
-                                break;
-                        }
-                    },
-                    [&new_top_opt](int vl) {
-                        log_info("file open request to jump to line: %d", vl);
-                        if (vl < 0) {
-                            vl += lnav_data.ld_views[LNV_TEXT]
-                                      .get_inner_height();
-                            if (vl < 0) {
-                                vl = 0;
-                            }
-                        }
-                        if (vl
-                            < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
-                            new_top_opt = vis_line_t(vl);
-                        }
-                    },
-                    [&new_top_opt](const std::string& loc) {
-                        log_info("file open request to jump to anchor: %s",
-                                 loc.c_str());
-                        auto* ta = dynamic_cast<text_anchors*>(
-                            lnav_data.ld_views[LNV_TEXT].get_sub_source());
-
-                        if (ta != nullptr) {
-                            new_top_opt = ta->row_for_anchor(loc);
-                        }
-                    });
-            }
-            if (new_top_opt) {
-                log_info("  setting requested top line: %d",
-                         (int) new_top_opt.value());
-                text_view.set_selection(new_top_opt.value());
-                log_info("  actual top is now: %d", (int) text_view.get_top());
-                log_info("  actual selection is now: %d",
-                         (int) text_view.get_selection().value_or(-1_vl));
-                scroll_downs[LNV_TEXT] = false;
-            } else {
-                log_info("no line requested");
             }
         }
         if (cb.did_promotion && deadline) {
@@ -351,6 +302,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
              || log_view.get_top() > vis_line_t(new_count))
             && force)
         {
+            log_debug("no log scroll down");
             scroll_downs[LNV_LOG] = false;
         }
 
@@ -412,22 +364,32 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         retval.rir_changes += 1;
     }
 
-    // log_trace("updating top/selections");
-    for (auto lpc : {LNV_LOG, LNV_TEXT}) {
-        auto& scroll_view = lnav_data.ld_views[lpc];
-
-        if (scroll_downs[lpc]) {
-            if (scroll_view.is_selectable()) {
-                auto inner_height = scroll_view.get_inner_height();
-
-                if (inner_height > 0_vl) {
-                    scroll_view.set_selection(inner_height - 1_vl);
-                }
-            } else if (scroll_view.get_top_for_last_row()
-                       > scroll_view.get_top())
-            {
-                scroll_view.set_top(scroll_view.get_top_for_last_row());
+    if (retval.rir_changes > 0) {
+        log_trace("updating top/selections");
+        if (exec_phase.interactive()) {
+            // XXX find a better place for this
+            if (!lnav_data.ld_views[LNV_LOG].get_selection()) {
+                lnav_data.ld_views[LNV_LOG].set_selection_to_last_row();
             }
+        }
+        for (auto lpc : {LNV_LOG, LNV_TEXT}) {
+            auto& scroll_view = lnav_data.ld_views[lpc];
+
+            if (scroll_downs[lpc]) {
+                auto sel_opt = scroll_view.get_selection();
+                if (scroll_view.is_selectable() && sel_opt.has_value()) {
+                    scroll_view.set_selection_to_last_row();
+                } else if (scroll_view.get_top_for_last_row()
+                           > scroll_view.get_top())
+                {
+                    scroll_view.set_top_for_last_row();
+                }
+            }
+            log_debug("  scroll down[%d] = %d (sel=%d) (height=%d)",
+                      lpc,
+                      scroll_downs[lpc],
+                      scroll_view.get_selection().value_or(-1_vl),
+                      scroll_view.get_inner_height());
         }
     }
 

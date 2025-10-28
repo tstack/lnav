@@ -536,8 +536,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         "more data required",
                         curr->get_name().c_str());
                 },
-                [this, curr](const log_format::scan_no_match& snm) {
-                    if (this->lf_format == nullptr) {
+                [this, curr, prescan_size](
+                    const log_format::scan_no_match& snm) {
+                    if (this->lf_format == nullptr && prescan_size < 5) {
                         log_trace(
                             "  scan with format (%s) does not match -- %s",
                             curr->get_name().c_str(),

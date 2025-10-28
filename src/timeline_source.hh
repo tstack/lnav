@@ -190,7 +190,7 @@ public:
     size_t gs_total_width{0};
     timeline_opid_row_map gs_active_opids;
     timeline_desc_map gs_descriptions;
-    std::vector<std::reference_wrapper<opid_row>> gs_time_order;
+    std::vector<const opid_row*> gs_time_order;
     timeval gs_lower_bound{};
     timeval gs_upper_bound{};
     size_t gs_filtered_count{0};
@@ -239,6 +239,7 @@ public:
 private:
     bool gho_show_details{false};
     std::shared_ptr<timeline_source> gho_src;
+    std::vector<attr_line_t> gho_static_lines;
 };
 
 #endif

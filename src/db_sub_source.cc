@@ -662,6 +662,7 @@ db_label_source::clear()
     this->dls_level_column = std::nullopt;
     this->dls_cell_allocator.reset();
     this->dls_header_allocator.reset();
+    this->dls_step_rc = SQLITE_OK;
     if (this->tss_view != nullptr) {
         this->tss_view->get_bookmarks().clear();
     }

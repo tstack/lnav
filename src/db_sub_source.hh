@@ -123,6 +123,12 @@ public:
 
     void reset_user_state();
 
+    bool is_error() const
+    {
+        return !(this->dls_step_rc == SQLITE_OK
+                 || this->dls_step_rc == SQLITE_DONE);
+    }
+
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
 
@@ -179,6 +185,7 @@ public:
     ArenaAlloc::Alloc<char> dls_cell_allocator{1024};
     ArenaAlloc::Alloc<char> dls_header_allocator{1024};
     string_attrs_t dls_ansi_attrs;
+    int dls_step_rc{SQLITE_OK};
 
     static const unsigned char NULL_STR[];
 };

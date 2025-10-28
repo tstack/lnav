@@ -1892,52 +1892,6 @@ lnav::session::restore_view_states()
         const auto& vs = session_data.sd_view_states[view_index];
         auto& tview = lnav_data.ld_views[view_index];
         auto* ta = dynamic_cast<text_anchors*>(tview.get_sub_source());
-        bool has_loc = false;
-
-        if (view_index == LNV_TEXT) {
-            auto lf = lnav_data.ld_text_source.current_file();
-            if (lf != nullptr) {
-                const auto& init_loc = lf->get_open_options().loo_init_location;
-                has_loc = init_loc.valid() || init_loc.is<file_location_tail>();
-                if (!has_loc) {
-                    switch (lf->get_text_format()) {
-                        case text_format_t::TF_UNKNOWN:
-                        case text_format_t::TF_LOG:
-                            break;
-                        default:
-                            if (vs.vs_top == 0 && tview.get_top() > 0) {
-                                log_debug("setting to 0");
-                                tview.set_top(0_vl);
-                            }
-                            break;
-                    }
-                }
-            }
-        } else if (view_index == LNV_LOG) {
-            file_location_t log_loc{mapbox::util::no_init{}};
-            for (const auto& ld : lnav_data.ld_log_source) {
-                const auto* lf = ld->get_file_ptr();
-                if (lf == nullptr) {
-                    continue;
-                }
-
-                const auto& init_loc = lf->get_open_options().loo_init_location;
-                if (init_loc.valid() && init_loc.is<std::string>()) {
-                    has_loc = true;
-                    log_loc = init_loc;
-                }
-            }
-
-            if (log_loc.valid()) {
-                auto anchor = log_loc.get<std::string>();
-                auto row_opt = lnav_data.ld_log_source.row_for_anchor(anchor);
-                if (row_opt) {
-                    log_info("setting LOG view to desired loc: %s",
-                             anchor.c_str());
-                    tview.set_selection(row_opt.value());
-                }
-            }
-        }
 
         if (!vs.vs_search.empty()) {
             tview.execute_search(vs.vs_search);
@@ -1973,6 +1927,7 @@ lnav::session::restore_view_states()
             }
         }
 
+        auto has_loc = tview.get_selection().has_value();
         if (!has_loc && vs.vs_top >= 0
             && (view_index == LNV_LOG || tview.get_top() == 0_vl
                 || tview.get_top() == tview.get_top_for_last_row()))
@@ -1981,7 +1936,6 @@ lnav::session::restore_view_states()
                      lnav_view_strings[view_index].data(),
                      vs.vs_top);
             tview.set_top(vis_line_t(vs.vs_top), true);
-            tview.set_selection(-1_vl);
         }
         if (!has_loc && vs.vs_selection) {
             log_info("restoring %s view selection: %d",
@@ -2008,8 +1962,30 @@ lnav::session::restore_view_states()
             }
         }
         sel = tview.get_selection();
-        if (!sel && tview.get_top() == 0_vl && tview.listview_rows(tview) > 0) {
-            tview.set_selection(0_vl);
+        if (!sel) {
+            auto height = tview.get_inner_height();
+            if (height == 0) {
+            } else if (view_index == LNV_TEXT) {
+                auto lf = lnav_data.ld_text_source.current_file();
+                if (lf != nullptr) {
+                    switch (lf->get_text_format()) {
+                        case text_format_t::TF_UNKNOWN:
+                        case text_format_t::TF_LOG: {
+                            if (height > 0_vl) {
+                                tview.set_selection(height - 1_vl);
+                            }
+                            break;
+                        }
+                        default:
+                            tview.set_selection(0_vl);
+                            break;
+                    }
+                }
+            } else if (view_index == LNV_LOG) {
+                tview.set_selection(height - 1_vl);
+            } else {
+                tview.set_selection(0_vl);
+            }
         }
         log_info("%s view actual top/selection: %d/%d",
                  lnav_view_strings[view_index].data(),

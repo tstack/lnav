@@ -1010,6 +1010,9 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             } else {
                 line_number = (int) value;
                 if (line_number < 0) {
+                    log_info("negative goto: %d height=%d",
+                             line_number,
+                             tc->get_inner_height());
                     line_number = tc->get_inner_height() + line_number;
                     if (line_number < 0) {
                         line_number = 0;

@@ -156,7 +156,7 @@
             }
         },
         "textfile": {
-            "max-unformatted-line-length": 1024
+            "max-unformatted-line-length": 2048
         },
         "url-scheme": {
             "docker": {

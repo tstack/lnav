@@ -40,4 +40,5 @@
 ;SELECT raise_error("No more breakpoints after here")
   WHERE $log_line IS NULL
 
+:switch-to-view log
 :eval :goto $log_line

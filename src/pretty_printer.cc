@@ -36,6 +36,8 @@
 #include "base/string_util.hh"
 #include "config.h"
 
+constexpr auto MIN_QUOTED_PRETTY_SIZE = 8;
+
 void
 pretty_printer::append_to(attr_line_t& al)
 {
@@ -43,6 +45,8 @@ pretty_printer::append_to(attr_line_t& al)
 
     auto op_guard = lnav_opid_guard::internal(op);
 
+    log_debug("BEGIN pretty-print (length=%d)",
+              this->pp_scanner->get_input().length());
     if (this->pp_scanner->get_init_offset() > 0) {
         data_scanner::capture_t leading_cap = {
             0,
@@ -177,6 +181,8 @@ pretty_printer::append_to(attr_line_t& al)
             = std::move(this->pp_hier_stage->hn_children.front());
         this->pp_hier_stage->hn_parent = nullptr;
     }
+
+    log_debug("END pretty-print");
 }
 
 void
@@ -218,7 +224,9 @@ pretty_printer::write_element(const element& el)
     if (this->pp_line_length == 0) {
         indent_size = this->append_indent();
     }
-    if (el.e_token == DT_QUOTED_STRING) {
+    if (el.e_token == DT_QUOTED_STRING
+        && el.e_capture.length() > MIN_QUOTED_PRETTY_SIZE)
+    {
         auto unquoted_str = auto_mem<char>::malloc(el.e_capture.length() + 1);
         const char* start
             = this->pp_scanner->to_string_fragment(el.e_capture).data();

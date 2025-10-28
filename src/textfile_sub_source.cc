@@ -28,6 +28,7 @@
  */
 
 #include <chrono>
+#include <memory>
 
 #include "textfile_sub_source.hh"
 
@@ -57,17 +58,23 @@
 using namespace lnav::roles::literals;
 
 static bool
-file_needs_reformatting(const std::shared_ptr<logfile> lf)
+file_needs_reformatting(const std::shared_ptr<logfile>& lf)
 {
     static const auto& cfg = injector::get<const lnav::textfile::config&>();
+
+    const auto& opts = lf->get_open_options();
+    if (opts.loo_piper && !opts.loo_piper->is_finished()) {
+        return false;
+    }
 
     switch (lf->get_text_format()) {
         case text_format_t::TF_BINARY:
         case text_format_t::TF_DIFF:
             return false;
         default:
-            if (lf->get_longest_line_length()
-                > cfg.c_max_unformatted_line_length)
+            if (lf->get_stat().st_size < 16 * 1024
+                && lf->get_longest_line_length()
+                    > cfg.c_max_unformatted_line_length)
             {
                 return true;
             }
@@ -81,26 +88,8 @@ textfile_sub_source::text_line_count()
     size_t retval = 0;
 
     if (!this->tss_files.empty()) {
-        const auto curr_iter = this->current_file_state();
-        if (this->tss_view_mode == view_mode::raw
-            || !curr_iter->fvs_text_source)
-        {
-            const auto& lf = curr_iter->fvs_file;
-            if (lf->get_text_format() == text_format_t::TF_BINARY) {
-                const auto fsize = lf->get_content_size();
-                retval = fsize / 16;
-                if (fsize % 16) {
-                    retval += 1;
-                }
-            } else {
-                auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-                if (lfo != nullptr) {
-                    retval = lfo->lfo_filter_state.tfs_index.size();
-                }
-            }
-        } else {
-            retval = curr_iter->fvs_text_source->text_line_count();
-        }
+        retval
+            = this->current_file_state()->text_line_count(this->tss_view_mode);
     }
 
     return retval;
@@ -796,6 +785,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     new_data = true;
                     retval.rr_new_data += 1;
                     break;
+                case logfile::rebuild_result_t::NO_NEW_LINES:
+                    this->move_to_init_location(iter);
+                    break;
                 default:
                     break;
             }
@@ -1082,26 +1074,46 @@ textfile_sub_source::quiesce()
     }
 }
 
-std::optional<vis_line_t>
-textfile_sub_source::row_for_anchor(const std::string& id)
+size_t
+textfile_sub_source::file_view_state::text_line_count(view_mode mode) const
 {
-    const auto curr_iter = this->current_file_state();
-    if (curr_iter == this->tss_files.end() || id.empty()) {
+    size_t retval = 0;
+
+    if (mode == view_mode::raw || !this->fvs_text_source) {
+        const auto& lf = this->fvs_file;
+        if (lf->get_text_format() == text_format_t::TF_BINARY) {
+            const auto fsize = lf->get_content_size();
+            retval = fsize / 16;
+            if (fsize % 16) {
+                retval += 1;
+            }
+        } else {
+            auto* lfo = (line_filter_observer*) lf->get_logline_observer();
+            if (lfo != nullptr) {
+                retval = lfo->lfo_filter_state.tfs_index.size();
+            }
+        }
+    } else {
+        retval = this->fvs_text_source->text_line_count();
+    }
+
+    return retval;
+}
+
+std::optional<vis_line_t>
+textfile_sub_source::file_view_state::row_for_anchor(view_mode mode,
+                                                     const std::string& id)
+{
+    if (mode == view_mode::rendered && this->fvs_text_source) {
+        return this->fvs_text_source->row_for_anchor(id);
+    }
+
+    if (!this->fvs_metadata.m_sections_root) {
         return std::nullopt;
     }
 
-    if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
-    {
-        return curr_iter->fvs_text_source->row_for_anchor(id);
-    }
-
-    if (!curr_iter->fvs_metadata.m_sections_root) {
-        return std::nullopt;
-    }
-
-    const auto& lf = curr_iter->fvs_file;
-    const auto& meta = curr_iter->fvs_metadata;
+    const auto& lf = this->fvs_file;
+    const auto& meta = this->fvs_metadata;
     std::optional<vis_line_t> retval;
 
     auto is_ptr = startswith(id, "#/");
@@ -1156,6 +1168,17 @@ textfile_sub_source::row_for_anchor(const std::string& id)
         });
 
     return retval;
+}
+
+std::optional<vis_line_t>
+textfile_sub_source::row_for_anchor(const std::string& id)
+{
+    const auto curr_iter = this->current_file_state();
+    if (curr_iter == this->tss_files.end() || id.empty()) {
+        return std::nullopt;
+    }
+
+    return curr_iter->row_for_anchor(this->tss_view_mode, id);
 }
 
 static void
@@ -1524,6 +1547,78 @@ textfile_sub_source::get_effective_view_mode() const
     return retval;
 }
 
+void
+textfile_sub_source::move_to_init_location(file_iterator& iter)
+{
+    if (iter->fvs_consumed_init_location) {
+        return;
+    }
+
+    auto& lf = iter->fvs_file;
+    std::optional<vis_line_t> new_sel_opt;
+    require(lf->get_open_options().loo_init_location.valid());
+    lf->get_open_options().loo_init_location.match(
+        [this, &new_sel_opt, &lf](default_for_text_format def) {
+            if (!this->tss_apply_default_init_location) {
+                return;
+            }
+            switch (lf->get_text_format()) {
+                case text_format_t::TF_UNKNOWN:
+                case text_format_t::TF_LOG: {
+                    log_info("file open request to tail");
+                    auto inner_height = lf->size();
+                    if (inner_height > 0) {
+                        new_sel_opt = vis_line_t(inner_height) - 1_vl;
+                    }
+                    break;
+                }
+                default:
+                    log_info("file open is %s, moving to top",
+                             fmt::to_string(lf->get_text_format()).c_str());
+                    new_sel_opt = 0_vl;
+                    break;
+            }
+        },
+        [&new_sel_opt, &lf](file_location_tail tail) {
+            log_info("file open request to tail");
+            auto inner_height = lf->size();
+            if (inner_height > 0) {
+                new_sel_opt = vis_line_t(inner_height) - 1_vl;
+            }
+        },
+        [this, &new_sel_opt, &iter](int vl) {
+            log_info("file open request to jump to line: %d", vl);
+            auto height = iter->text_line_count(this->tss_view_mode);
+            if (vl < 0) {
+                vl += height;
+                if (vl < 0) {
+                    vl = 0;
+                }
+            }
+            if (vl < height) {
+                new_sel_opt = vis_line_t(vl);
+            }
+        },
+        [this, &new_sel_opt, &iter](const std::string& loc) {
+            log_info("file open request to jump to anchor: %s", loc.c_str());
+            new_sel_opt = iter->row_for_anchor(this->tss_view_mode, loc);
+        });
+
+    if (new_sel_opt) {
+        log_info("%s", fmt::to_string(lf->get_filename()).c_str());
+        log_info("  setting requested selection: %d",
+                 (int) new_sel_opt.value());
+        iter->fvs_selection = new_sel_opt.value();
+        log_info("  actual top is now: %d", (int) iter->fvs_top);
+        log_info("  actual selection is now: %d", (int) iter->fvs_selection);
+
+        if (this->current_file() == lf) {
+            this->tss_view->set_selection(iter->fvs_selection);
+        }
+    }
+    iter->fvs_consumed_init_location = true;
+}
+
 textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src,
                                                  text_sub_source* log_src)
     : tho_src(src), tho_log_src(log_src)
@@ -1546,6 +1641,12 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             } else {
                 lines = lnav::messages::view::only_log_files();
             }
+        } else if (!curr_file->get_notes().empty()) {
+            this->tho_static_lines = curr_file->get_notes()
+                                         .begin()
+                                         ->second.to_attr_line()
+                                         .split_lines();
+            lines = &this->tho_static_lines;
         } else if (curr_file->size() == 0) {
             lines = lnav::messages::view::empty_file();
         } else if (this->tho_src->text_line_count() == 0) {
@@ -1556,17 +1657,17 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
                 || curr_state != this->tho_filter_state)
             {
                 auto msg = lnav::console::user_message::info(
-                    "All log messages are currently hidden");
+                    "All text lines are currently hidden");
                 auto min_time = this->tho_src->get_min_row_time();
                 if (min_time) {
-                    msg.with_note(attr_line_t("Logs before ")
+                    msg.with_note(attr_line_t("Lines before ")
                                       .append_quoted(lnav::to_rfc3339_string(
                                           min_time.value()))
                                       .append(" are not being shown"));
                 }
                 auto max_time = this->tho_src->get_max_row_time();
                 if (max_time) {
-                    msg.with_note(attr_line_t("Logs after ")
+                    msg.with_note(attr_line_t("Lines after ")
                                       .append_quoted(lnav::to_rfc3339_string(
                                           max_time.value()))
                                       .append(" are not being shown"));
@@ -1585,7 +1686,7 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
                             .append_quoted(cmd)
                             .append(" matched ")
                             .append(lnav::roles::number(fmt::to_string(hits)))
-                            .append(" message(s) "));
+                            .append(" line(s) "));
                 }
                 this->tho_static_lines = msg.to_attr_line().split_lines();
                 this->tho_filter_state = curr_state;

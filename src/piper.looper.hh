@@ -79,6 +79,11 @@ public:
            auto_fd stderr_fd,
            options opts);
 
+    looper(const looper&) = delete;
+    looper(looper&&) = delete;
+    looper& operator=(const looper&) = delete;
+    looper& operator=(looper&&) = delete;
+
     ~looper();
 
     std::string get_name() const { return this->l_name; }

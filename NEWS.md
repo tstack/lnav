@@ -160,6 +160,10 @@ Bug Fixes:
 * If a file path contains a hash (`#`), check if the path
   exists before splitting around the hash and treating it
   as an internal file location.
+* The initialization sequence has been cleaned up to
+  hopefully make it more consistent/reliable.  This
+  concerns the sequence of loading files and executing
+  commands from the command-line.
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging

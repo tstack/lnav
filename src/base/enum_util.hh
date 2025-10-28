@@ -32,8 +32,7 @@
 
 #include <type_traits>
 
-namespace lnav {
-namespace enums {
+namespace lnav::enums {
 
 template<typename E>
 constexpr auto
@@ -42,7 +41,6 @@ to_underlying(E e) noexcept
     return static_cast<std::underlying_type_t<E>>(e);
 }
 
-}  // namespace enums
-}  // namespace lnav
+}  // namespace lnav::enums
 
 #endif

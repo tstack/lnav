@@ -319,7 +319,7 @@ std::pair<std::string, file_location_t>
 split_file_location(const std::string& file_path_str)
 {
     if (access(file_path_str.c_str(), R_OK) == 0) {
-        return {file_path_str, file_location_t{mapbox::util::no_init{}}};
+        return {file_path_str, file_location_t{default_for_text_format{}}};
     }
 
     auto colon_index = file_path_str.rfind(':');
@@ -344,7 +344,7 @@ split_file_location(const std::string& file_path_str)
     }
 
     return std::make_pair(file_path_str,
-                          file_location_t{mapbox::util::no_init{}});
+                          file_location_t{default_for_text_format{}});
 }
 
 Result<std::filesystem::path, std::string>

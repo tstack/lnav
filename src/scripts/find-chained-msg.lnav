@@ -31,4 +31,5 @@
 ;SELECT ifnull($next_selection,
                raise_error(printf('no further requests found with %s: %s', $target_field_name, $curr_value)))
 
+:switch-to-view log
 ;UPDATE lnav_top_view SET selection = $next_selection

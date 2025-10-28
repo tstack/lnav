@@ -177,6 +177,8 @@ public:
 
     view_mode get_effective_view_mode() const;
 
+    bool tss_apply_default_init_location{false};
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {
@@ -208,6 +210,11 @@ private:
             tc.set_top(this->fvs_top);
         }
 
+        size_t text_line_count(view_mode mode) const;
+
+        std::optional<vis_line_t>
+        row_for_anchor(view_mode mode, const std::string& id);
+
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};
         vis_line_t fvs_selection{0};
@@ -218,10 +225,13 @@ private:
         std::string fvs_error;
         std::unique_ptr<plain_text_source> fvs_text_source;
         lnav::document::metadata fvs_metadata;
+        bool fvs_consumed_init_location{false};
     };
 
     using file_iterator = std::deque<file_view_state>::iterator;
     using const_file_iterator = std::deque<file_view_state>::const_iterator;
+
+    void move_to_init_location(file_iterator& iter);
 
     file_iterator current_file_state() { return this->tss_files.begin(); }
 

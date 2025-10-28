@@ -447,6 +447,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         while (!done) {
             retcode = sqlite3_step(stmt.in());
 
+            if (!ec.ec_label_source_stack.empty()) {
+                ec.ec_label_source_stack.back()->dls_step_rc = retcode;
+            }
+
             switch (retcode) {
                 case SQLITE_OK:
                 case SQLITE_DONE: {
@@ -525,7 +529,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             }
         }
         log_debug(
-            "cell memory footprint: total=%zu; actual=%zu; cached-chunks=%zu",
+            "cell memory footprint: rows=%zu total=%zu; actual=%zu; "
+            "cached-chunks=%zu",
+            dls.dls_row_cursors.size(),
             total_size,
             memory_usage,
             cached_chunks);
@@ -551,10 +557,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 lnav_data.ld_views[LNV_DB].set_selection(0_vl);
                 lnav_data.ld_views[LNV_DB].set_left(0);
                 if (lnav_data.ld_flags & LNF_HEADLESS) {
-                    if (ec.ec_local_vars.size() == 1) {
-                        ensure_view(&lnav_data.ld_views[LNV_DB]);
-                    }
-
                     retval = "";
                     alt_msg = "";
                 } else if (dls.dls_row_cursors.size() == 1) {
@@ -589,13 +591,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             {
                 retval = "info: No rows matched";
                 alt_msg = "";
-
-                if (lnav_data.ld_flags & LNF_HEADLESS) {
-                    if (ec.ec_local_vars.size() == 1) {
-                        lnav_data.ld_views[LNV_DB].reload_data();
-                        ensure_view(&lnav_data.ld_views[LNV_DB]);
-                    }
-                }
             }
 #endif
         }
@@ -927,7 +922,6 @@ execute_init_commands(
     std::string out_name;
     std::optional<exec_context::output_t> ec_out;
     auto_fd fd_copy;
-    auto& dls = *(ec.ec_label_source_stack.back());
     int option_index = 1;
 
     {
@@ -939,7 +933,6 @@ execute_init_commands(
                 = intern_string::lookup("command-option");
 
             std::string alt_msg;
-            auto has_db_query = false;
 
             wait_for_children();
 
@@ -948,6 +941,7 @@ execute_init_commands(
             };
             log_debug("init cmd: %s", cmd.c_str());
             {
+                auto top_view = lnav_data.ld_view_stack.top();
                 auto _sg
                     = ec.enter_source(COMMAND_OPTION_SRC, option_index++, cmd);
                 switch (cmd.at(0)) {
@@ -962,7 +956,6 @@ execute_init_commands(
                         setup_logline_table(ec);
                         msgs.emplace_back(
                             execute_sql(ec, cmd.substr(1), alt_msg), alt_msg);
-                        has_db_query = true;
                         break;
                     case '|':
                         msgs.emplace_back(execute_file(ec, cmd.substr(1)),
@@ -979,12 +972,9 @@ execute_init_commands(
                 }
                 wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
-            }
-            if (has_db_query && !dls.dls_headers.empty()
-                && lnav_data.ld_view_stack.size() == 1)
-            {
-                lnav_data.ld_views[LNV_DB].reload_data();
-                ensure_view(LNV_DB);
+                if (top_view == lnav_data.ld_view_stack.top()) {
+                    setup_initial_view_stack();
+                }
             }
         }
     }

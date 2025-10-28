@@ -47,6 +47,7 @@
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "md4cpp.hh"
+#include "readline_highlighters.hh"
 #include "sql_util.hh"
 #include "sysclip.hh"
 
@@ -184,25 +185,93 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
                                              int bottom,
                                              attr_line_t& value_out)
 {
-    if (y >= 1) {
+    if (this->gho_src->ts_rebuild_in_progress) {
         return false;
     }
 
     if (this->gho_src->gs_time_order.empty()) {
         if (y == 0) {
-            value_out.append("No operations found"_error);
+            this->gho_static_lines.clear();
+
+            if (this->gho_src->gs_filtered_count > 0) {
+                auto um = lnav::console::user_message::warning(
+                    attr_line_t()
+                        .append(lnav::roles::number(
+                            fmt::to_string(this->gho_src->gs_filtered_count)))
+                        .append(" operations have been filtered out"));
+                auto min_time = this->gho_src->get_min_row_time();
+                if (min_time) {
+                    um.with_note(attr_line_t("Operations before ")
+                                     .append_quoted(lnav::to_rfc3339_string(
+                                         min_time.value()))
+                                     .append(" are not being shown"));
+                }
+                auto max_time = this->gho_src->get_max_row_time();
+                if (max_time) {
+                    um.with_note(attr_line_t("Operations after ")
+                                     .append_quoted(lnav::to_rfc3339_string(
+                                         max_time.value()))
+                                     .append(" are not being shown"));
+                }
+
+                auto& fs = this->gho_src->gs_lss.get_filters();
+                for (const auto& filt : fs) {
+                    auto hits = this->gho_src->gs_lss.get_filtered_count_for(
+                        filt->get_index());
+                    if (filt->get_type() == text_filter::EXCLUDE && hits == 0) {
+                        continue;
+                    }
+                    auto cmd = attr_line_t(":" + filt->to_command());
+                    readline_command_highlighter(cmd, std::nullopt);
+                    um.with_note(
+                        attr_line_t("Filter ")
+                            .append_quoted(cmd)
+                            .append(" matched ")
+                            .append(lnav::roles::number(fmt::to_string(hits)))
+                            .append(" message(s) "));
+                }
+                this->gho_static_lines = um.to_attr_line().split_lines();
+            } else {
+                auto um
+                    = lnav::console::user_message::error("No operations found");
+                if (this->gho_src->gs_lss.size() > 0) {
+                    um.with_note("The loaded logs do not define any OP IDs")
+                        .with_help(attr_line_t("An OP ID can manually be set "
+                                               "by performing an ")
+                                       .append("UPDATE"_keyword)
+                                       .append(" on a log vtable, such as ")
+                                       .append("all_logs"_symbol));
+                } else {
+                    um.with_note(
+                        "Operations are found in log files and none are loaded "
+                        "right now");
+                }
+
+                this->gho_static_lines = um.to_attr_line().split_lines();
+            }
+        }
+
+        if (y < this->gho_static_lines.size()) {
+            value_out = this->gho_static_lines[y];
             return true;
         }
 
         return false;
     }
 
+    if (y > 0) {
+        return false;
+    }
+
     auto sel = lv.get_selection().value_or(0_vl);
-    const auto& row = this->gho_src->gs_time_order[sel].get();
+    const auto& row = *this->gho_src->gs_time_order[sel];
     auto tr = row.or_value.otr_range;
     auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
     auto sel_begin_us = to_us(tr.tr_begin - lb);
     auto sel_end_us = to_us(tr.tr_end - lb);
+
+    require(sel_begin_us > 0us);
+    require(sel_end_us > 0us);
 
     tm sel_lb_tm;
     secs2tm(lb.tv_sec, &sel_lb_tm);
@@ -227,6 +296,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     double span = to_us(ub - lb).count();
     auto us_per_ch
         = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
+    require(us_per_ch > 0us);
     auto us_per_inc = us_per_ch * 10;
     auto lr = line_range{
         static_cast<int>(CHART_INDENT + floor(sel_begin_us / us_per_ch)),
@@ -239,6 +309,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     if (lr.lr_end > width) {
         lr.lr_end = -1;
     }
+    require(lr.lr_start >= 0);
     value_out.get_attrs().emplace_back(lr,
                                        VC_ROLE.value(role_t::VCR_CURSOR_LINE));
     auto total_us = std::chrono::microseconds{0};
@@ -293,7 +364,7 @@ timeline_header_overlay::list_value_for_overlay(
         return;
     }
 
-    const auto& row = this->gho_src->gs_time_order[line].get();
+    const auto& row = *this->gho_src->gs_time_order[line];
 
     if (row.or_value.otr_sub_ops.size() <= 1) {
         return;
@@ -454,8 +525,8 @@ timeline_source::get_time_bounds_for(int line)
     if (high_index == low_index) {
         high_index = vis_line_t(this->gs_time_order.size() - 1);
     }
-    const auto& low_row = this->gs_time_order[low_index].get();
-    const auto& high_row = this->gs_time_order[high_index].get();
+    const auto& low_row = *this->gs_time_order[low_index];
+    const auto& high_row = *this->gs_time_order[high_index];
     auto low_tv = low_row.or_value.otr_range.tr_begin;
     auto high_tv = high_row.or_value.otr_range.tr_begin;
 
@@ -473,6 +544,7 @@ timeline_source::get_time_bounds_for(int line)
     auto lower_tv = to_timeval(lower_dur);
     auto upper_tv = to_timeval(upper_dur);
 
+    ensure(lower_tv <= upper_tv);
     return {lower_tv, upper_tv};
 }
 
@@ -491,7 +563,7 @@ timeline_source::text_value_for_line(textview_curses& tc,
     if (!this->ts_rebuild_in_progress
         && line < (ssize_t) this->gs_time_order.size())
     {
-        const auto& row = this->gs_time_order[line].get();
+        const auto& row = *this->gs_time_order[line];
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
         auto duration_str = fmt::format(
@@ -535,7 +607,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
     if (!this->ts_rebuild_in_progress
         && line < (ssize_t) this->gs_time_order.size())
     {
-        const auto& row = this->gs_time_order[line].get();
+        const auto& row = *this->gs_time_order[line];
 
         value_out = this->gs_rendered_line.get_attrs();
 
@@ -576,6 +648,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                 }
 
                 auto block_attrs = text_attrs::with_reverse();
+                require(lr.lr_start >= 0);
                 value_out.emplace_back(lr, VC_STYLE.value(block_attrs));
             }
         }
@@ -833,13 +906,18 @@ timeline_source::rebuild_indexes()
         {
             this->gs_upper_bound = pair.second.or_value.otr_range.tr_end;
         }
-        this->gs_time_order.emplace_back(pair.second);
+
+        ensure(!max_log_time_opt
+               || pair.second.or_value.otr_range.tr_begin
+                   <= max_log_time_opt.value());
+        this->gs_time_order.emplace_back(&pair.second);
     }
-    std::stable_sort(this->gs_time_order.begin(),
-                     this->gs_time_order.end(),
-                     std::less<const opid_row>{});
+    std::stable_sort(
+        this->gs_time_order.begin(),
+        this->gs_time_order.end(),
+        [](const auto* lhs, const auto* rhs) { return *lhs < *rhs; });
     for (size_t lpc = 0; lpc < this->gs_time_order.size(); lpc++) {
-        const auto& row = this->gs_time_order[lpc].get();
+        const auto& row = *this->gs_time_order[lpc];
         if (row.or_value.otr_level_stats.lls_error_count > 0) {
             bm_errs.insert_once(vis_line_t(lpc));
         } else if (row.or_value.otr_level_stats.lls_warning_count > 0) {
@@ -869,29 +947,29 @@ timeline_source::row_for_time(timeval time_bucket)
             return std::nullopt;
         }
 
-        if (iter->get().or_value.otr_range.contains_inclusive(time_bucket)) {
+        if ((*iter)->or_value.otr_range.contains_inclusive(time_bucket)) {
             break;
         }
         ++iter;
     }
 
     auto closest_iter = iter;
-    auto closest_diff = time_bucket - iter->get().or_value.otr_range.tr_begin;
+    auto closest_diff = time_bucket - (*iter)->or_value.otr_range.tr_begin;
     for (; iter != this->gs_time_order.end(); ++iter) {
-        if (time_bucket < iter->get().or_value.otr_range.tr_begin) {
+        if (time_bucket < (*iter)->or_value.otr_range.tr_begin) {
             break;
         }
-        if (!iter->get().or_value.otr_range.contains_inclusive(time_bucket)) {
+        if (!(*iter)->or_value.otr_range.contains_inclusive(time_bucket)) {
             continue;
         }
 
-        auto diff = time_bucket - iter->get().or_value.otr_range.tr_begin;
+        auto diff = time_bucket - (*iter)->or_value.otr_range.tr_begin;
         if (diff < closest_diff) {
             closest_iter = iter;
             closest_diff = diff;
         }
 
-        for (const auto& sub : iter->get().or_value.otr_sub_ops) {
+        for (const auto& sub : (*iter)->or_value.otr_sub_ops) {
             if (!sub.ostr_range.contains_inclusive(time_bucket)) {
                 continue;
             }
@@ -927,7 +1005,7 @@ timeline_source::row_for(const row_info& ri)
                 for (const auto& [index, oprow] :
                      lnav::itertools::enumerate(this->gs_time_order))
                 {
-                    if (&oprow.get() == &opid_iter->second) {
+                    if (oprow == &opid_iter->second) {
                         return vis_line_t(index);
                     }
                 }
@@ -945,7 +1023,7 @@ timeline_source::time_for_row(vis_line_t row)
         return std::nullopt;
     }
 
-    const auto& otr = this->gs_time_order[row].get().or_value;
+    const auto& otr = this->gs_time_order[row]->or_value;
 
     if (this->tss_view->get_selection() == row) {
         auto ov_sel = this->tss_view->get_overlay_selection();
@@ -991,7 +1069,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
         return;
     }
 
-    const auto& row = this->gs_time_order[sel.value()].get();
+    const auto& row = *this->gs_time_order[sel.value()];
     auto low_tv = row.or_value.otr_range.tr_begin;
     auto high_tv = row.or_value.otr_range.tr_end;
     auto id_sf = row.or_name;
@@ -1130,7 +1208,7 @@ timeline_source::text_crumbs_for_line(int line,
         return;
     }
 
-    const auto& row = this->gs_time_order[line].get();
+    const auto& row = *this->gs_time_order[line];
     char ts[64];
 
     sql_strftime(ts, sizeof(ts), row.or_value.otr_range.tr_begin, 'T');

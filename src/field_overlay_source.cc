@@ -33,9 +33,11 @@
 
 #include "base/auto_mem.hh"
 #include "base/humanize.time.hh"
+#include "base/injector.hh"
 #include "base/snippet_highlighters.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "lnav.exec-phase.hh"
 #include "log.annotate.hh"
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
@@ -310,7 +312,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     if (this->fos_log_helper.ldh_line_values.lvv_opid_value) {
         auto opid_al = attr_line_t(" Operation ID: ");
 
-        auto opid_str = this->fos_log_helper.ldh_line_values.lvv_opid_value.value();
+        auto opid_str
+            = this->fos_log_helper.ldh_line_values.lvv_opid_value.value();
         opid_al.append(opid_str);
         switch (this->fos_log_helper.ldh_line_values.lvv_opid_provenance) {
             case logline_value_vector::opid_provenance::none:
@@ -322,8 +325,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 opid_al.append(" (user-provided)"_comment);
                 break;
         }
-        this->fos_row_to_field_meta.emplace(
-            this->fos_lines.size(), row_info{std::nullopt, opid_str});
+        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                            row_info{std::nullopt, opid_str});
         this->fos_lines.emplace_back(opid_al);
     }
 
@@ -859,12 +862,20 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                                           int bottom,
                                           attr_line_t& value_out)
 {
+    auto& exec_phase = injector::get<lnav::exec_phase&>();
     if (media != media_t::display) {
         return false;
     }
 
     const std::vector<attr_line_t>* lines = nullptr;
-    if (this->fos_lss.text_line_count() == 0) {
+    if (exec_phase.spinning_up()) {
+        auto msg = lnav::console::user_message::info(
+            "Files are being indexed...");
+        this->fos_static_lines = msg.to_attr_line().split_lines();
+        this->fos_static_lines_state.clear();
+        apply_status_attrs(this->fos_static_lines);
+        lines = &this->fos_static_lines;
+    } else if (this->fos_lss.text_line_count() == 0) {
         if (this->fos_lss.is_indexing_in_progress()
             || this->fos_lss.is_rebuild_forced())
         {

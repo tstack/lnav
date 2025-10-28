@@ -384,6 +384,10 @@ public:
 
     vis_line_t get_top_for_last_row();
 
+    void set_top_for_last_row() { this->set_top(this->get_top_for_last_row()); }
+
+    void set_selection_to_last_row();
+
     /** @return True if the given line is visible. */
     bool is_line_visible(vis_line_t line) const
     {
@@ -606,7 +610,7 @@ protected:
     list_gutter_source* lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
     bool lv_word_wrap{false};
     bool lv_selectable{false};
-    vis_line_t lv_selection{0};
+    vis_line_t lv_selection{-1_vl};
     bool lv_sync_selection_and_top{false};
 
     timeval lv_mouse_time{0, 0};

@@ -86,13 +86,13 @@ listview_curses::update_top_from_selection()
     if (this->lv_selection >= inner_height) {
         if (inner_height == 0_vl) {
             this->lv_selection = -1_vl;
+            this->set_top(0_vl);
         } else {
             this->lv_selection = inner_height - 1_vl;
         }
     }
 
     if (this->lv_selection < 0_vl) {
-        this->set_top(0_vl);
         return;
     }
 
@@ -1458,6 +1458,17 @@ listview_curses::get_top_for_last_row()
     }
 
     return retval;
+}
+
+void
+listview_curses::set_selection_to_last_row()
+{
+    if (this->is_selectable()) {
+        auto height = this->get_inner_height();
+        if (height > 0_vl) {
+            this->set_selection(height - 1_vl);
+        }
+    }
 }
 
 vis_line_t

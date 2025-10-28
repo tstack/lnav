@@ -646,6 +646,9 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                         .append("detect-format"));
                 if (open_opts.loo_init_location.valid()) {
                     auto loc = open_opts.loo_init_location.match(
+                        [](default_for_text_format) {
+                            return std::string("default");
+                        },
                         [](file_location_tail) { return std::string("tail"); },
                         [](int vl) {
                             return fmt::format(FMT_STRING("L{:L}"), vl);

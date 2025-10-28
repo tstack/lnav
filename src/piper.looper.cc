@@ -28,6 +28,10 @@
  */
 
 #include <chrono>
+#include <filesystem>
+#include <future>
+#include <map>
+#include <thread>
 #include <unordered_set>
 
 #include "piper.looper.hh"
@@ -39,6 +43,7 @@
 #include "base/date_time_scanner.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/piper.file.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "hasher.hh"
@@ -226,18 +231,56 @@ looper::looper(std::string name,
       l_stdout(std::move(stdout_fd)), l_stderr(std::move(stderr_fd)),
       l_options(opts)
 {
+    std::error_code ec;
     size_t count = 0;
-    do {
-        this->l_out_dir
-            = storage_path()
-            / fmt::format(
-                  FMT_STRING("p-{}-{:03}"),
-                  hasher().update(getmstime()).update(l_name).to_string(),
-                  count);
+    for (auto attempt : {1, 2, 3}) {
+        do {
+            this->l_out_dir
+                = storage_path()
+                / fmt::format(
+                      FMT_STRING("p-{}-{:03}"),
+                      hasher().update(getmstime()).update(l_name).to_string(),
+                      count);
+            count += 1;
+        } while (std::filesystem::exists(this->l_out_dir, ec) || ec);
+        std::filesystem::create_directories(this->l_out_dir, ec);
+        if (!ec) {
+            break;
+        }
+        log_error("%d: failed to create output directory: %s -- %s",
+                  attempt,
+                  this->l_out_dir.c_str(),
+                  ec.message().c_str());
         count += 1;
-    } while (std::filesystem::exists(this->l_out_dir));
-    std::filesystem::create_directories(this->l_out_dir);
-    this->l_future = std::async(std::launch::async, [this]() { this->loop(); });
+    }
+    this->l_future = std::async(std::launch::async, [this] { this->loop(); });
+    log_info("waiting for piper to start: %s", this->l_name.c_str());
+    auto attempts = 50;
+    while (attempts > 0) {
+        if (!this->l_looping.load()) {
+            log_info("  piper exited already");
+            break;
+        }
+        auto found = false;
+        for (const auto& entry :
+             std::filesystem::directory_iterator{this->l_out_dir, ec})
+        {
+            log_info("  found file: %s", entry.path().c_str());
+            found = true;
+        }
+        if (ec) {
+            log_error("failed to read piper directory: %s -- %s",
+                      this->l_out_dir.c_str(),
+                      ec.message().c_str());
+            break;
+        }
+        if (found) {
+            break;
+        }
+        std::this_thread::sleep_for(100us);
+        attempts -= 1;
+    }
+    log_info("  piper started");
 }
 
 looper::~looper()

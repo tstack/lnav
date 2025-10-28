@@ -170,6 +170,7 @@ main(int argc, char* argv[])
             auto height = ncplane_dim_y(sc.get_std_plane());
             lv.set_height(vis_line_t(height - lv.get_y()));
         }
+        lv.set_selection(0_vl);
 
         if (keys != nullptr) {
             // Treats the string argument as a sequence of key presses (only
