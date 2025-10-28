@@ -9,7 +9,7 @@
     "body-field": "fields/message",
     "hide-extra": true,
     "opid-field": "spans",
-    "thread-id-field": "thread/id",
+    "thread-id-field": "threadId",
     "value": {
       "timestamp": {
         "kind": "string",
@@ -28,11 +28,11 @@
         "kind": "string",
         "description": "Log message content"
       },
-      "thread/name": {
+      "threadName": {
         "kind": "string",
         "description": "Thread Name"
       },
-      "thread/id": {
+      "threadId": {
         "kind": "integer",
         "description": "Thread ID",
         "hidden": true
@@ -62,7 +62,7 @@
         "suffix": ")"
       },
       {
-        "field": "thread/name",
+        "field": "threadName",
         "min-width": 10,
         "max-width": 10,
         "overflow": "abbrev",
