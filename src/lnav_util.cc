@@ -383,26 +383,35 @@ hasher::to_string(char out[STRING_SIZE])
 #if defined(__x86_64__) || defined(_M_X64)
     // ---------- x86-64 SSE4.1 version ----------
     auto bytes = this->to_array();
-    __m128i input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes.ba_data));
+    // ---------- x86-64 SSE2 version ----------
+    __m128i input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(bytes));
 
+    // Split into high/low nibbles
     __m128i high = _mm_and_si128(_mm_srli_epi16(input, 4), _mm_set1_epi8(0x0F));
-    __m128i low = _mm_and_si128(input, _mm_set1_epi8(0x0F));
+    __m128i low  = _mm_and_si128(input, _mm_set1_epi8(0x0F));
 
+    // Interleave [h0,l0,h1,l1,...]
     __m128i lozip = _mm_unpacklo_epi8(high, low);
     __m128i hizip = _mm_unpackhi_epi8(high, low);
 
-    __m128i mask_lo = _mm_cmpgt_epi8(lozip, _mm_set1_epi8(9));
-    __m128i mask_hi = _mm_cmpgt_epi8(hizip, _mm_set1_epi8(9));
+    // Compare nibbles >= 10
+    __m128i cmp_lo = _mm_cmpgt_epi8(lozip, _mm_set1_epi8(9));
+    __m128i cmp_hi = _mm_cmpgt_epi8(hizip, _mm_set1_epi8(9));
 
+    // ASCII bases: '0' (0x30), 'a'-10 (0x57)
     __m128i base0 = _mm_set1_epi8(0x30);
     __m128i basea = _mm_set1_epi8(0x57);
 
-    __m128i off_lo = _mm_blendv_epi8(base0, basea, mask_lo);
-    __m128i off_hi = _mm_blendv_epi8(base0, basea, mask_hi);
+    // offset = base0 + (mask ? (basea - base0) : 0)
+    __m128i diff = _mm_sub_epi8(basea, base0);
+
+    __m128i off_lo = _mm_or_si128(_mm_and_si128(cmp_lo, diff), base0);
+    __m128i off_hi = _mm_or_si128(_mm_and_si128(cmp_hi, diff), base0);
 
     __m128i out_lo = _mm_add_epi8(lozip, off_lo);
     __m128i out_hi = _mm_add_epi8(hizip, off_hi);
 
+    alignas(16) char out[32];
     _mm_storeu_si128(reinterpret_cast<__m128i*>(out), out_lo);
     _mm_storeu_si128(reinterpret_cast<__m128i*>(out + 16), out_hi);
     out[32] = '\0';
