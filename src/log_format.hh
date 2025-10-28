@@ -672,6 +672,7 @@ public:
 
     struct opid_descriptors {
         std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
+        size_t od_index{0};
 
         std::string to_string(
             const lnav::map::small<size_t, std::string>& lod) const;
@@ -684,6 +685,13 @@ public:
     std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
         lf_subid_description_def{
             std::make_shared<std::map<intern_string_t, opid_descriptors>>()};
+
+    std::shared_ptr<std::vector<opid_descriptors*>> lf_opid_description_def_vec{
+        std::make_shared<std::vector<opid_descriptors*>>()};
+
+    std::shared_ptr<std::vector<opid_descriptors*>>
+        lf_subid_description_def_vec{
+            std::make_shared<std::vector<opid_descriptors*>>()};
 
     ArenaAlloc::Alloc<char> lf_desc_allocator{2 * 1024};
 

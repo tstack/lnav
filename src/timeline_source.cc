@@ -757,33 +757,26 @@ timeline_source::rebuild_indexes()
                 }
             }
 
-            if (otr.otr_description.lod_id) {
-                auto desc_id = otr.otr_description.lod_id.value();
+            if (otr.otr_description.lod_index) {
+                auto desc_id = otr.otr_description.lod_index.value();
                 auto desc_def_iter
-                    = format->lf_opid_description_def->find(desc_id);
+                    = format->lf_opid_description_def_vec->at(desc_id);
 
-                if (desc_def_iter == format->lf_opid_description_def->end()) {
-                    log_error("cannot find description: %s",
-                              active_iter->first.data());
-                } else {
-                    auto desc_key
-                        = opid_description_def_key{format->get_name(), desc_id};
-                    auto desc_defs_iter
-                        = row.or_description_defs.odd_defs.find(desc_key);
-                    if (desc_defs_iter
-                        == row.or_description_defs.odd_defs.end())
-                    {
-                        row.or_description_defs.odd_defs.insert(
-                            desc_key, desc_def_iter->second);
-                    }
+                auto desc_key
+                    = opid_description_def_key{format->get_name(), desc_id};
+                auto desc_defs_iter
+                    = row.or_description_defs.odd_defs.find(desc_key);
+                if (desc_defs_iter == row.or_description_defs.odd_defs.end()) {
+                    row.or_description_defs.odd_defs.insert(desc_key,
+                                                            *desc_def_iter);
+                }
 
-                    auto& all_descs = active_iter->second.or_descriptions;
-                    auto& curr_desc_m = all_descs[desc_key];
-                    const auto& new_desc_v = otr.otr_description.lod_elements;
+                auto& all_descs = active_iter->second.or_descriptions;
+                auto& curr_desc_m = all_descs[desc_key];
+                const auto& new_desc_v = otr.otr_description.lod_elements;
 
-                    for (const auto& desc_pair : new_desc_v) {
-                        curr_desc_m[desc_pair.first] = desc_pair.second;
-                    }
+                for (const auto& desc_pair : new_desc_v) {
+                    curr_desc_m[desc_pair.first] = desc_pair.second;
                 }
             } else if (!otr.otr_description.lod_elements.empty()) {
                 auto desc_sf = string_fragment::from_str(

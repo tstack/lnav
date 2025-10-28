@@ -107,8 +107,8 @@ log_level_stats::operator|=(const log_level_stats& rhs)
 log_op_description&
 log_op_description::operator|=(const log_op_description& rhs)
 {
-    if (!this->lod_id && rhs.lod_id) {
-        this->lod_id = rhs.lod_id;
+    if (!this->lod_index && rhs.lod_index) {
+        this->lod_index = rhs.lod_index;
     }
     if (this->lod_elements.size() < rhs.lod_elements.size()) {
         this->lod_elements = rhs.lod_elements;
@@ -627,18 +627,18 @@ log_format::get_root_formats()
 
 void
 external_log_format::update_op_description(
-    const std::map<intern_string_t, opid_descriptors>& desc_defs,
+    const std::vector<opid_descriptors*>& desc_defs_vec,
     log_op_description& lod,
     const pattern* fpat,
     const lnav::pcre2pp::match_data& md)
 {
     std::optional<std::string> desc_elem_str;
-    if (!lod.lod_id) {
-        for (const auto& desc_def_pair : desc_defs) {
-            if (lod.lod_id) {
+    if (!lod.lod_index) {
+        for (const auto& desc_defs : desc_defs_vec) {
+            if (lod.lod_index) {
                 break;
             }
-            for (const auto& desc_def : *desc_def_pair.second.od_descriptors) {
+            for (const auto& desc_def : *desc_defs->od_descriptors) {
                 auto desc_field_index_iter = fpat->p_value_name_to_index.find(
                     desc_def.od_field.pp_value);
 
@@ -654,15 +654,15 @@ external_log_format::update_op_description(
 
                 desc_elem_str = desc_def.matches(desc_cap_opt.value());
                 if (desc_elem_str) {
-                    lod.lod_id = desc_def_pair.first;
+                    lod.lod_index = desc_defs->od_index;
                     break;
                 }
             }
         }
     }
-    if (lod.lod_id) {
+    if (lod.lod_index) {
         const auto& desc_def_v
-            = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
+            = *desc_defs_vec[lod.lod_index.value()]->od_descriptors;
         auto& desc_v = lod.lod_elements;
 
         if (desc_def_v.size() == desc_v.size()
@@ -710,16 +710,16 @@ external_log_format::update_op_description(
 
 void
 external_log_format::update_op_description(
-    const std::map<intern_string_t, opid_descriptors>& desc_defs,
+    const std::vector<opid_descriptors*>& desc_defs_vec,
     log_op_description& lod)
 {
     std::optional<std::string> desc_elem_str;
-    if (!lod.lod_id) {
-        for (const auto& desc_def_pair : desc_defs) {
-            if (lod.lod_id) {
+    if (!lod.lod_index) {
+        for (const auto& desc_defs : desc_defs_vec) {
+            if (lod.lod_index) {
                 break;
             }
-            for (const auto& desc_def : *desc_def_pair.second.od_descriptors) {
+            for (const auto& desc_def : *desc_defs->od_descriptors) {
                 auto desc_cap_iter
                     = this->lf_desc_captures.find(desc_def.od_field.pp_value);
 
@@ -728,15 +728,15 @@ external_log_format::update_op_description(
                 }
                 desc_elem_str = desc_def.matches(desc_cap_iter->second);
                 if (desc_elem_str) {
-                    lod.lod_id = desc_def_pair.first;
+                    lod.lod_index = desc_defs->od_index;
                     break;
                 }
             }
         }
     }
-    if (lod.lod_id) {
+    if (lod.lod_index) {
         const auto& desc_def_v
-            = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
+            = *desc_defs_vec[lod.lod_index.value()]->od_descriptors;
         auto& desc_v = lod.lod_elements;
 
         if (desc_def_v.size() == desc_v.size()
@@ -1665,19 +1665,20 @@ external_log_format::scan_json(std::vector<logline>& dst,
                     ll.get_msg_level());
                 if (ostr != nullptr && ostr->ostr_description.empty()) {
                     log_op_description sub_desc;
-                    this->update_op_description(*this->lf_subid_description_def,
-                                                sub_desc);
+                    this->update_op_description(
+                        *this->lf_subid_description_def_vec, sub_desc);
                     if (!sub_desc.lod_elements.empty()) {
-                        auto& sub_desc_def = this->lf_subid_description_def->at(
-                            sub_desc.lod_id.value());
+                        auto& sub_desc_def
+                            = this->lf_subid_description_def_vec->at(
+                                sub_desc.lod_index.value());
                         ostr->ostr_description
-                            = sub_desc_def.to_string(sub_desc.lod_elements);
+                            = sub_desc_def->to_string(sub_desc.lod_elements);
                     }
                 }
             }
 
             auto& otr = opid_iter->second;
-            this->update_op_description(*this->lf_opid_description_def,
+            this->update_op_description(*this->lf_opid_description_def_vec,
                                         otr.otr_description);
         } else {
             this->jlf_line_values.lvv_opid_value = std::nullopt;
@@ -1946,22 +1947,24 @@ external_log_format::scan(logfile& lf,
                     if (ostr != nullptr && ostr->ostr_description.empty()) {
                         log_op_description sub_desc;
                         this->update_op_description(
-                            *this->lf_subid_description_def,
+                            *this->lf_subid_description_def_vec,
                             sub_desc,
                             fpat,
                             md);
                         if (!sub_desc.lod_elements.empty()) {
                             auto& sub_desc_def
-                                = this->lf_subid_description_def->at(
-                                    sub_desc.lod_id.value());
-                            ostr->ostr_description
-                                = sub_desc_def.to_string(sub_desc.lod_elements);
+                                = this->lf_subid_description_def_vec->at(
+                                    sub_desc.lod_index.value());
+                            ostr->ostr_description = sub_desc_def->to_string(
+                                sub_desc.lod_elements);
                         }
                     }
                 }
             }
-            this->update_op_description(
-                *this->lf_opid_description_def, otr.otr_description, fpat, md);
+            this->update_op_description(*this->lf_opid_description_def_vec,
+                                        otr.otr_description,
+                                        fpat,
+                                        md);
             opid = opid_cap->hash();
         }
         if (fpat->p_module_field_index != -1) {
@@ -3966,6 +3969,16 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_meta.lvm_name = this->elf_duration_field;
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
         vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
+    }
+
+    for (auto& od_pair : *this->lf_opid_description_def) {
+        od_pair.second.od_index = this->lf_opid_description_def_vec->size();
+        this->lf_opid_description_def_vec->emplace_back(&od_pair.second);
+    }
+
+    for (auto& od_pair : *this->lf_subid_description_def) {
+        od_pair.second.od_index = this->lf_subid_description_def_vec->size();
+        this->lf_subid_description_def_vec->emplace_back(&od_pair.second);
     }
 
     if (!this->lf_timestamp_format.empty()) {

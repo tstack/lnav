@@ -585,8 +585,10 @@ public:
 
         auto desc_v = std::make_shared<std::vector<opid_descriptor>>();
         desc_v->emplace({});
-        this->lf_opid_description_def->emplace(get_opid_desc(),
-                                               opid_descriptors{desc_v});
+        auto emplace_res = this->lf_opid_description_def->emplace(
+            get_opid_desc(), opid_descriptors{desc_v, 0});
+        this->lf_opid_description_def_vec->emplace_back(
+            &emplace_res.first->second);
     }
 
     const intern_string_t get_name() const override
@@ -704,10 +706,10 @@ public:
                 opid_iter->second.otr_level_stats.update_msg_count(level);
 
                 auto& otr = opid_iter->second;
-                if (!otr.otr_description.lod_id && host_cap.is_valid()
+                if (!otr.otr_description.lod_index && host_cap.is_valid()
                     && otr.otr_description.lod_elements.empty())
                 {
-                    otr.otr_description.lod_id = get_opid_desc();
+                    otr.otr_description.lod_index = 0;
                     otr.otr_description.lod_elements.emplace_back(
                         0, host_cap.to_string());
                 }

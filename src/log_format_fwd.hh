@@ -73,7 +73,7 @@ struct log_level_stats {
 };
 
 struct log_op_description {
-    std::optional<intern_string_t> lod_id;
+    std::optional<size_t> lod_index;
     lnav::map::small<size_t, std::string> lod_elements;
 
     log_op_description& operator|=(const log_op_description& rhs);

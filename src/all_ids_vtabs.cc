@@ -95,17 +95,13 @@ CREATE TABLE all_opids (
                     }
                     if (gather_iter->second.otp_description.empty()) {
                         auto format = lf->get_format();
-                        if (om.otr_description.lod_id.has_value()) {
+                        if (om.otr_description.lod_index.has_value()) {
                             auto desc_iter
-                                = format->lf_opid_description_def->find(
-                                    om.otr_description.lod_id.value());
-                            if (desc_iter
-                                != format->lf_opid_description_def->end())
-                            {
-                                gather_iter->second.otp_description
-                                    = desc_iter->second.to_string(
-                                        om.otr_description.lod_elements);
-                            }
+                                = format->lf_opid_description_def_vec->at(
+                                    om.otr_description.lod_index.value());
+                            gather_iter->second.otp_description
+                                = desc_iter->to_string(
+                                    om.otr_description.lod_elements);
                         } else if (!om.otr_description.lod_elements.empty()) {
                             gather_iter->second.otp_description
                                 = om.otr_description.lod_elements.front()

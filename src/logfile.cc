@@ -1881,7 +1881,7 @@ logfile::set_opid_description(string_fragment opid, string_fragment desc)
     if (opid_iter == opid_guard->los_opid_ranges.end()) {
         return;
     }
-    opid_iter->second.otr_description.lod_id = std::nullopt;
+    opid_iter->second.otr_description.lod_index = std::nullopt;
     opid_iter->second.otr_description.lod_elements.clear();
     opid_iter->second.otr_description.lod_elements[0] = desc.to_string();
 }

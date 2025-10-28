@@ -125,7 +125,7 @@ public:
 
     struct opid_description_def_key {
         intern_string_t oddk_format_name;
-        intern_string_t oddk_desc_name;
+        size_t oddk_desc_index;
 
         bool operator<(const opid_description_def_key& rhs) const
         {
@@ -133,7 +133,7 @@ public:
                 return true;
             }
             if (this->oddk_format_name == rhs.oddk_format_name) {
-                return this->oddk_desc_name < rhs.oddk_desc_name;
+                return this->oddk_desc_index < rhs.oddk_desc_index;
             }
 
             return false;

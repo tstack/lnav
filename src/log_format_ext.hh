@@ -409,13 +409,13 @@ public:
                             scan_batch_context& sbc);
 
     void update_op_description(
-        const std::map<intern_string_t, opid_descriptors>& desc_def,
+        const std::vector<opid_descriptors*>& desc_def,
         log_op_description& lod,
         const pattern* fpat,
         const lnav::pcre2pp::match_data& md);
 
     void update_op_description(
-        const std::map<intern_string_t, opid_descriptors>& desc_def,
+        const std::vector<opid_descriptors*>& desc_def,
         log_op_description& lod);
 
     void json_append_to_cache(const char* value, ssize_t len)
