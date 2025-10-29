@@ -262,7 +262,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         ? role_t::VCR_CURSOR_LINE
         : role_t::VCR_DISABLED_CURSOR_LINE;
     const auto& fc = lnav_data.ld_active_files;
-    auto filename_width = std::min(fc.fc_largest_path_length, (size_t) 32);
+    auto filename_width = std::min(fc.fc_largest_path_length, (size_t) 30);
 
     this->fss_curr_line.clear();
     auto& al = this->fss_curr_line;
@@ -353,6 +353,18 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         al.appendf(FMT_STRING("{:>8}"),
                    humanize::file_size(lf->get_index_size(),
                                        humanize::alignment::columnar));
+    }
+    al.append(" ");
+    auto indexed_size = lf->get_indexed_file_offset();
+    auto total_size = lf->get_stat().st_size;
+    if (!lf->get_decompress_error().empty()) {
+        al.append(" ", VC_ICON.value(ui_icon_t::error));
+    } else if (!lf->get_notes().empty()) {
+        al.append(" ", VC_ICON.value(ui_icon_t::warning));
+    } else if (indexed_size < total_size) {
+        al.append(humanize::sparkline(indexed_size, total_size));
+    } else {
+        al.append(" ", VC_ICON.value(ui_icon_t::ok));
     }
     if (selected) {
         al.with_attr_for_all(VC_ROLE.value(cursor_role));

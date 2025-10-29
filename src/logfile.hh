@@ -169,6 +169,15 @@ public:
 
     file_off_t get_index_size() const { return this->lf_index_size; }
 
+    /**
+     * @return The amount of data in the (possibly compressed) file that has
+     * been indexed.
+     */
+    file_off_t get_indexed_file_offset() const
+    {
+        return this->lf_line_buffer.get_read_offset(this->lf_index_size);
+    }
+
     int get_index_generation() const { return this->lf_index_generation; }
 
     file_ssize_t get_content_size() const

@@ -193,13 +193,21 @@ listview_curses::reload_data()
 }
 
 bool
-listview_curses::handle_key(const ncinput& ch)
+listview_curses::handle_key_using_delegates(const ncinput& ch)
 {
-    for (auto& lv_input_delegate : this->lv_input_delegates) {
+    for (auto* lv_input_delegate : this->lv_input_delegates) {
         if (lv_input_delegate->list_input_handle_key(*this, ch)) {
             return true;
         }
     }
+
+    return false;
+}
+
+bool
+listview_curses::handle_key(const ncinput& ch)
+{
+    this->handle_key_using_delegates(ch);
 
     auto height = 0_vl;
 

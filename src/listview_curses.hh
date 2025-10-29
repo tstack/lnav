@@ -490,6 +490,8 @@ public:
     /** This method should be called when the data source has changed. */
     virtual void reload_data();
 
+    bool handle_key_using_delegates(const ncinput& ch);
+
     /**
      * @param ch The input to be handled.
      * @return True if the key was eaten by this view.

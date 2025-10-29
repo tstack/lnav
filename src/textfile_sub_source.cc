@@ -72,7 +72,7 @@ file_needs_reformatting(const std::shared_ptr<logfile>& lf)
         case text_format_t::TF_DIFF:
             return false;
         default:
-            if (lf->get_stat().st_size < 16 * 1024
+            if (lf->get_content_size() < 16 * 1024
                 && lf->get_longest_line_length()
                     > cfg.c_max_unformatted_line_length)
             {

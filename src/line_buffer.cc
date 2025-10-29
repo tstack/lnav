@@ -427,7 +427,8 @@ line_buffer::set_fd(auto_fd& fd)
                 auto piper_hdr_opt = lnav::piper::read_header(fd, gz_id);
 
                 if (piper_hdr_opt) {
-                    static intern_string_t SRC = intern_string::lookup("piper");
+                    static const intern_string_t SRC
+                        = intern_string::lookup("piper");
 
                     auto meta_buf = std::move(piper_hdr_opt.value());
 

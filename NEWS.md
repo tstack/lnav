@@ -120,6 +120,11 @@ Features:
   highlight can be applied to text that is covered by
   another highlight.
 * Added `rust_tracing_log` from @richard-hajek.
+* The "Files" panel now shows a progress bar for each
+  file as it is being indexed and finishes with a
+  check-mark if indexing was successful, a warning
+  sign if the file has some notes, or an error mark
+  if something else happened.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

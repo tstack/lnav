@@ -118,26 +118,42 @@ panels: Files and Filters.  These panels provide visual access to parts of
 lnav's configuration.  To access the panels, press the :kbd:`TAB` key.
 To hide the panels again, press :kbd:`q`.
 
+Files
+^^^^^
+
 .. figure:: lnav-files-panel.png
    :align: center
    :figwidth: 90%
 
    Screenshot of the files panel showing the loaded files.
 
-The Files panel is open initially to display progress in loading files.
+The Files panel is open initially to display progress in indexing files.
 The following information is displayed for each file:
 
-* the "unique" portion of the path relative to the other files and
-* the amount of data that has been indexed.
+* the "unique" portion of the path relative to the other files;
+* the amount of data that has been indexed;
+* and, a progress bar or an icon to show the status of the file.  The
+  following icons may appear:
+
+  * green check mark (✔) if the file was successfully indexed;
+  * yellow warning (⚠) if there are notes for the file, such as why it was
+    hidden
+  * red X (✘) if there was an error reading the file.
 
 To the right of the file list is a panel that shows details for each
-file, such as:
+file.  You can focus on the details view by pressing :kbd:`CTRL` + :kbd:`]`.
+Press :kbd:`Esc` to return focus to the file listing.
+
+The following information is shown in the details view:
 
 * the date range of log messages contained in the file;
 * the errors that were encountered while trying to index the file;
 * the notes recorded for files where some automatic action was taken,
   like hiding the file if it was seen as a duplicate of another file;
 * the details of the demultiplexing and log format matching process.
+
+Filters
+^^^^^^^
 
 .. figure:: lnav-filters-panel.png
    :align: center
