@@ -1918,7 +1918,7 @@ setup_initial_view_stack()
 
     auto& exec_phase = injector::get<lnav::exec_phase&>();
 
-    if (!exec_phase.spinning_up()) {
+    if (!exec_phase.spinning_up() || lnav_data.ld_view_stack.empty()) {
         return;
     }
 

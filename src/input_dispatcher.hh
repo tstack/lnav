@@ -47,6 +47,8 @@ public:
         FULL,
     };
 
+    size_t id_count{0};
+
     std::function<escape_match_t(const char*)> id_escape_matcher;
     std::function<bool(notcurses*, const ncinput&, const char*)> id_key_handler;
     std::function<void(const char*)> id_escape_handler;

@@ -971,7 +971,11 @@ execute_init_commands(
                     deadline += 500ms;
                 }
                 wait_for_pipers(deadline);
-                rebuild_indexes_repeatedly();
+                if (lnav_data.ld_flags & LNF_HEADLESS || lnav_data.ld_input_dispatcher.id_count == 0) {
+                    rebuild_indexes_repeatedly();
+                } else {
+                    rebuild_indexes(deadline);
+                }
                 if (top_view == lnav_data.ld_view_stack.top()) {
                     setup_initial_view_stack();
                 }

@@ -1144,7 +1144,8 @@ static void
 ui_execute_init_commands(
     exec_context& ec,
     std::vector<std::pair<Result<std::string, lnav::console::user_message>,
-                          std::string>>& cmd_results)
+                          std::string>>& cmd_results,
+    std::optional<ui_clock::time_point> deadline)
 {
     std::error_code errc;
     std::filesystem::create_directories(lnav::paths::workdir(), errc);
@@ -2366,7 +2367,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             auto rebuild_res = rebuild_indexes(loop_deadline);
             log_trace("%d: END initial build rebuild", loop_count);
             changes += rebuild_res.rir_changes;
-            if ((opened_files && lnav_data.ld_mode != ln_mode_t::FILES)
+            if (lnav_data.ld_input_dispatcher.id_count > 0
+                || (opened_files && lnav_data.ld_mode != ln_mode_t::FILES)
                 || (changes == 0 && rebuild_res.rir_completed
                     && !rebuild_res.rir_rescan_needed))
             {
@@ -2387,8 +2389,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 std::pair<Result<std::string, lnav::console::user_message>,
                           std::string>>
                 cmd_results;
+            std::optional<ui_clock::time_point> deadline;
 
-            ui_execute_init_commands(ec, cmd_results);
+            if (lnav_data.ld_input_dispatcher.id_count > 0) {
+                deadline = loop_deadline;
+            }
+            ui_execute_init_commands(ec, cmd_results, deadline);
 
             if (!cmd_results.empty()) {
                 auto& prompt = lnav::prompt::get();
