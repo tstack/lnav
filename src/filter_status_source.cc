@@ -213,7 +213,8 @@ filter_status_source::update_filtered(text_sub_source* tss)
     auto& sf = this->tss_fields[TSF_FILTERED];
     auto retval = false;
 
-    if (tss->get_filtered_count() == 0) {
+    auto curr_filtered_count = tss->get_filtered_count();
+    if (curr_filtered_count == 0) {
         if (tss->tss_apply_filters) {
             if (!sf.empty()) {
                 sf.clear();
@@ -224,11 +225,12 @@ filter_status_source::update_filtered(text_sub_source* tss)
                 " \u2718 Filtering disabled, re-enable with " ANSI_BOLD_START
                 ":toggle-filtering" ANSI_NORM);
         }
+        this->bss_last_filtered_count = curr_filtered_count;
     } else {
         auto& timer = ui_periodic_timer::singleton();
         auto& al = sf.get_value();
 
-        if (tss->get_filtered_count() == this->bss_last_filtered_count) {
+        if (curr_filtered_count == this->bss_last_filtered_count) {
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_STATUS);
                 al.with_attr(
