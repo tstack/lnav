@@ -2,6 +2,15 @@
 ## lnav v0.14.0
 
 Features:
+* The Filter configuration panel in the TUI now supports
+  editing the minimum/maximum times for the current
+  view.  Previously, only the `:hide-lines-before` and
+  `:hide-lines-after` commands could be used to set the
+  values.  Pressing `m` will create/set the minimum
+  time and pressing `Shift` + `M` will create/set the
+  maximum time.  Live preview has also been added to
+  show which lines will be filtered out when the min/max
+  is applied.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

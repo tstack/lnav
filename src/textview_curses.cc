@@ -1237,12 +1237,33 @@ textview_curses::update_hash_state(hasher& h) const
 }
 
 void
+textview_curses::clear_preview()
+{
+    auto& hl = this->get_highlights();
+    hl.erase({highlight_source_t::PREVIEW, "preview"});
+    hl.erase({highlight_source_t::PREVIEW, "bodypreview"});
+    if (this->tc_sub_source != nullptr) {
+        this->tc_sub_source->clear_preview();
+    }
+}
+
+void
 text_sub_source::scroll_invoked(textview_curses* tc)
 {
     auto* ttt = dynamic_cast<text_time_translator*>(this);
 
     if (ttt != nullptr) {
         ttt->ttt_scroll_invoked(tc);
+    }
+}
+
+void
+text_sub_source::clear_preview()
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(this);
+
+    if (ttt != nullptr) {
+        ttt->clear_preview_times();
     }
 }
 

@@ -768,6 +768,22 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
+    if (this->ttt_preview_min_time
+        && this->lss_token_line->get_timeval() < this->ttt_preview_min_time)
+    {
+        auto color = styling::color_unit::from_palette(
+            lnav::enums::to_underlying(ansi_color::red));
+        value_out.emplace_back(line_range{0, 1},
+                               VC_BACKGROUND.value(color));
+    }
+    if (this->ttt_preview_max_time
+        && this->ttt_preview_max_time < this->lss_token_line->get_timeval())
+    {
+        auto color = styling::color_unit::from_palette(
+            lnav::enums::to_underlying(ansi_color::red));
+        value_out.emplace_back(line_range{0, 1},
+                               VC_BACKGROUND.value(color));
+    }
     if (!this->lss_token_line->is_continued()) {
         if (this->lss_preview_filter_stmt != nullptr) {
             auto color = styling::color_unit::EMPTY;
@@ -3371,8 +3387,9 @@ logfile_sub_source::text_handle_mouse(
     const listview_curses::display_line_content_t& mouse_line,
     mouse_event& me)
 {
-    if (mouse_line.is<listview_curses::static_overlay_content>() &&
-        this->text_line_count() > 0) {
+    if (mouse_line.is<listview_curses::static_overlay_content>()
+        && this->text_line_count() > 0)
+    {
         auto top = tc.get_top();
         if (top > 0) {
             auto win = this->window_at(top - 1_vl);

@@ -332,11 +332,20 @@ public:
         }
     }
 
-protected:
     static constexpr auto min_time_init = timeval{0, 0};
     static constexpr auto max_time_init
         = timeval{std::numeric_limits<time_t>::max(), 0};
 
+    void clear_preview_times()
+    {
+        this->ttt_preview_min_time = std::nullopt;
+        this->ttt_preview_max_time = std::nullopt;
+    }
+
+    std::optional<timeval> ttt_preview_min_time;
+    std::optional<timeval> ttt_preview_max_time;
+
+protected:
     timeval ttt_min_row_time = min_time_init;
     timeval ttt_max_row_time = max_time_init;
     uint32_t ttt_time_filter_generation{0};
@@ -542,6 +551,10 @@ public:
 
     virtual int get_filtered_count_for(size_t filter_index) const { return 0; }
 
+    virtual size_t get_filtered_before() const { return 0; }
+
+    virtual size_t get_filtered_after() const { return 0; }
+
     virtual void update_filter_hash_state(hasher& h) const;
 
     virtual text_format_t get_text_format() const
@@ -569,6 +582,8 @@ public:
     virtual void quiesce() {}
 
     virtual void scroll_invoked(textview_curses* tc);
+
+    virtual void clear_preview();
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
@@ -883,6 +898,8 @@ public:
                           const line_range& orig_line);
 
     void update_hash_state(hasher& h) const;
+
+    void clear_preview();
 
     bool tc_interactive{false};
     std::function<void(textview_curses&)> tc_state_event_handler;

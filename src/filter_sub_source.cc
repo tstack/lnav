@@ -28,6 +28,7 @@
  */
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "filter_sub_source.hh"
@@ -37,6 +38,7 @@
 #include "base/func_util.hh"
 #include "base/itertools.hh"
 #include "base/opt_util.hh"
+#include "base/text_format_enum.hh"
 #include "cmd.parser.hh"
 #include "config.h"
 #include "data_scanner.hh"
@@ -46,6 +48,7 @@
 #include "readline_possibilities.hh"
 #include "sql_util.hh"
 #include "textinput_curses.hh"
+#include "textview_curses.hh"
 
 using namespace lnav::roles::literals;
 
@@ -56,7 +59,7 @@ filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
       fss_sql_history(lnav::textinput::history::for_context("sql-filter"_frag))
 {
     this->fss_editor->set_visible(false);
-    this->fss_editor->set_x(25);
+    this->fss_editor->set_x(28);
     this->fss_editor->tc_popup.set_title("Pattern");
     this->fss_editor->tc_height = 1;
     this->fss_editor->tc_on_change
@@ -81,13 +84,12 @@ filter_sub_source::register_view(textview_curses* tc)
 {
     text_sub_source::register_view(tc);
     tc->add_child_view(this->fss_editor.get());
+    tc->set_ensure_selection(true);
 }
 
 bool
 filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
-    static auto& prompt = lnav::prompt::get();
-
     if (this->fss_editing) {
         return this->fss_editor->handle_key(ch);
     }
@@ -101,94 +103,112 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             top_view->reload_data();
             break;
         }
-        case ' ': {
-            auto* top_view = *lnav_data.ld_view_stack.top();
-            auto* tss = top_view->get_sub_source();
-            auto& fs = tss->get_filters();
-
-            if (fs.empty() || !lv.get_selection()) {
-                return true;
-            }
-
-            auto tf = *(fs.begin() + lv.get_selection().value());
-
-            fs.set_filter_enabled(tf, !tf->is_enabled());
-            tss->text_filters_changed();
-            lv.reload_data();
-            top_view->reload_data();
-            return true;
-        }
-        case 't': {
-            auto* top_view = *lnav_data.ld_view_stack.top();
-            auto* tss = top_view->get_sub_source();
-            auto& fs = tss->get_filters();
-
-            if (fs.empty() || !lv.get_selection()) {
-                return true;
-            }
-
-            auto tf = *(fs.begin() + lv.get_selection().value());
-
-            if (tf->get_type() == text_filter::INCLUDE) {
-                tf->set_type(text_filter::EXCLUDE);
-            } else {
-                tf->set_type(text_filter::INCLUDE);
-            }
-
-            tss->text_filters_changed();
-            lv.reload_data();
-            top_view->reload_data();
-            return true;
-        }
+        case ' ':
+        case 't':
         case 'D': {
             auto* top_view = *lnav_data.ld_view_stack.top();
-            auto* tss = top_view->get_sub_source();
-            auto& fs = tss->get_filters();
-
-            if (fs.empty() || !lv.get_selection()) {
+            auto rows = this->rows_for(top_view);
+            if (rows.empty() || !lv.get_selection()) {
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection().value());
-
-            fs.delete_filter(tf->get_id());
+            auto& tf = rows[lv.get_selection().value()];
+            tf->handle_key(top_view, ch);
             lv.reload_data();
-            tss->text_filters_changed();
+            top_view->get_sub_source()->text_filters_changed();
             top_view->reload_data();
             return true;
         }
-        case 'i': {
+        case 'm': {
             auto* top_view = *lnav_data.ld_view_stack.top();
-            auto* tss = top_view->get_sub_source();
-            auto& fs = tss->get_filters();
-            auto filter_index = fs.next_index();
+            auto* ttt = dynamic_cast<text_time_translator*>(
+                top_view->get_sub_source());
+            if (ttt != nullptr) {
+                auto curr_min = ttt->get_min_row_time();
+                this->fss_filter_state = curr_min.has_value();
+                if (curr_min) {
+                    this->fss_min_time = curr_min;
+                    ttt->set_min_row_time(text_time_translator::min_time_init);
+                    ttt->ttt_preview_min_time = curr_min;
+                    top_view->get_sub_source()->text_filters_changed();
+                } else {
+                    auto sel = top_view->get_selection();
+                    if (sel) {
+                        auto ri_opt = ttt->time_for_row(sel.value());
+                        if (ri_opt) {
+                            auto ri = ri_opt.value();
 
-            if (!filter_index) {
-                lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                    "error: too many filters");
+                            this->fss_min_time = ri.ri_time;
+                        }
+                    }
+                    if (!this->fss_min_time) {
+                        this->fss_min_time = current_timeval();
+                    }
+                    ttt->ttt_preview_min_time = this->fss_min_time;
+                }
+
+                lv.set_selection(0_vl);
+                lv.reload_data();
+
+                auto rows = this->rows_for(top_view);
+                auto& row = rows[0];
+                this->fss_editing = true;
+                this->tss_view->set_enabled(false);
+                row->prime_text_input(top_view, *this->fss_editor, *this);
+                this->fss_editor->set_y(lv.get_y_for_selection());
+                this->fss_editor->set_visible(true);
+                this->fss_editor->focus();
+                this->tss_view->reload_data();
                 return true;
             }
-
-            auto ef = std::make_shared<empty_filter>(
-                text_filter::type_t::INCLUDE, *filter_index);
-            fs.add_filter(ef);
-            lv.set_selection(vis_line_t(fs.size() - 1));
-            lv.reload_data();
-
-            this->fss_editing = true;
-            this->tss_view->set_enabled(false);
-            this->fss_view_text_possibilities
-                = view_text_possibilities(*top_view);
-            this->fss_editor->tc_text_format = text_format_t::TF_PCRE;
-            this->fss_editor->set_y(lv.get_y_for_selection());
-            this->fss_editor->set_content("");
-            this->fss_editor->tc_suggestion = top_view->get_input_suggestion();
-            this->fss_editor->set_visible(true);
-            this->fss_editor->focus();
-            this->fss_filter_state = true;
-            ef->disable();
-            return true;
+            break;
         }
+        case 'M': {
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* ttt = dynamic_cast<text_time_translator*>(
+                top_view->get_sub_source());
+            if (ttt != nullptr) {
+                auto curr_max = ttt->get_max_row_time();
+                this->fss_filter_state = curr_max.has_value();
+                if (curr_max) {
+                    this->fss_max_time = curr_max;
+                    ttt->ttt_preview_max_time = curr_max;
+                    ttt->set_max_row_time(text_time_translator::max_time_init);
+                    top_view->get_sub_source()->text_filters_changed();
+                } else {
+                    auto sel = top_view->get_selection();
+                    if (sel) {
+                        auto ri_opt = ttt->time_for_row(sel.value());
+                        if (ri_opt) {
+                            auto ri = ri_opt.value();
+
+                            this->fss_max_time = ri.ri_time;
+                        }
+                    }
+                    if (!this->fss_max_time) {
+                        this->fss_max_time = current_timeval();
+                    }
+                    ttt->ttt_preview_max_time = this->fss_max_time;
+                }
+
+                auto new_sel = ttt->get_min_row_time() ? 1_vl : 0_vl;
+                lv.set_selection(new_sel);
+                lv.reload_data();
+
+                auto rows = this->rows_for(top_view);
+                auto& row = rows[new_sel];
+                this->fss_editing = true;
+                this->tss_view->set_enabled(false);
+                row->prime_text_input(top_view, *this->fss_editor, *this);
+                this->fss_editor->set_y(lv.get_y_for_selection());
+                this->fss_editor->set_visible(true);
+                this->fss_editor->focus();
+                this->tss_view->reload_data();
+                return true;
+            }
+            break;
+        }
+        case 'i':
         case 'o': {
             auto* top_view = *lnav_data.ld_view_stack.top();
             auto* tss = top_view->get_sub_source();
@@ -201,59 +221,50 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto ef = std::make_shared<empty_filter>(
-                text_filter::type_t::EXCLUDE, *filter_index);
+            auto filter_type = ch.eff_text[0] == 'i'
+                ? text_filter::type_t::INCLUDE
+                : text_filter::type_t::EXCLUDE;
+            auto ef
+                = std::make_shared<empty_filter>(filter_type, *filter_index);
             fs.add_filter(ef);
-            lv.set_selection(vis_line_t(fs.size() - 1));
+
+            auto rows = this->rows_for(top_view);
+            lv.set_selection(vis_line_t(rows.size()) - 1_vl);
+            auto& row = rows.back();
             lv.reload_data();
 
             this->fss_editing = true;
             this->tss_view->set_enabled(false);
-
-            this->fss_editor->tc_text_format = text_format_t::TF_PCRE;
-            this->fss_editor->set_y(lv.get_y_for_selection());
-            this->fss_editor->set_visible(true);
-            this->fss_editor->set_content("");
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
-            this->fss_editor->tc_suggestion = top_view->get_input_suggestion();
+            row->prime_text_input(top_view, *this->fss_editor, *this);
+            this->fss_editor->set_y(lv.get_y_for_selection());
+            this->fss_editor->set_visible(true);
             this->fss_editor->focus();
             this->fss_filter_state = true;
-            ef->disable();
             return true;
         }
         case '\r':
         case NCKEY_ENTER: {
             auto* top_view = *lnav_data.ld_view_stack.top();
-            auto* tss = top_view->get_sub_source();
-            auto& fs = tss->get_filters();
+            auto rows = this->rows_for(top_view);
 
-            if (fs.empty() || !lv.get_selection()) {
+            if (rows.empty() || !lv.get_selection()) {
                 return true;
             }
 
-            auto tf = *(fs.begin() + lv.get_selection().value());
-
+            auto& row = rows[lv.get_selection().value()];
             this->fss_editing = true;
             this->tss_view->set_enabled(false);
-
-            this->fss_editor->tc_text_format
-                = tf->get_lang() == filter_lang_t::SQL ? text_format_t::TF_SQL
-                                                       : text_format_t::TF_PCRE;
-            if (tf->get_lang() == filter_lang_t::SQL) {
-                prompt.refresh_sql_completions(*top_view);
-                prompt.refresh_sql_expr_completions(*top_view);
-            }
             this->fss_editor->set_y(lv.get_y_for_selection());
             this->fss_editor->set_visible(true);
             this->fss_editor->tc_suggestion.clear();
-            this->fss_editor->set_content(tf->get_id());
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
             this->fss_editor->focus();
-            this->fss_filter_state = tf->is_enabled();
-            tf->disable();
-            tss->text_filters_changed();
+            this->fss_filter_state
+                = row->prime_text_input(top_view, *this->fss_editor, *this);
+            top_view->get_sub_source()->text_filters_changed();
             return true;
         }
         case 'n': {
@@ -283,14 +294,14 @@ size_t
 filter_sub_source::text_line_count()
 {
     return (lnav_data.ld_view_stack.top() |
-                [](auto tc) -> std::optional<size_t> {
-               text_sub_source* tss = tc->get_sub_source();
+                [this](auto tc) -> std::optional<size_t> {
+               auto* tss = tc->get_sub_source();
 
                if (tss == nullptr) {
                    return std::nullopt;
                }
-               auto& fs = tss->get_filters();
-               return std::make_optional(fs.size());
+               auto rows = this->rows_for(tc);
+               return std::make_optional(rows.size());
            })
         .value_or(0);
 }
@@ -298,9 +309,9 @@ filter_sub_source::text_line_count()
 size_t
 filter_sub_source::text_line_width(textview_curses& curses)
 {
-    textview_curses* top_view = *lnav_data.ld_view_stack.top();
-    text_sub_source* tss = top_view->get_sub_source();
-    filter_stack& fs = tss->get_filters();
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto* tss = top_view->get_sub_source();
+    auto& fs = tss->get_filters();
     size_t retval = 0;
 
     for (auto& filter : fs) {
@@ -317,76 +328,31 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
                                        line_flags_t flags)
 {
     auto* top_view = *lnav_data.ld_view_stack.top();
-    auto* tss = top_view->get_sub_source();
-    auto& fs = tss->get_filters();
-    auto tf = *(fs.begin() + line);
-    bool selected
+    auto selected
         = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
-
-    this->fss_curr_line.clear();
+    auto rows = this->rows_for(top_view);
+    auto rs = render_state{top_view};
     auto& al = this->fss_curr_line;
-    attr_line_builder alb(al);
 
+    al.clear();
+    if (selected && this->fss_editing) {
+        rs.rs_editing = true;
+    }
     if (selected) {
         al.append(" ", VC_GRAPHIC.value(NCACS_RARROW));
     } else {
         al.append(" ");
     }
     al.append(" ");
-    if (tf->is_enabled()) {
-        al.append("\u25c6"_ok);
-    } else {
-        al.append("\u25c7"_comment);
-    }
-    al.append(" ");
-    switch (tf->get_type()) {
-        case text_filter::INCLUDE:
-            al.append(" ").append(lnav::roles::ok("IN")).append(" ");
-            break;
-        case text_filter::EXCLUDE:
-            if (tf->get_lang() == filter_lang_t::REGEX) {
-                al.append(lnav::roles::error("OUT")).append(" ");
-            } else {
-                al.append("    ");
-            }
-            break;
-        default:
-            ensure(0);
-            break;
-    }
 
-    {
-        auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
-        if (this->fss_editing && line == tc.get_selection()) {
-            alb.appendf(FMT_STRING("{:>9}"), "-");
-        } else {
-            alb.appendf(FMT_STRING("{:>9L}"),
-                        tss->get_filtered_count_for(tf->get_index()));
-        }
-    }
+    auto& row = rows[line];
 
-    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
-
-    attr_line_t content{tf->get_id()};
-    switch (tf->get_lang()) {
-        case filter_lang_t::REGEX:
-            readline_regex_highlighter(content, std::nullopt);
-            break;
-        case filter_lang_t::SQL:
-            readline_sql_highlighter(
-                content, lnav::sql::dialect::sqlite, std::nullopt);
-            break;
-        case filter_lang_t::NONE:
-            break;
-    }
-    al.append(content);
-
+    row->value_for(rs, al);
     if (selected) {
         al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));
     }
 
-    value_out = al.get_string();
-
+    value_out = al.al_string;
     return {};
 }
 
@@ -403,31 +369,517 @@ filter_sub_source::text_size_for_line(textview_curses& tc,
                                       int line,
                                       text_sub_source::line_flags_t raw)
 {
-    auto* top_view = *lnav_data.ld_view_stack.top();
-    auto* tss = top_view->get_sub_source();
-    auto& fs = tss->get_filters();
-    auto tf = *(fs.begin() + line);
-
-    return 8 + tf->get_id().size();
+    // XXX
+    return 40;
 }
 
 void
 filter_sub_source::rl_change(textinput_curses& rc)
 {
     auto* top_view = *lnav_data.ld_view_stack.top();
-    auto* tss = top_view->get_sub_source();
-    auto& fs = tss->get_filters();
-    if (fs.empty()) {
-        return;
+    auto rows = this->rows_for(top_view);
+    auto& row = rows[this->tss_view->get_selection().value()];
+
+    row->ti_change(top_view, rc);
+}
+
+void
+filter_sub_source::rl_history(textinput_curses& tc)
+{
+    switch (tc.tc_text_format) {
+        case text_format_t::TF_PCRE: {
+            std::vector<attr_line_t> poss;
+            this->fss_regexp_history.query_entries(
+                tc.get_content(),
+                [&poss](const auto& e) { poss.emplace_back(e.e_content); });
+            tc.open_popup_for_history(poss);
+            break;
+        }
+        case text_format_t::TF_SQL: {
+            break;
+        }
+        default:
+            ensure(false);
+            break;
+    }
+}
+
+void
+filter_sub_source::rl_completion_request_int(textinput_curses& tc,
+                                             completion_request_type_t crt)
+{
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto rows = this->rows_for(top_view);
+    auto& row = rows[this->tss_view->get_selection().value()];
+
+    row->ti_completion_request(top_view, tc, crt);
+}
+
+void
+filter_sub_source::rl_completion_request(textinput_curses& tc)
+{
+    this->rl_completion_request_int(tc, completion_request_type_t::full);
+}
+
+void
+filter_sub_source::rl_completion(textinput_curses& tc)
+{
+    static auto& prompt = lnav::prompt::get();
+
+    prompt.rl_completion(tc);
+}
+
+void
+filter_sub_source::rl_perform(textinput_curses& rc)
+{
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto rows = this->rows_for(top_view);
+    auto& row = rows[this->tss_view->get_selection().value()];
+
+    row->ti_perform(top_view, rc, *this);
+    this->fss_min_time = std::nullopt;
+    this->fss_max_time = std::nullopt;
+    this->tss_view->reload_data();
+}
+
+void
+filter_sub_source::rl_blur(textinput_curses& tc)
+{
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    top_view->clear_preview();
+    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
+    lnav_data.ld_filter_help_status_source.fss_error.clear();
+    this->fss_editing = false;
+    tc.set_visible(false);
+    this->tss_view->set_enabled(true);
+}
+
+void
+filter_sub_source::rl_abort(textinput_curses& rc)
+{
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto rows = this->rows_for(top_view);
+    auto& row = rows[this->tss_view->get_selection().value()];
+
+    row->ti_abort(top_view, rc, *this);
+    this->fss_min_time = std::nullopt;
+    this->fss_max_time = std::nullopt;
+    this->tss_view->reload_data();
+}
+
+void
+filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
+{
+    set_view_mode(ln_mode_t::PAGING);
+    lnav_data.ld_filter_view.reload_data();
+}
+
+bool
+filter_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
+{
+    if (this->fss_editing) {
+        return true;
+    }
+    auto nci = ncinput{};
+    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
+        nci.id = ' ';
+        nci.eff_text[0] = ' ';
+        this->list_input_handle_key(tc, nci);
+    }
+    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 4, 7)) {
+        nci.id = 't';
+        nci.eff_text[0] = 't';
+        this->list_input_handle_key(tc, nci);
+    }
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1}))
+    {
+        nci.id = '\r';
+        nci.eff_text[0] = '\r';
+        this->list_input_handle_key(tc, nci);
+    }
+    return true;
+}
+
+bool
+filter_sub_source::min_time_filter_row::handle_key(textview_curses* top_view,
+                                                   const ncinput& ch)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    switch (ch.eff_text[0]) {
+        case 'D':
+            ttt->set_min_row_time(text_time_translator::min_time_init);
+            top_view->get_sub_source()->text_filters_changed();
+            return true;
+        default:
+            return false;
+    }
+}
+
+void
+filter_sub_source::min_time_filter_row::value_for(const render_state& rs,
+                                                  attr_line_t& al)
+{
+    al.append("Min Time"_table_header).append(" ");
+    if (rs.rs_editing) {
+        al.append(fmt::format(FMT_STRING("{:>9}"), "-"),
+                  VC_ROLE.value(role_t::VCR_NUMBER));
+    } else {
+        al.append(fmt::format(
+                      FMT_STRING("{:>9}"),
+                      rs.rs_top_view->get_sub_source()->get_filtered_before()),
+                  VC_ROLE.value(role_t::VCR_NUMBER));
+    }
+    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
+    al.append(lnav::to_rfc3339_string(this->tfr_time));
+}
+
+Result<timeval, std::string>
+filter_sub_source::time_filter_row::parse_time(textview_curses* top_view,
+                                               textinput_curses& tc)
+{
+    auto content = tc.get_content();
+    if (content.empty()) {
+        return Err(std::string("expecting a timestamp or relative time"));
     }
 
-    auto iter = fs.begin() + this->tss_view->get_selection().value();
-    auto tf = *iter;
+    auto parse_res = relative_time::from_str(content);
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    date_time_scanner dts;
+
+    if (top_view->get_inner_height() > 0_vl) {
+        auto top_time_opt = ttt->time_for_row(
+            top_view->get_selection().value_or(top_view->get_top()));
+
+        if (top_time_opt) {
+            auto top_time_tv = top_time_opt.value().ri_time;
+            tm top_tm;
+
+            localtime_r(&top_time_tv.tv_sec, &top_tm);
+            dts.set_base_time(top_time_tv.tv_sec, top_tm);
+        }
+    }
+    if (parse_res.isOk()) {
+        auto rt = parse_res.unwrap();
+        auto tv_opt
+            = ttt->time_for_row(top_view->get_selection().value_or(0_vl));
+        auto tv = current_timeval();
+        if (tv_opt) {
+            tv = tv_opt.value().ri_time;
+        }
+        auto tm = rt.adjust(tv);
+        return Ok(tm.to_timeval());
+    }
+    auto time_str = tc.get_content();
+    exttm tm;
+    timeval tv;
+    const auto* scan_end
+        = dts.scan(time_str.c_str(), time_str.size(), nullptr, &tm, tv);
+    if (scan_end != nullptr) {
+        auto matched_size = scan_end - time_str.c_str();
+        if (matched_size == time_str.size()) {
+            return Ok(tv);
+        }
+
+        return Err(fmt::format(FMT_STRING("extraneous input '{}'"), scan_end));
+    }
+
+    auto pe = parse_res.unwrapErr();
+    return Err(pe.pe_msg);
+}
+
+void
+filter_sub_source::min_time_filter_row::ti_perform(textview_curses* top_view,
+                                                   textinput_curses& tc,
+                                                   filter_sub_source& parent)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    auto parse_res = this->parse_time(top_view, tc);
+    if (parse_res.isOk()) {
+        auto tv = parse_res.unwrap();
+
+        ttt->set_min_row_time(tv);
+    } else {
+        auto msg = parse_res.unwrapErr();
+        if (parent.fss_filter_state) {
+            ttt->set_min_row_time(parent.fss_min_time.value());
+        }
+
+        auto um
+            = lnav::console::user_message::error("could not parse timestamp")
+                  .with_reason(msg);
+        lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
+    }
+    parent.fss_min_time = std::nullopt;
+    top_view->get_sub_source()->text_filters_changed();
+}
+
+void
+filter_sub_source::min_time_filter_row::ti_abort(textview_curses* top_view,
+                                                 textinput_curses& tc,
+                                                 filter_sub_source& parent)
+{
+    auto* tss = top_view->get_sub_source();
+    auto* ttt = dynamic_cast<text_time_translator*>(tss);
+
+    if (parent.fss_filter_state) {
+        ttt->set_min_row_time(parent.fss_min_time.value());
+    }
+    tss->text_filters_changed();
+}
+
+bool
+filter_sub_source::time_filter_row::prime_text_input(textview_curses* top_view,
+                                                     textinput_curses& ti,
+                                                     filter_sub_source& parent)
+{
+    ti.tc_text_format = text_format_t::TF_UNKNOWN;
+    ti.set_content(lnav::to_rfc3339_string(this->tfr_time));
+    return true;
+}
+
+void
+filter_sub_source::min_time_filter_row::ti_change(textview_curses* top_view,
+                                                  textinput_curses& rc)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    auto parse_res = this->parse_time(top_view, rc);
+
+    if (parse_res.isOk()) {
+        auto tv = parse_res.unwrap();
+        ttt->ttt_preview_min_time = tv;
+        lnav_data.ld_filter_help_status_source.fss_error.clear();
+    } else {
+        ttt->ttt_preview_min_time = std::nullopt;
+        auto msg = parse_res.unwrapErr();
+        lnav_data.ld_filter_help_status_source.fss_error.set_value(
+            "error: could not parse timestamp -- %s", msg.c_str());
+    }
+}
+
+void
+filter_sub_source::max_time_filter_row::ti_change(textview_curses* top_view,
+                                                  textinput_curses& rc)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    auto parse_res = this->parse_time(top_view, rc);
+
+    if (parse_res.isOk()) {
+        auto tv = parse_res.unwrap();
+        ttt->ttt_preview_max_time = tv;
+        lnav_data.ld_filter_help_status_source.fss_error.clear();
+    } else {
+        ttt->ttt_preview_max_time = std::nullopt;
+        auto msg = parse_res.unwrapErr();
+        lnav_data.ld_filter_help_status_source.fss_error.set_value(
+            "error: could not parse timestamp -- %s", msg.c_str());
+    }
+}
+
+void
+filter_sub_source::time_filter_row::ti_completion_request(
+    textview_curses* top_view,
+    textinput_curses& tc,
+    completion_request_type_t crt)
+{
+}
+
+bool
+filter_sub_source::max_time_filter_row::handle_key(textview_curses* top_view,
+                                                   const ncinput& ch)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    switch (ch.eff_text[0]) {
+        case 'D':
+            ttt->set_max_row_time(text_time_translator::max_time_init);
+            top_view->get_sub_source()->text_filters_changed();
+            return true;
+        default:
+            return false;
+    }
+}
+
+void
+filter_sub_source::max_time_filter_row::value_for(const render_state& rs,
+                                                  attr_line_t& al)
+{
+    al.append("Max Time"_table_header).append(" ");
+    if (rs.rs_editing) {
+        al.append(fmt::format(FMT_STRING("{:>9}"), "-"),
+                  VC_ROLE.value(role_t::VCR_NUMBER));
+    } else {
+        al.append(
+            fmt::format(FMT_STRING("{:>9}"),
+                        rs.rs_top_view->get_sub_source()->get_filtered_after()),
+            VC_ROLE.value(role_t::VCR_NUMBER));
+    }
+    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
+    al.append(lnav::to_rfc3339_string(this->tfr_time));
+}
+
+void
+filter_sub_source::max_time_filter_row::ti_perform(textview_curses* top_view,
+                                                   textinput_curses& tc,
+                                                   filter_sub_source& parent)
+{
+    auto* ttt = dynamic_cast<text_time_translator*>(top_view->get_sub_source());
+    auto parse_res = this->parse_time(top_view, tc);
+    if (parse_res.isOk()) {
+        auto tv = parse_res.unwrap();
+
+        ttt->set_max_row_time(tv);
+    } else {
+        auto msg = parse_res.unwrapErr();
+        if (parent.fss_filter_state) {
+            ttt->set_max_row_time(parent.fss_max_time.value());
+        }
+        auto um
+            = lnav::console::user_message::error("could not parse timestamp")
+                  .with_reason(msg);
+        lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
+    }
+    parent.fss_max_time = std::nullopt;
+    top_view->get_sub_source()->text_filters_changed();
+}
+
+void
+filter_sub_source::max_time_filter_row::ti_abort(textview_curses* top_view,
+                                                 textinput_curses& tc,
+                                                 filter_sub_source& parent)
+{
+    auto* tss = top_view->get_sub_source();
+    auto* ttt = dynamic_cast<text_time_translator*>(tss);
+
+    if (parent.fss_filter_state) {
+        ttt->set_max_row_time(parent.fss_max_time.value());
+    }
+    tss->text_filters_changed();
+}
+
+void
+filter_sub_source::text_filter_row::value_for(const render_state& rs,
+                                              attr_line_t& al)
+{
+    attr_line_builder alb(al);
+    if (this->tfr_filter->is_enabled()) {
+        al.append("\u25c6"_ok);
+    } else {
+        al.append("\u25c7"_comment);
+    }
+    al.append(" ");
+    switch (this->tfr_filter->get_type()) {
+        case text_filter::INCLUDE:
+            al.append(" ").append(lnav::roles::ok("IN")).append(" ");
+            break;
+        case text_filter::EXCLUDE:
+            if (this->tfr_filter->get_lang() == filter_lang_t::REGEX) {
+                al.append(lnav::roles::error("OUT")).append(" ");
+            } else {
+                al.append("    ");
+            }
+            break;
+        default:
+            ensure(0);
+            break;
+    }
+    al.append("   ");
+
+    {
+        auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
+        if (rs.rs_editing) {
+            alb.appendf(FMT_STRING("{:>9}"), "-");
+        } else {
+            alb.appendf(
+                FMT_STRING("{:>9L}"),
+                rs.rs_top_view->get_sub_source()->get_filtered_count_for(
+                    this->tfr_filter->get_index()));
+        }
+    }
+
+    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
+
+    attr_line_t content{this->tfr_filter->get_id()};
+    switch (this->tfr_filter->get_lang()) {
+        case filter_lang_t::REGEX:
+            readline_regex_highlighter(content, std::nullopt);
+            break;
+        case filter_lang_t::SQL:
+            readline_sql_highlighter(
+                content, lnav::sql::dialect::sqlite, std::nullopt);
+            break;
+        case filter_lang_t::NONE:
+            break;
+    }
+    al.append(content);
+}
+
+bool
+filter_sub_source::text_filter_row::handle_key(textview_curses* top_view,
+                                               const ncinput& ch)
+{
+    switch (ch.eff_text[0]) {
+        case ' ': {
+            auto& fs = top_view->get_sub_source()->get_filters();
+            fs.set_filter_enabled(this->tfr_filter,
+                                  !this->tfr_filter->is_enabled());
+            return true;
+        }
+        case 't': {
+            if (this->tfr_filter->get_type() == text_filter::INCLUDE) {
+                this->tfr_filter->set_type(text_filter::EXCLUDE);
+            } else {
+                this->tfr_filter->set_type(text_filter::INCLUDE);
+            }
+            return true;
+        }
+        case 'D': {
+            auto& fs = top_view->get_sub_source()->get_filters();
+
+            fs.delete_filter(this->tfr_filter->get_id());
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
+bool
+filter_sub_source::text_filter_row::prime_text_input(textview_curses* top_view,
+                                                     textinput_curses& ti,
+                                                     filter_sub_source& parent)
+{
+    static auto& prompt = lnav::prompt::get();
+
+    ti.tc_text_format = this->tfr_filter->get_lang() == filter_lang_t::SQL
+        ? text_format_t::TF_SQL
+        : text_format_t::TF_PCRE;
+    if (this->tfr_filter->get_lang() == filter_lang_t::SQL) {
+        prompt.refresh_sql_completions(*top_view);
+        prompt.refresh_sql_expr_completions(*top_view);
+    }
+    ti.set_content(this->tfr_filter->get_id());
+    if (this->tfr_filter->get_id().empty()) {
+        ti.tc_suggestion = top_view->get_input_suggestion();
+    }
+    auto retval = this->tfr_filter->is_enabled();
+    this->tfr_filter->disable();
+
+    return retval;
+}
+
+void
+filter_sub_source::text_filter_row::ti_change(textview_curses* top_view,
+                                              textinput_curses& rc)
+{
     auto new_value = rc.get_content();
+    auto* tss = top_view->get_sub_source();
+    auto& fs = tss->get_filters();
 
     top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     top_view->set_needs_update();
-    switch (tf->get_lang()) {
+    switch (this->tfr_filter->get_lang()) {
         case filter_lang_t::NONE:
             break;
         case filter_lang_t::REGEX: {
@@ -437,16 +889,16 @@ filter_sub_source::rl_change(textinput_curses& rc)
                     sugg = top_view->tc_selected_text->sti_value;
                 }
                 if (fs.get_filter(sugg) == nullptr) {
-                    this->fss_editor->tc_suggestion = sugg;
+                    rc.tc_suggestion = sugg;
                 } else {
-                    this->fss_editor->tc_suggestion.clear();
+                    rc.tc_suggestion.clear();
                 }
             } else {
                 auto regex_res
                     = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
 
-                this->rl_completion_request_int(
-                    rc, completion_request_type_t::partial);
+                this->ti_completion_request(
+                    top_view, rc, completion_request_type_t::partial);
                 if (regex_res.isErr()) {
                     auto pe = regex_res.unwrapErr();
                     lnav_data.ld_filter_help_status_source.fss_error.set_value(
@@ -454,7 +906,8 @@ filter_sub_source::rl_change(textinput_curses& rc)
                 } else {
                     auto& hm = top_view->get_highlights();
                     highlighter hl(regex_res.unwrap().to_shared());
-                    auto role = tf->get_type() == text_filter::EXCLUDE
+                    auto role
+                        = this->tfr_filter->get_type() == text_filter::EXCLUDE
                         ? role_t::VCR_DIFF_DELETE
                         : role_t::VCR_DIFF_ADD;
                     hl.with_role(role);
@@ -468,8 +921,8 @@ filter_sub_source::rl_change(textinput_curses& rc)
             break;
         }
         case filter_lang_t::SQL: {
-            this->rl_completion_request_int(rc,
-                                            completion_request_type_t::partial);
+            this->ti_completion_request(
+                top_view, rc, completion_request_type_t::partial);
 
             auto full_sql
                 = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), new_value);
@@ -513,29 +966,10 @@ filter_sub_source::rl_change(textinput_curses& rc)
 }
 
 void
-filter_sub_source::rl_history(textinput_curses& tc)
-{
-    switch (tc.tc_text_format) {
-        case text_format_t::TF_PCRE: {
-            std::vector<attr_line_t> poss;
-            this->fss_regexp_history.query_entries(
-                tc.get_content(),
-                [&poss](const auto& e) { poss.emplace_back(e.e_content); });
-            tc.open_popup_for_history(poss);
-            break;
-        }
-        case text_format_t::TF_SQL: {
-            break;
-        }
-        default:
-            ensure(false);
-            break;
-    }
-}
-
-void
-filter_sub_source::rl_completion_request_int(textinput_curses& tc,
-                                             completion_request_type_t crt)
+filter_sub_source::text_filter_row::ti_completion_request(
+    textview_curses* top_view,
+    textinput_curses& tc,
+    completion_request_type_t crt)
 {
     static const auto FILTER_HELP
         = help_text("filter", "filter the view by a pattern")
@@ -549,10 +983,8 @@ filter_sub_source::rl_completion_request_int(textinput_curses& tc,
                       .with_format(help_parameter_format_t::HPF_SQL_EXPR));
     static auto& prompt = lnav::prompt::get();
 
-    auto* top_view = *lnav_data.ld_view_stack.top();
     auto& al = tc.tc_lines[tc.tc_cursor.y];
     auto al_sf = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
-    std::string prefix;
     auto is_regex = tc.tc_text_format == text_format_t::TF_PCRE;
     auto parse_res = lnav::command::parse_for_prompt(
         lnav_data.ld_exec_context,
@@ -607,36 +1039,21 @@ filter_sub_source::rl_completion_request_int(textinput_curses& tc,
 }
 
 void
-filter_sub_source::rl_completion_request(textinput_curses& tc)
-{
-    this->rl_completion_request_int(tc, completion_request_type_t::full);
-}
-
-void
-filter_sub_source::rl_completion(textinput_curses& tc)
-{
-    static auto& prompt = lnav::prompt::get();
-
-    prompt.rl_completion(tc);
-}
-
-void
-filter_sub_source::rl_perform(textinput_curses& rc)
+filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
+                                               textinput_curses& ti,
+                                               filter_sub_source& parent)
 {
     static const intern_string_t INPUT_SRC = intern_string::lookup("input");
 
-    auto* top_view = *lnav_data.ld_view_stack.top();
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
-    auto iter = fs.begin() + this->tss_view->get_selection().value();
-    auto tf = *iter;
-    auto new_value = rc.get_content();
+    auto new_value = ti.get_content();
 
     fs.fs_generation += 1;
     if (new_value.empty()) {
-        this->rl_abort(rc);
+        this->ti_abort(top_view, ti, parent);
     } else {
-        switch (tf->get_lang()) {
+        switch (this->tfr_filter->get_lang()) {
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {
                 auto compile_res
@@ -646,16 +1063,22 @@ filter_sub_source::rl_perform(textinput_curses& rc)
                     auto ce = compile_res.unwrapErr();
                     auto um = lnav::console::to_user_message(INPUT_SRC, ce);
                     lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
-                    this->rl_abort(rc);
+                    this->ti_abort(top_view, ti, parent);
                 } else {
                     auto code_ptr = compile_res.unwrap().to_shared();
-                    tf->lf_deleted = true;
+                    this->tfr_filter->lf_deleted = true;
                     tss->text_filters_changed();
 
                     auto pf = std::make_shared<pcre_filter>(
-                        tf->get_type(), new_value, tf->get_index(), code_ptr);
+                        this->tfr_filter->get_type(),
+                        new_value,
+                        this->tfr_filter->get_index(),
+                        code_ptr);
 
-                    this->fss_regexp_history.insert_plain_content(new_value);
+                    parent.fss_regexp_history.insert_plain_content(new_value);
+
+                    auto iter
+                        = std::find(fs.begin(), fs.end(), this->tfr_filter);
 
                     *iter = pf;
                     tss->text_filters_changed();
@@ -690,7 +1113,7 @@ filter_sub_source::rl_perform(textinput_curses& rc)
                               .with_snippet(lnav::console::snippet::from(
                                   INPUT_SRC, sqlerr));
                     lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
-                    this->rl_abort(rc);
+                    this->ti_abort(top_view, ti, parent);
                 } else {
                     lnav_data.ld_log_source.set_sql_filter(new_value,
                                                            stmt.release());
@@ -702,72 +1125,60 @@ filter_sub_source::rl_perform(textinput_curses& rc)
     }
 
     top_view->reload_data();
-    this->tss_view->reload_data();
 }
 
 void
-filter_sub_source::rl_blur(textinput_curses& tc)
+filter_sub_source::text_filter_row::ti_abort(textview_curses* top_view,
+                                             textinput_curses& tc,
+                                             filter_sub_source& parent)
 {
-    auto* top_view = *lnav_data.ld_view_stack.top();
-    top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
-    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
-    lnav_data.ld_filter_help_status_source.fss_error.clear();
-    this->fss_editing = false;
-    tc.set_visible(false);
-    this->tss_view->set_enabled(true);
-}
-
-void
-filter_sub_source::rl_abort(textinput_curses& rc)
-{
-    auto* top_view = *lnav_data.ld_view_stack.top();
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
-    auto iter = fs.begin() + this->tss_view->get_selection().value();
-    auto tf = *iter;
 
     top_view->reload_data();
     fs.delete_filter("");
-    this->tss_view->reload_data();
-    this->tss_view->set_needs_update();
-    tf->set_enabled(this->fss_filter_state);
+    this->tfr_filter->set_enabled(parent.fss_filter_state);
     tss->text_filters_changed();
-    this->tss_view->reload_data();
 }
 
-void
-filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
+std::vector<std::unique_ptr<filter_sub_source::filter_row>>
+filter_sub_source::rows_for(textview_curses* tc) const
 {
-    set_view_mode(ln_mode_t::PAGING);
-    lnav_data.ld_filter_view.reload_data();
-}
+    auto retval = row_vector{};
+    auto* tss = tc->get_sub_source();
+    if (tss == nullptr) {
+        return retval;
+    }
 
-bool
-filter_sub_source::text_handle_mouse(
-    textview_curses& tc,
-    const listview_curses::display_line_content_t&,
-    mouse_event& me)
-{
-    if (this->fss_editing) {
-        return true;
+    const auto* ttt = dynamic_cast<text_time_translator*>(tss);
+
+    if (ttt != nullptr) {
+        if (this->fss_min_time) {
+            retval.emplace_back(std::make_unique<min_time_filter_row>(
+                this->fss_min_time.value()));
+        } else {
+            auto min_time = ttt->get_min_row_time();
+            if (min_time) {
+                retval.emplace_back(
+                    std::make_unique<min_time_filter_row>(min_time.value()));
+            }
+        }
+        if (this->fss_max_time) {
+            retval.emplace_back(std::make_unique<max_time_filter_row>(
+                this->fss_max_time.value()));
+        } else {
+            auto max_time = ttt->get_max_row_time();
+            if (max_time) {
+                retval.emplace_back(
+                    std::make_unique<max_time_filter_row>(max_time.value()));
+            }
+        }
     }
-    auto nci = ncinput{};
-    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
-        nci.id = ' ';
-        nci.eff_text[0] = ' ';
-        this->list_input_handle_key(tc, nci);
+
+    auto& fs = tss->get_filters();
+    for (auto& tf : fs) {
+        retval.emplace_back(std::make_unique<text_filter_row>(tf));
     }
-    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 4, 7)) {
-        nci.id = 't';
-        nci.eff_text[0] = 't';
-        this->list_input_handle_key(tc, nci);
-    }
-    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1}))
-    {
-        nci.id = '\r';
-        nci.eff_text[0] = '\r';
-        this->list_input_handle_key(tc, nci);
-    }
-    return true;
+
+    return retval;
 }

@@ -248,6 +248,10 @@ public:
 
     bool is_selectable() const { return this->lv_selectable; }
 
+    void set_ensure_selection(bool val) { this->lv_ensure_selection = val; }
+
+    bool get_ensure_selection() const { return this->lv_ensure_selection; }
+
     void set_selection(vis_line_t sel);
 
     void set_selection_without_context(vis_line_t sel);
@@ -613,6 +617,7 @@ protected:
     bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{-1_vl};
+    bool lv_ensure_selection{false};
     bool lv_sync_selection_and_top{false};
 
     timeval lv_mouse_time{0, 0};

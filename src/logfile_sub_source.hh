@@ -409,9 +409,15 @@ public:
         return this->lss_index[this->lss_filtered_index[vl]].value();
     }
 
-    size_t get_filtered_before() const
+    size_t get_filtered_before() const { return this->lss_filtered_index[0]; }
+
+    size_t get_filtered_after() const
     {
-         return this->lss_filtered_index[0];
+        if (this->lss_filtered_index.empty()) {
+            return 0;
+        }
+
+        return this->lss_index.size() - this->lss_filtered_index.back() - 1;
     }
 
     content_line_t at_base(vis_line_t vl)
@@ -680,6 +686,13 @@ public:
     bool is_indexing_in_progress() const
     {
         return this->lss_indexing_in_progress;
+    }
+
+    void clear_preview()
+    {
+        text_sub_source::clear_preview();
+
+        this->set_preview_sql_filter(nullptr);
     }
 
 protected:

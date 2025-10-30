@@ -116,6 +116,8 @@ public:
     std::vector<attr_line_t> fos_meta_lines;
     std::optional<content_line_t> fos_header_line;
     std::optional<logfile_sub_source::line_context_t> fos_header_line_context;
+    bool fos_header_has_time_offset{false};
+    bool fos_header_has_time_preview{false};
 
     struct row_info {
         std::optional<logline_value_meta> ri_meta;

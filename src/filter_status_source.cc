@@ -41,6 +41,8 @@ static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit "_frag;
 
 static constexpr auto CREATE_HELP
     = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
+static constexpr auto MIN_MAX_TIME_HELP
+    = ANSI_BOLD("m") "/" ANSI_BOLD("M") ": Set min/max time";
 static constexpr auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
 static constexpr auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
 static constexpr auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
@@ -262,51 +264,78 @@ size_t
 filter_help_status_source::statusview_fields()
 {
     lnav_data.ld_view_stack.top() | [this](auto tc) {
-        text_sub_source* tss = tc->get_sub_source();
+        auto* tss = tc->get_sub_source();
         if (tss == nullptr) {
             return;
         }
+
+        auto* ttt = dynamic_cast<text_time_translator*>(tss);
 
         if (lnav_data.ld_mode == ln_mode_t::FILTER) {
             static auto* editor = injector::get<filter_sub_source*>();
             auto& lv = lnav_data.ld_filter_view;
             auto sel = lv.get_selection();
-            auto& fs = tss->get_filters();
-
-            if (editor->fss_editing) {
-                auto tf = *(fs.begin() + sel.value());
-                auto lang = tf->get_lang() == filter_lang_t::SQL ? "an SQL"
-                                                                 : "a regular";
-
-                if (tf->get_type() == text_filter::type_t::INCLUDE) {
-                    this->fss_help.set_value(
-                        "                        "
-                        "Enter %s expression to match lines to filter in:",
-                        lang);
-                } else {
-                    this->fss_help.set_value(
-                        "                        "
-                        "Enter %s expression to match lines to filter out:",
-                        lang);
-                }
-            } else if (fs.empty()) {
-                this->fss_help.set_value("  %s", CREATE_HELP);
-            } else if (sel) {
-                auto tf = *(fs.begin() + sel.value());
-
+            auto* fss = dynamic_cast<filter_sub_source*>(lv.get_sub_source());
+            auto rows = fss->rows_for(tc);
+            if (rows.empty()) {
                 this->fss_help.set_value(
-                    "  %s  %s%s  %s  %s%s  %s  %s%s",
+                    "  %s  %s",
                     CREATE_HELP,
-                    ENABLE_HELP,
-                    tf->is_enabled() ? "Disable" : "Enable ",
-                    EDIT_HELP,
-                    TOGGLE_HELP,
-                    tf->get_type() == text_filter::type_t::INCLUDE ? "OUT"
-                                                                   : "IN ",
-                    DELETE_HELP,
-                    FILTERING_HELP,
-                    tss->tss_apply_filters ? "Disable Filtering"
-                                           : "Enable Filtering");
+                    ttt != nullptr ? MIN_MAX_TIME_HELP : "");
+            } else {
+                auto& row = rows[sel.value()];
+                auto* tfr = dynamic_cast<filter_sub_source::text_filter_row*>(
+                    row.get());
+                if (editor->fss_editing) {
+                    if (tfr != nullptr) {
+                        auto& tf = tfr->tfr_filter;
+                        auto lang = tf->get_lang() == filter_lang_t::SQL
+                            ? "an SQL"
+                            : "a regular";
+
+                        if (tf->get_type() == text_filter::type_t::INCLUDE) {
+                            this->fss_help.set_value(
+                                "                           "
+                                "Enter %s expression to match lines to filter "
+                                "in:",
+                                lang);
+                        } else {
+                            this->fss_help.set_value(
+                                "                           "
+                                "Enter %s expression to match lines to filter "
+                                "out:",
+                                lang);
+                        }
+                    } else {
+                        this->fss_help.set_value(
+                            "                           "
+                            "Enter timestamp:");
+                    }
+                } else if (tfr != nullptr) {
+                    auto& tf = tfr->tfr_filter;
+                    this->fss_help.set_value(
+                        "  %s  %s%s  %s  %s%s  %s  %s%s",
+                        CREATE_HELP,
+                        ENABLE_HELP,
+                        tf->is_enabled() ? "Disable" : "Enable ",
+                        EDIT_HELP,
+                        TOGGLE_HELP,
+                        tf->get_type() == text_filter::type_t::INCLUDE ? "OUT"
+                                                                       : "IN ",
+                        DELETE_HELP,
+                        FILTERING_HELP,
+                        tss->tss_apply_filters ? "Disable Filtering"
+                                               : "Enable Filtering");
+                } else {
+                    this->fss_help.set_value("  %s  %s  %s  %s%s",
+                                             CREATE_HELP,
+                                             EDIT_HELP,
+                                             DELETE_HELP,
+                                             FILTERING_HELP,
+                                             tss->tss_apply_filters
+                                                 ? "Disable Filtering"
+                                                 : "Enable Filtering");
+                }
             }
         } else if ((lnav_data.ld_mode == ln_mode_t::FILES
                     || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS)

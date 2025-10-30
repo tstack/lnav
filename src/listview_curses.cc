@@ -182,6 +182,9 @@ listview_curses::reload_data()
             } else if (this->lv_selection >= this->get_inner_height()) {
                 this->set_selection_without_context(this->get_inner_height()
                                                     - 1_vl);
+            } else if (this->lv_ensure_selection && this->lv_selection == -1_vl)
+            {
+                this->set_selection_without_context(0_vl);
             }
 
             this->update_top_from_selection();
@@ -207,7 +210,9 @@ listview_curses::handle_key_using_delegates(const ncinput& ch)
 bool
 listview_curses::handle_key(const ncinput& ch)
 {
-    this->handle_key_using_delegates(ch);
+    if (this->handle_key_using_delegates(ch)) {
+        return true;
+    }
 
     auto height = 0_vl;
 

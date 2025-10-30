@@ -31,10 +31,15 @@
 #define filter_sub_source_hh
 
 #include <memory>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
+#include "base/attr_line.hh"
 #include "textinput.history.hh"
+#include "textinput_curses.hh"
 #include "textview_curses.hh"
+#include "view_curses.hh"
 
 class textinput_curses;
 
@@ -48,7 +53,10 @@ public:
     using injectable
         = filter_sub_source(std::shared_ptr<textinput_curses> editor);
 
-    filter_sub_source(const filter_sub_source*) = delete;
+    filter_sub_source(const filter_sub_source&) = delete;
+    filter_sub_source(filter_sub_source&&) = delete;
+    filter_sub_source& operator=(const filter_sub_source&) = delete;
+    filter_sub_source& operator=(filter_sub_source&&) = delete;
 
     ~filter_sub_source() override = default;
 
@@ -103,11 +111,131 @@ public:
 
     void rl_abort(textinput_curses& rc);
 
+    struct render_state {
+        textview_curses* rs_top_view;
+        bool rs_editing{false};
+    };
+
+    struct filter_row {
+        virtual ~filter_row() = default;
+
+        virtual void value_for(const render_state& rs, attr_line_t& al) = 0;
+        virtual bool handle_key(textview_curses* top_view, const ncinput& ch)
+            = 0;
+        virtual bool prime_text_input(textview_curses* top_view,
+                                      textinput_curses& ti,
+                                      filter_sub_source& parent)
+            = 0;
+        virtual void ti_change(textview_curses* top_view, textinput_curses& rc)
+            = 0;
+        virtual void ti_completion_request(textview_curses* top_view,
+                                           textinput_curses& tc,
+                                           completion_request_type_t crt)
+            = 0;
+        virtual void ti_perform(textview_curses* top_view,
+                                textinput_curses& tc,
+                                filter_sub_source& parent)
+            = 0;
+        virtual void ti_abort(textview_curses* top_view,
+                              textinput_curses& tc,
+                              filter_sub_source& parent)
+            = 0;
+    };
+
+    struct time_filter_row : filter_row {
+        explicit time_filter_row(const timeval& tv) : tfr_time(tv) {}
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override;
+        void ti_completion_request(textview_curses* top_view,
+                                   textinput_curses& tc,
+                                   completion_request_type_t crt) override;
+
+        Result<timeval, std::string> parse_time(textview_curses* top_view,
+                                                textinput_curses& tc);
+
+        timeval tfr_time;
+    };
+
+    struct min_time_filter_row : time_filter_row {
+        explicit min_time_filter_row(const timeval& tv) : time_filter_row(tv) {}
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override
+        {
+            parent.fss_min_time = this->tfr_time;
+            return time_filter_row::prime_text_input(top_view, ti, parent);
+        }
+        bool handle_key(textview_curses* top_view, const ncinput& ch) override;
+        void value_for(const render_state& rs, attr_line_t& al) override;
+        void ti_change(textview_curses* top_view,
+                       textinput_curses& rc) override;
+        void ti_perform(textview_curses* top_view,
+                        textinput_curses& tc,
+                        filter_sub_source& parent) override;
+        void ti_abort(textview_curses* top_view,
+                      textinput_curses& tc,
+                      filter_sub_source& parent) override;
+    };
+
+    struct max_time_filter_row : time_filter_row {
+        explicit max_time_filter_row(const timeval& tv) : time_filter_row(tv) {}
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override
+        {
+            parent.fss_max_time = this->tfr_time;
+            return time_filter_row::prime_text_input(top_view, ti, parent);
+        }
+        bool handle_key(textview_curses* top_view, const ncinput& ch) override;
+        void value_for(const render_state& rs, attr_line_t& al) override;
+        void ti_change(textview_curses* top_view,
+                       textinput_curses& rc) override;
+        void ti_perform(textview_curses* top_view,
+                        textinput_curses& tc,
+                        filter_sub_source& parent) override;
+        void ti_abort(textview_curses* top_view,
+                      textinput_curses& tc,
+                      filter_sub_source& parent) override;
+    };
+
+    struct text_filter_row : filter_row {
+        explicit text_filter_row(const std::shared_ptr<text_filter>& tf)
+            : tfr_filter(tf)
+        {
+        }
+
+        void value_for(const render_state& rs, attr_line_t& al) override;
+        bool handle_key(textview_curses* top_view, const ncinput& ch) override;
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override;
+        void ti_change(textview_curses* top_view,
+                       textinput_curses& rc) override;
+        void ti_completion_request(textview_curses* top_view,
+                                   textinput_curses& tc,
+                                   completion_request_type_t crt) override;
+        void ti_perform(textview_curses* top_view,
+                        textinput_curses& tc,
+                        filter_sub_source& parent) override;
+        void ti_abort(textview_curses* top_view,
+                      textinput_curses& tc,
+                      filter_sub_source& parent) override;
+
+        std::shared_ptr<text_filter> tfr_filter;
+    };
+
+    using row_vector = std::vector<std::unique_ptr<filter_row>>;
+
+    row_vector rows_for(textview_curses* tc) const;
+
     std::shared_ptr<textinput_curses> fss_editor;
     lnav::textinput::history fss_regexp_history;
     lnav::textinput::history fss_sql_history;
     std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;
+    std::optional<timeval> fss_min_time;
+    std::optional<timeval> fss_max_time;
 
     bool fss_editing{false};
     bool fss_filter_state{false};

@@ -11,6 +11,7 @@ TIME_FORMATS = \
     "%Y-%m-%d %H:%M:%S.%L %z" \
     "%Y-%m-%d %H:%M:%S.%L %Z" \
     "%Y-%m-%d %H:%M:%S:%L %z" \
+    "%Y-%m-%d %H:%M:%S.%f" \
     "%Y-%m-%d %H:%M:%S,%L" \
     "%Y-%m-%d %H:%M:%S.%L" \
     "%Y-%m-%d %H:%M:%S%z" \

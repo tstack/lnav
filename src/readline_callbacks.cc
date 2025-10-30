@@ -1021,9 +1021,7 @@ rl_change(textinput_curses& rc)
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     rc.tc_suggestion.clear();
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    tc->clear_preview();
     lnav_data.ld_user_message_source.clear();
 
     log_debug("rl_change");
@@ -1074,9 +1072,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
     std::string term_val;
     std::string name;
 
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    tc->clear_preview();
     tc->reload_data();
     lnav_data.ld_user_message_source.clear();
 
@@ -1423,9 +1419,7 @@ lnav_rl_abort(textinput_curses& rc)
     lnav_data.ld_example_source.clear();
     lnav_data.ld_doc_source.clear();
     clear_preview();
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    tc->clear_preview();
 
     std::vector<lnav::console::user_message> errors;
     lnav_config = rollback_lnav_config;
@@ -1465,9 +1459,7 @@ rl_callback(textinput_curses& rc)
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
     clear_preview();
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
-    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    tc->clear_preview();
     layout_views();
 
     auto new_mode = ln_mode_t::PAGING;

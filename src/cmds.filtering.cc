@@ -110,25 +110,33 @@ com_hide_line(exec_context& ec,
                                  all_args);
         }
 
-        if (tv_opt && !ec.ec_dry_run) {
-            char time_text[256];
-            std::string relation;
-
-            sql_strftime(time_text, sizeof(time_text), tv_opt.value());
-            if (args[0] == "hide-lines-before") {
-                log_debug("set min");
-                ttt->set_min_row_time(tv_opt.value());
-                relation = "before";
+        if (tv_opt) {
+            if (ec.ec_dry_run) {
+                if (args[0] == "hide-lines-before") {
+                    ttt->ttt_preview_min_time = tv_opt.value();
+                } else {
+                    ttt->ttt_preview_max_time = tv_opt.value();
+                }
             } else {
-                ttt->set_max_row_time(tv_opt.value());
-                relation = "after";
+                char time_text[256];
+                std::string relation;
+
+                sql_strftime(time_text, sizeof(time_text), tv_opt.value());
+                if (args[0] == "hide-lines-before") {
+                    ttt->set_min_row_time(tv_opt.value());
+                    relation = "before";
+                } else {
+                    ttt->set_max_row_time(tv_opt.value());
+                    relation = "after";
+                }
+
+                tc->get_sub_source()->text_filters_changed();
+                tc->reload_data();
+
+                retval = fmt::format(FMT_STRING("info: hiding lines {} {}"),
+                                     relation,
+                                     time_text);
             }
-
-            tc->get_sub_source()->text_filters_changed();
-            tc->reload_data();
-
-            retval = fmt::format(
-                FMT_STRING("info: hiding lines {} {}"), relation, time_text);
         }
     }
 
