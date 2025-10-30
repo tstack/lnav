@@ -412,6 +412,10 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             lnav_data.ld_scroll_broadcaster(tc);
         }
     };
+
+    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+        lnav_data.ld_files_view.reload_data();
+    }
     // log_trace("done");
 
     return retval;
