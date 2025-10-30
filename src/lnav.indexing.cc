@@ -222,15 +222,21 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     auto& log_view = lnav_data.ld_views[LNV_LOG];
     auto& text_view = lnav_data.ld_views[LNV_TEXT];
     bool scroll_downs[LNV__MAX];
-    std::optional<vis_line_t> scroll_down_sels[LNV__MAX];
+    std::optional<text_time_translator::row_info> scroll_down_sels[LNV__MAX];
     rebuild_indexes_result_t retval;
     bool is_headless = lnav_data.ld_flags & LNF_HEADLESS;
 
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
+        auto* ttt = dynamic_cast<text_time_translator*>(view.get_sub_source());
+        if (ttt == nullptr) {
+            continue;
+        }
         auto sel_opt = view.get_selection();
 
-        scroll_down_sels[lpc] = sel_opt;
+        if (sel_opt.has_value()) {
+            scroll_down_sels[lpc] = ttt->time_for_row(sel_opt.value());
+        }
         if (view.is_selectable() && sel_opt.has_value()) {
             auto inner_height = view.get_inner_height();
 
@@ -374,11 +380,19 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
         for (auto lpc : {LNV_LOG, LNV_TEXT}) {
             auto& scroll_view = lnav_data.ld_views[lpc];
+            auto* ttt = dynamic_cast<text_time_translator*>(
+                scroll_view.get_sub_source());
+            if (ttt == nullptr) {
+                continue;
+            }
+            auto sel_opt = scroll_view.get_selection();
+            std::optional<text_time_translator::row_info> curr_row_info;
 
-            if (scroll_downs[lpc]
-                && scroll_down_sels[lpc] == scroll_view.get_selection())
-            {
-                auto sel_opt = scroll_view.get_selection();
+            if (sel_opt.has_value()) {
+                curr_row_info = ttt->time_for_row(sel_opt.value());
+            }
+
+            if (scroll_downs[lpc] && scroll_down_sels[lpc] == curr_row_info) {
                 if (scroll_view.is_selectable() && sel_opt.has_value()) {
                     scroll_view.set_selection_to_last_row();
                 } else if (scroll_view.get_top_for_last_row()

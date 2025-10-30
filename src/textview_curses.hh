@@ -268,6 +268,11 @@ public:
 
         row_info(timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
 
+        bool operator==(const row_info& rhs) const
+        {
+            return this->ri_time == rhs.ri_time && this->ri_id == rhs.ri_id;
+        }
+
         timeval ri_time{0, 0};
         int64_t ri_id{-1};
     };

@@ -1314,6 +1314,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         signal(SIGWINCH, SIG_IGN);
         lnav_data.ld_winched = false;
         lnav_data.ld_window = nullptr;
+        lnav_data.ld_filter_view.set_sub_source(nullptr);
         for (auto& tv : lnav_data.ld_views) {
             tv.set_window(nullptr);
         }
