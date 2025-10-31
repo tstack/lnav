@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  COVERITY_SUPPRESS_ASSERT: 2564
+  COVERITY_SUPPRESS_ASSERT: 2564,2573
 
 jobs:
   coverity:
