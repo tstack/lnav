@@ -69,7 +69,7 @@ Breadcrumb Bar
 
    Screenshot of the breadcrumb bar focused and navigating the help text
 
-To focus on the breadcrumb bar, press :kbd:`ENTER`.  The :kbd:`←`/:kbd:`→`
+To focus on the breadcrumb bar, press :kbd:`\``.  The :kbd:`←`/:kbd:`→`
 cursor keys can be used to select a crumb and the :kbd:`↑`/:kbd:`↓` keys can
 be used select a value of that crumb.  To accept a value and drop focus on the
 bar, press :kbd:`ENTER`.  To accept a value and move to the next crumb, press
