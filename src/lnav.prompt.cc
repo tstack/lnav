@@ -1034,7 +1034,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         {
                             auto path_str = entry.path().string();
                             log_debug("  entry: %s", path_str.c_str());
-                            if (entry.is_directory()) {
+                            auto is_dir = entry.is_directory(ec);
+                            if (ec) {
+                                log_error("  bad entry: %s",
+                                          ec.message().c_str());
+                                continue;
+                            }
+                            if (is_dir) {
                                 path_str.push_back('/');
                             } else if (ht->ht_format
                                        == help_parameter_format_t::
