@@ -395,6 +395,7 @@ filter_sub_source::rl_history(textinput_curses& tc)
             tc.open_popup_for_history(poss);
             break;
         }
+        case text_format_t::TF_UNKNOWN:
         case text_format_t::TF_SQL: {
             break;
         }
