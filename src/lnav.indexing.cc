@@ -427,7 +427,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
     };
 
-    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+    if (retval.rir_changes > 0 && !(lnav_data.ld_flags & LNF_HEADLESS)) {
         lnav_data.ld_files_view.reload_data();
     }
     // log_trace("done");

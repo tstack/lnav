@@ -29,6 +29,7 @@
  * @file file_collection.cc
  */
 
+#include <mutex>
 #include <unordered_map>
 
 #include "file_collection.hh"
@@ -730,16 +731,17 @@ file_collection::expand_filename(
                                 gl->gl_pathv[lpc],
                                 errmsg);
                     } else if (loo.loo_filename.empty()) {
-                        file_collection retval;
+                        auto in_map
+                            = this->fc_name_to_errors->readAccess()->count(
+                                  path_str)
+                            > 0;
 
-                        if (gl->gl_pathc == 1) {
-                            if (this->fc_name_to_errors->readAccess()->count(
-                                    filename_key)
-                                == 0)
-                            {
+                        if (!in_map) {
+                            file_collection retval;
+                            if (gl->gl_pathc == 1 && path == path_str) {
                                 log_error("failed to find path: %s (%s) -- %s",
                                           filename_key.c_str(),
-                                          gl->gl_pathv[lpc],
+                                          path.c_str(),
                                           errmsg);
                                 retval.fc_name_to_errors->writeAccess()
                                     ->emplace(filename_key,
@@ -747,20 +749,20 @@ file_collection::expand_filename(
                                                   time(nullptr),
                                                   errmsg,
                                               });
+                            } else {
+                                log_error("failed to find path: %s -- %s",
+                                          path_str.c_str(),
+                                          errmsg);
+                                retval.fc_name_to_errors->writeAccess()
+                                    ->emplace(path_str,
+                                              file_error_info{
+                                                  time(nullptr),
+                                                  errmsg,
+                                              });
                             }
-                        } else {
-                            log_error("failed to find path: %s -- %s",
-                                      path_str.c_str(),
-                                      errmsg);
-                            retval.fc_name_to_errors->writeAccess()->emplace(
-                                path_str,
-                                file_error_info{
-                                    time(nullptr),
-                                    errmsg,
-                                });
+                            fq.push_back(lnav::futures::make_ready_future(
+                                std::move(retval)));
                         }
-                        fq.push_back(lnav::futures::make_ready_future(
-                            std::move(retval)));
                     }
                     continue;
                 }
