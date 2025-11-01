@@ -2917,6 +2917,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         lnav_data.ld_child_pollers.clear();
 
+        delete lnav_data.ld_views[LNV_SCHEMA].get_sub_source();
         delete lnav_data.ld_views[LNV_PRETTY].get_sub_source();
         for (auto& tc : lnav_data.ld_views) {
             tc.deinit();
