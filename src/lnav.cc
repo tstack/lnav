@@ -1147,6 +1147,11 @@ ui_execute_init_commands(
                           std::string>>& cmd_results,
     std::optional<ui_clock::time_point> deadline)
 {
+    if (lnav_data.ld_commands.empty()) {
+        lnav_data.ld_cmd_init_done = true;
+        return;
+    }
+
     std::error_code errc;
     std::filesystem::create_directories(lnav::paths::workdir(), errc);
     auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
