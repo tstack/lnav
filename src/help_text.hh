@@ -135,14 +135,7 @@ struct help_text {
 
     help_text() = default;
 
-    help_text(const char* name, const char* summary = "") noexcept
-        : ht_name(name), ht_summary(summary)
-    {
-        if (name[0] == ':') {
-            this->ht_context = help_context_t::HC_COMMAND;
-            this->ht_name = &name[1];
-        }
-    }
+    help_text(const char* name, const char* summary = "") noexcept;
 
     help_text& command() noexcept
     {

@@ -121,6 +121,18 @@ code::get_named_captures() const
     return retval;
 }
 
+matcher::matches_result
+code::find_in(string_fragment in, uint32_t options) const
+{
+    thread_local match_data md = this->create_match_data();
+
+    if (md.md_ovector_count < this->p_match_proto.md_ovector_count) {
+        md = this->create_match_data();
+    }
+
+    return this->capture_from(in).into(md).matches(options);
+}
+
 size_t
 code::match_partial(string_fragment in) const
 {
@@ -291,7 +303,7 @@ code::replace(string_fragment str, const char* repl) const
         remaining = find_res->f_remaining;
         bool in_escape = false;
 
-        retval.append(&str.data()[start],(all.sf_begin - start));
+        retval.append(&str.data()[start], (all.sf_begin - start));
         start = all.sf_end;
         for (int lpc = 0; repl[lpc]; lpc++) {
             auto ch = repl[lpc];
@@ -333,6 +345,22 @@ code::replace(string_fragment str, const char* repl) const
     }
 
     return retval;
+}
+
+code
+code::from_const(string_fragment sf, int options)
+{
+    auto res = from(sf, options);
+
+    if (res.isErr()) {
+        fprintf(stderr,
+                "failed to compile constant regex: %.*s\n",
+                sf.length(),
+                sf.data());
+        fprintf(stderr, "  %s\n", res.unwrapErr().get_message().c_str());
+    }
+
+    return res.unwrap();
 }
 
 int

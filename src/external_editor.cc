@@ -82,11 +82,11 @@ get_config_dir_mtime(const std::filesystem::path& path,
     return 0;
 }
 
-static std::optional<impl>
+static std::optional<std::string>
 get_impl(const std::filesystem::path& path)
 {
     const auto& cfg = injector::get<const config&>();
-    std::vector<std::tuple<time64_t, bool, impl>> candidates;
+    std::vector<std::tuple<time64_t, bool, const impl*>> candidates;
 
     log_debug("editor impl count: %d", cfg.c_impls.size());
     for (const auto& [name, impl] : cfg.c_impls) {
@@ -104,25 +104,24 @@ get_impl(const std::filesystem::path& path)
                       .has_value()
                 : false;
             candidates.emplace_back(
-                get_config_dir_mtime(path, impl.i_config_dir), prefers, impl);
+                get_config_dir_mtime(path, impl.i_config_dir), prefers, &impl);
         }
     }
 
-    std::stable_sort(candidates.begin(),
-                     candidates.end(),
-                     [](const auto& lhs, const auto& rhs) {
-                         const auto& [lmtime, lprefers, limpl] = lhs;
-                         const auto& [rmtime, rprefers, rimpl] = rhs;
+    std::sort(candidates.begin(),
+              candidates.end(),
+              [](const auto& lhs, const auto& rhs) {
+                  const auto& [lmtime, lprefers, limpl] = lhs;
+                  const auto& [rmtime, rprefers, rimpl] = rhs;
 
-                         return lmtime > rmtime ||
-                             (lmtime == rmtime && lprefers);
-                     });
+                  return lmtime > rmtime || (lmtime == rmtime && lprefers);
+              });
 
     if (candidates.empty()) {
         return std::nullopt;
     }
 
-    return std::get<2>(candidates.front());
+    return std::get<2>(candidates.front())->i_command;
 }
 
 Result<void, std::string>
@@ -136,7 +135,7 @@ open(std::filesystem::path p, uint32_t line, uint32_t col)
         return Err(MSG);
     }
 
-    log_info("external editor command: %s", impl->i_command.c_str());
+    log_info("external editor command: %s", impl->c_str());
 
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child_pid_res = lnav::pid::from_fork();
@@ -159,7 +158,7 @@ open(std::filesystem::path p, uint32_t line, uint32_t col)
         auto col_str = fmt::to_string(col);
         setenv("COL", col_str.c_str(), 1);
 
-        execlp("sh", "sh", "-c", impl->i_command.c_str(), nullptr);
+        execlp("sh", "sh", "-c", impl->c_str(), nullptr);
         _exit(EXIT_FAILURE);
     }
     log_debug("started external editor, pid: %d", child_pid.in());

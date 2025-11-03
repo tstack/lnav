@@ -230,12 +230,8 @@ read_format_bool(yajlpp_parse_context* ypc, int val)
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "convert-to-local-time") {
-        elf->lf_date_time.dts_local_time = val;
-    } else if (field_name == "json") {
-        if (val) {
-            elf->elf_type = external_log_format::elf_type_t::ELF_TYPE_JSON;
-        }
+    if (field_name == "json" && val) {
+        elf->elf_type = external_log_format::elf_type_t::ELF_TYPE_JSON;
     }
 
     return 1;

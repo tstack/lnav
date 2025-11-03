@@ -120,9 +120,8 @@ bookmark_type_t::get_type_names()
     for (const auto& bt : get_all_types()) {
         retval.emplace_back(bt.get_name());
     }
-    std::stable_sort(
-        retval.begin(), retval.end(), [](const auto& lhs, const auto& rhs) {
-            return lhs < rhs;
-        });
+    std::sort(retval.begin(),
+              retval.end(),
+              [](const auto& lhs, const auto& rhs) { return lhs < rhs; });
     return retval;
 }

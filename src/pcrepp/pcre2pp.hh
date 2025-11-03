@@ -269,14 +269,7 @@ public:
     template<typename T, std::size_t N>
     static code from_const(const T (&str)[N], int options = 0)
     {
-        auto res = from(string_fragment::from_const(str), options);
-
-        if (res.isErr()) {
-            fprintf(stderr, "failed to compile constant regex: %s\n", str);
-            fprintf(stderr, "  %s\n", res.unwrapErr().get_message().c_str());
-        }
-
-        return res.unwrap();
+        return from_const(string_fragment::from_const(str), options);
     }
 
     const std::string& get_pattern() const { return this->p_pattern; }
@@ -309,16 +302,7 @@ public:
     }
 
     matcher::matches_result find_in(string_fragment in,
-                                    uint32_t options = 0) const
-    {
-        thread_local match_data md = this->create_match_data();
-
-        if (md.md_ovector_count < this->p_match_proto.md_ovector_count) {
-            md = this->create_match_data();
-        }
-
-        return this->capture_from(in).into(md).matches(options);
-    }
+                                    uint32_t options = 0) const;
 
     size_t match_partial(string_fragment in) const;
 
@@ -339,6 +323,8 @@ public:
 private:
     friend matcher;
     friend match_data;
+
+    static code from_const(string_fragment sf, int options);
 
     auto_mem<pcre2_code> p_code;
     std::string p_pattern;

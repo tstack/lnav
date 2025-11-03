@@ -40,6 +40,8 @@
 namespace lnav::external_editor {
 
 struct impl {
+    impl() = default;
+
     std::string i_test_command;
     std::string i_command;
     std::filesystem::path i_config_dir;

@@ -65,6 +65,19 @@ status_field::set_value(const string_fragment& value)
     return true;
 }
 
+bool
+status_field::set_value(const char* fmt, ...)
+{
+    char buffer[256];
+    va_list args;
+
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    auto retval = this->set_value(std::string(buffer));
+    va_end(args);
+
+    return retval;
+}
 
 void
 status_field::do_cylon()

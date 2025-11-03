@@ -66,18 +66,7 @@ public:
      * @param fmt The format string.
      * @param ... Arguments for the format.
      */
-    bool set_value(const char* fmt, ...)
-    {
-        char buffer[256];
-        va_list args;
-
-        va_start(args, fmt);
-        vsnprintf(buffer, sizeof(buffer), fmt, args);
-        auto retval = this->set_value(std::string(buffer));
-        va_end(args);
-
-        return retval;
-    }
+    bool set_value(const char* fmt, ...);
 
     void set_stitch_value(role_t left, role_t right);
 

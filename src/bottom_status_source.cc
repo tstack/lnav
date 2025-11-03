@@ -204,7 +204,7 @@ bottom_status_source::update_loading(file_off_t off,
             sf.clear();
         }
     } else if (off == total) {
-        static const std::vector<std::string> DOTS = {
+        static const char* const DOTS[] = {
             "   ",
             ".  ",
             ".. ",
@@ -212,12 +212,12 @@ bottom_status_source::update_loading(file_off_t off,
             ".. ",
             ".  ",
         };
+        static auto DOTS_LEN = std::distance(std::begin(DOTS), std::end(DOTS));
 
         this->bss_load_percent += 1;
         sf.set_cylon(true);
         sf.set_role(role_t::VCR_ACTIVE_STATUS2);
-        sf.set_value(" Working%s  ",
-                     DOTS[this->bss_load_percent % DOTS.size()].c_str());
+        sf.set_value(" Working%s  ", DOTS[this->bss_load_percent % DOTS_LEN]);
     } else {
         int pct = (int) (((double) off / (double) total) * 100.0);
 
