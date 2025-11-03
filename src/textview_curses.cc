@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "textview_curses.hh"
@@ -157,7 +158,7 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
 {
     auto ll = this->text_accel_get_line(vl);
     auto curr_tv = ll->get_timeval();
-    struct timeval diff_tv;
+    timeval diff_tv;
 
     auto prev_umark = tc.get_bookmarks()[&textview_curses::BM_USER].prev(vl);
     auto next_umark = tc.get_bookmarks()[&textview_curses::BM_USER].next(vl);
@@ -921,9 +922,12 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 
     const auto& user_marks = this->tc_bookmarks[&BM_USER];
     const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
-    if (user_marks.bv_tree.exists(row) || user_expr_marks.bv_tree.exists(row)) {
+    if (this->tc_mark_style
+        && (user_marks.bv_tree.exists(row)
+            || user_expr_marks.bv_tree.exists(row)))
+    {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_STYLE.value(text_attrs::with_reverse()));
+                        this->tc_mark_style.value());
     }
 }
 
@@ -1073,7 +1077,7 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
     if (marked) {
         bv.insert_once(vl);
     } else {
-        bv.bv_tree.erase(vl);
+        bv.erase(vl);
     }
     if (this->tc_sub_source) {
         this->tc_sub_source->text_mark(bm, vl, marked);
@@ -1107,6 +1111,9 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
     for (auto curr_line = start_line; curr_line <= end_line; ++curr_line) {
         auto& bv = this->tc_bookmarks[bm];
         auto [insert_iter, added] = bv.insert_once(curr_line);
+        if (!added) {
+            bv.erase(curr_line);
+        }
         if (this->tc_sub_source) {
             this->tc_sub_source->text_mark(bm, curr_line, added);
         }

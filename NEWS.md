@@ -181,6 +181,9 @@ Bug Fixes:
   hopefully make it more consistent/reliable.  This
   concerns the sequence of loading files and executing
   commands from the command-line.
+* In the SPECTRO view, you can now move to the next/
+  previous row with bookmarks.  Note that this view
+  synchronizes bookmarks with the LOG view.
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging

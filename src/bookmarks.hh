@@ -99,13 +99,6 @@ struct bookmark_metadata {
 };
 
 /**
- * Extension of the STL vector that is used to store bookmarks for
- * files being viewed, where a bookmark is just a particular line in
- * the file(s).  The value-added over the standard vector are some
- * methods for doing content-wise iteration.  In other words, given a
- * value that may or may not be in the vector, find the next or
- * previous value that is in the vector.
- *
  * @param LineType The type used to store line numbers.  (e.g.
  *   vis_line_t or content_line_t)
  *
@@ -118,10 +111,15 @@ public:
     using const_iterator = typename tlx::btree_set<LineType>::const_iterator;
 
     tlx::btree_set<LineType> bv_tree;
+    size_t bv_generation{0};
 
     std::size_t size() const { return this->bv_tree.size(); }
 
-    void clear() { this->bv_tree.clear(); }
+    void clear()
+    {
+        this->bv_tree.clear();
+        this->bv_generation += 1;
+    }
 
     bool empty() const { return this->bv_tree.empty(); }
 
@@ -133,7 +131,11 @@ public:
      */
     std::pair<iterator, bool> insert_once(LineType vl)
     {
-        return this->bv_tree.insert(vl);
+        auto retval = this->bv_tree.insert(vl);
+        if (retval.second) {
+            this->bv_generation += 1;
+        }
+        return retval;
     }
 
     std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
@@ -147,6 +149,12 @@ public:
         auto up = this->bv_tree.upper_bound(stop);
 
         return std::make_pair(lb, up);
+    }
+
+    void erase(LineType vl)
+    {
+        this->bv_tree.erase(vl);
+        this->bv_generation += 1;
     }
 
     /**

@@ -27,7 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
+
 #include "base/itertools.hh"
+#include "base/result.h"
 #include "lnav.hh"
 #include "lnav_commands.hh"
 
@@ -42,8 +45,7 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         auto sel = tc->get_selection();
         if (sel) {
             lnav_data.ld_last_user_mark[tc] = sel.value();
-            tc->toggle_user_mark(&textview_curses::BM_USER,
-                                 vis_line_t(lnav_data.ld_last_user_mark[tc]));
+            tc->toggle_user_mark(&textview_curses::BM_USER, sel.value());
             tc->reload_data();
         }
     }

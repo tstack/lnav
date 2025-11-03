@@ -191,6 +191,9 @@ log_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
     sb_out.sb_min_value_out = this->lsvs_stats.lvs_min_value;
     sb_out.sb_max_value_out = this->lsvs_stats.lvs_max_value;
     sb_out.sb_count = this->lsvs_stats.lvs_count;
+    sb_out.sb_mark_generation = lnav_data.ld_views[LNV_LOG]
+                                    .get_bookmarks()[&textview_curses::BM_USER]
+                                    .bv_generation;
 }
 
 void
@@ -286,12 +289,36 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
     };
 }
 
+bool
+log_spectro_value_source::spectro_is_marked(spectrogram_request& sr)
+{
+    auto& lss = lnav_data.ld_log_source;
+    auto begin_line
+        = lss.find_from_time(timeval{to_time_t(sr.sr_begin_time), 0})
+              .value_or(0_vl);
+    auto end_line = lss.find_from_time(timeval{to_time_t(sr.sr_end_time), 0})
+                        .value_or(vis_line_t(lss.text_line_count()));
+    auto win = lss.window_at(begin_line, end_line);
+    for (const auto& msg_info : *win) {
+        const auto& ll = msg_info.get_logline();
+        if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
+            break;
+        }
+
+        if (ll.is_marked()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 log_spectro_value_source::spectro_mark(textview_curses& tc,
                                        std::chrono::microseconds begin_time,
                                        std::chrono::microseconds end_time,
                                        double range_min,
-                                       double range_max)
+                                       double range_max,
+                                       mark_op_t op)
 {
     // XXX need to refactor this and the above method
     auto& log_tc = lnav_data.ld_views[LNV_LOG];
@@ -329,16 +356,18 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
                     if (range_min <= lv_iter->lv_value.d
                         && lv_iter->lv_value.d <= range_max)
                     {
-                        log_tc.toggle_user_mark(&textview_curses::BM_USER,
-                                                curr_line);
+                        log_tc.set_user_mark(&textview_curses::BM_USER,
+                                             curr_line,
+                                             op == mark_op_t::add);
                     }
                     break;
                 case value_kind_t::VALUE_INTEGER:
                     if (range_min <= lv_iter->lv_value.i
                         && lv_iter->lv_value.i <= range_max)
                     {
-                        log_tc.toggle_user_mark(&textview_curses::BM_USER,
-                                                curr_line);
+                        log_tc.set_user_mark(&textview_curses::BM_USER,
+                                             curr_line,
+                                             op == mark_op_t::add);
                     }
                     break;
                 default:

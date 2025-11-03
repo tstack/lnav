@@ -34,6 +34,7 @@
 
 #include <chrono>
 #include <functional>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -51,6 +52,7 @@ struct spectrogram_bounds {
     double sb_min_value_out{0.0};
     double sb_max_value_out{0.0};
     int64_t sb_count{0};
+    size_t sb_mark_generation{0};
 };
 
 struct spectrogram_thresholds {
@@ -107,11 +109,22 @@ public:
     virtual void spectro_row(spectrogram_request& sr, spectrogram_row& row_out)
         = 0;
 
+    virtual bool spectro_is_marked(spectrogram_request& sr)
+    {
+        return false;
+    }
+
+    enum class mark_op_t {
+        add,
+        clear,
+    };
+
     virtual void spectro_mark(textview_curses& tc,
                               std::chrono::microseconds begin_time,
                               std::chrono::microseconds end_time,
                               double range_min,
-                              double range_max)
+                              double range_max,
+                              mark_op_t op)
         = 0;
 };
 
@@ -126,9 +139,16 @@ public:
 
     bool empty() const override { return this->ss_details_source == nullptr; }
 
+    void register_view(textview_curses* tc) override
+    {
+        text_sub_source::register_view(tc);
+        tc->tc_mark_style = std::nullopt;
+    }
+
     void invalidate()
     {
         this->ss_cached_bounds.sb_count = 0;
+        this->ss_cached_bounds.sb_mark_generation = 0;
         this->ss_row_cache.clear();
         this->ss_cursor_column = std::nullopt;
         this->ss_cursor_details_checksum.clear();
@@ -181,6 +201,10 @@ public:
     void chart_attrs_for_line(textview_curses& tc,
                               int row,
                               string_attrs_t& value_out);
+
+    void text_mark(const bookmark_type_t* bm,
+                   vis_line_t line,
+                   bool added) override;
 
     void cache_bounds();
 

@@ -44,11 +44,14 @@ public:
     void spectro_row(spectrogram_request& sr,
                      spectrogram_row& row_out) override;
 
+    bool spectro_is_marked(spectrogram_request& sr) override;
+
     void spectro_mark(textview_curses& tc,
                       std::chrono::microseconds begin_time,
                       std::chrono::microseconds end_time,
                       double range_min,
-                      double range_max) override;
+                      double range_max,
+                      mark_op_t op) override;
 
     intern_string_t lsvs_colname;
     logline_value_stats lsvs_stats;
@@ -72,7 +75,8 @@ public:
                       std::chrono::microseconds begin_time,
                       std::chrono::microseconds end_time,
                       double range_min,
-                      double range_max) override
+                      double range_max,
+                      mark_op_t op) override
     {
     }
 

@@ -13,6 +13,17 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_plain.0
 
 run_cap_test ${lnav_test} -n \
+    -c ':goto 5' \
+    -c ':mark' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 5' \
+    -c ':mark' \
+    -c ':mark' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
     ${top_srcdir}/README.md
 
 run_cap_test ${lnav_test} -n -c ':goto #screenshot' \

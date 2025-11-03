@@ -69,48 +69,6 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
                                           const ncinput& ch)
 {
     switch (ch.eff_text[0]) {
-        case 'm': {
-            auto sel = lv.get_selection();
-            if (!sel || sel.value() < 0
-                || (size_t) sel.value() >= this->text_line_count()
-                || !this->ss_cursor_column || this->ss_value_source == nullptr)
-            {
-                alerter::singleton().chime(
-                    "a value must be selected before it can be marked");
-                return true;
-            }
-
-            auto [height, width] = lv.get_dimensions();
-            width -= UNUSABLE_WIDTH;
-
-            auto& sb = this->ss_cached_bounds;
-            auto begin_time_opt = this->time_for_row_int(sel.value());
-            if (!begin_time_opt) {
-                return true;
-            }
-            auto begin_time = begin_time_opt.value();
-            auto end_time = to_us(begin_time.ri_time);
-
-            end_time += this->ss_granularity;
-
-            double column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
-                / (double) (width - 1);
-            double range_min = sb.sb_min_value_out
-                + this->ss_cursor_column.value_or(0) * column_size;
-            double range_max = range_min + column_size;
-            this->ss_value_source->spectro_mark((textview_curses&) lv,
-                                                to_us(begin_time.ri_time),
-                                                end_time,
-                                                range_min,
-                                                range_max);
-            auto cursor_col = this->ss_cursor_column;
-            this->invalidate();
-            this->ss_cursor_column = cursor_col;
-            this->text_selection_changed((textview_curses&) lv);
-            lv.reload_data();
-            return true;
-        }
-
         case KEY_CTRL('a'): {
             if (this->ss_value_source != nullptr) {
                 this->ss_cursor_column = 0;
@@ -397,7 +355,7 @@ line_info
 spectrogram_source::text_value_for_line(textview_curses& tc,
                                         int row,
                                         std::string& value_out,
-                                        text_sub_source::line_flags_t flags)
+                                        line_flags_t flags)
 {
     if (tc.get_dimensions().second < MINIMUM_WIDTH) {
         return {};
@@ -460,6 +418,60 @@ spectrogram_source::chart_attrs_for_line(textview_curses& tc,
 }
 
 void
+spectrogram_source::text_mark(const bookmark_type_t* bm,
+                              vis_line_t line,
+                              bool added)
+{
+    if (bm != &textview_curses::BM_USER) {
+        return;
+    }
+
+    if (line < 0 || (size_t) line >= this->text_line_count()
+        || !this->ss_cursor_column || this->ss_value_source == nullptr)
+    {
+        alerter::singleton().chime(
+            "a value must be selected before it can be marked");
+        return;
+    }
+
+    auto [height, width] = this->tss_view->get_dimensions();
+    width -= UNUSABLE_WIDTH;
+
+    const auto& s_row = this->load_row(*this->tss_view, line);
+    auto& sb = this->ss_cached_bounds;
+    auto begin_time_opt = this->time_for_row_int(line);
+    if (!begin_time_opt) {
+        return;
+    }
+    auto begin_time = begin_time_opt.value();
+    auto end_time = to_us(begin_time.ri_time);
+
+    end_time += this->ss_granularity;
+
+    double column_size
+        = (sb.sb_max_value_out - sb.sb_min_value_out) / (double) (width - 1);
+    double range_min = sb.sb_min_value_out
+        + this->ss_cursor_column.value_or(0) * column_size;
+    double range_max = range_min + column_size;
+    auto mark_op = spectrogram_value_source::mark_op_t::add;
+    if (this->ss_cursor_column
+        && s_row.sr_values[this->ss_cursor_column.value()].rb_marks > 0)
+    {
+        mark_op = spectrogram_value_source::mark_op_t::clear;
+    }
+    this->ss_value_source->spectro_mark(*this->tss_view,
+                                        to_us(begin_time.ri_time),
+                                        end_time,
+                                        range_min,
+                                        range_max,
+                                        mark_op);
+    auto cursor_col = this->ss_cursor_column;
+    this->invalidate();
+    this->ss_cursor_column = cursor_col;
+    this->text_selection_changed(*this->tss_view);
+}
+
+void
 spectrogram_source::text_attrs_for_line(textview_curses& tc,
                                         int row,
                                         string_attrs_t& value_out)
@@ -508,10 +520,13 @@ spectrogram_source::cache_bounds()
 
     this->ss_value_source->spectro_bounds(sb);
 
-    if (sb.sb_count == this->ss_cached_bounds.sb_count) {
+    if (sb.sb_count == this->ss_cached_bounds.sb_count
+        && sb.sb_mark_generation == this->ss_cached_bounds.sb_mark_generation)
+    {
         return;
     }
 
+    this->invalidate();
     this->ss_cached_bounds = sb;
 
     if (sb.sb_count == 0) {
@@ -541,6 +556,26 @@ spectrogram_source::cache_bounds()
     }
     if (st.st_yellow_threshold <= st.st_green_threshold) {
         st.st_yellow_threshold = st.st_green_threshold + 1;
+    }
+
+    auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
+    bm.clear();
+    auto [height, width] = this->tss_view->get_dimensions();
+    for (auto row = 0_vl; row < this->ss_cached_line_count; row += 1_vl) {
+        spectrogram_request sr(sb);
+
+        sr.sr_width = width;
+        auto row_time = rounddown(sb.sb_begin_time, this->ss_granularity)
+            + row * this->ss_granularity;
+        sr.sr_begin_time = row_time;
+        sr.sr_end_time = row_time + this->ss_granularity;
+
+        sr.sr_column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
+            / (double) (width - 1);
+
+        if (this->ss_value_source->spectro_is_marked(sr)) {
+            bm.insert_once(row);
+        }
     }
 }
 

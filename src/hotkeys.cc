@@ -190,10 +190,6 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         }
     }
 
-    if (tc->handle_key_using_delegates(ch)) {
-        return true;
-    }
-
     if (handle_keyseq(keyseq)) {
         return true;
     }

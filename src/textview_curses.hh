@@ -928,6 +928,8 @@ public:
     int tc_press_left{0};
     std::function<void(textview_curses&, const attr_line_t&, int x)>
         tc_on_click;
+    std::optional<string_attr_pair> tc_mark_style{
+        VC_STYLE.value(text_attrs::with_reverse())};
 
 protected:
     class grep_highlighter {
