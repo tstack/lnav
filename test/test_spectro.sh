@@ -2,6 +2,7 @@
 
 export TZ=UTC
 export YES_COLOR=1
+export LC_ALL=C
 
 lnav_test="${top_builddir}/src/lnav-test"
 unset XDG_CONFIG_HOME

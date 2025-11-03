@@ -221,7 +221,7 @@ filter_status_source::update_filtered(text_sub_source* tss)
                 retval = true;
             }
         } else {
-            sf.set_value(
+            retval = sf.set_value(
                 " \u2718 Filtering disabled, re-enable with " ANSI_BOLD_START
                 ":toggle-filtering" ANSI_NORM);
         }
