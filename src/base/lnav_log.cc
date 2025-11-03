@@ -129,10 +129,7 @@ struct fixed_string {
 
     const char* data() const { return this->fs_data; }
 
-    void clear()
-    {
-        this->fs_size = 0;
-    }
+    void clear() { this->fs_size = 0; }
 
     void resize(size_t new_size)
     {
@@ -320,17 +317,13 @@ lnav_opid_guard::suspend() &&
     return retval;
 }
 
+static char log_ring_data[BUFFER_SIZE];
 static struct {
     size_t lr_length;
-    off_t lr_frag_start;
+    off_t lr_frag_start{BUFFER_SIZE};
     off_t lr_frag_end;
-    char lr_data[BUFFER_SIZE];
-} log_ring = {
-    0,
-    BUFFER_SIZE,
-    0,
-    {},
-};
+    char *lr_data{log_ring_data};
+} log_ring;
 
 static constexpr const char* const LEVEL_NAMES[] = {
     "T",

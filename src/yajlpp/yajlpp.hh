@@ -76,6 +76,12 @@ yajl_gen_string(yajl_gen hand, const std::string& str)
         hand, (const unsigned char*) str.c_str(), str.length());
 }
 
+inline yajl_gen_status
+yajl_gen_string(yajl_gen hand, const string_fragment& str)
+{
+    return yajl_gen_string(hand, str.udata(), str.length());
+}
+
 yajl_gen_status yajl_gen_tree(yajl_gen hand, yajl_val val);
 
 void yajl_cleanup_tree(yajl_val val);
@@ -579,8 +585,7 @@ public:
 
     yajl_gen_status operator()(const string_fragment& str)
     {
-        return yajl_gen_string(
-            this->yg_handle, (const unsigned char*) str.data(), str.length());
+        return yajl_gen_string(this->yg_handle, str);
     }
 
     yajl_gen_status operator()(bool value)

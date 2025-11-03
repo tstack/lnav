@@ -495,9 +495,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(field);
+            return yajl_gen_bool(handle, field);
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -949,9 +947,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(field);
+            return yajl_gen_string(handle, field);
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -993,9 +989,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(field);
+            return yajl_gen_string(handle, field);
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -1117,9 +1111,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(field.value());
+            return yajl_gen_string(handle, field.value());
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -1171,9 +1163,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(field.pp_value);
+            return yajl_gen_string(handle, field.pp_value);
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -1603,9 +1593,7 @@ struct json_path_handler : public json_path_handler_base {
                 yajl_gen_string(handle, jph.jph_property);
             }
 
-            yajlpp_generator gen(handle);
-
-            return gen(jph.to_enum_string(field));
+            return yajl_gen_string(handle, jph.to_enum_string(field));
         };
         this->jph_field_getter
             = [args...](void* root, std::optional<std::string> name) {
@@ -1821,7 +1809,7 @@ property_handler(const std::string& path)
 }
 
 template<typename T, std::size_t N>
-inline json_path_handler
+json_path_handler
 pattern_property_handler(const T (&path)[N])
 {
     return {lnav::pcre2pp::code::from_const(path, PCRE2_ANCHORED).to_shared()};

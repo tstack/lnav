@@ -23,7 +23,7 @@ doc = false
 # Build latest: 
 # prqlc = { git = "https://github.com/PRQL/prql.git" }
 # Build deterministic:
-prqlc = "0.13.5"
+prqlc = "0.13.6"
 cxx = "1.0"
 log = "0.4"
 miette = "7.6.0"

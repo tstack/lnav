@@ -165,6 +165,9 @@ public:
 
     grep_proc(std::shared_ptr<pollable_supervisor>);
 
+    grep_proc(const grep_proc&) = delete;
+    grep_proc& operator=(const grep_proc&) = delete;
+
     using injectable = grep_proc(std::shared_ptr<pollable_supervisor>);
 
     ~grep_proc() override;

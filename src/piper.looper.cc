@@ -233,7 +233,7 @@ looper::looper(std::string name,
 {
     std::error_code ec;
     size_t count = 0;
-    for (auto attempt : {1, 2, 3}) {
+    for (const auto attempt : {1, 2, 3}) {
         do {
             this->l_out_dir
                 = storage_path()

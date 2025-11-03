@@ -546,14 +546,14 @@ dependencies = [
 
 [[package]]
 name = "csv"
-version = "1.3.1"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acdc4883a9c96732e4733212c01447ebd805833b7275a73ca3ee080fd77afdaf"
+checksum = "52cd9d68cf7efc6ddfaaee42e7288d3a99d613d4b50f76ce9827ae0c6e14f938"
 dependencies = [
  "csv-core",
  "itoa",
  "ryu",
- "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -1157,13 +1157,13 @@ dependencies = [
 
 [[package]]
 name = "is-terminal"
-version = "0.4.16"
+version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e04d7f318608d35d4b61ddd75cbdaee86b023ebe2bd5a66ee0915f0bf93095a9"
+checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -1567,9 +1567,9 @@ dependencies = [
 
 [[package]]
 name = "prqlc"
-version = "0.13.5"
+version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcacbd060eaccb279056cdb7086a5f0b0e479ebd1c39ca19991657eeaba5384f"
+checksum = "313316631b584b03a6df9c1e5253959029e9d5d4b4be1517a67f8af03bf6715a"
 dependencies = [
  "anstream",
  "anyhow",
@@ -1604,9 +1604,9 @@ dependencies = [
 
 [[package]]
 name = "prqlc-parser"
-version = "0.13.5"
+version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fcfdc09e28ef786d02abf075f8650e7e54bac6d38c2349524a2a54ee4a47fa7"
+checksum = "c76611a37e3e38195084a374b7f20b32fee371f418f5bc7e4cde6a0b775baccd"
 dependencies = [
  "chumsky",
  "enum-as-inner",
