@@ -871,7 +871,7 @@ textview_curses::apply_highlights(attr_line_t& al,
             continue;
         }
 
-        if (this->tc_disabled_highlights.count(tc_highlight.first.first)) {
+        if (this->tc_disabled_highlights.is_set(tc_highlight.first.first)) {
             continue;
         }
 

@@ -51,13 +51,20 @@ struct bitset {
     }
 
     template<T arg>
-    constexpr bool is_set() const
+    [[nodiscard]] constexpr bool is_set() const
     {
         static_assert(to_underlying(arg) >= 0);
-        static_assert(to_underlying(arg) < 64);
+        static_assert(to_underlying(arg) < sizeof(this->bs_data) * 8);
 
         return this->bs_data & 1 << to_underlying(arg);
     }
+
+    [[nodiscard]] bool is_set(T arg) const
+    {
+        return this->bs_data & 1 << to_underlying(arg);
+    }
+
+    void set(T arg) { this->bs_data |= 1 << to_underlying(arg); }
 
     uint64_t bs_data;
 };

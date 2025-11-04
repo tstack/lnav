@@ -30,12 +30,13 @@
 #ifndef lnav_textview_curses_fwd_hh
 #define lnav_textview_curses_fwd_hh
 
+#include <cstdint>
 #include <map>
 #include <utility>
 
 #include "highlighter.hh"
 
-enum class highlight_source_t {
+enum class highlight_source_t : uint8_t {
     INTERACTIVE,
     PREVIEW,
     CONFIGURATION,

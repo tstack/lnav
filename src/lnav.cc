@@ -1637,7 +1637,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_files_view.set_selectable(true);
     lnav_data.ld_files_view.set_window(lnav_data.ld_window);
     lnav_data.ld_files_view.set_show_scrollbar(true);
-    lnav_data.ld_files_view.get_disabled_highlights().insert(
+    lnav_data.ld_files_view.get_disabled_highlights().set(
         highlight_source_t::THEME);
     lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
@@ -1646,7 +1646,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_file_details_view.set_window(lnav_data.ld_window);
     lnav_data.ld_file_details_view.set_show_scrollbar(true);
     lnav_data.ld_file_details_view.set_supports_marks(true);
-    lnav_data.ld_file_details_view.get_disabled_highlights().insert(
+    lnav_data.ld_file_details_view.get_disabled_highlights().set(
         highlight_source_t::THEME);
     lnav_data.ld_file_details_view.tc_cursor_role
         = role_t::VCR_DISABLED_CURSOR_LINE;

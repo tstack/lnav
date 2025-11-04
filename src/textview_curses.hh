@@ -37,8 +37,10 @@
 #include <utility>
 #include <vector>
 
+#include "base/enum_util.hh"
 #include "base/func_util.hh"
 #include "base/lnav_log.hh"
+#include "base/text_format_enum.hh"
 #include "bookmarks.hh"
 #include "breadcrumb.hh"
 #include "grep_proc.hh"
@@ -49,7 +51,6 @@
 #include "log_accel.hh"
 #include "logfile_fwd.hh"
 #include "ring_span.hh"
-#include "text_format.hh"
 #include "textview_curses_fwd.hh"
 #include "vis_line.hh"
 
@@ -816,7 +817,7 @@ public:
         return this->tc_highlights;
     }
 
-    std::set<highlight_source_t>& get_disabled_highlights()
+    lnav::enums::bitset<highlight_source_t>& get_disabled_highlights()
     {
         return this->tc_disabled_highlights;
     }
@@ -967,13 +968,13 @@ protected:
     vis_bookmarks tc_bookmarks{vis_bookmarks_t::create_array()};
 
     int tc_searching{0};
-    struct timeval tc_follow_deadline{0, 0};
+    timeval tc_follow_deadline{0, 0};
     vis_line_t tc_follow_selection{-1_vl};
     std::function<bool()> tc_follow_func;
     action tc_search_action;
 
     highlight_map_t tc_highlights;
-    std::set<highlight_source_t> tc_disabled_highlights;
+    lnav::enums::bitset<highlight_source_t> tc_disabled_highlights;
 
     std::optional<vis_line_t> tc_selection_start;
     mouse_event tc_press_event;
