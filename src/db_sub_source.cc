@@ -37,6 +37,7 @@
 #include "base/humanize.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
+#include "base/map_util.hh"
 #include "base/math_util.hh"
 #include "base/time_util.hh"
 #include "base/types.hh"
@@ -53,7 +54,7 @@ const unsigned char db_label_source::NULL_STR[] = "<NULL>";
 constexpr ssize_t MAX_JSON_WIDTH = 16 * 1024;
 
 struct user_row_style {
-    std::map<std::string, style_config> urs_column_config;
+    lnav::map::small<std::string, style_config> urs_column_config;
 };
 
 static const typed_json_path_container<user_row_style>&

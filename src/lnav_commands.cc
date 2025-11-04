@@ -3606,11 +3606,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
 };
 
-static std::unordered_map<char const*, std::vector<char const*>> aliases = {
-    {"quit", {"q", "q!"}},
-    {"write-table-to", {"write-cols-to"}},
-};
-
 static Result<std::string, lnav::console::user_message>
 com_crash(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
@@ -3629,14 +3624,8 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
     for (auto& cmd : STD_COMMANDS) {
         cmd.c_help.index_tags();
         cmd_map[cmd.c_name] = &cmd;
-
-        auto itr = aliases.find(cmd.c_name);
-        if (itr != aliases.end()) {
-            for (char const* alias : itr->second) {
-                cmd_map[alias] = &cmd;
-            }
-        }
     }
+    cmd_map["q"] = cmd_map["q!"] = cmd_map["quit"];
 
     if (getenv("LNAV_SRC") != nullptr) {
         static readline_context::command_t add_test(com_add_test);

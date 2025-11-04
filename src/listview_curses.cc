@@ -43,6 +43,7 @@
 #include "base/itertools.hh"
 #include "base/keycodes.hh"
 #include "base/lnav_log.hh"
+#include "base/time_util.hh"
 #include "config.h"
 
 using namespace std::chrono_literals;

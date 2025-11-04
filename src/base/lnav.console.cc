@@ -149,7 +149,7 @@ user_message::remove_internal_snippets()
 }
 
 attr_line_t
-user_message::to_attr_line(std::set<render_flags> flags) const
+user_message::to_attr_line(render_flags flags) const
 {
     auto indent = 1;
     attr_line_t retval;
@@ -158,7 +158,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
         indent = 3;
     }
 
-    if (flags.count(render_flags::prefix)) {
+    if (flags == render_flags::prefix) {
         switch (this->um_level) {
             case level::raw:
                 break;

@@ -56,7 +56,6 @@
 #include "base/short_alloc.h"
 #include "json_ptr.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "relative_time.hh"
 #include "yajl/api/yajl_gen.h"
 #include "yajl/api/yajl_parse.h"
 
@@ -203,6 +202,8 @@ private:
     std::string ye_msg;
 };
 
+struct relative_time_parse_error;
+
 struct json_path_container;
 
 template<typename T>
@@ -323,7 +324,7 @@ struct json_path_handler_base {
                                 long long value) const;
     void report_duration_error(yajlpp_parse_context* ypc,
                                const std::string& value_str,
-                               const relative_time::parse_error& pe) const;
+                               const relative_time_parse_error& pe) const;
     void report_enum_error(yajlpp_parse_context* ypc,
                            const std::string& value_str) const;
     void report_error(yajlpp_parse_context* ypc,

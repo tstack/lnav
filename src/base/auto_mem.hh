@@ -279,7 +279,7 @@ public:
         if (amount <= 0) {
             return;
         }
-        assert(amount <= this->ab_size);
+        assert(amount <= (ssize_t) this->ab_size);
         auto remaining = this->ab_size - amount;
         if (remaining > 0) {
             memmove(this->ab_buffer, &this->ab_buffer[amount], remaining);

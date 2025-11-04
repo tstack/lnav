@@ -437,7 +437,7 @@ read_file(const std::filesystem::path& path)
 Result<write_file_result, std::string>
 write_file(const std::filesystem::path& path,
            string_fragment_producer& content,
-           std::set<write_file_options> options)
+           lnav::enums::bitset<write_file_options> options)
 {
     write_file_result retval;
     auto tmp_pattern = path;
@@ -471,7 +471,7 @@ write_file(const std::filesystem::path& path,
     }
 
     std::error_code ec;
-    if (options.count(write_file_options::backup_existing)) {
+    if (options.is_set<write_file_options::backup_existing>()) {
         if (std::filesystem::exists(path, ec)) {
             auto backup_path = path;
 
@@ -489,10 +489,10 @@ write_file(const std::filesystem::path& path,
     }
 
     auto mode = S_IRUSR | S_IWUSR;
-    if (options.count(write_file_options::executable)) {
+    if (options.is_set<write_file_options::executable>()) {
         mode |= S_IXUSR;
     }
-    if (options.count(write_file_options::read_only)) {
+    if (options.is_set<write_file_options::read_only>()) {
         mode &= ~S_IWUSR;
     }
 

@@ -38,6 +38,7 @@
 #include "base/math_util.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "relative_time.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
@@ -1603,7 +1604,7 @@ void
 json_path_handler_base::report_duration_error(
     yajlpp_parse_context* ypc,
     const std::string& value_str,
-    const relative_time::parse_error& pe) const
+    const relative_time_parse_error& pe) const
 {
     ypc->report_error(lnav::console::user_message::error(
                           attr_line_t()

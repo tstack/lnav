@@ -2236,4 +2236,5 @@ init_lnav_io_commands(readline_context::command_map_t& cmd_map)
         cmd.c_help.index_tags();
         cmd_map[cmd.c_name] = &cmd;
     }
+    cmd_map["write-cols-to"] = cmd_map["write-table-to"];
 }

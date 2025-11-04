@@ -971,7 +971,9 @@ execute_init_commands(
                     deadline += 500ms;
                 }
                 wait_for_pipers(deadline);
-                if (lnav_data.ld_flags & LNF_HEADLESS || lnav_data.ld_input_dispatcher.id_count == 0) {
+                if (lnav_data.ld_flags & LNF_HEADLESS
+                    || lnav_data.ld_input_dispatcher.id_count == 0)
+                {
                     rebuild_indexes_repeatedly();
                 } else {
                     rebuild_indexes(deadline);
@@ -1291,7 +1293,7 @@ exec_context::execute(source_location loc, const std::string& cmdline)
 }
 
 void
-exec_context::add_error_context(lnav::console::user_message& um)
+exec_context::add_error_context(lnav::console::user_message& um) const
 {
     switch (um.um_level) {
         case lnav::console::user_message::level::raw:
@@ -1316,6 +1318,14 @@ exec_context::add_error_context(lnav::console::user_message& um)
                                   help_text_content::synopsis_and_summary);
         um.with_help(help);
     }
+}
+
+lnav::console::user_message
+exec_context::make_error_from_str(std::string&& str) const
+{
+    auto retval = lnav::console::user_message::error(std::move(str));
+    this->add_error_context(retval);
+    return retval;
 }
 
 exec_context::sql_callback_guard

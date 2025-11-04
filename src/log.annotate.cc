@@ -34,6 +34,7 @@
 #include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
+#include "base/map_util.hh"
 #include "base/paths.hh"
 #include "line_buffer.hh"
 #include "lnav.hh"
@@ -111,13 +112,13 @@ struct expressions : lnav_config_listener {
                 continue;
             }
 
-            this->e_cond_exprs.emplace(pair.first, std::move(cce));
+            this->e_cond_exprs.insert(pair.first, std::move(cce));
         }
     }
 
     void unload_config() override { this->e_cond_exprs.clear(); }
 
-    std::map<intern_string_t, compiled_cond_expr> e_cond_exprs;
+    lnav::map::small<intern_string_t, compiled_cond_expr> e_cond_exprs;
 };
 
 static expressions exprs;
@@ -132,7 +133,7 @@ applicable(vis_line_t vl)
     log_data_helper ldh(lss);
 
     ldh.load_line(vl, true);
-    for (auto& expr : exprs.e_cond_exprs) {
+    for (auto expr : exprs.e_cond_exprs) {
         if (!expr.second.cce_enabled) {
             continue;
         }

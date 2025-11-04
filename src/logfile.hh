@@ -49,6 +49,7 @@
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
+#include "base/map_util.hh"
 #include "base/progress.hh"
 #include "base/result.h"
 #include "bookmarks.hh"
@@ -423,7 +424,7 @@ public:
         not_utf,
     };
 
-    using note_map = std::map<note_type, lnav::console::user_message>;
+    using note_map = lnav::map::small<note_type, lnav::console::user_message>;
     using safe_notes = safe::Safe<note_map>;
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }

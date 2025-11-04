@@ -35,14 +35,19 @@
 #define __STDC_FORMAT_MACROS
 #include <array>
 #include <chrono>
-#include <set>
 #include <string>
 
 #include <inttypes.h>
 
 #include "base/intern_string.hh"
+#include "base/map_util.hh"
 #include "base/result.h"
 #include "base/time_util.hh"
+
+struct relative_time_parse_error {
+    int pe_column;
+    std::string pe_msg;
+};
 
 class relative_time {
 public:
@@ -105,12 +110,8 @@ public:
         RTF__MAX
     };
 
-    struct parse_error {
-        int pe_column;
-        std::string pe_msg;
-    };
-
-    static Result<relative_time, parse_error> from_str(string_fragment str);
+    static Result<relative_time, relative_time_parse_error> from_str(
+        string_fragment str);
 
     static relative_time from_timeval(const timeval& tv);
 
@@ -248,7 +249,7 @@ public:
     };
 
     std::array<_rt_field, RTF__MAX> rt_field;
-    std::set<token_t> rt_included_days;
+    lnav::set::small<token_t> rt_included_days;
     std::chrono::microseconds rt_duration{0};
 
     bool rt_next;

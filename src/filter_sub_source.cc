@@ -46,6 +46,7 @@
 #include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
+#include "relative_time.hh"
 #include "sql_util.hh"
 #include "textinput_curses.hh"
 #include "textview_curses.hh"

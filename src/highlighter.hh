@@ -33,15 +33,15 @@
 #define highlighter_hh
 
 #include <memory>
-#include <set>
 #include <string>
 
 #include "base/attr_line.hh"
 #include "base/intern_string.hh"
+#include "base/map_util.hh"
 #include "base/string_attr_type.hh"
+#include "base/text_format_enum.hh"
 #include "pcrepp/pcre2pp_fwd.hh"
 #include "styling.hh"
-#include "text_format.hh"
 
 struct highlighter {
     highlighter() = default;
@@ -102,14 +102,14 @@ struct highlighter {
     bool applies_to_format(text_format_t tf) const
     {
         return this->h_text_formats.empty()
-            || this->h_text_formats.count(tf) > 0;
+            || this->h_text_formats.contains(tf);
     }
 
     std::string h_name;
     role_t h_role{role_t::VCR_NONE};
     std::shared_ptr<lnav::pcre2pp::code> h_regex;
     text_attrs h_attrs;
-    std::set<text_format_t> h_text_formats;
+    lnav::set::small<text_format_t> h_text_formats;
     intern_string_t h_format_name;
     bool h_nestable{true};
 };

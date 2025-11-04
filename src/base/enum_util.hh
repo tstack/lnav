@@ -30,6 +30,7 @@
 #ifndef lnav_enum_util_hh
 #define lnav_enum_util_hh
 
+#include <cstdint>
 #include <type_traits>
 
 namespace lnav::enums {
@@ -40,6 +41,26 @@ to_underlying(E e) noexcept
 {
     return static_cast<std::underlying_type_t<E>>(e);
 }
+
+template<typename T>
+struct bitset {
+    template<typename... Args>
+    bitset(Args... args)
+    {
+        this->bs_data = ((1 << to_underlying<T>(args)) | ... | 0);
+    }
+
+    template<T arg>
+    constexpr bool is_set() const
+    {
+        static_assert(to_underlying(arg) >= 0);
+        static_assert(to_underlying(arg) < 64);
+
+        return this->bs_data & 1 << to_underlying(arg);
+    }
+
+    uint64_t bs_data;
+};
 
 }  // namespace lnav::enums
 

@@ -1643,8 +1643,9 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             }
         } else if (!curr_file->get_notes().empty()) {
             this->tho_static_lines = curr_file->get_notes()
-                                         .begin()
-                                         ->second.to_attr_line()
+                                         .values()
+                                         .front()
+                                         .to_attr_line()
                                          .split_lines();
             lines = &this->tho_static_lines;
         } else if (curr_file->size() == 0) {

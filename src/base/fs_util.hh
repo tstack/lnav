@@ -41,6 +41,7 @@
 #include <unistd.h>
 
 #include "auto_fd.hh"
+#include "enum_util.hh"
 #include "fmt/format.h"
 #include "intern_string.hh"
 #include "mapbox/variant.hpp"
@@ -131,7 +132,7 @@ Result<std::pair<std::filesystem::path, auto_fd>, std::string> open_temp_file(
 
 Result<std::string, std::string> read_file(const std::filesystem::path& path);
 
-enum class write_file_options {
+enum class write_file_options : uint8_t {
     backup_existing,
     read_only,
     executable,
@@ -144,12 +145,12 @@ struct write_file_result {
 Result<write_file_result, std::string> write_file(
     const std::filesystem::path& path,
     string_fragment_producer& content,
-    std::set<write_file_options> options = {});
+    lnav::enums::bitset<write_file_options> options = {});
 
 inline Result<write_file_result, std::string>
 write_file(const std::filesystem::path& path,
            const string_fragment& content,
-           std::set<write_file_options> options = {})
+           lnav::enums::bitset<write_file_options> options = {})
 {
     auto sfp = string_fragment_producer::from(content);
     return write_file(path, *sfp, options);

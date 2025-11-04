@@ -710,7 +710,7 @@ public:
                     && otr.otr_description.lod_elements.empty())
                 {
                     otr.otr_description.lod_index = 0;
-                    otr.otr_description.lod_elements.emplace_back(
+                    otr.otr_description.lod_elements.insert(
                         0, host_cap.to_string());
                 }
             }

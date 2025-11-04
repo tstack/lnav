@@ -113,7 +113,7 @@ struct user_message {
 
     user_message& with_reason(const user_message& um)
     {
-        return this->with_reason(um.to_attr_line({}));
+        return this->with_reason(um.to_attr_line(render_flags::none));
     }
 
     user_message& with_errno_reason()
@@ -170,11 +170,11 @@ struct user_message {
     }
 
     enum class render_flags {
+        none,
         prefix,
     };
 
-    attr_line_t to_attr_line(std::set<render_flags> flags
-                             = {render_flags::prefix}) const;
+    attr_line_t to_attr_line(render_flags flags = render_flags::prefix) const;
 
     user_message move() & { return std::move(*this); }
     user_message move() && { return std::move(*this); }

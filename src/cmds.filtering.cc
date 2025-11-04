@@ -29,6 +29,7 @@
 
 #include "lnav.hh"
 #include "lnav_commands.hh"
+#include "relative_time.hh"
 #include "sql_util.hh"
 
 static Result<std::string, lnav::console::user_message>

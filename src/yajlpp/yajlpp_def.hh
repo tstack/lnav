@@ -37,6 +37,7 @@
 
 #include "base/date_time_scanner.hh"
 #include "base/lnav.resolver.hh"
+#include "base/map_util.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "mapbox/variant.hpp"
@@ -438,6 +439,14 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename K, typename U>
     struct LastIsMap<std::map<K, U> T::*> {
+        static constexpr bool is_ptr = false;
+        using key_type = K;
+        using value_type = U;
+        static constexpr bool value = true;
+    };
+
+    template<typename T, typename K, typename U>
+    struct LastIsMap<lnav::map::small<K, U> T::*> {
         static constexpr bool is_ptr = false;
         using key_type = K;
         using value_type = U;

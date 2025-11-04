@@ -85,23 +85,22 @@ struct exec_context {
         return *this;
     }
 
-    void add_error_context(lnav::console::user_message& um);
+    void add_error_context(lnav::console::user_message& um) const;
+
+    lnav::console::user_message make_error_from_str(std::string&& str) const;
 
     template<typename... Args>
     lnav::console::user_message make_error_msg(fmt::string_view format_str,
-                                               const Args&... args)
+                                               const Args&... args) const
     {
-        auto retval = lnav::console::user_message::error(
-            fmt::vformat(format_str, fmt::make_format_args(args...)));
+        auto str = fmt::vformat(format_str, fmt::make_format_args(args...));
 
-        this->add_error_context(retval);
-
-        return retval;
+        return this->make_error_from_str(std::move(str));
     }
 
     template<typename... Args>
     Result<std::string, lnav::console::user_message> make_error(
-        fmt::string_view format_str, const Args&... args)
+        fmt::string_view format_str, const Args&... args) const
     {
         return Err(this->make_error_msg(format_str, args...));
     }

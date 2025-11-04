@@ -284,8 +284,10 @@ TEST_CASE("reltime")
 
         CHECK(rt_res.isOk());
         auto rt = rt_res.unwrap();
-        CHECK(rt.rt_included_days
-              == std::set<relative_time::token_t>{relative_time::RTT_TUESDAY});
+        CHECK(rt.rt_included_days.keys()
+              == lnav::set::small<
+                     relative_time::token_t>{relative_time::RTT_TUESDAY}
+                     .keys());
     }
 
     {

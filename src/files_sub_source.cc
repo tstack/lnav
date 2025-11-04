@@ -533,7 +533,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             if (!notes.empty()) {
                 details.emplace_back(
                     attr_line_t("  ").append("Notes"_h2).append(":"));
-                for (const auto& [_kind, note_um] : notes) {
+                for (const auto& note_um : notes.values()) {
                     for (const auto& note_line :
                          note_um.to_attr_line().split_lines())
                     {

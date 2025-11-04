@@ -1670,6 +1670,30 @@
 ----
 
 
+.. _write_table_to:
+
+:write-table-to *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Write SQL results to the given file in a tabular format
+
+  **Parameters**
+    * **--anonymize** --- Anonymize the table contents
+    * **path\*** --- The path to the file to write
+
+  **Examples**
+    To write SQL results as text to /tmp/table.txt:
+
+    .. code-block::  lnav
+
+      :write-table-to /tmp/table.txt
+
+  **See Also**
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+
+----
+
+
 .. _write_csv_to:
 
 :write-csv-to *\[--anonymize\]* *path*
@@ -1825,30 +1849,6 @@
 
   **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
-
-----
-
-
-.. _write_table_to:
-
-:write-table-to *\[--anonymize\]* *path*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  Write SQL results to the given file in a tabular format
-
-  **Parameters**
-    * **--anonymize** --- Anonymize the table contents
-    * **path\*** --- The path to the file to write
-
-  **Examples**
-    To write SQL results as text to /tmp/table.txt:
-
-    .. code-block::  lnav
-
-      :write-table-to /tmp/table.txt
-
-  **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 

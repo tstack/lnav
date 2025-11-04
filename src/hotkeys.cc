@@ -45,6 +45,7 @@
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "logline_window.hh"
+#include "relative_time.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"

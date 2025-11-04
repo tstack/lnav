@@ -2407,14 +2407,16 @@ vt_update(sqlite3_vtab* tab,
                 .with_obj(tmp_bm);
             ypc.parse_doc(log_tags.value());
             if (!errors.empty()) {
-                auto top_error = lnav::console::user_message::error(
-                                     attr_line_t("invalid value for ")
-                                         .append_quoted("log_tags"_symbol)
-                                         .append(" column of table ")
-                                         .append_quoted(lnav::roles::symbol(
-                                             vt->vi->get_name().to_string())))
-                                     .with_reason(errors[0].to_attr_line({}))
-                                     .move();
+                auto top_error
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid value for ")
+                              .append_quoted("log_tags"_symbol)
+                              .append(" column of table ")
+                              .append_quoted(lnav::roles::symbol(
+                                  vt->vi->get_name().to_string())))
+                          .with_reason(errors[0].to_attr_line(
+                              lnav::console::user_message::render_flags::none))
+                          .move();
                 set_vtable_errmsg(tab, top_error);
                 return SQLITE_ERROR;
             }

@@ -318,9 +318,9 @@ log_format::opid_descriptors::to_string(
 
     for (size_t lpc = 0; lpc < this->od_descriptors->size(); lpc++) {
         retval.append(this->od_descriptors->at(lpc).od_prefix);
-        auto iter = lod.find(lpc);
-        if (iter != lod.end()) {
-            retval.append(iter->second);
+        auto val = lod.value_for(lpc);
+        if (val) {
+            retval.append(*val.value());
         }
         retval.append(this->od_descriptors->at(lpc).od_suffix);
     }
@@ -674,13 +674,7 @@ external_log_format::update_op_description(
              desc_def_index++)
         {
             const auto& desc_def = desc_def_v[desc_def_index];
-            auto found_desc = desc_v.begin();
-
-            for (; found_desc != desc_v.end(); ++found_desc) {
-                if (found_desc->first == desc_def_index) {
-                    break;
-                }
-            }
+            auto found_desc = desc_v.value_for(desc_def_index);
             auto desc_field_index_iter
                 = fpat->p_value_name_to_index.find(desc_def.od_field.pp_value);
 
@@ -696,11 +690,11 @@ external_log_format::update_op_description(
                 desc_elem_str = desc_def.matches(desc_cap_opt.value());
             }
             if (desc_elem_str) {
-                if (found_desc == desc_v.end()) {
-                    desc_v.emplace_back(desc_def_index, desc_elem_str.value());
+                if (!found_desc) {
+                    desc_v.insert(desc_def_index, desc_elem_str.value());
                 } else if (!desc_elem_str->empty()) {
-                    found_desc->second.append(desc_def.od_joiner);
-                    found_desc->second.append(desc_elem_str.value());
+                    found_desc.value()->append(desc_def.od_joiner);
+                    found_desc.value()->append(desc_elem_str.value());
                 }
             }
             desc_elem_str = std::nullopt;
@@ -748,13 +742,7 @@ external_log_format::update_op_description(
              desc_def_index++)
         {
             const auto& desc_def = desc_def_v[desc_def_index];
-            auto found_desc = desc_v.begin();
-
-            for (; found_desc != desc_v.end(); ++found_desc) {
-                if (found_desc->first == desc_def_index) {
-                    break;
-                }
-            }
+            auto found_desc = desc_v.value_for(desc_def_index);
             auto desc_cap_iter
                 = this->lf_desc_captures.find(desc_def.od_field.pp_value);
             if (desc_cap_iter == this->lf_desc_captures.end()) {
@@ -765,11 +753,11 @@ external_log_format::update_op_description(
                 desc_elem_str = desc_def.matches(desc_cap_iter->second);
             }
             if (desc_elem_str) {
-                if (found_desc == desc_v.end()) {
-                    desc_v.emplace_back(desc_def_index, desc_elem_str.value());
+                if (!found_desc) {
+                    desc_v.insert(desc_def_index, desc_elem_str.value());
                 } else if (!desc_elem_str->empty()) {
-                    found_desc->second.append(desc_def.od_joiner);
-                    found_desc->second.append(desc_elem_str.value());
+                    found_desc.value()->append(desc_def.od_joiner);
+                    found_desc.value()->append(desc_elem_str.value());
                 }
             }
             desc_elem_str = std::nullopt;
@@ -1644,13 +1632,11 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 jlu.jlu_duration);
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
-            if (jlu.jlu_opid_desc_frag
-                && opid_iter->second.otr_description.lod_elements[0].empty())
-            {
-                opid_iter->second.otr_description.lod_elements[0].push_back(
-                    ' ');
-                opid_iter->second.otr_description.lod_elements[0]
-                    += jlu.jlu_opid_desc_frag.value();
+            auto& elems = opid_iter->second.otr_description.lod_elements;
+            if (jlu.jlu_opid_desc_frag && elems.empty()) {
+                elems.insert(0,
+                             fmt::format(FMT_STRING(" {}"),
+                                         jlu.jlu_opid_desc_frag.value()));
             }
 
             if (jlu.jlu_subid) {

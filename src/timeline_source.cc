@@ -721,7 +721,7 @@ timeline_source::rebuild_indexes()
         safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
             ld->get_file_ptr()->get_opids());
         for (const auto& pair : r_opid_map->los_opid_ranges) {
-            auto& otr = pair.second;
+            const opid_time_range& otr = pair.second;
             auto active_iter = this->gs_active_opids.find(pair.first);
             if (active_iter == this->gs_active_opids.end()) {
                 auto opid = pair.first.to_owned(this->gs_allocator);
@@ -737,8 +737,8 @@ timeline_source::rebuild_indexes()
                 active_iter->second.or_value |= otr;
             }
 
-            auto& row = active_iter->second;
-            for (auto& sub : active_iter->second.or_value.otr_sub_ops) {
+            opid_row& row = active_iter->second;
+            for (auto& sub : row.or_value.otr_sub_ops) {
                 auto subid_iter = this->gs_subid_map.find(sub.ostr_subid);
 
                 if (subid_iter == this->gs_subid_map.end()) {
@@ -749,11 +749,8 @@ timeline_source::rebuild_indexes()
                                      .first;
                 }
                 sub.ostr_subid = subid_iter->first;
-                if (sub.ostr_subid.length()
-                    > active_iter->second.or_max_subid_width)
-                {
-                    active_iter->second.or_max_subid_width
-                        = sub.ostr_subid.length();
+                if (sub.ostr_subid.length() > row.or_max_subid_width) {
+                    row.or_max_subid_width = sub.ostr_subid.length();
                 }
             }
 
@@ -764,27 +761,22 @@ timeline_source::rebuild_indexes()
 
                 auto desc_key
                     = opid_description_def_key{format->get_name(), desc_id};
-                auto desc_defs_iter
-                    = row.or_description_defs.odd_defs.find(desc_key);
-                if (desc_defs_iter == row.or_description_defs.odd_defs.end()) {
+                auto desc_defs_opt
+                    = row.or_description_defs.odd_defs.value_for(desc_key);
+                if (!desc_defs_opt) {
                     row.or_description_defs.odd_defs.insert(desc_key,
                                                             *desc_def_iter);
                 }
 
-                auto& all_descs = active_iter->second.or_descriptions;
-                auto& curr_desc_m = all_descs[desc_key];
+                auto& all_descs = row.or_descriptions;
                 const auto& new_desc_v = otr.otr_description.lod_elements;
-
-                for (const auto& desc_pair : new_desc_v) {
-                    curr_desc_m[desc_pair.first] = desc_pair.second;
-                }
+                all_descs.insert(desc_key, new_desc_v);
             } else if (!otr.otr_description.lod_elements.empty()) {
                 auto desc_sf = string_fragment::from_str(
-                    otr.otr_description.lod_elements.front().second);
-                active_iter->second.or_description
-                    = desc_sf.to_owned(this->gs_allocator);
+                    otr.otr_description.lod_elements.values().front());
+                row.or_description = desc_sf.to_owned(this->gs_allocator);
             }
-            active_iter->second.or_value.otr_description.lod_elements.clear();
+            row.or_value.otr_description.lod_elements.clear();
         }
 
         if (this->gs_index_progress) {
@@ -818,19 +810,20 @@ timeline_source::rebuild_indexes()
     this->gs_time_order.clear();
     this->gs_time_order.reserve(this->gs_active_opids.size());
     for (auto& pair : this->gs_active_opids) {
-        auto& otr = pair.second.or_value;
+        opid_row& row = pair.second;
+        opid_time_range& otr = pair.second.or_value;
         std::string full_desc;
-        if (pair.second.or_description.empty()) {
-            const auto& desc_defs = pair.second.or_description_defs.odd_defs;
-            for (auto& desc : pair.second.or_descriptions) {
-                auto desc_def_iter = desc_defs.find(desc.first);
-                if (desc_def_iter == desc_defs.end()) {
-                    continue;
+        if (row.or_description.empty()) {
+            const auto& desc_defs = row.or_description_defs.odd_defs;
+            if (!row.or_descriptions.empty()) {
+                auto desc_def_opt
+                    = desc_defs.value_for(row.or_descriptions.keys().front());
+                if (desc_def_opt) {
+                    full_desc = desc_def_opt.value()->to_string(
+                        row.or_descriptions.values().front());
                 }
-                const auto& desc_def = desc_def_iter->second;
-                full_desc = desc_def.to_string(desc.second);
             }
-            pair.second.or_descriptions.clear();
+            row.or_descriptions.clear();
             auto full_desc_sf = string_fragment::from_str(full_desc);
             auto desc_sf_iter = this->gs_descriptions.find(full_desc_sf);
             if (desc_sf_iter == this->gs_descriptions.end()) {

@@ -115,6 +115,7 @@
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
+#include "relative_time.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
@@ -4170,16 +4171,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
 
                 for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-                    for (const auto& note : lf->get_notes()) {
-                        switch (note.first) {
-                            case logfile::note_type::not_utf: {
-                                lnav::console::print(stderr, note.second);
-                                break;
-                            }
-
-                            default:
-                                break;
-                        }
+                    auto utf_note_opt = lf->get_notes().value_for(
+                        logfile::note_type::not_utf);
+                    if (utf_note_opt.has_value()) {
+                        lnav::console::print(stderr, *utf_note_opt.value());
                     }
                 }
 

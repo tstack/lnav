@@ -60,14 +60,14 @@ com_goto_mark(exec_context& ec,
 {
     std::string retval;
 
-    static const std::set<const bookmark_type_t*> DEFAULT_TYPES = {
+    static const lnav::set::small<const bookmark_type_t*> DEFAULT_TYPES = {
         &textview_curses::BM_USER,
         &textview_curses::BM_USER_EXPR,
         &textview_curses::BM_META,
     };
 
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    std::set<const bookmark_type_t*> mark_types;
+    lnav::set::small<const bookmark_type_t*> mark_types;
 
     if (args.size() > 1) {
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
@@ -100,7 +100,7 @@ com_goto_mark(exec_context& ec,
         if (args[0] == "next-mark") {
             auto search_from_top = search_forward_from(tc);
 
-            for (const auto& bt : mark_types) {
+            for (const auto& bt : mark_types.keys()) {
                 auto bt_top = next_cluster(
                     &bookmark_vector<vis_line_t>::next, bt, search_from_top);
 
@@ -113,14 +113,14 @@ com_goto_mark(exec_context& ec,
                 auto um = lnav::console::user_message::info(fmt::format(
                     FMT_STRING("no more {} bookmarks after here"),
                     fmt::join(
-                        mark_types
+                        mark_types.keys()
                             | lnav::itertools::map(&bookmark_type_t::get_name),
                         ", ")));
 
                 return Err(um);
             }
         } else if (sel) {
-            for (const auto& bt : mark_types) {
+            for (const auto& bt : mark_types.keys()) {
                 auto bt_top = next_cluster(
                     &bookmark_vector<vis_line_t>::prev, bt, sel.value());
 
@@ -133,7 +133,7 @@ com_goto_mark(exec_context& ec,
                 auto um = lnav::console::user_message::info(fmt::format(
                     FMT_STRING("no more {} bookmarks before here"),
                     fmt::join(
-                        mark_types
+                        mark_types.keys()
                             | lnav::itertools::map(&bookmark_type_t::get_name),
                         ", ")));
 

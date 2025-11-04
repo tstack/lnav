@@ -1054,8 +1054,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                    "skipping indexing for file")
                                    .with_reason(utf8_error_um)
                                    .move();
-                this->lf_notes.writeAccess()->emplace(note_type::not_utf,
-                                                      note_um);
+                this->lf_notes.writeAccess()->insert(note_type::not_utf,
+                                                     note_um);
                 if (this->lf_logfile_observer != nullptr) {
                     this->lf_logfile_observer->logfile_indexing(this, 0, 0);
                 }
@@ -1306,8 +1306,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                       .with_reason(
                           "file is large and has no discernible log format")
                       .move();
-            this->lf_notes.writeAccess()->emplace(note_type::indexing_disabled,
-                                                  note_um);
+            this->lf_notes.writeAccess()->insert(note_type::indexing_disabled,
+                                                 note_um);
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(this, 0, 0);
             }
@@ -1700,8 +1700,7 @@ logfile::mark_as_duplicate(const std::string& name)
 {
     safe::WriteAccess<safe_notes> notes(this->lf_notes);
 
-    const auto iter = notes->find(note_type::duplicate);
-    if (iter != notes->end()) {
+    if (notes->contains(note_type::duplicate)) {
         return false;
     }
 
@@ -1713,7 +1712,7 @@ logfile::mark_as_duplicate(const std::string& name)
                   attr_line_t("this file appears to have the same content as ")
                       .append(lnav::roles::file(name)))
               .move();
-    notes->emplace(note_type::duplicate, note_um);
+    notes->insert(note_type::duplicate, note_um);
     return true;
 }
 
@@ -1883,7 +1882,7 @@ logfile::set_opid_description(string_fragment opid, string_fragment desc)
     }
     opid_iter->second.otr_description.lod_index = std::nullopt;
     opid_iter->second.otr_description.lod_elements.clear();
-    opid_iter->second.otr_description.lod_elements[0] = desc.to_string();
+    opid_iter->second.otr_description.lod_elements.insert(0, desc.to_string());
 }
 
 void

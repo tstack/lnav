@@ -219,7 +219,7 @@ const char relative_time::FIELD_CHARS[] = {
     'y',
 };
 
-Result<relative_time, relative_time::parse_error>
+Result<relative_time, relative_time_parse_error>
 relative_time::from_str(string_fragment str)
 {
     int64_t number = 0;
@@ -228,7 +228,7 @@ relative_time::from_str(string_fragment str)
     token_t base_token = RTT_INVALID;
     rt_field_type last_field_type = RTF__MAX;
     relative_time retval;
-    parse_error pe_out;
+    relative_time_parse_error pe_out;
     std::unordered_set<int> seen_tokens;
 
     pe_out.pe_column = 0;
@@ -810,7 +810,7 @@ relative_time::to_string() const
     char* pos = dst;
 
     if (this->is_absolute()) {
-        for (const auto& day_token : this->rt_included_days) {
+        for (const auto& day_token : this->rt_included_days.keys()) {
             pos += snprintf(pos,
                             sizeof(dst) - (pos - dst),
                             "%s ",
@@ -1070,10 +1070,9 @@ relative_time::window_start(const struct exttm& tm) const
     }
 
     if (!this->rt_included_days.empty()) {
-        auto iter = this->rt_included_days.find(
-            (token_t) (RTT_SUNDAY + tm.et_tm.tm_wday));
-
-        if (iter == this->rt_included_days.end()) {
+        if (!this->rt_included_days.contains(
+                (token_t) (RTT_SUNDAY + tm.et_tm.tm_wday)))
+        {
             return std::nullopt;
         }
         clear = true;

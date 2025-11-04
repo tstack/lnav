@@ -260,7 +260,7 @@ public:
     std::optional<bookmark_metadata*> find_bookmark_metadata(
         vis_line_t vl) const
     {
-        if (vl >= this->lss_filtered_index.size()) {
+        if (vl >= vis_line_t(this->lss_filtered_index.size())) {
             return std::nullopt;
         }
         return this->find_bookmark_metadata(this->at(vl));

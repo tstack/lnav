@@ -149,7 +149,8 @@ upsert(entry& en)
     auto errors = parse_res.unwrapErr();
     return Err(lnav::console::user_message::error(
                    "unable to create entry on regex101.com")
-                   .with_reason(errors[0].to_attr_line({})));
+                   .with_reason(errors[0].to_attr_line(
+                       lnav::console::user_message::render_flags::none)));
 }
 
 struct retrieve_entity {
@@ -214,7 +215,8 @@ retrieve(const std::string& permalink)
                    attr_line_t("unable to get entry ")
                        .append_quoted(lnav::roles::symbol(permalink))
                        .append(" on regex101.com"))
-            .with_reason(parse_errors[0].to_attr_line({}));
+            .with_reason(parse_errors[0].to_attr_line(
+                lnav::console::user_message::render_flags::none));
     }
 
     auto entry_value = parse_res.unwrap();
@@ -252,7 +254,8 @@ retrieve(const std::string& permalink)
                    attr_line_t("unable to get entry version ")
                        .append_quoted(lnav::roles::symbol(version_url.string()))
                        .append(" on regex101.com"))
-            .with_reason(parse_errors[0].to_attr_line({}));
+            .with_reason(parse_errors[0].to_attr_line(
+                lnav::console::user_message::render_flags::none));
     }
 
     auto retval = version_parse_res.unwrap();
