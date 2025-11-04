@@ -111,13 +111,10 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto align = hm.hm_align;
 
         if (row < (int) this->dls_row_styles.size()) {
-            auto style_iter
-                = this->dls_row_styles[row].rs_column_config.find(lpc);
-            if (style_iter != this->dls_row_styles[row].rs_column_config.end())
-            {
-                if (style_iter->second.ta_align.has_value()) {
-                    align = style_iter->second.ta_align.value();
-                }
+            auto style_opt
+                = this->dls_row_styles[row].rs_column_config.value_for(lpc);
+            if (style_opt && style_opt.value()->ta_align.has_value()) {
+                align = style_opt.value()->ta_align.value();
             }
         }
 
@@ -246,11 +243,10 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
             continue;
         }
         if (row < (ssize_t) this->dls_row_styles.size()) {
-            auto style_iter
-                = this->dls_row_styles[row].rs_column_config.find(lpc);
-            if (style_iter != this->dls_row_styles[row].rs_column_config.end())
-            {
-                user_attrs = style_iter->second;
+            auto style_opt
+                = this->dls_row_styles[row].rs_column_config.value_for(lpc);
+            if (style_opt) {
+                user_attrs = *style_opt.value();
             }
         }
 

@@ -163,7 +163,7 @@ public:
     };
 
     struct row_style {
-        std::map<int, text_attrs> rs_column_config;
+        lnav::map::small<int, text_attrs> rs_column_config;
     };
 
     uint32_t dls_generation{0};
