@@ -369,7 +369,8 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
     {
         auto poss_str = lnav_commands | lnav::itertools::first()
             | lnav::itertools::similar_to(args.empty() ? "" : args[0], 10);
-        auto poss_width = poss_str | lnav::itertools::map(&std::string::size)
+        auto poss_width = poss_str
+            | lnav::itertools::map(&string_fragment::length)
             | lnav::itertools::max();
 
         auto poss = poss_str
@@ -380,8 +381,8 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                             .append(" ")
                             .pad_to(poss_width.value_or(0) + 1)
                             .append(lnav_commands[x]->c_help.ht_summary)
-                            .with_attr_for_all(
-                                lnav::prompt::SUBST_TEXT.value(x + " "));
+                            .with_attr_for_all(lnav::prompt::SUBST_TEXT.value(
+                                fmt::format(FMT_STRING("{} "), x)));
                     });
 
         rc.open_popup_for_completion(0, poss);
@@ -573,24 +574,26 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                             return cmd_pair.second->c_dependencies.empty();
                         })
             | lnav::itertools::first() | lnav::itertools::similar_to(line, 10);
-        auto poss_width = poss_str | lnav::itertools::map(&std::string::size)
+        auto poss_width = poss_str
+            | lnav::itertools::map(&string_fragment::length)
             | lnav::itertools::max();
 
-        auto poss = poss_str
+        auto poss
+            = poss_str
             | lnav::itertools::map([&args, &poss_width](const auto& x) {
-                        const auto* summary
-                            = sql_cmd_map->at(x)->c_help.ht_summary
-                            ? sql_cmd_map->at(x)->c_help.ht_summary
-                            : sqlite_function_help.find(x)->second->ht_summary;
-                        return attr_line_t()
-                            .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
-                            .highlight_fuzzy_matches(cget(args, 0).value_or(""))
-                            .append(" ")
-                            .pad_to(poss_width.value_or(0) + 1)
-                            .append(summary)
-                            .with_attr_for_all(
-                                lnav::prompt::SUBST_TEXT.value(x + " "));
-                    });
+                  auto x_str = x.to_string();
+                  const auto* summary = sql_cmd_map->at(x)->c_help.ht_summary
+                      ? sql_cmd_map->at(x)->c_help.ht_summary
+                      : sqlite_function_help.find(x_str)->second->ht_summary;
+                  return attr_line_t()
+                      .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                      .highlight_fuzzy_matches(cget(args, 0).value_or(""))
+                      .append(" ")
+                      .pad_to(poss_width.value_or(0) + 1)
+                      .append(summary)
+                      .with_attr_for_all(
+                          lnav::prompt::SUBST_TEXT.value(x_str + " "));
+              });
 
         rc.open_popup_for_completion(0, poss);
         rc.tc_popup.set_title("DB Command");
@@ -644,7 +647,8 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                           })
                     | lnav::itertools::first()
                     | lnav::itertools::similar_to(to_complete, 10);
-                auto width = poss_str | lnav::itertools::map(&std::string::size)
+                auto width = poss_str
+                    | lnav::itertools::map(&string_fragment::length)
                     | lnav::itertools::max();
 
                 title = "transform";
@@ -652,7 +656,7 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     | lnav::itertools::map([&width,
                                             &to_complete](const auto& x) {
                            const auto& ht = sql_cmd_map->at(x)->c_help;
-                           auto sub_value = x + " ";
+                           auto sub_value = fmt::format(FMT_STRING("{} "), x);
                            if (!ht.ht_parameters.empty()
                                && ht.ht_parameters[0].ht_group_start)
                            {

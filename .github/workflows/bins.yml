@@ -144,8 +144,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - runs-on: macos-13
-            arch: x86_64
           - runs-on: macos-14
             arch: aarch64
     runs-on: ${{ matrix.runs-on }}

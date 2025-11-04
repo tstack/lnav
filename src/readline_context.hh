@@ -34,7 +34,9 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "help_text.hh"
@@ -73,10 +75,10 @@ public:
     using splitter_func_t
         = split_result_t (*)(readline_context& rc, const std::string& cmdline);
     using command_t = struct _command_t {
-        const char* c_name;
+        string_fragment c_name;
         command_func_t c_func;
 
-        struct help_text c_help;
+        help_text c_help;
         prompt_func_t c_prompt{nullptr};
         std::string c_provides;
         std::set<std::string> c_dependencies;
@@ -92,11 +94,11 @@ public:
         {
         }
 
-        _command_t(command_func_t func) noexcept : c_name("anon"), c_func(func)
+        explicit _command_t(command_func_t func) noexcept : c_name("anon"), c_func(func)
         {
         }
     };
-    typedef std::map<std::string, command_t*> command_map_t;
+    using command_map_t = std::map<string_fragment, command_t*>;
 
     readline_context(std::string name,
                      command_map_t* commands = nullptr,

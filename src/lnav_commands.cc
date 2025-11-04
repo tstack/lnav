@@ -3625,21 +3625,21 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
         cmd.c_help.index_tags();
         cmd_map[cmd.c_name] = &cmd;
     }
-    cmd_map["q"] = cmd_map["q!"] = cmd_map["quit"];
+    cmd_map["q"_frag] = cmd_map["q!"_frag] = cmd_map["quit"_frag];
 
     if (getenv("LNAV_SRC") != nullptr) {
         static readline_context::command_t add_test(com_add_test);
 
-        cmd_map["add-test"] = &add_test;
+        cmd_map["add-test"_frag] = &add_test;
     }
     if (getenv("lnav_test") != nullptr) {
         static readline_context::command_t shexec(com_shexec),
             poll_now(com_poll_now), test_comment(com_test_comment),
             crasher(com_crash);
 
-        cmd_map["shexec"] = &shexec;
-        cmd_map["poll-now"] = &poll_now;
-        cmd_map["test-comment"] = &test_comment;
-        cmd_map["crash"] = &crasher;
+        cmd_map["shexec"_frag] = &shexec;
+        cmd_map["poll-now"_frag] = &poll_now;
+        cmd_map["test-comment"_frag] = &test_comment;
+        cmd_map["crash"_frag] = &crasher;
     }
 }

@@ -2232,9 +2232,12 @@ static readline_context::command_t IO_COMMANDS[] = {
 void
 init_lnav_io_commands(readline_context::command_map_t& cmd_map)
 {
+    static auto WRITE_COLS_FRAG = "write-cols-to"_frag;
+    static auto WRITE_TABLE_FRAG = "write-table-to"_frag;
+
     for (auto& cmd : IO_COMMANDS) {
         cmd.c_help.index_tags();
         cmd_map[cmd.c_name] = &cmd;
     }
-    cmd_map["write-cols-to"] = cmd_map["write-table-to"];
+    cmd_map[WRITE_COLS_FRAG] = cmd_map[WRITE_TABLE_FRAG];
 }

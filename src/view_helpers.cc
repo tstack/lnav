@@ -645,7 +645,8 @@ build_all_help_text()
     all_help_text.append("\n").append("Command Reference"_h2);
 
     for (const auto& cmd : lnav_commands) {
-        if (cmd.second->c_help.ht_summary == nullptr) {
+        if (cmd.second->c_name != cmd.first ||
+            cmd.second->c_help.ht_summary == nullptr) {
             continue;
         }
         all_help_text.append(2, '\n');
