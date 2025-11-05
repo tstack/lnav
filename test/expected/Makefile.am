@@ -854,6 +854,8 @@ dist_noinst_DATA = \
     test_sql_coll_func.sh_eb2c424733ce978d1b6d1dcb93d6e45af7c8fa96.out \
     test_sql_coll_func.sh_f045e94d921bfcfbded83ee681bf11445a99ff6d.err \
     test_sql_coll_func.sh_f045e94d921bfcfbded83ee681bf11445a99ff6d.out \
+    test_sql_fs_func.sh_02e69430dfd00be8462bd9aa2a51570b198a173b.err \
+    test_sql_fs_func.sh_02e69430dfd00be8462bd9aa2a51570b198a173b.out \
     test_sql_fs_func.sh_109ff42de817b56a9082f605f63af71c0db8c9d7.err \
     test_sql_fs_func.sh_109ff42de817b56a9082f605f63af71c0db8c9d7.out \
     test_sql_fs_func.sh_17b09f79bfcac1762153ec9650fb1e545a24d8a3.err \
