@@ -773,16 +773,14 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     {
         auto color = styling::color_unit::from_palette(
             lnav::enums::to_underlying(ansi_color::red));
-        value_out.emplace_back(line_range{0, 1},
-                               VC_BACKGROUND.value(color));
+        value_out.emplace_back(line_range{0, 1}, VC_BACKGROUND.value(color));
     }
     if (this->ttt_preview_max_time
         && this->ttt_preview_max_time < this->lss_token_line->get_timeval())
     {
         auto color = styling::color_unit::from_palette(
             lnav::enums::to_underlying(ansi_color::red));
-        value_out.emplace_back(line_range{0, 1},
-                               VC_BACKGROUND.value(color));
+        value_out.emplace_back(line_range{0, 1}, VC_BACKGROUND.value(color));
     }
     if (!this->lss_token_line->is_continued()) {
         if (this->lss_preview_filter_stmt != nullptr) {
@@ -1372,12 +1370,12 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 } else {
                     auto matched = eval_res.unwrap();
 
+                    line_iter->set_expr_mark(matched);
                     if (matched) {
-                        line_iter->set_expr_mark(true);
                         vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
                             vis_line_t(this->lss_filtered_index.size()));
-                    } else {
-                        line_iter->set_expr_mark(false);
+                        this->lss_user_marks[&textview_curses::BM_USER_EXPR]
+                            .insert_once(cl);
                     }
                 }
                 this->lss_filtered_index.push_back(index_index);
@@ -1455,12 +1453,6 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
             auto& user_mark = this->lss_user_marks[bmt];
             if (user_mark.bv_tree.exists(orig_ic.value())) {
                 bm[bmt].insert_once(vl);
-
-                if (bmt == &textview_curses::BM_USER) {
-                    auto ll = lf->begin() + cl;
-
-                    ll->set_mark(true);
-                }
             }
         }
 
@@ -1546,12 +1538,12 @@ logfile_sub_source::text_filters_changed()
             } else {
                 auto matched = eval_res.unwrap();
 
+                line_iter->set_expr_mark(matched);
                 if (matched) {
-                    line_iter->set_expr_mark(true);
                     vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
                         vis_line_t(this->lss_filtered_index.size()));
-                } else {
-                    line_iter->set_expr_mark(false);
+                    this->lss_user_marks[&textview_curses::BM_USER_EXPR]
+                        .insert_once(cl);
                 }
             }
             this->lss_filtered_index.push_back(index_index);
@@ -1792,6 +1784,7 @@ logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 Result<void, lnav::console::user_message>
 logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
 {
+    static auto op = lnav_operation{"set_sql_marker"};
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
@@ -1804,15 +1797,19 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
         }
     }
 
+    auto op_guard = lnav_opid_guard::internal(op);
+    log_info("setting SQL marker: %s", stmt_str.c_str());
     this->lss_marker_stmt_text = std::move(stmt_str);
     this->lss_marker_stmt = stmt;
 
     if (this->tss_view == nullptr || this->lss_force_rebuild) {
+        log_info("skipping SQL marker update");
         return Ok();
     }
 
     auto& vis_bm = this->tss_view->get_bookmarks();
     auto& expr_marks_bv = vis_bm[&textview_curses::BM_USER_EXPR];
+    auto& cl_marks_bv = this->lss_user_marks[&textview_curses::BM_USER_EXPR];
 
     expr_marks_bv.clear();
     if (this->lss_index_delegate) {
@@ -1822,12 +1819,13 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
          row += 1_vl)
     {
         auto cl = this->at(row);
-        auto ld = this->find_data(cl);
+        uint64_t line_number;
+        auto ld = this->find_data(cl, line_number);
 
         if (!(*ld)->is_visible()) {
             continue;
         }
-        auto ll = (*ld)->get_file()->begin() + cl;
+        auto ll = (*ld)->get_file()->begin() + line_number;
         if (ll->is_continued() || ll->is_ignored()) {
             continue;
         }
@@ -1839,11 +1837,10 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
         } else {
             auto matched = eval_res.unwrap();
 
+            ll->set_expr_mark(matched);
             if (matched) {
-                ll->set_expr_mark(true);
                 expr_marks_bv.insert_once(row);
-            } else {
-                ll->set_expr_mark(false);
+                cl_marks_bv.insert_once(cl);
             }
         }
         if (this->lss_index_delegate) {
@@ -1854,6 +1851,7 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
     if (this->lss_index_delegate) {
         this->lss_index_delegate->index_complete(*this);
     }
+    log_info("SQL marker update complete");
 
     return Ok();
 }
@@ -2190,13 +2188,10 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
 
         ll->set_mark(added);
     }
-    auto lb = this->lss_user_marks[bm].bv_tree.lower_bound(cl);
     if (added) {
-        if (lb == this->lss_user_marks[bm].bv_tree.end() || *lb != cl) {
-            this->lss_user_marks[bm].bv_tree.insert(cl);
-        }
-    } else if (lb != this->lss_user_marks[bm].bv_tree.end() && *lb == cl) {
-        this->lss_user_marks[bm].bv_tree.erase(lb);
+        this->lss_user_marks[bm].insert_once(cl);
+    } else {
+        this->lss_user_marks[bm].erase(cl);
     }
     if (bm == &textview_curses::BM_META
         && this->lss_meta_grepper.gps_proc != nullptr)
@@ -2245,7 +2240,7 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
                 }
 
                 for (auto cl : to_del) {
-                    bv.bv_tree.erase(cl);
+                    bv.erase(cl);
                 }
             }
         }
@@ -3435,6 +3430,42 @@ logfile_sub_source::reload_config(error_reporter& reporter)
             break;
         case logfile_sub_source_ns::time_column_feature_t::Enabled:
             break;
+    }
+}
+
+void
+logfile_sub_source::add_commands_for_session(
+    const std::function<void(const std::string&)>& receiver)
+{
+    text_sub_source::add_commands_for_session(receiver);
+
+    auto mark_expr = this->get_sql_marker_text();
+    if (!mark_expr.empty()) {
+        receiver(fmt::format(FMT_STRING("mark-expr {}"), mark_expr));
+    }
+    auto filter_expr = this->get_sql_filter_text();
+    if (!filter_expr.empty()) {
+        receiver(fmt::format(FMT_STRING("filter-expr {}"), filter_expr));
+    }
+
+    for (const auto& format : log_format::get_root_formats()) {
+        auto field_states = format->get_field_states();
+
+        for (const auto& fs_pair : field_states) {
+            if (!fs_pair.second.lvm_user_hidden) {
+                continue;
+            }
+
+            if (fs_pair.second.lvm_user_hidden.value()) {
+                receiver(fmt::format(FMT_STRING("hide-fields {}.{}"),
+                                     format->get_name().to_string(),
+                                     fs_pair.first.to_string()));
+            } else if (fs_pair.second.lvm_hidden) {
+                receiver(fmt::format(FMT_STRING("show-fields {}.{}"),
+                                     format->get_name().to_string(),
+                                     fs_pair.first.to_string()));
+            }
+        }
     }
 }
 

@@ -4143,6 +4143,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
                 setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
                 setup_initial_view_stack();
+                for (auto& tview : lnav_data.ld_views) {
+                    if (!tview.get_selection().has_value()) {
+                        tview.set_selection(0_vl);
+                    }
+                }
+                lnav_data.ld_text_source.tss_apply_default_init_location = true;
+
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
                 run_cleanup_tasks();
@@ -4196,7 +4203,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
                 }
 
-                root_superv.stop_children();
+                {
+                    auto& bg_service
+                        = injector::get<bg_looper&, services::background_t>();
+
+                    root_superv.stop_child(bg_service.shared_from_this());
+                }
 
                 {
                     auto& pt = lnav::progress_tracker::get_tasks();

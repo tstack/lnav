@@ -695,6 +695,9 @@ public:
         this->set_preview_sql_filter(nullptr);
     }
 
+    void add_commands_for_session(
+        const std::function<void(const std::string&)>& receiver);
+
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }
 

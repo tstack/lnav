@@ -1669,7 +1669,7 @@ save_session_with_id(const std::string& session_id)
                     view_map.gen("word_wrap");
                     view_map.gen(tc.get_word_wrap());
 
-                    auto tss = tc.get_sub_source();
+                    auto* tss = tc.get_sub_source();
                     if (tss == nullptr) {
                         continue;
                     }
@@ -1677,87 +1677,11 @@ save_session_with_id(const std::string& session_id)
                     view_map.gen("filtering");
                     view_map.gen(tss->tss_apply_filters);
 
-                    auto& fs = tss->get_filters();
-
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
 
-                    for (const auto& filter : fs) {
-                        auto cmd = filter->to_command();
-
-                        if (cmd.empty()) {
-                            continue;
-                        }
-
-                        cmd_array.gen(cmd);
-
-                        if (!filter->is_enabled()) {
-                            cmd_array.gen("disable-filter " + filter->get_id());
-                        }
-                    }
-
-                    auto& hmap = lnav_data.ld_views[lpc].get_highlights();
-
-                    for (auto& hl : hmap) {
-                        if (hl.first.first != highlight_source_t::INTERACTIVE) {
-                            continue;
-                        }
-                        cmd_array.gen("highlight " + hl.first.second);
-                    }
-
-                    auto* ttt = dynamic_cast<text_time_translator*>(tss);
-                    if (ttt != nullptr) {
-                        for (const auto& format :
-                             log_format::get_root_formats())
-                        {
-                            auto field_states = format->get_field_states();
-
-                            for (const auto& fs_pair : field_states) {
-                                if (!fs_pair.second.lvm_user_hidden) {
-                                    continue;
-                                }
-
-                                if (fs_pair.second.lvm_user_hidden.value()) {
-                                    cmd_array.gen(
-                                        "hide-fields "
-                                        + format->get_name().to_string() + "."
-                                        + fs_pair.first.to_string());
-                                } else if (fs_pair.second.lvm_hidden) {
-                                    cmd_array.gen(
-                                        "show-fields "
-                                        + format->get_name().to_string() + "."
-                                        + fs_pair.first.to_string());
-                                }
-                            }
-                        }
-
-                        auto min_time_opt = ttt->get_min_row_time();
-                        auto max_time_opt = ttt->get_max_row_time();
-                        char min_time_str[32], max_time_str[32];
-
-                        if (min_time_opt) {
-                            sql_strftime(min_time_str,
-                                         sizeof(min_time_str),
-                                         min_time_opt.value());
-                            cmd_array.gen("hide-lines-before "
-                                          + std::string(min_time_str));
-                        }
-                        if (max_time_opt) {
-                            sql_strftime(max_time_str,
-                                         sizeof(max_time_str),
-                                         max_time_opt.value());
-                            cmd_array.gen("hide-lines-after "
-                                          + std::string(max_time_str));
-                        }
-
-                        if (lpc == LNV_LOG) {
-                            auto& lss = lnav_data.ld_log_source;
-                            auto mark_expr = lss.get_sql_marker_text();
-                            if (!mark_expr.empty()) {
-                                cmd_array.gen("mark-expr " + mark_expr);
-                            }
-                        }
-                    }
+                    tss->add_commands_for_session(
+                        [&](auto& cmd) { cmd_array.gen(cmd); });
                 }
             }
         }
@@ -1898,11 +1822,29 @@ lnav::session::restore_view_states()
             tview.set_follow_search_for(-1, {});
         }
         tview.set_word_wrap(vs.vs_word_wrap);
+        lnav::set::small<std::string> curr_cmds;
+        auto* tss = tview.get_sub_source();
         if (tview.get_sub_source() != nullptr) {
-            tview.get_sub_source()->tss_apply_filters = vs.vs_filtering;
+            tss->tss_apply_filters = vs.vs_filtering;
+            tss->add_commands_for_session([&](auto& cmd) {
+                auto cmd_sf = string_fragment::from_str(cmd)
+                                  .split_when(string_fragment::tag1{' '})
+                                  .first;
+                curr_cmds.insert(cmd_sf.to_string());
+            });
         }
         for (const auto& cmdline : vs.vs_commands) {
+            auto cmdline_sf = string_fragment::from_str(cmdline);
             auto active = ensure_view(&tview);
+            auto [cmd_sf, _cmdline_rem]
+                = cmdline_sf.split_when(string_fragment::tag1{' '});
+            if (curr_cmds.contains(cmd_sf.to_string())) {
+                log_debug("view %s command '%.*s' already active",
+                          tview.get_title().c_str(),
+                          cmd_sf.length(),
+                          cmd_sf.data());
+                continue;
+            }
             auto exec_cmd_res
                 = execute_command(lnav_data.ld_exec_context, cmdline);
             if (exec_cmd_res.isOk()) {

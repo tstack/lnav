@@ -157,4 +157,11 @@ supervisor::add_child_service(std::shared_ptr<service_base> new_service)
     new_service->start();
 }
 
+void
+supervisor::stop_child(std::shared_ptr<service_base> child)
+{
+    child->stop();
+    this->cleanup_children();
+}
+
 }  // namespace isc

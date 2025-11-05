@@ -1158,6 +1158,7 @@ com_mark_expr(exec_context& ec,
         if (set_res.isErr()) {
             return Err(set_res.unwrapErr());
         }
+        lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
     return Ok(retval);

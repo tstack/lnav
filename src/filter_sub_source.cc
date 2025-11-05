@@ -535,7 +535,7 @@ filter_sub_source::min_time_filter_row::value_for(const render_state& rs,
                   VC_ROLE.value(role_t::VCR_NUMBER));
     }
     al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
-    al.append(lnav::to_rfc3339_string(this->tfr_time));
+    al.append(lnav::to_rfc3339_string(this->tfr_time, 'T'));
 }
 
 Result<timeval, std::string>
@@ -638,7 +638,7 @@ filter_sub_source::time_filter_row::prime_text_input(textview_curses* top_view,
                                                      filter_sub_source& parent)
 {
     ti.tc_text_format = text_format_t::TF_UNKNOWN;
-    ti.set_content(lnav::to_rfc3339_string(this->tfr_time));
+    ti.set_content(lnav::to_rfc3339_string(this->tfr_time, 'T'));
     return true;
 }
 
@@ -718,7 +718,7 @@ filter_sub_source::max_time_filter_row::value_for(const render_state& rs,
             VC_ROLE.value(role_t::VCR_NUMBER));
     }
     al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
-    al.append(lnav::to_rfc3339_string(this->tfr_time));
+    al.append(lnav::to_rfc3339_string(this->tfr_time, 'T'));
 }
 
 void

@@ -115,6 +115,8 @@ struct supervisor {
 
     void add_child_service(std::shared_ptr<service_base> new_service);
 
+    void stop_child(std::shared_ptr<service_base> child);
+
     void stop_children();
 
     void cleanup_children();

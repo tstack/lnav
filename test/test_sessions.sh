@@ -195,3 +195,13 @@ run_cap_test ${lnav_test} -d /tmp/lnav.err -I ${test_dir} -n \
     -c ':load-session' \
     -c ':export-session-to -' \
     support-dump/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":hide-lines-before 4pm" \
+    -c ":save-session" \
+    ${test_dir}/logfile_w3c_big.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":hide-lines-before 10pm" \
+    -c ":load-session" \
+    ${test_dir}/logfile_w3c_big.0

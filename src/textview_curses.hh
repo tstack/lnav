@@ -348,6 +348,9 @@ public:
         this->ttt_preview_max_time = std::nullopt;
     }
 
+    void add_time_commands_for_session(
+        const std::function<void(const std::string&)>& receiver);
+
     std::optional<timeval> ttt_preview_min_time;
     std::optional<timeval> ttt_preview_max_time;
 
@@ -590,6 +593,9 @@ public:
     virtual void scroll_invoked(textview_curses* tc);
 
     virtual void clear_preview();
+
+    virtual void add_commands_for_session(
+        const std::function<void(const std::string&)>& receiver);
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};

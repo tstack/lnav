@@ -86,14 +86,14 @@ com_hide_line(exec_context& ec,
             if (tc->get_inner_height() > 0) {
                 exttm tm;
 
-                auto vl = tc->get_selection();
-                if (vl) {
-                    auto log_vl_ri = ttt->time_for_row(vl.value());
-                    if (log_vl_ri) {
-                        tm = exttm::from_tv(log_vl_ri.value().ri_time);
-                        tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
-                    }
+                auto vl = tc->get_selection().value_or(0_vl);
+                auto log_vl_ri = ttt->time_for_row(vl);
+                if (log_vl_ri) {
+                    tm = exttm::from_tv(log_vl_ri.value().ri_time);
+                    tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
                 }
+            } else {
+                log_warning("empty view %s", tc->get_title().c_str());
             }
         } else if (dts.convert_to_timeval(all_args, tv_abs)) {
             tv_opt = tv_abs;
@@ -112,17 +112,19 @@ com_hide_line(exec_context& ec,
         }
 
         if (tv_opt) {
+            char time_text[256];
+            std::string relation;
+
+            sql_strftime(time_text, sizeof(time_text), tv_opt.value());
             if (ec.ec_dry_run) {
                 if (args[0] == "hide-lines-before") {
                     ttt->ttt_preview_min_time = tv_opt.value();
+                    relation = "before";
                 } else {
                     ttt->ttt_preview_max_time = tv_opt.value();
+                    relation = "after";
                 }
             } else {
-                char time_text[256];
-                std::string relation;
-
-                sql_strftime(time_text, sizeof(time_text), tv_opt.value());
                 if (args[0] == "hide-lines-before") {
                     ttt->set_min_row_time(tv_opt.value());
                     relation = "before";
@@ -132,12 +134,12 @@ com_hide_line(exec_context& ec,
                 }
 
                 tc->get_sub_source()->text_filters_changed();
-                tc->reload_data();
-
-                retval = fmt::format(FMT_STRING("info: hiding lines {} {}"),
-                                     relation,
-                                     time_text);
             }
+            tc->reload_data();
+            retval = fmt::format(
+                FMT_STRING("info: hiding lines {} {}"), relation, time_text);
+        } else {
+            log_warning("no tv_opt?");
         }
     }
 

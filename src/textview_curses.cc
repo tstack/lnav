@@ -128,6 +128,22 @@ text_filter::end_of_message(logfile_filter_state& lfs)
     lfs.tfs_lines_for_message[this->lf_index] = 0;
 }
 
+void
+text_time_translator::add_time_commands_for_session(
+    const std::function<void(const std::string&)>& receiver)
+{
+    auto min_time_opt = this->get_min_row_time();
+    if (min_time_opt) {
+        auto min_time_str = lnav::to_rfc3339_string(min_time_opt.value(), 'T');
+        receiver(fmt::format(FMT_STRING("hide-lines-before {}"), min_time_str));
+    }
+    auto max_time_opt = this->get_max_row_time();
+    if (max_time_opt) {
+        auto max_time_str = lnav::to_rfc3339_string(max_time_opt.value(), 'T');
+        receiver(fmt::format(FMT_STRING("hide-lines-after {}"), max_time_str));
+    }
+}
+
 log_accel::direction_t
 text_accel_source::get_line_accel_direction(vis_line_t vl)
 {
@@ -1271,6 +1287,33 @@ text_sub_source::clear_preview()
 
     if (ttt != nullptr) {
         ttt->clear_preview_times();
+    }
+}
+
+void
+text_sub_source::add_commands_for_session(
+    const std::function<void(const std::string&)>& receiver)
+{
+    for (const auto& filter : this->tss_filters) {
+        receiver(filter->to_command());
+
+        if (!filter->is_enabled()) {
+            receiver(
+                fmt::format(FMT_STRING("disable-filter {}"), filter->get_id()));
+        }
+    }
+
+    auto* ttt = dynamic_cast<text_time_translator*>(this);
+    if (ttt != nullptr) {
+        ttt->add_time_commands_for_session(receiver);
+    }
+
+    const auto& hmap = this->tss_view->get_highlights();
+    for (const auto& hl : hmap) {
+        if (hl.first.first != highlight_source_t::INTERACTIVE) {
+            continue;
+        }
+        receiver(fmt::format(FMT_STRING("highlight {}"), hl.first.second));
     }
 }
 
