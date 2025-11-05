@@ -31,6 +31,7 @@
 #define lnav_map_util_hh
 
 #include <functional>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <type_traits>
@@ -186,6 +187,11 @@ public:
     class iterator_T {
     public:
         using iterator_category = std::forward_iterator_tag;
+        using value_type = std::pair<const K&, const V&>;
+        using difference_type = ptrdiff_t;
+        using pointer = value_type*;
+        using reference = value_type&;
+
         friend class small;
         const K& key() const { return this->i_parent.s_keys[this->i_index]; }
 
@@ -223,10 +229,7 @@ public:
             return {this->key(), this->value()};
         }
 
-        std::pair<const K&, const V&> operator*() const
-        {
-            return {this->key(), this->value()};
-        }
+        value_type operator*() const { return {this->key(), this->value()}; }
 
     private:
         iterator_T(T& parent, size_t index) : i_parent(parent), i_index(index)
