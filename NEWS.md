@@ -184,6 +184,8 @@ Bug Fixes:
 * In the SPECTRO view, you can now move to the next/
   previous row with bookmarks.  Note that this view
   synchronizes bookmarks with the LOG view.
+* Session state should no longer override commands
+  passed on the command-line.
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging

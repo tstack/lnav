@@ -169,7 +169,6 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_access_log.0
 
 # hiding fields failed
-export TZ="UTC"
 rm -rf ./sessions
 mkdir -p $HOME
 run_cap_test ${lnav_test} -n \
@@ -203,5 +202,18 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":hide-lines-before 10pm" \
+    -c ":load-session" \
+    ${test_dir}/logfile_w3c_big.0
+
+export YES_COLOR=1
+rm -rf ./sessions
+mkdir -p $HOME
+
+run_cap_test ${lnav_test} -n \
+    -c ":mark-expr :sc_bytes < 1000" \
+    -c ":save-session" \
+    ${test_dir}/logfile_w3c_big.0
+
+run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     ${test_dir}/logfile_w3c_big.0
