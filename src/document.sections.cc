@@ -912,7 +912,7 @@ private:
     discover_builder& sw_discover_builder;
     attr_line_t& sw_line;
     data_scanner sw_scanner;
-    int sw_depth{0};
+    size_t sw_depth{0};
     size_t sw_line_number{0};
     bool sw_at_start{true};
     std::set<size_t> sw_indents;

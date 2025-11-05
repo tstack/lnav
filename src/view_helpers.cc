@@ -1691,6 +1691,7 @@ set_view_mode(ln_mode_t mode)
             break;
         }
         case ln_mode_t::BREADCRUMBS: {
+            lnav_data.ld_view_stack.top().value()->set_enabled(false);
             breadcrumb_view->focus();
             break;
         }

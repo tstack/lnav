@@ -34,9 +34,19 @@
 
 #define DS_STRINGIZE(A) #A
 
+#if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define NO_ASAN no_sanitize_address,
+#  else
+#    define NO_ASAN
+#  endif
+#else
+#  define NO_ASAN
+#endif
+
 #if defined(__APPLE__)
 #    define DIST_SLICE(id) \
-        __attribute__((no_sanitize_address, \
+        __attribute__((NO_ASAN \
                        used, \
                        section("__DATA,__ds_" DS_STRINGIZE( \
                            id) ",regular,no_dead_strip")))

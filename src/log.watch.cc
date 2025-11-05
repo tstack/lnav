@@ -32,6 +32,7 @@
 #include <sqlite3.h>
 
 #include "base/injector.hh"
+#include "base/map_util.hh"
 #include "bound_tags.hh"
 #include "lnav.events.hh"
 #include "lnav_config_fwd.hh"
@@ -99,13 +100,13 @@ struct expressions : public lnav_config_listener {
                 continue;
             }
 
-            this->e_watch_exprs.emplace(pair.first, std::move(cwe));
+            this->e_watch_exprs.insert(pair.first, std::move(cwe));
         }
     }
 
     void unload_config() override { this->e_watch_exprs.clear(); }
 
-    std::map<std::string, compiled_watch_expr> e_watch_exprs;
+    lnav::map::small<std::string, compiled_watch_expr> e_watch_exprs;
 };
 
 static expressions exprs;
@@ -132,7 +133,7 @@ eval_with(logfile& lf, logfile::iterator ll)
     auto line_number = std::distance(lf.begin(), ll);
     format->annotate(&lf, line_number, sa, values);
 
-    for (auto& watch_pair : exprs.e_watch_exprs) {
+    for (auto watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {
             continue;
         }

@@ -1401,10 +1401,10 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
                     loginfo("names = %s", notcurses_terminfo->name);
                 } else {
                     logpanic("failed to load terminfo at %s", terminfo_path);
-                    free(terminfo_path);
+                    free((void *) terminfo_path);
                     goto err;
                 }
-                free(terminfo_path);
+                free((void *) terminfo_path);
             } else {
                 loginfo("loading from internal");
                 notcurses_terminfo = terminfo_load_from_internal(tname);

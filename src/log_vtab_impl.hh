@@ -398,14 +398,14 @@ public:
 
     ~sql_progress_guard()
     {
+        log_vtab_data.lvd_looping = true;
+        log_vtab_data.lvd_progress = nullptr;
+        log_vtab_data.lvd_location = source_location{};
+        log_vtab_data.lvd_content.clear();
         if (log_vtab_data.lvd_finished) {
             log_vtab_data.lvd_finished();
         }
-        log_vtab_data.lvd_looping = true;
-        log_vtab_data.lvd_progress = nullptr;
         log_vtab_data.lvd_finished = nullptr;
-        log_vtab_data.lvd_location = source_location{};
-        log_vtab_data.lvd_content.clear();
     }
 };
 

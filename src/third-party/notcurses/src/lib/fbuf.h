@@ -248,7 +248,7 @@ fbuf_emit(fbuf* f, const char* esc){
 static inline int
 fbuf_emit_parm(fbuf* f, const char* esc){
   int retval = fbuf_emit(f, esc);
-  free(esc);
+  free((void*) esc);
   return retval;
 }
 

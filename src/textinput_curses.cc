@@ -736,7 +736,7 @@ textinput_curses::command_indent(indent_mode_t mode)
         return;
     }
 
-    int indent_amount;
+    int indent_amount = 0;
     switch (mode) {
         case indent_mode_t::left:
         case indent_mode_t::clear_left:

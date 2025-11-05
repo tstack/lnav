@@ -319,7 +319,7 @@ term_emit(const char* seq, FILE* out, bool flush){
 static inline int
 term_emit_parm(const char* seq, FILE* out, bool flush){
   int retval = term_emit(seq, out, flush);
-  free(seq);
+  free((void *) seq);
   return retval;
 }
 

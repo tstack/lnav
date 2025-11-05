@@ -728,7 +728,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                 0, lpc == comment_lines.size() - 1 ? lead : " \u2502 ");
             comment_line.insert(0, filename_width, ' ');
             if (tc != nullptr) {
-                auto hl = tc->get_highlights();
+                const auto& hl = tc->get_highlights();
                 auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
 
                 if (hl_iter != hl.end()) {
@@ -751,7 +751,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 
         al.insert(0, filename_width, ' ');
         if (tc != nullptr) {
-            auto hl = tc->get_highlights();
+            const auto& hl = tc->get_highlights();
             auto hl_iter = hl.find({highlight_source_t::PREVIEW, "search"});
 
             if (hl_iter != hl.end()) {
@@ -799,7 +799,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                                      : " \u2502 "_comment);
                 anno_line.insert(0, filename_width, ' ');
                 if (tc != nullptr) {
-                    auto hl = tc->get_highlights();
+                    const auto& hl = tc->get_highlights();
                     auto hl_iter
                         = hl.find({highlight_source_t::PREVIEW, "search"});
 
@@ -965,7 +965,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
     } else if (y == 0) {
         lines = &this->fos_static_lines;
         auto top = lv.get_top();
-        if (top < this->fos_lss.text_line_count()) {
+        if (top < vis_line_t(this->fos_lss.text_line_count())) {
             auto cl = this->fos_lss.at(top);
             if (!this->fos_header_line || this->fos_header_line.value() != cl
                 || !this->fos_header_line_context

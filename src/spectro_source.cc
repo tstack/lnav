@@ -691,12 +691,12 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
              sizeof(buf),
              ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
                  "  ") " %'d+",
-             role_t::VCR_LOW_THRESHOLD,
+             lnav::enums::to_underlying(role_t::VCR_LOW_THRESHOLD),
              st.st_green_threshold - 1,
-             role_t::VCR_MED_THRESHOLD,
+             lnav::enums::to_underlying(role_t::VCR_MED_THRESHOLD),
              st.st_green_threshold,
              st.st_yellow_threshold - 1,
-             role_t::VCR_HIGH_THRESHOLD,
+             lnav::enums::to_underlying(role_t::VCR_HIGH_THRESHOLD),
              st.st_yellow_threshold);
     auto buflen = strlen(buf);
     if (line.length() + buflen + 20 < width) {
