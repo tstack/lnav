@@ -185,6 +185,7 @@ public:
     template<typename T>
     class iterator_T {
     public:
+        using iterator_category = std::forward_iterator_tag;
         friend class small;
         const K& key() const { return this->i_parent.s_keys[this->i_index]; }
 
