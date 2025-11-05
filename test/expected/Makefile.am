@@ -424,8 +424,14 @@ dist_noinst_DATA = \
     test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.out \
     test_log2src.sh_0de731f5cb0dd0fb5138dd4c97d61cc0ec95dde8.err \
     test_log2src.sh_0de731f5cb0dd0fb5138dd4c97d61cc0ec95dde8.out \
+    test_log2src.sh_76b15f019b0225a08419b4068462bd4606bddbfa.err \
+    test_log2src.sh_76b15f019b0225a08419b4068462bd4606bddbfa.out \
     test_log2src.sh_7afad25dfbecb3e452e744c6bb0999d28f5da258.err \
     test_log2src.sh_7afad25dfbecb3e452e744c6bb0999d28f5da258.out \
+    test_log2src.sh_8c267bb7d50311e16299a3e1d458a7a0436271b6.err \
+    test_log2src.sh_8c267bb7d50311e16299a3e1d458a7a0436271b6.out \
+    test_log2src.sh_987222ab54049d8bf7eda2ad77366b45d7ee5479.err \
+    test_log2src.sh_987222ab54049d8bf7eda2ad77366b45d7ee5479.out \
     test_logfile.sh_00877d2e9dadab916a02005a068410dfbd85ec74.err \
     test_logfile.sh_00877d2e9dadab916a02005a068410dfbd85ec74.out \
     test_logfile.sh_05d1505168bf34b89fc0d1a39f1409cfe798119e.err \
@@ -1590,8 +1596,12 @@ dist_noinst_DATA = \
     test_text_file.sh_596b120fbea638472a27964444e262b4572afacc.out \
     test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.err \
     test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
+    test_text_file.sh_5b521dc944be52036354670bf31806fe6d3e5eb1.err \
+    test_text_file.sh_5b521dc944be52036354670bf31806fe6d3e5eb1.out \
     test_text_file.sh_5e9320f18d066e6fc930dbbffc357af64312bd4b.err \
     test_text_file.sh_5e9320f18d066e6fc930dbbffc357af64312bd4b.out \
+    test_text_file.sh_60c6e07888e831473262c22aaccbe41fa8bdebe7.err \
+    test_text_file.sh_60c6e07888e831473262c22aaccbe41fa8bdebe7.out \
     test_text_file.sh_68d8596eab1758ef9299e73231584b7697e91e3b.err \
     test_text_file.sh_68d8596eab1758ef9299e73231584b7697e91e3b.out \
     test_text_file.sh_6a24078983cf1b7a80b6fb65d5186cd125498136.err \

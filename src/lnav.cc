@@ -172,7 +172,7 @@ using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
 using namespace md4cpp::literals;
 
-static std::vector<std::string> DEFAULT_FILES;
+static std::vector<std::filesystem::path> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static std::vector<std::pair<const char*, std::future<void>>> CLEANUP_TASKS;
@@ -340,13 +340,15 @@ append_default_files()
 
     for (const auto& path : DEFAULT_FILES) {
         if (access(path.c_str(), R_OK) == 0) {
-            auto_mem<char> abspath;
-
             auto full_path = cwd / path;
-            if ((abspath = realpath(full_path.c_str(), nullptr)) == nullptr) {
-                perror("Unable to resolve path");
+            auto realpath_res = lnav::filesystem::realpath(full_path);
+            if (realpath_res.isOk()) {
+                auto abspath = realpath_res.unwrap();
+                lnav_data.ld_active_files.fc_file_names[abspath.string()];
             } else {
-                lnav_data.ld_active_files.fc_file_names[abspath.in()];
+                log_error("realpath() failed: %s -- %s",
+                          full_path.c_str(),
+                          realpath_res.unwrapErr().c_str());
             }
         } else if (lnav::filesystem::stat_file(path).isOk()) {
             lnav::console::print(
@@ -4215,7 +4217,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                     for (auto& bt : **pt.readAccess()) {
                         auto tp = bt();
-
                         if (tp.tp_messages.empty()) {
                             continue;
                         }

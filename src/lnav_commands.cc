@@ -263,7 +263,7 @@ com_add_src_path(exec_context& ec,
 {
     static const intern_string_t SRC = intern_string::lookup("path");
     if (args.size() < 2) {
-        return ec.make_error("expecting file name to open");
+        return ec.make_error("expecting a path to source code");
     }
 
 #if !defined(HAVE_RUST_DEPS)
@@ -276,12 +276,11 @@ com_add_src_path(exec_context& ec,
     auto split_args_res = lexer.split(ec.create_resolver());
     if (split_args_res.isErr()) {
         auto split_err = split_args_res.unwrapErr();
-        auto um
-            = lnav::console::user_message::error("unable to parse file names")
-                  .with_reason(split_err.se_error.te_msg)
-                  .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err.se_error)))
-                  .move();
+        auto um = lnav::console::user_message::error("unable to parse paths")
+                      .with_reason(split_err.se_error.te_msg)
+                      .with_snippet(lnav::console::snippet::from(
+                          SRC, lexer.to_attr_line(split_err.se_error)))
+                      .move();
 
         return Err(um);
     }
@@ -823,91 +822,88 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("move-args");
-    } else if (args.size() > 1) {
-        std::string all_args = remaining_args(cmdline, args);
-        auto* tc = *lnav_data.ld_view_stack.top();
-        std::optional<vis_line_t> dst_vl;
-        auto is_location = false;
+    std::string all_args = remaining_args(cmdline, args);
+    auto* tc = *lnav_data.ld_view_stack.top();
+    std::optional<vis_line_t> dst_vl;
+    auto is_location = false;
 
-        if (startswith(all_args, "#")) {
-            auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+    if (startswith(all_args, "#")) {
+        auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
 
-            if (ta == nullptr) {
-                return ec.make_error("view does not support anchor links");
-            }
-
-            dst_vl = ta->row_for_anchor(all_args);
-            if (!dst_vl) {
-                return ec.make_error("unable to find anchor: {}", all_args);
-            }
-            is_location = true;
+        if (ta == nullptr) {
+            return ec.make_error("view does not support anchor links");
         }
 
-        auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
-        int line_number, consumed;
-        date_time_scanner dts;
-        const char* scan_end = nullptr;
-        struct timeval tv;
-        struct exttm tm;
-        float value;
-        auto parse_res = relative_time::from_str(all_args);
+        dst_vl = ta->row_for_anchor(all_args);
+        if (!dst_vl) {
+            return ec.make_error("unable to find anchor: {}", all_args);
+        }
+        is_location = true;
+    }
 
-        if (ttt != nullptr && tc->get_inner_height() > 0_vl) {
-            auto top_time_opt
-                = ttt->time_for_row(tc->get_selection().value_or(0_vl));
+    auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
+    int line_number, consumed;
+    date_time_scanner dts;
+    const char* scan_end = nullptr;
+    struct timeval tv;
+    struct exttm tm;
+    float value;
+    auto parse_res = relative_time::from_str(all_args);
 
-            if (top_time_opt) {
-                auto top_time_tv = top_time_opt.value().ri_time;
-                struct tm top_tm;
+    if (ttt != nullptr && tc->get_inner_height() > 0_vl) {
+        auto top_time_opt
+            = ttt->time_for_row(tc->get_selection().value_or(0_vl));
 
-                localtime_r(&top_time_tv.tv_sec, &top_tm);
-                dts.set_base_time(top_time_tv.tv_sec, top_tm);
-            }
+        if (top_time_opt) {
+            auto top_time_tv = top_time_opt.value().ri_time;
+            struct tm top_tm;
+
+            localtime_r(&top_time_tv.tv_sec, &top_tm);
+            dts.set_base_time(top_time_tv.tv_sec, top_tm);
+        }
+    }
+
+    if (dst_vl) {
+    } else if (parse_res.isOk()) {
+        if (ttt == nullptr) {
+            return ec.make_error(
+                "relative time values only work in a time-indexed view");
+        }
+        if (tc->get_inner_height() == 0_vl) {
+            return ec.make_error("view is empty");
+        }
+        auto tv_opt = ttt->time_for_row(tc->get_selection().value_or(0_vl));
+        if (!tv_opt) {
+            return ec.make_error("cannot get time for the top row");
+        }
+        tv = tv_opt.value().ri_time;
+
+        vis_line_t vl = tc->get_selection().value_or(0_vl), new_vl;
+        bool done = false;
+        auto rt = parse_res.unwrap();
+        log_info("  goto relative time: %s", rt.to_string().c_str());
+
+        if (rt.is_relative()) {
+            injector::get<relative_time&, last_relative_time_tag>() = rt;
         }
 
-        if (dst_vl) {
-        } else if (parse_res.isOk()) {
-            if (ttt == nullptr) {
-                return ec.make_error(
-                    "relative time values only work in a time-indexed view");
-            }
-            if (tc->get_inner_height() == 0_vl) {
-                return ec.make_error("view is empty");
-            }
-            auto tv_opt = ttt->time_for_row(tc->get_selection().value_or(0_vl));
-            if (!tv_opt) {
-                return ec.make_error("cannot get time for the top row");
-            }
-            tv = tv_opt.value().ri_time;
+        do {
+            auto tm = rt.adjust(tv);
 
-            vis_line_t vl = tc->get_selection().value_or(0_vl), new_vl;
-            bool done = false;
-            auto rt = parse_res.unwrap();
-            log_info("  goto relative time: %s", rt.to_string().c_str());
-
-            if (rt.is_relative()) {
-                injector::get<relative_time&, last_relative_time_tag>() = rt;
+            tv = tm.to_timeval();
+            auto new_vl_opt = ttt->row_for_time(tv);
+            if (!new_vl_opt) {
+                break;
             }
 
-            do {
-                auto tm = rt.adjust(tv);
+            new_vl = new_vl_opt.value();
+            if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
+                vl = new_vl;
+                done = true;
+            }
+        } while (!done);
 
-                tv = tm.to_timeval();
-                auto new_vl_opt = ttt->row_for_time(tv);
-                if (!new_vl_opt) {
-                    break;
-                }
-
-                new_vl = new_vl_opt.value();
-                if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
-                    vl = new_vl;
-                    done = true;
-                }
-            } while (!done);
-
-            dst_vl = vl;
+        dst_vl = vl;
 
 #if 0
             if (!ec.ec_dry_run && !rt.is_absolute()
@@ -917,25 +913,24 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     r, R, "to move forward/backward the same amount of time"));
             }
 #endif
-        } else if ((scan_end = dts.scan(
-                        all_args.c_str(), all_args.size(), nullptr, &tm, tv))
-                       != nullptr
-                   || (scan_end = dts.scan(all_args.c_str(),
-                                           all_args.size(),
-                                           INTERACTIVE_FMTS,
-                                           &tm,
-                                           tv))
-                       != nullptr)
-        {
-            if (ttt == nullptr) {
-                return ec.make_error(
-                    "time values only work in a time-indexed view");
-            }
+    } else if ((scan_end
+                = dts.scan(all_args.c_str(), all_args.size(), nullptr, &tm, tv))
+                   != nullptr
+               || (scan_end = dts.scan(all_args.c_str(),
+                                       all_args.size(),
+                                       INTERACTIVE_FMTS,
+                                       &tm,
+                                       tv))
+                   != nullptr)
+    {
+        if (ttt == nullptr) {
+            return ec.make_error(
+                "time values only work in a time-indexed view");
+        }
 
-            size_t matched_size = scan_end - all_args.c_str();
-            if (matched_size != all_args.size()) {
-                auto um
-                    = lnav::console::user_message::error(
+        size_t matched_size = scan_end - all_args.c_str();
+        if (matched_size != all_args.size()) {
+            auto um = lnav::console::user_message::error(
                           attr_line_t("invalid timestamp: ").append(all_args))
                           .with_reason(
                               attr_line_t("the leading part of the timestamp "
@@ -952,98 +947,94 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                               "fix the timestamp or remove the trailing text")
                           .move();
 
-                auto unmatched_size = all_args.size() - matched_size;
-                auto& snippet_copy = um.um_snippets.back();
-                attr_line_builder alb(snippet_copy.s_content);
+            auto unmatched_size = all_args.size() - matched_size;
+            auto& snippet_copy = um.um_snippets.back();
+            attr_line_builder alb(snippet_copy.s_content);
 
-                alb.append("\n")
-                    .append(1 + cmdline.find(all_args), ' ')
-                    .append(matched_size, ' ');
-                {
-                    auto attr_guard
-                        = alb.with_attr(VC_ROLE.value(role_t::VCR_COMMENT));
-
-                    alb.append("^");
-                    if (unmatched_size > 1) {
-                        if (unmatched_size > 2) {
-                            alb.append(unmatched_size - 2, '-');
-                        }
-                        alb.append("^");
-                    }
-                    alb.append(" unrecognized input");
-                }
-                return Err(um);
-            }
-
-            if (!(tm.et_flags & ETF_DAY_SET)) {
-                tm.et_tm.tm_yday = -1;
-                tm.et_tm.tm_mday = 1;
-            }
-            if (!(tm.et_flags & ETF_HOUR_SET)) {
-                tm.et_tm.tm_hour = 0;
-            }
-            if (!(tm.et_flags & ETF_MINUTE_SET)) {
-                tm.et_tm.tm_min = 0;
-            }
-            if (!(tm.et_flags & ETF_SECOND_SET)) {
-                tm.et_tm.tm_sec = 0;
-            }
-            if (!(tm.et_flags & ETF_MICROS_SET)
-                && !(tm.et_flags & ETF_MILLIS_SET))
+            alb.append("\n")
+                .append(1 + cmdline.find(all_args), ' ')
+                .append(matched_size, ' ');
             {
-                tm.et_nsec = 0;
-            }
-            tv = tm.to_timeval();
-            dst_vl = ttt->row_for_time(tv);
-        } else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
-            if (args[1][consumed] == '%') {
-                if (value < 0) {
-                    return ec.make_error(
-                        "negative percentages are not allowed");
-                }
-                line_number
-                    = (int) ((double) tc->get_inner_height() * (value / 100.0));
-            } else {
-                line_number = (int) value;
-                if (line_number < 0) {
-                    log_info("negative goto: %d height=%d",
-                             line_number,
-                             tc->get_inner_height());
-                    line_number = tc->get_inner_height() + line_number;
-                    if (line_number < 0) {
-                        line_number = 0;
-                    }
-                }
-            }
+                auto attr_guard
+                    = alb.with_attr(VC_ROLE.value(role_t::VCR_COMMENT));
 
-            dst_vl = vis_line_t(line_number);
-        } else {
-            auto um = lnav::console::user_message::error(
-                          attr_line_t("invalid argument: ").append(args[1]))
-                          .with_reason(
-                              "expecting line number/percentage, timestamp, or "
-                              "relative time")
-                          .move();
-            ec.add_error_context(um);
+                alb.append("^");
+                if (unmatched_size > 1) {
+                    if (unmatched_size > 2) {
+                        alb.append(unmatched_size - 2, '-');
+                    }
+                    alb.append("^");
+                }
+                alb.append(" unrecognized input");
+            }
             return Err(um);
         }
 
-        dst_vl | [&ec, tc, &retval, is_location](auto new_top) {
-            if (ec.ec_dry_run) {
-                retval = "info: will move to line "
-                    + std::to_string((int) new_top);
-            } else {
-                tc->get_sub_source()->get_location_history() |
-                    [new_top](auto lh) { lh->loc_history_append(new_top); };
-                tc->set_selection(new_top);
-                if (tc->is_selectable() && is_location) {
-                    tc->set_top(new_top - 2_vl, false);
-                }
-
-                retval = "";
+        if (!(tm.et_flags & ETF_DAY_SET)) {
+            tm.et_tm.tm_yday = -1;
+            tm.et_tm.tm_mday = 1;
+        }
+        if (!(tm.et_flags & ETF_HOUR_SET)) {
+            tm.et_tm.tm_hour = 0;
+        }
+        if (!(tm.et_flags & ETF_MINUTE_SET)) {
+            tm.et_tm.tm_min = 0;
+        }
+        if (!(tm.et_flags & ETF_SECOND_SET)) {
+            tm.et_tm.tm_sec = 0;
+        }
+        if (!(tm.et_flags & ETF_MICROS_SET) && !(tm.et_flags & ETF_MILLIS_SET))
+        {
+            tm.et_nsec = 0;
+        }
+        tv = tm.to_timeval();
+        dst_vl = ttt->row_for_time(tv);
+    } else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
+        if (args[1][consumed] == '%') {
+            if (value < 0) {
+                return ec.make_error("negative percentages are not allowed");
             }
-        };
+            line_number
+                = (int) ((double) tc->get_inner_height() * (value / 100.0));
+        } else {
+            line_number = (int) value;
+            if (line_number < 0) {
+                log_info("negative goto: %d height=%d",
+                         line_number,
+                         tc->get_inner_height());
+                line_number = tc->get_inner_height() + line_number;
+                if (line_number < 0) {
+                    line_number = 0;
+                }
+            }
+        }
+
+        dst_vl = vis_line_t(line_number);
+    } else {
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("invalid argument: ").append(args[1]))
+                      .with_reason(
+                          "expecting line number/percentage, timestamp, or "
+                          "relative time")
+                      .move();
+        ec.add_error_context(um);
+        return Err(um);
     }
+
+    dst_vl | [&ec, tc, &retval, is_location](auto new_top) {
+        if (ec.ec_dry_run) {
+            retval = "info: will move to line " + std::to_string((int) new_top);
+        } else {
+            tc->get_sub_source()->get_location_history() |
+                [new_top](auto lh) { lh->loc_history_append(new_top); };
+            tc->set_selection(new_top);
+            if (tc->is_selectable() && is_location) {
+                tc->set_top(new_top - 2_vl, false);
+            }
+
+            retval = "";
+        }
+    };
 
     return Ok(retval);
 }

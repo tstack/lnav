@@ -981,6 +981,8 @@ execute_init_commands(
                 if (top_view == lnav_data.ld_view_stack.top()) {
                     setup_initial_view_stack();
                 }
+
+                lnav::progress_tracker::instance().wait_for_completion();
             }
         }
     }

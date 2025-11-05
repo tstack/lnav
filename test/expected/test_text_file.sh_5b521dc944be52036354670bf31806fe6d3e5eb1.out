@@ -1,0 +1,13 @@
+    [35m"catalog"[0m: [
+        {
+            [35m"author"[0m: [35m"Gambardella, Matthew"[0m,
+            [35m"title"[0m: [35m"XML Developer's Guide"[0m,
+            [35m"description"[0m: [35m"An in-depth look at creating applications with XML."[0m
+        },
+        {
+            [35m"author"[0m: [35m"Ralls, Kim"[0m,
+            [35m"title"[0m: [35m"Midnight Rain"[0m,
+            [35m"description"[0m: [35m"A former architect battles corporate zombies, an evil sorceress, and her own childhood to become queen of the world."[0m
+        }
+    ]
+}

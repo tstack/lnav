@@ -30,7 +30,9 @@
 #ifndef lnav_progress_hh
 #define lnav_progress_hh
 
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -60,30 +62,31 @@ struct task_progress {
     std::vector<console::user_message> tp_messages;
 };
 
-using progress_reporter_t = task_progress(*)();
+using progress_reporter_t = task_progress (*)();
 
 struct progress_tracker {
     using task_container = dist_slice_container<progress_reporter_t>;
 
     using safe_task_container = safe::Safe<task_container*>;
 
-    static safe_task_container& get_tasks()
-    {
-        static auto pt = progress_tracker();
+    static progress_tracker& instance();
 
-        return pt.pt_tasks;
-    }
+    static safe_task_container& get_tasks();
+
+    void wait_for_completion();
+
+    void notify_completion();
+
+    void abort();
 
 private:
     safe_task_container pt_tasks;
+    std::mutex pt_mutex;
+    std::condition_variable pt_cv;
+    uint64_t pt_version{0};
+    bool pt_abort{false};
 
-    progress_tracker()
-    {
-        static auto inner
-            = DIST_SLICE_CONTAINER(progress_reporter_t, prog_reps);
-
-        *this->pt_tasks.writeAccess() = &inner;
-    }
+    progress_tracker();
 };
 
 }  // namespace lnav

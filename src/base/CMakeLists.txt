@@ -24,6 +24,7 @@ add_library(
         network.tcp.cc
         paths.cc
         piper.file.cc
+        progress.cc
         small_string_map.cc
         snippet_highlighters.cc
         string_attr_type.cc

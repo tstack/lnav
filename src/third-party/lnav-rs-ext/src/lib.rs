@@ -4,10 +4,7 @@ extern crate alloc;
 mod ext_access;
 
 use crate::ext_access::{set_login_otp, start_server, stop_server};
-use crate::ffi::{
-    get_lnav_log_level, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson,
-    LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
-};
+use crate::ffi::{get_lnav_log_level, notify_completion, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair};
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
@@ -77,6 +74,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
 
                 ext_prog.status = Status::idle;
             }
+            notify_completion();
         }
     });
 
@@ -86,7 +84,6 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
             match update {
                 ProgressUpdate::Step(msg) => {
                     ext_prog.current_step = msg;
-                    ext_prog.status = Status::idle;
                     ext_prog.completed = 0;
                     ext_prog.total = 0;
                     ext_prog.version += 1;
@@ -94,20 +91,17 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
                 }
                 ProgressUpdate::BeginStep(msg) => {
                     ext_prog.current_step = msg;
-                    ext_prog.status = Status::working;
                     ext_prog.version += 1;
                     None
                 }
                 ProgressUpdate::EndStep(_) => {
                     ext_prog.current_step.clear();
-                    ext_prog.status = Status::idle;
                     ext_prog.version += 1;
                     ext_prog.completed = 0;
                     ext_prog.total = 0;
                     None
                 }
                 ProgressUpdate::Work(info) => {
-                    ext_prog.status = Status::working;
                     ext_prog.completed = 0;
                     ext_prog.total = info.total;
                     Some(info)
@@ -275,6 +269,8 @@ mod ffi {
         fn longpoll(poll_inpout: &PollInput) -> PollResult;
 
         fn notify_pollers();
+
+        fn notify_completion();
 
         fn execute_external_command(
             src: String,
@@ -492,6 +488,9 @@ pub fn add_src_root(path: String) -> UniquePtr<ExtError> {
 }
 
 fn discover_srcs() {
+    if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
+        ext_prog.status = Status::working;
+    }
     let _ = REFRESH_WORKER.send(());
 }
 

@@ -1,0 +1,2 @@
+[1m[31m✘[0m [1m[31merror[0m: cannot access path "{root_dir}"
+ [1m[31mreason[0m: Permission denied (os error 13)

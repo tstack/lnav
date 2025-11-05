@@ -148,6 +148,8 @@ struct backup_progress_t {
         {
             if (bg_helper.gh_enabled) {
                 INSTANCE.bp_status.store(lnav::progress_status_t::idle);
+
+                lnav::progress_tracker::instance().notify_completion();
             }
         }
 

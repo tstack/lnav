@@ -27,35 +27,72 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rust/cxx.h"
+#include "progress.hh"
 
-namespace lnav_rs_ext {
+namespace lnav {
 
-struct ExecResult;
-struct PollInput;
-struct ViewStates;
-struct VarPair;
-struct PollResult;
-enum class LnavLogLevel : std::uint8_t;
+progress_tracker&
+progress_tracker::instance()
+{
+    static auto pt = progress_tracker();
 
-::rust::String version_info();
+    return pt;
+}
 
-ExecResult execute_external_command(::rust::String,
-                                    ::rust::String,
-                                    ::rust::String hdrs,
-                                    ::rust::Vec<VarPair> vars);
-
-void get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t>& dst);
-
-PollResult longpoll(const PollInput& vs);
-
-void notify_pollers();
-
-void notify_completion();
-
-LnavLogLevel get_lnav_log_level();
+progress_tracker::safe_task_container&
+progress_tracker::get_tasks()
+{
+    return instance().pt_tasks;
+}
 
 void
-log_msg(LnavLogLevel level, ::rust::Str file, uint32_t line, ::rust::Str msg);
+progress_tracker::wait_for_completion()
+{
+    std::unique_lock<std::mutex> lock(this->pt_mutex);
 
-}  // namespace lnav_rs_ext
+    auto active_tasks = false;
+    {
+        for (const auto& task : **this->pt_tasks.readAccess()) {
+            auto tp = task();
+            if (tp.tp_status == progress_status_t::working) {
+                active_tasks = true;
+                break;
+            }
+        }
+    }
+    if (!active_tasks) {
+        return;
+    }
+
+    auto init_version = this->pt_version;
+    this->pt_cv.wait(lock, [&] {
+        return this->pt_abort || init_version != this->pt_version;
+    });
+}
+
+void
+progress_tracker::notify_completion()
+{
+    std::lock_guard<std::mutex> lock(this->pt_mutex);
+
+    this->pt_version += 1;
+    this->pt_cv.notify_all();
+}
+
+void
+progress_tracker::abort()
+{
+    std::lock_guard lg{this->pt_mutex};
+
+    this->pt_abort = true;
+    this->pt_cv.notify_all();
+}
+
+progress_tracker::progress_tracker()
+{
+    static auto inner = DIST_SLICE_CONTAINER(progress_reporter_t, prog_reps);
+
+    *this->pt_tasks.writeAccess() = &inner;
+}
+
+}  // namespace lnav

@@ -170,6 +170,12 @@ notify_pollers()
 #    endif
 }
 
+void
+notify_completion()
+{
+    lnav::progress_tracker::instance().notify_completion();
+}
+
 }  // namespace lnav_rs_ext
 #endif
 

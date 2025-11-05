@@ -26,6 +26,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     ${top_srcdir}/README.md
 
+run_cap_test ${lnav_test} -n -c ':goto #badanchor' \
+    ${srcdir}/textfile_0.md
+
 run_cap_test ${lnav_test} -n -c ':goto #screenshot' \
     ${top_srcdir}/README.md
 
@@ -117,6 +120,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':goto 3' \
     -c ':next-section' \
+    < ${test_dir}/books.json
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 3' \
+    -c ':prev-section' \
     < ${test_dir}/books.json
 
 run_cap_test ${lnav_test} -n \
