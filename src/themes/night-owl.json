@@ -90,11 +90,11 @@
                     },
                     "popup": {
                         "color": "#fff",
-                        "background-color": "#011627"
+                        "background-color": "#023c4d"
                     },
                     "popup-border": {
                         "color": "#5f7e97",
-                        "background-color": "#011627"
+                        "background-color": "#023c4d"
                     },
                     "scrollbar": {
                         "color": "$black",

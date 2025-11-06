@@ -5441,7 +5441,7 @@
                     },
                     "popup": {
                         "color": "#fff",
-                        "background-color": "#011627",
+                        "background-color": "#023c4d",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -5449,7 +5449,7 @@
                     },
                     "popup-border": {
                         "color": "#5f7e97",
-                        "background-color": "#011627",
+                        "background-color": "#023c4d",
                         "underline": false,
                         "bold": false,
                         "italic": false,
