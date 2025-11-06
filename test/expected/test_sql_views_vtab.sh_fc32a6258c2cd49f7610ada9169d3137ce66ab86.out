@@ -1,0 +1,3 @@
+view_name,basename(filepath),visible
+log,logfile_access_log.0,1
+log,logfile_access_log_dupe.0,0

@@ -138,6 +138,12 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     "${test_dir}/logfile_access_log.*"
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :sc_bytes > 2000" \
+    -c ":clear-filter-expr" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr :sc_bytes # ff" \
     "${test_dir}/logfile_access_log.*"
 
@@ -529,6 +535,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ":mark-expr :cs_uri_stem LIKE '%vmk%'" \
     -c ":write-to -" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":mark-expr :cs_uri_stem LIKE '%vmk%'" \
+    -c ":clear-mark-expr" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \

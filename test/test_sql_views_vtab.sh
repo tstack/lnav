@@ -16,6 +16,12 @@ log,logfile_access_log.1,1
 EOF
 
 run_cap_test ${lnav_test} -n \
+    -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log_dupe.0
+
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_view_files SET visible=0 WHERE endswith(filepath, 'log.0')" \
     ${test_dir}/logfile_access_log.*
 

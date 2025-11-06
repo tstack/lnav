@@ -331,6 +331,7 @@ dist_noinst_DATA = \
 	log.clog \
 	log2src/python/log_example.py \
 	log2src/python/python-example.0 \
+	logfile_access_log_dupe.0 \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_ansi.0 \
