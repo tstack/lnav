@@ -923,14 +923,17 @@ gather_pipers()
 void
 wait_for_pipers(std::optional<ui_clock::time_point> deadline)
 {
-    static constexpr auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
-    auto sleep_time = std::chrono::milliseconds(10);
+    static constexpr auto MAX_SLEEP_TIME = 300ms;
+    auto sleep_time = 10ms;
+    auto loop_count = 0;
 
     for (;;) {
         gather_pipers();
         auto piper_count = lnav_data.ld_active_files.active_pipers();
         if (piper_count == 0 && lnav_data.ld_child_pollers.empty()) {
-            log_debug("all pipers finished");
+            if (loop_count > 0) {
+                log_debug("all pipers finished");
+            }
             break;
         }
         if (deadline && ui_clock::now() > deadline.value()) {
@@ -951,6 +954,7 @@ wait_for_pipers(std::optional<ui_clock::time_point> deadline)
         if (sleep_time < MAX_SLEEP_TIME) {
             sleep_time = sleep_time * 2;
         }
+        loop_count += 1;
     }
 }
 
@@ -4202,6 +4206,23 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             printf("%s\n", msg.c_str());
                             output_view = false;
                         }
+                    }
+                }
+
+                if (getenv("LNAV_EXTERNAL_URL")) {
+                    auto wakeup_pair = auto_pipe();
+                    wakeup_pair.open();
+                    wakeup_pair.read_end().non_blocking();
+
+                    static auto& mlooper
+                        = injector::get<main_looper&, services::main_t>();
+                    mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
+                    while (lnav_data.ld_looping) {
+                        mlooper.get_port().process_for(50ms);
+                        rescan_files();
+                        auto deadline = ui_clock::now() + 1s;
+                        wait_for_pipers(deadline);
+                        rebuild_indexes(deadline);
                     }
                 }
 
