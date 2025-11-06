@@ -798,6 +798,7 @@ textview_curses::handle_mouse(mouse_event& me)
                             al.to_string_fragment(link_iter).to_string(),
                             href,
                         };
+                        this->set_needs_update();
                     }
                 }
                 if (this->tc_on_click) {
