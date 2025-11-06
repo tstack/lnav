@@ -37,15 +37,21 @@ if test ".$with_libarchive" = ".no" ; then
   AC_MSG_RESULT([disabled])
   m4_ifval($2,$2)
 else
-  AC_MSG_RESULT([(testing)])
-  AC_CHECK_LIB(archive, archive_read_new)
-  AC_CHECK_HEADERS(archive.h)
-  if test "$ac_cv_lib_archive_archive_read_new" = "yes" && \
-     test "x$ac_cv_header_archive_h" = xyes; then
-     LIBARCHIVE_LIBS="-larchive"
-     AC_MSG_CHECKING([lib archive])
-     AC_MSG_RESULT([$LIBARCHIVE_LIBS])
-     m4_ifval($1,$1)
+  if test ".$with_libarchive" = ".yes" ; then
+    AC_MSG_RESULT([(testing)])
+    AC_CHECK_LIB(archive, archive_read_new)
+    AC_CHECK_HEADERS(archive.h)
+    if test "$ac_cv_lib_archive_archive_read_new" = "yes" && \
+       test "x$ac_cv_header_archive_h" = xyes; then
+       LIBARCHIVE_LIBS="-larchive"
+       AC_MSG_CHECKING([lib archive])
+       AC_MSG_RESULT([$LIBARCHIVE_LIBS])
+       m4_ifval($1,$1)
+    else
+       AC_MSG_CHECKING([lib archive])
+       AC_MSG_RESULT([[no]])
+       m4_ifval($2,$2)
+    fi
   else
      unset ac_cv_header_archive_h
      OLDLDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$with_libarchive/lib"
