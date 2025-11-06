@@ -57,7 +57,7 @@ else
      if test "$ac_cv_lib_archive_archive_read_new" = "yes" && \
         test "x$ac_cv_header_archive_h" = xyes; then
         AC_MSG_RESULT(.setting LIBARCHIVE_LIBS -L$with_libarchive/lib -larchive)
-        LIBARCHIVE_LDFLAGS="-L$with_libarchive/lib"
+        LIBARCHIVE_LDFLAGS="-L$with_libarchive/lib -Wl,-rpath,$with_libarchive/lib"
         LIBARCHIVE_LIBS="-larchive"
         test -d "$with_libarchive/include" && LIBARCHIVE_CFLAGS="-I$with_libarchive/include"
         AC_MSG_CHECKING([lib archive])
