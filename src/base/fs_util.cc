@@ -27,16 +27,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <utility>
 
 #include "fs_util.hh"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 #ifdef HAVE_SYS_SYSCTL_H
 #    include <sys/sysctl.h>
@@ -277,7 +284,7 @@ path_transcoder::from(std::string arg)
 std::string
 path_transcoder::to_native(std::string arg)
 {
-    if (!this->pt_root_name_capitalized) {
+    if (arg.empty() || !this->pt_root_name_capitalized) {
         return arg;
     }
 
