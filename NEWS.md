@@ -11,6 +11,11 @@ Features:
   maximum time.  Live preview has also been added to
   show which lines will be filtered out when the min/max
   is applied.
+* The "Files" panel now shows a progress bar for each
+  file as it is being indexed and finishes with a
+  check-mark if indexing was successful, a warning
+  sign if the file has some notes, or an error mark
+  if something else happened.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,
@@ -117,6 +122,7 @@ Features:
 * The OPID for log messages is now shown in the parser
   details overlay (revealed by pressing `p`) in the
   LOG view.
+* Added `rust_tracing_log` from @richard-hajek.
 * The `strace_log` format has been improved to handle
   more output formats and the syscalls will now show
   up in the TIMELINE view.
@@ -128,12 +134,6 @@ Features:
   theme highlight configurations to control whether a
   highlight can be applied to text that is covered by
   another highlight.
-* Added `rust_tracing_log` from @richard-hajek.
-* The "Files" panel now shows a progress bar for each
-  file as it is being indexed and finishes with a
-  check-mark if indexing was successful, a warning
-  sign if the file has some notes, or an error mark
-  if something else happened.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a
@@ -147,6 +147,14 @@ Breaking changes:
   now have microsecond precision instead of millisecond.
 
 Interface changes:
+* The TIMELINE view header has been redesigned to be
+  one line that shows the time increments at the
+  current scale.  This approach should more clearly
+  convey the spans of time shown in the main part of the
+  view.  The previous design tried to show the overall
+  time and the current time frame.  But, the multi-line
+  header was hard to interpret and didn't make it clear
+  how large the time increments were.
 * If there are background tasks, like the processing done
   by `:add-source-path`, a panel with progress bars for
   each operation will be shown just above the bottom
@@ -164,14 +172,6 @@ Interface changes:
 * The `}` hotkey and `:next-section` command will now
   move to the next log message if the focused line is
   in the middle of a multi-line message.
-* The TIMELINE view header has been redesigned to be
-  one line that shows the time increments at the
-  current scale.  This approach should more clearly
-  convey the spans of time shown in the main part of the
-  view.  The previous design tried to show the overall
-  time and the current time frame.  But, the multi-line
-  header was hard to interpret and didn't make it clear
-  how large the time increments were.
 
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path

@@ -31,7 +31,9 @@
 
 #include "relative_time.hh"
 
+#include "base/intern_string.hh"
 #include "base/lnav_log.hh"
+#include "base/result.h"
 #include "base/time_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
@@ -226,6 +228,8 @@ relative_time::from_str(string_fragment str)
     bool number_set = false, number_was_set = false;
     bool next_set = false;
     token_t base_token = RTT_INVALID;
+    token_t token = RTT_INVALID;
+    token_t last_token = token;
     rt_field_type last_field_type = RTF__MAX;
     relative_time retval;
     relative_time_parse_error pe_out;
@@ -237,6 +241,7 @@ relative_time::from_str(string_fragment str)
     auto remaining = str;
     while (true) {
         rt_field_type curr_field_type = RTF__MAX;
+        last_token = token;
 
         if (remaining.empty()) {
             if (number_set) {
@@ -271,6 +276,28 @@ relative_time::from_str(string_fragment str)
             }
 
             if (base_token != RTT_INVALID) {
+                if (last_token == RTT_HERE) {
+                    switch (base_token) {
+                        case RTT_BEFORE:
+                            for (int field = 0; field < RTF__MAX; field++) {
+                                if (retval.rt_field[field].value > 0) {
+                                    retval.rt_field[field]
+                                        = -retval.rt_field[field].value;
+                                }
+                                if (last_field_type != RTF__MAX
+                                    && field < last_field_type)
+                                {
+                                    retval.rt_field[field] = 0;
+                                }
+                            }
+                            break;
+                        case RTT_AFTER:
+                            break;
+                        default:
+                            break;
+                    }
+                    return Ok(retval);
+                }
                 switch (base_token) {
                     case RTT_BEFORE:
                         pe_out.pe_msg
@@ -297,7 +324,7 @@ relative_time::from_str(string_fragment str)
         for (int lpc = 0; lpc < RTT__MAX && !found; lpc++) {
             thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
-            auto token = (token_t) lpc;
+            token = (token_t) lpc;
             auto match_res = MATCHERS[lpc]
                                  .pcre.capture_from(remaining)
                                  .into(md)
@@ -339,8 +366,8 @@ relative_time::from_str(string_fragment str)
                     seen_tokens.insert(RTT_TODAY);
                     seen_tokens.insert(RTT_NOW);
 
-                    struct timeval tv;
-                    struct exttm tm;
+                    timeval tv;
+                    exttm tm;
 
                     gettimeofday(&tv, nullptr);
                     localtime_r(&tv.tv_sec, &tm.et_tm);
@@ -641,6 +668,12 @@ relative_time::from_str(string_fragment str)
                     }
                     break;
                 case RTT_HERE:
+                    if (!retval.empty() && base_token == RTT_INVALID) {
+                        pe_out.pe_msg
+                            = "Expecting 'before' or 'after' when 'here' is "
+                              "used with a time";
+                        return Err(pe_out);
+                    }
                     break;
                 case RTT_NEXT:
                     retval.rt_next = true;
