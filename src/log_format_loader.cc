@@ -494,6 +494,13 @@ static constexpr json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
+static constexpr json_path_handler_base::enum_value_t OPID_SOURCE_ENUM[] = {
+    {"from-description"_frag, log_format::opid_source_t::from_description},
+    {"from-whole-msg"_frag, log_format::opid_source_t::from_whole_msg},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const json_path_container line_format_handlers = {
     yajlpp::property_handler("field")
         .with_synopsis("<field-name>")
@@ -970,6 +977,10 @@ static const struct json_path_container subid_description_handlers = {
 };
 
 static const struct json_path_container opid_handlers = {
+    yajlpp::property_handler("source")
+        .with_description("The source of the operation ID")
+        .with_enum_values(OPID_SOURCE_ENUM)
+        .for_field(&log_format::lf_opid_source),
     yajlpp::property_handler("subid")
         .with_description("The field that holds the ID for a sub-operation")
         .for_field(&external_log_format::elf_subid_field),

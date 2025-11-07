@@ -1585,6 +1585,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         auto found_opid_desc = false;
         if (this->elf_opid_field.empty()
+            && this->lf_opid_source.value_or(opid_source_t::from_description)
+                == opid_source_t::from_description
             && this->lf_opid_description_def->size() == 1)
         {
             const auto& od = this->lf_opid_description_def->begin()->second;
@@ -2847,6 +2849,9 @@ external_log_format::get_subline(const logline& ll,
             }
 
             if (this->elf_opid_field.empty()
+                && this->lf_opid_source.value_or(
+                       opid_source_t::from_description)
+                    == opid_source_t::from_description
                 && this->lf_opid_description_def->size() == 1)
             {
                 auto found_opid_desc = false;
@@ -3988,6 +3993,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (pat.p_opid_field_index == -1
+            && this->lf_opid_source.value_or(opid_source_t::from_description)
+                == opid_source_t::from_description
             && this->lf_opid_description_def->size() == 1)
         {
             const auto& opid_def

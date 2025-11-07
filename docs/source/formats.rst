@@ -309,6 +309,16 @@ object with the following fields:
 
 :opid: This object contains further options related to OP IDs:
 
+  :source: Specifies the source of the operation ID if :code:`opid-field`
+    is not set. The possible values are:
+
+      :from-description: The description captured from the log message
+        is hashed and used as the operation ID.  This is the default if
+        a description is set.
+      :from-whole-msg: The log message line is hashed and used as the
+        operation ID.  This is the default if no descriptions are
+        given.
+
   :description: This object contains definitions for how to construct a
     description of an operation.  Each definition should contain a
     :code:`format` array with objects that have the following fields:

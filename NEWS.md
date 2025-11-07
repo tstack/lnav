@@ -110,6 +110,12 @@ Features:
   updated to use this when appropriate.  For example,
   access_log now uses `c_ip` and `cs_user_agent` as the
   OPID.
+
+  > [!NOTE]
+  > If you want a description, but don't want it used as
+  > the OPID.  You can set the `opid/source` field to
+  > "from-whole-msg" and the OPID will be computed from
+  > the contents of the log message.
 * The `duration-field` log format property has been added
   to specify the field that contains a duration in the
   log message.  If a duration is available, it will be

@@ -35,6 +35,7 @@
             "error": ".+"
         },
         "opid": {
+            "source": "from-whole-msg",
             "description": {
                 "syscall": {
                     "format": [

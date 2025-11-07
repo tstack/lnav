@@ -678,6 +678,14 @@ public:
             const lnav::map::small<size_t, std::string>& lod) const;
     };
 
+    enum class opid_source_t {
+        from_field,
+        from_description,
+        from_whole_msg,
+    };
+
+    std::optional<opid_source_t> lf_opid_source{};
+
     std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
         lf_opid_description_def{
             std::make_shared<std::map<intern_string_t, opid_descriptors>>()};

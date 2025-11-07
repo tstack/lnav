@@ -233,6 +233,15 @@
                     "title": "/<format_name>/opid",
                     "type": "object",
                     "properties": {
+                        "source": {
+                            "title": "/<format_name>/opid/source",
+                            "description": "The source of the operation ID",
+                            "type": "string",
+                            "enum": [
+                                "from-description",
+                                "from-whole-msg"
+                            ]
+                        },
                         "subid": {
                             "title": "/<format_name>/opid/subid",
                             "description": "The field that holds the ID for a sub-operation",
