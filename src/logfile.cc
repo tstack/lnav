@@ -997,7 +997,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 } else {
                     limit = 100;
                 }
-            } else if (!has_format) {
+            } else if (this->lf_options.loo_detect_format && !has_format) {
                 limit = 1000;
             } else {
                 limit = 1000 * 1000;
