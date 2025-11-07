@@ -85,7 +85,7 @@ parsed::arg_at(int x) const
     }
     for (const auto& arg : this->p_args) {
         log_debug(
-            "  arg %s[%d]", arg.first.c_str(), arg.second.a_values.size());
+            "  arg %s[%zu]", arg.first.c_str(), arg.second.a_values.size());
         for (const auto& [index, se] :
              lnav::itertools::enumerate(arg.second.a_values))
         {

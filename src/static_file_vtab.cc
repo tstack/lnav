@@ -142,7 +142,7 @@ sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 
     p_cur->base.pVtab = p_svt;
     p_cur->vc_files = lnav::apps::find_app_files();
-    log_info("opened app file vtab with %d files", p_cur->vc_files.size());
+    log_info("opened app file vtab with %zu files", p_cur->vc_files.size());
 
     return SQLITE_OK;
 }

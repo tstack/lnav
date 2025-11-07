@@ -252,7 +252,7 @@ com_filter(exec_context& ec,
             auto pf = std::make_shared<pcre_filter>(
                 lt, args[1], *filter_index, compile_res.unwrap().to_shared());
 
-            log_debug("%s [%d] %s",
+            log_debug("%s [%zu] %s",
                       args[0].c_str(),
                       pf->get_index(),
                       args[1].c_str());

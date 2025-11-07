@@ -46,6 +46,7 @@
 #include "intern_string.hh"
 #include "mapbox/variant.hpp"
 #include "result.h"
+#include "time_util.hh"
 
 struct default_for_text_format {};
 struct file_location_tail {};
@@ -113,7 +114,7 @@ openp(const std::filesystem::path& path, int flags, mode_t mode)
 
 std::optional<std::filesystem::path> self_path();
 
-time_t self_mtime();
+lnav::time64_t self_mtime();
 
 Result<std::filesystem::path, std::string> realpath(
     const std::filesystem::path& path);

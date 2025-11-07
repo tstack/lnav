@@ -1717,7 +1717,7 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
         = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'})
               .column_width();
     const auto repl_lines = sf.count('\n');
-    log_debug("repl_cols => %d", repl_cols);
+    log_debug("repl_cols => %zu", repl_cols);
     if (repl_lines > 0) {
         this->tc_cursor.x = repl_cols;
     } else {
@@ -1777,7 +1777,7 @@ textinput_curses::replace_selection(string_fragment sf)
             if (change_pos < this->tc_change_log.size()) {
                 // XXX an on_change handler can run and do its own replacement
                 // before we get a change to add or entry
-                log_debug("inserting change log at %d", change_pos);
+                log_debug("inserting change log at %zu", change_pos);
                 this->tc_change_log.insert(
                     std::next(this->tc_change_log.begin(), change_pos),
                     change_entry{redo_range, old_text});

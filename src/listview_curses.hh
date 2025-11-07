@@ -541,7 +541,7 @@ public:
             this->vc_y,
             (int) this->lv_top,
             this->lv_left,
-            this->lv_height,
+            (int) this->lv_height,
             (int) this->lv_selection,
             (int) this->get_inner_height());
     }

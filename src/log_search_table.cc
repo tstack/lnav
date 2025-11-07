@@ -286,7 +286,7 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
         this->lst_mismatch_bitmap.expand_bitmap_to(lss.text_line_count());
         this->lst_mismatch_bitmap.resize_bitmap(lss.text_line_count());
 #if 1
-        log_debug("%s:bitmap resize %d:%d",
+        log_debug("%s:bitmap resize %zu:%zu",
                   this->vi_name.c_str(),
                   this->lst_mismatch_bitmap.size(),
                   this->lst_mismatch_bitmap.capacity());

@@ -271,7 +271,7 @@ plain_text_source::line_for_offset(file_off_t off) const
         return std::nullopt;
     }
 
-    log_trace("line_for_offset(%d)", off);
+    log_trace("line_for_offset(%lld)", off);
     auto iter = std::lower_bound(
         this->tds_lines.begin(), this->tds_lines.end(), off, cmper{});
     if (iter == this->tds_lines.end()) {
@@ -289,7 +289,7 @@ plain_text_source::line_for_offset(file_off_t off) const
     }
 
     auto retval = vis_line_t(std::distance(this->tds_lines.begin(), iter));
-    log_trace("  retval=%d", retval);
+    log_trace("  retval=%d", (int) retval);
     return retval;
 }
 
@@ -608,7 +608,7 @@ plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
         }
         case direction::next: {
             if (neighbors_res->cnr_next) {
-                log_trace("  next offset %d",
+                log_trace("  next offset %lld",
                           neighbors_res->cnr_next.value()->hn_start);
                 return this->line_for_offset(
                     neighbors_res->cnr_next.value()->hn_start);

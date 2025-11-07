@@ -605,7 +605,7 @@ CREATE TABLE lnav_views (
 
         if (tc.get_top() != top_row) {
             log_debug(
-                "setting top for %s to %d", tc.get_title().c_str(), top_row);
+                "setting top for %s to %lld", tc.get_title().c_str(), top_row);
             tc.set_top(vis_line_t(top_row));
             if (!tc.is_selectable()) {
                 selection = top_row;
@@ -629,7 +629,7 @@ CREATE TABLE lnav_views (
                             [&tc, &selection](auto row) {
                                 log_debug("setting top for %s to %d from time",
                                           tc.get_title().c_str(),
-                                          row);
+                                          (int) row);
                                 selection = row;
                                 tc.set_selection(row);
                             };

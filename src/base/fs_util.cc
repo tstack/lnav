@@ -126,7 +126,7 @@ self_path()
 #endif
 }
 
-static time_t
+static time64_t
 init_self_mtime()
 {
     auto retval = time_t{};
@@ -145,7 +145,7 @@ init_self_mtime()
     return retval;
 }
 
-time_t
+time64_t
 self_mtime()
 {
     static auto RETVAL = init_self_mtime();

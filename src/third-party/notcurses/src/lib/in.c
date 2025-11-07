@@ -895,8 +895,8 @@ kitty_gbg(inputctx* ictx)
 {
     const unsigned char* upos = strchr(ictx->amata.matchstart, 'u');
     logerror("unknown kitty keyboard sequence: %.*s",
-             upos - ictx->amata.matchstart,
-             ictx->amata.matchstart + 1);
+             (int) (upos - ictx->amata.matchstart),
+             (const char*) ictx->amata.matchstart + 1);
     return 2;
 }
 

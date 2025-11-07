@@ -134,7 +134,7 @@ CREATE TABLE fstat (
 
         int next()
         {
-            log_debug("fstat_vtab::next %d %d",
+            log_debug("fstat_vtab::next %zu %zu",
                       this->c_path_index,
                       this->c_glob->gl_pathc);
             if (this->c_path_index < this->c_glob->gl_pathc) {
@@ -149,7 +149,8 @@ CREATE TABLE fstat (
 
         int eof()
         {
-            log_debug("eof %d %d", this->c_path_index, this->c_glob->gl_pathc);
+            log_debug(
+                "eof %zu %zu", this->c_path_index, this->c_glob->gl_pathc);
             return this->c_path_index >= this->c_glob->gl_pathc;
         }
 

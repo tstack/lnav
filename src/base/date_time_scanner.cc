@@ -30,6 +30,7 @@
  */
 
 #include <chrono>
+#include <exception>
 
 #include "date_time_scanner.hh"
 
@@ -175,7 +176,7 @@ date_time_scanner::scan(const char* time_dest,
                              || this->dts_default_zone != nullptr)
                             && this->dts_zoned_to_local)))
                 {
-                    time_t gmt = tm_out->to_timeval().tv_sec;
+                    lnav::time64_t gmt = tm_out->to_timeval().tv_sec;
 
                     if (!(tm_out->et_flags & ETF_ZONE_SET)
                         && !(tm_out->et_flags & ETF_EPOCH_TIME)
@@ -193,7 +194,7 @@ date_time_scanner::scan(const char* time_dest,
                                       ztime.get_sys_time().time_since_epoch())
                                       .count();
                         } catch (const std::exception& e) {
-                            log_error("failed to convert time %d -- %s",
+                            log_error("failed to convert time %lld -- %s",
                                       gmt,
                                       e.what());
                         }

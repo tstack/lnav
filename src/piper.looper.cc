@@ -82,14 +82,11 @@ public:
 
     void reload_config(error_reporter& reporter) override
     {
-        static const auto KNOWN_CAPTURES
-            = std::unordered_set<string_fragment,
-                                 frag_hasher,
-                                 std::equal_to<string_fragment>>{
-                "mux_id"_frag,
-                "timestamp"_frag,
-                "body"_frag,
-            };
+        static const auto KNOWN_CAPTURES = lnav::set::small<string_fragment>{
+            "mux_id"_frag,
+            "timestamp"_frag,
+            "body"_frag,
+        };
 
         auto* cfg = injector::get<config*>();
 
@@ -119,7 +116,7 @@ public:
             dd.dd_timestamp_capture_index = pat->name_index("timestamp");
 
             for (const auto& ncap : pat->get_named_captures()) {
-                if (KNOWN_CAPTURES.count(ncap.get_name())) {
+                if (KNOWN_CAPTURES.contains(ncap.get_name())) {
                     continue;
                 }
 
@@ -823,7 +820,7 @@ looper::loop()
                         break;
                     }
                     os.os_woff += prc;
-                    log_info("  header size: %d", os.os_woff);
+                    log_info("  header size: %lld", os.os_woff);
 
                     auto out_path = this->l_out_dir
                         / fmt::format(FMT_STRING("out.{}.{}"),

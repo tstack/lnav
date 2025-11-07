@@ -2215,7 +2215,8 @@ public:
                     return false;
                 },
                 [line_number, &sbr](const logfmt::parser::error& err) {
-                    log_error("bad line %.*s", sbr.length(), sbr.get_data());
+                    log_error(
+                        "bad line %.*s", (int) sbr.length(), sbr.get_data());
                     log_error("%lld:logfmt parse error: %s",
                               line_number,
                               err.e_msg.c_str());

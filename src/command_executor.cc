@@ -311,9 +311,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         auto tree = sqlite_extension_prql;
         for (const auto& mod : lnav_prql_modules) {
-            log_debug("lnav_rs_ext adding mod %s", mod.get_name());
+            auto name = mod.get_name().to_string();
+            log_debug("lnav_rs_ext adding mod %s", name.c_str());
             tree.emplace_back(lnav_rs_ext::SourceTreeElement{
-                mod.get_name().data(),
+                name.c_str(),
                 mod.to_string_fragment_producer()->to_string(),
             });
         }

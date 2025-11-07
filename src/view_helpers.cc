@@ -1044,7 +1044,7 @@ update_hits(textview_curses* tc)
                 {
                     log_error("stale search bookmark for %s: %d",
                               tc->get_title().c_str(),
-                              prev_vl.value());
+                              (int) prev_vl.value());
                 } else {
                     attr_line_t al;
 
@@ -1065,7 +1065,7 @@ update_hits(textview_curses* tc)
                 {
                     log_error("stale search bookmark for %s: %d",
                               tc->get_title().c_str(),
-                              next_vl.value());
+                              (int) next_vl.value());
                     break;
                 }
 

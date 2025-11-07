@@ -554,7 +554,7 @@ log_msg(LnavLogLevel level, ::rust::Str file, uint32_t line, ::rust::Str msg)
               ((std::string) file).c_str(),
               line,
               "%.*s",
-              msg.size(),
+              (int) msg.size(),
               msg.data());
 }
 
@@ -828,7 +828,7 @@ execute_external_command(::rust::String rs_src,
             auto pg = ec.with_provenance(exec_context::external_access{src});
             ec.ec_local_vars.push(std::map<std::string, scoped_value_t>{
                 {"headers", scoped_value_t{(std::string) hdrs}}});
-            log_trace("var count: %d", vars.size());
+            log_trace("var count: %zu", vars.size());
             for (const auto& var : vars) {
                 auto buf = auto_buffer::alloc(var.value.length());
                 auto outlen = buf.capacity();
@@ -836,7 +836,8 @@ execute_external_command(::rust::String rs_src,
                     var.value.data(), var.value.length(), buf.in(), &outlen, 0);
                 buf.resize(outlen);
                 auto key_str = (std::string) var.expr;
-                log_trace("  %s=%.*s", key_str.c_str(), buf.size(), buf.data());
+                log_trace(
+                    "  %s=%.*s", key_str.c_str(), (int) buf.size(), buf.data());
                 ec.ec_local_vars.top()[key_str]
                     = scoped_value_t{buf.to_string()};
             }

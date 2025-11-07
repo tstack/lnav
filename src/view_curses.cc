@@ -365,7 +365,7 @@ view_curses::mvwattrline(ncplane* window,
 
                 if (read_res.isErr()) {
                     log_trace(
-                        "error:%d:%d:%s", y, x + lpc, read_res.unwrapErr());
+                        "error:%d:%zu:%s", y, x + lpc, read_res.unwrapErr());
                     expanded_line.resize(exp_read_start);
                     expanded_line.push_back('?');
                     char_index += 1;

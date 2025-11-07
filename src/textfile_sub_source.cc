@@ -807,8 +807,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     {
                         log_debug(
                             "text file has changed, invalidating metadata.  "
-                            "old: {mtime: %d size: %zu isize: %zu}, new: "
-                            "{mtime: %d size: %zu isize: %zu}",
+                            "old: {mtime: %ld size: %lld isize: %lld}, new: "
+                            "{mtime: %ld size: %lld isize: %lld}",
                             iter->fvs_mtime,
                             iter->fvs_file_size,
                             iter->fvs_file_indexed_size,
@@ -909,7 +909,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     auto read_file_res = read_res.unwrap();
                     auto md_file = md4cpp::parse_file(
                         lf->get_filename(), read_file_res.rfr_content);
-                    log_info("%s: rendering markdown content of size %d",
+                    log_info("%s: rendering markdown content of size %zu",
                              lf->get_basename().c_str(),
                              read_file_res.rfr_content.size());
                     md2attr_line mdal;
@@ -1320,7 +1320,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
     const auto& lf = curr_iter->fvs_file;
     log_debug("adjacent_anchor: %s:L%d:%s",
               lf->get_path_for_key().c_str(),
-              vl,
+              (int) vl,
               dir == text_anchors::direction::prev ? "prev" : "next");
     if (this->tss_view_mode == view_mode::rendered
         && curr_iter->fvs_text_source)
@@ -1344,7 +1344,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
     const auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     const auto line_offsets = lf->get_file_range(ll_iter, false);
     log_debug(
-        "  range %d:%d", line_offsets.fr_offset, line_offsets.next_offset());
+        "  range %lld:%zu", line_offsets.fr_offset, line_offsets.next_offset());
     auto path_for_line
         = md.path_for_range(line_offsets.fr_offset, line_offsets.next_offset());
 

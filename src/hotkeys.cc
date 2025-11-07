@@ -930,7 +930,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         default:
-            log_debug("key sequence %x", ch);
+            log_debug("key sequence %x", ch.eff_text[0]);
             return false;
     }
     return true;

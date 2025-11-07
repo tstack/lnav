@@ -547,7 +547,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 rc.tc_suggestion.clear();
             }
         } else {
-            log_info("no arg at %d", x);
+            log_info("no arg at %zu", x);
         }
     }
 }

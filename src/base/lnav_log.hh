@@ -63,12 +63,18 @@ void log_rusage_raw(enum lnav_log_level_t level,
                     const char* src_file,
                     int line_number,
                     const struct rusage& ru);
+#if defined(__GNUC__) || defined(__clang__)
+#    define LNAV_ATTR_FORMAT_PRINTF(a, b) __attribute__((format(printf, a, b)))
+#else
+#    define LNAV_ATTR_FORMAT_PRINTF(a, b)
+#endif
+
 void log_msg(enum lnav_log_level_t level,
              const char* src_file,
              int line_number,
              const char* fmt,
-             ...);
-void log_msg_extra(const char* fmt, ...);
+             ...) LNAV_ATTR_FORMAT_PRINTF(4, 5);
+void log_msg_extra(const char* fmt, ...) LNAV_ATTR_FORMAT_PRINTF(1, 2);
 void log_msg_extra_complete();
 void log_install_handlers();
 void log_abort() lnav_dead2;

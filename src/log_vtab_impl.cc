@@ -606,16 +606,16 @@ vt_next(sqlite3_vtab_cursor* cur)
         }
         if (vc->log_cursor.is_eof()) {
             log_info("vt_next at EOF (%d:%d:%d), scanned rows %lu",
-                     vc->log_cursor.lc_curr_line,
-                     vc->log_cursor.lc_end_line,
-                     vc->log_cursor.lc_direction,
+                     (int) vc->log_cursor.lc_curr_line,
+                     (int) vc->log_cursor.lc_end_line,
+                     (int) vc->log_cursor.lc_direction,
                      vc->log_cursor.lc_scanned_rows);
             done = true;
         } else {
             done = vt->vi->next(vc->log_cursor, *vt->lss);
             if (done) {
                 if (vc->log_cursor.lc_curr_line % 10000 == 0) {
-                    log_debug("scanned %d", vc->log_cursor.lc_curr_line);
+                    log_debug("scanned %d", (int) vc->log_cursor.lc_curr_line);
                 }
 #ifdef DEBUG_INDEXING
                 log_debug("scanned %d", vc->log_cursor.lc_curr_line);
@@ -1243,7 +1243,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                             log_error(
                                                 "failed to parse json value: "
                                                 "%.*s",
-                                                lv_struct.text_length(),
+                                                (int) lv_struct.text_length(),
                                                 lv_struct.text_value());
                                             root.gen(lv_struct.to_string());
                                         }
@@ -1891,8 +1891,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 if (col_valid_opt) {
                     log_debug("column %d valid range [%d:%d)",
                               icol.cc_column,
-                              col_valid_opt->v_min_line,
-                              col_valid_opt->v_max_line);
+                              (int) col_valid_opt->v_min_line,
+                              (int) col_valid_opt->v_max_line);
                 }
             }
 
@@ -1949,8 +1949,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             log_debug(
                 "scan needed to populate index, clearing other indexes "
                 "scan_range[%d:%d)",
-                scan_range.v_min_line,
-                scan_range.v_max_line);
+                (int) scan_range.v_min_line,
+                (int) scan_range.v_max_line);
             p_cur->log_cursor.lc_level_constraint = std::nullopt;
             opid_val = std::nullopt;
             log_time_range = std::nullopt;
@@ -1959,8 +1959,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
             if (index_valid_opt) {
                 log_debug("  min_index_range[%d:%d)",
-                          index_valid_opt->v_min_line,
-                          index_valid_opt->v_max_line);
+                          (int) index_valid_opt->v_min_line,
+                          (int) index_valid_opt->v_max_line);
                 if (scan_range.v_min_line < index_valid_opt->v_min_line
                     && index_valid_opt->v_max_line < scan_range.v_max_line)
                 {
@@ -2005,8 +2005,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             }
         } else if (index_valid_opt) {
             log_info("using existing index over range [%d:%d)",
-                     index_valid_opt->v_min_line,
-                     index_valid_opt->v_max_line);
+                     (int) index_valid_opt->v_min_line,
+                     (int) index_valid_opt->v_max_line);
             if (p_cur->log_cursor.lc_direction < 0) {
                 p_cur->log_cursor.lc_indexed_lines.push_back(
                     index_valid_opt->v_min_line - 1_vl);
@@ -2092,13 +2092,13 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     }
 #endif
     log_debug("before table filter [%d:%d)",
-              p_cur->log_cursor.lc_curr_line,
-              p_cur->log_cursor.lc_end_line);
+              (int) p_cur->log_cursor.lc_curr_line,
+              (int) p_cur->log_cursor.lc_end_line);
     vt->vi->filter(p_cur->log_cursor, *vt->lss);
 
     log_debug("before initial next [%d:%d)",
-              p_cur->log_cursor.lc_curr_line,
-              p_cur->log_cursor.lc_end_line);
+              (int) p_cur->log_cursor.lc_curr_line,
+              (int) p_cur->log_cursor.lc_end_line);
     if (vt->base.pModule->xNext != vt_next_no_rowid) {
         p_cur->log_cursor.lc_curr_line -= p_cur->log_cursor.lc_direction;
     }

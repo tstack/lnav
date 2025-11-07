@@ -101,8 +101,9 @@ file_collection::limits_t::limits_t()
         this->l_open_files = this->l_fds - RESERVED_FDS;
     }
 
-    log_info(
-        "fd limit: %zu; open file limit: %zu", this->l_fds, this->l_open_files);
+    log_info("fd limit: %zu; open file limit: %zu",
+             (size_t) this->l_fds,
+             (size_t) this->l_open_files);
 }
 
 const file_collection::limits_t&

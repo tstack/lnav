@@ -1960,12 +1960,16 @@ public:
                 auto sv = keyseq_sf.to_string_view();
                 auto scan_res = scn::scan<int32_t>(sv, "f{}");
                 if (!scan_res) {
-                    log_error("invalid function key sequence: %s", keyseq_sf);
+                    log_error("invalid function key sequence: %.*s",
+                              keyseq_sf.length(),
+                              keyseq_sf.data());
                     continue;
                 }
                 auto value = scan_res->value();
                 if (value < 0 || value > 64) {
-                    log_error("invalid function key number: %s", keyseq_sf);
+                    log_error("invalid function key number: %.*s",
+                              keyseq_sf.length(),
+                              keyseq_sf.data());
                     continue;
                 }
 
@@ -2155,19 +2159,25 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
         auto sample_path = lnav::paths::dotlnav() / "configs" / "default"
             / fmt::format(FMT_STRING("{}.sample"), bsf.get_name());
 
+        const auto& name_sf = bsf.get_name();
         auto stat_res = lnav::filesystem::stat_file(sample_path);
         if (stat_res.isOk()) {
             auto st = stat_res.unwrap();
             if (st.st_mtime >= lnav::filesystem::self_mtime()) {
-                log_debug("skipping writing sample: %s (mtimes %d >= %d)",
-                          bsf.get_name(),
+                log_debug("skipping writing sample: %.*s (mtimes %ld >= %lld)",
+                          name_sf.length(),
+                          bsf.get_name().data(),
                           st.st_mtime,
                           lnav::filesystem::self_mtime());
                 continue;
             }
-            log_debug("sample file needs to be updated: %s", bsf.get_name());
+            log_debug("sample file needs to be updated: %.*s",
+                      name_sf.length(),
+                      name_sf.data());
         } else {
-            log_debug("sample file does not exist: %s", bsf.get_name());
+            log_debug("sample file does not exist: %.*s",
+                      name_sf.length(),
+                      name_sf.data());
         }
 
         auto sfp = bsf.to_string_fragment_producer();

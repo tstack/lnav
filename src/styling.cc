@@ -230,7 +230,7 @@ term_color_palette::term_color_palette(const string_fragment& name,
 
     if (parse_res.isErr()) {
         log_error("failed to parse palette: %s -- %s",
-                  name,
+                  iname.c_str(),
                   parse_res.unwrapErr()[0].to_attr_line().get_string().c_str());
     }
     require(parse_res.isOk());

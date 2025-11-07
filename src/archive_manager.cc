@@ -417,7 +417,7 @@ cleanup_cache()
             std::vector<fs::path> to_remove;
             std::error_code ec;
 
-            log_debug("cache-ttl %d", cfg.amc_cache_ttl.count());
+            log_debug("cache-ttl %lld", cfg.amc_cache_ttl.count());
             for (const auto& entry : fs::directory_iterator(cache_path, ec)) {
                 if (entry.path().extension() != ".done") {
                     continue;

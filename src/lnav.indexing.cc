@@ -339,7 +339,8 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 
                 const auto& dupe_name = lf.front()->get_unique_path();
                 log_info(
-                    "Keeping duplicated file: %s; size=%lld; mtime=%d; path=%s",
+                    "Keeping duplicated file: %s; size=%lld; mtime=%ld; "
+                    "path=%s",
                     lf.front()->get_content_id().c_str(),
                     lf.front()->get_stat().st_size,
                     lf.front()->get_stat().st_mtime,
@@ -349,7 +350,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                     lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
                         if (lf->mark_as_duplicate(dupe_name)) {
                             log_info(
-                                "  Hiding copy: size=%lld; mtime=%d; path=%s",
+                                "  Hiding copy: size=%lld; mtime=%ld; path=%s",
                                 lf->get_stat().st_size,
                                 lf->get_stat().st_mtime,
                                 lf->get_filename_as_string().c_str());
@@ -404,8 +405,8 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             log_debug("  scroll down[%d] = %d (sel=%d) (height=%d)",
                       lpc,
                       scroll_downs[lpc],
-                      scroll_view.get_selection().value_or(-1_vl),
-                      scroll_view.get_inner_height());
+                      (int) scroll_view.get_selection().value_or(-1_vl),
+                      (int) scroll_view.get_inner_height());
         }
     }
 

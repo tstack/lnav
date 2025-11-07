@@ -75,7 +75,7 @@ public:
             case CURLE_BAD_DOWNLOAD_RESUME:
                 break;
             default:
-                log_error("%s:curl failure -- %ld %s",
+                log_error("%s:curl failure -- %d %s",
                           this->cr_name.c_str(),
                           result,
                           curl_easy_strerror(result));

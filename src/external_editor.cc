@@ -66,7 +66,7 @@ get_config_dir_mtime(const std::filesystem::path& path,
         auto config_path = parent / config_dir;
         auto mtime = std::filesystem::last_write_time(config_path, ec);
         if (!ec) {
-            auto retval = mtime.time_since_epoch().count();
+            time64_t retval = mtime.time_since_epoch().count();
 
             log_debug("  found editor config dir: %s (%lld)",
                       config_path.c_str(),
@@ -88,7 +88,7 @@ get_impl(const std::filesystem::path& path)
     const auto& cfg = injector::get<const config&>();
     std::vector<std::tuple<time64_t, bool, const impl*>> candidates;
 
-    log_debug("editor impl count: %d", cfg.c_impls.size());
+    log_debug("editor impl count: %zu", cfg.c_impls.size());
     for (const auto& [name, impl] : cfg.c_impls) {
         const auto full_cmd = fmt::format(FMT_STRING("{} > /dev/null 2>&1"),
                                           impl.i_test_command);

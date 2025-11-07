@@ -135,7 +135,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto cell_length = al.utf8_length_or_length();
         if (actual_col_size < cell_length) {
             log_warning(
-                "invalid column size: actual_col_size=%d < cell_length=%d",
+                "invalid column size: actual_col_size=%zd < cell_length=%zd",
                 actual_col_size,
                 cell_length);
             cell_length = actual_col_size;
@@ -478,7 +478,7 @@ db_label_source::push_column(const column_value_t& sv)
                 auto parse_res
                     = get_row_style_handlers().parser_for(SRC).of(frag);
                 if (parse_res.isErr()) {
-                    log_error("DB row %d JSON is invalid:", row_index);
+                    log_error("DB row %zu JSON is invalid:", row_index);
                     auto errors = parse_res.unwrapErr();
                     for (const auto& err : errors) {
                         log_error("  %s", err.to_attr_line().al_string.c_str());
@@ -496,7 +496,7 @@ db_label_source::push_column(const column_value_t& sv)
                         auto col_index_opt
                             = this->column_name_to_index(col_name);
                         if (!col_index_opt) {
-                            log_error("DB row %d column name '%s' not found",
+                            log_error("DB row %zu column name '%s' not found",
                                       row_index,
                                       col_name.c_str());
                             col_sf = string_fragment::from_str(
@@ -512,7 +512,7 @@ db_label_source::push_column(const column_value_t& sv)
                             auto fg_res = styling::color_unit::from_str(
                                 col_style.sc_color);
                             if (fg_res.isErr()) {
-                                log_error("DB row %d color is invalid: %s",
+                                log_error("DB row %zu color is invalid: %s",
                                           row_index,
                                           fg_res.unwrapErr().c_str());
                                 col_sf
@@ -530,7 +530,8 @@ db_label_source::push_column(const column_value_t& sv)
                                 col_style.sc_background_color);
                             if (bg_res.isErr()) {
                                 log_error(
-                                    "DB row %d background-color is invalid: %s",
+                                    "DB row %zu background-color is invalid: "
+                                    "%s",
                                     row_index,
                                     bg_res.unwrapErr().c_str());
                                 col_sf
@@ -573,7 +574,7 @@ db_label_source::push_column(const column_value_t& sv)
                 }
             }
         } else {
-            log_error("DB row %d is not a string -- %s",
+            log_error("DB row %zu is not a string -- %s",
                       row_index,
                       mapbox::util::apply_visitor(type_visitor(), sv));
 

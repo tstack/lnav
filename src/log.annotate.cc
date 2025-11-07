@@ -166,7 +166,7 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
     log_data_helper ldh(lss);
 
     if (!ldh.load_line(vl, true)) {
-        log_error("failed to parse line %d", vl);
+        log_error("failed to parse line %d", (int) vl);
         return Err(lnav::console::user_message::error("Failed to parse line"));
     }
     auto line_number = content_line_t{ldh.ldh_line_index - ldh.ldh_y_offset};
@@ -379,7 +379,7 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
                     sbr.rtrim(is_line_ending);
                     log_debug("%s: %.*s",
                               handler.c_str(),
-                              sbr.length(),
+                              (int) sbr.length(),
                               sbr.get_data());
 
                     last_range = li.li_file_range;

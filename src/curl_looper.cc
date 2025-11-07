@@ -157,7 +157,7 @@ curl_request::debug_cb(
         while (size > 0 && isspace(data[size - 1])) {
             size -= 1;
         }
-        log_debug("%s:%.*s", cr->get_name().c_str(), size, data);
+        log_debug("%s:%.*s", cr->get_name().c_str(), (int) size, data);
     }
 
     return 0;
@@ -367,7 +367,7 @@ curl_looper::check_for_finished_requests()
                     this->cl_all_requests.erase(all_iter);
                 }
             } else {
-                log_debug("%s:curl_request %p is polling, requeueing in %d",
+                log_debug("%s:curl_request %p is polling, requeueing in %ld",
                           cr->get_name().c_str(),
                           cr.get(),
                           delay_ms);

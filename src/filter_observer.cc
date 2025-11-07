@@ -119,7 +119,7 @@ line_filter_observer::clear_deleted_filter_state()
 
     for (auto& filter : this->lfo_filter_stack) {
         if (filter->lf_deleted) {
-            log_debug("skipping deleted %p %d %d",
+            log_debug("skipping deleted %p %zu %d",
                       filter.get(),
                       filter->get_index(),
                       filter->get_lang());

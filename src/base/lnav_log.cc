@@ -444,13 +444,13 @@ log_rusage_raw(enum lnav_log_level_t level,
     log_msg(level,
             src_file,
             line_number,
-            "  utime=%d.%06d",
+            "  utime=%ld.%06d",
             ru.ru_utime.tv_sec,
             ru.ru_utime.tv_usec);
     log_msg(level,
             src_file,
             line_number,
-            "  stime=%d.%06d",
+            "  stime=%ld.%06d",
             ru.ru_stime.tv_sec,
             ru.ru_stime.tv_usec);
     log_msg(level, src_file, line_number, "  maxrss=%ld", ru.ru_maxrss);

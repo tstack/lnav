@@ -284,7 +284,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             return true;
         }
         default:
-            log_debug("unhandled %x", ch);
+            log_debug("unhandled %x", ch.eff_text[0]);
             break;
     }
 

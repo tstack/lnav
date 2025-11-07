@@ -948,7 +948,7 @@ wait_for_pipers(std::optional<ui_clock::time_point> deadline)
         }
         rebuild_indexes();
 
-        log_debug("%d pipers and %d children are still active",
+        log_debug("%zu pipers and %zu children are still active",
                   piper_count,
                   lnav_data.ld_child_pollers.size());
         if (sleep_time < MAX_SLEEP_TIME) {
@@ -1944,7 +1944,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
                 lnav_data.ld_session_loaded = true;
                 loop_deadline = ui_now;
-                log_debug("initial rescan found %d files",
+                log_debug("initial rescan found %zu files",
                           lnav_data.ld_active_files.fc_files.size());
                 exec_phase.completed(lnav::phase_t::scan);
             }
@@ -2233,7 +2233,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (false && poll_to.count() > 0) {
             log_trace(
                 "%d: poll() with timeout %lld ", loop_count, poll_to.count());
-            log_trace("  (changes=%d; before_deadline=%d; exec_phase=%d)",
+            log_trace("  (changes=%zu; before_deadline=%d; exec_phase=%d)",
                       changes,
                       ui_now < loop_deadline,
                       exec_phase.ep_value);
@@ -2507,7 +2507,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                               *iter,
                               WTERMSIG(child_stat));
                 } else {
-                    log_info("child %d exited");
+                    log_info("child %d exited", *iter);
                 }
                 iter = lnav_data.ld_children.erase(iter);
             }
@@ -2610,7 +2610,7 @@ wait_for_children()
                       *iter,
                       WTERMSIG(child_stat));
         } else {
-            log_info("child %d exited");
+            log_info("child %d exited", *iter);
         }
         iter = lnav_data.ld_children.erase(iter);
     }
@@ -4026,7 +4026,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             log_info("  sqlite=%s", sqlite3_version);
             log_info("  zlib=%s", zlibVersion());
             log_info("lnav_data:");
-            log_info("  flags=%x", lnav_data.ld_flags);
+            log_info("  flags=%lx", lnav_data.ld_flags);
             log_info("  commands:");
             for (auto cmd_iter = lnav_data.ld_commands.begin();
                  cmd_iter != lnav_data.ld_commands.end();

@@ -942,7 +942,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
     if (!do_change) {
         return;
     }
-    log_debug("%d:detected time rollover; offsets=%d %d %d %d",
+    log_debug("%zu:detected time rollover; offsets=%d %d %d %d",
               dst.size(),
               off_year,
               off_month,
@@ -1111,7 +1111,7 @@ read_json_number(yajlpp_parse_context* ypc,
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
         if (!scan_res) {
-            log_error("invalid number %.*s", numberLen, numberVal);
+            log_error("invalid number %.*s", (int) numberLen, numberVal);
             return 0;
         }
         auto ts_val = scan_res.value().value();
@@ -1134,7 +1134,7 @@ read_json_number(yajlpp_parse_context* ypc,
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
         if (!scan_res) {
-            log_error("invalid number %.*s", numberLen, numberVal);
+            log_error("invalid number %.*s", (int) numberLen, numberVal);
             return 0;
         }
         auto ts_val = scan_res.value().value();
@@ -1173,7 +1173,7 @@ read_json_number(yajlpp_parse_context* ypc,
             auto scan_res
                 = scn::scan_int<int64_t>(number_frag.to_string_view());
             if (!scan_res) {
-                log_error("invalid number %.*s", numberLen, numberVal);
+                log_error("invalid number %.*s", (int) numberLen, numberVal);
                 return 0;
             }
             auto level_int = scan_res.value().value();
@@ -1202,7 +1202,7 @@ read_json_number(yajlpp_parse_context* ypc,
             auto scan_res
                 = scn::scan_value<double>(number_frag.to_string_view());
             if (!scan_res) {
-                log_error("invalid number %.*s", numberLen, numberVal);
+                log_error("invalid number %.*s", (int) numberLen, numberVal);
                 return 0;
             }
             val = scan_res.value().value();
@@ -1516,7 +1516,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
     json_log_userdata jlu(sbr, &sbc);
 
     if (li.li_partial) {
-        log_debug("skipping partial line at offset %d",
+        log_debug("skipping partial line at offset %lld",
                   li.li_file_range.fr_offset);
         if (this->lf_specialized) {
             if (!dst.empty()) {
@@ -1710,9 +1710,10 @@ external_log_format::scan_json(std::vector<logline>& dst,
             handle, 1, (const unsigned char*) sbr.get_data(), sbr.length());
         if (msg != nullptr) {
             auto msg_frag = string_fragment::from_c_str(msg);
-            log_debug("Unable to parse line at offset %d: %s",
+            log_debug("Unable to parse line at offset %lld: %.*s",
                       li.li_file_range.fr_offset,
-                      msg);
+                      msg_frag.length(),
+                      msg_frag.data());
             line_count = msg_frag.count('\n') + 1;
             yajl_free_error(handle, msg);
         }
@@ -1845,7 +1846,7 @@ external_log_format::scan(logfile& lf,
                 }
             }
 
-            log_debug("%s:%d: date-time re-locked to %d",
+            log_debug("%s:%zu: date-time re-locked to %d",
                       lf.get_unique_path().c_str(),
                       dst.size(),
                       this->lf_date_time.dts_fmt_lock);
@@ -2117,7 +2118,7 @@ external_log_format::scan(logfile& lf,
     if (this->lf_specialized && !this->lf_multiline) {
         const auto& last_line = dst.back();
 
-        log_debug("%s: invalid line %d file_offset=%" PRIu64,
+        log_debug("%s: invalid line %zu file_offset=%" PRIu64,
                   lf.get_filename().c_str(),
                   dst.size(),
                   li.li_file_range.fr_offset);
@@ -2419,14 +2420,15 @@ external_log_format::rewrite(exec_context& ec,
     {
         if (!iter->lv_origin.is_valid()) {
             log_debug("%d: not rewriting value with invalid origin -- %s",
-                      ec.ec_top_line,
+                      (int) ec.ec_top_line,
                       iter->lv_meta.lvm_name.get());
             continue;
         }
 
         auto vd_iter = this->elf_value_defs.find(iter->lv_meta.lvm_name);
         if (vd_iter == this->elf_value_defs.end()) {
-            log_debug("not rewriting undefined value -- %s",
+            log_debug("%d: not rewriting undefined value -- %s",
+                      (int) ec.ec_top_line,
                       iter->lv_meta.lvm_name.get());
             continue;
         }
@@ -3316,7 +3318,7 @@ detect_mime_type(const std::filesystem::path& filename)
 
         if (buffer_size < elf->elf_converter.c_header.h_size) {
             log_debug(
-                "%s: file content too small (%d) for header detection: %s",
+                "%s: file content too small (%zu) for header detection: %s",
                 filename.c_str(),
                 buffer_size,
                 elf->get_name().get());

@@ -238,7 +238,7 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
                     hd.h_name = std::string((char*) name);
                     hd.h_comment = std::string((char*) comment);
                     log_info(
-                        "%d: read gzip header (mtime=%d; name='%s'; "
+                        "%d: read gzip header (mtime=%ld; name='%s'; "
                         "comment='%s'; crc=%x)",
                         fd,
                         hd.h_mtime.tv_sec,
@@ -285,7 +285,7 @@ line_buffer::gz_indexed::stream_data(void* buf, size_t size)
                 // stream
                 continue_stream();
             } else if (err != Z_OK) {
-                log_error(" inflate-error at offset %d: %d  %s",
+                log_error(" inflate-error at offset %lu: %d  %s",
                           this->strm.total_in,
                           (int) err,
                           this->strm.msg ? this->strm.msg : "");
@@ -826,7 +826,7 @@ line_buffer::fill_range(file_off_t start,
         retval = this->lb_loader_future.get();
         if (false && wait_start) {
             auto diff = std::chrono::system_clock::now() - wait_start.value();
-            log_debug("wait done! %d", diff.count());
+            log_debug("wait done! %lld", diff.count());
         }
         // log_debug("got preload");
         this->lb_loader_future = {};
@@ -916,7 +916,7 @@ line_buffer::fill_range(file_off_t start,
                 if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
-                    log_info("fd(%d): rc (%d) -- set file size to %llu",
+                    log_info("fd(%d): rc (%zd) -- set file size to %llu",
                              this->lb_fd.get(),
                              rc,
                              this->lb_file_size);
@@ -1268,7 +1268,7 @@ line_buffer::load_next_line(file_range prev_line)
                 }
             } else {
                 if (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) {
-                    log_warning("Line exceeded max size: offset=%d", offset);
+                    log_warning("Line exceeded max size: offset=%zd", offset);
                     retval.li_file_range.fr_size = MAX_LINE_BUFFER_SIZE - 1;
                     retval.li_partial = false;
                 } else {
@@ -1544,7 +1544,7 @@ line_buffer::enable_cache()
     static constexpr ssize_t FILL_LENGTH = 1024 * 1024;
     auto off = file_off_t{0};
     while (!done) {
-        log_debug("%d: caching file content at %d", this->lb_fd.get(), off);
+        log_debug("%d: caching file content at %lld", this->lb_fd.get(), off);
         if (!this->fill_range(off, FILL_LENGTH)) {
             log_debug("%d: caching finished", this->lb_fd.get());
             done = true;

@@ -118,8 +118,8 @@ struct key_repeat_history {
 
 struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
-    time_t ld_session_time;
-    time_t ld_session_load_time;
+    lnav::time64_t ld_session_time;
+    lnav::time64_t ld_session_load_time;
     const char* ld_program_name;
     std::string ld_debug_log_name;
 

@@ -147,7 +147,7 @@ for_href(const std::string& href)
                                 }
                             }
                             log_info(
-                                "Opening href with external editor: %s:%u:%u",
+                                "Opening href with external editor: %s:%lu:%lu",
                                 path_part.in(),
                                 line,
                                 col);

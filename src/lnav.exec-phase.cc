@@ -41,7 +41,7 @@ void
 exec_phase::completed(phase_t current_phase)
 {
     const auto name = get_phase_name(current_phase);
-    log_debug("phase completed: %.*s", name.size(), name.data());
+    log_debug("phase completed: %.*s", (int) name.size(), name.data());
 
     require(this->ep_value == current_phase);
 

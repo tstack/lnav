@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
+#include <future>
 #include <regex>
 
 #include "tailer.looper.hh"
@@ -384,7 +386,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             ssize_t total_bytes = 0;
 
             while (total_bytes < sf.length()) {
-                log_debug("attempting to write %d", sf.length() - total_bytes);
+                log_debug("attempting to write %zd", sf.length() - total_bytes);
                 auto rc = write(
                     in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
 
@@ -395,7 +397,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
                     write_failed = true;
                     break;
                 }
-                log_debug("  wrote %d", rc);
+                log_debug("  wrote %zd", rc);
                 total_bytes += rc;
             }
         }
@@ -414,7 +416,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             }
             log_debug("tailer(%s): transfer output -- %.*s",
                       netloc.c_str(),
-                      rc,
+                      (int) rc,
                       buffer);
         }
 
@@ -1199,7 +1201,7 @@ tailer::cleanup_cache()
             std::vector<std::filesystem::path> to_remove;
             std::error_code ec;
 
-            log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
+            log_debug("cache-ttl %lld", cfg.c_cache_ttl.count());
             for (const auto& entry :
                  std::filesystem::directory_iterator(cache_path, ec))
             {

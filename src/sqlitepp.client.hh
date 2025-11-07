@@ -102,7 +102,7 @@ bind_values_helper(sqlite3_stmt* stmt,
 
     for (size_t lpc = 0; lpc < idxs.size(); lpc++) {
         if (rcs[lpc] != SQLITE_OK) {
-            log_error("Failed to bind column %d in statement: %s -- %s",
+            log_error("Failed to bind column %zu in statement: %s -- %s",
                       lpc,
                       sqlite3_sql(stmt),
                       sqlite3_errstr(rcs[lpc]));

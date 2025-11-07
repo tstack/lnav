@@ -113,7 +113,7 @@ column_namer::add_column(const string_fragment& in_name)
         log_trace("column name already exists (%.*s), trying (%.*s)",
                   retval.length(),
                   retval.data(),
-                  buf.size(),
+                  (int) buf.size(),
                   buf.data());
         retval = string_fragment::from_memory_buffer(buf);
         num += 1;

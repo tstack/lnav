@@ -631,7 +631,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
             auto load_res = doc.load_string(block_text.al_string.c_str());
             if (!load_res) {
-                log_error("XML parsing failure at %d: %s",
+                log_error("XML parsing failure at %td: %s",
                           load_res.offset,
                           load_res.description());
 
@@ -1165,7 +1165,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
                         auto load_res = doc.load_string(html_span.c_str());
                         if (!load_res) {
-                            log_error("XML parsing failure at %d: %s",
+                            log_error("XML parsing failure at %td: %s",
                                       load_res.offset,
                                       load_res.description());
 
@@ -1191,7 +1191,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
                         auto load_res = doc.load_string(html_span.c_str());
                         if (!load_res) {
-                            log_error("XML parsing failure at %d: %s",
+                            log_error("XML parsing failure at %td: %s",
                                       load_res.offset,
                                       load_res.description());
 

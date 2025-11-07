@@ -639,7 +639,7 @@ load_time_bookmarks()
                             if (hack_hash == log_hash) {
                                 log_trace("needed hack to match line: %s:%d",
                                           lf->get_filename_as_string().c_str(),
-                                          cl);
+                                          (int) cl);
                             } else {
                                 ++line_iter;
                                 continue;
@@ -1726,7 +1726,7 @@ save_session()
 void
 reset_session()
 {
-    log_info("reset session: time=%d", lnav_data.ld_session_time);
+    log_info("reset session: time=%lld", lnav_data.ld_session_time);
 
     save_session();
 
@@ -1876,13 +1876,13 @@ lnav::session::restore_view_states()
         {
             log_info("restoring %s view top: %d",
                      lnav_view_strings[view_index].data(),
-                     vs.vs_top);
+                     (int) vs.vs_top);
             tview.set_top(vis_line_t(vs.vs_top), true);
         }
         if (!has_loc && vs.vs_selection) {
             log_info("restoring %s view selection: %d",
                      lnav_view_strings[view_index].data(),
-                     vs.vs_selection.value());
+                     (int) vs.vs_selection.value_or(-1_vl));
             tview.set_selection(vis_line_t(vs.vs_selection.value()));
         }
         auto sel = tview.get_selection();
@@ -1931,8 +1931,8 @@ lnav::session::restore_view_states()
         }
         log_info("%s view actual top/selection: %d/%d",
                  lnav_view_strings[view_index].data(),
-                 tview.get_top(),
-                 tview.get_selection().value_or(-1_vl));
+                 (int) tview.get_top(),
+                 (int) tview.get_selection().value_or(-1_vl));
     }
 }
 

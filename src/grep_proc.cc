@@ -79,15 +79,19 @@ grep_proc<LineType>::start()
         this->gp_sink->grep_quiesce();
     }
 
-    log_info(
-        "grep_proc(%p): start with highest %d", this, this->gp_highest_line);
+    log_info("grep_proc(%p): start with highest %d",
+             this,
+             (int) this->gp_highest_line);
     if (this->gp_child_started || this->gp_queue.empty()) {
         log_debug("grep_proc(%p): nothing to do?", this);
         return;
     }
     for (const auto& [index, elem] : lnav::itertools::enumerate(this->gp_queue))
     {
-        log_info("  queue[%d]: [%d:%d)", index, elem.first, elem.second);
+        log_info("  queue[%lu]: [%d:%d)",
+                 index,
+                 (int) elem.first,
+                 (int) elem.second);
     }
 
     auto_pipe in_pipe(STDIN_FILENO);
@@ -269,7 +273,8 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
                 this->gp_sink->grep_match(*this, this->gp_last_line);
             }
         } else {
-            log_error("bad line from child -- %s", line);
+            log_error(
+                "bad line from child -- %.*s", line.length(), line.data());
         }
     }
 }

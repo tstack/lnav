@@ -945,7 +945,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         if (lf == nullptr) {
             if (ld.ld_lines_indexed > 0) {
-                log_debug("%d: file closed, doing full rebuild",
+                log_debug("%zu: file closed, doing full rebuild",
                           ld.ld_file_index);
                 force = true;
                 retval = rebuild_result::rr_full_rebuild;
@@ -983,7 +983,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         if (retval == rebuild_result::rr_no_change) {
                             retval = rebuild_result::rr_appended_lines;
                         }
-                        log_debug("new lines for %s:%d",
+                        log_debug("new lines for %s:%zu",
                                   lf->get_filename_as_string().c_str(),
                                   lf->size());
                         if (!this->lss_index.empty()

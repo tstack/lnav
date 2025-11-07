@@ -1202,19 +1202,25 @@ write_sample_file()
             / fmt::format(FMT_STRING("formats/default/{}.sample"),
                           bsf.get_name());
 
+        const auto& name_sf = bsf.get_name();
         auto stat_res = lnav::filesystem::stat_file(sample_path);
         if (stat_res.isOk()) {
             auto st = stat_res.unwrap();
             if (st.st_mtime >= lnav::filesystem::self_mtime()) {
-                log_debug("skipping writing sample: %s (mtimes %d >= %d)",
-                          bsf.get_name(),
+                log_debug("skipping writing sample: %.*s (mtimes %ld >= %lld)",
+                          name_sf.length(),
+                          name_sf.data(),
                           st.st_mtime,
                           lnav::filesystem::self_mtime());
                 continue;
             }
-            log_debug("sample file needs to be updated: %s", bsf.get_name());
+            log_debug("sample file needs to be updated: %.*s",
+                      name_sf.length(),
+                      name_sf.data());
         } else {
-            log_debug("sample file does not exist: %s", bsf.get_name());
+            log_debug("sample file does not exist: %.*s",
+                      name_sf.length(),
+                      name_sf.data());
         }
 
         auto sfp = bsf.to_string_fragment_producer();

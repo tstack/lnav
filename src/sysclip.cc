@@ -71,7 +71,7 @@ osc52_close(FILE* file)
 {
     static const char ANSI_OSC_COPY_TO_CLIP[] = ANSI_OSC "52;c;";
 
-    log_debug("writing %d bytes of clipboard data using OSC 52", ftell(file));
+    log_debug("writing %ld bytes of clipboard data using OSC 52", ftell(file));
     write(STDOUT_FILENO, ANSI_OSC_COPY_TO_CLIP, strlen(ANSI_OSC_COPY_TO_CLIP));
 
     base64_state b64state{};

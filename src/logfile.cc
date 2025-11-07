@@ -253,7 +253,7 @@ logfile::file_options_have_changed()
         if (this->lf_file_options_generation == options_hier->foh_generation) {
             return false;
         }
-        log_info("checking new generation of file options: %d -> %d",
+        log_info("checking new generation of file options: %zu -> %zu",
                  this->lf_file_options_generation,
                  options_hier->foh_generation);
         auto new_options = options_hier->match(this->get_filename());
@@ -380,7 +380,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
          * Try each scanner until we get a match.  Fortunately, the formats
          * tend to be sufficiently different that there are few ambiguities...
          */
-        log_trace("logfile[%s]: scanning line %d (offset: %d; size: %d)",
+        log_trace("logfile[%s]: scanning line %zu (offset: %lld; size: %lld)",
                   this->lf_filename_as_string.c_str(),
                   this->lf_index.size(),
                   li.li_file_range.fr_offset,
@@ -561,7 +561,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         {
             auto winner = best_match.value();
             auto* curr = winner.first;
-            log_info("%s:%d:log format found -- %s",
+            log_info("%s:%zu:log format found -- %s",
                      this->lf_filename_as_string.c_str(),
                      this->lf_index.size(),
                      curr->get_name().get());
@@ -1004,7 +1004,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
         }
         if (!has_format) {
-            log_debug("loading file... %s:%d",
+            log_debug("loading file... %s:%zu",
                       this->lf_filename_as_string.c_str(),
                       begin_size);
         }
@@ -1139,7 +1139,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             if (!li.li_utf8_scan_result.is_valid()) {
                 log_warning(
-                    "%s: invalid UTF-8 detected at L%d:C%d/%d (O:%lld) -- %s",
+                    "%s: invalid UTF-8 detected at L%zu:C%d/%lld (O:%lld) -- "
+                    "%s",
                     this->lf_filename_as_string.c_str(),
                     this->lf_index.size() + 1,
                     li.li_utf8_scan_result.usr_valid_frag.sf_end,
@@ -1326,7 +1327,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             rusagesub(end_rusage,
                       begin_rusage,
                       this->lf_activity.la_initial_index_rusage);
-            log_info("Resource usage for initial indexing of file: %s:%d-%d",
+            log_info("Resource usage for initial indexing of file: %s:%zu-%zu",
                      this->lf_filename_as_string.c_str(),
                      begin_size,
                      this->lf_index.size());
@@ -1526,7 +1527,7 @@ logfile::read_full_message(const_iterator ll,
                 }
                 if (read_result.isErr()) {
                     auto errmsg = read_result.unwrapErr();
-                    log_error("%s:%d:unable to read range %d:%d -- %s",
+                    log_error("%s:%zu:unable to read range %lld:%lld -- %s",
                               this->get_unique_path().c_str(),
                               std::distance(this->cbegin(), ll),
                               range_for_line.fr_offset,
@@ -1550,7 +1551,7 @@ logfile::read_full_message(const_iterator ll,
 
             if (read_result.isErr()) {
                 auto errmsg = read_result.unwrapErr();
-                log_error("%s:%d:unable to read range %d:%d -- %s",
+                log_error("%s:%zu:unable to read range %lld:%lld -- %s",
                           this->get_unique_path().c_str(),
                           std::distance(this->cbegin(), ll),
                           range_for_line.fr_offset,
@@ -1817,7 +1818,7 @@ logfile::dump_stats()
              this->lf_filename_as_string.c_str());
     log_info("  file_size=%lld", this->lf_line_buffer.get_file_size());
     log_info("  buffer_size=%ld", this->lf_line_buffer.get_buffer_size());
-    log_info("  read_hist=[%4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu %4lu]",
+    log_info("  read_hist=[%4u %4u %4u %4u %4u %4u %4u %4u %4u %4u]",
              buf_stats.s_hist[0],
              buf_stats.s_hist[1],
              buf_stats.s_hist[2],
@@ -1828,17 +1829,17 @@ logfile::dump_stats()
              buf_stats.s_hist[7],
              buf_stats.s_hist[8],
              buf_stats.s_hist[9]);
-    log_info("  decompressions=%lu", buf_stats.s_decompressions);
-    log_info("  preads=%lu", buf_stats.s_preads);
-    log_info("  requested_preloads=%lu", buf_stats.s_requested_preloads);
-    log_info("  used_preloads=%lu", buf_stats.s_used_preloads);
+    log_info("  decompressions=%u", buf_stats.s_decompressions);
+    log_info("  preads=%u", buf_stats.s_preads);
+    log_info("  requested_preloads=%u", buf_stats.s_requested_preloads);
+    log_info("  used_preloads=%u", buf_stats.s_used_preloads);
 }
 
 void
 logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 {
     if (line_number >= this->lf_index.size()) {
-        log_error("invalid line number: %s", line_number);
+        log_error("invalid line number: %u", line_number);
         return;
     }
 

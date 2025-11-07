@@ -1001,7 +1001,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (line_number < 0) {
                 log_info("negative goto: %d height=%d",
                          line_number,
-                         tc->get_inner_height());
+                         (int) tc->get_inner_height());
                 line_number = tc->get_inner_height() + line_number;
                 if (line_number < 0) {
                     line_number = 0;
@@ -2493,7 +2493,7 @@ com_config(exec_context& ec,
         }
         auto parsed_args = parse_res.unwrap();
 
-        log_debug("config dry run %d %d",
+        log_debug("config dry run %zu %d",
                   args.size(),
                   prompt.p_editor.tc_popup.is_visible());
         if (ec.ec_dry_run && args.size() == 2
