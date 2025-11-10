@@ -28,12 +28,20 @@
  */
 
 #include <chrono>
+#include <optional>
+#include <string>
 
 #include "humanize.time.hh"
 
+#include "attr_line.builder.hh"
 #include "config.h"
+#include "date_time_scanner.hh"
 #include "fmt/format.h"
+#include "intern_string.hh"
 #include "math_util.hh"
+#include "ptimec.hh"
+#include "relative_time.hh"
+#include "result.h"
 #include "time_util.hh"
 
 namespace humanize::time {
@@ -49,8 +57,7 @@ point::from_tv(const timeval& tv)
 std::string
 point::as_time_ago() const
 {
-    struct timeval current_time
-        = this->p_recent_point.value_or(current_timeval());
+    timeval current_time = this->p_recent_point.value_or(current_timeval());
 
     if (this->p_convert_to_local) {
         current_time.tv_sec = convert_log_time_to_local(current_time.tv_sec);
@@ -96,7 +103,7 @@ point::as_time_ago() const
 std::string
 point::as_precise_time_ago() const
 {
-    struct timeval now, diff;
+    timeval now, diff;
 
     now = this->p_recent_point.value_or(current_timeval());
     if (this->p_convert_to_local) {
@@ -106,9 +113,11 @@ point::as_precise_time_ago() const
     timersub(&now, &this->p_past_point, &diff);
     if (diff.tv_sec < 0) {
         return this->as_time_ago();
-    } else if (diff.tv_sec <= 1) {
+    }
+    if (diff.tv_sec <= 1) {
         return "a second ago";
-    } else if (diff.tv_sec < (10 * 60)) {
+    }
+    if (diff.tv_sec < (10 * 60)) {
         if (diff.tv_sec < 60) {
             return fmt::format(FMT_STRING("{:2} seconds ago"), diff.tv_sec);
         }
@@ -121,13 +130,12 @@ point::as_precise_time_ago() const
                            minutes > 1 ? "s" : "",
                            seconds,
                            seconds == 1 ? "" : "s");
-    } else {
-        return this->as_time_ago();
     }
+    return this->as_time_ago();
 }
 
 duration
-duration::from_tv(const struct timeval& tv)
+duration::from_tv(const timeval& tv)
 {
     return duration{tv};
 }

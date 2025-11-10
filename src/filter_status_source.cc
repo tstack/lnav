@@ -133,23 +133,42 @@ filter_status_source::statusview_fields()
     } else {
         this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
                                                     role_t::VCR_STATUS_HOTKEY);
-        if (lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
-        {
+        if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->empty()) {
             this->tss_fields[TSF_FILES_TITLE].set_role(
                 role_t::VCR_STATUS_DISABLED_TITLE);
         } else {
-            this->tss_fields[TSF_FILES_TITLE].set_role(
-                role_t::VCR_ALERT_STATUS);
+            size_t error_count = 0;
+            size_t other_count = 0;
 
             auto& fc = lnav_data.ld_active_files;
-            if (fc.fc_name_to_errors->readAccess()->size() == 1) {
+            {
+                auto stub_map = fc.fc_name_to_stubs->readAccess();
+
+                for (const auto& stub : *stub_map) {
+                    switch (stub.second.fei_description.um_level) {
+                        case lnav::console::user_message::level::raw:
+                        case lnav::console::user_message::level::ok:
+                        case lnav::console::user_message::level::info:
+                        case lnav::console::user_message::level::warning:
+                            other_count += 1;
+                            break;
+                        case lnav::console::user_message::level::error:
+                            error_count += 1;
+                            break;
+                    }
+                }
+            }
+
+            if (error_count > 0) {
+                this->tss_fields[TSF_FILES_TITLE].set_role(
+                    role_t::VCR_ALERT_STATUS);
+            }
+            if (error_count == 1) {
                 this->tss_error.set_value(
                     " error: a file cannot be opened "_frag);
-            } else {
-                this->tss_error.set_value(
-                    " error: %u files cannot be opened ",
-                    lnav_data.ld_active_files.fc_name_to_errors->readAccess()
-                        ->size());
+            } else if (error_count > 1) {
+                this->tss_error.set_value(" error: %zu files cannot be opened ",
+                                          error_count);
             }
         }
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
@@ -195,7 +214,7 @@ status_field&
 filter_status_source::statusview_value_for_field(int field)
 {
     if (field == TSF_FILTERED
-        && !lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
+        && !lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->empty())
     {
         return this->tss_error;
     }
@@ -348,7 +367,7 @@ filter_help_status_source::statusview_fields()
 
             sel.match(
                 [this](files_model::no_selection) { this->fss_help.clear(); },
-                [this](files_model::error_selection) {
+                [this](files_model::stub_selection) {
                     this->fss_help.set_value("  %s", CLOSE_HELP);
                 },
                 [this](files_model::other_selection) {

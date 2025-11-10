@@ -301,9 +301,6 @@ read_format_field(yajlpp_parse_context* ypc,
 
     if (field_name == "timestamp-format") {
         elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
-    } else if (field_name == "module-field") {
-        elf->elf_module_id_field = intern_string::lookup(value);
-        elf->elf_container = true;
     }
 
     return 1;
@@ -439,12 +436,6 @@ static const struct json_path_container pattern_handlers = {
             "The regular expression to match a log message and capture fields.")
         .with_min_length(1)
         .for_field(&external_log_format::pattern::p_pcre),
-    yajlpp::property_handler("module-format")
-        .with_synopsis("<bool>")
-        .with_description(
-            "If true, this pattern will only be used to parse message bodies "
-            "of container formats, like syslog")
-        .for_field(&external_log_format::pattern::p_module_format),
 };
 
 static constexpr json_path_handler_base::enum_value_t SUBSECOND_UNIT_ENUM[] = {
@@ -1091,9 +1082,6 @@ const struct json_path_container format_handlers = {
         .for_field(&external_log_format::lf_description),
     json_path_handler("timestamp-format#", read_format_field)
         .with_description("An array of strptime(3)-like timestamp formats"),
-    json_path_handler("module-field", read_format_field)
-        .with_description(
-            "The name of the module field in the log message pattern"),
     json_path_handler("opid-field")
         .with_description(
             "The name of the operation-id field in the log message pattern")
@@ -1478,17 +1466,10 @@ load_formats(const std::vector<std::filesystem::path>& extra_paths,
         load_from_path(extra_path, errors);
     }
 
-    uint8_t mod_counter = 0;
-
     std::vector<std::shared_ptr<external_log_format>> alpha_ordered_formats;
     for (auto iter = LOG_FORMATS.begin(); iter != LOG_FORMATS.end(); ++iter) {
         auto& elf = iter->second;
         elf->build(errors);
-
-        if (elf->elf_has_module_format) {
-            mod_counter += 1;
-            elf->lf_mod_index = mod_counter;
-        }
 
         for (auto& check_iter : LOG_FORMATS) {
             if (iter->first == check_iter.first) {

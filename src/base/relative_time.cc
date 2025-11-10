@@ -27,17 +27,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
 #include <unordered_set>
 
 #include "relative_time.hh"
 
-#include "base/intern_string.hh"
-#include "base/lnav_log.hh"
-#include "base/result.h"
-#include "base/time_util.hh"
 #include "config.h"
+#include "intern_string.hh"
+#include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "result.h"
 #include "scn/scan.h"
+#include "time_util.hh"
 
 using namespace std::chrono_literals;
 

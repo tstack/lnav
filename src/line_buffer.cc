@@ -363,7 +363,7 @@ int
 line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
 {
     if (offset != this->strm.total_out) {
-        // log_debug("doing seek!  %d %d", offset, this->strm.total_out);
+        // log_debug("doing seek!  %zu %lu", offset, this->strm.total_out);
         this->seek(offset);
     }
 
@@ -1402,6 +1402,106 @@ line_buffer::read_range(file_range fr, scan_direction dir)
     retval.get_metadata() = fr.fr_metadata;
 
     return Ok(std::move(retval));
+}
+
+Result<auto_buffer, std::string>
+line_buffer::peek_range(file_range fr)
+{
+    static const std::string SHORT_READ_MSG = "short read";
+
+    require(this->lb_seekable);
+
+    auto buf = auto_buffer::alloc(fr.fr_size);
+
+    if (this->lb_cached_fd) {
+        auto rc = pread(this->lb_cached_fd.value().get(),
+                        buf.data(),
+                        fr.fr_size,
+                        fr.fr_offset);
+        if (rc == -1) {
+            return Err(lnav::from_errno().message());
+        }
+        if (rc != fr.fr_size) {
+            return Err(SHORT_READ_MSG);
+        }
+        buf.resize(rc);
+
+        return Ok(std::move(buf));
+    }
+
+    if (this->lb_compressed) {
+        safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
+
+        if (*gi) {
+            auto rc = gi->read(buf.data(), fr.fr_offset, fr.fr_size);
+
+            if (rc == -1) {
+                return Err(lnav::from_errno().message());
+            }
+            if (rc != fr.fr_size) {
+                return Err(SHORT_READ_MSG);
+            }
+            buf.resize(rc);
+            return Ok(std::move(buf));
+        }
+        if (this->lb_bz_file) {
+            lock_hack::guard guard;
+            char scratch[32 * 1024];
+            BZFILE* bz_file;
+            file_off_t seek_to;
+            int bzfd;
+
+            /*
+             * Unfortunately, there is no bzseek, so we need to reopen the
+             * file every time we want to do a read.
+             */
+            bzfd = dup(this->lb_fd);
+            if (lseek(this->lb_fd, 0, SEEK_SET) < 0) {
+                close(bzfd);
+                throw error(errno);
+            }
+            if ((bz_file = BZ2_bzdopen(bzfd, "r")) == nullptr) {
+                close(bzfd);
+                if (errno == 0) {
+                    throw std::bad_alloc();
+                } else {
+                    throw error(errno);
+                }
+            }
+
+            seek_to = fr.fr_offset;
+            while (seek_to > 0) {
+                int count;
+
+                count = BZ2_bzread(bz_file,
+                                   scratch,
+                                   std::min((size_t) seek_to, sizeof(scratch)));
+                seek_to -= count;
+            }
+            auto rc = BZ2_bzread(bz_file, buf.data(), fr.fr_size);
+            this->lb_compressed_offset = 0;
+            BZ2_bzclose(bz_file);
+
+            if (rc == -1) {
+                return Err(lnav::from_errno().message());
+            }
+            if (rc != fr.fr_size) {
+                return Err(SHORT_READ_MSG);
+            }
+            buf.resize(rc);
+            return Ok(std::move(buf));
+        }
+    }
+
+    auto rc = pread(this->lb_fd, buf.data(), fr.fr_size, fr.fr_offset);
+    if (rc == -1) {
+        return Err(lnav::from_errno().message());
+    }
+    if (rc != fr.fr_size) {
+        return Err(SHORT_READ_MSG);
+    }
+    buf.resize(rc);
+    return Ok(std::move(buf));
 }
 
 file_range

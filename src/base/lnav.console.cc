@@ -173,16 +173,12 @@ user_message::to_attr_line(render_flags flags) const
                                              VC_ICON.value(ui_icon_t::info));
                 break;
             case level::warning:
-                retval.append("  ")
-                    .append(lnav::roles::warning("warning"))
-                    .append(": ");
+                retval.append("  ").append("warning"_warning).append(": ");
                 retval.al_attrs.emplace_back(line_range{0, 1},
                                              VC_ICON.value(ui_icon_t::warning));
                 break;
             case level::error:
-                retval.append("  ")
-                    .append(lnav::roles::error("error"))
-                    .append(": ");
+                retval.append("  ").append("error"_error).append(": ");
                 retval.al_attrs.emplace_back(line_range{0, 1},
                                              VC_ICON.value(ui_icon_t::error));
                 break;
@@ -778,7 +774,7 @@ to_user_message(intern_string_t src, const lnav::pcre2pp::compile_error& ce)
                                       });
     pcre_error_content.append("\n")
         .append(ce.ce_offset, ' ')
-        .append(lnav::roles::error("^ "))
+        .append("^ "_error)
         .append(lnav::roles::error(ce.get_message()))
         .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 

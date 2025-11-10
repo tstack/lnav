@@ -25,6 +25,7 @@ add_library(
         paths.cc
         piper.file.cc
         progress.cc
+        relative_time.cc
         small_string_map.cc
         snippet_highlighters.cc
         string_attr_type.cc
@@ -76,6 +77,7 @@ add_library(
         paths.hh
         piper.file.hh
         progress.hh
+        relative_time.hh
         result.h
         short_alloc.h
         small_string_map.hh

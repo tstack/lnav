@@ -132,6 +132,7 @@ eval_with(logfile& lf, logfile::iterator ll)
     string_attrs_t sa;
     auto line_number = std::distance(lf.begin(), ll);
     format->annotate(&lf, line_number, sa, values);
+    auto lffs = lf.get_format_file_state();
 
     for (auto watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {
@@ -187,7 +188,8 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             if (strcmp(name, ":log_format_regex") == 0) {
-                const auto pat_name = format->get_pattern_name(line_number);
+                const auto pat_name = format->get_pattern_name(
+                    lffs.lffs_pattern_locks, line_number);
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
                                   pat_name.get(),

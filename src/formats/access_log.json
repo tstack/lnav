@@ -17,10 +17,6 @@
             },
             "std-vhost": {
                 "pattern": "^(?<cs_host>[\\w\\-\\.]*)(?::\\d+)?\\s+(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?:-|(?<cs_username>\\S+))\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?:-|(?<cs_referer>[^\"]+))\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
-            },
-            "mod-std": {
-                "module-format": true,
-                "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
             }
         },
         "level-field": "sc_status",

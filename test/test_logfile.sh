@@ -139,8 +139,9 @@ EOF
             `test_err_filename` > test_logfile.big.out
         mv test_logfile.big.out `test_err_filename`
         check_error_output "decompression worked?" <<EOF
-  error: unable to open file: /logfile_syslog.1.xz
- reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
+ error: unable to open file: /logfile_syslog.1.xz
+ reason: failed to extract archive “/logfile_syslog.1.xz”
+ |        reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
         run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
@@ -214,7 +215,7 @@ EOF
     mv test_logfile.trunc.out `test_err_filename`
     check_error_output "truncated tgz not reported correctly" <<EOF
   error: unable to open file: /test-logs-trunc.tgz
- reason: failed to extract 'src/lnav' from archive '/test-logs-trunc.tgz' -- truncated
+ reason: failed to extract archive “/test-logs-trunc.tgz”
 EOF
 
     mkdir -p rotmp
@@ -230,7 +231,7 @@ EOF
     cp test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
   error: unable to open file: /test-logs.tgz
- reason: unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
+ reason: failed to extract archive “/test-logs.tgz”
 EOF
 
     run_cap_test env TMPDIR=logfile-tmp ${lnav_test} -n \

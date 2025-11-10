@@ -46,6 +46,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/isc.hh"
+#include "base/time_util.hh"
 #include "bottom_status_source.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -224,6 +225,8 @@ struct lnav_data_t {
     lnav::func::scoped_cb ld_status_refresher;
 
     std::filesystem::file_time_type ld_last_dot_lnav_time;
+
+    time_range ld_default_time_range{time_range::unbounded()};
 };
 
 struct static_service {};

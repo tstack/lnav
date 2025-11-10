@@ -49,7 +49,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/spdlog_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
     $(srcdir)/%reldir%/strace_log.json \
-    $(srcdir)/%reldir%/sudo_log.json \
     $(srcdir)/%reldir%/syslog_log.json \
     $(srcdir)/%reldir%/s3_log.json \
     $(srcdir)/%reldir%/tcf_log.json \

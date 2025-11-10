@@ -93,8 +93,8 @@ struct date_time_scanner {
     struct exttm dts_base_tm;
     int dts_fmt_lock{-1};
     int dts_fmt_len{-1};
-    tm dts_last_tm {};
-    struct timeval dts_last_tv {};
+    tm dts_last_tm{};
+    struct timeval dts_last_tv{};
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};
     time_t dts_local_offset_expiry{0};
@@ -121,7 +121,7 @@ struct date_time_scanner {
                             const char* const time_fmt[],
                             struct timeval& tv_out)
     {
-        struct exttm tm;
+        exttm tm;
 
         if (time_len == -1) {
             time_len = strlen(time_src);
@@ -132,11 +132,12 @@ struct date_time_scanner {
         return false;
     }
 
-    bool convert_to_timeval(const std::string& time_src, struct timeval& tv_out)
+    bool convert_to_timeval(const string_fragment& time_src,
+                            struct timeval& tv_out)
     {
-        struct exttm tm;
+        exttm tm;
 
-        if (this->scan(time_src.c_str(), time_src.size(), nullptr, &tm, tv_out)
+        if (this->scan(time_src.data(), time_src.length(), nullptr, &tm, tv_out)
             != nullptr)
         {
             return true;

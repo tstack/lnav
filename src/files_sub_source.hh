@@ -32,12 +32,15 @@
 
 #include <chrono>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/lnav.console.hh"
 #include "file_collection.hh"
+#include "mapbox/variant.hpp"
 #include "plain_text_source.hh"
 #include "textview_curses.hh"
 
@@ -108,8 +111,9 @@ struct selection_base {
     }
 };
 
-struct error_selection
-    : selection_base<error_selection, std::pair<std::string, std::string>> {};
+struct stub_selection
+    : selection_base<stub_selection,
+                     std::pair<std::string, lnav::console::user_message>> {};
 
 struct other_selection
     : selection_base<other_selection,
@@ -120,7 +124,7 @@ struct file_selection
                      std::vector<std::shared_ptr<logfile>>::iterator> {};
 
 using files_list_selection = mapbox::util::
-    variant<no_selection, error_selection, other_selection, file_selection>;
+    variant<no_selection, stub_selection, other_selection, file_selection>;
 
 files_list_selection from_selection(std::optional<vis_line_t> sel_vis);
 

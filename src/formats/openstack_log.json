@@ -8,10 +8,6 @@
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) (?<pid>\\d+) (?<level>\\w+) (?<logger>\\S+) \\[(?<tid>[^\\]]+)\\] (?<body>.*)"
             },
-            "mod-std": {
-                "module-format": true,
-                "pattern": "^(?<level>\\w+) (?<logger>\\S+) \\[(?<tid>[^\\]]+)\\] (?<body>.*)"
-            },
             "keystone": {
                 "pattern": "^[(](?<logger>[^)]+)[)]: (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<level>\\w+) (?!\\()(?<body>.*)"
             },

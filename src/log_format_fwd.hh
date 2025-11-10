@@ -166,11 +166,54 @@ struct log_thread_id_state {
                                            const std::chrono::microseconds& us);
 };
 
+struct logline_value_stats {
+    void merge(const logline_value_stats& other);
+
+    void add_value(double value);
+
+    int64_t lvs_width{0};
+    int64_t lvs_count{0};
+    double lvs_total{0};
+    double lvs_min_value{std::numeric_limits<double>::max()};
+    double lvs_max_value{-std::numeric_limits<double>::max()};
+};
+
+struct pattern_for_lines {
+    pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);
+
+    uint32_t pfl_line;
+    int pfl_pat_index;
+};
+
+struct pattern_locks {
+    std::vector<pattern_for_lines> pl_lines;
+
+    bool empty() const { return this->pl_lines.empty(); }
+
+    int pattern_index_for_line(uint64_t line_number) const;
+
+    int last_pattern_index() const
+    {
+        if (this->pl_lines.empty()) {
+            return -1;
+        }
+
+        return this->pl_lines.back().pfl_pat_index;
+    }
+};
+
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
+    pattern_locks& sbc_pattern_locks;
+    std::vector<logline_value_stats> sbc_value_stats;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
     lnav::small_string_map sbc_level_cache;
+};
+
+struct log_format_file_state {
+    const std::vector<logline_value_stats>& lffs_value_stats;
+    const pattern_locks& lffs_pattern_locks;
 };
 
 extern const string_attr_type<void> L_PREFIX;
@@ -178,7 +221,6 @@ extern const string_attr_type<void> L_TIMESTAMP;
 extern const string_attr_type<void> L_LEVEL;
 extern const string_attr_type<std::shared_ptr<logfile>> L_FILE;
 extern const string_attr_type<bookmark_metadata*> L_PARTITION;
-extern const string_attr_type<void> L_MODULE;
 extern const string_attr_type<void> L_OPID;
 extern const string_attr_type<bookmark_metadata*> L_META;
 
@@ -198,10 +240,9 @@ public:
     logline(file_off_t off,
             std::chrono::microseconds t,
             log_level_t lev,
-            uint8_t mod = 0,
             uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_opid(opid),
-          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_module_id(mod),
+          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
           ll_meta_mark(0), ll_expr_mark(0)
     {
         this->ll_schema[0] = 0;
@@ -211,10 +252,9 @@ public:
     logline(file_off_t off,
             const timeval& tv,
             log_level_t lev,
-            uint8_t mod = 0,
             uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
-          ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_meta_mark(0),
+          ll_valid_utf(1), ll_level(lev), ll_meta_mark(0),
           ll_expr_mark(0)
     {
         this->set_time(tv);
@@ -353,8 +393,6 @@ public:
 
     bool is_continued() const { return this->ll_level & LEVEL_CONTINUED; }
 
-    uint8_t get_module_id() const { return this->ll_module_id; }
-
     void set_opid(uint16_t opid) { this->ll_opid = opid; }
 
     uint16_t get_opid() const { return this->ll_opid; }
@@ -416,12 +454,12 @@ public:
         return this->ll_time < rhs;
     }
 
-    bool operator<(const struct timeval& rhs) const
+    bool operator<(const timeval& rhs) const
     {
         return this->get_timeval() < rhs;
     }
 
-    bool operator<=(const struct timeval& rhs) const
+    bool operator<=(const timeval& rhs) const
     {
         return this->get_timeval() <= rhs;
     }
@@ -434,7 +472,6 @@ private:
     unsigned int ll_sub_offset : 15;
     unsigned int ll_valid_utf : 1;
     uint8_t ll_level;
-    uint8_t ll_module_id : 6;
     uint8_t ll_meta_mark : 1;
     uint8_t ll_expr_mark : 1;
     char ll_schema[2];

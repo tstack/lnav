@@ -275,6 +275,8 @@ public:
 
     logline& back() { return this->lf_index.back(); }
 
+    bool in_range() const;
+
     /** @return True if this log file still exists. */
     bool exists() const;
 
@@ -429,6 +431,21 @@ public:
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
 
+    const std::vector<logline_value_stats>& get_value_stats() const
+    {
+        return this->lf_value_stats;
+    }
+
+    const logline_value_stats* stats_for_value(intern_string_t name) const;
+
+    log_format_file_state get_format_file_state() const
+    {
+        return {
+            this->lf_value_stats,
+            this->lf_pattern_locks,
+        };
+    }
+
     using safe_opid_state = safe::Safe<log_opid_state>;
 
     safe_opid_state& get_opids() { return this->lf_opids; }
@@ -502,6 +519,8 @@ public:
         return this->lf_line_buffer.get_decompress_error();
     }
 
+    time_range get_content_time_range() const;
+
 protected:
     /**
      * Process a line from the file.
@@ -540,7 +559,7 @@ private:
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};
-    struct timeval lf_time_offset{0, 0};
+    timeval lf_time_offset{0, 0};
     bool lf_is_closed{false};
     bool lf_indexing{true};
     bool lf_partial_line{false};
@@ -555,6 +574,8 @@ private:
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
+    std::vector<logline_value_stats> lf_value_stats;
+    pattern_locks lf_pattern_locks;
     safe_opid_state lf_opids;
     safe_thread_id_state lf_thread_ids;
     size_t lf_watch_count{0};
@@ -577,6 +598,17 @@ private:
     invalid_line_info lf_invalid_lines;
     auto_buffer lf_plain_msg_buffer = auto_buffer::alloc(256);
     shared_buffer lf_plain_msg_shared;
+
+    struct content_map_entry {
+        file_range cme_range;
+        std::chrono::microseconds cme_time;
+    };
+    file_size_t lf_file_size_at_map_time{0};
+    std::vector<content_map_entry> lf_content_map;
+
+    std::optional<content_map_entry> find_content_map_entry(file_off_t offset);
+
+    void build_content_map(const struct stat& st);
 };
 
 class logline_observer {

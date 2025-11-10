@@ -1896,6 +1896,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
     string_attrs_t sa;
     auto line_number = std::distance(lf->cbegin(), ll);
     format->annotate(lf, line_number, sa, values);
+    auto lffs = lf->get_format_file_state();
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -2009,7 +2010,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_format_regex") == 0) {
-            const auto pat_name = format->get_pattern_name(line_number);
+            const auto pat_name = format->get_pattern_name(
+                lffs.lffs_pattern_locks, line_number);
             sqlite3_bind_text(
                 stmt, lpc + 1, pat_name.get(), pat_name.size(), SQLITE_STATIC);
             continue;

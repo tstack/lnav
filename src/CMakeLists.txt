@@ -595,7 +595,6 @@ add_library(
         regexp_vtab.cc
         regex101.client.cc
         regex101.import.cc
-        relative_time.cc
         session.export.cc
         session_data.cc
         sequence_matcher.cc
@@ -739,7 +738,6 @@ add_library(
         regex101.client.hh
         regex101.import.hh
         regexp_vtab.hh
-        relative_time.hh
         styling.hh
         ring_span.hh
         safe/accessmode.h

@@ -39,10 +39,10 @@
 
 #include <inttypes.h>
 
-#include "base/intern_string.hh"
-#include "base/map_util.hh"
-#include "base/result.h"
-#include "base/time_util.hh"
+#include "intern_string.hh"
+#include "map_util.hh"
+#include "result.h"
+#include "time_util.hh"
 
 struct relative_time_parse_error {
     int pe_column;

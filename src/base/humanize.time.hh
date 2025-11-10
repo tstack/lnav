@@ -36,11 +36,20 @@
 
 #include <sys/time.h>
 
+#include "intern_string.hh"
+#include "lnav.console.hh"
+#include "result.h"
+
 namespace humanize::time {
 
 class point {
 public:
     static point from_tv(const timeval& tv);
+
+    static Result<point, lnav::console::user_message> from(
+        string_fragment in, std::optional<timeval> ref_point = {});
+
+    timeval get_point() const { return this->p_past_point; }
 
     point& with_recent_point(const timeval& tv)
     {

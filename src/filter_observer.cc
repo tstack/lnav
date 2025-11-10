@@ -63,7 +63,8 @@ line_filter_observer::logline_new_lines(const logfile& lf,
     for (; ll_begin != ll_end; ++ll_begin) {
         auto sbr_copy = sbr.clone();
         if (lf.get_format() != nullptr) {
-            lf.get_format()->get_subline(*ll_begin, sbr_copy);
+            lf.get_format()->get_subline(
+                lf.get_format_file_state(), *ll_begin, sbr_copy);
         }
         sbr_copy.erase_ansi();
         for (const auto& filter : this->lfo_filter_stack) {

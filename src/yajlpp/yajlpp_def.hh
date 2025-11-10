@@ -38,10 +38,10 @@
 #include "base/date_time_scanner.hh"
 #include "base/lnav.resolver.hh"
 #include "base/map_util.hh"
+#include "base/relative_time.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "mapbox/variant.hpp"
-#include "relative_time.hh"
 #include "yajlpp.hh"
 
 struct json_path_container;

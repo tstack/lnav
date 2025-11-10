@@ -29,6 +29,7 @@
  * @file time-extension-functions.cc
  */
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -37,10 +38,10 @@
 #include "base/attr_line.builder.hh"
 #include "base/date_time_scanner.hh"
 #include "base/humanize.time.hh"
+#include "base/relative_time.hh"
 #include "config.h"
 #include "date/tz.h"
 #include "ptimec.hh"
-#include "relative_time.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 

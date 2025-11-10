@@ -745,12 +745,11 @@ run_cap_test ${lnav_test} -n \
 
 unset LNAVSECURE
 
-
-touch -t 201503240923 ${test_dir}/logfile_syslog_with_access_log.0
-run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
-    -c ";select * from access_log" \
-    -c ':write-csv-to -' \
-    ${test_dir}/logfile_syslog_with_access_log.0
+#touch -t 201503240923 ${test_dir}/logfile_syslog_with_access_log.0
+#run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+#    -c ";select * from access_log" \
+#    -c ':write-csv-to -' \
+#    ${test_dir}/logfile_syslog_with_access_log.0
 
 run_test ${lnav_test} -n \
     -c ";select log_text from generic_log" \

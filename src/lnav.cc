@@ -76,6 +76,7 @@
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/progress.hh"
+#include "base/relative_time.hh"
 #include "base/string_util.hh"
 #include "bottom_status_source.hh"
 #include "bound_tags.hh"
@@ -115,7 +116,6 @@
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
-#include "relative_time.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
@@ -344,7 +344,8 @@ append_default_files()
             auto realpath_res = lnav::filesystem::realpath(full_path);
             if (realpath_res.isOk()) {
                 auto abspath = realpath_res.unwrap();
-                lnav_data.ld_active_files.fc_file_names[abspath.string()];
+                lnav_data.ld_active_files.fc_file_names[abspath.string()]
+                    .with_time_range(lnav_data.ld_default_time_range);
             } else {
                 log_error("realpath() failed: %s -- %s",
                           full_path.c_str(),
@@ -2434,7 +2435,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         if (exec_phase.loading_session()) {
             if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                if (lnav_data.ld_active_files.fc_name_to_errors->readAccess()
+                if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
                         ->empty())
                 {
                     log_info("%d: switching to paging!", loop_count);
@@ -2719,6 +2720,8 @@ main(int argc, char* argv[])
 
     bool exec_stdin = false, load_stdin = false;
     mode_flags_t mode_flags;
+    std::string since_time;
+    std::string until_time;
     const char* LANG = getenv("LANG");
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
@@ -3074,6 +3077,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             "headless");
         auto* file_opt = app.add_option("file", file_args, "files");
 
+        app.add_option("-S,--since", since_time, "since");
+        app.add_option("-U,--until", until_time, "until");
+
         auto wait_cb = [](size_t count) {
             fprintf(stderr, "PID %d waiting for attachment\n", getpid());
             char b;
@@ -3081,7 +3087,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 perror("Read key from STDIN");
             }
         };
-        app.add_flag("-S", wait_cb);
+        app.add_flag("--stop", wait_cb);
 
         auto cmd_appender
             = [](std::string cmd) { lnav_data.ld_commands.emplace_back(cmd); };
@@ -3686,6 +3692,33 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_looping = true;
     set_view_mode(ln_mode_t::PAGING);
 
+    {
+        if (!since_time.empty()) {
+            auto from_res = humanize::time::point::from(since_time);
+            if (from_res.isErr()) {
+                auto um = from_res.unwrapErr();
+                um.um_message = attr_line_t("invalid 'since' time ")
+                                    .append_quoted(since_time);
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
+            }
+            lnav_data.ld_default_time_range.tr_begin
+                = to_us(from_res.unwrap().get_point());
+        }
+        if (!until_time.empty()) {
+            auto from_res = humanize::time::point::from(until_time);
+            if (from_res.isErr()) {
+                auto um = from_res.unwrapErr();
+                um.um_message = attr_line_t("invalid 'until' time ")
+                                    .append_quoted(until_time);
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
+            }
+            lnav_data.ld_default_time_range.tr_end
+                = to_us(from_res.unwrap().get_point());
+        }
+    }
+
     if ((isatty(STDIN_FILENO) || is_dev_null(STDIN_FILENO)) && file_args.empty()
         && lnav_data.ld_active_files.fc_file_names.empty()
         && !mode_flags.mf_no_default)
@@ -3745,7 +3778,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             auto ul = std::make_shared<url_loader>(file_path_str);
 
             lnav_data.ld_active_files.fc_file_names[ul->get_path()]
-                .with_filename(file_path);
+                .with_filename(file_path)
+                .with_time_range(lnav_data.ld_default_time_range);
             isc::to<curl_looper&, services::curl_streamer_t>().send(
                 [ul](auto& clooper) { clooper.add_request(ul); });
         } else if (file_path_str.find("://") != std::string::npos) {
@@ -3756,12 +3790,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
         else if (file_path_type == lnav::filesystem::path_type::pattern)
         {
-            lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
-                !(lnav_data.ld_flags & LNF_HEADLESS));
+            lnav_data.ld_active_files.fc_file_names[file_path]
+                .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                .with_time_range(lnav_data.ld_default_time_range);
         } else if (lnav::filesystem::statp(file_path, &st) == -1) {
             if (file_path_type == lnav::filesystem::path_type::remote) {
-                lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
-                    !(lnav_data.ld_flags & LNF_HEADLESS));
+                lnav_data.ld_active_files.fc_file_names[file_path]
+                    .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                    .with_time_range(lnav_data.ld_default_time_range);
             } else {
                 lnav::console::print(
                     stderr,
@@ -3798,8 +3834,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     desc, std::move(fifo_fd), auto_fd{});
 
                 if (create_piper_res.isOk()) {
-                    lnav_data.ld_active_files.fc_file_names[desc].with_piper(
-                        create_piper_res.unwrap());
+                    lnav_data.ld_active_files.fc_file_names[desc]
+                        .with_piper(create_piper_res.unwrap())
+                        .with_time_range(lnav_data.ld_default_time_range);
                 }
             }
         } else if ((abspath = realpath(file_path.c_str(), nullptr)) == nullptr)
@@ -3812,13 +3849,17 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
             }
-            lnav_data.ld_active_files.fc_file_names.emplace(
-                dir_wild + "/*", logfile_open_options());
+            auto loo = logfile_open_options().with_time_range(
+                lnav_data.ld_default_time_range);
+            lnav_data.ld_active_files.fc_file_names.emplace(dir_wild + "/*",
+                                                            loo);
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
                 abspath.in(),
-                logfile_open_options().with_init_location(file_loc).with_follow(
-                    !(lnav_data.ld_flags & LNF_HEADLESS)));
+                logfile_open_options()
+                    .with_init_location(file_loc)
+                    .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                    .with_time_range(lnav_data.ld_default_time_range));
             if (file_loc.valid()) {
                 lnav_data.ld_files_to_front.emplace_back(abspath.in());
             }
@@ -3856,10 +3897,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 if (read_result.isErr()) {
                     continue;
                 }
-                shared_buffer_ref sbr = read_result.unwrap();
-                if (fmt->scan_for_partial(sbr, partial_len)) {
-                    long line_number = distance(lf->begin(), line_iter);
-                    std::string full_line(sbr.get_data(), sbr.length());
+                auto sbr = read_result.unwrap();
+                auto lffs = lf->get_format_file_state();
+                if (fmt->scan_for_partial(lffs, sbr, partial_len)) {
+                    long line_number = std::distance(lf->begin(), line_iter);
+                    auto full_line = to_string(sbr);
                     std::string partial_line(sbr.get_data(), partial_len);
 
                     fprintf(stderr,
@@ -3867,7 +3909,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                             "%s\n",
                             lf->get_filename().c_str(),
                             line_number,
-                            fmt->get_pattern_path(line_number).c_str());
+                            fmt->get_pattern_path(lffs.lffs_pattern_locks,
+                                                  line_number)
+                                .c_str());
                     fprintf(stderr,
                             "error:%s:%ld:         line -- %s\n",
                             lf->get_filename().c_str(),
@@ -3942,7 +3986,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                     .fc_file_names[stdin_piper.get_name()];
                     loo.with_piper(stdin_piper)
                         .with_include_in_session(
-                            lnav_data.ld_treat_stdin_as_log);
+                            lnav_data.ld_treat_stdin_as_log)
+                        .with_time_range(lnav_data.ld_default_time_range);
                     if (lnav_data.ld_treat_stdin_as_log) {
                         loo.with_text_format(text_format_t::TF_LOG);
                     }
@@ -4104,8 +4149,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 rescan_files(true);
                 rebuild_indexes_repeatedly();
                 {
-                    safe::WriteAccess<safe_name_to_errors> errs(
-                        *lnav_data.ld_active_files.fc_name_to_errors);
+                    safe::WriteAccess<safe_name_to_stubs> errs(
+                        *lnav_data.ld_active_files.fc_name_to_stubs);
                     if (!errs->empty()) {
                         for (const auto& pair : *errs) {
                             lnav::console::print(
@@ -4167,8 +4212,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 rebuild_indexes_repeatedly();
                 wait_for_children();
                 {
-                    safe::WriteAccess<safe_name_to_errors> errs(
-                        *lnav_data.ld_active_files.fc_name_to_errors);
+                    safe::WriteAccess<safe_name_to_stubs> errs(
+                        *lnav_data.ld_active_files.fc_name_to_stubs);
                     if (!errs->empty()) {
                         for (const auto& pair : *errs) {
                             lnav::console::print(
@@ -4184,8 +4229,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
 
                 for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-                    auto utf_note_opt = lf->get_notes().value_for(
-                        logfile::note_type::not_utf);
+                    auto lf_notes = lf->get_notes();
+                    auto utf_note_opt
+                        = lf_notes.value_for(logfile::note_type::not_utf);
                     if (utf_note_opt.has_value()) {
                         lnav::console::print(stderr, *utf_note_opt.value());
                     }

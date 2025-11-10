@@ -368,7 +368,6 @@ noinst_HEADERS = \
 	regex101.client.hh \
 	regex101.import.hh \
 	regexp_vtab.hh \
-	relative_time.hh \
 	ring_span.hh \
 	safe/accessmode.h \
 	safe/defaulttypes.h \
@@ -569,7 +568,6 @@ libdiag_a_SOURCES = \
 	regex101.client.cc \
 	regex101.import.cc \
 	regexp_vtab.cc \
-	relative_time.cc \
 	session.export.cc \
 	session_data.cc \
 	shared_buffer.cc \

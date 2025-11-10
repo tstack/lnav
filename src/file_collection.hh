@@ -41,10 +41,12 @@
 #include <vector>
 
 #include <sys/resource.h>
+#include <time.h>
 
 #include "archive_manager.hh"
 #include "base/auto_pid.hh"
 #include "base/future_util.hh"
+#include "base/lnav.console.hh"
 #include "base/string_util.hh"
 #include "file_format.hh"
 #include "logfile_fwd.hh"
@@ -78,16 +80,16 @@ struct other_file_descriptor {
     }
 };
 
-struct file_error_info {
+struct file_stub_info {
     const time_t fei_mtime;
-    const std::string fei_description;
+    const lnav::console::user_message fei_description;
 };
 
-using safe_name_to_errors = safe::Safe<std::map<std::string, file_error_info>>;
+using safe_name_to_stubs = safe::Safe<std::map<std::string, file_stub_info>>;
 
 struct file_collection;
 
-enum class child_poll_result_t {
+enum class child_poll_result_t : uint8_t {
     ALIVE,
     FINISHED,
 };
@@ -151,8 +153,8 @@ struct file_collection {
     bool fc_recursive{false};
     bool fc_rotated{false};
 
-    std::shared_ptr<safe_name_to_errors> fc_name_to_errors{
-        std::make_shared<safe_name_to_errors>()};
+    std::shared_ptr<safe_name_to_stubs> fc_name_to_stubs{
+        std::make_shared<safe_name_to_stubs>()};
     std::map<std::string, logfile_open_options, strnatless> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};
@@ -185,7 +187,7 @@ struct file_collection {
 
     bool empty() const
     {
-        return this->fc_name_to_errors->readAccess()->empty()
+        return this->fc_name_to_stubs->readAccess()->empty()
             && this->fc_file_names.empty() && this->fc_files.empty()
             && this->fc_progress->readAccess()->empty()
             && this->fc_other_files.empty();

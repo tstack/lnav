@@ -229,8 +229,7 @@ logline_window::logmsg_info::load_msg() const
     format->annotate(this->li_file,
                      std::distance(this->li_file->begin(), this->li_logline),
                      this->li_string_attrs,
-                     this->li_line_values,
-                     false);
+                     this->li_line_values);
 
     if (!this->li_line_values.lvv_opid_value) {
         auto bm_opt = this->get_metadata();

@@ -30,11 +30,6 @@
                                     "description": "The regular expression to match a log message and capture fields.",
                                     "type": "string",
                                     "minLength": 1
-                                },
-                                "module-format": {
-                                    "title": "/<format_name>/regex/<pattern_name>/module-format",
-                                    "description": "If true, this pattern will only be used to parse message bodies of container formats, like syslog",
-                                    "type": "boolean"
                                 }
                             },
                             "additionalProperties": false
@@ -217,11 +212,6 @@
                     "items": {
                         "type": "string"
                     }
-                },
-                "module-field": {
-                    "title": "/<format_name>/module-field",
-                    "description": "The name of the module field in the log message pattern",
-                    "type": "string"
                 },
                 "opid-field": {
                     "title": "/<format_name>/opid-field",

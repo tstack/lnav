@@ -160,7 +160,7 @@ file_collection::regenerate_unique_file_names()
 
     this->fc_largest_path_length = 0;
     {
-        safe::ReadAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
+        safe::ReadAccess<safe_name_to_stubs> errs(*this->fc_name_to_stubs);
 
         for (const auto& pair : *errs) {
             auto path = std::filesystem::path(pair.first).filename().string();
@@ -203,7 +203,7 @@ void
 file_collection::merge(file_collection& other)
 {
     bool do_regen = !other.fc_files.empty() || !other.fc_other_files.empty()
-        || !other.fc_name_to_errors->readAccess()->empty();
+        || !other.fc_name_to_stubs->readAccess()->empty();
 
     this->fc_recursive = this->fc_recursive || other.fc_recursive;
     this->fc_rotated = this->fc_rotated || other.fc_rotated;
@@ -211,16 +211,16 @@ file_collection::merge(file_collection& other)
     this->fc_synced_files.insert(other.fc_synced_files.begin(),
                                  other.fc_synced_files.end());
 
-    std::map<std::string, file_error_info> new_errors;
+    std::map<std::string, file_stub_info> new_stubs;
     {
-        safe::ReadAccess<safe_name_to_errors> errs(*other.fc_name_to_errors);
+        safe::ReadAccess<safe_name_to_stubs> errs(*other.fc_name_to_stubs);
 
-        new_errors.insert(errs->cbegin(), errs->cend());
+        new_stubs.insert(errs->cbegin(), errs->cend());
     }
     {
-        safe::WriteAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
+        safe::WriteAccess<safe_name_to_stubs> errs(*this->fc_name_to_stubs);
 
-        errs->insert(new_errors.begin(), new_errors.end());
+        errs->insert(new_stubs.begin(), new_stubs.end());
     }
     if (!other.fc_file_names.empty()) {
         this->fc_files_generation += 1;
@@ -230,7 +230,7 @@ file_collection::merge(file_collection& other)
     }
     if (!other.fc_files.empty()) {
         for (const auto& lf : other.fc_files) {
-            this->fc_name_to_errors->writeAccess()->erase(lf->get_filename());
+            this->fc_name_to_stubs->writeAccess()->erase(lf->get_filename());
         }
         this->fc_files.insert(
             this->fc_files.end(), other.fc_files.begin(), other.fc_files.end());
@@ -356,8 +356,7 @@ file_collection::watch_logfile(const std::string& filename,
             }
         }
         {
-            safe::WriteAccess<safe_name_to_errors> errs(
-                *this->fc_name_to_errors);
+            safe::WriteAccess<safe_name_to_stubs> errs(*this->fc_name_to_stubs);
 
             auto err_iter = errs->find(filename_key);
             if (err_iter != errs->end()) {
@@ -376,11 +375,15 @@ file_collection::watch_logfile(const std::string& filename,
                       filename.c_str(),
                       ec.message().c_str());
             file_collection retval;
-            retval.fc_name_to_errors->writeAccess()->emplace(filename,
-                                                             file_error_info{
-                                                                 time(nullptr),
-                                                                 ec.message(),
-                                                             });
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("failed to open required file ")
+                              .append_quoted(lnav::roles::file(filename)))
+                          .with_reason(ec.message());
+            retval.fc_name_to_stubs->writeAccess()->emplace(filename,
+                                                            file_stub_info{
+                                                                time(nullptr),
+                                                                um.move(),
+                                                            });
             return lnav::futures::make_ready_future(std::move(retval));
         }
         return std::nullopt;
@@ -413,13 +416,13 @@ file_collection::watch_logfile(const std::string& filename,
                      st,
                      loo,
                      prog = this->fc_progress,
-                     errs = this->fc_name_to_errors]() mutable {
+                     errs = this->fc_name_to_stubs]() mutable {
             static auto inner_op = lnav_operation{"watch_new_file"};
 
             file_collection retval;
 
             {
-                safe::ReadAccess<safe_name_to_errors> errs_inner(*errs);
+                safe::ReadAccess<safe_name_to_stubs> errs_inner(*errs);
 
                 if (errs_inner->find(filename) != errs_inner->end()) {
                     // The file is broken, no reason to try and reopen
@@ -521,12 +524,17 @@ file_collection::watch_logfile(const std::string& filename,
                     if (res.isErr()) {
                         log_error("archive extraction failed: %s",
                                   res.unwrapErr().c_str());
+                        auto um = lnav::console::user_message::error(
+                                      attr_line_t("failed to extract archive ")
+                                          .append_quoted(
+                                              lnav::roles::file(filename)))
+                                      .with_reason(res.unwrapErr());
                         retval.clear();
-                        retval.fc_name_to_errors->writeAccess()->emplace(
+                        retval.fc_name_to_stubs->writeAccess()->emplace(
                             filename,
-                            file_error_info{
+                            file_stub_info{
                                 st.st_mtime,
-                                res.unwrapErr(),
+                                um.move(),
                             });
                     } else {
                         auto& ofd = retval.fc_other_files[filename];
@@ -553,11 +561,16 @@ file_collection::watch_logfile(const std::string& filename,
                                                                   filename);
 
                         if (cr.isErr()) {
-                            retval.fc_name_to_errors->writeAccess()->emplace(
+                            auto um = lnav::console::user_message::error(
+                                          attr_line_t("failed to convert file ")
+                                              .append_quoted(
+                                                  lnav::roles::file(filename)))
+                                          .with_reason(cr.unwrapErr());
+                            retval.fc_name_to_stubs->writeAccess()->emplace(
                                 filename,
-                                file_error_info{
+                                file_stub_info{
                                     st.st_mtime,
-                                    cr.unwrapErr(),
+                                    um.move(),
                                 });
                             break;
                         }
@@ -580,13 +593,20 @@ file_collection::watch_logfile(const std::string& filename,
                                 log_error("converter[%d] exited with %d",
                                           child.in(),
                                           child.status());
-                                fc.fc_name_to_errors->writeAccess()->emplace(
+                                auto reason = fmt::format(
+                                    FMT_STRING("{}"),
+                                    fmt::join(*error_queue, "\n"));
+                                auto um
+                                    = lnav::console::user_message::error(
+                                          attr_line_t("failed to convert file ")
+                                              .append_quoted(
+                                                  lnav::roles::file(filename)))
+                                          .with_reason(reason);
+                                fc.fc_name_to_stubs->writeAccess()->emplace(
                                     filename,
-                                    file_error_info{
+                                    file_stub_info{
                                         st.st_mtime,
-                                        fmt::format(
-                                            FMT_STRING("{}"),
-                                            fmt::join(*error_queue, "\n")),
+                                        um.move(),
                                     });
                             },
                         });
@@ -602,11 +622,16 @@ file_collection::watch_logfile(const std::string& filename,
                     if (open_res.isOk()) {
                         retval.fc_files.push_back(open_res.unwrap());
                     } else {
-                        retval.fc_name_to_errors->writeAccess()->emplace(
+                        auto um = lnav::console::user_message::error(
+                                      attr_line_t("failed to open file ")
+                                          .append_quoted(lnav::roles::file(
+                                              filename_to_open)))
+                                      .with_reason(open_res.unwrapErr());
+                        retval.fc_name_to_stubs->writeAccess()->emplace(
                             filename,
-                            file_error_info{
+                            file_stub_info{
                                 st.st_mtime,
-                                open_res.unwrapErr(),
+                                um.move(),
                             });
                     }
                     break;
@@ -733,7 +758,7 @@ file_collection::expand_filename(
                                 errmsg);
                     } else if (loo.loo_filename.empty()) {
                         auto in_map
-                            = this->fc_name_to_errors->readAccess()->count(
+                            = this->fc_name_to_stubs->readAccess()->count(
                                   path_str)
                             > 0;
 
@@ -744,22 +769,34 @@ file_collection::expand_filename(
                                           filename_key.c_str(),
                                           path.c_str(),
                                           errmsg);
-                                retval.fc_name_to_errors->writeAccess()
-                                    ->emplace(filename_key,
-                                              file_error_info{
-                                                  time(nullptr),
-                                                  errmsg,
-                                              });
+                                auto um
+                                    = lnav::console::user_message::error(
+                                          attr_line_t("failed to find path of ")
+                                              .append_quoted(lnav::roles::file(
+                                                  filename_key)))
+                                          .with_reason(errmsg);
+                                retval.fc_name_to_stubs->writeAccess()->emplace(
+                                    filename_key,
+                                    file_stub_info{
+                                        time(nullptr),
+                                        um.move(),
+                                    });
                             } else {
                                 log_error("failed to find path: %s -- %s",
                                           path_str.c_str(),
                                           errmsg);
-                                retval.fc_name_to_errors->writeAccess()
-                                    ->emplace(path_str,
-                                              file_error_info{
-                                                  time(nullptr),
-                                                  errmsg,
-                                              });
+                                auto um
+                                    = lnav::console::user_message::error(
+                                          attr_line_t("failed to find path of ")
+                                              .append_quoted(
+                                                  lnav::roles::file(path_str)))
+                                          .with_reason(errmsg);
+                                retval.fc_name_to_stubs->writeAccess()->emplace(
+                                    path_str,
+                                    file_stub_info{
+                                        time(nullptr),
+                                        um.move(),
+                                    });
                             }
                             fq.push_back(lnav::futures::make_ready_future(
                                 std::move(retval)));
@@ -920,7 +957,7 @@ file_collection::copy()
 void
 file_collection::clear()
 {
-    this->fc_name_to_errors->writeAccess()->clear();
+    this->fc_name_to_stubs->writeAccess()->clear();
     this->fc_file_names.clear();
     this->fc_files.clear();
     this->fc_renamed_files.clear();

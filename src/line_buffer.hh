@@ -208,6 +208,8 @@ public:
     Result<shared_buffer_ref, std::string> read_range(
         file_range fr, scan_direction dir = scan_direction::forward);
 
+    Result<auto_buffer, std::string> peek_range(file_range fr);
+
     file_range get_available();
 
     bool is_likely_to_flush(file_range prev_line);

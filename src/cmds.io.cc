@@ -1039,6 +1039,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (prov) {
         loo.with_filename(prov->fo_name);
     }
+    loo.with_time_range(lnav_data.ld_default_time_range);
 
     for (auto fn : split_args) {
         std::replace(fn.begin(), fn.end(), '\\', '/');

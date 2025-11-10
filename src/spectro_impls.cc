@@ -126,7 +126,7 @@ log_spectro_value_source::update_stats()
 
     this->lsvs_begin_time = std::chrono::microseconds::zero();
     this->lsvs_end_time = std::chrono::microseconds::zero();
-    this->lsvs_stats.clear();
+    this->lsvs_stats = {};
     for (auto& ls : lss) {
         auto* lf = ls->get_file_ptr();
 
@@ -134,8 +134,7 @@ log_spectro_value_source::update_stats()
             continue;
         }
 
-        auto format = lf->get_format();
-        const auto* stats = format->stats_for_value(this->lsvs_colname);
+        const auto* stats = lf->stats_for_value(this->lsvs_colname);
 
         if (stats == nullptr) {
             continue;
@@ -344,7 +343,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
         lf->read_full_message(ll, values.lvv_sbr);
         values.lvv_sbr.erase_ansi();
         sa.clear();
-        format->annotate(lf.get(), cl, sa, values, false);
+        format->annotate(lf.get(), cl, sa, values);
 
         auto lv_iter = find_if(values.lvv_values.begin(),
                                values.lvv_values.end(),
@@ -388,7 +387,7 @@ db_spectro_value_source::update_stats()
 {
     this->dsvs_begin_time = std::chrono::microseconds::zero();
     this->dsvs_end_time = std::chrono::microseconds::zero();
-    this->dsvs_stats.clear();
+    this->dsvs_stats = {};
 
     auto& dls = lnav_data.ld_db_row_source;
 

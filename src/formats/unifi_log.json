@@ -33,7 +33,6 @@
         },
         "opid-field": "ID",
         "multiline": false,
-        "module-field": "module",
         "timestamp-format": [
             "%b %d %H:%M:%S"
         ],

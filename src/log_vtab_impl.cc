@@ -256,7 +256,7 @@ log_vtab_impl::extract(logfile* lf,
 {
     const auto* format = lf->get_format_ptr();
 
-    format->annotate(lf, line_number, sa, values, false);
+    format->annotate(lf, line_number, sa, values);
 }
 
 bool
@@ -281,7 +281,9 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
     }
 
     if (!lc.lc_pattern_name.empty()
-        && lc.lc_pattern_name != lf->get_format_ptr()->get_pattern_name(cl))
+        && lc.lc_pattern_name
+            != lf->get_format_ptr()->get_pattern_name(
+                lf->get_format_file_state().lffs_pattern_locks, cl))
     {
         return false;
     }
@@ -1007,6 +1009,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                     case log_footer_columns::format_regex: {
                         auto pat_name = lf->get_format_ptr()->get_pattern_name(
+                            lf->get_format_file_state().lffs_pattern_locks,
                             line_number);
                         sqlite3_result_text(ctx,
                                             pat_name.get(),
@@ -2691,18 +2694,12 @@ log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
     auto cl = content_line_t(lss.at(lc.lc_curr_line));
     auto* lf = lss.find_file_ptr(cl);
     auto lf_iter = lf->begin() + cl;
-    uint8_t mod_id = lf_iter->get_module_id();
 
     if (!lf_iter->is_message()) {
         return false;
     }
 
-    auto format = lf->get_format_ptr();
-    if (format->get_name() == this->lfvi_format.get_name()) {
-        return true;
-    }
-    if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
-        // XXX
+    if (lf->get_format_name() == this->lfvi_format.get_name()) {
         return true;
     }
 

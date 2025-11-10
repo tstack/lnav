@@ -193,7 +193,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     lf->read_full_message(lf_iter, sbr);
     sbr.erase_ansi();
     lf->get_format()->annotate(
-        lf, cl, this->lst_attrs_cache, this->lst_line_values_cache, false);
+        lf, cl, this->lst_attrs_cache, this->lst_line_values_cache);
     this->lst_content
         = this->lst_line_values_cache.lvv_sbr.to_string_fragment();
 

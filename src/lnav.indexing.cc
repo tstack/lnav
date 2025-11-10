@@ -283,10 +283,45 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     // log_trace("closing files");
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (auto& lf : lnav_data.ld_active_files.fc_files) {
-        if (!lf->exists() || lf->is_closed()) {
-            log_info("%s file: %s",
-                     !lf->exists() ? "deleted" : "closed",
-                     lf->get_filename().c_str());
+        const char* reason = nullptr;
+        if (!lf->in_range()) {
+            auto fn = lf->get_filename();
+            const auto tr = lf->get_content_time_range();
+            const auto& open_opts = lf->get_open_options();
+            auto um = lnav::console::user_message::info(
+                attr_line_t("file contents are out-of-range of time cutoffs ")
+                    .append_quoted(lnav::roles::file(fn)));
+            um.with_note(
+                attr_line_t("File time range is ")
+                    .append_quoted(lnav::to_rfc3339_string(tr.tr_begin))
+                    .append(" to ")
+                    .append_quoted(lnav::to_rfc3339_string(tr.tr_end)));
+            if (open_opts.loo_time_range.has_lower_bound()) {
+                um.with_note(attr_line_t("Minimum time cutoff is ")
+                                 .append_quoted(lnav::to_rfc3339_string(
+                                     open_opts.loo_time_range.tr_begin)));
+            }
+            if (open_opts.loo_time_range.has_upper_bound()) {
+                um.with_note(attr_line_t("Maximum time cutoff is ")
+                                 .append_quoted(lnav::to_rfc3339_string(
+                                     open_opts.loo_time_range.tr_end)));
+            }
+            auto stub_map
+                = lnav_data.ld_active_files.fc_name_to_stubs->writeAccess();
+
+            stub_map->emplace(lf->get_filename(),
+                              file_stub_info{
+                                  lf->get_stat().st_mtime,
+                                  um,
+                              });
+            reason = "out-of-range";
+        } else if (!lf->exists()) {
+            reason = "deleted";
+        } else if (lf->is_closed()) {
+            reason = "closed";
+        }
+        if (reason != nullptr) {
+            log_info("%s file: %s", reason, lf->get_filename().c_str());
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             closed_files.emplace_back(lf);
@@ -530,8 +565,8 @@ rescan_files(bool req)
                 continue;
             }
 
-            if (lnav_data.ld_active_files.fc_name_to_errors->readAccess()
-                    ->count(pair.first))
+            if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->count(
+                    pair.first))
             {
                 continue;
             }
@@ -542,7 +577,7 @@ rescan_files(bool req)
                 all_synced = false;
             }
         }
-        if (!lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
+        if (!lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->empty())
         {
             return false;
         }

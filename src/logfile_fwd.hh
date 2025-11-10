@@ -33,16 +33,18 @@
 #define lnav_logfile_fwd_hh
 
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include <sys/stat.h>
 
 #include "base/fs_util.hh"
+#include "base/lnav.console.hh"
+#include "base/text_format_enum.hh"
+#include "base/time_util.hh"
 #include "file_format.hh"
-#include "mapbox/variant.hpp"
 #include "piper.looper.hh"
-#include "text_format.hh"
 
 using ui_clock = std::chrono::steady_clock;
 
@@ -52,7 +54,7 @@ class logline_observer;
 
 using logfile_const_iterator = std::vector<logline>::const_iterator;
 
-enum class logfile_name_source {
+enum class logfile_name_source : uint8_t {
     USER,
     ARCHIVE,
     REMOTE,
@@ -96,9 +98,10 @@ struct logfile_open_options_base {
     std::optional<lnav::piper::running_handle> loo_piper;
     file_location_t loo_init_location{default_for_text_format{}};
     std::vector<lnav::console::user_message> loo_match_details;
+    time_range loo_time_range{time_range::unbounded()};
 };
 
-struct logfile_open_options : public logfile_open_options_base {
+struct logfile_open_options : logfile_open_options_base {
     logfile_open_options() = default;
 
     explicit logfile_open_options(const logfile_open_options_base& base)
@@ -195,6 +198,13 @@ struct logfile_open_options : public logfile_open_options_base {
     logfile_open_options& with_text_format(text_format_t tf)
     {
         this->loo_text_format = tf;
+
+        return *this;
+    }
+
+    logfile_open_options& with_time_range(time_range tr)
+    {
+        this->loo_time_range = tr;
 
         return *this;
     }

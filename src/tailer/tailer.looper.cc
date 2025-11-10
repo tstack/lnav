@@ -137,7 +137,7 @@ update_tailer_description(
 
                 iter->second.ofd_description = remote_uname;
             }
-            fc.fc_name_to_errors->writeAccess()->erase(netloc);
+            fc.fc_name_to_stubs->writeAccess()->erase(netloc);
         });
 }
 
@@ -1178,12 +1178,16 @@ tailer::looper::report_error(std::string path, std::string msg)
     log_error("reporting error: %s -- %s", path.c_str(), msg.c_str());
     isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
         file_collection fc;
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("unable to open remote path ")
+                          .append_quoted(lnav::roles::file(path)))
+                      .with_reason(msg);
 
-        fc.fc_name_to_errors->writeAccess()->emplace(path,
-                                                     file_error_info{
-                                                         {},
-                                                         msg,
-                                                     });
+        fc.fc_name_to_stubs->writeAccess()->emplace(path,
+                                                    file_stub_info{
+                                                        {},
+                                                        um.move(),
+                                                    });
         update_active_files(fc);
         lnav_data.ld_active_files.fc_progress->writeAccess()->sp_tailers.erase(
             path);

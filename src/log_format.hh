@@ -49,6 +49,7 @@
 #include "base/date_time_scanner.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
+#include "base/log_level_enum.hh"
 #include "highlighter.hh"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
@@ -176,7 +177,6 @@ struct logline_value_meta {
     bool lvm_foreign_key{false};
     bool lvm_hidden{false};
     std::optional<bool> lvm_user_hidden;
-    bool lvm_from_module{false};
     intern_string_t lvm_struct_name;
     std::optional<log_format*> lvm_format;
 };
@@ -338,29 +338,6 @@ struct logline_value_vector {
     std::optional<std::string> lvv_thread_id_value;
 };
 
-struct logline_value_stats {
-    logline_value_stats() { this->clear(); }
-
-    void clear()
-    {
-        this->lvs_width = 0;
-        this->lvs_count = 0;
-        this->lvs_total = 0;
-        this->lvs_min_value = std::numeric_limits<double>::max();
-        this->lvs_max_value = -std::numeric_limits<double>::max();
-    }
-
-    void merge(const logline_value_stats& other);
-
-    void add_value(double value);
-
-    int64_t lvs_width;
-    int64_t lvs_count;
-    double lvs_total;
-    double lvs_min_value;
-    double lvs_max_value;
-};
-
 struct logline_value_name_cmp {
     explicit logline_value_name_cmp(const intern_string_t* name)
         : lvc_name(name)
@@ -431,7 +408,6 @@ public:
 
     virtual void clear()
     {
-        this->lf_pattern_locks.clear();
         this->lf_date_time.clear();
         this->lf_time_scanner.clear();
     }
@@ -490,7 +466,9 @@ public:
                                scan_batch_context& sbc)
         = 0;
 
-    virtual bool scan_for_partial(shared_buffer_ref& sbr, size_t& len_out) const
+    virtual bool scan_for_partial(const log_format_file_state& lffs,
+                                  shared_buffer_ref& sbr,
+                                  size_t& len_out) const
     {
         return false;
     }
@@ -508,8 +486,7 @@ public:
     virtual void annotate(logfile* lf,
                           uint64_t line_number,
                           string_attrs_t& sa,
-                          logline_value_vector& values,
-                          bool annotate_module = true) const;
+                          logline_value_vector& values) const;
 
     virtual void rewrite(exec_context& ec,
                          shared_buffer_ref& line,
@@ -519,10 +496,10 @@ public:
         value_out.assign(line.get_data(), line.length());
     }
 
-    virtual const logline_value_stats* stats_for_value(
+    virtual std::optional<size_t> stats_index_for_value(
         const intern_string_t& name) const
     {
-        return nullptr;
+        return std::nullopt;
     }
 
     virtual std::shared_ptr<log_format> specialized(int fmt_lock = -1) = 0;
@@ -532,7 +509,8 @@ public:
         return nullptr;
     }
 
-    virtual void get_subline(const logline& ll,
+    virtual void get_subline(const log_format_file_state& lffs,
+                             const logline& ll,
                              shared_buffer_ref& sbr,
                              subline_options opts = subline_options{})
     {
@@ -574,13 +552,16 @@ public:
 
     void check_for_new_year(std::vector<logline>& dst,
                             exttm log_tv,
-                            timeval timeval1);
+                            timeval timeval1) const;
 
-    virtual std::string get_pattern_path(uint64_t line_number) const;
+    virtual std::string get_pattern_path(const pattern_locks& pl,
+                                         uint64_t line_number) const;
 
-    virtual intern_string_t get_pattern_name(uint64_t line_number) const;
+    virtual intern_string_t get_pattern_name(const pattern_locks& pl,
+                                             uint64_t line_number) const;
 
-    virtual std::string get_pattern_regex(uint64_t line_number) const
+    virtual std::string get_pattern_regex(const pattern_locks& pl,
+                                          uint64_t line_number) const
     {
         return "";
     }
@@ -591,24 +572,6 @@ public:
     }
 
     virtual bool format_changed() { return false; }
-
-    struct pattern_for_lines {
-        pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);
-
-        uint32_t pfl_line;
-        int pfl_pat_index;
-    };
-
-    int last_pattern_index() const
-    {
-        if (this->lf_pattern_locks.empty()) {
-            return -1;
-        }
-
-        return this->lf_pattern_locks.back().pfl_pat_index;
-    }
-
-    int pattern_index_for_line(uint64_t line_number) const;
 
     bool operator<(const log_format& rhs) const
     {
@@ -637,7 +600,6 @@ public:
     bool lf_formatted_lines{false};
     date_time_scanner lf_date_time;
     date_time_scanner lf_time_scanner;
-    std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
     intern_string_t lf_subsecond_field;
     std::optional<subsecond_unit> lf_subsecond_unit;
@@ -647,7 +609,6 @@ public:
     timestamp_point_of_reference_t lf_timestamp_point_of_reference{
         timestamp_point_of_reference_t::send};
     std::map<std::string, action_def> lf_action_defs;
-    std::vector<logline_value_stats> lf_value_stats;
     std::vector<highlighter> lf_highlighters;
     bool lf_is_self_describing{false};
     bool lf_time_ordered{true};
@@ -746,7 +707,8 @@ protected:
                             int& index,
                             int& locked_index);
 
-    const char* log_scanf(uint32_t line_number,
+    const char* log_scanf(scan_batch_context& sbc,
+                          uint32_t line_number,
                           string_fragment line,
                           const pcre_format* fmt,
                           const char* time_fmt[],

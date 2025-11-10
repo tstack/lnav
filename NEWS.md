@@ -151,6 +151,15 @@ Breaking changes:
   file.
 * Timestamp columns and results from lnav time functions
   now have microsecond precision instead of millisecond.
+* The "module format" functionality has been removed.
+  This functionality tried to match log messages wrapped
+  in another format (usually syslog), but it never
+  really worked well and was impeding progress in other
+  areas.  Also, there have been many features added
+  since the beginning that can serve the same use cases.
+* The `sudo_log` format has been removed since it was
+  a module-only format.  Instead, a `sudo_log`
+  search-table was added to the `syslog_log` format.
 
 Interface changes:
 * The TIMELINE view header has been redesigned to be

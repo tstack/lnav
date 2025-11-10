@@ -3,7 +3,7 @@
     "syslog_log": {
         "title": "Syslog",
         "description": "The system logger format found on most posix systems.",
-        "url": "http://en.wikipedia.org/wiki/Syslog",
+        "url": "https://en.wikipedia.org/wiki/Syslog",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3,6})?(?:Z|(?:\\+|-)\\d{2}:\\d{2})))(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?: \\[CLOUDINIT\\])?(?:(?: syslogd [\\d\\.]+|(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^ :]+))(?:\\[(?<log_pid>\\d+)\\](?: \\([^\\)]+\\))?)?))):\\s*(?<body>.*)$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
@@ -19,7 +19,6 @@
         },
         "opid-field": "log_syslog_tag",
         "multiline": true,
-        "module-field": "log_procname",
         "thread-id-field": "log_pid",
         "value": {
             "log_pri": {
@@ -71,6 +70,11 @@
                 "cmd": [
                     "dump-pid.sh"
                 ]
+            }
+        },
+        "search-table": {
+            "sudo_log": {
+                "pattern": "sudo: (?<login>\\S+)\\s*: (?:(?<error_msg>[^;]+);)?\\s*TTY=(?<tty>[^;]+)\\s+;\\s*PWD=(?<pwd>[^;]+)\\s+;\\s*USER=(?<user>[^;]+)\\s+;\\s*COMMAND=(?<command>.*)$"
             }
         },
         "sample": [

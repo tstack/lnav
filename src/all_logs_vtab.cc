@@ -117,7 +117,7 @@ all_logs_vtab::extract(logfile* lf,
 
     sa.clear();
     sub_values.lvv_sbr = line.clone();
-    format->annotate(lf, line_number, sa, sub_values, false);
+    format->annotate(lf, line_number, sa, sub_values);
 
     auto body = find_string_attr_range(sa, &SA_BODY);
     if (!body.is_valid()) {

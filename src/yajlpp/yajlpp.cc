@@ -35,10 +35,10 @@
 
 #include "yajlpp.hh"
 
+#include "base/relative_time.hh"
 #include "base/math_util.hh"
 #include "config.h"
 #include "fmt/format.h"
-#include "relative_time.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 

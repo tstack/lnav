@@ -81,15 +81,15 @@ public:
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module) const override
+                  logline_value_vector& values) const override
     {
         auto lr = line_range{0, TIMESTAMP_SIZE};
         sa.emplace_back(lr, L_TIMESTAMP.value());
-        log_format::annotate(lf, line_number, sa, values, annotate_module);
+        log_format::annotate(lf, line_number, sa, values);
     }
 
-    void get_subline(const logline& ll,
+    void get_subline(const log_format_file_state& lffs,
+                     const logline& ll,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {
@@ -178,9 +178,10 @@ public:
         return log_fmt;
     }
 
-    std::string get_pattern_regex(uint64_t line_number) const override
+    std::string get_pattern_regex(const pattern_locks& pl,
+                                  uint64_t line_number) const override
     {
-        int pat_index = this->pattern_index_for_line(line_number);
+        auto pat_index = pl.pattern_index_for_line(line_number);
         return get_pcre_log_formats()[pat_index].name;
     }
 
@@ -215,7 +216,8 @@ public:
             }
         }
 
-        if ((last_pos = this->log_scanf(dst.size(),
+        if ((last_pos = this->log_scanf(sbc,
+                                        dst.size(),
                                         sbr.to_string_fragment(),
                                         get_pcre_log_formats(),
                                         nullptr,
@@ -276,12 +278,13 @@ public:
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module) const override
+                  logline_value_vector& values) const override
     {
         thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+        auto lffs = lf->get_format_file_state();
         auto& line = values.lvv_sbr;
-        int pat_index = this->pattern_index_for_line(line_number);
+        int pat_index
+            = lffs.lffs_pattern_locks.pattern_index_for_line(line_number);
         const auto& fmt = get_pcre_log_formats()[pat_index];
         int prefix_len = 0;
         const auto line_sf = line.to_string_fragment();
@@ -326,7 +329,7 @@ public:
         lr.lr_end = line.length();
         sa.emplace_back(lr, SA_BODY.value());
 
-        log_format::annotate(lf, line_number, sa, values, annotate_module);
+        log_format::annotate(lf, line_number, sa, values);
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
@@ -626,6 +629,7 @@ public:
         auto host_cap = string_fragment::invalid();
         auto duration = std::chrono::microseconds{0};
 
+        sbc.sbc_value_stats.resize(this->blf_field_defs.size());
         ss.with_separator(this->blf_separator.get());
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
@@ -677,7 +681,7 @@ public:
                         const auto sv = (*iter).to_string_view();
                         auto scan_float_res = scn::scan_value<double>(sv);
                         if (scan_float_res) {
-                            this->lf_value_stats[fd.fd_numeric_index.value()]
+                            sbc.sbc_value_stats[fd.fd_numeric_index.value()]
                                 .add_value(scan_float_res->value());
                         }
                         break;
@@ -715,7 +719,7 @@ public:
                 }
             }
             dst.emplace_back(
-                li.li_file_range.fr_offset, log_us, level, 0, opid);
+                li.li_file_range.fr_offset, log_us, level, opid);
             dst.back().set_opid(opid);
             return scan_match{2000};
         }
@@ -887,8 +891,6 @@ public:
 
                     ++iter;
                 } while (iter != ss.end());
-
-                this->lf_value_stats.resize(numeric_count);
             }
         }
 
@@ -899,7 +901,6 @@ public:
         }
 
         this->blf_format_name.clear();
-        this->lf_value_stats.clear();
 
         return scan_no_match{"no header found"};
     }
@@ -907,8 +908,7 @@ public:
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module) const override
+                  logline_value_vector& values) const override
     {
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
@@ -951,26 +951,22 @@ public:
                 = fd.fd_root_meta->lvm_user_hidden;
         }
 
-        log_format::annotate(lf, line_number, sa, values, annotate_module);
+        log_format::annotate(lf, line_number, sa, values);
     }
 
-    const logline_value_stats* stats_for_value(
+    std::optional<size_t> stats_index_for_value(
         const intern_string_t& name) const override
     {
-        const logline_value_stats* retval = nullptr;
-
         for (const auto& blf_field_def : this->blf_field_defs) {
             if (blf_field_def.fd_meta.lvm_name == name) {
                 if (!blf_field_def.fd_numeric_index) {
                     break;
                 }
-                retval = &this->lf_value_stats[blf_field_def.fd_numeric_index
-                                                   .value()];
-                break;
+                return blf_field_def.fd_numeric_index.value();
             }
         }
 
-        return retval;
+        return std::nullopt;
     }
 
     bool hide_field(intern_string_t field_name, bool val) override
@@ -1071,7 +1067,8 @@ public:
         return retval;
     }
 
-    void get_subline(const logline& ll,
+    void get_subline(const log_format_file_state& lffs,
+                     const logline& ll,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {
@@ -1409,7 +1406,8 @@ public:
 
     scan_result_t scan_int(std::vector<logline>& dst,
                            const line_info& li,
-                           shared_buffer_ref& sbr)
+                           shared_buffer_ref& sbr,
+                           scan_batch_context& sbc)
     {
         static const intern_string_t F_DATE_LOCAL
             = intern_string::lookup("date-local");
@@ -1428,6 +1426,7 @@ public:
         bool found_date = false, found_time = false;
         log_level_t level = LEVEL_INFO;
 
+        sbc.sbc_value_stats.resize(this->wlf_field_defs.size());
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
             if (iter.index() >= this->wlf_field_defs.size()) {
                 level = LEVEL_INVALID;
@@ -1463,8 +1462,7 @@ public:
                 }
                 dst.emplace_back(li.li_file_range.fr_offset,
                                  std::chrono::microseconds{0},
-                                 LEVEL_IGNORE,
-                                 0);
+                                 LEVEL_IGNORE);
                 return scan_match{2000};
             }
 
@@ -1501,7 +1499,7 @@ public:
                             = scn::scan_value<double>(sf.to_string_view());
 
                         if (scan_float_res) {
-                            this->lf_value_stats[fd.fd_numeric_index.value()]
+                            sbc.sbc_value_stats[fd.fd_numeric_index.value()]
                                 .add_value(scan_float_res->value());
                         }
                         break;
@@ -1529,7 +1527,7 @@ public:
                     ll.set_ignore(true);
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0);
+            dst.emplace_back(li.li_file_range.fr_offset, tv, level);
             return scan_match{2000};
         }
 
@@ -1564,7 +1562,7 @@ public:
         }
 
         if (!this->wlf_format_name.empty()) {
-            return this->scan_int(dst, li, sbr);
+            return this->scan_int(dst, li, sbr, sbc);
         }
 
         if (dst.empty() || dst.size() > 20 || sbr.empty()
@@ -1695,16 +1693,14 @@ public:
                 } while (iter != ss.end());
 
                 this->wlf_format_name = W3C_LOG_NAME;
-                this->lf_value_stats.resize(numeric_count);
             }
         }
 
         if (!this->wlf_format_name.empty() && !this->wlf_field_defs.empty()) {
-            return this->scan_int(dst, li, sbr);
+            return this->scan_int(dst, li, sbr, sbc);
         }
 
         this->wlf_format_name.clear();
-        this->lf_value_stats.clear();
 
         return scan_no_match{"no header found"};
     }
@@ -1712,8 +1708,7 @@ public:
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module) const override
+                  logline_value_vector& values) const override
     {
         auto& sbr = values.lvv_sbr;
         ws_separated_string ss(sbr.get_data(), sbr.length());
@@ -1772,26 +1767,22 @@ public:
 
             sa.emplace_back(ts_lr, L_TIMESTAMP.value());
         }
-        log_format::annotate(lf, line_number, sa, values, annotate_module);
+        log_format::annotate(lf, line_number, sa, values);
     }
 
-    const logline_value_stats* stats_for_value(
+    std::optional<size_t> stats_index_for_value(
         const intern_string_t& name) const override
     {
-        const logline_value_stats* retval = nullptr;
-
         for (const auto& wlf_field_def : this->wlf_field_defs) {
             if (wlf_field_def.fd_meta.lvm_name == name) {
                 if (!wlf_field_def.fd_numeric_index) {
                     break;
                 }
-                retval = &this->lf_value_stats[wlf_field_def.fd_numeric_index
-                                                   .value()];
-                break;
+                return wlf_field_def.fd_numeric_index.value();
             }
         }
 
-        return retval;
+        return std::nullopt;
     }
 
     bool hide_field(const intern_string_t field_name, bool val) override
@@ -1907,7 +1898,8 @@ public:
         return retval;
     }
 
-    void get_subline(const logline& ll,
+    void get_subline(const log_format_file_state& lffs,
+                     const logline& ll,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {
@@ -2104,8 +2096,7 @@ public:
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module) const override
+                  logline_value_vector& values) const override
     {
         static const intern_string_t FIELDS_NAME
             = intern_string::lookup("fields");
@@ -2229,7 +2220,7 @@ public:
                             SA_BODY.value());
         }
 
-        log_format::annotate(lf, line_number, sa, values, annotate_module);
+        log_format::annotate(lf, line_number, sa, values);
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override

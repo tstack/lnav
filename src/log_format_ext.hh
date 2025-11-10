@@ -41,8 +41,6 @@
 #include "log_search_table_fwd.hh"
 #include "yajlpp/yajlpp.hh"
 
-class module_format;
-
 class external_log_format : public log_format {
 public:
     struct value_def {
@@ -106,7 +104,6 @@ public:
         int p_timestamp_field_index{-1};
         int p_time_field_index{-1};
         int p_level_field_index{-1};
-        int p_module_field_index{-1};
         int p_opid_field_index{-1};
         int p_subid_field_index{-1};
         int p_body_field_index{-1};
@@ -115,7 +112,6 @@ public:
         int p_src_line_field_index{-1};
         int p_duration_field_index{-1};
         int p_timestamp_end{-1};
-        bool p_module_format{false};
         std::vector<int> p_opid_description_field_indexes;
         std::set<size_t> p_matched_samples;
     };
@@ -146,14 +142,14 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override;
 
-    bool scan_for_partial(shared_buffer_ref& sbr,
+    bool scan_for_partial(const log_format_file_state& lffs,
+                          shared_buffer_ref& sbr,
                           size_t& len_out) const override;
 
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
-                  logline_value_vector& values,
-                  bool annotate_module = true) const override;
+                  logline_value_vector& values) const override;
 
     void rewrite(exec_context& ec,
                  shared_buffer_ref& line,
@@ -182,10 +178,11 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override;
 
-    const logline_value_stats* stats_for_value(
+    std::optional<size_t> stats_index_for_value(
         const intern_string_t& name) const override;
 
-    void get_subline(const logline& ll,
+    void get_subline(const log_format_file_state& lffs,
+                     const logline& ll,
                      shared_buffer_ref& sbr,
                      subline_options opts) override;
 
@@ -286,7 +283,8 @@ public:
         std::optional<size_t> vlcr_line_format_index;
     };
 
-    value_line_count_result value_line_count(const value_def* vd,
+    value_line_count_result value_line_count(scan_batch_context& sbc,
+                                             const value_def* vd,
                                              bool top_level,
                                              std::optional<double> val,
                                              const unsigned char* str,
@@ -300,24 +298,25 @@ public:
         return iter != this->elf_value_defs.end();
     }
 
-    std::string get_pattern_path(uint64_t line_number) const override
+    std::string get_pattern_path(const pattern_locks& pl,
+                                 uint64_t line_number) const override
     {
         if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
             return "structured";
         }
-        int pat_index = this->pattern_index_for_line(line_number);
+        auto pat_index = pl.pattern_index_for_line(line_number);
         return this->elf_pattern_order[pat_index]->p_config_path;
     }
 
-    intern_string_t get_pattern_name(uint64_t line_number) const override;
+    intern_string_t get_pattern_name(const pattern_locks& pl,
+                                     uint64_t line_number) const override;
 
-    std::string get_pattern_regex(uint64_t line_number) const override;
+    std::string get_pattern_regex(const pattern_locks& pl,
+                                  uint64_t line_number) const override;
 
     log_level_t convert_level(string_fragment str,
                               scan_batch_context* sbc) const;
 
-    using mod_map_t = std::map<intern_string_t, module_format>;
-    static mod_map_t MODULE_FORMATS;
     static std::vector<std::shared_ptr<external_log_format>>
         GRAPH_ORDERED_FORMATS;
 
@@ -352,7 +351,6 @@ public:
     intern_string_t elf_level_field;
     factory_container<lnav::pcre2pp::code> elf_level_pointer;
     intern_string_t elf_body_field;
-    intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
     intern_string_t elf_subid_field;
     intern_string_t elf_thread_id_field;
@@ -361,8 +359,6 @@ public:
     intern_string_t elf_duration_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;
     std::vector<std::pair<int64_t, log_level_t>> elf_level_pairs;
-    bool elf_container{false};
-    bool elf_has_module_format{false};
     bool elf_builtin_format{false};
 
     struct header_exprs {
@@ -408,15 +404,13 @@ public:
                             shared_buffer_ref& sbr,
                             scan_batch_context& sbc);
 
-    void update_op_description(
-        const std::vector<opid_descriptors*>& desc_def,
-        log_op_description& lod,
-        const pattern* fpat,
-        const lnav::pcre2pp::match_data& md);
+    void update_op_description(const std::vector<opid_descriptors*>& desc_def,
+                               log_op_description& lod,
+                               const pattern* fpat,
+                               const lnav::pcre2pp::match_data& md);
 
-    void update_op_description(
-        const std::vector<opid_descriptors*>& desc_def,
-        log_op_description& lod);
+    void update_op_description(const std::vector<opid_descriptors*>& desc_def,
+                               log_op_description& lod);
 
     void json_append_to_cache(const char* value, ssize_t len)
     {
@@ -444,7 +438,8 @@ public:
         memset(&this->jlf_cached_line[old_size], ' ', len);
     }
 
-    void json_append(const json_format_element& jfe,
+    void json_append(const log_format_file_state& sbc,
+                     const json_format_element& jfe,
                      const value_def* vd,
                      const string_fragment& sf);
 
@@ -474,14 +469,6 @@ public:
 
 private:
     const intern_string_t elf_name;
-
-    static uint8_t module_scan(string_fragment body_cap,
-                               const intern_string_t& mod_name);
-};
-
-class module_format {
-public:
-    std::shared_ptr<log_format> mf_mod_format;
 };
 
 #endif

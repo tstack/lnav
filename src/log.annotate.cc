@@ -198,7 +198,8 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
         root.gen("log_format");
         root.gen(lf->get_format_name());
         root.gen("log_format_regex");
-        root.gen(lf->get_format()->get_pattern_name(line_number));
+        root.gen(lf->get_format()->get_pattern_name(
+            lf->get_format_file_state().lffs_pattern_locks, line_number));
         root.gen("log_msg");
         root.gen(ldh.ldh_line_values.lvv_sbr.to_string_fragment());
         for (const auto& val : ldh.ldh_line_values.lvv_values) {

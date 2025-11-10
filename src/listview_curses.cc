@@ -94,6 +94,11 @@ listview_curses::update_top_from_selection()
     }
 
     if (this->lv_selection < 0_vl) {
+        if (inner_height == 0_vl) {
+            this->lv_top = 0_vl;
+        } else if (this->lv_top >= inner_height) {
+            this->lv_top = inner_height - 1_vl;
+        }
         return;
     }
 

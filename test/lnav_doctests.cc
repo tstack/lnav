@@ -32,6 +32,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <data_parser.hh>
 
+#include "base/relative_time.hh"
 #include "base/from_trait.hh"
 #include "byte_array.hh"
 #include "cmd.parser.hh"
@@ -41,7 +42,6 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "ptimec.hh"
-#include "relative_time.hh"
 #include "shlex.hh"
 #include "terminfo/terminfo.h"
 #include "unique_path.hh"

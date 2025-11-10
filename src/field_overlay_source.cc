@@ -329,12 +329,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     auto lf = this->fos_log_helper.ldh_file->get_format();
-    if (!lf->get_pattern_regex(cl).empty()) {
+    auto lffs = this->fos_log_helper.ldh_file->get_format_file_state();
+    if (!lf->get_pattern_regex(lffs.lffs_pattern_locks, cl).empty()) {
         attr_line_t pattern_al;
         std::string& pattern_str = pattern_al.get_string();
-        pattern_str = " Pattern: " + lf->get_pattern_path(cl) + " = ";
+        pattern_str = " Pattern: "
+            + lf->get_pattern_path(lffs.lffs_pattern_locks, cl) + " = ";
         int skip = pattern_str.length();
-        pattern_str += lf->get_pattern_regex(cl);
+        pattern_str += lf->get_pattern_regex(lffs.lffs_pattern_locks, cl);
         lnav::snippets::regex_highlighter(
             pattern_al,
             pattern_al.length(),

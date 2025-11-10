@@ -134,6 +134,7 @@ main(int argc, char* argv[])
                 retval = EXIT_FAILURE;
             } else {
                 isc::supervisor root_superv(injector::get<isc::service_list>());
+                std::shared_ptr<logfile> lf;
                 std::shared_ptr<log_format> format;
                 bool found = false;
                 char cmd[2048];
@@ -161,9 +162,14 @@ main(int argc, char* argv[])
                     std::vector<logline> index;
                     logfile_open_options loo;
                     auto open_res = logfile::open(argv[lpc], loo);
-                    auto lf = open_res.unwrap();
+                    lf = open_res.unwrap();
                     ArenaAlloc::Alloc<char> allocator;
-                    scan_batch_context sbc{allocator};
+                    auto lffs = lf->get_format_file_state();
+                    scan_batch_context sbc{
+                        allocator,
+                        const_cast<pattern_locks&>(lffs.lffs_pattern_locks),
+                        lffs.lffs_value_stats,
+                    };
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
                          ++iter)
@@ -189,7 +195,7 @@ main(int argc, char* argv[])
                 string_attrs_t sa;
 
                 if (format.get() != nullptr) {
-                    format->annotate(nullptr, 0, sa, ll_values, false);
+                    format->annotate(lf.get(), 0, sa, ll_values);
                     body = find_string_attr_range(sa, &SA_BODY);
                 }
 

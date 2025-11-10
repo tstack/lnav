@@ -27,9 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
+#include <vector>
+
+#include "base/lnav.console.hh"
+#include "base/relative_time.hh"
 #include "lnav.hh"
 #include "lnav_commands.hh"
-#include "relative_time.hh"
 #include "sql_util.hh"
 
 static Result<std::string, lnav::console::user_message>

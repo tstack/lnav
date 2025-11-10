@@ -36,9 +36,11 @@
 
 #include "config.h"
 #include "date_time_scanner.cfg.hh"
+#include "humanize.time.hh"
 #include "injector.hh"
 #include "math_util.hh"
 #include "ptimec.hh"
+#include "relative_time.hh"
 #include "scn/scan.h"
 
 size_t
@@ -410,3 +412,66 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
     tm_out.et_tm.tm_zone = nullptr;
 #endif
 }
+
+namespace humanize::time {
+Result<point, lnav::console::user_message>
+point::from(string_fragment in, std::optional<timeval> ref_point)
+{
+    auto parse_res = relative_time::from_str(in);
+
+    std::optional<timeval> tv_opt;
+
+    if (parse_res.isOk()) {
+        auto tm = exttm::from_tv(ref_point.value_or(current_timeval()));
+        tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
+    } else {
+        date_time_scanner dts;
+        timeval tv_abs;
+        exttm tm;
+
+        auto scan_end = dts.scan(in.data(), in.length(), nullptr, &tm, tv_abs);
+        if (scan_end != nullptr) {
+            size_t matched_size = scan_end - in.data();
+            if (matched_size != in.length()) {
+                auto um
+                    = lnav::console::user_message::error(
+                          attr_line_t("invalid timestamp: ").append(in))
+                          .with_reason(
+                              attr_line_t("the leading part of the timestamp "
+                                          "was matched, however, the trailing "
+                                          "text ")
+                                  .append_quoted(scan_end)
+                                  .append(" was not"))
+                          .with_note(
+                              attr_line_t("input matched time format ")
+                                  .append_quoted(
+                                      PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt))
+                          .with_help(
+                              "fix the timestamp or remove the trailing text")
+                          .move();
+                return Err(um);
+            }
+            tv_opt = tv_abs;
+        }
+    }
+    if (!tv_opt) {
+        auto pe = parse_res.unwrapErr();
+        if (!pe.pe_msg.empty()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("invalid timestamp ").append_quoted(in))
+                          .with_reason(pe.pe_msg)
+                          .move();
+            return Err(um);
+        }
+
+        auto um
+            = lnav::console::user_message::error(
+                  attr_line_t("invalid timestamp ").append_quoted(in))
+                  .with_reason("Not recognized as a relative or absolute time")
+                  .move();
+        return Err(um);
+    }
+
+    return Ok(point{tv_opt.value()});
+}
+}  // namespace humanize::time

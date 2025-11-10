@@ -289,10 +289,28 @@ struct time_range {
     std::chrono::microseconds tr_begin;
     std::chrono::microseconds tr_end;
 
+    static time_range unbounded()
+    {
+        return {
+            std::chrono::microseconds::zero(),
+            std::chrono::microseconds::max(),
+        };
+    }
+
     void invalidate()
     {
         this->tr_begin = std::chrono::microseconds::max();
         this->tr_end = std::chrono::microseconds::zero();
+    }
+
+    bool has_lower_bound() const
+    {
+        return this->tr_begin != std::chrono::microseconds::zero();
+    }
+
+    bool has_upper_bound() const
+    {
+        return this->tr_end != std::chrono::microseconds::max();
     }
 
     bool operator<(const time_range& rhs) const

@@ -10,7 +10,6 @@
             }
         },
         "level-field": "timestamp",
-        "module-field": "container",
         "value": {
             "container": {
                 "kind": "string",
