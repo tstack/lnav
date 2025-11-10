@@ -29,6 +29,8 @@
  * @file file_collection.cc
  */
 
+#include <map>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 
@@ -84,6 +86,7 @@ child_poller::poll(file_collection& fc)
 file_collection::limits_t::limits_t()
 {
     static constexpr rlim_t RESERVED_FDS = 32;
+    static constexpr rlim_t HIGH_FD = 24;
 
     struct rlimit rl;
 
@@ -96,8 +99,10 @@ file_collection::limits_t::limits_t()
     }
 
     if (this->l_fds < RESERVED_FDS) {
+        this->l_high_fd = this->l_fds;
         this->l_open_files = this->l_fds;
     } else {
+        this->l_high_fd = this->l_fds - HIGH_FD;
         this->l_open_files = this->l_fds - RESERVED_FDS;
     }
 
@@ -207,6 +212,15 @@ file_collection::merge(file_collection& other)
 
     this->fc_recursive = this->fc_recursive || other.fc_recursive;
     this->fc_rotated = this->fc_rotated || other.fc_rotated;
+    if (other.fc_files_high_mark) {
+        if (this->fc_files_high_mark) {
+            this->fc_files_high_mark
+                = std::min(this->fc_files_high_mark.value(),
+                           other.fc_files_high_mark.value());
+        } else {
+            this->fc_files_high_mark = other.fc_files_high_mark;
+        }
+    }
 
     this->fc_synced_files.insert(other.fc_synced_files.begin(),
                                  other.fc_synced_files.end());
@@ -407,6 +421,16 @@ file_collection::watch_logfile(const std::string& filename,
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
+            return std::nullopt;
+        }
+
+        log_trace("wtf %d %d",
+                  this->fc_files.size(),
+                  this->fc_files_high_mark.value_or(0));
+        if (this->fc_files_high_mark
+            && this->fc_files.size() >= this->fc_files_high_mark.value())
+        {
+            log_trace("too many open files, cannot open %s", filename.c_str());
             return std::nullopt;
         }
 
@@ -833,8 +857,23 @@ file_collection::rescan_files(bool required)
     file_collection retval;
     lnav::futures::future_queue<file_collection> fq(
         [this, &retval](std::future<file_collection>& fc) {
+            const auto& lim = get_limits();
             try {
                 auto v = fc.get();
+
+                if (!v.fc_files.empty()
+                    && v.fc_files.back()->get_fd() > lim.l_high_fd)
+                {
+                    log_warning(
+                        "open file FD is too high (%d > %llu), dropping...",
+                        v.fc_files.back()->get_fd(),
+                        lim.l_high_fd);
+                    v.fc_files.clear();
+                    retval.fc_files_high_mark
+                        = this->fc_files.size() + retval.fc_files.size();
+                    log_debug("setting high mark to %zu",
+                              retval.fc_files_high_mark.value());
+                }
                 retval.merge(v);
             } catch (const std::exception& e) {
                 log_error("rescan future exception: %s", e.what());
@@ -844,7 +883,7 @@ file_collection::rescan_files(bool required)
 
             if (retval.fc_files.size() < 100
                 && this->fc_files.size() + retval.fc_files.size()
-                    < get_limits().l_open_files)
+                    < lim.l_open_files)
             {
                 return lnav::progress_result_t::ok;
             }
@@ -856,7 +895,7 @@ file_collection::rescan_files(bool required)
         if (this->fc_files.size() + retval.fc_files.size()
             >= get_limits().l_open_files)
         {
-            log_debug("too many files open, breaking...");
+            log_warning("too many files open, breaking...");
             break;
         }
 
@@ -964,6 +1003,13 @@ file_collection::clear()
     this->fc_closed_files.clear();
     this->fc_other_files.clear();
     this->fc_new_stats.clear();
+}
+
+bool
+file_collection::is_below_open_file_limit() const
+{
+    return !this->fc_files_high_mark
+        || this->fc_files.size() < this->fc_files_high_mark.value();
 }
 
 size_t

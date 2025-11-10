@@ -158,6 +158,7 @@ struct file_collection {
     std::map<std::string, logfile_open_options, strnatless> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};
+    std::optional<size_t> fc_files_high_mark;
     std::vector<std::pair<std::shared_ptr<logfile>, std::string>>
         fc_renamed_files;
     std::set<std::string> fc_closed_files;
@@ -173,6 +174,7 @@ struct file_collection {
         limits_t();
 
         rlim_t l_fds;
+        rlim_t l_high_fd;
         rlim_t l_open_files;
     };
 
@@ -195,10 +197,7 @@ struct file_collection {
 
     void clear();
 
-    bool is_below_open_file_limit() const
-    {
-        return this->fc_files.size() < get_limits().l_open_files;
-    }
+    bool is_below_open_file_limit() const;
 
     size_t other_file_format_count(file_format_t ff) const;
 
