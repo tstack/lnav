@@ -173,14 +173,6 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                       });
             return true;
         }
-        case 'n': {
-            execute_command(lnav_data.ld_exec_context, "next-mark search");
-            return true;
-        }
-        case 'N': {
-            execute_command(lnav_data.ld_exec_context, "prev-mark search");
-            return true;
-        }
         case '/': {
             execute_command(lnav_data.ld_exec_context, "prompt search-files");
             return true;
@@ -374,7 +366,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
                                        humanize::alignment::columnar));
     }
     al.append(" ");
-    auto indexed_size = lf->get_indexed_file_offset();
+    auto indexed_size = lf->get_index_size();
     auto total_size = lf->get_content_size();
     if (!lf->get_decompress_error().empty()) {
         al.append(" ", VC_ICON.value(ui_icon_t::error));
@@ -485,6 +477,52 @@ files_sub_source::text_handle_mouse(
     }
 
     return false;
+}
+
+void
+files_sub_source::text_update_marks(vis_bookmarks& bm)
+{
+    auto& bm_errs = bm[&textview_curses::BM_ERRORS];
+    auto& bm_warn = bm[&textview_curses::BM_WARNINGS];
+
+    bm_errs.clear();
+    bm_warn.clear();
+
+    auto index = 0_vl;
+
+    auto& fc = lnav_data.ld_active_files;
+    {
+        safe::ReadAccess<safe_name_to_stubs> stubs(*fc.fc_name_to_stubs);
+
+        for (const auto& stub_pair : *stubs) {
+            switch (stub_pair.second.fei_description.um_level) {
+                case lnav::console::user_message::level::warning:
+                    bm_warn.insert_once(index);
+                    break;
+                case lnav::console::user_message::level::error:
+                    bm_errs.insert_once(index);
+                    break;
+                default:
+                    break;
+            }
+            index += 1_vl;
+        }
+    }
+
+    index += vis_line_t(fc.fc_other_files.size());
+
+    for (const auto& lf : fc.fc_files) {
+        if (!lf->get_decompress_error().empty()) {
+            bm_errs.insert_once(index);
+        } else if (!lf->get_notes().empty()) {
+            bm_warn.insert_once(index);
+        }
+        index += 1_vl;
+    }
+
+    log_debug("files bookmarks errors=%zu; warnings=%zu",
+              bm_errs.size(),
+              bm_warn.size());
 }
 
 void

@@ -250,7 +250,10 @@ filter_status_source::update_filtered(text_sub_source* tss)
         auto& al = sf.get_value();
 
         if (curr_filtered_count == this->bss_last_filtered_count) {
-            if (timer.fade_diff(this->bss_filter_counter) == 0) {
+            if (timer.fade_diff(this->bss_filter_counter) == 0
+                && this->tss_fields[TSF_FILTERED].get_role()
+                    != role_t::VCR_STATUS)
+            {
                 this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_STATUS);
                 al.with_attr(
                     string_attr(line_range{0, -1},
@@ -261,8 +264,8 @@ filter_status_source::update_filtered(text_sub_source* tss)
             this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_ALERT_STATUS);
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
-            sf.set_value("%'9d Lines not shown ", tss->get_filtered_count());
-            retval = true;
+            retval = sf.set_value("%'9d Lines not shown ",
+                                  tss->get_filtered_count());
         }
     }
 

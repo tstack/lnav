@@ -76,6 +76,8 @@ public:
                            const listview_curses::display_line_content_t&,
                            mouse_event& me) override;
 
+    void text_update_marks(vis_bookmarks& bm) override;
+
     void text_selection_changed(textview_curses& tc) override;
 
     size_t fss_last_line_len{0};
