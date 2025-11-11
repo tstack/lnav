@@ -19,6 +19,19 @@
         },
         "thread-id-field": "pid",
         "duration-field": "duration",
+        "opid": {
+            "source": "from-whole-msg",
+            "description": {
+                "statement": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "statement: (.*)"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "level": {
                 "kind": "string"
