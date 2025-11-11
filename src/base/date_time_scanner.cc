@@ -422,7 +422,9 @@ point::from(string_fragment in, std::optional<timeval> ref_point)
     std::optional<timeval> tv_opt;
 
     if (parse_res.isOk()) {
-        auto tm = exttm::from_tv(ref_point.value_or(current_timeval()));
+        auto now_tv = current_timeval();
+        now_tv.tv_sec = convert_log_time_to_local(now_tv.tv_sec);
+        auto tm = exttm::from_tv(ref_point.value_or(now_tv));
         tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
     } else {
         date_time_scanner dts;

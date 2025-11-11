@@ -605,6 +605,7 @@ private:
     };
     file_size_t lf_file_size_at_map_time{0};
     std::vector<content_map_entry> lf_content_map;
+    std::optional<file_size_t> lf_upper_bound_size;
 
     std::optional<content_map_entry> find_content_map_entry(file_off_t offset);
 

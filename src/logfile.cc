@@ -924,6 +924,19 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         this->lf_index.back().set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
     }
 
+    if (this->lf_format != nullptr
+        && this->lf_index.back().get_time<std::chrono::microseconds>()
+            > this->lf_options.loo_time_range.tr_end)
+    {
+        if (!this->lf_upper_bound_size) {
+            this->lf_upper_bound_size = this->lf_index.back().get_offset();
+            log_debug("%s: upper found in file found %llu",
+                      this->lf_filename_as_string.c_str(),
+                      this->lf_upper_bound_size.value());
+        }
+        this->lf_index.pop_back();
+    }
+
     return retval;
 }
 
@@ -1074,6 +1087,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     if (this->lf_text_format == text_format_t::TF_BINARY) {
         this->lf_index_size = st.st_size;
+        this->lf_stat = st;
+    } else if (this->lf_upper_bound_size) {
+        this->lf_index_size = this->lf_line_buffer.get_file_size();
         this->lf_stat = st;
     } else if (this->lf_line_buffer.is_data_available(this->lf_index_size,
                                                       st.st_size))
@@ -1868,7 +1884,11 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
                  || (include_continues && next_line->is_continued())));
 
     if (next_line == this->end()) {
-        retval = this->lf_index_size - ll->get_offset();
+        if (this->lf_upper_bound_size) {
+            retval = this->lf_upper_bound_size.value() - ll->get_offset();
+        } else {
+            retval = this->lf_index_size - ll->get_offset();
+        }
         if (retval > line_buffer::MAX_LINE_BUFFER_SIZE) {
             retval = line_buffer::MAX_LINE_BUFFER_SIZE;
         }
