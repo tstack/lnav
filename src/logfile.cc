@@ -395,7 +395,7 @@ void
 logfile::build_content_map(const struct stat& st)
 {
     this->lf_content_map.clear();
-    this->lf_file_size_at_map_time = st.st_size;
+    this->lf_file_size_at_map_time = this->lf_index_size;
 
     if (this->lf_index_size == this->get_content_size()) {
         log_trace("%s: file has already been scanned, no need to peek",
@@ -1595,7 +1595,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (this->lf_format != nullptr
             && (this->lf_index.size() >= RETRY_MATCH_SIZE
                 || this->lf_index_size == this->get_content_size())
-            && this->lf_file_size_at_map_time != st.st_size)
+            && this->lf_file_size_at_map_time != this->lf_index_size)
         {
             this->build_content_map(st);
         }

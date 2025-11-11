@@ -356,7 +356,8 @@ file_collection::watch_logfile(const std::string& filename,
                     wilddir,
                     logfile_open_options()
                         .with_non_utf_visibility(false)
-                        .with_visible_size_limit(256 * 1024));
+                        .with_visible_size_limit(256 * 1024)
+                        .with_time_range(loo.loo_time_range));
                 return lnav::futures::make_ready_future(std::move(retval));
             }
             return std::nullopt;
@@ -424,9 +425,6 @@ file_collection::watch_logfile(const std::string& filename,
             return std::nullopt;
         }
 
-        log_trace("wtf %d %d",
-                  this->fc_files.size(),
-                  this->fc_files_high_mark.value_or(0));
         if (this->fc_files_high_mark
             && this->fc_files.size() >= this->fc_files_high_mark.value())
         {

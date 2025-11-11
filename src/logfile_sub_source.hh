@@ -463,6 +463,9 @@ public:
         {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             this->ld_file_ptr = lf.get();
+            this->ld_lines_indexed = 0;
+            this->ld_lines_watched = 0;
+            this->ld_visible = lf->is_indexing();
             lf->set_logline_observer(&this->ld_filter_state);
         }
 

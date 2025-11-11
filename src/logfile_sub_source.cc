@@ -911,6 +911,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
         full_sort = true;
+        this->lss_index.clear();
     }
 
     std::vector<size_t> file_order(this->lss_files.size());
