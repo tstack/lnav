@@ -2060,12 +2060,14 @@ external_log_format::scan(logfile& lf,
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
 
-            log_debug("%s:%zu: changing pattern lock %d -> (%d)%s",
-                      lf.get_unique_path().c_str(),
-                      dst.size() - 1,
-                      orig_lock,
-                      curr_fmt,
-                      this->elf_pattern_order[curr_fmt]->p_name.c_str());
+            if (!this->lf_specialized && orig_lock != -1) {
+                log_debug("%s:%zu: changing pattern lock %d -> (%d)%s",
+                          lf.get_unique_path().c_str(),
+                          dst.size() - 1,
+                          orig_lock,
+                          curr_fmt,
+                          this->elf_pattern_order[curr_fmt]->p_name.c_str());
+            }
             if (sbc.sbc_pattern_locks.empty()) {
                 lock_line = 0;
             } else {
@@ -2076,7 +2078,7 @@ external_log_format::scan(logfile& lf,
         return scan_match{1000};
     }
 
-    if (this->lf_specialized && !this->lf_multiline) {
+    if (this->lf_specialized && !this->lf_multiline && !dst.empty()) {
         const auto& last_line = dst.back();
 
         log_debug("%s: invalid line %zu file_offset=%" PRIu64,

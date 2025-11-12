@@ -604,12 +604,28 @@ private:
         std::chrono::microseconds cme_time;
     };
     file_size_t lf_file_size_at_map_time{0};
-    std::vector<content_map_entry> lf_content_map;
+    std::optional<content_map_entry> lf_lower_bound_entry;
+    std::optional<content_map_entry> lf_upper_bound_entry;
     std::optional<file_size_t> lf_upper_bound_size;
 
-    std::optional<content_map_entry> find_content_map_entry(file_off_t offset);
+    struct map_read_upper_bound {};
+    struct map_read_lower_bound {
+        std::chrono::microseconds mrlb_time;
+    };
+    using map_read_requirement
+        = mapbox::util::variant<map_read_upper_bound, map_read_lower_bound>;
 
-    void build_content_map(const struct stat& st);
+    struct map_entry_not_found {};
+    struct map_entry_found {
+        content_map_entry mef_entry;
+    };
+    using map_entry_result
+        = mapbox::util::variant<map_entry_not_found, map_entry_found>;
+
+    map_entry_result find_content_map_entry(file_off_t offset,
+                                            map_read_requirement req);
+
+    rebuild_result_t build_content_map();
 };
 
 class logline_observer {

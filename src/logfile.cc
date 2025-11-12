@@ -54,6 +54,7 @@
 #include "base/injector.hh"
 #include "base/intern_string.hh"
 #include "base/is_utf8.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/result.h"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
@@ -301,50 +302,68 @@ logfile::file_options_have_changed()
     return tz_changed;
 }
 
-std::optional<logfile::content_map_entry>
-logfile::find_content_map_entry(file_off_t offset)
+logfile::map_entry_result
+logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
 {
     static constexpr auto LOOKBACK_SIZE = 32 * 1024;
+    static constexpr auto MAX_LOOKBACK_SIZE = 4 * 1024 * 1024;
 
     if (offset < LOOKBACK_SIZE) {
-        return std::nullopt;
+        return map_entry_not_found{};
     }
     auto end_range = file_range{
         offset - LOOKBACK_SIZE,
         LOOKBACK_SIZE,
     };
 
+    auto full_size = this->get_content_size();
+    file_size_t lower_offset = 0;
+    file_size_t upper_offset = full_size;
+    auto looping = true;
     do {
+        std::optional<content_map_entry> lower_retval;
         auto peek_res = this->lf_line_buffer.peek_range(end_range);
         if (!peek_res.isOk()) {
             log_error("%s: peek failed -- %s",
                       this->lf_filename_as_string.c_str(),
                       peek_res.unwrapErr().c_str());
-            return std::nullopt;
+            return map_entry_not_found{};
         }
         auto peek_buf = peek_res.unwrap();
         auto peek_sf = to_string_fragment(peek_buf);
 
-        if (!peek_sf.endswith("\n")) {
-            log_warning("%s: peek returned partial line",
-                        this->lf_filename_as_string.c_str());
-            return std::nullopt;
+        if (req.is<map_read_upper_bound>()) {
+            if (!peek_sf.endswith("\n")) {
+                log_warning("%s: peek returned partial line",
+                            this->lf_filename_as_string.c_str());
+                return map_entry_not_found{};
+            }
+            peek_sf.pop_back();
         }
-        peek_sf.pop_back();
         while (!peek_sf.empty()) {
             auto rsplit_res = peek_sf.rsplit_pair(string_fragment::tag1{'\n'});
             if (!rsplit_res) {
                 log_trace("%s: did not peek enough to find last line",
                           this->lf_filename_as_string.c_str());
-                if (end_range.fr_offset < LOOKBACK_SIZE) {
-                    return std::nullopt;
+                if (req.is<map_read_upper_bound>()) {
+                    if (end_range.fr_offset < LOOKBACK_SIZE) {
+                        return map_entry_not_found{};
+                    }
+                    end_range.fr_offset -= LOOKBACK_SIZE;
+                    end_range.fr_size += LOOKBACK_SIZE;
+                    if (end_range.next_offset() > full_size) {
+                        end_range.fr_offset = 0;
+                        end_range.fr_size = full_size;
+                    } else if (end_range.fr_size > MAX_LOOKBACK_SIZE) {
+                        return map_entry_not_found{};
+                    }
                 }
-                end_range.fr_offset -= LOOKBACK_SIZE;
-                end_range.fr_size += LOOKBACK_SIZE;
                 break;
             }
 
             auto [leading, last_line] = rsplit_res.value();
+            // log_debug("leading %d", leading.length());
+            // log_debug("last %.*s", last_line.length(), last_line.data());
             pattern_locks line_locks;
             scan_batch_context sbc_tmp{
                 this->lf_allocator,
@@ -368,59 +387,185 @@ logfile::find_content_map_entry(file_off_t offset)
             auto scan_res = this->lf_format->scan(
                 *this, tmp_index, end_li, tmp_sbr, sbc_tmp);
             if (scan_res.is<log_format::scan_match>() && !tmp_index.empty()) {
-                return content_map_entry{
-                    end_lines_fr,
-                    tmp_index.back().get_time<std::chrono::microseconds>(),
-                };
+                auto line_time
+                    = tmp_index.back().get_time<std::chrono::microseconds>();
+
+                if (req.is<map_read_lower_bound>()) {
+                    auto lb = req.get<map_read_lower_bound>();
+                    if (line_time >= lb.mrlb_time) {
+                        lower_retval = content_map_entry{
+                            end_lines_fr,
+                            line_time,
+                        };
+                    } else if (lower_retval) {
+                        return map_entry_found{lower_retval.value()};
+                    } else {
+                        // need to move forward
+                        peek_sf = string_fragment{};
+                        continue;
+                    }
+                } else {
+                    return map_entry_found{content_map_entry{
+                        end_lines_fr,
+                        line_time,
+                    }};
+                }
             }
-            log_trace("%s: no match for line, going back",
-                      this->lf_filename_as_string.c_str());
+            // log_trace("%s: no match for line, going back",
+            // this->lf_filename_as_string.c_str());
             peek_sf = leading;
         }
 
-        if (peek_sf.empty()) {
-            log_trace("%s: no messages found in peak, going back further",
-                      this->lf_filename_as_string.c_str());
-            if (end_range.fr_offset < LOOKBACK_SIZE) {
-                return std::nullopt;
-            }
-            end_range.fr_offset -= LOOKBACK_SIZE;
+        log_trace("%s: no messages found in peak, going back further",
+                  this->lf_filename_as_string.c_str());
+        if (end_range.fr_offset < LOOKBACK_SIZE) {
+            return map_entry_not_found{};
         }
-    } while (true);
+        req.match([](map_read_upper_bound& m) {},
+                  [&](map_read_lower_bound& m) {
+                      if (lower_retval) {
+                          upper_offset = end_range.fr_offset;
+                          end_range.fr_offset
+                              -= (upper_offset - lower_offset) / 2;
+                          log_debug("first half %llu", end_range.fr_offset);
+                      } else if (end_range.next_offset() < full_size) {
+                          lower_offset = end_range.fr_offset;
+                          end_range.fr_offset
+                              += (upper_offset - end_range.fr_offset) / 2;
+                          log_debug("2nd half %llu", end_range.fr_offset);
+                      } else {
+                          looping = false;
+                      }
+                      if (end_range.next_offset() > full_size) {
+                          end_range.fr_offset = full_size - end_range.fr_size;
+                      }
+                  });
+    } while (looping);
 
-    return std::nullopt;
+    return map_entry_not_found{};
 }
 
-void
-logfile::build_content_map(const struct stat& st)
+logfile::rebuild_result_t
+logfile::build_content_map()
 {
-    this->lf_content_map.clear();
+    static auto op = lnav_operation{"build_content_map"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
+    auto retval = rebuild_result_t::NO_NEW_LINES;
+
+    this->lf_lower_bound_entry = std::nullopt;
+    this->lf_upper_bound_entry = std::nullopt;
     this->lf_file_size_at_map_time = this->lf_index_size;
 
-    if (this->lf_index_size == this->get_content_size()) {
-        log_trace("%s: file has already been scanned, no need to peek",
-                  this->lf_filename_as_string.c_str());
-        const auto& ll = this->lf_index.back();
-        auto last_line_offset = ll.get_offset();
-        auto cme = content_map_entry{
-            file_range{last_line_offset, st.st_size - last_line_offset},
-            ll.get_time<std::chrono::microseconds>(),
-        };
+    auto full_size = this->get_content_size();
 
-        this->lf_content_map.emplace_back(cme);
-        return;
+    if (this->lf_options.loo_time_range.has_lower_bound()
+        && this->lf_options.loo_time_range.tr_begin
+            > this->lf_index.front().get_time<std::chrono::microseconds>()
+        && this->lf_options.loo_time_range.tr_begin
+            <= this->lf_index.back().get_time<std::chrono::microseconds>())
+    {
+        auto ll_opt = this->find_from_time(
+            to_timeval(this->lf_options.loo_time_range.tr_begin));
+        auto ll = ll_opt.value();
+        auto first_line_offset = ll->get_offset();
+        this->lf_lower_bound_entry = content_map_entry{
+            file_range{first_line_offset, full_size - first_line_offset},
+            ll->get_time<std::chrono::microseconds>(),
+        };
+        log_info("%s: lower bound is within current index, erasing %ld lines",
+                 this->lf_filename_as_string.c_str(),
+                 std::distance(this->lf_index.cbegin(), ll));
+        this->lf_index_size = first_line_offset;
+        this->lf_index.clear();
+        retval = rebuild_result_t::NEW_ORDER;
     }
 
-    auto end_entry = this->find_content_map_entry(this->get_content_size());
-    if (!end_entry) {
+    if (this->lf_index_size == full_size) {
+        log_trace("%s: file has already been scanned, no need to peek",
+                  this->lf_filename_as_string.c_str());
+        const auto& last_line = this->lf_index.back();
+        auto last_line_offset = last_line.get_offset();
+        this->lf_upper_bound_entry = content_map_entry{
+            file_range{last_line_offset, full_size - last_line_offset},
+            last_line.get_time<std::chrono::microseconds>(),
+        };
+        if (this->lf_options.loo_time_range.has_lower_bound()
+            && this->lf_options.loo_time_range.tr_begin
+                > this->lf_index.back().get_time<std::chrono::microseconds>())
+        {
+            log_info("%s: lower bound is past content",
+                     this->lf_filename_as_string.c_str());
+            this->lf_index.clear();
+            retval = rebuild_result_t::NEW_ORDER;
+        }
+        return retval;
+    }
+
+    auto end_entry_opt
+        = this->find_content_map_entry(full_size, map_read_upper_bound{});
+    if (!end_entry_opt.is<map_entry_found>()) {
         log_warning(
             "%s: skipping content map since the last message could not be "
             "found",
             this->get_filename().c_str());
-        return;
+        return retval;
     }
 
-    this->lf_content_map.emplace_back(end_entry.value());
+    auto end_entry = end_entry_opt.get<map_entry_found>().mef_entry;
+    log_info("found content end: %llu %s",
+             end_entry.cme_range.fr_offset,
+             lnav::to_rfc3339_string(to_timeval(end_entry.cme_time)).c_str());
+    this->lf_upper_bound_entry = end_entry;
+
+    if (this->lf_options.loo_time_range.has_lower_bound()) {
+        if (this->lf_options.loo_time_range.tr_begin > end_entry.cme_time) {
+            retval = rebuild_result_t::NEW_ORDER;
+        } else if (this->lf_options.loo_time_range.tr_begin
+                   > this->lf_index.back()
+                         .get_time<std::chrono::microseconds>())
+        {
+            auto offset = full_size / 2;
+            log_debug("%s: searching for lower bound %lld",
+                      this->lf_filename_as_string.c_str(),
+                      this->lf_options.loo_time_range.tr_begin.count());
+            auto low_entry_opt = this->find_content_map_entry(
+                offset,
+                map_read_lower_bound{
+                    this->lf_options.loo_time_range.tr_begin,
+                });
+            if (low_entry_opt.is<map_entry_found>()) {
+                auto low_entry = low_entry_opt.get<map_entry_found>().mef_entry;
+                log_info("found content start: %llu %s",
+                         low_entry.cme_range.fr_offset,
+                         lnav::to_rfc3339_string(to_timeval(low_entry.cme_time))
+                             .c_str());
+                this->lf_lower_bound_entry = low_entry;
+                this->lf_index_size = low_entry.cme_range.fr_offset;
+
+                retval = rebuild_result_t::NEW_ORDER;
+            }
+        }
+    }
+
+    if (retval == rebuild_result_t::NEW_ORDER) {
+        {
+            auto los = this->lf_opids.writeAccess();
+
+            los->los_opid_ranges.clear();
+            los->los_sub_in_use.clear();
+        }
+        {
+            auto tids = this->lf_thread_ids.writeAccess();
+            tids->ltis_tid_ranges.clear();
+        }
+        this->lf_pattern_locks.pl_lines.clear();
+        this->lf_value_stats.clear();
+        this->lf_index.clear();
+        this->lf_upper_bound_size = std::nullopt;
+    }
+
+    return retval;
 }
 
 bool
@@ -430,22 +575,7 @@ logfile::in_range() const
         return true;
     }
 
-    if (this->lf_options.loo_time_range.has_upper_bound()
-        && this->lf_index.front().get_time<std::chrono::microseconds>()
-            > this->lf_options.loo_time_range.tr_end)
-    {
-        return false;
-    }
-
-    if (this->lf_options.loo_time_range.has_lower_bound()
-        && !this->lf_content_map.empty()
-        && this->lf_content_map.back().cme_time
-            < this->lf_options.loo_time_range.tr_begin)
-    {
-        return false;
-    }
-
-    return true;
+    return !this->lf_index.empty() || this->lf_lower_bound_entry.has_value();
 }
 
 bool
@@ -512,16 +642,9 @@ logfile::get_content_time_range() const
         };
     }
 
-    if (this->lf_content_map.empty()) {
-        return {
-            this->lf_index.front().get_time<std::chrono::microseconds>(),
-            this->lf_index.back().get_time<std::chrono::microseconds>(),
-        };
-    }
-
     return {
         this->lf_index.front().get_time<std::chrono::microseconds>(),
-        this->lf_content_map.back().cme_time,
+        this->lf_index.back().get_time<std::chrono::microseconds>(),
     };
 }
 
@@ -930,8 +1053,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     {
         if (!this->lf_upper_bound_size) {
             this->lf_upper_bound_size = this->lf_index.back().get_offset();
-            log_debug("%s: upper found in file found %llu",
+            log_debug("%s:%zu: upper found in file found %llu",
                       this->lf_filename_as_string.c_str(),
+                      this->lf_index.size(),
                       this->lf_upper_bound_size.value());
         }
         this->lf_index.pop_back();
@@ -1089,7 +1213,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_index_size = st.st_size;
         this->lf_stat = st;
     } else if (this->lf_upper_bound_size) {
-        this->lf_index_size = this->lf_line_buffer.get_file_size();
+        this->lf_index_size = this->get_content_size();
         this->lf_stat = st;
     } else if (this->lf_line_buffer.is_data_available(this->lf_index_size,
                                                       st.st_size))
@@ -1181,7 +1305,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
         } else {
             this->lf_line_buffer.flush_at(0);
-            off = 0;
+            off = this->lf_index_size;
         }
         if (this->lf_logline_observer != nullptr) {
             this->lf_logline_observer->logline_restart(*this, rollback_size);
@@ -1492,6 +1616,10 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 break;
             }
 
+            if (this->lf_upper_bound_size) {
+                break;
+            }
+
             limit -= 1;
         }
 
@@ -1613,7 +1741,13 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 || this->lf_index_size == this->get_content_size())
             && this->lf_file_size_at_map_time != this->lf_index_size)
         {
-            this->build_content_map(st);
+            switch (this->build_content_map()) {
+                case rebuild_result_t::NEW_ORDER:
+                    retval = rebuild_result_t::NEW_ORDER;
+                    break;
+                default:
+                    break;
+            }
         }
     } else {
         this->lf_stat = st;
@@ -1902,6 +2036,8 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
                 = std::make_optional(std::make_pair(ll->get_offset(), retval));
         }
     }
+
+    require_ge(retval, 0);
 
     return {retval, line_count, meta};
 }
