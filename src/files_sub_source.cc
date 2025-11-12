@@ -69,7 +69,9 @@ from_selection(std::optional<vis_line_t> sel_vis)
 
             std::advance(iter, sel);
             return stub_selection::build(
-                sel, std::make_pair(iter->first, iter->second.fei_description));
+                sel,
+                std::make_pair(iter->second.fsi_display_name,
+                               iter->second.fsi_description));
         }
 
         sel -= errs->size();
@@ -271,7 +273,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
 
         if (line < (ssize_t) errs->size()) {
             auto iter = std::next(errs->begin(), line);
-            auto path = std::filesystem::path(iter->first);
+            auto path = std::filesystem::path(iter->second.fsi_display_name);
             auto fn = fmt::to_string(path.filename());
 
             truncate_to(fn, filename_width);
@@ -283,7 +285,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             }
             al.append("   ");
             ui_icon_t icon = ui_icon_t::ok;
-            switch (iter->second.fei_description.um_level) {
+            switch (iter->second.fsi_description.um_level) {
                 case lnav::console::user_message::level::raw:
                     break;
                 case lnav::console::user_message::level::ok:
@@ -495,7 +497,7 @@ files_sub_source::text_update_marks(vis_bookmarks& bm)
         safe::ReadAccess<safe_name_to_stubs> stubs(*fc.fc_name_to_stubs);
 
         for (const auto& stub_pair : *stubs) {
-            switch (stub_pair.second.fei_description.um_level) {
+            switch (stub_pair.second.fsi_description.um_level) {
                 case lnav::console::user_message::level::warning:
                     bm_warn.insert_once(index);
                     break;

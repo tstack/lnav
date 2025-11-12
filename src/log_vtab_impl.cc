@@ -2699,7 +2699,7 @@ log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
-    if (lf->get_format_name() == this->lfvi_format.get_name()) {
+    if (lf->get_format_name() == this->lfvi_format->get_name()) {
         return true;
     }
 

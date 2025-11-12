@@ -81,8 +81,9 @@ struct other_file_descriptor {
 };
 
 struct file_stub_info {
-    const time_t fei_mtime;
-    const lnav::console::user_message fei_description;
+    const std::string fsi_display_name;
+    const time_t fsi_mtime;
+    const lnav::console::user_message fsi_description;
 };
 
 using safe_name_to_stubs = safe::Safe<std::map<std::string, file_stub_info>>;

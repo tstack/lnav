@@ -3638,10 +3638,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             std::make_shared<all_logs_vtab>());
         lnav_data.ld_vtab_manager->register_vtab(
             std::make_shared<log_format_vtab_impl>(
-                *log_format::find_root_format("generic_log")));
+                log_format::find_root_format("generic_log")));
         lnav_data.ld_vtab_manager->register_vtab(
             std::make_shared<log_format_vtab_impl>(
-                *log_format::find_root_format("lnav_piper_log")));
+                log_format::find_root_format("lnav_piper_log")));
 
         for (auto& iter : log_format::get_root_formats()) {
             auto lvi = iter->get_vtab_impl();
@@ -4158,7 +4158,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 lnav::console::user_message::error(
                                     attr_line_t("unable to open file: ")
                                         .append(lnav::roles::file(pair.first)))
-                                    .with_reason(pair.second.fei_description));
+                                    .with_reason(pair.second.fsi_description));
                         }
 
                         return EXIT_FAILURE;
@@ -4221,7 +4221,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 lnav::console::user_message::error(
                                     attr_line_t("unable to open file: ")
                                         .append(lnav::roles::file(pair.first)))
-                                    .with_reason(pair.second.fei_description));
+                                    .with_reason(pair.second.fsi_description));
                         }
 
                         return EXIT_FAILURE;

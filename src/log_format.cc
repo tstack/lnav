@@ -4654,8 +4654,9 @@ external_log_format::match_samples(const std::vector<sample_t>& samples) const
 
 class external_log_table : public log_format_vtab_impl {
 public:
-    explicit external_log_table(const external_log_format& elf)
-        : log_format_vtab_impl(elf), elt_format(elf)
+    explicit external_log_table(std::shared_ptr<const log_format> elf)
+        : log_format_vtab_impl(elf),
+          elt_format(dynamic_cast<const external_log_format*>(elf.get()))
     {
     }
 
@@ -4663,8 +4664,8 @@ public:
     {
         const auto& elf = this->elt_format;
 
-        cols.resize(elf.elf_column_count);
-        for (const auto& vd : elf.elf_value_def_order) {
+        cols.resize(elf->elf_column_count);
+        for (const auto& vd : elf->elf_value_def_order) {
             auto type_pair = logline_value_to_sqlite_type(vd->vd_meta.lvm_kind);
 
             if (!vd->vd_meta.lvm_column.is<logline_value_meta::table_column>())
@@ -4675,7 +4676,7 @@ public:
             auto col
                 = vd->vd_meta.lvm_column.get<logline_value_meta::table_column>()
                       .value;
-            require(0 <= col && col < elf.elf_column_count);
+            require(0 <= col && col < elf->elf_column_count);
 
             cols[col].vc_name = vd->vd_meta.lvm_name.get();
             cols[col].vc_type = type_pair.first;
@@ -4690,7 +4691,7 @@ public:
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
 
-        for (const auto& elf_value_def : this->elt_format.elf_value_defs) {
+        for (const auto& elf_value_def : this->elt_format->elf_value_defs) {
             if (elf_value_def.second->vd_meta.lvm_foreign_key
                 || elf_value_def.second->vd_meta.lvm_identifier)
             {
@@ -4712,7 +4713,7 @@ public:
             return false;
         }
 
-        if (lf->get_format_name() == this->lfvi_format.get_name()) {
+        if (lf->get_format_name() == this->lfvi_format->get_name()) {
             return true;
         }
 
@@ -4730,14 +4731,14 @@ public:
         format->annotate(lf, line_number, sa, values);
     }
 
-    const external_log_format& elt_format;
+    const external_log_format* elt_format;
     line_range elt_container_body;
 };
 
 std::shared_ptr<log_vtab_impl>
 external_log_format::get_vtab_impl() const
 {
-    return std::make_shared<external_log_table>(*this);
+    return std::make_shared<external_log_table>(this->shared_from_this());
 }
 
 std::shared_ptr<log_format>

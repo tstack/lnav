@@ -375,7 +375,7 @@ file_collection::watch_logfile(const std::string& filename,
 
             auto err_iter = errs->find(filename_key);
             if (err_iter != errs->end()) {
-                if (err_iter->second.fei_mtime != st.st_mtime) {
+                if (err_iter->second.fsi_mtime != st.st_mtime) {
                     log_debug("clearing error info for file: %s",
                               filename_key.c_str());
                     errs->erase(err_iter);
@@ -396,6 +396,7 @@ file_collection::watch_logfile(const std::string& filename,
                           .with_reason(ec.message());
             retval.fc_name_to_stubs->writeAccess()->emplace(filename,
                                                             file_stub_info{
+                                                                filename,
                                                                 time(nullptr),
                                                                 um.move(),
                                                             });
@@ -555,6 +556,7 @@ file_collection::watch_logfile(const std::string& filename,
                         retval.fc_name_to_stubs->writeAccess()->emplace(
                             filename,
                             file_stub_info{
+                                filename,
                                 st.st_mtime,
                                 um.move(),
                             });
@@ -591,6 +593,7 @@ file_collection::watch_logfile(const std::string& filename,
                             retval.fc_name_to_stubs->writeAccess()->emplace(
                                 filename,
                                 file_stub_info{
+                                    filename,
                                     st.st_mtime,
                                     um.move(),
                                 });
@@ -627,6 +630,7 @@ file_collection::watch_logfile(const std::string& filename,
                                 fc.fc_name_to_stubs->writeAccess()->emplace(
                                     filename,
                                     file_stub_info{
+                                        filename,
                                         st.st_mtime,
                                         um.move(),
                                     });
@@ -652,6 +656,7 @@ file_collection::watch_logfile(const std::string& filename,
                         retval.fc_name_to_stubs->writeAccess()->emplace(
                             filename,
                             file_stub_info{
+                                filename,
                                 st.st_mtime,
                                 um.move(),
                             });
@@ -800,6 +805,7 @@ file_collection::expand_filename(
                                 retval.fc_name_to_stubs->writeAccess()->emplace(
                                     filename_key,
                                     file_stub_info{
+                                        filename_key,
                                         time(nullptr),
                                         um.move(),
                                     });
@@ -816,6 +822,7 @@ file_collection::expand_filename(
                                 retval.fc_name_to_stubs->writeAccess()->emplace(
                                     path_str,
                                     file_stub_info{
+                                        path_str,
                                         time(nullptr),
                                         um.move(),
                                     });

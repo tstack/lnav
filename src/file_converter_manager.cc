@@ -27,7 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -35,9 +37,12 @@
 
 #include <unistd.h>
 
+#include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "base/result.h"
 #include "config.h"
 #include "line_buffer.hh"
 #include "piper.looper.cfg.hh"
@@ -143,7 +148,7 @@ convert(const external_file_format& eff, const std::string& filename)
     });
     err_reader.detach();
 
-    log_info("started tshark %d to process file", child.in());
+    log_info("started converter %d to process file", child.in());
 
     return Ok(convert_result{
         std::move(child),

@@ -238,6 +238,12 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_bro_http.log.0
 
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -c ":close" \
+    -c ";SELECT * FROM bro_http_log WHERE log_level = 'error'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_bro_http.log.0
+
 run_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line > 100000' \
     -c ':switch-to-view db' \

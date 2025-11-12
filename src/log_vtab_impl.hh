@@ -358,15 +358,15 @@ protected:
 
 class log_format_vtab_impl : public log_vtab_impl {
 public:
-    log_format_vtab_impl(const log_format& format)
-        : log_vtab_impl(format.get_name()), lfvi_format(format)
+    log_format_vtab_impl(std::shared_ptr<const log_format> format)
+        : log_vtab_impl(format->get_name()), lfvi_format(format)
     {
     }
 
     virtual bool next(log_cursor& lc, logfile_sub_source& lss);
 
 protected:
-    const log_format& lfvi_format;
+    std::shared_ptr<const log_format> lfvi_format;
 };
 
 using sql_progress_callback_t = int (*)(const log_cursor&);

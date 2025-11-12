@@ -718,8 +718,7 @@ public:
                         0, host_cap.to_string());
                 }
             }
-            dst.emplace_back(
-                li.li_file_range.fr_offset, log_us, level, opid);
+            dst.emplace_back(li.li_file_range.fr_offset, log_us, level, opid);
             dst.back().set_opid(opid);
             return scan_match{2000};
         }
@@ -1006,14 +1005,15 @@ public:
 
     class bro_log_table : public log_format_vtab_impl {
     public:
-        explicit bro_log_table(const bro_log_format& format)
-            : log_format_vtab_impl(format), blt_format(format)
+        explicit bro_log_table(std::shared_ptr<const log_format> format)
+            : log_format_vtab_impl(format),
+              blt_format(dynamic_cast<const bro_log_format*>(format.get()))
         {
         }
 
         void get_columns(std::vector<vtab_column>& cols) const override
         {
-            for (const auto& fd : this->blt_format.blf_field_defs) {
+            for (const auto& fd : this->blt_format->blf_field_defs) {
                 auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
                     fd.fd_meta.lvm_kind);
 
@@ -1031,14 +1031,14 @@ public:
         {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
-            for (const auto& fd : this->blt_format.blf_field_defs) {
+            for (const auto& fd : this->blt_format->blf_field_defs) {
                 if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
                     keys_inout.emplace(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
 
-        const bro_log_format& blt_format;
+        const bro_log_format* blt_format;
     };
 
     static std::map<intern_string_t, std::shared_ptr<bro_log_table>>&
@@ -1060,7 +1060,7 @@ public:
         auto& tables = get_tables();
         const auto iter = tables.find(this->blf_format_name);
         if (iter == tables.end()) {
-            retval = std::make_shared<bro_log_table>(*this);
+            retval = std::make_shared<bro_log_table>(this->shared_from_this());
             tables[this->blf_format_name] = retval;
         }
 
@@ -1830,8 +1830,8 @@ public:
 
     class w3c_log_table : public log_format_vtab_impl {
     public:
-        explicit w3c_log_table(const w3c_log_format& format)
-            : log_format_vtab_impl(format), wlt_format(format)
+        explicit w3c_log_table(std::shared_ptr<const log_format> format)
+            : log_format_vtab_impl(format)
         {
         }
 
@@ -1855,7 +1855,7 @@ public:
             for (const auto& fs : get_known_struct_fields()) {
                 cols.emplace_back(fs.fs_struct_name.to_string());
             }
-        };
+        }
 
         void get_foreign_keys(
             std::unordered_set<std::string>& keys_inout) const override
@@ -1868,8 +1868,6 @@ public:
                 }
             }
         }
-
-        const w3c_log_format& wlt_format;
     };
 
     static std::map<intern_string_t, std::shared_ptr<w3c_log_table>>&
@@ -1891,7 +1889,7 @@ public:
         auto& tables = get_tables();
         const auto iter = tables.find(this->wlf_format_name);
         if (iter == tables.end()) {
-            retval = std::make_shared<w3c_log_table>(*this);
+            retval = std::make_shared<w3c_log_table>(this->shared_from_this());
             tables[this->wlf_format_name] = retval;
         }
 
@@ -1965,7 +1963,7 @@ public:
 
     class logfmt_log_table : public log_format_vtab_impl {
     public:
-        logfmt_log_table(const log_format& format)
+        logfmt_log_table(std::shared_ptr<const log_format> format)
             : log_format_vtab_impl(format)
         {
         }
@@ -1980,7 +1978,8 @@ public:
 
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override
     {
-        static auto retval = std::make_shared<logfmt_log_table>(*this);
+        static auto retval
+            = std::make_shared<logfmt_log_table>(this->shared_from_this());
 
         return retval;
     }

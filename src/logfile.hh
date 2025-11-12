@@ -138,10 +138,7 @@ public:
         return this->lf_filename_as_string;
     }
 
-    std::filesystem::path get_path_for_key() const
-    {
-        return this->lf_actual_path.value_or(this->lf_filename);
-    }
+    std::filesystem::path get_path_for_key() const;
 
     /** @return The filename as given in the constructor, excluding the path
      * prefix. */
@@ -156,6 +153,8 @@ public:
 
     /** @return The inode for this log file. */
     const struct stat& get_stat() const { return this->lf_stat; }
+
+    time_t get_origin_mtime() const;
 
     size_t get_longest_line_length() const { return this->lf_longest_line; }
 

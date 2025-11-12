@@ -145,7 +145,7 @@ filter_status_source::statusview_fields()
                 auto stub_map = fc.fc_name_to_stubs->readAccess();
 
                 for (const auto& stub : *stub_map) {
-                    switch (stub.second.fei_description.um_level) {
+                    switch (stub.second.fsi_description.um_level) {
                         case lnav::console::user_message::level::raw:
                         case lnav::console::user_message::level::ok:
                         case lnav::console::user_message::level::info:

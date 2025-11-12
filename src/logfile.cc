@@ -2128,6 +2128,17 @@ logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
     this->lf_index_generation += 1;
 }
 
+std::filesystem::path
+logfile::get_path_for_key() const
+{
+    if (this->lf_options.loo_temp_dev == 0 && this->lf_options.loo_temp_ino == 0
+        && this->lf_line_buffer.is_piper())
+    {
+        return this->lf_actual_path.value_or(this->lf_filename);
+    }
+    return this->lf_filename;
+}
+
 void
 logfile::set_filename(const std::string& filename)
 {
@@ -2137,6 +2148,19 @@ logfile::set_filename(const std::string& filename)
         std::filesystem::path p(filename);
         this->lf_basename = p.filename();
     }
+}
+
+time_t
+logfile::get_origin_mtime() const
+{
+    if (!this->is_valid_filename()) {
+        struct stat st;
+        if (lnav::filesystem::statp(this->lf_filename, &st) == 0) {
+            return st.st_mtime;
+        }
+    }
+
+    return this->lf_stat.st_mtime;
 }
 
 struct timeval

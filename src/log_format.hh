@@ -376,7 +376,7 @@ class log_vtab_impl;
 /**
  * Base class for implementations of log format parsers.
  */
-class log_format {
+class log_format : public std::enable_shared_from_this<log_format> {
 public:
     /**
      * @return The collection of builtin log formats.

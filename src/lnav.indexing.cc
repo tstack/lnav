@@ -308,10 +308,10 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             }
             auto stub_map
                 = lnav_data.ld_active_files.fc_name_to_stubs->writeAccess();
-
-            stub_map->emplace(lf->get_filename(),
+            stub_map->emplace(lf->get_path_for_key().string(),
                               file_stub_info{
-                                  lf->get_stat().st_mtime,
+                                  lf->get_filename_as_string(),
+                                  lf->get_origin_mtime(),
                                   um,
                               });
             reason = "out-of-range";
@@ -321,7 +321,11 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             reason = "closed";
         }
         if (reason != nullptr) {
-            log_info("%s file: %s", reason, lf->get_filename().c_str());
+            log_info(
+                "%s file: %s (%s)",
+                reason,
+                lf->get_filename().c_str(),
+                lf->get_actual_path().value_or(lf->get_filename()).c_str());
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             closed_files.emplace_back(lf);
