@@ -218,9 +218,15 @@ logfile::open(std::filesystem::path filename,
                     safe::WriteAccess<lnav::safe_file_options_hier>
                         options_hier(safe_options_hier);
 
-                    options_hier->foh_generation += 1;
                     auto& coll = options_hier->foh_path_to_collection["/"];
-                    coll.foc_pattern_to_options[lf->get_filename()] = fo;
+                    auto iter
+                        = coll.foc_pattern_to_options.find(lf->get_filename());
+                    if (iter == coll.foc_pattern_to_options.end()
+                        || !(iter->second == fo))
+                    {
+                        coll.foc_pattern_to_options[lf->get_filename()] = fo;
+                        options_hier->foh_generation += 1;
+                    }
                 }
             });
     }
@@ -265,7 +271,8 @@ logfile::file_options_have_changed()
         if (this->lf_file_options_generation == options_hier->foh_generation) {
             return false;
         }
-        log_info("checking new generation of file options: %zu -> %zu",
+        log_info("%s: checking new generation of file options: %zu -> %zu",
+                 this->lf_filename_as_string.c_str(),
                  this->lf_file_options_generation,
                  options_hier->foh_generation);
         auto new_options = options_hier->match(this->get_filename());
@@ -521,9 +528,10 @@ logfile::build_content_map()
     if (this->lf_options.loo_time_range.has_lower_bound()) {
         if (this->lf_options.loo_time_range.tr_begin > end_entry.cme_time) {
             retval = rebuild_result_t::NEW_ORDER;
-        } else if (this->lf_options.loo_time_range.tr_begin
-                   > this->lf_index.back()
-                         .get_time<std::chrono::microseconds>())
+        } else if (this->lf_index.empty()
+                   || this->lf_options.loo_time_range.tr_begin
+                       > this->lf_index.back()
+                             .get_time<std::chrono::microseconds>())
         {
             auto offset = full_size / 2;
             log_debug("%s: searching for lower bound %lld",
@@ -635,7 +643,7 @@ logfile::set_format_base_time(log_format* lf, const line_info& li)
 time_range
 logfile::get_content_time_range() const
 {
-    if (this->lf_format == nullptr) {
+    if (this->lf_format == nullptr || this->lf_index.empty()) {
         return {
             std::chrono::seconds{this->lf_stat.st_ctime},
             std::chrono::seconds{this->lf_stat.st_mtime},
