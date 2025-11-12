@@ -329,6 +329,9 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
     auto looping = true;
     do {
         std::optional<content_map_entry> lower_retval;
+        log_debug("  peeking range (off=%lld; size=%lld)",
+                  end_range.fr_offset,
+                  end_range.fr_size);
         auto peek_res = this->lf_line_buffer.peek_range(end_range);
         if (!peek_res.isOk()) {
             log_error("%s: peek failed -- %s",
@@ -352,7 +355,9 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             if (!rsplit_res) {
                 log_trace("%s: did not peek enough to find last line",
                           this->lf_filename_as_string.c_str());
-                if (req.is<map_read_upper_bound>()) {
+                if (req.is<map_read_upper_bound>()
+                    && peek_sf.length() == peek_buf.size())
+                {
                     if (end_range.fr_offset < LOOKBACK_SIZE) {
                         return map_entry_not_found{};
                     }
@@ -423,30 +428,40 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             peek_sf = leading;
         }
 
-        log_trace("%s: no messages found in peak, going back further",
+        log_trace("%s: no messages found in peek, going back further",
                   this->lf_filename_as_string.c_str());
         if (end_range.fr_offset < LOOKBACK_SIZE) {
             return map_entry_not_found{};
         }
-        req.match([](map_read_upper_bound& m) {},
-                  [&](map_read_lower_bound& m) {
-                      if (lower_retval) {
-                          upper_offset = end_range.fr_offset;
-                          end_range.fr_offset
-                              -= (upper_offset - lower_offset) / 2;
-                          log_debug("first half %llu", end_range.fr_offset);
-                      } else if (end_range.next_offset() < full_size) {
-                          lower_offset = end_range.fr_offset;
-                          end_range.fr_offset
-                              += (upper_offset - end_range.fr_offset) / 2;
-                          log_debug("2nd half %llu", end_range.fr_offset);
-                      } else {
-                          looping = false;
-                      }
-                      if (end_range.next_offset() > full_size) {
-                          end_range.fr_offset = full_size - end_range.fr_size;
-                      }
-                  });
+        req.match(
+            [&](map_read_upper_bound& m) {
+                if (end_range.fr_offset < end_range.fr_size
+                    || (full_size - end_range.fr_offset) >= MAX_LOOKBACK_SIZE)
+                {
+                    looping = false;
+                } else {
+                    // look further back
+                    end_range.fr_offset += end_range.fr_offset + peek_sf.sf_end
+                        + 1 - end_range.fr_size;
+                }
+            },
+            [&](map_read_lower_bound& m) {
+                if (lower_retval) {
+                    upper_offset = end_range.fr_offset;
+                    end_range.fr_offset -= (upper_offset - lower_offset) / 2;
+                    log_debug("first half %llu", end_range.fr_offset);
+                } else if (end_range.next_offset() < full_size) {
+                    lower_offset = end_range.fr_offset;
+                    end_range.fr_offset
+                        += (upper_offset - end_range.fr_offset) / 2;
+                    log_debug("2nd half %llu", end_range.fr_offset);
+                } else {
+                    looping = false;
+                }
+                if (end_range.next_offset() > full_size) {
+                    end_range.fr_offset = full_size - end_range.fr_size;
+                }
+            });
     } while (looping);
 
     return map_entry_not_found{};
@@ -465,7 +480,9 @@ logfile::build_content_map()
     this->lf_file_size_at_map_time = this->lf_index_size;
 
     auto full_size = this->get_content_size();
-
+    log_info("%s: finding content layout (full_size=%lld)",
+             this->lf_filename_as_string.c_str(),
+             full_size);
     if (this->lf_options.loo_time_range.has_lower_bound()
         && this->lf_options.loo_time_range.tr_begin
             > this->lf_index.front().get_time<std::chrono::microseconds>()
