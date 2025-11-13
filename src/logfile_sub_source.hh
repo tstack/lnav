@@ -409,7 +409,11 @@ public:
         return this->lss_index[this->lss_filtered_index[vl]].value();
     }
 
-    size_t get_filtered_before() const { return this->lss_filtered_index[0]; }
+    size_t get_filtered_before() const
+    {
+        return this->lss_filtered_index.empty() ? 0
+                                                : this->lss_filtered_index[0];
+    }
 
     size_t get_filtered_after() const
     {

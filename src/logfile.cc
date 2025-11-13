@@ -350,14 +350,13 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             }
             peek_sf.pop_back();
         }
+        auto found_line = false;
         while (!peek_sf.empty()) {
             auto rsplit_res = peek_sf.rsplit_pair(string_fragment::tag1{'\n'});
             if (!rsplit_res) {
                 log_trace("%s: did not peek enough to find last line",
                           this->lf_filename_as_string.c_str());
-                if (req.is<map_read_upper_bound>()
-                    && peek_sf.length() == peek_buf.size())
-                {
+                if (!found_line && req.is<map_read_upper_bound>()) {
                     if (end_range.fr_offset < LOOKBACK_SIZE) {
                         return map_entry_not_found{};
                     }
@@ -373,6 +372,7 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
                 break;
             }
 
+            found_line = true;
             auto [leading, last_line] = rsplit_res.value();
             // log_debug("leading %d", leading.length());
             // log_debug("last %.*s", last_line.length(), last_line.data());
@@ -449,12 +449,10 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
                 if (lower_retval) {
                     upper_offset = end_range.fr_offset;
                     end_range.fr_offset -= (upper_offset - lower_offset) / 2;
-                    log_debug("first half %llu", end_range.fr_offset);
                 } else if (end_range.next_offset() < full_size) {
                     lower_offset = end_range.fr_offset;
                     end_range.fr_offset
                         += (upper_offset - end_range.fr_offset) / 2;
-                    log_debug("2nd half %llu", end_range.fr_offset);
                 } else {
                     looping = false;
                 }
