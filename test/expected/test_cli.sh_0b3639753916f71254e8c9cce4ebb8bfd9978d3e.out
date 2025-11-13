@@ -7730,7 +7730,7 @@
             }
         },
         "mouse": {
-            "mode": "disabled"
+            "mode": "enabled"
         },
         "movement": {
             "mode": "cursor"

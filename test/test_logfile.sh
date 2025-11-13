@@ -781,3 +781,11 @@ run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.0
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.1
 
 run_cap_test ${lnav_test} -n ${test_dir}/\#with
+
+run_cap_test ${lnav_test} -n \
+    -S "2011-11-03 00:19:26.831473" \
+    ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -n \
+    -S "2023-03-24T14:26:17" \
+    ${test_dir}/logfile_bunyan.0

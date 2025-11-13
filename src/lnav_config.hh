@@ -115,7 +115,7 @@ struct _lnav_config {
     std::string lc_ui_keymap;
     std::string lc_ui_theme;
     movement_config lc_ui_movement;
-    lnav_mouse_mode lc_mouse_mode;
+    lnav_mouse_mode lc_mouse_mode{lnav_mouse_mode::disabled};
     std::map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
     std::map<std::string, std::string> lc_global_vars;

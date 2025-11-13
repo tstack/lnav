@@ -1,0 +1,25 @@
+2023-03-24T14:26:17.493Z renovate[7] DEBUG    Release 2.8.7 is pending status checks
+  logContext: qjifsaDDI
+  repository: webgui/custom-icons-transformer
+  depName: prettier
+  check: stabilityDays
+2023-03-24T14:26:17.897Z renovate[7] DEBUG    Release 4.4.1 is pending status checks
+  logContext: qjifsaDDI
+  repository: webgui/custom-icons-transformer
+  depName: rimraf
+  check: stabilityDays
+2023-03-24T14:26:17.897Z renovate[7] DEBUG    All releases are pending - using latest
+  logContext: qjifsaDDI
+  repository: webgui/custom-icons-transformer
+  depName: rimraf
+  bucket: non-major
+2023-03-24T14:26:18.330Z renovate[7] DEBUG    Release 2.10.0 is pending status checks
+  logContext: qjifsaDDI
+  repository: webgui/custom-icons-transformer
+  depName: prettier-plugin-svelte
+  check: stabilityDays
+2023-03-24T14:26:18.331Z renovate[7] DEBUG    All releases are pending - using latest
+  logContext: qjifsaDDI
+  repository: webgui/custom-icons-transformer
+  depName: prettier-plugin-svelte
+  bucket: non-major

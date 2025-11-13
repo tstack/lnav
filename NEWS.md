@@ -172,6 +172,7 @@ Breaking changes:
   search-table was added to the `syslog_log` format.
 
 Interface changes:
+* Mouse mode is now enabled by default.
 * The TIMELINE view header has been redesigned to be
   one line that shows the time increments at the
   current scale.  This approach should more clearly
