@@ -84,3 +84,11 @@ run_cap_test ${lnav_test} -m \
 run_cap_test ${lnav_test} -m \
     -I ${test_dir} \
     format test_log test ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -nN \
+    -S "30m ago" \
+    -U "40m ago"
+
+run_cap_test ${lnav_test} -nN -S "abc"
+
+run_cap_test ${lnav_test} -nN -S "2020-01-01abc"

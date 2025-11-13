@@ -11,6 +11,16 @@ Features:
   maximum time.  Live preview has also been added to
   show which lines will be filtered out when the min/max
   is applied.
+* The `-S`/`--since` and `-U`/`--until` flags have been
+  added to limit how much of a log file is indexed.
+  Supported values are relative (e.g. "yesterday",
+  "30 min ago") or absolute local times ("2020-01-01").
+  The values on the main command-line set the defaults
+  for all values that are opened.  The `:open` command
+  supports the same options to change the values from
+  the default for a particular file.  Files with
+  content that lie completely outside of the cutoff
+  will be closed to reduce resource usage.
 * The "Files" panel now shows a progress bar for each
   file as it is being indexed and finishes with a
   check-mark if indexing was successful, a warning

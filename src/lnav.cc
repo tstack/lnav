@@ -541,6 +541,19 @@ make it easier to navigate through files quickly.
         .append("         ")
         .append("Print version information.\n")
         .append("\n")
+
+        .append("  ")
+        .append("-S"_symbol)
+        .append(",")
+        .append("--since"_symbol)
+        .append(" ")
+        .append("Only index log content since this time.\n")
+        .append("  ")
+        .append("-U"_symbol)
+        .append(",")
+        .append("--until"_symbol)
+        .append(" ")
+        .append("Only index log content until this time.\n")
         .append("  ")
         .append("-r"_symbol)
         .append("         ")
@@ -3716,6 +3729,32 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             lnav_data.ld_default_time_range.tr_end
                 = to_us(from_res.unwrap().get_point());
+        }
+
+        if (lnav_data.ld_default_time_range.tr_end
+            < lnav_data.ld_default_time_range.tr_begin)
+        {
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("The low time cutoff ")
+                          .append_quoted(lnav::roles::symbol(since_time))
+                          .append(" is not less than the high time cutoff ")
+                          .append_quoted(lnav::roles::symbol(until_time)))
+                      .with_note(attr_line_t("The resolved low time is ")
+                                     .append_quoted(lnav::roles::symbol(
+                                         lnav::to_rfc3339_string(
+                                             lnav_data.ld_default_time_range
+                                                 .tr_begin))))
+                      .with_note(
+                          attr_line_t("The resolved high time is ")
+                              .append_quoted(
+                                  lnav::roles::symbol(lnav::to_rfc3339_string(
+                                      lnav_data.ld_default_time_range.tr_end))))
+                      .with_help(
+                          "Ensure that the low time cutoff is less than "
+                          "the high time cutoff.");
+            lnav::console::print(stderr, um);
+            return EXIT_FAILURE;
         }
     }
 

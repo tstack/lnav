@@ -6,6 +6,8 @@ dist_noinst_DATA = \
     test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.out \
     test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.err \
     test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.out \
+    test_cli.sh_0d8077e96c0cf8889cee3219a7cb07e82b23bb4e.err \
+    test_cli.sh_0d8077e96c0cf8889cee3219a7cb07e82b23bb4e.out \
     test_cli.sh_10c33e465ef7681c6b5519d05d557426b26cd43d.err \
     test_cli.sh_10c33e465ef7681c6b5519d05d557426b26cd43d.out \
     test_cli.sh_1507a515f62dfc9ad0af85decadbd7921be9b96d.err \
@@ -18,6 +20,8 @@ dist_noinst_DATA = \
     test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.out \
     test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.err \
     test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.out \
+    test_cli.sh_4a90f3241f857801474a1ae522c6c6a452e33e5a.err \
+    test_cli.sh_4a90f3241f857801474a1ae522c6c6a452e33e5a.out \
     test_cli.sh_4b7e1d207a7094b0d13152cb469848bd0fae08f3.err \
     test_cli.sh_4b7e1d207a7094b0d13152cb469848bd0fae08f3.out \
     test_cli.sh_5381ebb34f10dc3dc26a6f92aff199c16c3b8a5b.err \
@@ -28,6 +32,8 @@ dist_noinst_DATA = \
     test_cli.sh_5a08fb5360e41bc1a880c04112af35604d3eaea0.out \
     test_cli.sh_64555477e8795379ae33a3dbca8113cf7111ff2b.err \
     test_cli.sh_64555477e8795379ae33a3dbca8113cf7111ff2b.out \
+    test_cli.sh_6d8527ea7806e393f848e29abed8c45acc7be2d2.err \
+    test_cli.sh_6d8527ea7806e393f848e29abed8c45acc7be2d2.out \
     test_cli.sh_712cb8b623e9230d97008a8b7d06df1ea76c37af.err \
     test_cli.sh_712cb8b623e9230d97008a8b7d06df1ea76c37af.out \
     test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.err \

@@ -34,6 +34,22 @@ Options
    exit.  This option can be helpful for validating that a log format is
    well-formed.
 
+.. option:: -S <relative-time/absolute-local-time>
+
+    Only index log content since the given time.  The time can be relative
+    (e.g. "2pm yesterday", "30 min ago") or an absolute time
+    (e.g. "2020-01-02T03:04:05").  If the log content lies completely outside
+    of this time cutoff, the file will be closed out to reduce resource
+    usage.
+
+.. option:: -U <relative-time/absolute-local-time>
+
+    Only index log content until the given time.  The time can be relative
+    (e.g. "2pm yesterday", "30 min ago") or an absolute time
+    (e.g. "2020-01-02T03:04:05").  If the log content lies completely outside
+    of this time cutoff, the file will be closed out to reduce resource
+    usage.
+
 .. option:: -c <command>
 
    Execute the given lnav command, SQL query, or lnav script.  The

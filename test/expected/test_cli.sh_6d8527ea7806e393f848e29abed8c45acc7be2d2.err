@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: The low time cutoff “[1m30m ago[0m” is not less than the high time cutoff “[1m40m ago[0m”
+[36m =[0m [36mnote[0m: The resolved low time is “[1m2013-06-06 18:43:00.000000[0m”
+[36m =[0m [36mnote[0m: The resolved high time is “[1m2013-06-06 18:33:00.000000[0m”
+[36m =[0m [36mhelp[0m: Ensure that the low time cutoff is less than the high time cutoff.

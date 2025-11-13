@@ -1374,13 +1374,15 @@ For support questions, email:
   [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
   [1m:prev-section[0m, [1m:relative-goto[0m
 
-[4m:[0m[1m[4mopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+[4m:[0m[1m[4mopen[0m[4m [[0m[4m--since[0m[4m] [[0m[4m--until[0m[4m] [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Open the given file(s) in lnav.  Opening files on machines
   accessible via SSH can be done using the syntax:
   [user@]host:/path/to/logs
-[4mParameter[0m
-  [4mpath[0m   The path to the file to open
+[4mParameters[0m
+  [4m--since[0m   The low cutoff time
+  [4m--until[0m   The high cutoff time
+  [4mpath[0m      The path to the file to open
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:close[0m, [1m:echo[0m, [1m:export-session-to[0m, 
   [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 

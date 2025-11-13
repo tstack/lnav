@@ -39,6 +39,7 @@
 #include "base/itertools.hh"
 #include "base/paths.hh"
 #include "bound_tags.hh"
+#include "CLI/CLI.hpp"
 #include "curl_looper.hh"
 #include "external_opener.hh"
 #include "field_overlay_source.hh"
@@ -1041,7 +1042,38 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
     loo.with_time_range(lnav_data.ld_default_time_range);
 
-    for (auto fn : split_args) {
+    CLI::App app{"open"};
+    std::vector<std::string> file_args;
+    std::string since_time;
+    std::string until_time;
+
+    app.add_option("-S,--since", since_time, "start time for the log");
+    app.add_option("-U,--until", until_time, "end time for the log");
+    app.add_option("file", file_args, "files to open");
+    app.parse(split_args);
+
+    if (!since_time.empty()) {
+        auto from_res = humanize::time::point::from(since_time);
+        if (from_res.isErr()) {
+            auto um = from_res.unwrapErr();
+            um.um_message = attr_line_t("invalid 'since' time ")
+                                .append_quoted(since_time);
+            return Err(um);
+        }
+        loo.loo_time_range.tr_begin = to_us(from_res.unwrap().get_point());
+    }
+    if (!until_time.empty()) {
+        auto from_res = humanize::time::point::from(until_time);
+        if (from_res.isErr()) {
+            auto um = from_res.unwrapErr();
+            um.um_message = attr_line_t("invalid 'until' time ")
+                                .append_quoted(until_time);
+            return Err(um);
+        }
+        loo.loo_time_range.tr_end = to_us(from_res.unwrap().get_point());
+    }
+
+    for (auto fn : file_args) {
         std::replace(fn.begin(), fn.end(), '\\', '/');
         auto fn_path = std::filesystem::path{fn};
         auto file_loc = file_location_t{default_for_text_format{}};
@@ -2146,6 +2178,12 @@ static readline_context::command_t IO_COMMANDS[] = {
                           "machines "
                           "accessible via SSH can be done using the syntax: "
                           "[user@]host:/path/to/logs")
+            .with_parameter(help_text{"--since", "The low cutoff time"}
+                                .with_format(help_parameter_format_t::HPF_TEXT)
+                                .optional())
+            .with_parameter(help_text{"--until", "The high cutoff time"}
+                                .with_format(help_parameter_format_t::HPF_TEXT)
+                                .optional())
             .with_parameter(
                 help_text{"path", "The path to the file to open"}
                     .with_format(help_parameter_format_t::HPF_FILENAME)

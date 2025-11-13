@@ -17,6 +17,8 @@ make it easier to navigate through files quickly.
   [1m-d[0m [4mfile[0m    Write debug messages to the given file.
   [1m-V[0m         Print version information.
 
+  [1m-S[0m,[1m--since[0m Only index log content since this time.
+  [1m-U[0m,[1m--until[0m Only index log content until this time.
   [1m-r[0m         Recursively load files from the given directory hierarchies.
   [1m-R[0m         Load older rotated log files as well.
   [1m-c[0m [4mcmd[0m     Execute a command after the files have been loaded.

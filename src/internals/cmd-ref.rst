@@ -1022,12 +1022,14 @@
 
 .. _open:
 
-:open *path*
-^^^^^^^^^^^^
+:open *\[--since\]* *\[--until\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Open the given file(s) in lnav.  Opening files on machines accessible via SSH can be done using the syntax: [user@]host:/path/to/logs
 
   **Parameters**
+    * **--since** --- The low cutoff time
+    * **--until** --- The high cutoff time
     * **path** --- The path to the file to open
 
   **Examples**
