@@ -99,7 +99,7 @@ public:
         gz_indexed(gz_indexed&& other) = default;
         ~gz_indexed() { this->close(); }
 
-        inline operator bool() const { return this->gz_fd != -1; }
+        operator bool() const { return this->gz_fd != -1; }
 
         uLong get_source_offset() const
         {
@@ -148,6 +148,11 @@ public:
     void set_do_preloading(bool value) { this->lb_do_preloading = value; }
 
     bool get_do_preloading() const { return this->lb_do_preloading; }
+
+    bool set_decompress_extra(bool value)
+    {
+        return this->lb_decompress_extra = value;
+    }
 
     /** @param fd The file descriptor that data should be pulled from. */
     void set_fd(auto_fd& fd);
@@ -388,6 +393,7 @@ private:
     time_t lb_file_time{0};
     bool lb_seekable{false}; /*< Flag set for seekable file descriptors. */
     bool lb_compressed{false};
+    bool lb_decompress_extra{false};
     bool lb_is_utf8{true};
     bool lb_do_preloading{false};
     file_off_t lb_last_line_offset{-1}; /*< */

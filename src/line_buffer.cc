@@ -471,7 +471,9 @@ line_buffer::set_fd(auto_fd& fd)
                     if (!hdr.empty()) {
                         this->lb_header = std::move(hdr);
                     }
-                    this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
+                    if (this->lb_decompress_extra) {
+                        this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
+                    }
                 }
 #ifdef HAVE_BZLIB_H
                 else if (gz_id[0] == 'B' && gz_id[1] == 'Z')
@@ -486,7 +488,9 @@ line_buffer::set_fd(auto_fd& fd)
                      * Loading data from a bzip2 file is pretty slow, so we try
                      * to keep as much in memory as possible.
                      */
-                    this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
+                    if (this->lb_decompress_extra) {
+                        this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
+                    }
 
                     this->lb_compressed_offset = 0;
                 }
@@ -1038,7 +1042,9 @@ line_buffer::fill_range(file_off_t start,
                      * For compressed files, increase the buffer size so we
                      * don't have to spend as much time uncompressing the data.
                      */
-                    this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+                    if (this->lb_decompress_extra) {
+                        this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+                    }
                 }
                 break;
 
@@ -1298,6 +1304,9 @@ line_buffer::load_next_line(file_range prev_line)
 
             offset += retval.li_file_range.fr_size;
 
+            done = true;
+        } else if (!retval.li_utf8_scan_result.is_valid()) {
+            retval.li_partial = true;
             done = true;
         } else {
             if (!this->is_pipe() || !this->is_pipe_closed()) {

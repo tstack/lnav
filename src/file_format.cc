@@ -44,6 +44,8 @@
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
+    // static auto op = lnav_operation{"detect_file_format"};
+    // auto op_guard = lnav_opid_guard::internal(op);
     log_trace("detecting format of file: %s", filename.c_str());
 
     detect_file_format_result retval = {file_format_t::UNKNOWN};

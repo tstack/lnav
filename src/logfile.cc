@@ -247,6 +247,7 @@ logfile::logfile(std::filesystem::path filename,
     : lf_filename(std::move(filename)),
       lf_filename_as_string(lf_filename.string()), lf_options(loo)
 {
+    this->lf_line_buffer.set_decompress_extra(true);
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
     this->lf_thread_ids.writeAccess()->ltis_tid_ranges.reserve(64);
 }
@@ -1092,6 +1093,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
     static const auto& dts_cfg
         = injector::get<const date_time_scanner_ns::config&>();
+
+    static auto op = lnav_operation{"rebuild_file_index"};
+    auto op_guard = lnav_opid_guard::internal(op);
 
     if (!this->lf_invalidated_opids.empty()) {
         auto writeOpids = this->lf_opids.writeAccess();

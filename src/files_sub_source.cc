@@ -521,10 +521,6 @@ files_sub_source::text_update_marks(vis_bookmarks& bm)
         }
         index += 1_vl;
     }
-
-    log_debug("files bookmarks errors=%zu; warnings=%zu",
-              bm_errs.size(),
-              bm_warn.size());
 }
 
 void
