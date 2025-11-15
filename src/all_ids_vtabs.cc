@@ -51,6 +51,7 @@ CREATE TABLE all_opids (
     opid TEXT PRIMARY KEY,  -- The operation ID
     earliest DATETIME,      -- The earliest time this ID was seen
     latest DATETIME,        -- The latest time this ID was seen
+    duration INTEGER,       -- The amount of time between earliest and latest in microseconds
     errors INTEGER,         -- The number of error messages associated with this ID
     warnings INTEGER,       -- The number of warning messages associated with this ID
     total INTEGER,          -- The total number of messages associated with this ID
@@ -161,21 +162,26 @@ CREATE TABLE all_opids (
             }
             case 3: {
                 to_sqlite(ctx,
-                          vc.c_iter->otp_range.otr_level_stats.lls_error_count);
+                          vc.c_iter->otp_range.otr_range.duration().count());
                 break;
             }
             case 4: {
+                to_sqlite(ctx,
+                          vc.c_iter->otp_range.otr_level_stats.lls_error_count);
+                break;
+            }
+            case 5: {
                 to_sqlite(
                     ctx,
                     vc.c_iter->otp_range.otr_level_stats.lls_warning_count);
                 break;
             }
-            case 5: {
+            case 6: {
                 to_sqlite(ctx,
                           vc.c_iter->otp_range.otr_level_stats.lls_total_count);
                 break;
             }
-            case 6: {
+            case 7: {
                 if (vc.c_iter->otp_description.empty()) {
                     sqlite3_result_null(ctx);
                 } else {
@@ -207,6 +213,7 @@ CREATE TABLE all_opids (
                    string_fragment opid,
                    string_fragment earliest,
                    string_fragment latest,
+                   int64_t duration,
                    int64_t errors,
                    int64_t warnings,
                    int64_t total,
@@ -230,6 +237,7 @@ CREATE TABLE all_thread_ids (
     thread_id TEXT PRIMARY KEY,  -- The thread ID
     earliest DATETIME,           -- The earliest time this ID was seen
     latest DATETIME,             -- The latest time this ID was seen
+    duration INTEGER,            -- The amount of time between earliest and latest in microseconds
     errors INTEGER,              -- The number of error messages associated with this ID
     warnings INTEGER,            -- The number of warning messages associated with this ID
     total INTEGER                -- The total number of messages associated with this ID
@@ -323,18 +331,23 @@ CREATE TABLE all_thread_ids (
                 break;
             }
             case 3: {
-                to_sqlite(
-                    ctx,
-                    vc.c_iter->titp_range.titr_level_stats.lls_error_count);
+                to_sqlite(ctx,
+                          vc.c_iter->titp_range.titr_range.duration().count());
                 break;
             }
             case 4: {
                 to_sqlite(
                     ctx,
-                    vc.c_iter->titp_range.titr_level_stats.lls_warning_count);
+                    vc.c_iter->titp_range.titr_level_stats.lls_error_count);
                 break;
             }
             case 5: {
+                to_sqlite(
+                    ctx,
+                    vc.c_iter->titp_range.titr_level_stats.lls_warning_count);
+                break;
+            }
+            case 6: {
                 to_sqlite(
                     ctx,
                     vc.c_iter->titp_range.titr_level_stats.lls_total_count);

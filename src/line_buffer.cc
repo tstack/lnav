@@ -623,13 +623,19 @@ line_buffer::ensure_available(file_off_t start,
 bool
 line_buffer::load_next_buffer()
 {
+    static auto op = lnav_operation{"load_next_buffer"};
+    auto op_guard = lnav_opid_guard::internal(op);
+
     // log_debug("loader here!");
     auto retval = false;
-    auto start = this->lb_loader_file_offset.value();
+    const auto start = this->lb_loader_file_offset.value();
     ssize_t rc = 0;
     safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
 
-    // log_debug("BEGIN preload read");
+    log_debug("BEGIN fd(%d) preload read of %zu at %lld",
+              this->lb_fd.get(),
+              this->lb_alt_buffer.value().available(),
+              start + this->lb_alt_buffer->size());
     /* ... read in the new data. */
     if (!this->lb_cached_fd && *gi) {
         if (this->lb_file_size != (ssize_t) -1 && this->in_range(start)
@@ -775,6 +781,11 @@ line_buffer::load_next_buffer()
 
     if (start > this->lb_last_line_offset) {
         const auto* line_start = this->lb_alt_buffer.value().begin();
+        if (this->lb_line_metadata && start == 0
+            && this->lb_alt_buffer->size() > this->lb_piper_header_size)
+        {
+            line_start += this->lb_piper_header_size;
+        }
 
         do {
             auto before = line_start - this->lb_alt_buffer->begin();
@@ -791,6 +802,7 @@ line_buffer::load_next_buffer()
         } while (line_start != nullptr
                  && line_start < this->lb_alt_buffer->end());
     }
+    log_debug("END preload read");
 
     return retval;
 }
@@ -800,13 +812,14 @@ line_buffer::fill_range(file_off_t start,
                         ssize_t max_length,
                         scan_direction dir)
 {
-    bool retval = false;
+    auto retval = false;
+    auto got_preload = false;
 
     require(start >= 0);
 
-#if 0
-    log_debug("(%p) fill range %d %d (%d) %d",
-              this,
+#if 1
+    log_debug("BEGIN (%d) fill range %lld %zu (%lld) %zd",
+              this->lb_fd.get(),
               start,
               max_length,
               this->lb_file_offset,
@@ -815,8 +828,9 @@ line_buffer::fill_range(file_off_t start,
     if (!lnav::pid::in_child && this->lb_loader_future.valid()
         && start >= this->lb_loader_file_offset.value())
     {
-#if 0
-        log_debug("getting preload! %d %d",
+#if 1
+        log_debug("fd(%d) getting preload! %d %d",
+                  this->lb_fd.get(),
                   start,
                   this->lb_loader_file_offset.value());
 #endif
@@ -848,10 +862,13 @@ line_buffer::fill_range(file_off_t start,
         this->lb_stats.s_used_preloads += 1;
         this->lb_next_line_start_index = 0;
         this->lb_next_buffer_offset = 0;
+        got_preload = true;
     }
     if (this->in_range(start)
-        && (max_length == 0 || this->in_range(start + max_length - 1)))
+        && (got_preload || max_length == 0
+            || this->in_range(start + max_length - 1)))
     {
+        log_debug("fd(%d) cached!", this->lb_fd.get());
         /* Cache already has the data, nothing to do. */
         retval = true;
         if (this->lb_do_preloading && !lnav::pid::in_child && this->lb_seekable
@@ -893,6 +910,7 @@ line_buffer::fill_range(file_off_t start,
     } else if (this->lb_fd != -1) {
         ssize_t rc;
 
+        log_debug("fd(%d) doing read", this->lb_fd.get());
         /* Make sure there is enough space, then */
         this->ensure_available(start, max_length, dir);
 
@@ -1113,6 +1131,7 @@ line_buffer::fill_range(file_off_t start,
         }
         ensure(this->lb_buffer.size() <= this->lb_buffer.capacity());
     }
+    log_debug("END fill_range");
 
     return retval;
 }
@@ -1205,8 +1224,7 @@ line_buffer::load_next_line(file_range prev_line)
                 if (start_iter != this->lb_line_starts.end()) {
                     auto next_line_iter = start_iter + 1;
 
-                    // log_debug("found offset %d %d", buffer_offset,
-                    // *start_iter);
+                    // log_debug("found offset %d %d", buffer_offset, *start_iter);
                     if (next_line_iter != this->lb_line_starts.end()) {
                         auto start_index = std::distance(
                             this->lb_line_starts.begin(), start_iter);
@@ -1399,7 +1417,7 @@ line_buffer::read_range(file_range fr, scan_direction dir)
             FMT_STRING("short-read (need: {}; avail: {})"), fr.fr_size, avail));
     }
     if (this->lb_line_metadata) {
-        auto new_start
+        const auto* new_start
             = static_cast<const char*>(memchr(line_start, ';', fr.fr_size));
         if (new_start) {
             auto offset = new_start - line_start + 1;

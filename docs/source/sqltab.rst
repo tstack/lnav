@@ -21,6 +21,8 @@ the following tables/views:
 * `lnav_view_filters_and_stats`_
 * `lnav_top_view`_
 * `all_logs`_
+* `all_opids`_
+* `all_thread_ids`_
 * `lnav_focused_msg`_
 * `http_status_codes`_
 * `regexp_capture(<string>, <regex>)`_
