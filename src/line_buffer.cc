@@ -709,6 +709,9 @@ line_buffer::load_next_buffer()
                 count = BZ2_bzread(bz_file,
                                    scratch,
                                    std::min((size_t) seek_to, sizeof(scratch)));
+                if (count <= 0) {
+                    break;
+                }
                 seek_to -= count;
             }
             rc = BZ2_bzread(bz_file,
@@ -1224,7 +1227,8 @@ line_buffer::load_next_line(file_range prev_line)
                 if (start_iter != this->lb_line_starts.end()) {
                     auto next_line_iter = start_iter + 1;
 
-                    // log_debug("found offset %d %d", buffer_offset, *start_iter);
+                    // log_debug("found offset %d %d", buffer_offset,
+                    // *start_iter);
                     if (next_line_iter != this->lb_line_starts.end()) {
                         auto start_index = std::distance(
                             this->lb_line_starts.begin(), start_iter);
@@ -1432,7 +1436,8 @@ line_buffer::read_range(file_range fr, scan_direction dir)
 }
 
 Result<auto_buffer, std::string>
-line_buffer::peek_range(file_range fr)
+line_buffer::peek_range(file_range fr,
+                        lnav::enums::bitset<peek_options> options)
 {
     static const std::string SHORT_READ_MSG = "short read";
 
@@ -1448,7 +1453,9 @@ line_buffer::peek_range(file_range fr)
         if (rc == -1) {
             return Err(lnav::from_errno().message());
         }
-        if (rc != fr.fr_size) {
+        if (!options.is_set<peek_options::allow_short_read>()
+            && rc != fr.fr_size)
+        {
             return Err(SHORT_READ_MSG);
         }
         buf.resize(rc);
@@ -1466,7 +1473,13 @@ line_buffer::peek_range(file_range fr)
                 return Err(lnav::from_errno().message());
             }
             if (rc != fr.fr_size) {
-                return Err(SHORT_READ_MSG);
+                this->lb_file_size = gi->strm.total_out;
+                log_info("fd(%d): set file size to %llu",
+                         this->lb_fd.get(),
+                         this->lb_file_size);
+                if (!options.is_set<peek_options::allow_short_read>()) {
+                    return Err(SHORT_READ_MSG);
+                }
             }
             buf.resize(rc);
             return Ok(std::move(buf));
@@ -1503,6 +1516,9 @@ line_buffer::peek_range(file_range fr)
                 count = BZ2_bzread(bz_file,
                                    scratch,
                                    std::min((size_t) seek_to, sizeof(scratch)));
+                if (count <= 0) {
+                    break;
+                }
                 seek_to -= count;
             }
             auto rc = BZ2_bzread(bz_file, buf.data(), fr.fr_size);
@@ -1513,7 +1529,14 @@ line_buffer::peek_range(file_range fr)
                 return Err(lnav::from_errno().message());
             }
             if (rc != fr.fr_size) {
-                return Err(SHORT_READ_MSG);
+                if (options.is_set<peek_options::allow_short_read>()) {
+                    this->lb_file_size = fr.fr_offset + fr.fr_size;
+                    log_info("fd(%d): set file size to %llu",
+                             this->lb_fd.get(),
+                             this->lb_file_size);
+                } else {
+                    return Err(SHORT_READ_MSG);
+                }
             }
             buf.resize(rc);
             return Ok(std::move(buf));
@@ -1524,7 +1547,7 @@ line_buffer::peek_range(file_range fr)
     if (rc == -1) {
         return Err(lnav::from_errno().message());
     }
-    if (rc != fr.fr_size) {
+    if (!options.is_set<peek_options::allow_short_read>() && rc != fr.fr_size) {
         return Err(SHORT_READ_MSG);
     }
     buf.resize(rc);

@@ -482,16 +482,112 @@ logfile::build_content_map()
     static auto op = lnav_operation{"build_content_map"};
 
     auto op_guard = lnav_opid_guard::internal(op);
+
+    log_info("%s: trying to build content map",
+             this->lf_filename_as_string.c_str());
+    if (this->lf_line_buffer.is_compressed()) {
+        auto skip_size = file_off_t{512 * 1024};
+        auto read_size = file_ssize_t{64 * 1024};
+        pattern_locks line_locks;
+        scan_batch_context sbc_tmp{
+            this->lf_allocator,
+            line_locks,
+        };
+
+        auto peek_range = file_range{
+            0,
+            read_size,
+        };
+        while (true) {
+            auto last_peek = peek_range;
+            peek_range.fr_offset += skip_size;
+            log_debug("  content map peek %lld:%lld",
+                      peek_range.fr_offset,
+                      peek_range.fr_size);
+            auto peek_res = this->lf_line_buffer.peek_range(
+                peek_range,
+                {
+                    line_buffer::peek_options::allow_short_read,
+                });
+            if (peek_res.isErr()) {
+                log_error("  content map peek failed -- %s",
+                          peek_res.unwrapErr().c_str());
+                break;
+            }
+
+            auto buf = peek_res.unwrap();
+            if (buf.empty()) {
+                log_info("file size %lld",
+                         this->lf_line_buffer.get_file_size());
+                if (this->lf_line_buffer.get_file_size() == -1) {
+                    log_info("skipped past end, reversing");
+                    skip_size = peek_range.fr_size;
+                    peek_range = last_peek;
+                    continue;
+                }
+                log_info("  reached end of file");
+                break;
+            }
+            auto buf_sf = to_string_fragment(buf);
+            auto split_res = buf_sf.split_pair(string_fragment::tag1{'\n'});
+            if (!split_res) {
+                log_warning("  cannot find start of line at %lld",
+                            peek_range.fr_offset);
+                continue;
+            }
+
+            auto [_junk, line_start_sf] = split_res.value();
+            while (!line_start_sf.empty()) {
+                auto utf8_res = is_utf8(line_start_sf, '\n');
+                if (!utf8_res.usr_remaining) {
+                    log_warning("  cannot find end of line at %lld",
+                                peek_range.fr_offset + line_start_sf.sf_begin);
+                    break;
+                }
+                auto line_len = utf8_res.remaining_ptr() - line_start_sf.data();
+                shared_buffer tmp_sb;
+                shared_buffer_ref tmp_sbr;
+
+                tmp_sbr.share(tmp_sb, line_start_sf.data(), line_len);
+
+                auto map_line_fr = file_range{
+                    peek_range.fr_offset + line_start_sf.sf_begin,
+                    line_len,
+                };
+                map_line_fr.fr_metadata.m_has_ansi = utf8_res.usr_has_ansi;
+                map_line_fr.fr_metadata.m_valid_utf = utf8_res.is_valid();
+                auto map_li = line_info{map_line_fr};
+                map_li.li_utf8_scan_result = utf8_res;
+                std::vector<logline> tmp_index;
+                auto scan_res = this->lf_format->scan(
+                    *this, tmp_index, map_li, tmp_sbr, sbc_tmp);
+                if (scan_res.is<log_format::scan_match>()) {
+                    auto line_time = tmp_index.front()
+                                         .get_time<std::chrono::microseconds>();
+                    this->lf_content_map.emplace_back(content_map_entry{
+                        map_line_fr,
+                        line_time,
+                    });
+                    log_info("  adding content map entry %lld - %s",
+                             map_line_fr.fr_offset,
+                             lnav::to_rfc3339_string(line_time).c_str());
+                    if (skip_size < 1024 * 1024 * 1024) {
+                        skip_size *= 2;
+                    }
+                    break;
+                }
+                line_start_sf = utf8_res.usr_remaining.value();
+            }
+        }
+    }
+
     auto retval = rebuild_result_t::NO_NEW_LINES;
     auto full_size = this->get_content_size();
 
     this->lf_lower_bound_entry = std::nullopt;
     this->lf_upper_bound_entry = std::nullopt;
-    this->lf_file_size_at_map_time = full_size;
 
-    log_info("%s: finding content layout (full_size=%lld)",
-             this->lf_filename_as_string.c_str(),
-             full_size);
+    log_info("  finding content layout (full_size=%lld)", full_size);
     if (this->lf_options.loo_time_range.has_lower_bound()
         && this->lf_options.loo_time_range.tr_begin
             > this->lf_index.front().get_time<std::chrono::microseconds>()
@@ -506,8 +602,7 @@ logfile::build_content_map()
             file_range{first_line_offset, full_size - first_line_offset},
             ll->get_time<std::chrono::microseconds>(),
         };
-        log_info("%s: lower bound is within current index, erasing %ld lines",
-                 this->lf_filename_as_string.c_str(),
+        log_info("  lower bound is within current index, erasing %ld lines",
                  std::distance(this->lf_index.cbegin(), ll));
         this->lf_index_size = first_line_offset;
         this->lf_index.clear();
@@ -515,8 +610,7 @@ logfile::build_content_map()
     }
 
     if (this->lf_index_size == full_size) {
-        log_trace("%s: file has already been scanned, no need to peek",
-                  this->lf_filename_as_string.c_str());
+        log_trace("  file has already been scanned, no need to peek");
         const auto& last_line = this->lf_index.back();
         auto last_line_offset = last_line.get_offset();
         this->lf_upper_bound_entry = content_map_entry{
@@ -527,11 +621,11 @@ logfile::build_content_map()
             && this->lf_options.loo_time_range.tr_begin
                 > this->lf_index.back().get_time<std::chrono::microseconds>())
         {
-            log_info("%s: lower bound is past content",
-                     this->lf_filename_as_string.c_str());
+            log_info("  lower bound is past content");
             this->lf_index.clear();
             retval = rebuild_result_t::NEW_ORDER;
         }
+        this->lf_file_size_at_map_time = full_size;
         return retval;
     }
 
@@ -539,17 +633,17 @@ logfile::build_content_map()
         = this->find_content_map_entry(full_size, map_read_upper_bound{});
     if (!end_entry_opt.is<map_entry_found>()) {
         log_warning(
-            "%s: skipping content map since the last message could not be "
-            "found",
-            this->get_filename().c_str());
+            "  skipping content map since the last message could not be "
+            "found");
         return retval;
     }
 
     auto end_entry = end_entry_opt.get<map_entry_found>().mef_entry;
-    log_info("found content end: %llu %s",
+    log_info("  found content end: %llu %s",
              end_entry.cme_range.fr_offset,
              lnav::to_rfc3339_string(to_timeval(end_entry.cme_time)).c_str());
     this->lf_upper_bound_entry = end_entry;
+    this->lf_file_size_at_map_time = full_size;
 
     if (this->lf_options.loo_time_range.has_lower_bound()) {
         if (this->lf_options.loo_time_range.tr_begin > end_entry.cme_time) {
@@ -560,8 +654,7 @@ logfile::build_content_map()
                              .get_time<std::chrono::microseconds>())
         {
             auto offset = full_size / 2;
-            log_debug("%s: searching for lower bound %lld",
-                      this->lf_filename_as_string.c_str(),
+            log_debug("  searching for lower bound %lld",
                       this->lf_options.loo_time_range.tr_begin.count());
             auto low_entry_opt = this->find_content_map_entry(
                 offset,
@@ -570,7 +663,7 @@ logfile::build_content_map()
                 });
             if (low_entry_opt.is<map_entry_found>()) {
                 auto low_entry = low_entry_opt.get<map_entry_found>().mef_entry;
-                log_info("found content start: %llu %s",
+                log_info("  found content start: %llu %s",
                          low_entry.cme_range.fr_offset,
                          lnav::to_rfc3339_string(to_timeval(low_entry.cme_time))
                              .c_str());
@@ -1368,8 +1461,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 } else {
                     limit = 100;
                 }
-            } else if (!this->lf_line_buffer.is_compressed()
-                       && this->lf_options.loo_detect_format
+            } else if (this->lf_options.loo_detect_format
                        && (!has_format || !this->lf_upper_bound_entry))
             {
                 limit = 1000;

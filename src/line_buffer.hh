@@ -213,7 +213,12 @@ public:
     Result<shared_buffer_ref, std::string> read_range(
         file_range fr, scan_direction dir = scan_direction::forward);
 
-    Result<auto_buffer, std::string> peek_range(file_range fr);
+    enum class peek_options : uint8_t {
+        allow_short_read,
+    };
+
+    Result<auto_buffer, std::string> peek_range(
+        file_range fr, lnav::enums::bitset<peek_options> options = {});
 
     file_range get_available();
 

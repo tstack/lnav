@@ -603,6 +603,7 @@ private:
         std::chrono::microseconds cme_time;
     };
     file_size_t lf_file_size_at_map_time{0};
+    std::vector<content_map_entry> lf_content_map;
     std::optional<content_map_entry> lf_lower_bound_entry;
     std::optional<content_map_entry> lf_upper_bound_entry;
     std::optional<file_size_t> lf_upper_bound_size;
