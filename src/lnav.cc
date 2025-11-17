@@ -2125,15 +2125,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
                 {
                     auto sel_opt = lnav_data.ld_views[LNV_LOG].get_selection();
-                    if (sel_opt) {
+                    if (sel_opt
+                        && sel_opt.value()
+                            < lnav_data.ld_log_source.text_line_count())
+                    {
                         auto win = lnav_data.ld_log_source.window_at(
                             sel_opt.value());
-                        for (const auto& msg : *win) {
-                            auto hash_res = msg.get_line_hash();
-                            if (hash_res.isOk()) {
-                                vs.vs_log_selection
-                                    = hash_res.unwrap().to_string();
-                            }
+                        const auto& msg = *win->begin();
+                        auto hash_res = msg.get_line_hash();
+                        if (hash_res.isOk()) {
+                            vs.vs_log_selection = hash_res.unwrap().to_string();
                         }
                     }
                 }

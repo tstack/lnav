@@ -313,6 +313,11 @@ struct time_range {
         return this->tr_end != std::chrono::microseconds::max();
     }
 
+    bool has_bounds() const
+    {
+        return this->has_lower_bound() || this->has_upper_bound();
+    }
+
     bool operator<(const time_range& rhs) const
     {
         return this->tr_begin < rhs.tr_begin;

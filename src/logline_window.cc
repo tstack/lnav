@@ -30,6 +30,7 @@
 #include "logline_window.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/auto_mem.hh"
 #include "logfile_sub_source.hh"
 
 logline_window::iterator
@@ -65,16 +66,21 @@ logline_window::end()
 logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
     : li_source(lss), li_line(vl)
 {
-    if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
+    auto inner_height = vis_line_t(this->li_source.text_line_count());
+    if (this->li_line < inner_height) {
         while (true) {
-            auto pair_opt = this->li_source.find_line_with_file(this->li_line);
-            if (!pair_opt) {
-                break;
+            auto cl = this->li_source.at(this->li_line);
+            auto* lf = this->li_source.find_file_ptr(cl);
+            auto ll = lf->begin() + cl;
+            if (ll->is_continued()) {
+                while (ll != lf->begin() && ll->is_continued()) {
+                    --ll;
+                    --this->li_line;
+                }
+                continue;
             }
-
-            auto& [lf, ll] = pair_opt.value();
             if (ll->is_message()) {
-                this->li_file = lf.get();
+                this->li_file = lf;
                 this->li_logline = ll;
                 this->li_line_number
                     = std::distance(this->li_file->begin(), this->li_logline);
@@ -99,18 +105,23 @@ logline_window::logmsg_info::next_msg()
     this->li_string_attrs.clear();
     this->li_line_values.clear();
 
+    auto inner_height = vis_line_t(this->li_source.text_line_count());
+
     ++this->li_line;
-    while (this->li_line < vis_line_t(this->li_source.text_line_count())) {
-        auto pair_opt = this->li_source.find_line_with_file(this->li_line);
-
-        if (!pair_opt) {
-            break;
+    while (0 <= this->li_line && this->li_line < inner_height) {
+        auto cl = this->li_source.at(this->li_line);
+        auto* lf = this->li_source.find_file_ptr(cl);
+        auto ll = lf->begin() + cl;
+        if (ll->is_continued()) {
+            while (ll != lf->end() && ll->is_continued()) {
+                ++ll;
+                ++this->li_line;
+            }
+            continue;
         }
-
-        auto line_pair = pair_opt.value();
-        if (line_pair.second->is_message()) {
-            this->li_file = line_pair.first.get();
-            this->li_logline = line_pair.second;
+        if (ll != lf->end() && ll->is_message()) {
+            this->li_file = lf;
+            this->li_logline = ll;
             this->li_line_number
                 = std::distance(this->li_file->begin(), this->li_logline);
             break;
@@ -128,16 +139,12 @@ logline_window::logmsg_info::prev_msg()
     this->li_line_values.clear();
     while (this->li_line > 0) {
         --this->li_line;
-        auto pair_opt = this->li_source.find_line_with_file(this->li_line);
-
-        if (!pair_opt) {
-            break;
-        }
-
-        auto line_pair = pair_opt.value();
-        if (line_pair.second->is_message()) {
-            this->li_file = line_pair.first.get();
-            this->li_logline = line_pair.second;
+        auto cl = this->li_source.at(this->li_line);
+        auto* lf = this->li_source.find_file_ptr(cl);
+        auto ll = lf->begin() + cl;
+        if (ll->is_message()) {
+            this->li_file = lf;
+            this->li_logline = ll;
             this->li_line_number
                 = std::distance(this->li_file->begin(), this->li_logline);
             break;
