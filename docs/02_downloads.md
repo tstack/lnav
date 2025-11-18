@@ -6,6 +6,15 @@ permalink: /downloads
 
 The latest **stable** release is [**v{{ site.version }}**](https://github.com/tstack/lnav/releases/latest).
 
+<blockquote>
+<iframe width="560" height="315"
+    src="https://www.youtube-nocookie.com/embed/6peBzqjgI2M?si=eu9ndJcS7m9WJGJ7"
+    title="lnav v0.13.0 release"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</blockquote>
+
 The following options are available for installing **lnav**:
 
 ## Linux

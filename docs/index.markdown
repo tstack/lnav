@@ -90,7 +90,7 @@ to learn more.
 
 <iframe width="560" height="315"
     src="https://www.youtube.com/embed/Su6aUb2yM1g?si=dNFSxX8d_gEnseA0"
-    title="YouTube video player"
+    title="Introduction to lnav"
     frameborder="0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
