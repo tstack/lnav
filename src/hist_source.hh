@@ -323,10 +323,7 @@ public:
 
     size_t text_line_count() override { return this->hs_line_count; }
 
-    size_t text_line_width(textview_curses& curses) override
-    {
-        return 48 + 8 * 4;
-    }
+    size_t text_line_width(textview_curses& curses) override;
 
     void clear();
 

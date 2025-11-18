@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
+
 #include "hist_source.hh"
 
 #include "base/math_util.hh"
@@ -158,6 +160,12 @@ hist_source2::init()
                               vc.attrs_for_role(role_t::VCR_ERROR))
         .with_attrs_for_ident(hist_type_t::HT_MARK,
                               vc.attrs_for_role(role_t::VCR_COMMENT));
+}
+
+size_t
+hist_source2::text_line_width(textview_curses& curses)
+{
+    return 63 + 8 * 4;
 }
 
 void
