@@ -76,7 +76,7 @@ hist_source2::text_value_for_line(textview_curses& tc,
     auto secs = to_time_t(bucket.b_time);
     if (gmtime_r(&secs, &bucket_tm) != nullptr) {
         fmt::format_to(std::back_inserter(value_out),
-                       FMT_STRING(" {:%a %b %d %H:%M:%S}  "),
+                       FMT_STRING(" {:%a %b %d %H:%M:%S %Y}  "),
                        bucket_tm);
     } else {
         log_error("no time?");
