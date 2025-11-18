@@ -2131,8 +2131,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     {
                         auto win = lnav_data.ld_log_source.window_at(
                             sel_opt.value());
-                        const auto& msg = *win->begin();
-                        auto hash_res = msg.get_line_hash();
+                        auto win_iter = win->begin();
+                        auto hash_res = win_iter->get_line_hash();
                         if (hash_res.isOk()) {
                             vs.vs_log_selection = hash_res.unwrap().to_string();
                         }
