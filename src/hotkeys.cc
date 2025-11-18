@@ -349,10 +349,14 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
-                ec.execute(INTERNAL_SRC_LOC,
-                           fmt::format(
-                               FMT_STRING(":zoom-to {}"),
-                               lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                auto res = ec.execute(
+                    INTERNAL_SRC_LOC,
+                    fmt::format(
+                        FMT_STRING(":zoom-to {}"),
+                        lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                if (res.isOk()) {
+                    prompt.p_editor.set_inactive_value(res.unwrap());
+                }
             }
             break;
 
@@ -360,10 +364,14 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                ec.execute(INTERNAL_SRC_LOC,
-                           fmt::format(
-                               FMT_STRING(":zoom-to {}"),
-                               lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                auto res = ec.execute(
+                    INTERNAL_SRC_LOC,
+                    fmt::format(
+                        FMT_STRING(":zoom-to {}"),
+                        lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                if (res.isOk()) {
+                    prompt.p_editor.set_inactive_value(res.unwrap());
+                }
             }
             break;
 

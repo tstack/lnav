@@ -107,6 +107,8 @@ constexpr std::chrono::microseconds ZOOM_LEVELS[] = {
     8h,
     24h,
     7 * 24h,
+    30 * 24h,
+    365 * 24h,
 };
 
 constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
@@ -120,6 +122,8 @@ constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
     "8-hour"_frag,
     "1-day"_frag,
     "1-week"_frag,
+    "1-month"_frag,
+    "1-year"_frag,
 };
 
 inline attr_line_t&
@@ -2232,71 +2236,76 @@ com_zoom_to(exec_context& ec,
             std::vector<std::string>& args)
 {
     std::string retval;
+    std::optional<int> zoom_level;
 
-    if (ec.ec_dry_run) {
-    } else if (args.size() > 1) {
-        bool found = false;
+    if (args.size() == 1) {
+        auto um = lnav::console::user_message::error("expecting a zoom level")
+                      .with_snippets(ec.ec_source)
+                      .with_help(attr_line_t("available levels: ")
+                                     .join(lnav_zoom_strings, ", "))
+                      .move();
+        return Err(um);
+    }
 
-        for (size_t lpc = 0; lpc < lnav_zoom_strings.size() && !found; lpc++) {
-            if (lnav_zoom_strings[lpc].iequal(args[1])) {
-                auto& ss = *lnav_data.ld_spectro_source;
-                timeval old_time;
+    for (size_t lpc = 0; lpc < lnav_zoom_strings.size() && !zoom_level; lpc++) {
+        if (lnav_zoom_strings[lpc].iequal(args[1])) {
+            zoom_level = lpc;
+        }
+    }
 
-                lnav_data.ld_zoom_level = lpc;
+    if (!zoom_level) {
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("invalid zoom level: ")
+                          .append(lnav::roles::symbol(args[1])))
+                      .with_snippets(ec.ec_source)
+                      .with_help(attr_line_t("available levels: ")
+                                     .join(lnav_zoom_strings, ", "))
+                      .move();
+        return Err(um);
+    }
+    if (!ec.ec_dry_run) {
+        auto& ss = *lnav_data.ld_spectro_source;
+        timeval old_time;
 
-                auto& hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
+        lnav_data.ld_zoom_level = zoom_level.value();
 
-                if (hist_view.get_inner_height() > 0) {
-                    auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
-                        lnav_data.ld_views[LNV_HISTOGRAM].get_top());
-                    if (old_time_opt) {
-                        old_time = old_time_opt.value().ri_time;
-                        rebuild_hist();
-                        lnav_data.ld_hist_source2.row_for_time(old_time) |
-                            [](auto new_top) {
-                                lnav_data.ld_views[LNV_HISTOGRAM].set_top(
-                                    new_top);
-                            };
-                    }
-                }
+        auto& hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
 
-                auto& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
-
-                if (spectro_view.get_inner_height() > 0) {
-                    auto old_time_opt
-                        = lnav_data.ld_spectro_source->time_for_row(
-                            lnav_data.ld_views[LNV_SPECTRO]
-                                .get_selection()
-                                .value_or(0_vl));
-                    ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
-                    ss.invalidate();
-                    spectro_view.reload_data();
-                    if (old_time_opt) {
-                        lnav_data.ld_spectro_source->row_for_time(
-                            old_time_opt.value().ri_time)
-                            | [](auto new_top) {
-                                  lnav_data.ld_views[LNV_SPECTRO].set_selection(
-                                      new_top);
-                              };
-                    }
-                }
-
-                lnav_data.ld_view_stack.set_needs_update();
-
-                found = true;
+        if (hist_view.get_inner_height() > 0) {
+            auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
+                lnav_data.ld_views[LNV_HISTOGRAM].get_top());
+            if (old_time_opt) {
+                old_time = old_time_opt.value().ri_time;
+                rebuild_hist();
+                lnav_data.ld_hist_source2.row_for_time(old_time) |
+                    [](auto new_top) {
+                        lnav_data.ld_views[LNV_HISTOGRAM].set_top(new_top);
+                    };
             }
         }
 
-        if (!found) {
-            auto um = lnav::console::user_message::error(
-                          attr_line_t("invalid zoom level: ")
-                              .append(lnav::roles::symbol(args[1])))
-                          .with_snippets(ec.ec_source)
-                          .with_help(attr_line_t("available levels: ")
-                                         .join(lnav_zoom_strings, ", "))
-                          .move();
-            return Err(um);
+        auto& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
+
+        if (spectro_view.get_inner_height() > 0) {
+            auto old_time_opt = lnav_data.ld_spectro_source->time_for_row(
+                lnav_data.ld_views[LNV_SPECTRO].get_selection().value_or(0_vl));
+            ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+            ss.invalidate();
+            spectro_view.reload_data();
+            if (old_time_opt) {
+                lnav_data.ld_spectro_source->row_for_time(
+                    old_time_opt.value().ri_time)
+                    |
+                    [](auto new_top) {
+                        lnav_data.ld_views[LNV_SPECTRO].set_selection(new_top);
+                    };
+            }
         }
+
+        lnav_data.ld_view_stack.set_needs_update();
+
+        retval = fmt::format(FMT_STRING("info: set zoom-level to {}"),
+                             lnav_zoom_strings[zoom_level.value()]);
     }
 
     return Ok(retval);

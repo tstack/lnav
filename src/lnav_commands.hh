@@ -69,7 +69,7 @@ std::optional<std::string> find_arg(std::vector<std::string>& args,
 
 bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks& vb);
 
-constexpr ssize_t ZOOM_COUNT = 10;
+constexpr ssize_t ZOOM_COUNT = 12;
 extern const std::chrono::microseconds ZOOM_LEVELS[ZOOM_COUNT];
 
 extern const std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings;
