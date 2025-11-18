@@ -556,6 +556,9 @@ int walk_automaton(automaton* a, struct inputctx* ictx, unsigned candidate,
     a->state = a->escapes;
     return 0;
   }
+  if(e == NULL){ // we're not in the trie
+    return -1;
+  }
   if(e->ntype == NODE_STRING){
     if(candidate == 0x1b || candidate == 0x07){
       a->state = e->trie[candidate];
@@ -570,6 +573,7 @@ int walk_automaton(automaton* a, struct inputctx* ictx, unsigned candidate,
     }
     return 0;
   }
+  assert(e->trie);
   if((a->state = e->trie[candidate]) == 0){
     if(esctrie_idx(a, e) == a->escapes){
       memset(ni, 0, sizeof(*ni));
