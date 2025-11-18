@@ -181,6 +181,10 @@ Interface changes:
   time and the current time frame.  But, the multi-line
   header was hard to interpret and didn't make it clear
   how large the time increments were.
+* The HIST view now shows the year and inserts a spacer
+  row in-between gaps in time.  The spacer row shows
+  bullet points on a log scale to represent the amount
+  of time in the gap.
 * If there are background tasks, like the processing done
   by `:add-source-path`, a panel with progress bars for
   each operation will be shown just above the bottom

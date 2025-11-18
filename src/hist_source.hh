@@ -33,7 +33,9 @@
 #define hist_source_hh
 
 #include <cmath>
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -70,12 +72,6 @@ struct stacked_bar_chart_base {
 };
 
 struct bucket_stats_t {
-    bucket_stats_t()
-        : bs_min_value(std::numeric_limits<double>::max()),
-          bs_max_value(std::numeric_limits<double>::min())
-    {
-    }
-
     void merge(const bucket_stats_t& rhs)
     {
         this->bs_min_value = std::min(this->bs_min_value, rhs.bs_min_value);
@@ -93,8 +89,8 @@ struct bucket_stats_t {
         this->bs_min_value = std::min(this->bs_min_value, value);
     }
 
-    double bs_min_value;
-    double bs_max_value;
+    double bs_min_value = std::numeric_limits<double>::max();
+    double bs_max_value = std::numeric_limits<double>::min();
 };
 
 template<typename T>
@@ -295,15 +291,15 @@ class hist_source2
     , public text_time_translator {
 public:
     enum class hist_type_t : uint8_t {
-        HT_NORMAL,
-        HT_WARNING,
-        HT_ERROR,
-        HT_MARK,
+        normal,
+        warning,
+        error,
+        mark,
 
         HT__MAX
     };
 
-    hist_source2() { this->clear(); }
+    hist_source2();
 
     ~hist_source2() override = default;
 
@@ -355,7 +351,7 @@ public:
 
 private:
     struct hist_value {
-        double hv_value;
+        double hv_value{0};
     };
 
     struct bucket_t {
@@ -371,25 +367,22 @@ private:
         {
             return this->b_values[lnav::enums::to_underlying(ht)];
         }
+
+        bool empty() const;
     };
 
     static constexpr int64_t BLOCK_SIZE = 100;
 
     struct bucket_block {
-        bucket_block()
-        {
-            memset(this->bb_buckets, 0, sizeof(this->bb_buckets));
-        }
-
         unsigned int bb_used{0};
         bucket_t bb_buckets[BLOCK_SIZE];
     };
 
     bucket_t& find_bucket(int64_t index);
 
-    std::chrono::microseconds hs_time_slice{10 * 60};
-    int64_t hs_line_count;
-    int64_t hs_current_row;
+    std::chrono::microseconds hs_time_slice;
+    int64_t hs_line_count{0};
+    int64_t hs_current_row{0};
     std::chrono::microseconds hs_last_ts;
     std::vector<bucket_block> hs_blocks;
     stacked_bar_chart<hist_type_t> hs_chart;

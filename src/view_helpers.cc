@@ -1503,20 +1503,20 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
         case LEVEL_FATAL:
         case LEVEL_CRITICAL:
         case LEVEL_ERROR:
-            ht = hist_source2::hist_type_t::HT_ERROR;
+            ht = hist_source2::hist_type_t::error;
             break;
         case LEVEL_WARNING:
-            ht = hist_source2::hist_type_t::HT_WARNING;
+            ht = hist_source2::hist_type_t::warning;
             break;
         default:
-            ht = hist_source2::hist_type_t::HT_NORMAL;
+            ht = hist_source2::hist_type_t::normal;
             break;
     }
 
     this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(), ht);
     if (ll->is_marked() || ll->is_expr_marked()) {
         this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(),
-                                   hist_source2::hist_type_t::HT_MARK);
+                                   hist_source2::hist_type_t::mark);
     }
 }
 

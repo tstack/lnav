@@ -27,15 +27,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
+#include <cmath>
 #include <optional>
 
 #include "hist_source.hh"
 
 #include "base/math_util.hh"
+#include "base/string_util.hh"
 #include "config.h"
 #include "fmt/chrono.h"
 #include "hist_source_T.hh"
-#include "textinput_curses.hh"
+#include "vis_line.hh"
+
+using namespace std::chrono_literals;
 
 std::optional<vis_line_t>
 hist_source2::row_for_time(timeval tv_bucket)
@@ -58,7 +63,7 @@ hist_source2::row_for_time(timeval tv_bucket)
             }
         }
     }
-    return vis_line_t(retval);
+    return std::nullopt;
 }
 
 line_info
@@ -68,13 +73,23 @@ hist_source2::text_value_for_line(textview_curses& tc,
                                   line_flags_t flags)
 {
     auto& bucket = this->find_bucket(row);
-    struct tm bucket_tm;
+    tm bucket_tm;
 
     if (this->hs_needs_flush) {
         this->end_of_row();
     }
 
     value_out.clear();
+
+    if (bucket.empty()) {
+        const auto& next_bucket = this->find_bucket(row + 1);
+        auto time_diff = next_bucket.b_time - bucket.b_time;
+        auto slices = time_diff / this->hs_time_slice;
+        auto count = std::log(slices) + 1;
+        value_out = repeat(" \u2022", count);
+        return {};
+    }
+
     auto secs = to_time_t(bucket.b_time);
     if (gmtime_r(&secs, &bucket_tm) != nullptr) {
         fmt::format_to(std::back_inserter(value_out),
@@ -86,10 +101,10 @@ hist_source2::text_value_for_line(textview_curses& tc,
     fmt::format_to(
         std::back_inserter(value_out),
         FMT_STRING(" {:8L} normal  {:8L} errors  {:8L} warnings  {:8L} marks"),
-        rint(bucket.value_for(hist_type_t::HT_NORMAL).hv_value),
-        rint(bucket.value_for(hist_type_t::HT_ERROR).hv_value),
-        rint(bucket.value_for(hist_type_t::HT_WARNING).hv_value),
-        rint(bucket.value_for(hist_type_t::HT_MARK).hv_value));
+        rint(bucket.value_for(hist_type_t::normal).hv_value),
+        rint(bucket.value_for(hist_type_t::error).hv_value),
+        rint(bucket.value_for(hist_type_t::warning).hv_value),
+        rint(bucket.value_for(hist_type_t::mark).hv_value));
 
     return {};
 }
@@ -99,7 +114,19 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
                                   int row,
                                   string_attrs_t& value_out)
 {
-    auto& bucket = this->find_bucket(row);
+    const auto& bucket = this->find_bucket(row);
+
+    auto alt_row_index = row % 4;
+    if (alt_row_index == 2 || alt_row_index == 3) {
+        value_out.emplace_back(line_range{0, -1},
+                               VC_ROLE.value(role_t::VCR_ALT_ROW));
+    }
+    if (bucket.empty()) {
+        value_out.emplace_back(line_range{0, -1},
+                               VC_ROLE.value(role_t::VCR_COMMENT));
+        return;
+    }
+
     auto dim = tc.get_dimensions();
     auto width = dim.second;
     int left = 0;
@@ -117,11 +144,6 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
                                              bucket.b_values[lpc].hv_value,
                                              value_out);
     }
-    auto alt_row_index = row % 4;
-    if (alt_row_index == 2 || alt_row_index == 3) {
-        value_out.emplace_back(line_range{0, -1},
-                               VC_ROLE.value(role_t::VCR_ALT_ROW));
-    }
 }
 
 void
@@ -135,6 +157,13 @@ hist_source2::add_value(std::chrono::microseconds ts,
     if (ts != this->hs_last_ts) {
         this->end_of_row();
 
+        auto diff = ts - this->hs_last_ts;
+        if (diff > this->hs_time_slice) {
+            this->hs_current_row += 1;
+            auto& bucket = this->find_bucket(this->hs_current_row);
+            bucket.b_time = this->hs_last_ts + this->hs_time_slice;
+            this->hs_line_count += 1;
+        }
         this->hs_current_row += 1;
         this->hs_last_ts = ts;
     }
@@ -146,19 +175,24 @@ hist_source2::add_value(std::chrono::microseconds ts,
     this->hs_needs_flush = true;
 }
 
+hist_source2::hist_source2() : hs_time_slice(1min)
+{
+    this->clear();
+}
+
 void
 hist_source2::init()
 {
     auto& vc = view_colors::singleton();
 
     this->hs_chart.with_show_state(stacked_bar_chart_base::show_all{})
-        .with_attrs_for_ident(hist_type_t::HT_NORMAL,
+        .with_attrs_for_ident(hist_type_t::normal,
                               vc.attrs_for_role(role_t::VCR_TEXT))
-        .with_attrs_for_ident(hist_type_t::HT_WARNING,
+        .with_attrs_for_ident(hist_type_t::warning,
                               vc.attrs_for_role(role_t::VCR_WARNING))
-        .with_attrs_for_ident(hist_type_t::HT_ERROR,
+        .with_attrs_for_ident(hist_type_t::error,
                               vc.attrs_for_role(role_t::VCR_ERROR))
-        .with_attrs_for_ident(hist_type_t::HT_MARK,
+        .with_attrs_for_ident(hist_type_t::mark,
                               vc.attrs_for_role(role_t::VCR_COMMENT));
 }
 
@@ -192,21 +226,21 @@ hist_source2::end_of_row()
              lpc < lnav::enums::to_underlying(hist_type_t::HT__MAX);
              lpc++)
         {
-            auto& hv = last_bucket.b_values[lpc];
+            const auto& hv = last_bucket.b_values[lpc];
             this->hs_chart.add_value((const hist_type_t) lpc, hv.hv_value);
 
             if (hv.hv_value > 0.0) {
                 const bookmark_type_t* bt = nullptr;
                 switch ((hist_type_t) lpc) {
-                    case hist_type_t::HT_WARNING: {
+                    case hist_type_t::warning: {
                         bt = &textview_curses::BM_WARNINGS;
                         break;
                     }
-                    case hist_type_t::HT_ERROR: {
+                    case hist_type_t::error: {
                         bt = &textview_curses::BM_ERRORS;
                         break;
                     }
-                    case hist_type_t::HT_MARK: {
+                    case hist_type_t::mark: {
                         bt = &textview_curses::BM_META;
                         break;
                     }
@@ -226,13 +260,24 @@ hist_source2::end_of_row()
 std::optional<text_time_translator::row_info>
 hist_source2::time_for_row(vis_line_t row)
 {
-    if (row < 0 || row > this->hs_line_count) {
+    if (row < 0 || row >= this->hs_line_count) {
         return std::nullopt;
     }
 
     const auto& bucket = this->find_bucket(row);
 
     return row_info{timeval{to_time_t(bucket.b_time), 0}, row};
+}
+
+bool
+hist_source2::bucket_t::empty() const
+{
+    for (const auto& hv : this->b_values) {
+        if (hv.hv_value > 0.0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 hist_source2::bucket_t&
