@@ -1510,6 +1510,10 @@ listview_curses::set_left(int left)
     if (this->lv_left == left || left < 0) {
         return;
     }
+    if (this->lv_word_wrap && left != 0) {
+        alerter::singleton().chime(
+            "cannot scroll horizontally when word wrap is enabled");
+    }
 
     if (left > this->lv_left) {
         unsigned long width;
@@ -1529,6 +1533,20 @@ listview_curses::set_left(int left)
     this->lv_left = left;
     this->invoke_scroll();
     this->set_needs_update();
+}
+int
+listview_curses::shift_left(int offset)
+{
+    if (this->lv_word_wrap) {
+        alerter::singleton().chime(
+            "cannot scroll horizontally when word wrap is enabled");
+    } else if (offset < 0 && this->lv_left < -offset) {
+        this->set_left(0);
+    } else {
+        this->set_left(this->lv_left + offset);
+    }
+
+    return this->lv_left;
 }
 
 vis_line_t
@@ -1585,6 +1603,22 @@ listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
     this->lv_source->listview_selection_changed(*this);
     this->set_needs_update();
 }
+listview_curses&
+listview_curses::set_word_wrap(bool ww)
+{
+    bool scroll_down = this->lv_top >= this->get_top_for_last_row();
+
+    this->lv_word_wrap = ww;
+    if (ww && scroll_down && this->lv_top < this->get_top_for_last_row()) {
+        this->lv_top = this->get_top_for_last_row();
+    }
+    if (ww) {
+        this->lv_left = 0;
+    }
+    this->set_needs_update();
+
+    return *this;
+}
 
 int
 listview_curses::get_y_for_selection() const
@@ -1605,4 +1639,19 @@ listview_curses::update_hash_state(hasher& h) const
     h.update(this->get_selection().value_or(-1_vl));
     h.update(this->get_inner_height());
     h.update(this->get_overlay_selection().value_or(-1_vl));
+}
+void
+listview_curses::log_state()
+{
+    log_debug("listview_curses=%p", this);
+    log_debug(
+        "  vc_title=%s; vc_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
+        "lv_selection=%d; inner_height=%d",
+        this->vc_title.c_str(),
+        this->vc_y,
+        (int) this->lv_top,
+        this->lv_left,
+        (int) this->lv_height,
+        (int) this->lv_selection,
+        (int) this->get_inner_height());
 }

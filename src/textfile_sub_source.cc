@@ -29,6 +29,7 @@
 
 #include <chrono>
 #include <memory>
+#include <unordered_set>
 
 #include "textfile_sub_source.hh"
 

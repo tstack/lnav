@@ -32,6 +32,7 @@
 #ifndef listview_curses_hh
 #define listview_curses_hh
 
+#include <cstdint>
 #include <list>
 #include <string>
 #include <utility>
@@ -39,7 +40,9 @@
 
 #include <sys/types.h>
 
+#include "base/attr_line.hh"
 #include "hasher.hh"
+#include "mapbox/variant.hpp"
 #include "view_curses.hh"
 #include "vis_line.hh"
 
@@ -168,7 +171,7 @@ public:
  */
 class listview_curses
     : public view_curses
-    , private log_state_dumper {
+    , log_state_dumper {
 public:
     using action = std::function<void(listview_curses*)>;
 
@@ -297,21 +300,7 @@ public:
         }
     }
 
-    listview_curses& set_word_wrap(bool ww)
-    {
-        bool scroll_down = this->lv_top >= this->get_top_for_last_row();
-
-        this->lv_word_wrap = ww;
-        if (ww && scroll_down && this->lv_top < this->get_top_for_last_row()) {
-            this->lv_top = this->get_top_for_last_row();
-        }
-        if (ww) {
-            this->lv_left = 0;
-        }
-        this->set_needs_update();
-
-        return *this;
-    }
+    listview_curses& set_word_wrap(bool ww);
 
     bool get_word_wrap() const { return this->lv_word_wrap; }
 
@@ -425,19 +414,7 @@ public:
      * @param offset The amount to change top by.
      * @return The final value of top.
      */
-    int shift_left(int offset)
-    {
-        if (this->lv_word_wrap) {
-            alerter::singleton().chime(
-                "cannot scroll horizontally when word wrap is enabled");
-        } else if (offset < 0 && this->lv_left < -offset) {
-            this->set_left(0);
-        } else {
-            this->set_left(this->lv_left + offset);
-        }
-
-        return this->lv_left;
-    }
+    int shift_left(int offset);
 
     /**
      * Set the height of the view.  A value greater than one is considered to
@@ -531,20 +508,7 @@ public:
 
     virtual void update_hash_state(hasher& h) const;
 
-    void log_state() override
-    {
-        log_debug("listview_curses=%p", this);
-        log_debug(
-            "  vc_title=%s; vc_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
-            "lv_selection=%d; inner_height=%d",
-            this->vc_title.c_str(),
-            this->vc_y,
-            (int) this->lv_top,
-            this->lv_left,
-            (int) this->lv_height,
-            (int) this->lv_selection,
-            (int) this->get_inner_height());
-    }
+    void log_state() override;
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
 

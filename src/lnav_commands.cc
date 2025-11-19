@@ -1512,6 +1512,7 @@ com_enable_word_wrap(exec_context& ec,
         lnav_data.ld_views[LNV_LOG].set_word_wrap(true);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(true);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(true);
+        retval = "info: enabled word-wrap";
     }
 
     return Ok(retval);
@@ -1528,6 +1529,7 @@ com_disable_word_wrap(exec_context& ec,
         lnav_data.ld_views[LNV_LOG].set_word_wrap(false);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(false);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(false);
+        retval = "info: disabled word-wrap";
     }
 
     return Ok(retval);

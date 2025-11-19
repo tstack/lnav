@@ -651,44 +651,46 @@ textview_curses::handle_mouse(mouse_event& me)
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
+            auto same_line = (this->tc_press_line.is<main_content>()
+                              && mouse_line.is<main_content>()
+                              && this->tc_press_line.get<main_content>().mc_line
+                                  == mouse_line.get<main_content>().mc_line);
             this->tc_text_selection_active = true;
             if (!this->vc_enabled) {
-            } else if (me.me_y == me.me_press_y) {
-                if (mouse_line.is<main_content>()) {
-                    auto& mc = mouse_line.get<main_content>();
-                    attr_line_t al;
-                    auto low_x
-                        = std::min(this->tc_press_left,
-                                   (int) mc.mc_line_range.lr_start + me.me_x);
-                    auto high_x
-                        = std::max(this->tc_press_left,
-                                   (int) mc.mc_line_range.lr_start + me.me_x);
+            } else if (same_line) {
+                const auto& mc = mouse_line.get<main_content>();
+                attr_line_t al;
+                auto low_x
+                    = std::min(this->tc_press_left,
+                               (int) mc.mc_line_range.lr_start + me.me_x);
+                auto high_x
+                    = std::max(this->tc_press_left,
+                               (int) mc.mc_line_range.lr_start + me.me_x);
 
-                    this->set_selection_without_context(mc.mc_line);
-                    if (this->tc_supports_marks
-                        && me.me_button == mouse_button_t::BUTTON_LEFT)
-                    {
-                        this->textview_value_for_row(mc.mc_line, al);
-                        auto line_sf
-                            = string_fragment::from_str(al.get_string());
-                        auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
-                        if (me.me_x <= 1) {
-                            this->set_left(this->lv_left - 1);
-                        } else if (me.me_x >= width - 1) {
-                            this->set_left(this->lv_left + 1);
-                        }
-                        if (!cursor_sf.empty()) {
-                            this->tc_selected_text = {
-                                me.me_x,
-                                mc.mc_line,
-                                line_range{
-                                    cursor_sf.sf_begin,
-                                    cursor_sf.sf_end,
-                                },
-                                al.al_attrs,
-                                cursor_sf.to_string(),
-                            };
-                        }
+                this->set_selection_without_context(mc.mc_line);
+                if (this->tc_supports_marks
+                    && me.me_button == mouse_button_t::BUTTON_LEFT)
+                {
+                    this->textview_value_for_row(mc.mc_line, al);
+                    auto line_sf = string_fragment::from_str(al.get_string());
+                    auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
+                    if (this->lv_word_wrap) {
+                    } else if (me.me_x <= 1) {
+                        this->set_left(this->lv_left - 1);
+                    } else if (me.me_x >= width - 1) {
+                        this->set_left(this->lv_left + 1);
+                    }
+                    if (!cursor_sf.empty()) {
+                        this->tc_selected_text = {
+                            me.me_x,
+                            mc.mc_line,
+                            line_range{
+                                cursor_sf.sf_begin,
+                                cursor_sf.sf_end,
+                            },
+                            al.al_attrs,
+                            cursor_sf.to_string(),
+                        };
                     }
                 }
             } else {
