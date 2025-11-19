@@ -95,6 +95,17 @@ textfile_sub_source::text_line_count()
     return retval;
 }
 
+size_t
+textfile_sub_source::text_line_width(textview_curses& tc)
+{
+    const auto iter = this->current_file_state();
+    if (iter == this->tss_files.end()) {
+        return 0;
+    }
+
+    return iter->text_line_width(this->tss_view_mode, tc);
+}
+
 line_info
 textfile_sub_source::text_value_for_line(textview_curses& tc,
                                          int line,
@@ -1097,6 +1108,24 @@ textfile_sub_source::file_view_state::text_line_count(view_mode mode) const
         retval = this->fvs_text_source->text_line_count();
     }
 
+    return retval;
+}
+
+size_t
+textfile_sub_source::file_view_state::text_line_width(view_mode mode,
+                                                      textview_curses& tc) const
+{
+    size_t retval = 0;
+    if (mode == view_mode::raw || !this->fvs_text_source) {
+        const auto& lf = this->fvs_file;
+        if (lf->get_text_format() == text_format_t::TF_BINARY) {
+            retval = 88;
+        } else {
+            retval = lf->get_longest_line_length();
+        }
+    } else {
+        retval = this->fvs_text_source->text_line_width(tc);
+    }
     return retval;
 }
 

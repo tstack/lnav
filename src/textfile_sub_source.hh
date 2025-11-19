@@ -58,12 +58,7 @@ public:
 
     size_t text_line_count() override;
 
-    size_t text_line_width(textview_curses& curses) override
-    {
-        return this->tss_files.empty()
-            ? 0
-            : this->current_file()->get_longest_line_length();
-    }
+    size_t text_line_width(textview_curses& curses) override;
 
     line_info text_value_for_line(textview_curses& tc,
                                   int line,
@@ -211,6 +206,8 @@ private:
         }
 
         size_t text_line_count(view_mode mode) const;
+
+        size_t text_line_width(view_mode mode, textview_curses& tc) const;
 
         std::optional<vis_line_t>
         row_for_anchor(view_mode mode, const std::string& id);
