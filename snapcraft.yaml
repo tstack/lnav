@@ -43,8 +43,6 @@ apps:
 
 parts:
   rustup:
-    after:
-      - selective-checkout
     plugin: rust
     rust-channel: stable
     source: .
@@ -52,7 +50,6 @@ parts:
     override-prime: ""
   lnav:
     after:
-      - selective-checkout
       - rustup
     plugin: autotools
     autotools-configure-parameters:
