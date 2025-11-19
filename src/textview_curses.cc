@@ -538,8 +538,8 @@ textview_curses::handle_mouse(mouse_event& me)
             mouse_line.match(
                 [this, &me, sub_delegate, &mouse_line](const main_content& mc) {
                     this->tc_text_selection_active = true;
-                    this->tc_press_left = this->lv_left
-                        + mc.mc_line_range.lr_start + me.me_press_x;
+                    this->tc_press_left
+                        = mc.mc_line_range.lr_start + me.me_press_x;
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks
                             && me.me_button == mouse_button_t::BUTTON_LEFT
@@ -587,10 +587,8 @@ textview_curses::handle_mouse(mouse_event& me)
                             auto line_sf
                                 = string_fragment::from_str(al.get_string());
                             auto cursor_sf = line_sf.sub_cell_range(
-                                this->lv_left + mc.mc_line_range.lr_start
-                                    + me.me_x,
-                                this->lv_left + mc.mc_line_range.lr_start
-                                    + me.me_x);
+                                mc.mc_line_range.lr_start + me.me_x,
+                                mc.mc_line_range.lr_start + me.me_x);
                             auto ds = data_scanner(line_sf);
                             auto tf = this->tc_sub_source->get_text_format();
                             while (true) {
@@ -661,12 +659,10 @@ textview_curses::handle_mouse(mouse_event& me)
                     attr_line_t al;
                     auto low_x
                         = std::min(this->tc_press_left,
-                                   (int) this->lv_left
-                                       + mc.mc_line_range.lr_start + me.me_x);
+                                   (int) mc.mc_line_range.lr_start + me.me_x);
                     auto high_x
                         = std::max(this->tc_press_left,
-                                   (int) this->lv_left
-                                       + mc.mc_line_range.lr_start + me.me_x);
+                                   (int) mc.mc_line_range.lr_start + me.me_x);
 
                     this->set_selection_without_context(mc.mc_line);
                     if (this->tc_supports_marks
