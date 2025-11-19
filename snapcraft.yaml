@@ -6,7 +6,7 @@ description: |
   for the small-scale.
 icon: docs/assets/images/favicon.png
 
-base: core20
+base: core22
 grade: stable
 confinement: strict
 
