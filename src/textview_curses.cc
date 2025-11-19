@@ -771,7 +771,8 @@ textview_curses::handle_mouse(mouse_event& me)
                 this->textview_value_for_row(mc.mc_line, al);
                 auto line_sf = string_fragment::from_str(al.get_string());
                 auto cursor_sf = line_sf.sub_cell_range(
-                    this->lv_left + me.me_x, this->lv_left + me.me_x);
+                    mc.mc_line_range.lr_start + me.me_x,
+                    mc.mc_line_range.lr_start + me.me_x);
                 auto link_iter = find_string_attr_containing(
                     al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
                 if (link_iter != al.get_attrs().end()) {
