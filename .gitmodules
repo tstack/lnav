@@ -1,3 +1,0 @@
-[submodule "ext/pcapplusplus"]
-	path = ext/pcapplusplus
-	url = https://github.com/seladb/PcapPlusPlus.git
