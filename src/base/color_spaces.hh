@@ -138,6 +138,13 @@ struct transparent {
     bool operator==(const transparent& rhs) const { return true; }
 };
 
+template<class... Ts>
+struct overload : Ts... {
+    using Ts::operator()...;
+};
+template<class... Ts>
+overload(Ts...) -> overload<Ts...>;
+
 class color_unit {
 public:
     static Result<color_unit, std::string> from_str(const string_fragment& sf);
@@ -167,12 +174,6 @@ public:
     {
         return this->cu_value == rhs.cu_value;
     }
-    template<class... Ts>
-    struct overload : Ts... {
-        using Ts::operator()...;
-    };
-    template<class... Ts>
-    overload(Ts...) -> overload<Ts...>;
 
     bool empty() const
     {

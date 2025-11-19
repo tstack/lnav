@@ -31,6 +31,7 @@
 
 #include "lnav.console.hh"
 
+#include "color_spaces.hh"
 #include "config.h"
 #include "fmt/color.h"
 #include "itertools.hh"
@@ -277,7 +278,7 @@ static std::optional<fmt::terminal_color>
 color_to_terminal_color(const styling::color_unit& curses_color)
 {
     return std::visit(
-        styling::color_unit::overload{
+        styling::overload{
             [](const styling::semantic& s)
                 -> std::optional<fmt::terminal_color> { return std::nullopt; },
             [](const styling::transparent& s)

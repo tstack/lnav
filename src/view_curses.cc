@@ -762,7 +762,7 @@ uint64_t
 view_colors::to_channels(const text_attrs& ta)
 {
     uint64_t retval = 0;
-    std::visit(styling::color_unit::overload{
+    std::visit(styling::overload{
                    [&retval](styling::transparent) {
                        ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
                    },
@@ -781,7 +781,7 @@ view_colors::to_channels(const text_attrs& ta)
                            &retval, rc.rc_r, rc.rc_g, rc.rc_b);
                    }},
                ta.ta_fg_color.cu_value);
-    std::visit(styling::color_unit::overload{
+    std::visit(styling::overload{
                    [&retval](styling::transparent) {
                        ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
                    },
