@@ -55,7 +55,7 @@ struct log_stmt_table {
 -- The source_log_stmt() table-valued function allows you to query
 -- the log statements that were extracted from source code added
 -- by the :add-source-path command.
-CREATE TABLE source_log_stmt (
+CREATE TABLE lnav_db.source_log_stmt (
     begin_line INTEGER,
     end_line INTEGER,
     language TEXT,

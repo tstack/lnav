@@ -41,7 +41,7 @@ extern char** environ;
 
 const char* const ENVIRON_CREATE_STMT = R"(
 -- Access lnav's environment variables through this table.
-CREATE TABLE environ (
+CREATE TABLE lnav_db.environ (
     name TEXT PRIMARY KEY,
     value TEXT
 );

@@ -990,12 +990,14 @@ schema_collation_list(void* ptr, int ncols, char** colvalues, char** colnames)
 static int
 schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    auto smc = (sqlite_metadata_callbacks*) ptr;
+    auto* smc = (sqlite_metadata_callbacks*) ptr;
     auto& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> attach_sql;
 
-    attach_sql = sqlite3_mprintf(
-        "ATTACH DATABASE %Q AS %Q;\n", colvalues[2], colvalues[1]);
+    attach_sql = sqlite3_mprintf("-- BEGIN %s\nATTACH DATABASE %Q AS %Q;\n",
+                                 colvalues[1],
+                                 colvalues[2],
+                                 colvalues[1]);
 
     schema_out += attach_sql;
 
@@ -1394,17 +1396,23 @@ sql_compile_script(sqlite3* db,
         retcode = sqlite3_prepare_v2(db, script, -1, stmt.out(), &tail);
         log_debug("retcode %d  %p %p", retcode, script, tail);
         if (retcode != SQLITE_OK) {
-            const auto* errmsg = sqlite3_errmsg(db);
+            const auto errmsg = string_fragment::from_c_str(sqlite3_errmsg(db));
             auto sql_content = annotate_sql_with_error(db, script, tail);
-
-            errors.emplace_back(
-                lnav::console::user_message::error(
-                    "failed to compile SQL statement")
-                    .with_reason(errmsg)
-                    .with_snippet(
-                        lnav::console::snippet::from(
-                            intern_string::lookup(src_name), sql_content)
-                            .with_line(line_number)));
+            auto um = lnav::console::user_message::error(
+                          "failed to compile SQL statement")
+                          .with_reason(errmsg.to_string())
+                          .with_snippet(
+                              lnav::console::snippet::from(
+                                  intern_string::lookup(src_name), sql_content)
+                                  .with_line(line_number));
+            if (errmsg.startswith("no such table: main.lnav")) {
+                um.with_help(
+                    attr_line_t("The lnav tables have been moved to the ")
+                        .append_quoted("lnav_db"_symbol)
+                        .append(" database.  Try prefixing the name with ")
+                        .append("lnav_db."_quoted_code));
+            }
+            errors.emplace_back(um);
             break;
         }
         if (script == tail) {

@@ -289,7 +289,7 @@ const sqlite3_module static_file_vtab_module = {
 
 const char* const STATIC_FILE_CREATE_STMT = R"(
 -- Access app files in the lnav configuration directories
-CREATE TABLE lnav_app_files (
+CREATE TABLE lnav_db.lnav_app_files (
     name TEXT PRIMARY KEY,
     app TEXT,
     filepath TEXT,
@@ -300,7 +300,7 @@ CREATE TABLE lnav_app_files (
 struct lnav_apps_vtab {
     static constexpr const char* NAME = "lnav_apps";
     static constexpr const char* CREATE_STMT = R"(
-CREATE TABLE lnav_apps (
+CREATE TABLE lnav_db.lnav_apps (
     name TEXT PRIMARY KEY,
     description TEXT,
     root TEXT

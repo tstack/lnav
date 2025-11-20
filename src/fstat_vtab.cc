@@ -81,7 +81,7 @@ struct fstat_table {
     static constexpr const char* NAME = "fstat";
     static constexpr const char* CREATE_STMT = R"(
 -- The fstat() table-valued function allows you to query the file system.
-CREATE TABLE fstat (
+CREATE TABLE lnav_db.fstat (
     st_parent TEXT,
     st_name TEXT,
     st_dev INTEGER,

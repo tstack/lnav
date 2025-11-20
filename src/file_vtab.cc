@@ -53,7 +53,7 @@ struct lnav_file : tvt_iterator_cursor<lnav_file> {
     static constexpr const char* NAME = "lnav_file";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
-CREATE TABLE lnav_file (
+CREATE TABLE lnav_db.lnav_file (
     device integer,       -- The device the file is stored on.
     inode integer,        -- The inode for the file on the device.
     filepath text,        -- The path to the file.
@@ -269,7 +269,7 @@ struct lnav_file_metadata {
     static constexpr const char* NAME = "lnav_file_metadata";
     static constexpr const char* CREATE_STMT = R"(
 -- Access the metadata embedded in open files
-CREATE TABLE lnav_file_metadata (
+CREATE TABLE lnav_db.lnav_file_metadata (
     filepath text,    -- The path to the file.
     descriptor text,  -- The descriptor that identifies the source of the metadata.
     mimetype text,    -- The MIME type of the metadata.

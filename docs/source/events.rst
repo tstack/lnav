@@ -21,8 +21,8 @@ install it by running :code:`lnav -i my_trigger.sql`.
     :caption: my_trigger.sql
     :linenos:
 
-    CREATE TRIGGER IF NOT EXISTS add_format_specific_filters
-      AFTER INSERT ON lnav_events WHEN
+    CREATE TRIGGER IF NOT EXISTS lnav_db.add_format_specific_filters
+      AFTER INSERT ON lnav_db.lnav_events WHEN
         -- Check the event type
         jget(NEW.content, '/$schema') =
           'https://lnav.org/event-file-format-detected-v1.schema.json' AND

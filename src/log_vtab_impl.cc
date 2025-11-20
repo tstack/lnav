@@ -27,6 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
+#include <vector>
+
 #include "log_vtab_impl.hh"
 
 #include "base/ansi_scrubber.hh"
@@ -135,7 +138,8 @@ log_vtab_impl::get_table_statement()
         std::ostringstream oss;
         size_t max_name_len = 15;
 
-        oss << "CREATE TABLE " << this->get_name().to_string() << LOG_COLUMNS;
+        oss << "CREATE TABLE lnav_db." << this->get_name().to_string()
+            << LOG_COLUMNS;
         this->get_columns(cols);
         this->vi_column_count = cols.size();
         for (const auto& col : cols) {

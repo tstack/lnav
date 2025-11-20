@@ -292,7 +292,7 @@ struct lnav_views : tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's views through this table.
-CREATE TABLE lnav_views (
+CREATE TABLE lnav_db.lnav_views (
     name TEXT PRIMARY KEY,  -- The name of the view.
     top INTEGER,            -- The number of the line at the top of the view, starting from zero.
     left INTEGER,           -- The left position of the viewport.
@@ -778,7 +778,7 @@ struct lnav_view_stack : public tvt_iterator_cursor<lnav_view_stack> {
     static constexpr const char* NAME = "lnav_view_stack";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's view stack through this table.
-CREATE TABLE lnav_view_stack (
+CREATE TABLE lnav_db.lnav_view_stack (
     name TEXT
 );
 )";
@@ -917,12 +917,12 @@ struct lnav_view_filter_base {
 };
 
 struct lnav_view_filters
-    : public tvt_iterator_cursor<lnav_view_filters>
-    , public lnav_view_filter_base {
+    : tvt_iterator_cursor<lnav_view_filters>
+    , lnav_view_filter_base {
     static constexpr const char* NAME = "lnav_view_filters";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's filters through this table.
-CREATE TABLE lnav_view_filters (
+CREATE TABLE lnav_db.lnav_view_filters (
     view_name TEXT,                    -- The name of the view.
     filter_id INTEGER DEFAULT 0,       -- The filter identifier.
     enabled   INTEGER DEFAULT 1,       -- Indicates if the filter is enabled/disabled.
@@ -1239,12 +1239,12 @@ CREATE TABLE lnav_view_filters (
 };
 
 struct lnav_view_filter_stats
-    : public tvt_iterator_cursor<lnav_view_filter_stats>
-    , public lnav_view_filter_base {
+    : tvt_iterator_cursor<lnav_view_filter_stats>
+    , lnav_view_filter_base {
     static constexpr const char* NAME = "lnav_view_filter_stats";
     static constexpr const char* CREATE_STMT = R"(
 -- Access statistics for filters through this table.
-CREATE TABLE lnav_view_filter_stats (
+CREATE TABLE lnav_db.lnav_view_filter_stats (
     view_name TEXT,     -- The name of the view.
     filter_id INTEGER,  -- The filter identifier.
     hits      INTEGER   -- The number of lines that matched this filter.
@@ -1276,11 +1276,11 @@ CREATE TABLE lnav_view_filter_stats (
     }
 };
 
-struct lnav_view_files : public tvt_iterator_cursor<lnav_view_files> {
+struct lnav_view_files : tvt_iterator_cursor<lnav_view_files> {
     static constexpr const char* NAME = "lnav_view_files";
     static constexpr const char* CREATE_STMT = R"(
 --
-CREATE TABLE lnav_view_files (
+CREATE TABLE lnav_db.lnav_view_files (
     view_name TEXT,     -- The name of the view.
     filepath  TEXT,     -- The path to the file.
     visible   INTEGER   -- Indicates whether or not the file is shown.
@@ -1289,7 +1289,7 @@ CREATE TABLE lnav_view_files (
 
     using iterator = logfile_sub_source::iterator;
 
-    struct cursor : public tvt_iterator_cursor<lnav_view_files>::cursor {
+    struct cursor : tvt_iterator_cursor<lnav_view_files>::cursor {
         explicit cursor(sqlite3_vtab* vt)
             : tvt_iterator_cursor<lnav_view_files>::cursor(vt)
         {
