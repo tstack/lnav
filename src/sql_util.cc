@@ -994,10 +994,8 @@ schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
     auto& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> attach_sql;
 
-    attach_sql = sqlite3_mprintf("-- BEGIN %s\nATTACH DATABASE %Q AS %Q;\n",
-                                 colvalues[1],
-                                 colvalues[2],
-                                 colvalues[1]);
+    attach_sql = sqlite3_mprintf(
+        "ATTACH DATABASE %Q AS %Q;\n", colvalues[2], colvalues[1]);
 
     schema_out += attach_sql;
 
