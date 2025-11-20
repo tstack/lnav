@@ -285,8 +285,15 @@ backup_user_db(const std::string& filename)
         loop_count += 1;
     }
 
+    {
+        auto total = sqlite3_backup_pagecount(backup);
+        auto complete = total - sqlite3_backup_remaining(backup);
+        bguard.update(complete, total);
+    }
     sqlite3_backup_finish(backup);
-    log_info("backup complete");
+    log_info("backup complete: complete=%llu; total=%llu",
+             backup_progress_t::INSTANCE.bp_complete.load(),
+             backup_progress_t::INSTANCE.bp_total.load());
 }
 
 static Result<std::string, lnav::console::user_message>
