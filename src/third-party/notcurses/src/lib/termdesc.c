@@ -446,7 +446,6 @@ init_terminfo_esc(tinfo* ti, const char* name, escape_e idx,
                    DEFBGQ \
                    KKBDQUERY \
                    SUMQUERY \
-                   PIXELMOUSEQUERY \
                    "\x1b[?1;3;256S" /* try to set 256 cregs */ \
                    "\x1b[?1;3;1024S" /* try to set 1024 cregs */ \
                    KITTYQUERY \
