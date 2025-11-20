@@ -1931,7 +1931,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (exec_phase.scanning() && new_files.empty()
                 && indexing_pipers == 0)
             {
-                if (lnav_data.ld_active_files.fc_files.size() > 1) {
+                if (!lnav_data.ld_active_files.fc_other_files.empty()
+                    || lnav_data.ld_active_files.fc_files.size() > 1
+                    || !lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
+                            ->empty())
+                {
                     opened_files = true;
                     set_view_mode(ln_mode_t::FILES);
                 }
@@ -2449,8 +2453,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         if (exec_phase.loading_session()) {
             if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
-                        ->empty())
+                if (lnav_data.ld_active_files.fc_other_files.empty()
+                    && lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
+                           ->empty())
                 {
                     log_info("%d: switching to paging!", loop_count);
                     set_view_mode(ln_mode_t::PAGING);
