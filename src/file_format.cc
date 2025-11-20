@@ -61,10 +61,19 @@ detect_file_format(const std::filesystem::path& filename)
     }
 
     auto describe_res = archive_manager::describe(filename);
-    if (describe_res.isOk()
-        && describe_res.unwrap().is<archive_manager::archive_info>())
-    {
-        return {file_format_t::ARCHIVE};
+    if (describe_res.isOk()) {
+        auto describe_inner = describe_res.unwrap();
+        if (describe_inner.is<archive_manager::archive_info>()) {
+            auto& ai = describe_inner.get<archive_manager::archive_info>();
+            auto um = lnav::console::user_message::info(
+                attr_line_t()
+                    .append_quoted(ai.ai_format_name)
+                    .append(" archive with ")
+                    .append(lnav::roles::number(
+                        fmt::to_string(ai.ai_entries.size())))
+                    .append(ai.ai_entries.size() == 1 ? " entry" : " entries"));
+            return {file_format_t::ARCHIVE, {um}};
+        }
     }
 
     auto open_res = lnav::filesystem::open_file(filename, O_RDONLY);
@@ -88,8 +97,12 @@ detect_file_format(const std::filesystem::path& filename)
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
+                static const auto DB_MSG
+                    = lnav::console::user_message::info("SQLite database file");
+
                 log_info("%s: appears to be a SQLite DB", filename.c_str());
                 retval.dffr_file_format = file_format_t::SQLITE_DB;
+                retval.dffr_details.emplace_back(DB_MSG);
             } else if (header_frag.startswith(JAVA_CLASS_HEADER)) {
                 static const auto CLASS_MSG = lnav::console::user_message::info(
                     "ignoring Java Class file");

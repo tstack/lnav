@@ -92,7 +92,7 @@ describe(const fs::path& filename)
     log_debug("read open %s", filename.c_str());
     auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
     if (r == ARCHIVE_OK) {
-        struct archive_entry* entry = nullptr;
+        archive_entry* entry = nullptr;
 
         const auto* format_name = archive_format_name(arc);
 

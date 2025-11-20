@@ -37,6 +37,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <vector>
 
 #include "base/file_range.hh"
 #include "base/result.h"
@@ -65,7 +66,7 @@ struct archive_info {
         time_t e_mtime;
         std::optional<file_ssize_t> e_size;
     };
-    const char* ai_format_name;
+    std::string ai_format_name;
     std::vector<entry> ai_entries;
 };
 struct unknown_file {};
