@@ -185,6 +185,7 @@ file_collection::regenerate_unique_file_names()
     for (const auto& pair : this->fc_other_files) {
         switch (pair.second.ofd_format) {
             case file_format_t::UNKNOWN:
+            case file_format_t::UNSUPPORTED:
             case file_format_t::ARCHIVE:
             case file_format_t::MULTIPLEXED:
             case file_format_t::SQLITE_DB: {
@@ -462,6 +463,7 @@ file_collection::watch_logfile(const std::string& filename,
             loo.loo_file_format = ff_res.dffr_file_format;
             switch (ff_res.dffr_file_format) {
                 case file_format_t::SQLITE_DB:
+                case file_format_t::UNSUPPORTED:
                     retval.fc_other_files[filename].ofd_format
                         = ff_res.dffr_file_format;
                     retval.fc_other_files[filename].ofd_details

@@ -35,6 +35,7 @@
 #include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "line_buffer.hh"
@@ -44,11 +45,21 @@
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
+    static const auto JAR_EXT = std::filesystem::path(".jar");
+
     // static auto op = lnav_operation{"detect_file_format"};
     // auto op_guard = lnav_opid_guard::internal(op);
     log_trace("detecting format of file: %s", filename.c_str());
 
     detect_file_format_result retval = {file_format_t::UNKNOWN};
+    auto ext = filename.extension();
+
+    if (ext == JAR_EXT) {
+        static const auto JAR_MSG
+            = lnav::console::user_message::info("ignoring Java JAR file");
+        return {file_format_t::UNSUPPORTED, {JAR_MSG}};
+    }
+
     auto describe_res = archive_manager::describe(filename);
     if (describe_res.isOk()
         && describe_res.unwrap().is<archive_manager::archive_info>())
@@ -72,11 +83,19 @@ detect_file_format(const std::filesystem::path& filename)
                       strerror(errno));
         } else {
             static const auto* SQLITE3_HEADER = "SQLite format 3";
+            static const auto* JAVA_CLASS_HEADER = "\xca\xfe\xba\xbe";
+
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
                 log_info("%s: appears to be a SQLite DB", filename.c_str());
                 retval.dffr_file_format = file_format_t::SQLITE_DB;
+            } else if (header_frag.startswith(JAVA_CLASS_HEADER)) {
+                static const auto CLASS_MSG = lnav::console::user_message::info(
+                    "ignoring Java Class file");
+
+                retval.dffr_file_format = file_format_t::UNSUPPORTED;
+                retval.dffr_details.emplace_back(CLASS_MSG);
             } else {
                 auto tf = detect_text_format(header_frag, filename);
                 auto looping = true;

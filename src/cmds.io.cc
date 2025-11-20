@@ -1541,6 +1541,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         alb.append(fmt::to_string(detect_res.dffr_file_format));
                         break;
                     }
+                    case file_format_t::UNSUPPORTED:
                     case file_format_t::REMOTE: {
                         break;
                     }

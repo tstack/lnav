@@ -34,6 +34,8 @@
 
 #include <filesystem>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "base/lnav.console.hh"
 #include "fmt/format.h"
@@ -41,6 +43,7 @@
 enum class file_format_t : int {
     UNKNOWN,
     SQLITE_DB,
+    UNSUPPORTED,
     ARCHIVE,
     MULTIPLEXED,
     REMOTE,
@@ -73,6 +76,9 @@ struct formatter<file_format_t> : formatter<string_view> {
         switch (ff) {
             case file_format_t::SQLITE_DB:
                 name = "\U0001F5C2  SQLite DB";
+                break;
+            case file_format_t::UNSUPPORTED:
+                name = "\U0001F6AB Unsupported";
                 break;
             case file_format_t::ARCHIVE:
                 name = "\U0001F5C4  Archive";

@@ -66,6 +66,16 @@ convert(const external_file_format& eff, const std::string& filename)
     auto outfile = TRY(lnav::filesystem::open_temp_file(
         cache_dir()
         / fmt::format(FMT_STRING("{}.XXXXXX"), eff.eff_format_name)));
+    auto new_path = lnav::filesystem::build_path({
+        eff.eff_source_path.parent_path(),
+        lnav::paths::dotlnav() / "formats/default",
+    });
+
+    log_info("  command: %s %s %s",
+             eff.eff_converter.c_str(),
+             eff.eff_format_name.c_str(),
+             filename.c_str());
+    log_info("  PATH=%s", new_path.c_str());
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child = TRY(lnav::pid::from_fork());
 
@@ -77,10 +87,6 @@ convert(const external_file_format& eff, const std::string& filename)
         dup2(outfile.second.get(), STDOUT_FILENO);
         outfile.second.reset();
 
-        auto new_path = lnav::filesystem::build_path({
-            eff.eff_source_path.parent_path(),
-            lnav::paths::dotlnav() / "formats/default",
-        });
         setenv("PATH", new_path.c_str(), 1);
         auto format_str = eff.eff_format_name;
 
