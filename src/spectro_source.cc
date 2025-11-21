@@ -39,7 +39,7 @@
 #include "base/math_util.hh"
 #include "config.h"
 
-static constexpr auto TIME_COLUMN_WIDTH = 22;
+static constexpr auto TIME_COLUMN_WIDTH = 26;
 static constexpr auto UNUSABLE_WIDTH = TIME_COLUMN_WIDTH + 2;
 static constexpr auto MINIMUM_WIDTH = UNUSABLE_WIDTH + 20;
 
@@ -373,7 +373,7 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
     auto ri = row_time_opt.value();
 
     gmtime_r(&ri.ri_time.tv_sec, &tm);
-    strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S", &tm);
+    strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S %Y", &tm);
 
     value_out = tm_buffer;
     value_out.resize(TIME_COLUMN_WIDTH + s_row.sr_width, ' ');
