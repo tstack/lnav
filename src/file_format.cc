@@ -46,6 +46,7 @@ detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
     static const auto JAR_EXT = std::filesystem::path(".jar");
+    static const auto WAR_EXT = std::filesystem::path(".war");
 
     // static auto op = lnav_operation{"detect_file_format"};
     // auto op_guard = lnav_opid_guard::internal(op);
@@ -58,6 +59,11 @@ detect_file_format(const std::filesystem::path& filename)
         static const auto JAR_MSG
             = lnav::console::user_message::info("ignoring Java JAR file");
         return {file_format_t::UNSUPPORTED, {JAR_MSG}};
+    }
+    if (ext == WAR_EXT) {
+        static const auto WAR_MSG
+            = lnav::console::user_message::info("ignoring Java WAR file");
+        return {file_format_t::UNSUPPORTED, {WAR_MSG}};
     }
 
     auto describe_res = archive_manager::describe(filename);
