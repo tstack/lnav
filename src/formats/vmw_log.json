@@ -231,6 +231,10 @@
             "vpx_lro_error": {
                 "pattern": "\\[VpxLRO\\] -- ERROR (?<lro_id>\\S+) -- (?:(?<SessionId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\\((?<SessionSubId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\))?)? -- (?<entity>\\S*) -- (?<operation>\\S*):\\s*(?<error>.*)",
                 "level": "error"
+            },
+            "vmw_gtest_results": {
+                "glob": "*/test.log",
+                "pattern": "\\[\\s+(?<test_result>\\w+)\\s+\\]\\s+(?<test_name>\\S+)\\s+\\((?<test_duration>\\d+ \\w+)\\)"
             }
         },
         "tags": {
