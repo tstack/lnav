@@ -192,7 +192,8 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                     auto name_iter = fc.fc_file_names.begin();
                     while (name_iter != fc.fc_file_names.end()) {
                         if (name_iter->first == es.sb_iter.first) {
-                            name_iter = fc.fc_file_names.erase(name_iter);
+                            fc.fc_file_names.erase(name_iter);
+                            name_iter = fc.fc_file_names.begin();
                             continue;
                         }
 
@@ -204,7 +205,8 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 
                             if (fmt::to_string(rp.home()) == es.sb_iter.first) {
                                 fc.fc_other_files.erase(name_iter->first);
-                                name_iter = fc.fc_file_names.erase(name_iter);
+                                fc.fc_file_names.erase(name_iter);
+                                name_iter = fc.fc_file_names.begin();
                                 continue;
                             }
                         }
@@ -439,7 +441,7 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
         value_out.with_ansi_string(fmt::format(
             "{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
                                                     "... {:>8}/{}",
-            PROG[spinner_index() % PROG_SIZE],
+            humanize::sparkline(prog.ep_out_size, prog.ep_total_size),
             prog.ep_path.filename().string(),
             humanize::file_size(prog.ep_out_size, humanize::alignment::none),
             humanize::file_size(prog.ep_total_size,

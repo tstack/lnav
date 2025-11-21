@@ -240,8 +240,12 @@ file_collection::merge(file_collection& other)
     if (!other.fc_file_names.empty()) {
         this->fc_files_generation += 1;
     }
-    for (const auto& fn_pair : other.fc_file_names) {
-        this->fc_file_names[fn_pair.first] = fn_pair.second;
+    if (this->fc_file_names.empty()) {
+        this->fc_file_names = other.fc_file_names;
+    } else {
+        for (const auto& fn_pair : other.fc_file_names) {
+            this->fc_file_names[fn_pair.first] = fn_pair.second;
+        }
     }
     if (!other.fc_files.empty()) {
         for (const auto& lf : other.fc_files) {
@@ -353,7 +357,7 @@ file_collection::watch_logfile(const std::string& filename,
             {
                 file_collection retval;
 
-                retval.fc_file_names.emplace(
+                retval.fc_file_names.insert2(
                     wilddir,
                     logfile_open_options()
                         .with_non_utf_visibility(false)

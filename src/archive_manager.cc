@@ -216,7 +216,7 @@ copy_data(const std::string& filename,
                     entry_path.filename().string(),
                     entry_path.parent_path().string()));
             }
-            next_space_check += 1024 * 1024;
+            next_space_check += 10 * 1024 * 1024;
         }
 
         r = archive_read_data_block(ar, &buff, &size, &offset);

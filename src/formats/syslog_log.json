@@ -74,7 +74,7 @@
         },
         "search-table": {
             "sudo_log": {
-                "pattern": "sudo: (?<login>\\S+)\\s*: (?:(?<error_msg>[^;]+);)?\\s*TTY=(?<tty>[^;]+)\\s+;\\s*PWD=(?<pwd>[^;]+)\\s+;\\s*USER=(?<user>[^;]+)\\s+;\\s*COMMAND=(?<command>.*)$"
+                "pattern": "sudo:\\s+(?<login>\\S+)\\s*: (?:(?<error_msg>[^;]+);)?(?:\\s*TTY=(?<tty>[^;]+)\\s+;)?\\s*PWD=(?<pwd>[^;]+)\\s+;\\s*USER=(?<user>[^;]+)\\s+;\\s*COMMAND=(?<command>.*)$"
             }
         },
         "sample": [

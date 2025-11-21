@@ -1931,10 +1931,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (exec_phase.scanning() && new_files.empty()
                 && indexing_pipers == 0)
             {
-                if (!lnav_data.ld_active_files.fc_other_files.empty()
-                    || lnav_data.ld_active_files.fc_files.size() > 1
-                    || !lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
-                            ->empty())
+                if (!opened_files
+                    && (!lnav_data.ld_active_files.fc_other_files.empty()
+                        || lnav_data.ld_active_files.fc_files.size() > 1
+                        || !lnav_data.ld_active_files.fc_name_to_stubs
+                                ->readAccess()
+                                ->empty()))
                 {
                     opened_files = true;
                     set_view_mode(ln_mode_t::FILES);
@@ -1983,6 +1985,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             rescan_future = std::future<file_collection>{};
             next_rescan_time
                 = ui_now + (std::exchange(rescan_needed, false) ? 0ms : 333ms);
+        }
+
+        if (!opened_files && exec_phase.scanning()
+            && ui_now - ui_start_time >= 500ms)
+        {
+            set_view_mode(ln_mode_t::FILES);
         }
 
         if (!rescan_future.valid()
@@ -2109,6 +2117,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             updated_views.emplace_back(&lnav_data.ld_user_message_view);
         }
         if (ui_now >= next_status_update_time) {
+            if (exec_phase.scanning()) {
+                lnav_data.ld_files_view.set_needs_update();
+            }
             if (lnav_data.ld_status[LNS_BOTTOM].get_needs_update()
                 || lnav_data.ld_status[LNS_FILTER].get_needs_update())
             {
@@ -3896,10 +3907,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             auto loo = logfile_open_options().with_time_range(
                 lnav_data.ld_default_time_range);
-            lnav_data.ld_active_files.fc_file_names.emplace(dir_wild + "/*",
+            lnav_data.ld_active_files.fc_file_names.insert2(dir_wild + "/*",
                                                             loo);
         } else {
-            lnav_data.ld_active_files.fc_file_names.emplace(
+            lnav_data.ld_active_files.fc_file_names.insert2(
                 abspath.in(),
                 logfile_open_options()
                     .with_init_location(file_loc)

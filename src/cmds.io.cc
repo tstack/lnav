@@ -1232,13 +1232,13 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 retval = "info: watching -- " + fn;
             } else if (lnav::filesystem::is_glob(fn.c_str())) {
                 loo.with_init_location(file_loc);
-                fc.fc_file_names.emplace(fn, loo);
+                fc.fc_file_names.insert2(fn, loo);
                 files_to_front.emplace_back(
                     loo.loo_filename.empty() ? fn : loo.loo_filename);
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
                 if (fn.find(':') != std::string::npos) {
-                    fc.fc_file_names.emplace(fn, loo);
+                    fc.fc_file_names.insert2(fn, loo);
                     retval = "info: watching -- " + fn;
                 } else {
                     auto um = lnav::console::user_message::error(
@@ -1304,7 +1304,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                fc.fc_file_names.emplace(dir_wild + "/*", loo);
+                fc.fc_file_names.insert2(dir_wild + "/*", loo);
                 retval = "info: watching -- " + dir_wild;
             } else if (!S_ISREG(st.st_mode)) {
                 auto um = lnav::console::user_message::error(
@@ -1351,7 +1351,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
                 if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
                     loo.with_init_location(file_loc);
-                    fc.fc_file_names.emplace(fn, loo);
+                    fc.fc_file_names.insert2(fn, loo);
                     retval = "info: opened -- " + fn;
                     files_to_front.emplace_back(fn);
 

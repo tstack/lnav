@@ -36,6 +36,7 @@
 #include <future>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -51,6 +52,7 @@
 #include "file_format.hh"
 #include "logfile_fwd.hh"
 #include "safe/safe.h"
+#include "tlx/container/btree_map.hpp"
 
 struct tailer_progress {
     std::string tp_message;
@@ -156,7 +158,7 @@ struct file_collection {
 
     std::shared_ptr<safe_name_to_stubs> fc_name_to_stubs{
         std::make_shared<safe_name_to_stubs>()};
-    std::map<std::string, logfile_open_options, strnatless> fc_file_names;
+    tlx::btree_map<std::string, logfile_open_options, strnatless> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};
     std::optional<size_t> fc_files_high_mark;
