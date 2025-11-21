@@ -16,16 +16,16 @@ dist_noinst_DATA = \
     test_cli.sh_17a68b798354f9a6cdfab372006caeb74038d15c.out \
     test_cli.sh_1ec76eb2416d2c09c13eba62ff8bcf920a888b9c.err \
     test_cli.sh_1ec76eb2416d2c09c13eba62ff8bcf920a888b9c.out \
-    test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.err \
-    test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.out \
-    test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.err \
-    test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.out \
     test_cli.sh_4a90f3241f857801474a1ae522c6c6a452e33e5a.err \
     test_cli.sh_4a90f3241f857801474a1ae522c6c6a452e33e5a.out \
     test_cli.sh_4b7e1d207a7094b0d13152cb469848bd0fae08f3.err \
     test_cli.sh_4b7e1d207a7094b0d13152cb469848bd0fae08f3.out \
+    test_cli.sh_51f5fc7865022bbd9c0d40355fbbc908e9377f44.err \
+    test_cli.sh_51f5fc7865022bbd9c0d40355fbbc908e9377f44.out \
     test_cli.sh_5381ebb34f10dc3dc26a6f92aff199c16c3b8a5b.err \
     test_cli.sh_5381ebb34f10dc3dc26a6f92aff199c16c3b8a5b.out \
+    test_cli.sh_54633172fadd70061373be5dcb340f24bf5507d5.err \
+    test_cli.sh_54633172fadd70061373be5dcb340f24bf5507d5.out \
     test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.err \
     test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.out \
     test_cli.sh_5a08fb5360e41bc1a880c04112af35604d3eaea0.err \
@@ -36,10 +36,10 @@ dist_noinst_DATA = \
     test_cli.sh_6d8527ea7806e393f848e29abed8c45acc7be2d2.out \
     test_cli.sh_712cb8b623e9230d97008a8b7d06df1ea76c37af.err \
     test_cli.sh_712cb8b623e9230d97008a8b7d06df1ea76c37af.out \
+    test_cli.sh_791b5cc9d5d1c5179ebaff0fcecbc49d055159c4.err \
+    test_cli.sh_791b5cc9d5d1c5179ebaff0fcecbc49d055159c4.out \
     test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.err \
     test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.out \
-    test_cli.sh_a2f9a3e798e5f4f09c92eaa25ae236a2fb09dbd9.err \
-    test_cli.sh_a2f9a3e798e5f4f09c92eaa25ae236a2fb09dbd9.out \
     test_cli.sh_c69c835a3c43210225cf62564b3e9584c899af20.err \
     test_cli.sh_c69c835a3c43210225cf62564b3e9584c899af20.out \
     test_cli.sh_cc06341dd560f927512e92c7c0985ed8b25827ae.err \

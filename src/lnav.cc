@@ -4181,7 +4181,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     std::pair<Result<std::string, lnav::console::user_message>,
                               std::string>>
                     cmd_results;
-                textview_curses *log_tc, *text_tc, *tc;
+                textview_curses *tc;
                 bool output_view = true;
                 auto msg_cb_guard = lnav_data.ld_exec_context.add_msg_callback(
                     [](const auto& um) {
@@ -4224,7 +4224,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 lnav_data.ld_exec_context.set_output("stdout", stdout, nullptr);
                 alerter::singleton().enabled(false);
 
-                log_tc = &lnav_data.ld_views[LNV_LOG];
+                auto* log_tc = &lnav_data.ld_views[LNV_LOG];
                 log_tc->set_height(24_vl);
                 lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
@@ -4233,7 +4233,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 wait_for_children();
 
                 log_tc->set_top(0_vl);
-                text_tc = &lnav_data.ld_views[LNV_TEXT];
+                auto* text_tc = &lnav_data.ld_views[LNV_TEXT];
                 if (text_tc->get_inner_height() > 0_vl
                     && (!text_tc->get_selection().has_value()
                         || lnav_data.ld_text_source.current_file()
@@ -4255,7 +4255,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         tview.set_selection(0_vl);
                     }
                 }
-                lnav_data.ld_text_source.tss_apply_default_init_location = true;
 
                 log_info("Executing initial commands");
                 execute_init_commands(lnav_data.ld_exec_context, cmd_results);
