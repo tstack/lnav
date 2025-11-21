@@ -527,8 +527,8 @@ file_collection::watch_logfile(const std::string& filename,
 
                             return &(*prog_iter);
                         },
-                        [&filename, &retval](const auto& tmp_path,
-                                             const auto& entry) {
+                        [&filename, &retval, &loo](const auto& tmp_path,
+                                                   const auto& entry) {
                             auto arc_path = std::filesystem::relative(
                                 entry.path(), tmp_path);
                             auto custom_name = filename / arc_path;
@@ -548,7 +548,8 @@ file_collection::watch_logfile(const std::string& filename,
                                 .with_source(logfile_name_source::ARCHIVE)
                                 .with_visibility(is_visible)
                                 .with_non_utf_visibility(false)
-                                .with_visible_size_limit(256 * 1024);
+                                .with_visible_size_limit(256 * 1024)
+                                .with_time_range(loo.loo_time_range);
                         });
                     if (res.isErr()) {
                         log_error("archive extraction failed: %s",
