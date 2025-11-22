@@ -892,7 +892,7 @@ db_label_source::get_cell_as_string(vis_line_t row, size_t col)
 }
 
 std::optional<int64_t>
-db_label_source::get_cell_as_int64(vis_line_t row, size_t col)
+db_label_source::get_cell_as_int64(vis_line_t row, size_t col) const
 {
     if (row < 0_vl || (((size_t) row) >= this->dls_row_cursors.size())
         || col >= this->dls_headers.size())
@@ -918,7 +918,7 @@ db_label_source::get_cell_as_int64(vis_line_t row, size_t col)
 }
 
 std::optional<double>
-db_label_source::get_cell_as_double(vis_line_t row, size_t col)
+db_label_source::get_cell_as_double(vis_line_t row, size_t col) const
 {
     if (row < 0_vl || (((size_t) row) >= this->dls_row_cursors.size())
         || col >= this->dls_headers.size())
@@ -945,6 +945,36 @@ db_label_source::get_cell_as_double(vis_line_t row, size_t col)
     }
 
     return std::nullopt;
+}
+
+mapbox::util::variant<int64_t, double>
+db_label_source::get_cell_as_numeric(vis_line_t row, size_t col) const
+{
+    if (row < 0_vl || (((size_t) row) >= this->dls_row_cursors.size())
+        || col >= this->dls_headers.size())
+    {
+        return numeric_cell_t{mapbox::util::no_init{}};
+    }
+
+    size_t lpc = 0;
+    auto cursor = this->dls_row_cursors[row].sync();
+    while (cursor.has_value()) {
+        if (lpc == col) {
+            switch (cursor->get_type()) {
+                case lnav::cell_type::CT_INTEGER:
+                    return cursor->get_int();
+                case lnav::cell_type::CT_FLOAT:
+                    return cursor->get_float();
+                default:
+                    return numeric_cell_t{mapbox::util::no_init{}};
+            }
+        }
+
+        cursor = cursor->next();
+        lpc += 1;
+    }
+
+    return numeric_cell_t{mapbox::util::no_init{}};
 }
 
 void

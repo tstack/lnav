@@ -221,10 +221,16 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         if (lv_iter != values.lvv_values.end()) {
             switch (lv_iter->lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_FLOAT:
-                    row_out.add_value(sr, lv_iter->lv_value.d, ll.is_marked());
+                    row_out.add_value(sr,
+                                      spectrogram_row::value_type::real,
+                                      lv_iter->lv_value.d,
+                                      ll.is_marked());
                     break;
                 case value_kind_t::VALUE_INTEGER: {
-                    row_out.add_value(sr, lv_iter->lv_value.i, ll.is_marked());
+                    row_out.add_value(sr,
+                                      spectrogram_row::value_type::integer,
+                                      lv_iter->lv_value.i,
+                                      ll.is_marked());
                     break;
                 }
                 default:
@@ -535,10 +541,20 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
         auto get_res
-            = dls.get_cell_as_double(lpc, this->dsvs_column_index.value());
+            = dls.get_cell_as_numeric(lpc, this->dsvs_column_index.value());
 
-        if (get_res) {
-            row_out.add_value(sr, get_res.value(), false);
+        if (get_res.valid()) {
+            if (get_res.is<int64_t>()) {
+                row_out.add_value(sr,
+                                  spectrogram_row::value_type::integer,
+                                  get_res.get<int64_t>(),
+                                  false);
+            } else {
+                row_out.add_value(sr,
+                                  spectrogram_row::value_type::real,
+                                  get_res.get<double>(),
+                                  false);
+            }
         }
     }
 

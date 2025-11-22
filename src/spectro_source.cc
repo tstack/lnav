@@ -39,6 +39,8 @@
 #include "base/math_util.hh"
 #include "config.h"
 
+using namespace std::chrono_literals;
+
 static constexpr auto TIME_COLUMN_WIDTH = 26;
 static constexpr auto UNUSABLE_WIDTH = TIME_COLUMN_WIDTH + 2;
 static constexpr auto MINIMUM_WIDTH = UNUSABLE_WIDTH + 20;
@@ -217,17 +219,24 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
             + this->ss_cursor_column.value() * sr.sr_column_size;
         auto range_max = range_min + sr.sr_column_size;
 
+        auto range_min_str
+            = s_row.sr_value_type == spectrogram_row::value_type::real
+            ? fmt::format(FMT_STRING("{:.2Lf}"), range_min)
+            : fmt::format(FMT_STRING("{:L}"), ceil(range_min));
+        auto range_max_str
+            = s_row.sr_value_type == spectrogram_row::value_type::real
+            ? fmt::format(FMT_STRING("{:.2Lf}"), range_max)
+            : fmt::format(FMT_STRING("{:L}"), floor(range_max));
+
         auto desc
             = attr_line_t()
                   .append(
                       lnav::roles::number(fmt::to_string(bucket.rb_counter)))
                   .append(fmt::format(FMT_STRING(" value{} in the range "),
                                       bucket.rb_counter == 1 ? "" : "s"))
-                  .append(lnav::roles::number(
-                      fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
+                  .append(lnav::roles::number(range_min_str))
                   .append("-")
-                  .append(lnav::roles::number(
-                      fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
+                  .append(lnav::roles::number(range_max_str))
                   .append(" ");
         auto mark_offset = TIME_COLUMN_WIDTH + this->ss_cursor_column.value();
         auto mark_is_before = true;
@@ -539,16 +548,14 @@ spectrogram_source::cache_bounds()
     auto grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
     auto grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
 
-    auto diff = std::max(std::chrono::microseconds{1},
-                         grain_end_time - grain_begin_time);
+    auto diff = std::max(1us, grain_end_time - grain_begin_time);
     this->ss_cached_line_count
-        = (diff + this->ss_granularity - std::chrono::microseconds{1})
-        / this->ss_granularity;
+        = (diff + this->ss_granularity - 1us) / this->ss_granularity;
 
     int64_t samples_per_row = sb.sb_count / this->ss_cached_line_count;
     auto& st = this->ss_cached_thresholds;
 
-    st.st_yellow_threshold = samples_per_row / 2;
+    st.st_yellow_threshold = samples_per_row / 4;
     st.st_green_threshold = st.st_yellow_threshold / 2;
 
     if (st.st_green_threshold <= 1) {

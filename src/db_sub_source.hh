@@ -115,8 +115,11 @@ public:
         const textview_curses& tc) override;
 
     std::string get_cell_as_string(vis_line_t row, size_t col);
-    std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col);
-    std::optional<double> get_cell_as_double(vis_line_t row, size_t col);
+    std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col) const;
+    std::optional<double> get_cell_as_double(vis_line_t row, size_t col) const;
+
+    using numeric_cell_t = mapbox::util::variant<int64_t, double>;
+    numeric_cell_t get_cell_as_numeric(vis_line_t row, size_t col) const;
 
     void update_time_column(const timeval& tv);
     void update_time_column(const string_fragment& sf);

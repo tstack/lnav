@@ -79,15 +79,27 @@ struct spectrogram_row {
         int rb_marks{0};
     };
 
+    enum class value_type : uint8_t {
+        integer,
+        real,
+    };
+
     std::vector<row_bucket> sr_values;
+    value_type sr_value_type{value_type::integer};
     unsigned long sr_width{0};
     double sr_column_size{0.0};
     std::function<std::unique_ptr<text_sub_source>(
         const spectrogram_request&, double range_min, double range_max)>
         sr_details_source_provider;
 
-    void add_value(spectrogram_request& sr, double value, bool marked)
+    void add_value(spectrogram_request& sr,
+                   value_type vt,
+                   double value,
+                   bool marked)
     {
+        if (vt != value_type::integer) {
+            this->sr_value_type = vt;
+        }
         long index = std::floor((value - sr.sr_bounds.sb_min_value_out)
                                 / sr.sr_column_size);
 
@@ -109,10 +121,7 @@ public:
     virtual void spectro_row(spectrogram_request& sr, spectrogram_row& row_out)
         = 0;
 
-    virtual bool spectro_is_marked(spectrogram_request& sr)
-    {
-        return false;
-    }
+    virtual bool spectro_is_marked(spectrogram_request& sr) { return false; }
 
     enum class mark_op_t {
         add,
