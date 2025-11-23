@@ -56,8 +56,7 @@ struct spectrogram_bounds {
 };
 
 struct spectrogram_thresholds {
-    int st_green_threshold{0};
-    int st_yellow_threshold{0};
+    int st_thresholds[7]{};
 };
 
 struct spectrogram_request {

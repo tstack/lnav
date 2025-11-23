@@ -55,6 +55,9 @@ struct term_color_palette {
 
     uint8_t match_color(const lab_color& to_match) const;
 
+    std::optional<lab_color> to_lab_color(
+        const styling::color_unit& color) const;
+
     std::vector<term_color> tc_palette;
 };
 

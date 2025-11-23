@@ -455,12 +455,19 @@ role_to_style(const role_t role,
             default_bg_style = fmt::bg(fmt::terminal_color::black);
             break;
         case role_t::VCR_LOW_THRESHOLD:
+        case role_t::VCR_SPECTRO_THRESHOLD0:
+        case role_t::VCR_SPECTRO_THRESHOLD1:
             line_style |= fmt::bg(fmt::terminal_color::green);
             break;
         case role_t::VCR_MED_THRESHOLD:
+        case role_t::VCR_SPECTRO_THRESHOLD2:
+        case role_t::VCR_SPECTRO_THRESHOLD3:
+        case role_t::VCR_SPECTRO_THRESHOLD4:
             line_style |= fmt::bg(fmt::terminal_color::yellow);
             break;
         case role_t::VCR_HIGH_THRESHOLD:
+        case role_t::VCR_SPECTRO_THRESHOLD5:
+        case role_t::VCR_SPECTRO_THRESHOLD6:
             line_style |= fmt::bg(fmt::terminal_color::red);
             break;
         default:

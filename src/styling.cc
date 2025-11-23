@@ -267,6 +267,30 @@ term_color_palette::match_color(const lab_color& to_match) const
     return lowest_id;
 }
 
+std::optional<lab_color>
+term_color_palette::to_lab_color(const styling::color_unit& color) const
+{
+    return std::visit(
+        styling::overload{
+            [](styling::transparent) -> std::optional<lab_color> {
+                return std::nullopt;
+            },
+            [](styling::semantic) -> std::optional<lab_color> {
+                return std::nullopt;
+            },
+            [this](const palette_color& pc) -> std::optional<lab_color> {
+                if (pc < this->tc_palette.size()) {
+                    return this->tc_palette[pc].xc_lab_color;
+                }
+                return std::nullopt;
+            },
+            [](const rgb_color& rc) -> std::optional<lab_color> {
+                return lab_color{rc};
+            },
+        },
+        color.cu_value);
+}
+
 namespace styling {
 
 Result<color_unit, std::string>

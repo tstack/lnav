@@ -285,6 +285,16 @@ lab_color::sufficient_contrast(const lab_color& other) const
             || std::signbit(this->lc_b) != std::signbit(other.lc_b));
 }
 
+lab_color
+lab_color::avg(const lab_color& other) const
+{
+    return lab_color{
+        (this->lc_l + other.lc_l) / 2.0,
+        (this->lc_a + other.lc_a) / 2.0,
+        (this->lc_b + other.lc_b) / 2.0,
+    };
+}
+
 namespace styling {
 
 constexpr color_unit color_unit::EMPTY = color_unit{transparent{}};

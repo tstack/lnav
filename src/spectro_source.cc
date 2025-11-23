@@ -241,8 +241,6 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         auto mark_offset = TIME_COLUMN_WIDTH + this->ss_cursor_column.value();
         auto mark_is_before = true;
 
-        retval.al_attrs.emplace_back(line_range{0, -1},
-                                     VC_ROLE.value(role_t::VCR_STATUS_INFO));
         if (desc.length() + 8 > (ssize_t) width) {
             desc.clear();
         }
@@ -259,6 +257,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         if (!mark_is_before) {
             retval.append("\u25b2 ");
         }
+        retval.with_attr_for_all(VC_ROLE.value(role_t::VCR_CURSOR_LINE));
 
         if (this->ss_details_view != nullptr) {
             if (s_row.sr_details_source_provider) {
@@ -411,18 +410,16 @@ spectrogram_source::chart_attrs_for_line(textview_curses& tc,
             continue;
         }
 
-        role_t role;
-
-        if (col_value < st.st_green_threshold) {
-            role = role_t::VCR_LOW_THRESHOLD;
-        } else if (col_value < st.st_yellow_threshold) {
-            role = role_t::VCR_MED_THRESHOLD;
-        } else {
-            role = role_t::VCR_HIGH_THRESHOLD;
-        }
+        auto role = lnav::enums::to_underlying(role_t::VCR_SPECTRO_THRESHOLD0);
+        auto t_iter = std::lower_bound(std::begin(st.st_thresholds),
+                                       std::end(st.st_thresholds),
+                                       col_value);
+        auto dist = std::distance(std::begin(st.st_thresholds), t_iter);
+        role += dist;
+        ensure(role < (int) role_t::VCR__MAX);
         auto lr
             = line_range{TIME_COLUMN_WIDTH + lpc, TIME_COLUMN_WIDTH + lpc + 1};
-        value_out.emplace_back(lr, VC_ROLE.value(role));
+        value_out.emplace_back(lr, VC_ROLE.value(role_t{role}));
     }
 }
 
@@ -545,6 +542,8 @@ spectrogram_source::cache_bounds()
         return;
     }
 
+    auto [height, width] = this->tss_view->get_dimensions();
+    width -= UNUSABLE_WIDTH;
     auto grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
     auto grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
 
@@ -555,19 +554,21 @@ spectrogram_source::cache_bounds()
     int64_t samples_per_row = sb.sb_count / this->ss_cached_line_count;
     auto& st = this->ss_cached_thresholds;
 
-    st.st_yellow_threshold = samples_per_row / 4;
-    st.st_green_threshold = st.st_yellow_threshold / 2;
-
-    if (st.st_green_threshold <= 1) {
-        st.st_green_threshold = 2;
-    }
-    if (st.st_yellow_threshold <= st.st_green_threshold) {
-        st.st_yellow_threshold = st.st_green_threshold + 1;
+    st.st_thresholds[0] = samples_per_row / width;
+    st.st_thresholds[1] = samples_per_row / (width / 2);
+    st.st_thresholds[2] = samples_per_row / (width / 4);
+    st.st_thresholds[3] = samples_per_row / (width / 5);
+    st.st_thresholds[4] = samples_per_row / (width / 6);
+    st.st_thresholds[5] = samples_per_row / (width / 8);
+    st.st_thresholds[6] = std::numeric_limits<int>::max();
+    for (size_t lpc = 0; lpc < 6; lpc++) {
+        if (st.st_thresholds[lpc] < lpc + 1) {
+            st.st_thresholds[lpc] = lpc + 1;
+        }
     }
 
     auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
     bm.clear();
-    auto [height, width] = this->tss_view->get_dimensions();
     for (auto row = 0_vl; row < this->ss_cached_line_count; row += 1_vl) {
         spectrogram_request sr(sb);
 
@@ -699,12 +700,12 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
              ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
                  "  ") " %'d+",
              lnav::enums::to_underlying(role_t::VCR_LOW_THRESHOLD),
-             st.st_green_threshold - 1,
+             st.st_thresholds[0],
              lnav::enums::to_underlying(role_t::VCR_MED_THRESHOLD),
-             st.st_green_threshold,
-             st.st_yellow_threshold - 1,
+             st.st_thresholds[0],
+             st.st_thresholds[3],
              lnav::enums::to_underlying(role_t::VCR_HIGH_THRESHOLD),
-             st.st_yellow_threshold);
+             st.st_thresholds[5]);
     auto buflen = strlen(buf);
     if (line.length() + buflen + 20 < width) {
         line.append(width / 2 - buflen / 3 - line.length(), ' ');

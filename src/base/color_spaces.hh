@@ -30,6 +30,7 @@
 #ifndef color_spaces_hh
 #define color_spaces_hh
 
+#include <optional>
 #include <string>
 #include <variant>
 
@@ -90,7 +91,10 @@ struct rgb_color {
 };
 
 struct lab_color {
-    constexpr lab_color() : lc_l(0), lc_a(0), lc_b(0) {}
+    explicit constexpr lab_color(double l = 0.0, double a = 0.0, double b = 0.0)
+        : lc_l(l), lc_a(a), lc_b(b)
+    {
+    }
 
     explicit lab_color(const rgb_color& rgb);
 
@@ -99,6 +103,8 @@ struct lab_color {
     double deltaE(const lab_color& other) const;
 
     bool sufficient_contrast(const lab_color& other) const;
+
+    lab_color avg(const lab_color& other) const;
 
     lab_color& operator=(const lab_color& other)
     {

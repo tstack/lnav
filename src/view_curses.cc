@@ -1436,6 +1436,39 @@ view_colors::init_roles(const lnav_theme& lt,
     this->get_role_attrs(role_t::VCR_HIGH_THRESHOLD)
         = this->to_attrs(lt, lt.lt_style_high_threshold, reporter);
 
+    {
+        auto t0_attrs = this->to_attrs(lt, lt.lt_style_low_threshold, reporter);
+        auto t3_attrs = this->to_attrs(lt, lt.lt_style_med_threshold, reporter);
+        auto t6_attrs
+            = this->to_attrs(lt, lt.lt_style_high_threshold, reporter);
+
+        auto t0_color = this->vc_active_palette->to_lab_color(
+            t0_attrs.ra_normal.ta_bg_color);
+        auto t1_attrs = t0_attrs;
+        auto t2_attrs = t3_attrs;
+        auto t3_color = this->vc_active_palette->to_lab_color(
+            t3_attrs.ra_normal.ta_bg_color);
+        auto t4_attrs = t3_attrs;
+        auto t5_attrs = t6_attrs;
+        auto t6_color = this->vc_active_palette->to_lab_color(
+            t6_attrs.ra_normal.ta_bg_color);
+        if (t0_color && t3_color && t6_color) {
+            auto low_mid = t0_color->avg(t3_color.value());
+            auto mid_high = t3_color->avg(t6_color.value());
+            t1_attrs.ra_normal.ta_bg_color = t0_color->avg(low_mid).to_rgb();
+            t2_attrs.ra_normal.ta_bg_color = t3_color->avg(low_mid).to_rgb();
+            t4_attrs.ra_normal.ta_bg_color = t3_color->avg(mid_high).to_rgb();
+            t5_attrs.ra_normal.ta_bg_color = t6_color->avg(mid_high).to_rgb();
+        }
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD0) = t0_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD1) = t1_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD2) = t2_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD3) = t3_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD4) = t4_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD5) = t5_attrs;
+        this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD6) = t6_attrs;
+    }
+
     for (auto level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
          level < LEVEL__MAX;
          level = static_cast<log_level_t>(level + 1))

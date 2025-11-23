@@ -185,6 +185,8 @@ Interface changes:
   row in-between gaps in time.  The spacer row shows
   bullet points on a log scale to represent the amount
   of time in the gap.
+* The SPECTRO view now shows the year in timestamps
+  and uses additional colors to show the value range.
 * If there are background tasks, like the processing done
   by `:add-source-path`, a panel with progress bars for
   each operation will be shown just above the bottom

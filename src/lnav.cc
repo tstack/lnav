@@ -1624,6 +1624,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         ld_view.tc_on_click = click_handler;
         ld_view.tc_interactive = true;
     }
+    lnav_data.ld_views[LNV_SPECTRO].tc_cursor_role = std::nullopt;
+    lnav_data.ld_views[LNV_SPECTRO].tc_disabled_cursor_role = std::nullopt;
+
     lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
     lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);

@@ -608,6 +608,16 @@ public:
         this->blf_field_defs.clear();
     }
 
+    std::vector<logline_value_meta> get_value_metadata() const override
+    {
+        std::vector<logline_value_meta> retval;
+
+        for (const auto& fd : this->blf_field_defs) {
+            retval.emplace_back(fd.fd_meta);
+        }
+        return retval;
+    }
+
     scan_result_t scan_int(std::vector<logline>& dst,
                            const line_info& li,
                            shared_buffer_ref& sbr,
@@ -1402,6 +1412,16 @@ public:
         this->wlf_time_scanner.clear();
         this->wlf_format_name.clear();
         this->wlf_field_defs.clear();
+    }
+
+    std::vector<logline_value_meta> get_value_metadata() const override
+    {
+        std::vector<logline_value_meta> retval;
+
+        for (const auto& fd : this->wlf_field_defs) {
+            retval.emplace_back(fd.fd_meta);
+        }
+        return retval;
     }
 
     scan_result_t scan_int(std::vector<logline>& dst,

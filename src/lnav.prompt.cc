@@ -1145,6 +1145,8 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 std::unordered_set<std::string> field_names;
                 auto* tss = tc.get_sub_source();
                 auto* dls = dynamic_cast<db_label_source*>(tss);
+                auto* lss = dynamic_cast<logfile_sub_source*>(tss);
+                auto sel_opt = tc.get_selection();
                 if (dls != nullptr) {
                     for (const auto& hdr : dls->dls_headers) {
                         if (!hdr.is_graphable()) {
@@ -1152,26 +1154,18 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         }
                         field_names.emplace(hdr.hm_name);
                     }
-                } else {
-                    tc.map_top_row([&field_names](const auto& al) {
-                        auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
-                        if (attr_opt) {
-                            auto format_name = attr_opt->get();
-                            auto format = log_format::find_root_format(
-                                format_name.c_str());
-                            if (format) {
-                                for (const auto& lvm :
-                                     format->get_value_metadata())
-                                {
-                                    if (lvm.is_numeric()) {
-                                        field_names.emplace(
-                                            lvm.lvm_name.to_string());
-                                    }
-                                }
+                } else if (lss != nullptr && sel_opt) {
+                    auto win = lss->window_at(sel_opt.value());
+                    for (const auto& log_msg : *win) {
+                        for (const auto& lvm : log_msg.get_file_ptr()
+                                                   ->get_format()
+                                                   ->get_value_metadata())
+                        {
+                            if (lvm.is_numeric()) {
+                                field_names.emplace(lvm.lvm_name.to_string());
                             }
                         }
-                        return std::nullopt;
-                    });
+                    }
                 }
 
                 if (field_names.empty()) {
