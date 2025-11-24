@@ -40,6 +40,7 @@
 
 #include <math.h>
 
+#include "digestible/digestible.h"
 #include "hasher.hh"
 #include "statusview_curses.hh"
 #include "textview_curses.hh"
@@ -53,6 +54,7 @@ struct spectrogram_bounds {
     double sb_max_value_out{0.0};
     int64_t sb_count{0};
     size_t sb_mark_generation{0};
+    digestible::tdigest<double> sb_tdigest{200};
 };
 
 struct spectrogram_thresholds {

@@ -42,6 +42,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/cell_container.hh"
 #include "base/lnav.resolver.hh"
+#include "digestible/digestible.h"
 #include "hist_source.hh"
 #include "robin_hood/robin_hood.h"
 #include "textview_curses.hh"
@@ -154,6 +155,7 @@ public:
         text_align_t hm_align{text_align_t::start};
         text_attrs hm_title_attrs{text_attrs::with_underline()};
         stacked_bar_chart<std::string> hm_chart;
+        digestible::tdigest<double> hm_tdigest{200};
 
         struct json_column_meta {
             json_column_meta(size_t index) : jcm_column_index(index) {}

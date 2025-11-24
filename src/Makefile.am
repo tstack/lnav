@@ -180,6 +180,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
 	-I$(srcdir)/third-party/date/include \
+	-I$(srcdir)/third-party/digestible/include \
 	-I$(srcdir)/third-party/notcurses/include \
 	-I$(srcdir)/third-party/lnav-rs-ext \
 	-I$(srcdir)/third-party/rapidyaml \
@@ -455,6 +456,7 @@ THIRD_PARTY_SRCS = \
     third-party/CLI/Split.hpp \
     third-party/CLI/TypeTools.hpp \
     third-party/CLI/ConfigFwd.hpp \
+    third-party/digestible/include/digestible/digestible.h \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
     third-party/md4c/entity.c \

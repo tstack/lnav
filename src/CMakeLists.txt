@@ -825,6 +825,8 @@ add_library(
         third-party/date/include/date/tz.h
         third-party/date/include/date/islamic.h
 
+        third-party/digestible/include/digestible/digestible.h
+
         third-party/intervaltree/IntervalTree.h
 
         third-party/md4c/entity.h
@@ -858,6 +860,7 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
         third-party/date/include
+        third-party/digestible/include
         third-party/lnav-rs-ext
         third-party/rapidyaml
         third-party/hat-trie/include

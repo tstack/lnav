@@ -155,7 +155,8 @@ log_spectro_value_source::update_stats()
         }
 
         this->lsvs_found = true;
-        this->lsvs_stats.merge(*stats);
+        auto stats_cp = *stats;
+        this->lsvs_stats.merge(stats_cp);
     }
 
     if (this->lsvs_begin_time > std::chrono::microseconds::zero()) {
@@ -193,6 +194,7 @@ log_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
     sb_out.sb_mark_generation = lnav_data.ld_views[LNV_LOG]
                                     .get_bookmarks()[&textview_curses::BM_USER]
                                     .bv_generation;
+    sb_out.sb_tdigest = this->lsvs_stats.lvs_tdigest;
 }
 
 void
@@ -506,6 +508,7 @@ db_spectro_value_source::update_stats()
         auto& bs = hm->hm_chart.get_stats_for(this->dsvs_colname);
         this->dsvs_stats.lvs_min_value = bs.bs_min_value;
         this->dsvs_stats.lvs_max_value = bs.bs_max_value;
+        this->dsvs_stats.lvs_tdigest = hm->hm_tdigest;
     }
 
     this->dsvs_stats.lvs_count = dls.dls_row_cursors.size();
@@ -527,6 +530,7 @@ db_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
     sb_out.sb_min_value_out = this->dsvs_stats.lvs_min_value;
     sb_out.sb_max_value_out = this->dsvs_stats.lvs_max_value;
     sb_out.sb_count = this->dsvs_stats.lvs_count;
+    sb_out.sb_tdigest = this->dsvs_stats.lvs_tdigest;
 }
 
 void

@@ -50,6 +50,7 @@
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
 #include "sysclip.hh"
+#include "tlx/container/btree_map.hpp"
 
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
@@ -708,6 +709,7 @@ timeline_source::rebuild_indexes()
     }
 
     log_info("building opid table");
+    tlx::btree_map<std::chrono::microseconds, std::string> part_map;
     for (const auto& [index, ld] : lnav::itertools::enumerate(this->gs_lss)) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
@@ -716,8 +718,22 @@ timeline_source::rebuild_indexes()
             continue;
         }
 
-        ld->get_file_ptr()->enable_cache();
-        auto format = ld->get_file_ptr()->get_format();
+        auto* lf = ld->get_file_ptr();
+        lf->enable_cache();
+
+        const auto& mark_meta = lf->get_bookmark_metadata();
+        {
+            for (const auto& [line_num, line_meta] : mark_meta) {
+                if (line_meta.bm_name.empty()) {
+                    continue;
+                }
+                const auto ll = std::next(lf->begin(), line_num);
+                part_map.insert2(ll->get_time<std::chrono::microseconds>(),
+                                 line_meta.bm_name);
+            }
+        }
+
+        auto format = lf->get_format();
         safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
             ld->get_file_ptr()->get_opids());
         for (const auto& pair : r_opid_map->los_opid_ranges) {

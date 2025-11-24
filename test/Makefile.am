@@ -30,6 +30,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party \
 	-I$(top_srcdir)/src/third-party/date/include \
+	-I$(top_srcdir)/src/third-party/digestible/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	$(CODE_COVERAGE_CPPFLAGS) \

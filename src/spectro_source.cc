@@ -553,18 +553,50 @@ spectrogram_source::cache_bounds()
 
     int64_t samples_per_row = sb.sb_count / this->ss_cached_line_count;
     auto& st = this->ss_cached_thresholds;
+    auto range = sb.sb_max_value_out - sb.sb_min_value_out;
+    auto mag_per_col = range / (double) width;
 
-    st.st_thresholds[0] = samples_per_row / width;
-    st.st_thresholds[1] = samples_per_row / (width / 2);
-    st.st_thresholds[2] = samples_per_row / (width / 4);
-    st.st_thresholds[3] = samples_per_row / (width / 5);
-    st.st_thresholds[4] = samples_per_row / (width / 6);
-    st.st_thresholds[5] = samples_per_row / (width / 8);
+    log_debug("samples per row = %" PRId64, samples_per_row);
+    std::vector<int> mags;
+    constexpr double pct_inc = 0.10;
+    auto accum = 0;
+    auto last_quant = sb.sb_min_value_out;
+    for (auto pct = pct_inc; pct < 1.0; pct += pct_inc) {
+        auto qmag = pct * samples_per_row;
+        auto hist_mag = qmag - accum;
+        log_debug("  hist mag = %f", hist_mag);
+        auto quant = sb.sb_tdigest.quantile(pct * 100.0);
+        auto quant_range = quant - last_quant;
+        log_debug(" quant range = %f", quant_range);
+        auto quant_cols = quant_range / mag_per_col;
+        log_debug(" quant cols = %f", quant_cols);
+        auto t = hist_mag / quant_cols;
+        log_debug(" t = %f", t);
+        mags.emplace_back(t);
+        accum += hist_mag;
+        last_quant = quant;
+    }
+    mags.emplace_back(sb.sb_count - accum);
+    log_debug("mag size %d", mags.size());
+    std::sort(mags.begin(), mags.end());
+    for (const auto& mag : mags) {
+        log_debug(" mag[] = %d", mag);
+    }
+    for (size_t lpc = 0; lpc < 6; lpc++) {
+        st.st_thresholds[lpc] = mags[lpc];
+    }
+
+    for (const auto& thresh : st.st_thresholds) {
+        log_debug(" thresh[] = %d", thresh);
+    }
     st.st_thresholds[6] = std::numeric_limits<int>::max();
     for (size_t lpc = 0; lpc < 6; lpc++) {
         if (st.st_thresholds[lpc] < lpc + 1) {
             st.st_thresholds[lpc] = lpc + 1;
         }
+    }
+    for (const auto& thresh : st.st_thresholds) {
+        log_debug(" thresh[] = %d", thresh);
     }
 
     auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];

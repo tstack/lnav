@@ -598,13 +598,16 @@ db_label_source::push_column(const column_value_t& sv)
     if (hm.is_graphable()) {
         if (sv.is<int64_t>()) {
             hm.hm_chart.add_value(hm.hm_name, sv.get<int64_t>());
+            hm.hm_tdigest.insert(sv.get<int64_t>());
         } else if (sv.is<double>()) {
             hm.hm_chart.add_value(hm.hm_name, sv.get<double>());
+            hm.hm_tdigest.insert(sv.get<double>());
         } else if (sv.is<string_fragment>()) {
             auto sf = sv.get<string_fragment>();
             auto num_from_res = humanize::try_from<double>(sf);
             if (num_from_res) {
                 hm.hm_chart.add_value(hm.hm_name, num_from_res.value());
+                hm.hm_tdigest.insert(num_from_res.value());
             }
         }
     } else if (cv_sf.is_valid() && cv_sf.length() > 2

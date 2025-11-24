@@ -51,6 +51,7 @@
 #include "base/string_attr_type.hh"
 #include "base/time_util.hh"
 #include "byte_array.hh"
+#include "digestible/digestible.h"
 #include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
@@ -176,6 +177,7 @@ struct logline_value_stats {
     double lvs_total{0};
     double lvs_min_value{std::numeric_limits<double>::max()};
     double lvs_max_value{-std::numeric_limits<double>::max()};
+    digestible::tdigest<double> lvs_tdigest{200};
 };
 
 struct pattern_for_lines {
@@ -242,8 +244,8 @@ public:
             log_level_t lev,
             uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_opid(opid),
-          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
-          ll_meta_mark(0), ll_expr_mark(0)
+          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_meta_mark(0),
+          ll_expr_mark(0)
     {
         this->ll_schema[0] = 0;
         this->ll_schema[1] = 0;
@@ -254,8 +256,7 @@ public:
             log_level_t lev,
             uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
-          ll_valid_utf(1), ll_level(lev), ll_meta_mark(0),
-          ll_expr_mark(0)
+          ll_valid_utf(1), ll_level(lev), ll_meta_mark(0), ll_expr_mark(0)
     {
         this->set_time(tv);
         this->ll_schema[0] = 0;
