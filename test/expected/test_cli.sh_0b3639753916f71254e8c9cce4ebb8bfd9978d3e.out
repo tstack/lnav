@@ -752,7 +752,7 @@
                     },
                     "spectrogram-low": {
                         "color": "Black",
-                        "background-color": "Green",
+                        "background-color": "#0f0",
                         "underline": false,
                         "bold": true,
                         "italic": false,
@@ -760,7 +760,7 @@
                     },
                     "spectrogram-medium": {
                         "color": "Black",
-                        "background-color": "Olive",
+                        "background-color": "#ffff5f",
                         "underline": false,
                         "bold": true,
                         "italic": false,
@@ -768,7 +768,7 @@
                     },
                     "spectrogram-high": {
                         "color": "Black",
-                        "background-color": "Maroon",
+                        "background-color": "#d70000",
                         "underline": false,
                         "bold": true,
                         "italic": false,
@@ -3288,26 +3288,26 @@
                         "strike": false
                     },
                     "spectrogram-low": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$black",
+                        "background-color": "#666",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-medium": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$black",
+                        "background-color": "#aaa",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "spectrogram-high": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$black",
+                        "background-color": "#fff",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },

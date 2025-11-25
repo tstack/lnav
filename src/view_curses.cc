@@ -1455,10 +1455,16 @@ view_colors::init_roles(const lnav_theme& lt,
         if (t0_color && t3_color && t6_color) {
             auto low_mid = t0_color->avg(t3_color.value());
             auto mid_high = t3_color->avg(t6_color.value());
-            t1_attrs.ra_normal.ta_bg_color = t0_color->avg(low_mid).to_rgb();
-            t2_attrs.ra_normal.ta_bg_color = t3_color->avg(low_mid).to_rgb();
-            t4_attrs.ra_normal.ta_bg_color = t3_color->avg(mid_high).to_rgb();
-            t5_attrs.ra_normal.ta_bg_color = t6_color->avg(mid_high).to_rgb();
+            t1_attrs.ra_normal.ta_bg_color = this->match_color(
+                styling::color_unit::from_rgb(t0_color->avg(low_mid).to_rgb()));
+            t2_attrs.ra_normal.ta_bg_color = this->match_color(
+                styling::color_unit::from_rgb(t3_color->avg(low_mid).to_rgb()));
+            t4_attrs.ra_normal.ta_bg_color
+                = this->match_color(styling::color_unit::from_rgb(
+                    t3_color->avg(mid_high).to_rgb()));
+            t5_attrs.ra_normal.ta_bg_color
+                = this->match_color(styling::color_unit::from_rgb(
+                    t6_color->avg(mid_high).to_rgb()));
         }
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD0) = t0_attrs;
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD1) = t1_attrs;

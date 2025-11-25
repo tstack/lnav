@@ -243,17 +243,17 @@
                     },
                     "spectrogram-low": {
                         "color": "Black",
-                        "background-color": "Green",
+                        "background-color": "#0f0",
                         "bold": true
                     },
                     "spectrogram-medium": {
                         "color": "Black",
-                        "background-color": "Olive",
+                        "background-color": "#ffff5f",
                         "bold": true
                     },
                     "spectrogram-high": {
                         "color": "Black",
-                        "background-color": "Maroon",
+                        "background-color": "#d70000",
                         "bold": true
                     },
                     "file": {

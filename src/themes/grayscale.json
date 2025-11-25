@@ -178,6 +178,21 @@
                     },
                     "number": {
                         "bold": true
+                    },
+                    "spectrogram-high": {
+                        "color": "$black",
+                        "background-color": "#fff",
+                        "bold": true
+                    },
+                    "spectrogram-medium": {
+                        "color": "$black",
+                        "background-color": "#aaa",
+                        "bold": true
+                    },
+                    "spectrogram-low": {
+                        "color": "$black",
+                        "background-color": "#666",
+                        "bold": true
                     }
                 },
                 "status-styles": {
