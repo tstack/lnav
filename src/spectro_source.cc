@@ -232,8 +232,8 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
 
         auto desc
             = attr_line_t()
-                  .append(
-                      lnav::roles::number(fmt::to_string(bucket.rb_counter)))
+                  .append(lnav::roles::number(
+                      fmt::format(FMT_STRING("{:L}"), bucket.rb_counter)))
                   .append(fmt::format(FMT_STRING(" value{} in the range "),
                                       bucket.rb_counter == 1 ? "" : "s"))
                   .append(lnav::roles::number(range_min_str))
