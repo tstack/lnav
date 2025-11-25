@@ -421,6 +421,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 adjusted_tm
                     = format->tm_for_display(this->lss_token_line, time_sf);
             }
+            adjusted_tm->et_flags |= this->lss_all_timestamp_flags
+                & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET);
             char buffer[128];
             this->lss_time_column_size
                 = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm.value());

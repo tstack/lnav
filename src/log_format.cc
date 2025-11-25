@@ -1696,6 +1696,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             ll.set_valid_utf(jlu.jlu_valid_utf);
             dst.emplace_back(ll);
         }
+        this->lf_timestamp_flags = jlu.jlu_exttm.et_flags;
 
         if (!this->lf_specialized) {
             static const intern_string_t ts_field
