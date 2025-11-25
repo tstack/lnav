@@ -227,12 +227,14 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                                       spectrogram_row::value_type::real,
                                       lv_iter->lv_value.d,
                                       ll.is_marked());
+                    row_out.sr_tdigest.insert(lv_iter->lv_value.d);
                     break;
                 case value_kind_t::VALUE_INTEGER: {
                     row_out.add_value(sr,
                                       spectrogram_row::value_type::integer,
                                       lv_iter->lv_value.i,
                                       ll.is_marked());
+                    row_out.sr_tdigest.insert(lv_iter->lv_value.i);
                     break;
                 }
                 default:

@@ -103,7 +103,9 @@ spectrogram_source::list_input_handle_key(listview_curses& lv,
             }
 
             if (!this->ss_cursor_column) {
-                lv.set_selection(0_vl);
+                auto old_sel = lv.get_selection().value_or(0_vl);
+                lv.set_selection(-1_vl);
+                lv.set_selection(old_sel);
             }
             line_range lr(
                 TIME_COLUMN_WIDTH + this->ss_cursor_column.value(),
@@ -400,7 +402,6 @@ spectrogram_source::chart_attrs_for_line(textview_curses& tc,
                                          int row,
                                          string_attrs_t& value_out)
 {
-    const auto& st = this->ss_cached_thresholds;
     const auto& s_row = this->load_row(tc, row);
 
     for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
@@ -411,10 +412,10 @@ spectrogram_source::chart_attrs_for_line(textview_curses& tc,
         }
 
         auto role = lnav::enums::to_underlying(role_t::VCR_SPECTRO_THRESHOLD0);
-        auto t_iter = std::lower_bound(std::begin(st.st_thresholds),
-                                       std::end(st.st_thresholds),
+        auto t_iter = std::lower_bound(std::begin(s_row.sr_thresholds),
+                                       std::end(s_row.sr_thresholds),
                                        col_value);
-        auto dist = std::distance(std::begin(st.st_thresholds), t_iter);
+        auto dist = std::distance(std::begin(s_row.sr_thresholds), t_iter);
         role += dist;
         ensure(role < (int) role_t::VCR__MAX);
         auto lr
@@ -551,54 +552,6 @@ spectrogram_source::cache_bounds()
     this->ss_cached_line_count
         = (diff + this->ss_granularity - 1us) / this->ss_granularity;
 
-    int64_t samples_per_row = sb.sb_count / this->ss_cached_line_count;
-    auto& st = this->ss_cached_thresholds;
-    auto range = sb.sb_max_value_out - sb.sb_min_value_out;
-    auto mag_per_col = range / (double) width;
-
-    log_debug("samples per row = %" PRId64, samples_per_row);
-    std::vector<int> mags;
-    constexpr double pct_inc = 0.10;
-    auto accum = 0;
-    auto last_quant = sb.sb_min_value_out;
-    for (auto pct = pct_inc; pct < 1.0; pct += pct_inc) {
-        auto qmag = pct * samples_per_row;
-        auto hist_mag = qmag - accum;
-        log_debug("  hist mag = %f", hist_mag);
-        auto quant = sb.sb_tdigest.quantile(pct * 100.0);
-        auto quant_range = quant - last_quant;
-        log_debug(" quant range = %f", quant_range);
-        auto quant_cols = quant_range / mag_per_col;
-        log_debug(" quant cols = %f", quant_cols);
-        auto t = hist_mag / quant_cols;
-        log_debug(" t = %f", t);
-        mags.emplace_back(t);
-        accum += hist_mag;
-        last_quant = quant;
-    }
-    mags.emplace_back(sb.sb_count - accum);
-    log_debug("mag size %d", mags.size());
-    std::sort(mags.begin(), mags.end());
-    for (const auto& mag : mags) {
-        log_debug(" mag[] = %d", mag);
-    }
-    for (size_t lpc = 0; lpc < 6; lpc++) {
-        st.st_thresholds[lpc] = mags[lpc];
-    }
-
-    for (const auto& thresh : st.st_thresholds) {
-        log_debug(" thresh[] = %d", thresh);
-    }
-    st.st_thresholds[6] = std::numeric_limits<int>::max();
-    for (size_t lpc = 0; lpc < 6; lpc++) {
-        if (st.st_thresholds[lpc] < lpc + 1) {
-            st.st_thresholds[lpc] = lpc + 1;
-        }
-    }
-    for (const auto& thresh : st.st_thresholds) {
-        log_debug(" thresh[] = %d", thresh);
-    }
-
     auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
     bm.clear();
     for (auto row = 0_vl; row < this->ss_cached_line_count; row += 1_vl) {
@@ -648,7 +601,32 @@ spectrogram_source::load_row(const listview_curses& tc, int row)
         s_row.sr_column_size = sr.sr_column_size;
         s_row.sr_values.clear();
         s_row.sr_values.resize(width + 1);
+        s_row.sr_tdigest.reset();
         this->ss_value_source->spectro_row(sr, s_row);
+
+        s_row.sr_tdigest.reset();
+        for (const auto& val : s_row.sr_values) {
+            if (val.rb_counter == 0) {
+                continue;
+            }
+            s_row.sr_tdigest.insert(val.rb_counter);
+        }
+        s_row.sr_tdigest.merge();
+        auto& st = s_row.sr_thresholds;
+        for (size_t lpc = 0; lpc < 6; lpc++) {
+            auto q = s_row.sr_tdigest.quantile(15.0 * (lpc + 1));
+            log_debug(" q[%f] = %f", 15.0 * (lpc + 1), q);
+            st[lpc] = q;
+        }
+        st[6] = std::numeric_limits<int>::max();
+        for (size_t lpc = 0; lpc < 6; lpc++) {
+            if (st[lpc] < lpc + 1) {
+                st[lpc] = lpc + 1;
+            }
+        }
+        for (const auto& thresh : st) {
+            log_debug(" thresh[] = %d", thresh);
+        }
     }
 
     return s_row;
@@ -720,8 +698,14 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
         return true;
     }
 
-    auto& sb = this->ss_cached_bounds;
-    auto& st = this->ss_cached_thresholds;
+    auto sel_opt = lv.get_selection();
+    if (!sel_opt) {
+        return false;
+    }
+
+    const auto& s_row = this->load_row(lv, sel_opt.value());
+    const auto& sb = this->ss_cached_bounds;
+    const auto& st = s_row.sr_thresholds;
 
     line.append(TIME_COLUMN_WIDTH, ' ');
     snprintf(buf, sizeof(buf), "Min: %'.10lg", sb.sb_min_value_out);
@@ -732,12 +716,12 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
              ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
                  "  ") " %'d+",
              lnav::enums::to_underlying(role_t::VCR_LOW_THRESHOLD),
-             st.st_thresholds[0],
+             st[0],
              lnav::enums::to_underlying(role_t::VCR_MED_THRESHOLD),
-             st.st_thresholds[0],
-             st.st_thresholds[3],
+             st[2],
+             st[4],
              lnav::enums::to_underlying(role_t::VCR_HIGH_THRESHOLD),
-             st.st_thresholds[5]);
+             st[5] + 1);
     auto buflen = strlen(buf);
     if (line.length() + buflen + 20 < width) {
         line.append(width / 2 - buflen / 3 - line.length(), ' ');

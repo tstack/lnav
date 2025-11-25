@@ -92,6 +92,8 @@ struct spectrogram_row {
     std::function<std::unique_ptr<text_sub_source>(
         const spectrogram_request&, double range_min, double range_max)>
         sr_details_source_provider;
+    digestible::tdigest<double> sr_tdigest{200};
+    int sr_thresholds[7]{};
 
     void add_value(spectrogram_request& sr,
                    value_type vt,
@@ -233,7 +235,6 @@ public:
             std::chrono::seconds{60});
     spectrogram_value_source* ss_value_source{nullptr};
     spectrogram_bounds ss_cached_bounds;
-    spectrogram_thresholds ss_cached_thresholds;
     size_t ss_cached_line_count{0};
     std::unordered_map<std::chrono::microseconds,
                        spectrogram_row,

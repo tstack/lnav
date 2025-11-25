@@ -867,6 +867,7 @@ listview_curses::set_show_details_in_overlay(bool val)
 
     this->lv_overlay_source->set_show_details_in_overlay(val);
     if (!val) {
+        this->lv_overlay_focused = false;
         return;
     }
 
