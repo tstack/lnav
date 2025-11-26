@@ -75,6 +75,7 @@
 #include "fs_util.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
+#include "auto_pid.hh"
 
 static constexpr size_t BUFFER_SIZE = 256 * 1024;
 static constexpr size_t MAX_LOG_LINE_SIZE = 2 * 1024;
@@ -88,6 +89,11 @@ std::optional<const termios*> lnav_log_orig_termios;
 static std::mutex*
 lnav_log_mutex()
 {
+    if (lnav::pid::in_child) {
+        thread_local std::mutex lnav_log_mutex_local;
+        return &lnav_log_mutex_local;
+    }
+
     static auto* retval = new std::mutex();
 
     return retval;

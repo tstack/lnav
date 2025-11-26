@@ -380,6 +380,7 @@ private:
     std::vector<uint32_t> lb_alt_line_starts;
     std::vector<bool> lb_alt_line_is_utf;
     std::vector<bool> lb_alt_line_has_ansi;
+    std::vector<size_t> lb_alt_line_col_widths;
     std::future<bool> lb_loader_future;
     std::optional<file_off_t> lb_loader_file_offset;
 
@@ -408,6 +409,7 @@ private:
     size_t lb_next_line_start_index{0};
     std::vector<bool> lb_line_is_utf;
     std::vector<bool> lb_line_has_ansi;
+    std::vector<size_t> lb_line_col_widths;
     stats lb_stats;
 
     std::optional<auto_fd> lb_cached_fd;

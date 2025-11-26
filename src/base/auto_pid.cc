@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
+
 #include "auto_pid.hh"
 
 #include <unistd.h>
@@ -34,9 +36,9 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "lnav_log.hh"
+#include "result.h"
 
-namespace lnav {
-namespace pid {
+namespace lnav::pid {
 
 bool in_child = false;
 
@@ -59,5 +61,4 @@ from_fork()
     return Ok(auto_pid<process_state::running>(pid));
 }
 
-}  // namespace pid
-}  // namespace lnav
+}  // namespace lnav::pid

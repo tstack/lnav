@@ -618,6 +618,7 @@ line_buffer::ensure_available(file_off_t start,
     }
     this->lb_line_starts.clear();
     this->lb_line_is_utf.clear();
+    this->lb_line_col_widths.clear();
 }
 
 bool
@@ -800,6 +801,8 @@ line_buffer::load_next_buffer()
             this->lb_alt_line_starts.emplace_back(before);
             this->lb_alt_line_is_utf.emplace_back(utf_scan_res.is_valid());
             this->lb_alt_line_has_ansi.emplace_back(utf_scan_res.usr_has_ansi);
+            this->lb_alt_line_col_widths.emplace_back(
+                utf_scan_res.usr_column_width_guess);
 
             line_start = lf;
         } while (line_start != nullptr
@@ -862,6 +865,8 @@ line_buffer::fill_range(file_off_t start,
         this->lb_alt_line_is_utf.clear();
         this->lb_line_has_ansi = std::move(this->lb_alt_line_has_ansi);
         this->lb_alt_line_has_ansi.clear();
+        this->lb_line_col_widths = std::move(this->lb_alt_line_col_widths);
+        this->lb_alt_line_col_widths.clear();
         this->lb_stats.s_used_preloads += 1;
         this->lb_next_line_start_index = 0;
         this->lb_next_buffer_offset = 0;
@@ -1196,6 +1201,7 @@ line_buffer::load_next_line(file_range prev_line)
         auto found_in_cache = false;
         auto has_ansi = false;
         auto valid_utf8 = true;
+        auto col_width = size_t{0};
         if (!this->lb_line_starts.empty()) {
             auto buffer_offset = offset - this->lb_file_offset;
 
@@ -1213,6 +1219,8 @@ line_buffer::load_next_line(file_range prev_line)
                                    [this->lb_next_line_start_index];
                     valid_utf8
                         = this->lb_line_is_utf[this->lb_next_line_start_index];
+                    col_width = this->lb_line_col_widths
+                                    [this->lb_next_line_start_index];
 
                     // log_debug("hit cache");
                     this->lb_next_buffer_offset = *next_line_iter;
@@ -1237,6 +1245,7 @@ line_buffer::load_next_line(file_range prev_line)
                         lf = line_start + utf8_end;
                         has_ansi = this->lb_line_has_ansi[start_index];
                         valid_utf8 = this->lb_line_is_utf[start_index];
+                        col_width = this->lb_line_col_widths[start_index];
 
                         this->lb_next_line_start_index = start_index + 1;
                         this->lb_next_buffer_offset = *next_line_iter;
@@ -1251,6 +1260,7 @@ line_buffer::load_next_line(file_range prev_line)
 
         if (found_in_cache && valid_utf8) {
             retval.li_utf8_scan_result.usr_has_ansi = has_ansi;
+            retval.li_utf8_scan_result.usr_column_width_guess = col_width;
         } else {
             auto frag = string_fragment::from_bytes(
                 line_start, retval.li_file_range.fr_size);

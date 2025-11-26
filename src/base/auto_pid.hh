@@ -34,6 +34,7 @@
 
 #include <cerrno>
 #include <csignal>
+#include <string>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -162,13 +163,11 @@ private:
     pid_t ap_child;
 };
 
-namespace lnav {
-namespace pid {
+namespace lnav::pid {
 
 extern bool in_child;
 
 Result<auto_pid<process_state::running>, std::string> from_fork();
-}  // namespace pid
-}  // namespace lnav
+}  // namespace lnav::pid
 
 #endif

@@ -1517,10 +1517,7 @@ listview_curses::set_left(int left)
     }
 
     if (left > this->lv_left) {
-        unsigned long width;
-        vis_line_t height;
-
-        this->get_dimensions(height, width);
+        auto [height, width] = this->get_dimensions();
         if (this->lv_show_scrollbar) {
             width -= 1;
         }
