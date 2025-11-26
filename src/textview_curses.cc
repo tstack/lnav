@@ -1354,6 +1354,20 @@ empty_filter::to_command() const
     return "";
 }
 
+bool
+pcre_filter::matches(std::optional<line_source> ls,
+                     const shared_buffer_ref& line)
+{
+    auto options = 0;
+    if (line.get_metadata().m_valid_utf) {
+        options |= PCRE2_NO_UTF_CHECK;
+    }
+
+    return this->pf_pcre->find_in(line.to_string_fragment(), options)
+        .ignore_error()
+        .has_value();
+}
+
 std::optional<size_t>
 filter_stack::next_index()
 {

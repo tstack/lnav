@@ -76,6 +76,7 @@ void reset_session();
 
 namespace lnav::session {
 
+void apply_view_commands();
 void restore_view_states();
 
 namespace regex101 {

@@ -1805,23 +1805,17 @@ reset_session()
 }
 
 void
-lnav::session::restore_view_states()
+lnav::session::apply_view_commands()
 {
     static auto op = lnav_operation{__FUNCTION__};
 
     auto op_guard = lnav_opid_guard::internal(op);
 
-    log_debug("restoring view states");
+    log_debug("applying view commands");
     for (size_t view_index = 0; view_index < LNV__MAX; view_index++) {
         const auto& vs = session_data.sd_view_states[view_index];
         auto& tview = lnav_data.ld_views[view_index];
-        auto* ta = dynamic_cast<text_anchors*>(tview.get_sub_source());
 
-        if (!vs.vs_search.empty()) {
-            tview.execute_search(vs.vs_search);
-            tview.set_follow_search_for(-1, {});
-        }
-        tview.set_word_wrap(vs.vs_word_wrap);
         lnav::set::small<std::string> curr_cmds;
         auto* tss = tview.get_sub_source();
         if (tview.get_sub_source() != nullptr) {
@@ -1868,7 +1862,27 @@ lnav::session::restore_view_states()
                 };
             }
         }
+    }
+}
 
+void
+lnav::session::restore_view_states()
+{
+    static auto op = lnav_operation{__FUNCTION__};
+
+    auto op_guard = lnav_opid_guard::internal(op);
+
+    log_debug("restoring view states");
+    for (size_t view_index = 0; view_index < LNV__MAX; view_index++) {
+        const auto& vs = session_data.sd_view_states[view_index];
+        auto& tview = lnav_data.ld_views[view_index];
+        auto* ta = dynamic_cast<text_anchors*>(tview.get_sub_source());
+
+        if (!vs.vs_search.empty()) {
+            tview.execute_search(vs.vs_search);
+            tview.set_follow_search_for(-1, {});
+        }
+        tview.set_word_wrap(vs.vs_word_wrap);
         auto has_loc = tview.get_selection().has_value();
         if (!has_loc && vs.vs_top >= 0
             && (view_index == LNV_LOG || tview.get_top() == 0_vl

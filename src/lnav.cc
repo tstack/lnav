@@ -1949,6 +1949,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 log_trace("%d: END initial rescan rebuild", loop_count);
                 changes += rebuild_res.rir_changes;
                 load_session();
+                lnav::session::apply_view_commands();
                 if (session_data.sd_save_time > 0) {
                     std::string ago;
 
