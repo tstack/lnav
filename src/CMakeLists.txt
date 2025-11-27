@@ -203,6 +203,7 @@ set(FORMAT_FILES
         formats/katello_log.json
         formats/laravel_log.json
         formats/lnav_debug_log.json
+        formats/macosuni_log.json
         formats/mysql_error_log.json
         formats/mysql_slow_log.json
         formats/nextcloud_log.json

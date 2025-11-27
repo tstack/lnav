@@ -1,0 +1,67 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "macosuni_log": {
+        "title": "macOS unified log",
+        "url": "https://developer.apple.com/documentation/os/logging",
+        "description": "Format for ndjson logs produced by macOS",
+        "file-type": "json",
+        "line-format": [
+            {
+                "field": "__timestamp__",
+                "suffix": " "
+            },
+            {
+                "prefix": "[",
+                "field": "processID"
+            },
+            {
+                "prefix": "/",
+                "field": "threadID",
+                "suffix": "]"
+            },
+            {
+                "prefix": " ",
+                "field": "eventMessage"
+            }
+        ],
+        "level-field": "messageType",
+        "thread-id-field": "threadID",
+        "timestamp-field": "timestamp",
+        "body-field": "eventMessage",
+        "hide-extra": true,
+        "value": {
+            "activityIdentifier": {
+                "kind": "integer",
+                "identifier": true,
+                "hidden": true
+            },
+            "messageType": {
+                "kind": "string",
+                "hidden": true
+            },
+            "threadID": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "processID": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "processImagePath": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            },
+            "senderImagePath": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            },
+            "traceID": {
+                "kind": "integer",
+                "identifier": true,
+                "hidden": true
+            }
+        }
+    }
+}

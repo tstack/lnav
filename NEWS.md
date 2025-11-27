@@ -139,6 +139,8 @@ Features:
   details overlay (revealed by pressing `p`) in the
   LOG view.
 * Added `rust_tracing_log` from @richard-hajek.
+* Added `macosuni_log` format that understands the
+  output of `log stream --style=ndjson`.
 * The `strace_log` format has been improved to handle
   more output formats and the syscalls will now show
   up in the TIMELINE view.
