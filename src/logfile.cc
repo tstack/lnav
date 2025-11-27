@@ -1622,12 +1622,6 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         break;
                 }
             }
-            if (!li.li_utf8_scan_result.is_valid()
-                && this->lf_text_format != text_format_t::TF_MARKDOWN
-                && this->lf_text_format != text_format_t::TF_LOG)
-            {
-                this->lf_text_format = text_format_t::TF_BINARY;
-            }
 
             auto read_result
                 = this->lf_line_buffer.read_range(li.li_file_range);
