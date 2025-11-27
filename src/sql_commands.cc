@@ -219,7 +219,10 @@ backup_user_db(const std::string& filename)
     }
 
     auto_sqlite3 db;
-    if (sqlite3_open("file:user_db?mode=memory&cache=shared", db.out())
+    if (sqlite3_open_v2("file:user_db?mode=memory&cache=shared",
+                        db.out(),
+                        SQLITE_OPEN_URI | SQLITE_OPEN_READWRITE,
+                        nullptr)
         != SQLITE_OK)
     {
         auto um = lnav::console::user_message::error(
