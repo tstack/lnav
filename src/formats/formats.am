@@ -21,6 +21,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/github_events_log.json \
     $(srcdir)/%reldir%/glog_log.json \
     $(srcdir)/%reldir%/haproxy_log.json \
+    $(srcdir)/%reldir%/idea_log.json \
     $(srcdir)/%reldir%/java_log.json \
     $(srcdir)/%reldir%/journald_json_log.json \
     $(srcdir)/%reldir%/katello_log.json \

@@ -138,9 +138,11 @@ Features:
 * The OPID for log messages is now shown in the parser
   details overlay (revealed by pressing `p`) in the
   LOG view.
-* Added `rust_tracing_log` from @richard-hajek.
+* Added `rust_tracing_log` format from @richard-hajek.
 * Added `macosuni_log` format that understands the
-  output of `log stream --style=ndjson`.
+  output of the macOS `log stream --style=ndjson`
+  command.
+* Added the `idea_log` format from @segevfiner.
 * The `strace_log` format has been improved to handle
   more output formats and the syscalls will now show
   up in the TIMELINE view.
