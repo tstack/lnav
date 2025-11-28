@@ -3252,6 +3252,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         };
     }
     log_info("lnav started %d", lnav_log_file.has_value());
+    for (int argi = 0; argi < argc; argi++) {
+        log_info("  arg[%d] = %s", argi, argv[argi]);
+    }
 
     {
         static auto builtin_formats
@@ -3728,6 +3731,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     {
         if (!since_time.empty()) {
+            log_info("setting default since time: %s", since_time.c_str());
             auto from_res = humanize::time::point::from(since_time);
             if (from_res.isErr()) {
                 auto um = from_res.unwrapErr();
@@ -3740,6 +3744,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 = to_us(from_res.unwrap().get_point());
         }
         if (!until_time.empty()) {
+            log_info("setting default until time: %s", until_time.c_str());
             auto from_res = humanize::time::point::from(until_time);
             if (from_res.isErr()) {
                 auto um = from_res.unwrapErr();
