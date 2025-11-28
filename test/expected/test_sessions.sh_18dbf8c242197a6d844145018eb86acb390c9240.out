@@ -1,0 +1,24 @@
+#!lnav -Nf
+# This file is an export of an lnav session.  You can type
+# '|/path/to/this/file' in lnav to execute this file and
+# restore the state of the session.
+
+;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.14.0' || ' or later')
+   WHERE lnav_version() < '0.14.0' COLLATE naturalcase
+
+# The files loaded into the session were:
+
+
+# Set this environment variable to override this value or edit this script.
+;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{top_srcdir_parent}')
+:open $LOG_DIR_0/lnav/test/logfile_postgres.0
+
+:rebuild
+
+
+# The following commands will restore the state of the LOG view.
+
+:switch-to-view log
+:goto 0
+
+:create-search-table pg_users user=(?<user_name>\w+)

@@ -55,11 +55,12 @@
 #include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
+#include "shared_buffer.hh"
 #include "yajlpp/yajlpp.hh"
 
 class log_format;
 
-enum class timestamp_point_of_reference_t {
+enum class timestamp_point_of_reference_t : uint8_t {
     send,
     start,
 };
@@ -530,6 +531,208 @@ struct subline_options {
 
     bool full_message{false};
     bool hash_hack{false};
+};
+
+enum class value_kind_t : int {
+    VALUE_UNKNOWN = -1,
+    VALUE_NULL,
+    VALUE_TEXT,
+    VALUE_INTEGER,
+    VALUE_FLOAT,
+    VALUE_BOOLEAN,
+    VALUE_JSON,
+    VALUE_STRUCT,
+    VALUE_QUOTED,
+    VALUE_W3C_QUOTED,
+    VALUE_TIMESTAMP,
+    VALUE_XML,
+
+    VALUE__MAX
+};
+
+enum class scale_op_t {
+    SO_IDENTITY,
+    SO_MULTIPLY,
+    SO_DIVIDE
+};
+
+struct scaling_factor {
+    template<typename T>
+    void scale(T& val) const
+    {
+        switch (this->sf_op) {
+            case scale_op_t::SO_IDENTITY:
+                break;
+            case scale_op_t::SO_DIVIDE:
+                val = val / (T) this->sf_value;
+                break;
+            case scale_op_t::SO_MULTIPLY:
+                val = val * (T) this->sf_value;
+                break;
+        }
+    }
+
+    scale_op_t sf_op{scale_op_t::SO_IDENTITY};
+    double sf_value{1};
+};
+
+enum class chart_type_t {
+    none,
+    hist,
+    spectro,
+};
+
+struct logline_value_meta {
+    struct internal_column {
+        bool operator==(const internal_column&) const { return true; }
+    };
+    struct external_column {
+        bool operator==(const external_column&) const { return true; }
+    };
+    struct table_column {
+        size_t value;
+
+        bool operator==(const table_column& rhs) const
+        {
+            return this->value == rhs.value;
+        }
+    };
+
+    using column_t
+        = mapbox::util::variant<internal_column, external_column, table_column>;
+
+    logline_value_meta(intern_string_t name,
+                       value_kind_t kind,
+                       column_t col = external_column{},
+                       const std::optional<log_format*>& format = std::nullopt)
+        : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
+    {
+    }
+
+    bool is_hidden() const
+    {
+        if (this->lvm_user_hidden) {
+            return this->lvm_user_hidden.value();
+        }
+        return this->lvm_hidden;
+    }
+
+    bool is_numeric() const;
+
+    logline_value_meta& with_struct_name(intern_string_t name)
+    {
+        this->lvm_struct_name = name;
+        return *this;
+    }
+
+    chart_type_t to_chart_type() const;
+
+    intern_string_t lvm_name;
+    value_kind_t lvm_kind;
+    column_t lvm_column{external_column{}};
+    std::optional<size_t> lvm_values_index;
+    bool lvm_identifier{false};
+    bool lvm_foreign_key{false};
+    bool lvm_hidden{false};
+    std::optional<bool> lvm_user_hidden;
+    intern_string_t lvm_struct_name;
+    std::optional<log_format*> lvm_format;
+};
+
+class logline_value {
+public:
+    logline_value(logline_value_meta lvm) : lv_meta(std::move(lvm))
+    {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_NULL;
+    }
+
+    logline_value(logline_value_meta lvm, bool b)
+        : lv_meta(std::move(lvm)), lv_value((int64_t) (b ? 1 : 0))
+    {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_BOOLEAN;
+    }
+
+    logline_value(logline_value_meta lvm, int64_t i)
+        : lv_meta(std::move(lvm)), lv_value(i)
+    {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_INTEGER;
+    }
+
+    logline_value(logline_value_meta lvm, double i)
+        : lv_meta(std::move(lvm)), lv_value(i)
+    {
+        this->lv_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
+    }
+
+    logline_value(logline_value_meta lvm, string_fragment frag)
+        : lv_meta(std::move(lvm)), lv_frag(frag)
+    {
+    }
+
+    logline_value(logline_value_meta lvm, const intern_string_t val)
+        : lv_meta(std::move(lvm)), lv_intern_string(val)
+    {
+    }
+
+    logline_value(logline_value_meta lvm, std::string val)
+        : lv_meta(std::move(lvm)), lv_str(std::move(val))
+    {
+    }
+
+    logline_value(logline_value_meta lvm,
+                  shared_buffer_ref& sbr,
+                  line_range origin);
+
+    void apply_scaling(const scaling_factor* sf);
+
+    std::string to_string() const;
+
+    string_fragment to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const;
+
+    const char* text_value() const;
+
+    size_t text_length() const;
+
+    string_fragment text_value_fragment() const;
+
+    line_range origin_in_full_msg(const char* msg, ssize_t len) const;
+
+    logline_value_meta lv_meta;
+    union value_u {
+        int64_t i;
+        double d;
+
+        value_u() : i(0) {}
+        value_u(int64_t i) : i(i) {}
+        value_u(double d) : d(d) {}
+    } lv_value;
+    std::optional<std::string> lv_str;
+    string_fragment lv_frag;
+    int lv_sub_offset{0};
+    intern_string_t lv_intern_string;
+    line_range lv_origin;
+};
+
+struct logline_value_vector {
+    enum class opid_provenance : uint8_t {
+        none,
+        file,
+        user,
+    };
+
+    void clear();
+
+    logline_value_vector() = default;
+
+    logline_value_vector(const logline_value_vector& other);
+
+    logline_value_vector& operator=(const logline_value_vector& other);
+
+    shared_buffer_ref lvv_sbr;
+    std::vector<logline_value> lvv_values;
+    std::optional<std::string> lvv_opid_value;
+    opid_provenance lvv_opid_provenance{opid_provenance::none};
+    std::optional<std::string> lvv_thread_id_value;
 };
 
 #endif

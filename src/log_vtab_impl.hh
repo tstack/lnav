@@ -32,6 +32,8 @@
 
 #include <deque>
 #include <map>
+#include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -39,9 +41,12 @@
 #include <sqlite3.h>
 
 #include "ArenaAlloc/arenaalloc.h"
-#include "logfile_sub_source.hh"
+#include "base/log_level_enum.hh"
+#include "base/string_attr_type.hh"
+#include "log_format_fwd.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
+#include "vis_line.hh"
 
 class textview_curses;
 
@@ -52,6 +57,7 @@ enum {
     VT_COL_MAX
 };
 
+class logfile;
 class logfile_sub_source;
 
 struct msg_range {
@@ -304,6 +310,11 @@ public:
 
     intern_string_t get_tags_name() const { return this->vi_tags_name; }
 
+    virtual std::optional<std::string> get_command() const
+    {
+        return std::nullopt;
+    }
+
     const std::string& get_table_statement();
 
     virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss);
@@ -358,10 +369,7 @@ protected:
 
 class log_format_vtab_impl : public log_vtab_impl {
 public:
-    log_format_vtab_impl(std::shared_ptr<const log_format> format)
-        : log_vtab_impl(format->get_name()), lfvi_format(format)
-    {
-    }
+    log_format_vtab_impl(std::shared_ptr<const log_format> format);
 
     virtual bool next(log_cursor& lc, logfile_sub_source& lss);
 

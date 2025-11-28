@@ -32,18 +32,24 @@
 #ifndef lnav_log_search_table_hh
 #define lnav_log_search_table_hh
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "base/auto_mem.hh"
+#include "base/intern_string.hh"
 #include "log_vtab_impl.hh"
-#include "logfile.hh"
 #include "pcrepp/pcre2pp.hh"
+
+class logfile;
 
 class log_search_table : public log_vtab_impl {
 public:
     log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
                      intern_string_t table_name);
+
+    std::optional<std::string> get_command() const override;
 
     void get_primary_keys(std::vector<std::string>& keys_out) const override;
 

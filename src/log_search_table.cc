@@ -27,11 +27,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
+#include <vector>
+
 #include "log_search_table.hh"
 
 #include "base/ansi_scrubber.hh"
 #include "column_namer.hh"
 #include "config.h"
+#include "logfile_sub_source.hh"
 #include "sql_util.hh"
 
 static const std::string MATCH_INDEX = "match_index";
@@ -45,6 +49,14 @@ log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
     : log_vtab_impl(table_name), lst_regex(code),
       lst_match_data(this->lst_regex->create_match_data())
 {
+}
+
+std::optional<std::string>
+log_search_table::get_command() const
+{
+    return fmt::format(FMT_STRING(":create-search-table {} {}"),
+                       this->vi_name.to_string_fragment(),
+                       this->lst_regex->get_pattern());
 }
 
 void

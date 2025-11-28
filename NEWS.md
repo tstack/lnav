@@ -152,6 +152,8 @@ Features:
   theme highlight configurations to control whether a
   highlight can be applied to text that is covered by
   another highlight.
+* Search tables are now included in the output of
+  the `:export-session-to` command.
 
 Breaking changes:
 * All of lnav's SQLite tables have been moved to a

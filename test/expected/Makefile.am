@@ -668,6 +668,8 @@ dist_noinst_DATA = \
     test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.out \
     test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.err \
     test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.out \
+    test_sessions.sh_18dbf8c242197a6d844145018eb86acb390c9240.err \
+    test_sessions.sh_18dbf8c242197a6d844145018eb86acb390c9240.out \
     test_sessions.sh_2ee066bea01006950407a34421e763020d36acd5.err \
     test_sessions.sh_2ee066bea01006950407a34421e763020d36acd5.out \
     test_sessions.sh_33ab03afda2c9331a289fcbd1abdbc1c37b2e87b.err \

@@ -55,6 +55,7 @@
 #include "log_format_ext.hh"
 #include "log_search_table.hh"
 #include "log_vtab_impl.hh"
+#include "logfile_sub_source.hh"
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "scn/scan.h"
@@ -326,6 +327,21 @@ log_format::opid_descriptors::to_string(
     return retval;
 }
 
+bool
+logline_value_meta::is_numeric() const
+{
+    if (this->lvm_identifier || this->lvm_foreign_key) {
+        return false;
+    }
+    switch (this->lvm_kind) {
+        case value_kind_t::VALUE_FLOAT:
+        case value_kind_t::VALUE_INTEGER:
+            return true;
+        default:
+            return false;
+    }
+}
+
 chart_type_t
 logline_value_meta::to_chart_type() const
 {
@@ -461,6 +477,23 @@ logline_value::logline_value(logline_value_meta lvm,
         case value_kind_t::VALUE__MAX:
             ensure(0);
             break;
+    }
+}
+
+void
+logline_value::apply_scaling(const scaling_factor* sf)
+{
+    if (sf != nullptr) {
+        switch (this->lv_meta.lvm_kind) {
+            case value_kind_t::VALUE_INTEGER:
+                sf->scale(this->lv_value.i);
+                break;
+            case value_kind_t::VALUE_FLOAT:
+                sf->scale(this->lv_value.d);
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -613,6 +646,69 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
     }
 
     return string_fragment::from_c_str(buffer).to_owned(alloc);
+}
+
+const char*
+logline_value::text_value() const
+{
+    if (this->lv_str) {
+        return this->lv_str->c_str();
+    }
+    if (this->lv_frag.empty()) {
+        if (this->lv_intern_string.empty()) {
+            return "";
+        }
+        return this->lv_intern_string.get();
+    }
+    return this->lv_frag.data();
+}
+
+size_t
+logline_value::text_length() const
+{
+    if (this->lv_str) {
+        return this->lv_str->size();
+    }
+    if (this->lv_frag.empty()) {
+        return this->lv_intern_string.size();
+    }
+    return this->lv_frag.length();
+}
+
+string_fragment
+logline_value::text_value_fragment() const
+{
+    return string_fragment::from_bytes(this->text_value(), this->text_length());
+}
+
+void
+logline_value_vector::clear()
+{
+    this->lvv_values.clear();
+    this->lvv_sbr.disown();
+    this->lvv_opid_value = std::nullopt;
+    this->lvv_opid_provenance = opid_provenance::none;
+    this->lvv_thread_id_value = std::nullopt;
+}
+
+logline_value_vector::logline_value_vector(const logline_value_vector& other)
+    : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
+      lvv_opid_value(other.lvv_opid_value),
+      lvv_opid_provenance(other.lvv_opid_provenance),
+      lvv_thread_id_value(other.lvv_thread_id_value)
+{
+}
+
+logline_value_vector&
+logline_value_vector::operator=(const logline_value_vector& other)
+{
+    this->lvv_sbr = other.lvv_sbr.clone();
+    this->lvv_values = other.lvv_values;
+    this->lvv_opid_value = other.lvv_opid_value;
+    this->lvv_opid_provenance = other.lvv_opid_provenance;
+    this->lvv_thread_id_value = other.lvv_thread_id_value;
+
+    return *this;
 }
 
 std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;

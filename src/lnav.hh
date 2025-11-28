@@ -58,6 +58,7 @@
 #include "hist_source.hh"
 #include "input_dispatcher.hh"
 #include "log_vtab_impl.hh"
+#include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
 #include "progress_source.hh"

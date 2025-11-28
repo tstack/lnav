@@ -2688,6 +2688,12 @@ log_vtab_manager::lookup_impl(string_fragment name) const
     return nullptr;
 }
 
+log_format_vtab_impl::log_format_vtab_impl(
+    std::shared_ptr<const log_format> format)
+    : log_vtab_impl(format->get_name()), lfvi_format(format)
+{
+}
+
 bool
 log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
 {

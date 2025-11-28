@@ -504,10 +504,9 @@ SELECT content_id, format, time_offset FROM lnav_file
 
             if (!hl_cmds.empty()) {
                 fmt::print(file, FMT_STRING("{}"), HIGHLIGHT_HEADER);
-                hl_cmds
-                    | lnav::itertools::for_each([&file](const auto& cmd) {
-                          fmt::print(file, FMT_STRING("{}"), cmd);
-                      });
+                hl_cmds | lnav::itertools::for_each([&file](const auto& cmd) {
+                    fmt::print(file, FMT_STRING("{}"), cmd);
+                });
                 fmt::println(file, FMT_STRING(""));
             }
         }
@@ -571,7 +570,22 @@ SELECT content_id, format, time_offset FROM lnav_file
             fmt::print(file, FMT_STRING("/{}\n"), tc.get_current_search());
         }
 
-        fmt::print(file, FMT_STRING(":goto {}\n"), (int) tc.get_top());
+        fmt::print(file,
+                   FMT_STRING(":goto {}\n"),
+                   (int) tc.get_selection().value_or(tc.get_top()));
+    }
+
+    for (const auto& [name, vi] : *lnav_data.ld_vtab_manager) {
+        if (vi->vi_provenance != log_vtab_impl::provenance_t::user) {
+            continue;
+        }
+
+        auto cmd_opt = vi->get_command();
+        if (!cmd_opt) {
+            continue;
+        }
+
+        fmt::print(file, FMT_STRING("\n{}\n"), cmd_opt.value());
     }
 
     return Ok();
