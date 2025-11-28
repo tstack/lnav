@@ -218,7 +218,8 @@ run_cap_test ${lnav_test} -n \
     -c ":load-session" \
     ${test_dir}/logfile_w3c_big.0
 
+cp ${test_dir}/logfile_postgres.0 support-dump/
 run_cap_test ${lnav_test} -nq \
     -c ":create-search-table pg_users user=(?<user_name>\w+)" \
     -c ":export-session-to -" \
-    ${test_dir}/logfile_postgres.0
+    support-dump/logfile_postgres.0
