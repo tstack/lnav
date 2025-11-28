@@ -163,10 +163,6 @@ object with the following fields:
     The `PCRE2 <http://www.pcre.org>`_ library is used by **lnav** to do all
     regular expression matching.
 
-  :module-format: If true, this regex will only be used to parse message
-    bodies for formats that can act as containers, such as syslog.  Default:
-    false.
-
 :json: True if each log line is JSON-encoded.
 
 :converter: An object that describes how an input file can be detected and
@@ -336,15 +332,6 @@ object with the following fields:
 
 :duration-field: The name of the field that contains the duration of an
   operation.
-
-:module-field: The name of the field that contains the module identifier
-  that distinguishes messages from one log source from another.  This field
-  should be used if this message format can act as a container for other
-  types of log messages.  For example, an Apache access log can be sent to
-  syslog instead of written to a file.  In this case, **lnav** will parse
-  the syslog message and then separately parse the body of the message to
-  determine the "sub" format.  This module identifier is used to help
-  **lnav** quickly identify the format to use when parsing message bodies.
 
 :hide-extra: A boolean for JSON logs that indicates whether fields not
   present in the line-format should be displayed on their own lines.
