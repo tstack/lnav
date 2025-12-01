@@ -896,7 +896,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
             case help_parameter_format_t::HPF_SQL:
             case help_parameter_format_t::HPF_SQL_EXPR: {
                 auto poss_strs = this->p_sql_completions
-                    | lnav::itertools::first()
+                    | lnav::itertools::first() | lnav::itertools::unique()
                     | lnav::itertools::similar_to(str, 10);
 
                 for (const auto& str : poss_strs) {

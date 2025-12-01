@@ -645,8 +645,9 @@ build_all_help_text()
     all_help_text.append("\n").append("Command Reference"_h2);
 
     for (const auto& cmd : lnav_commands) {
-        if (cmd.second->c_name != cmd.first ||
-            cmd.second->c_help.ht_summary == nullptr) {
+        if (cmd.second->c_name != cmd.first
+            || cmd.second->c_help.ht_summary == nullptr)
+        {
             continue;
         }
         all_help_text.append(2, '\n');
@@ -936,6 +937,8 @@ layout_views()
     lnav_data.ld_filter_view.set_y(bottom + 2);
     lnav_data.ld_filter_view.set_width(width);
     lnav_data.ld_filter_view.set_visible(filters_open && vis);
+    filter_source->fss_editor->set_y(
+        lnav_data.ld_filter_view.get_y_for_selection());
     filter_source->fss_editor->set_width(width - 26);
 
     lnav_data.ld_files_view.set_height(vis_line_t(filter_height)

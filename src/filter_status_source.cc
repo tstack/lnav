@@ -41,6 +41,7 @@ static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit "_frag;
 
 static constexpr auto CREATE_HELP
     = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
+static constexpr auto CREATE_EXPR_HELP = "  " ANSI_BOLD("e") ": Edit SQL expr";
 static constexpr auto MIN_MAX_TIME_HELP
     = ANSI_BOLD("m") "/" ANSI_BOLD("M") ": Set min/max time";
 static constexpr auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
@@ -293,6 +294,7 @@ filter_help_status_source::statusview_fields()
             return;
         }
 
+        auto* lss = dynamic_cast<logfile_sub_source*>(tss);
         auto* ttt = dynamic_cast<text_time_translator*>(tss);
 
         if (lnav_data.ld_mode == ln_mode_t::FILTER) {
@@ -303,8 +305,9 @@ filter_help_status_source::statusview_fields()
             auto rows = fss->rows_for(tc);
             if (rows.empty()) {
                 this->fss_help.set_value(
-                    "  %s  %s",
+                    "  %s%s  %s",
                     CREATE_HELP,
+                    lss != nullptr ? CREATE_EXPR_HELP : "",
                     ttt != nullptr ? MIN_MAX_TIME_HELP : "");
             } else {
                 auto& row = rows[sel.value()];
@@ -338,8 +341,9 @@ filter_help_status_source::statusview_fields()
                 } else if (tfr != nullptr) {
                     auto& tf = tfr->tfr_filter;
                     this->fss_help.set_value(
-                        "  %s  %s%s  %s  %s%s  %s  %s%s",
+                        "  %s%s  %s%s  %s  %s%s  %s  %s%s",
                         CREATE_HELP,
+                        lss != nullptr ? CREATE_EXPR_HELP : "",
                         ENABLE_HELP,
                         tf->is_enabled() ? "Disable" : "Enable ",
                         EDIT_HELP,
@@ -351,14 +355,15 @@ filter_help_status_source::statusview_fields()
                         tss->tss_apply_filters ? "Disable Filtering"
                                                : "Enable Filtering");
                 } else {
-                    this->fss_help.set_value("  %s  %s  %s  %s%s",
-                                             CREATE_HELP,
-                                             EDIT_HELP,
-                                             DELETE_HELP,
-                                             FILTERING_HELP,
-                                             tss->tss_apply_filters
-                                                 ? "Disable Filtering"
-                                                 : "Enable Filtering");
+                    this->fss_help.set_value(
+                        "  %s%s  %s  %s  %s%s",
+                        CREATE_HELP,
+                        lss != nullptr ? CREATE_EXPR_HELP : "",
+                        EDIT_HELP,
+                        DELETE_HELP,
+                        FILTERING_HELP,
+                        tss->tss_apply_filters ? "Disable Filtering"
+                                               : "Enable Filtering");
                 }
             }
         } else if ((lnav_data.ld_mode == ln_mode_t::FILES

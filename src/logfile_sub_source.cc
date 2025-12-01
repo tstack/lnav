@@ -1769,21 +1769,18 @@ logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
         ld->ld_filter_state.lfo_filter_state.clear_filter_state(0);
     }
 
-    auto old_filter = this->get_sql_filter();
+    auto old_filter_iter = this->tss_filters.find(0);
     if (stmt != nullptr) {
         auto new_filter
             = std::make_shared<sql_filter>(*this, std::move(stmt_str), stmt);
 
-        if (old_filter) {
-            auto existing_iter = std::find(this->tss_filters.begin(),
-                                           this->tss_filters.end(),
-                                           old_filter.value());
-            *existing_iter = new_filter;
+        if (old_filter_iter != this->tss_filters.end()) {
+            *old_filter_iter = new_filter;
         } else {
             this->tss_filters.add_filter(new_filter);
         }
-    } else if (old_filter) {
-        this->tss_filters.delete_filter(old_filter.value()->get_id());
+    } else if (old_filter_iter != this->tss_filters.end()) {
+        this->tss_filters.delete_filter((*old_filter_iter)->get_id());
     }
 
     return Ok();
@@ -2328,7 +2325,8 @@ std::optional<std::shared_ptr<text_filter>>
 logfile_sub_source::get_sql_filter()
 {
     return this->tss_filters | lnav::itertools::find_if([](const auto& filt) {
-               return filt->get_index() == 0;
+               return filt->get_index() == 0
+                   && dynamic_cast<sql_filter*>(filt.get()) != nullptr;
            })
         | lnav::itertools::deref();
 }

@@ -206,6 +206,9 @@ Interface changes:
   if any log messages were filtered out before the first
   message.  Left-clicking on the header will scroll the
   view to the displayed line.
+* In the Filters configuration panel, you can now
+  create/edit the SQL expression filter by pressing the
+  `e` key.
 * The `{` hotkey and `:prev-section` command will now
   move to the first line of a multi-line log message if
   the focused line is in the middle of the message.

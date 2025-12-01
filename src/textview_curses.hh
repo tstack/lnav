@@ -154,8 +154,8 @@ protected:
 
 class empty_filter : public text_filter {
 public:
-    empty_filter(type_t type, size_t index)
-        : text_filter(type, filter_lang_t::REGEX, "", index)
+    empty_filter(type_t type, filter_lang_t lang, size_t index)
+        : text_filter(type, lang, "", index)
     {
     }
 
@@ -208,6 +208,8 @@ public:
     const_iterator begin() const { return this->fs_filters.begin(); }
 
     const_iterator end() const { return this->fs_filters.end(); }
+
+    iterator find(size_t index);
 
     size_t size() const { return this->fs_filters.size(); }
 

@@ -120,6 +120,46 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             top_view->reload_data();
             return true;
         }
+        case 'e': {
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* lss
+                = dynamic_cast<logfile_sub_source*>(top_view->get_sub_source());
+            if (lss != nullptr) {
+                auto curr_filter = lss->get_sql_filter();
+                auto& fs = lss->get_filters();
+                if (!curr_filter) {
+                    auto ef = std::make_shared<empty_filter>(
+                        text_filter::EXCLUDE, filter_lang_t::SQL, 0);
+                    fs.add_filter(ef);
+                }
+
+                auto rows = this->rows_for(top_view);
+                auto row_iter = std::find_if(
+                    rows.begin(), rows.end(), [](const auto& fr) {
+                        auto* tfr = dynamic_cast<text_filter_row*>(fr.get());
+                        if (tfr == nullptr) {
+                            return false;
+                        }
+                        return tfr->tfr_filter->get_index() == 0;
+                    });
+                auto row_idx = std::distance(rows.begin(), row_iter);
+                lv.set_selection(vis_line_t(row_idx));
+                lv.reload_data();
+
+                this->fss_editing = true;
+                this->tss_view->set_enabled(false);
+                this->fss_view_text_possibilities
+                    = view_text_possibilities(*top_view);
+                (*row_iter)->prime_text_input(
+                    top_view, *this->fss_editor, *this);
+                this->fss_editor->set_y(lv.get_y_for_selection());
+                this->fss_editor->set_visible(true);
+                this->fss_editor->focus();
+                this->fss_filter_state = true;
+            } else {
+            }
+            return true;
+        }
         case 'm': {
             auto* top_view = *lnav_data.ld_view_stack.top();
             auto* ttt = dynamic_cast<text_time_translator*>(
@@ -225,8 +265,8 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto filter_type = ch.eff_text[0] == 'i'
                 ? text_filter::type_t::INCLUDE
                 : text_filter::type_t::EXCLUDE;
-            auto ef
-                = std::make_shared<empty_filter>(filter_type, *filter_index);
+            auto ef = std::make_shared<empty_filter>(
+                filter_type, filter_lang_t::REGEX, *filter_index);
             fs.add_filter(ef);
 
             auto rows = this->rows_for(top_view);

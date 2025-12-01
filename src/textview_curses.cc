@@ -105,11 +105,12 @@ text_filter::end_of_message(logfile_filter_state& lfs)
 
     for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++)
     {
-        require(lfs.tfs_filter_count[this->lf_index]
-                <= lfs.tfs_logfile->size());
-
         size_t line_number = lfs.tfs_filter_count[this->lf_index];
+        require(line_number <= lfs.tfs_logfile->size());
 
+        if (line_number == lfs.tfs_logfile->size()) {
+            continue;
+        }
         if (lfs.tfs_message_matched[this->lf_index]) {
             lfs.tfs_mask[line_number] |= mask;
         } else {
@@ -1366,6 +1367,20 @@ pcre_filter::matches(std::optional<line_source> ls,
     return this->pf_pcre->find_in(line.to_string_fragment(), options)
         .ignore_error()
         .has_value();
+}
+
+filter_stack::iterator
+filter_stack::find(size_t index)
+{
+    for (auto iter = this->fs_filters.begin(); iter != this->fs_filters.end();
+         ++iter)
+    {
+        if ((*iter)->get_index() == index) {
+            return iter;
+        }
+    }
+
+    return this->fs_filters.end();
 }
 
 std::optional<size_t>
