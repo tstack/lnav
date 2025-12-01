@@ -301,6 +301,8 @@ parse_for(mode_t mode,
             const auto& se = split_args[split_index];
             if (se.se_value == "-" || startswith(se.se_value, "--")) {
                 retval.p_free_args.emplace_back(se);
+            } else if (startswith(param.ht_name, "-")) {
+                break;
             } else {
                 switch (param.ht_format) {
                     case help_parameter_format_t::HPF_TEXT:
