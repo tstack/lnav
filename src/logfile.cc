@@ -1192,7 +1192,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     } else if (found.is<log_format::scan_no_match>()) {
         log_level_t last_level = LEVEL_UNKNOWN;
         auto last_time = this->lf_index_time;
-        uint8_t last_opid = 0;
+        auto continued = false;
 
         if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
             last_time = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -1208,15 +1208,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
              */
             last_time = ll.get_time<std::chrono::microseconds>();
             if (this->lf_format.get() != nullptr) {
-                last_level = (log_level_t) (ll.get_level_and_flags()
-                                            | LEVEL_CONTINUED);
+                last_level = ll.get_msg_level();
+                continued = true;
             }
-            last_opid = ll.get_opid();
         }
         this->lf_index.emplace_back(
-            li.li_file_range.fr_offset, last_time, last_level, last_opid);
-        this->lf_index.back().set_valid_utf(li.li_utf8_scan_result.is_valid());
-        this->lf_index.back().set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
+            li.li_file_range.fr_offset, last_time, last_level);
+        auto& new_line = this->lf_index.back();
+        new_line.set_continued(continued);
+        new_line.set_valid_utf(li.li_utf8_scan_result.is_valid());
+        new_line.set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
     }
 
     if (this->lf_format != nullptr
@@ -2451,7 +2452,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
-    ll.set_opid(opid.hash());
+    ll.merge_bloom_bits(opid.bloom_bits());
     this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
 }
 
@@ -2486,7 +2487,6 @@ logfile::clear_logline_opid(uint32_t line_number)
     }
 
     auto& ll = this->lf_index[line_number];
-    ll.set_opid(0);
     auto opid = std::move(iter->second.bm_opid);
     auto opid_sf = string_fragment::from_str(opid);
 

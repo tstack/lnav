@@ -657,7 +657,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                             .to_attr_line());
                 } else {
                     const auto& start_line = start_win_iter->get_logline();
-                    unsigned int opid_hash = start_line.get_opid();
+                    auto lvv = start_win_iter->get_values();
+                    auto opid_bloom
+                        = string_fragment::from_str(opid_opt.value())
+                              .bloom_bits();
                     auto next_win
                         = lss->window_to_end(start_win_iter->get_vis_line());
                     auto next_win_iter = next_win->begin();
@@ -676,7 +679,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                             --next_win_iter;
                         }
                         const auto& next_line = next_win_iter->get_logline();
-                        if (!next_line.match_opid_hash(opid_hash)) {
+                        if (!next_line.match_bloom_bits(opid_bloom)) {
                             continue;
                         }
                         const auto& next_opid_opt

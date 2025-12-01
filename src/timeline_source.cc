@@ -1102,10 +1102,10 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto preview_content = attr_line_t();
     auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
     auto win = this->gs_lss.window_at(low_vl.value(), high_vl);
-    auto id_hash = row.or_name.hash();
+    auto id_bloom_bits = row.or_name.bloom_bits();
     auto msg_count = 0;
     for (const auto& msg_line : *win) {
-        if (!msg_line.get_logline().match_opid_hash(id_hash)) {
+        if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
             continue;
         }
 

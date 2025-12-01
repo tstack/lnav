@@ -69,6 +69,7 @@ log_data_table::get_columns_int()
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         this->ldt_schema_id.clear();
+        this->ldt_bloom_bits = 0;
         return;
     }
 
@@ -110,6 +111,8 @@ log_data_table::get_columns_int()
         cols.emplace_back(colname, sql_type, collator);
     }
     this->ldt_schema_id = dp.dp_schema_id;
+    this->ldt_bloom_bits = 1UL << (dp.dp_schema_id.in()[0] % 56);
+    this->ldt_bloom_bits |= 1UL << (dp.dp_schema_id.in()[1] % 56);
 }
 
 bool
@@ -132,12 +135,14 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
-    if (lf_iter->has_schema() && !lf_iter->match_schema(this->ldt_schema_id)) {
+    if (lf_iter->has_schema()
+        && !lf_iter->match_bloom_bits(this->ldt_bloom_bits))
+    {
         return false;
     }
 
     string_attrs_t sa;
-    struct line_range body;
+    line_range body;
     logline_value_vector line_values;
 
     lf->read_full_message(lf_iter, line_values.lvv_sbr);
@@ -152,7 +157,10 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
     data_parser dp(&ds);
     dp.parse();
 
-    lf_iter->set_schema(dp.dp_schema_id);
+    uint64_t bloom_bits = 1UL << (dp.dp_schema_id.in()[0] % 56);
+    bloom_bits |= 1UL << (dp.dp_schema_id.in()[1] % 56);
+    lf_iter->merge_bloom_bits(bloom_bits);
+    lf_iter->set_schema_computed(true);
 
     /* The cached schema ID in the log line is not complete, so we still */
     /* need to check for a full match. */

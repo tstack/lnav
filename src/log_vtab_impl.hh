@@ -223,7 +223,8 @@ struct log_cursor {
     std::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
     intern_string_t lc_pattern_name;
-    std::optional<uint16_t> lc_opid;
+    std::optional<uint64_t> lc_opid_bloom_bits;
+    std::optional<uint64_t> lc_tid_bloom_bits;
     std::vector<string_constraint> lc_log_path;
     logfile* lc_last_log_path_match{nullptr};
     logfile* lc_last_log_path_mismatch{nullptr};

@@ -745,6 +745,8 @@ struct string_fragment {
         return hash_str(this->data(), this->length());
     }
 
+    uint64_t bloom_bits() const;
+
     const char* sf_string;
     int32_t sf_begin;
     int32_t sf_end;

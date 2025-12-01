@@ -68,8 +68,9 @@ public:
         if (lf.has_line_metadata()
             && lf.get_text_format() == text_format_t::TF_LOG)
         {
-            dst.emplace_back(
-                li.li_file_range.fr_offset, li.li_timestamp, li.li_level);
+            dst.emplace_back(li.li_file_range.fr_offset,
+                             to_us(li.li_timestamp),
+                             li.li_level);
             return scan_match{1};
         }
 
@@ -634,7 +635,7 @@ public:
         exttm tm;
         auto found_ts = false;
         log_level_t level = LEVEL_INFO;
-        uint16_t opid = 0;
+        uint64_t opid_bloom = 0;
         auto opid_cap = string_fragment::invalid();
         auto host_cap = string_fragment::invalid();
         auto duration = std::chrono::microseconds{0};
@@ -672,7 +673,7 @@ public:
             } else if (UID == fd.fd_meta.lvm_name) {
                 opid_cap = *iter;
 
-                opid = opid_cap.hash();
+                opid_bloom = opid_cap.bloom_bits();
             } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
                 host_cap = *iter;
             } else if (DURATION == fd.fd_meta.lvm_name) {
@@ -728,8 +729,8 @@ public:
                         0, host_cap.to_string());
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, log_us, level, opid);
-            dst.back().set_opid(opid);
+            dst.emplace_back(li.li_file_range.fr_offset, log_us, level);
+            dst.back().merge_bloom_bits(opid_bloom);
             return scan_match{2000};
         }
         return scan_no_match{"no header found"};
@@ -1482,7 +1483,8 @@ public:
                 }
                 dst.emplace_back(li.li_file_range.fr_offset,
                                  std::chrono::microseconds{0},
-                                 LEVEL_IGNORE);
+                                 LEVEL_UNKNOWN);
+                dst.back().set_ignore(true);
                 return scan_match{2000};
             }
 
@@ -1547,7 +1549,7 @@ public:
                     ll.set_ignore(true);
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, tv, level);
+            dst.emplace_back(li.li_file_range.fr_offset, to_us(tv), level);
             return scan_match{2000};
         }
 
@@ -2105,7 +2107,7 @@ public:
         if (lph.lph_found_time) {
             this->lf_timestamp_flags = lph.lph_time_tm.et_flags;
             dst.emplace_back(
-                li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
+                li.li_file_range.fr_offset, to_us(lph.lph_tv), lph.lph_level);
             retval = scan_match{2000};
         }
 

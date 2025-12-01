@@ -75,6 +75,15 @@
                     ]
                 },
                 {
+                    "display_value": "🧵 ⋯",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": ""
+                        }
+                    ]
+                },
+                {
                     "display_value": "87ecc75c2bfe711642086a9b8546ab05",
                     "search_placeholder": "",
                     "possibilities": [

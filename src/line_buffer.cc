@@ -823,7 +823,7 @@ line_buffer::fill_range(file_off_t start,
 
     require(start >= 0);
 
-#if 1
+#if 0
     log_debug("BEGIN (%d) fill range %lld %zu (%lld) %zd",
               this->lb_fd.get(),
               start,
@@ -834,7 +834,7 @@ line_buffer::fill_range(file_off_t start,
     if (!lnav::pid::in_child && this->lb_loader_future.valid()
         && start >= this->lb_loader_file_offset.value())
     {
-#if 1
+#if 0
         log_debug("fd(%d) getting preload! %d %d",
                   this->lb_fd.get(),
                   start,
@@ -876,7 +876,7 @@ line_buffer::fill_range(file_off_t start,
         && (got_preload || max_length == 0
             || this->in_range(start + max_length - 1)))
     {
-        log_debug("fd(%d) cached!", this->lb_fd.get());
+        // log_debug("fd(%d) cached!", this->lb_fd.get());
         /* Cache already has the data, nothing to do. */
         retval = true;
         if (this->lb_do_preloading && !lnav::pid::in_child && this->lb_seekable
@@ -1139,7 +1139,7 @@ line_buffer::fill_range(file_off_t start,
         }
         ensure(this->lb_buffer.size() <= this->lb_buffer.capacity());
     }
-    log_debug("END fill_range");
+    // log_debug("END fill_range");
 
     return retval;
 }

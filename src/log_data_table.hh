@@ -32,6 +32,7 @@
 #ifndef lnav_log_data_table_hh
 #define lnav_log_data_table_hh
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -70,6 +71,7 @@ private:
     logfile_sub_source& ldt_log_source;
     const content_line_t ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
+    uint64_t ldt_bloom_bits{0};
     data_parser::element_list_t ldt_pairs;
     std::shared_ptr<log_vtab_impl> ldt_format_impl;
     std::vector<vtab_column> ldt_cols;

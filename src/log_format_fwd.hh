@@ -240,28 +240,12 @@ public:
      * @param millis The millisecond timestamp for the line.
      * @param l The logging level.
      */
-    logline(file_off_t off,
-            std::chrono::microseconds t,
-            log_level_t lev,
-            uint16_t opid = 0)
-        : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_opid(opid),
-          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_meta_mark(0),
-          ll_expr_mark(0)
+    logline(file_off_t off, std::chrono::microseconds t, log_level_t lev)
+        : ll_time(t), ll_offset(off), ll_sub_offset(0), ll_valid_utf(1),
+          ll_has_ansi(false), ll_ignore(false), ll_continued(false),
+          ll_time_skew(false), ll_mark(false), ll_meta_mark(0), ll_expr_mark(0),
+          ll_level(lev)
     {
-        this->ll_schema[0] = 0;
-        this->ll_schema[1] = 0;
-    }
-
-    logline(file_off_t off,
-            const timeval& tv,
-            log_level_t lev,
-            uint16_t opid = 0)
-        : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
-          ll_valid_utf(1), ll_level(lev), ll_meta_mark(0), ll_expr_mark(0)
-    {
-        this->set_time(tv);
-        this->ll_schema[0] = 0;
-        this->ll_schema[1] = 0;
     }
 
     /** @return The offset of the line in the file. */
@@ -269,7 +253,11 @@ public:
 
     uint16_t get_sub_offset() const { return this->ll_sub_offset; }
 
-    void set_sub_offset(uint16_t suboff) { this->ll_sub_offset = suboff; }
+    logline& set_sub_offset(uint16_t suboff)
+    {
+        this->ll_sub_offset = suboff;
+        return *this;
+    }
 
     template<typename S>
     S get_time() const
@@ -320,125 +308,81 @@ public:
             += std::chrono::duration_cast<std::chrono::microseconds>(sub);
     }
 
-    void set_ignore(bool val)
+    logline& set_ignore(bool val)
     {
-        if (val) {
-            this->ll_level |= LEVEL_IGNORE;
-        } else {
-            this->ll_level &= ~LEVEL_IGNORE;
-        }
+        this->ll_ignore = val;
+        return *this;
     }
 
-    bool is_ignored() const { return this->ll_level & LEVEL_IGNORE; }
+    bool is_ignored() const { return this->ll_ignore; }
 
-    void set_mark(bool val)
+    logline& set_mark(bool val)
     {
-        if (val) {
-            this->ll_level |= LEVEL_MARK;
-        } else {
-            this->ll_level &= ~LEVEL_MARK;
-        }
+        this->ll_mark = val;
+        return *this;
     }
 
-    bool is_marked() const { return this->ll_level & LEVEL_MARK; }
+    bool is_marked() const { return this->ll_mark; }
 
-    void set_meta_mark(bool val) { this->ll_meta_mark = val; }
+    logline& set_meta_mark(bool val)
+    {
+        this->ll_meta_mark = val;
+        return *this;
+    }
 
     bool is_meta_marked() const { return this->ll_meta_mark; }
 
-    void set_expr_mark(bool val) { this->ll_expr_mark = val; }
+    logline& set_expr_mark(bool val)
+    {
+        this->ll_expr_mark = val;
+        return *this;
+    }
 
     bool is_expr_marked() const { return this->ll_expr_mark; }
 
-    void set_time_skew(bool val)
+    logline& set_time_skew(bool val)
     {
-        if (val) {
-            this->ll_level |= LEVEL_TIME_SKEW;
-        } else {
-            this->ll_level &= ~LEVEL_TIME_SKEW;
-        }
+        this->ll_time_skew = val;
+        return *this;
     }
 
-    bool is_time_skewed() const { return this->ll_level & LEVEL_TIME_SKEW; }
+    bool is_time_skewed() const { return this->ll_time_skew; }
 
-    void set_valid_utf(bool v) { this->ll_valid_utf = v; }
+    logline& set_valid_utf(bool v)
+    {
+        this->ll_valid_utf = v;
+        return *this;
+    }
 
     bool is_valid_utf() const { return this->ll_valid_utf; }
 
-    void set_has_ansi(bool v) { this->ll_has_ansi = v; }
+    logline& set_has_ansi(bool v)
+    {
+        this->ll_has_ansi = v;
+        return *this;
+    }
 
     bool has_ansi() const { return this->ll_has_ansi; }
 
     /** @param l The logging level. */
     void set_level(log_level_t l) { this->ll_level = l; };
 
-    /** @return The logging level. */
-    log_level_t get_level_and_flags() const
-    {
-        return (log_level_t) this->ll_level;
-    }
-
-    log_level_t get_msg_level() const
-    {
-        return (log_level_t) (this->ll_level & ~LEVEL__FLAGS);
-    }
+    log_level_t get_msg_level() const { return log_level_t{this->ll_level}; }
 
     const string_fragment& get_level_name() const
     {
-        return level_names[this->ll_level & ~LEVEL__FLAGS];
+        return level_names[this->ll_level];
     }
 
-    bool is_message() const
+    bool is_message() const { return !this->ll_ignore && !this->ll_continued; }
+
+    logline& set_continued(bool val)
     {
-        return (this->ll_level & (LEVEL_IGNORE | LEVEL_CONTINUED)) == 0;
+        this->ll_continued = val;
+        return *this;
     }
 
-    bool is_continued() const { return this->ll_level & LEVEL_CONTINUED; }
-
-    void set_opid(uint16_t opid) { this->ll_opid = opid; }
-
-    uint16_t get_opid() const { return this->ll_opid; }
-
-    bool match_opid_hash(unsigned long hash) const
-    {
-        uint16_t reduced = (uint16_t) hash;
-
-        return this->ll_opid == reduced;
-    }
-
-    /**
-     * @return  True if there is a schema value set for this log line.
-     */
-    bool has_schema() const
-    {
-        return (this->ll_schema[0] != 0 || this->ll_schema[1] != 0);
-    }
-
-    /**
-     * Set the "schema" for this log line.  The schema ID is used to match log
-     * lines that have a similar format when generating the logline table.  The
-     * schema is set lazily so that startup is faster.
-     *
-     * @param ba The SHA-1 hash of the constant parts of this log line.
-     */
-    void set_schema(const byte_array<2, uint64_t>& ba)
-    {
-        memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
-    }
-
-    /**
-     * Perform a partial match of the given schema against this log line.
-     * Storing the full schema is not practical, so we just keep the first four
-     * bytes.
-     *
-     * @param  ba The SHA-1 hash of the constant parts of a log line.
-     * @return    True if the first four bytes of the given schema match the
-     *   schema stored in this log line.
-     */
-    bool match_schema(const byte_array<2, uint64_t>& ba) const
-    {
-        return memcmp(this->ll_schema, ba.in(), sizeof(this->ll_schema)) == 0;
-    }
+    bool is_continued() const { return this->ll_continued; }
 
     /**
      * Compare loglines based on their timestamp.
@@ -466,18 +410,43 @@ public:
         return this->get_timeval() <= rhs;
     }
 
+    void set_schema_computed(bool val)
+    {
+        this->ll_has_schema = val;
+    }
+
+    bool has_schema() const { return this->ll_has_schema; }
+
+    void merge_bloom_bits(uint64_t bloom_bits)
+    {
+        this->ll_bloom_bits |= bloom_bits;
+    }
+
+    bool match_bloom_bits(uint64_t bloom_bits) const
+    {
+        return (this->ll_bloom_bits & bloom_bits) == bloom_bits;
+    }
+
+    static constexpr size_t BLOOM_BITS_SIZE = 56;
+
 private:
-    file_off_t ll_offset : 63;
-    uint8_t ll_has_ansi : 1;
     std::chrono::microseconds ll_time;
-    uint16_t ll_opid;
+    file_off_t ll_offset : 44;
     unsigned int ll_sub_offset : 15;
-    unsigned int ll_valid_utf : 1;
-    uint8_t ll_level;
+    uint8_t ll_valid_utf : 1;
+    uint8_t ll_has_ansi : 1;
+    uint8_t ll_ignore : 1;
+    uint8_t ll_continued : 1;
+    uint8_t ll_time_skew : 1;
+    uint64_t ll_bloom_bits : 56;
+    uint8_t ll_mark : 1;
     uint8_t ll_meta_mark : 1;
     uint8_t ll_expr_mark : 1;
-    char ll_schema[2];
+    uint8_t ll_has_schema : 1;
+    uint8_t ll_level : 4;
 };
+
+static_assert(sizeof(logline) == 24);
 
 struct format_tag_def {
     explicit format_tag_def(std::string name) : ftd_name(std::move(name)) {}

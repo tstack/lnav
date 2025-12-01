@@ -1683,6 +1683,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_time<std::chrono::microseconds>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
+            ll.merge_bloom_bits(jlu.jlu_tid_frag->bloom_bits());
         } else {
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator,
@@ -1721,7 +1722,6 @@ external_log_format::scan_json(std::vector<logline>& dst,
             char buf[hasher::STRING_SIZE];
             jlu.jlu_opid_hasher.to_string(buf);
             auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
-            jlu.jlu_base_line->set_opid(opid_frag.hash());
             auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_frag);
             if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
                 jlu.jlu_opid_frag = opid_frag.to_owned(sbc.sbc_allocator);
@@ -1731,6 +1731,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (jlu.jlu_opid_frag) {
+            ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
             this->jlf_line_values.lvv_opid_value
                 = jlu.jlu_opid_frag->to_string();
             this->jlf_line_values.lvv_opid_provenance
@@ -1782,14 +1783,11 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
+        ll.set_has_ansi(jlu.jlu_has_ansi);
+        ll.set_valid_utf(jlu.jlu_valid_utf);
         for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
             ll.set_sub_offset(lpc);
-            if (lpc > 0) {
-                ll.set_level(
-                    (log_level_t) (ll.get_level_and_flags() | LEVEL_CONTINUED));
-            }
-            ll.set_has_ansi(jlu.jlu_has_ansi);
-            ll.set_valid_utf(jlu.jlu_valid_utf);
+            ll.set_continued(lpc > 0);
             dst.emplace_back(ll);
         }
         this->lf_timestamp_flags = jlu.jlu_exttm.et_flags;
@@ -1836,9 +1834,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             log_level_t level = LEVEL_INVALID;
 
             ll.set_time(dst.back().get_timeval());
-            if (lpc > 0) {
-                level = (log_level_t) (level | LEVEL_CONTINUED);
-            }
+            ll.set_continued(lpc > 0);
             ll.set_level(level);
             ll.set_sub_offset(lpc);
             dst.emplace_back(ll);
@@ -1900,7 +1896,7 @@ external_log_format::scan(logfile& lf,
         const char* last;
         exttm log_time_tm;
         timeval log_tv;
-        uint16_t opid = 0;
+        uint64_t opid_bloom = 0;
         char combined_datetime_buf[512];
 
         if (fpat->p_time_field_index != -1) {
@@ -2059,7 +2055,7 @@ external_log_format::scan(logfile& lf,
                                         otr.otr_description,
                                         fpat,
                                         md);
-            opid = opid_cap->hash();
+            opid_bloom = opid_cap->bloom_bits();
         }
 
         for (const auto& ivd : fpat->p_value_by_index) {
@@ -2132,7 +2128,9 @@ external_log_format::scan(logfile& lf,
             }
         }
 
-        dst.emplace_back(li.li_file_range.fr_offset, log_us, level, opid);
+        dst.emplace_back(li.li_file_range.fr_offset, log_us, level);
+        auto& new_line = dst.back();
+        new_line.merge_bloom_bits(opid_bloom);
 
         auto src_file_cap = md[fpat->p_src_file_field_index];
         auto src_line_cap = md[fpat->p_src_line_field_index];
@@ -2141,13 +2139,15 @@ external_log_format::scan(logfile& lf,
             h.update(this->get_name().c_str());
             h.update(src_file_cap.value());
             h.update(src_line_cap.value());
-            dst.back().set_schema(h.to_array());
+            new_line.merge_bloom_bits(h.to_bloom_bits());
+            new_line.set_schema_computed(true);
         }
         auto thread_id_cap = md[fpat->p_thread_id_field_index];
         if (thread_id_cap) {
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, thread_id_cap.value(), log_us);
             tid_iter->second.titr_level_stats.update_msg_count(level);
+            new_line.merge_bloom_bits(thread_id_cap->bloom_bits());
         } else {
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, string_fragment{}, log_us);
@@ -2183,7 +2183,7 @@ external_log_format::scan(logfile& lf,
                   dst.size(),
                   li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,
-                         last_line.get_timeval(),
+                         last_line.get_time<std::chrono::microseconds>(),
                          log_level_t::LEVEL_INVALID);
 
         return scan_match{0};
@@ -2532,7 +2532,7 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
     }
     if (!field_name.empty() && jlu->jlu_format->elf_opid_field == field_name) {
-        jlu->jlu_base_line->set_opid(frag.hash());
+        jlu->jlu_base_line->merge_bloom_bits(frag.bloom_bits());
 
         auto& sbc = *jlu->jlu_batch_context;
         auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(frag);

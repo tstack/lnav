@@ -32,6 +32,7 @@
 
 #include <queue>
 #include <string>
+#include <vector>
 
 #include "base/fts_fuzzy_match.hh"
 #include "base/itertools.hh"
@@ -79,6 +80,7 @@ std::vector<typename T::value_type>
 operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
 {
     using score_pair = std::pair<int, typename T::value_type>;
+    constexpr size_t MAX_ELEMENTS = 512;
 
     struct score_cmp {
         bool operator()(const score_pair& lhs, const score_pair& rhs)
@@ -90,7 +92,13 @@ operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
     std::vector<std::remove_const_t<typename T::value_type>> retval;
 
     if (st.st_pattern.empty()) {
-        retval.insert(retval.begin(), in.begin(), in.end());
+        retval.reserve(std::min(MAX_ELEMENTS, in.size()));
+        for (const auto& elem : in) {
+            if (retval.size() >= MAX_ELEMENTS) {
+                break;
+            }
+            retval.emplace_back(elem);
+        }
         return retval;
     }
 

@@ -27,10 +27,13 @@
 [32m * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.[0m
 [32m */[0m
 
+[1m[36m#include[0m <array>
+[1m[36m#include[0m <cctype>
+
 [1m[36m#include[0m [35m"log_level.hh"[0m
 
-[1m[36m#include[0m <ctype.h>
-
+[1m[36m#include[0m [35m"base/intern_string.hh"[0m
+[1m[36m#include[0m [35m"base/log_level_enum.hh"[0m
 [1m[36m#include[0m [35m"config.h"[0m
 
 [1m[36mconstexpr[0m std::array<string_fragment, [1mLEVEL__MAX[0m> [4mlevel_names[0m = {

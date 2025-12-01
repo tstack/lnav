@@ -193,6 +193,8 @@ Interface changes:
   of time in the gap.
 * The SPECTRO view now shows the year in timestamps
   and uses additional colors to show the value range.
+* The breadcrumb bar in the LOG view now includes the
+  current thread, if defined.
 * If there are background tasks, like the processing done
   by `:add-source-path`, a panel with progress bars for
   each operation will be shown just above the bottom

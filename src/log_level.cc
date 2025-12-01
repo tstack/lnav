@@ -27,10 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <array>
+#include <cctype>
+
 #include "log_level.hh"
 
-#include <ctype.h>
-
+#include "base/intern_string.hh"
+#include "base/log_level_enum.hh"
 #include "config.h"
 
 constexpr std::array<string_fragment, LEVEL__MAX> level_names = {

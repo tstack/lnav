@@ -30,6 +30,10 @@
 #include <algorithm>
 #include <chrono>
 #include <future>
+#include <optional>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "logfile_sub_source.hh"
 
@@ -37,11 +41,11 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
-#include "base/fs_util.hh"
+#include "base/distributed_slice.hh"
 #include "base/injector.hh"
-#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
+#include "bookmarks.hh"
 #include "bookmarks.json.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -57,6 +61,7 @@
 #include "scn/scan.h"
 #include "shlex.hh"
 #include "sql_util.hh"
+#include "tlx/container/btree_set.hpp"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -2733,6 +2738,58 @@ logfile_sub_source::text_crumbs_for_line(int line,
     {
         static const std::string MOVE_STMT = R"(;UPDATE lnav_views
           SET selection = ifnull(
+            (SELECT log_line FROM all_logs WHERE log_thread_id = $tid LIMIT 1),
+            (SELECT raise_error('Could not find thread ID: ' || $tid,
+                                'The corresponding log messages might have been filtered out')))
+          WHERE name = 'log'
+        )";
+        static const std::string ELLIPSIS = "\u22ef";
+
+        auto tid_display = values.lvv_thread_id_value.has_value()
+            ? lnav::roles::identifier(values.lvv_thread_id_value.value())
+            : lnav::roles::hidden(ELLIPSIS);
+        crumbs.emplace_back(
+            values.lvv_thread_id_value.has_value()
+                ? values.lvv_thread_id_value.value()
+                : "",
+            attr_line_t().append("\U0001f9f5 ").append(tid_display),
+            [this]() -> std::vector<breadcrumb::possibility> {
+                std::set<std::string> poss_strs;
+
+                for (const auto& file_data : this->lss_files) {
+                    if (file_data->get_file_ptr() == nullptr) {
+                        continue;
+                    }
+                    safe::ReadAccess<logfile::safe_thread_id_state> r_tid_map(
+                        file_data->get_file_ptr()->get_thread_ids());
+
+                    for (const auto& pair : r_tid_map->ltis_tid_ranges) {
+                        poss_strs.emplace(pair.first.to_string());
+                    }
+                }
+
+                std::vector<breadcrumb::possibility> retval;
+
+                std::transform(poss_strs.begin(),
+                               poss_strs.end(),
+                               std::back_inserter(retval),
+                               [](const auto& tid_str) {
+                                   return breadcrumb::possibility(tid_str);
+                               });
+
+                return retval;
+            },
+            [ec = this->lss_exec_context](const auto& tid) {
+                ec->execute_with(
+                    INTERNAL_SRC_LOC,
+                    MOVE_STMT,
+                    std::make_pair("tid", tid.template get<std::string>()));
+            });
+    }
+
+    {
+        static const std::string MOVE_STMT = R"(;UPDATE lnav_views
+          SET selection = ifnull(
             (SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1),
             (SELECT raise_error('Could not find opid: ' || $opid,
                                 'The corresponding log messages might have been filtered out')))
@@ -2748,7 +2805,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                               : "",
             attr_line_t().append(opid_display),
             [this]() -> std::vector<breadcrumb::possibility> {
-                std::set<std::string> poss_strs;
+                std::unordered_set<std::string> poss_strs;
 
                 for (const auto& file_data : this->lss_files) {
                     if (file_data->get_file_ptr() == nullptr) {
@@ -2757,12 +2814,15 @@ logfile_sub_source::text_crumbs_for_line(int line,
                     safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
                         file_data->get_file_ptr()->get_opids());
 
+                    poss_strs.reserve(poss_strs.size()
+                                      + r_opid_map->los_opid_ranges.size());
                     for (const auto& pair : r_opid_map->los_opid_ranges) {
-                        poss_strs.emplace(pair.first.to_string());
+                        poss_strs.insert(pair.first.to_string());
                     }
                 }
 
                 std::vector<breadcrumb::possibility> retval;
+                retval.reserve(poss_strs.size());
 
                 std::transform(poss_strs.begin(),
                                poss_strs.end(),

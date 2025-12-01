@@ -176,12 +176,8 @@ breadcrumb_curses::reload_data()
         }
     }
 
-    auto matches = attr_line_t()
-                       .join(this->bc_similar_values
-                                 | lnav::itertools::map(
-                                     &breadcrumb::possibility::p_display_value),
-                             "\n")
-                       .move();
+    auto matches = this->bc_similar_values
+        | lnav::itertools::map(&breadcrumb::possibility::p_display_value);
     this->bc_match_source.replace_with(matches);
     auto width = this->bc_possible_values
         | lnav::itertools::fold(

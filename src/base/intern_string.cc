@@ -349,6 +349,27 @@ string_fragment::to_string_with_case_style(case_style style) const
     return retval;
 }
 
+uint64_t
+string_fragment::bloom_bits() const
+{
+    auto a = XXH3_64bits(this->data(), this->length());
+    auto b = a >> 8;
+    if ((b & 0x3f) == (a & 0x3f)) {
+        b = b >> 8;
+    }
+    auto c = b >> 8;
+    if ((c & 0x3f) == (a & 0x3f) || (c & 0x3f) == (b & 0x3f)) {
+        c = c >> 8;
+    }
+
+    uint64_t retval = 0;
+    retval |= 1ULL << (a % 56);
+    retval |= 1ULL << (b % 56);
+    retval |= 1ULL << (c % 56);
+
+    return retval;
+}
+
 std::string
 string_fragment::to_unquoted_string() const
 {
@@ -540,7 +561,7 @@ string_fragment::byte_to_column_index(const size_t byte_index) const
                     do {
                         curr_col += 1;
                     } while (curr_col % 8);
-                break;
+                    break;
                 default: {
                     auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
                     if (wcw_res < 0) {

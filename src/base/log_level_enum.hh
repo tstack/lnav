@@ -51,15 +51,6 @@ enum log_level_t : int {
     LEVEL_INVALID,
 
     LEVEL__MAX,
-
-    LEVEL_IGNORE = 0x10, /*< Ignore */
-    LEVEL_TIME_SKEW = 0x20, /*< Received after timestamp. */
-    LEVEL_MARK = 0x40, /*< Bookmarked line. */
-    LEVEL_CONTINUED = 0x80, /*< Continuation of multiline entry. */
-
-    /** Mask of flags for the level field. */
-    LEVEL__FLAGS
-        = (LEVEL_IGNORE | LEVEL_TIME_SKEW | LEVEL_MARK | LEVEL_CONTINUED)
 };
 
 #endif

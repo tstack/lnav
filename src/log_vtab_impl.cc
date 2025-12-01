@@ -27,22 +27,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "log_vtab_impl.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/intern_string.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
 #include "config.h"
-#include "hasher.hh"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
 #include "logline_window.hh"
-#include "scn/ranges.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
@@ -69,7 +71,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_time_msecs"_frag,  "log_path"_frag,        "log_unique_path"_frag,
         "log_text"_frag,        "log_body"_frag,        "log_raw_text"_frag,
         "log_line_hash"_frag,   "log_line_link"_frag,   "log_src_file"_frag,
-        "log_src_line"_frag,
+        "log_src_line"_frag,    "log_thread_id"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -102,7 +104,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_line_hash    TEXT HIDDEN,                       -- A hash of the first line of the log message
   log_line_link    TEXT HIDDEN,                       -- The permalink for the log message
   log_src_file     TEXT HIDDEN,                       -- The source file the log message came from
-  log_src_line     TEXT HIDDEN                        -- The source line the log message came from
+  log_src_line     TEXT HIDDEN,                       -- The source line the log message came from
+  log_thread_id    TEXT HIDDEN                        -- The ID of the thread that generated this message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -128,6 +131,7 @@ enum class log_footer_columns : uint32_t {
     line_link,
     src_file,
     src_line,
+    thread_id,
 };
 
 const std::string&
@@ -328,7 +332,15 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
         }
     }
 
-    if (lc.lc_opid && !lf_iter->match_opid_hash(lc.lc_opid.value())) {
+    if (lc.lc_opid_bloom_bits
+        && !lf_iter->match_bloom_bits(lc.lc_opid_bloom_bits.value()))
+    {
+        return false;
+    }
+
+    if (lc.lc_tid_bloom_bits
+        && !lf_iter->match_bloom_bits(lc.lc_tid_bloom_bits.value()))
+    {
         return false;
     }
 
@@ -468,7 +480,8 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
 
     p_cur->base.pVtab = p_svt;
-    p_cur->log_cursor.lc_opid = std::nullopt;
+    p_cur->log_cursor.lc_opid_bloom_bits = std::nullopt;
+    p_cur->log_cursor.lc_tid_bloom_bits = std::nullopt;
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_direction = 1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
@@ -1176,6 +1189,24 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
                         break;
                     }
+                    case log_footer_columns::thread_id: {
+                        if (vc->line_values.lvv_values.empty()) {
+                            vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
+                        }
+
+                        if (vc->line_values.lvv_thread_id_value) {
+                            to_sqlite(
+                                ctx,
+                                vc->line_values.lvv_thread_id_value.value());
+                        } else {
+                            sqlite3_result_null(ctx);
+                        }
+                        break;
+                    }
                 }
             } else {
                 if (vc->line_values.lvv_values.empty()) {
@@ -1549,7 +1580,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 #endif
     p_cur->log_cursor.lc_format_name.clear();
     p_cur->log_cursor.lc_pattern_name.clear();
-    p_cur->log_cursor.lc_opid = std::nullopt;
+    p_cur->log_cursor.lc_opid_bloom_bits = std::nullopt;
+    p_cur->log_cursor.lc_tid_bloom_bits = std::nullopt;
     p_cur->log_cursor.lc_level_constraint = std::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
     p_cur->log_cursor.lc_last_log_path_match = nullptr;
@@ -1570,7 +1602,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_indexed_lines_range = msg_range::empty();
 
     std::optional<vtab_time_range> log_time_range;
-    std::optional<uint16_t> opid_val;
+    std::optional<uint64_t> opid_val;
+    std::optional<uint64_t> tid_val;
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
 
@@ -1733,7 +1766,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                     iter->second.otr_range.tr_end);
                             }
 
-                            opid_val = opid.hash();
+                            opid_val = opid.bloom_bits();
                             break;
                         }
                         case log_footer_columns::path: {
@@ -1843,6 +1876,36 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 log_trace("could not find link: %s",
                                           permalink.c_str());
                             }
+                            break;
+                        }
+                        case log_footer_columns::thread_id: {
+                            if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
+                                continue;
+                            }
+                            auto tid = from_sqlite<string_fragment>()(
+                                argc, argv, lpc);
+                            if (!log_time_range) {
+                                log_time_range = vtab_time_range{};
+                            }
+                            for (const auto& file_data : *vt->lss) {
+                                if (file_data->get_file_ptr() == nullptr) {
+                                    continue;
+                                }
+                                safe::ReadAccess<logfile::safe_thread_id_state>
+                                    r_tid_map(file_data->get_file_ptr()
+                                                  ->get_thread_ids());
+                                const auto& iter
+                                    = r_tid_map->ltis_tid_ranges.find(tid);
+                                if (iter == r_tid_map->ltis_tid_ranges.end()) {
+                                    continue;
+                                }
+                                log_time_range->add(
+                                    iter->second.titr_range.tr_begin);
+                                log_time_range->add(
+                                    iter->second.titr_range.tr_end);
+                            }
+
+                            tid_val = tid.bloom_bits();
                             break;
                         }
                     }
@@ -1960,6 +2023,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 (int) scan_range.v_max_line);
             p_cur->log_cursor.lc_level_constraint = std::nullopt;
             opid_val = std::nullopt;
+            tid_val = std::nullopt;
             log_time_range = std::nullopt;
             log_path_constraints.clear();
             log_unique_path_constraints.clear();
@@ -2088,7 +2152,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         }
     }
 
-    p_cur->log_cursor.lc_opid = opid_val;
+    p_cur->log_cursor.lc_opid_bloom_bits = opid_val;
+    p_cur->log_cursor.lc_tid_bloom_bits = tid_val;
     p_cur->log_cursor.lc_log_path = std::move(log_path_constraints);
     p_cur->log_cursor.lc_unique_path = std::move(log_unique_path_constraints);
 
@@ -2289,6 +2354,16 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                             indexes.push_back(constraint);
                             p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
                             index_desc.emplace_back("log_line_link = ?");
+                            break;
+                        }
+                        case log_footer_columns::thread_id: {
+                            if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
+                                argvInUse += 1;
+                                indexes.push_back(constraint);
+                                p_info->aConstraintUsage[lpc].argvIndex
+                                    = argvInUse;
+                                index_desc.emplace_back("log_thread_id = ?");
+                            }
                             break;
                         }
                     }

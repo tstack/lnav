@@ -57,17 +57,12 @@ all_logs_vtab::all_logs_vtab()
       alv_src_meta(intern_string::lookup("log_msg_src"),
                    value_kind_t::VALUE_JSON,
                    logline_value_meta::table_column{3}),
-      alv_thread_meta(intern_string::lookup("log_thread_id"),
-                      value_kind_t::VALUE_TEXT,
-                      logline_value_meta::table_column{4}),
       alv_stacktrace_meta(intern_string::lookup("log_stack_trace"),
                           value_kind_t::VALUE_TEXT,
-                          logline_value_meta::table_column{5})
+                          logline_value_meta::table_column{4})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
-    this->alv_thread_meta.lvm_identifier = true;
-    this->alv_thread_meta.lvm_foreign_key = true;
 }
 
 void
@@ -92,11 +87,6 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
                       "",
                       false,
                       "The source code that generated this message");
-    cols.emplace_back(this->alv_thread_meta.lvm_name.get(),
-                      SQLITE3_TEXT,
-                      "",
-                      false,
-                      "The ID of the thread that generated this message");
     cols.emplace_back(this->alv_stacktrace_meta.lvm_name.get(),
                       SQLITE3_TEXT,
                       "",
@@ -157,9 +147,8 @@ all_logs_vtab::extract(logfile* lf,
             h.update(find_res->pattern.c_str());
         }
         auto line_iter = lf->begin() + line_number;
-        if (!line_iter->has_schema()) {
-            line_iter->set_schema(h.to_array());
-        }
+        line_iter->merge_bloom_bits(h.to_bloom_bits());
+        line_iter->set_schema_computed(true);
         values.lvv_values.emplace_back(this->alv_msg_meta,
                                        (std::string) find_res->pattern);
         values.lvv_values.emplace_back(this->alv_schema_meta, h.to_string());
@@ -195,12 +184,7 @@ all_logs_vtab::extract(logfile* lf,
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());
     }
-    if (sub_values.lvv_thread_id_value) {
-        values.lvv_values.emplace_back(this->alv_thread_meta,
-                                       sub_values.lvv_thread_id_value.value());
-    } else {
-        values.lvv_values.emplace_back(this->alv_thread_meta);
-    }
+    values.lvv_thread_id_value = std::move(sub_values.lvv_thread_id_value);
     values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
     values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
 }
