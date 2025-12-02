@@ -424,9 +424,9 @@ TIMELINE
    VMWare Update Manager.  Most rows show API requests as they
    are received and processed.
 
-The timeline view [#]_ visualizes operations over time.  The operations
-are ordered top-to-bottom by their start time.  So, scrolling down will
-move forward in time.  An operation is identified by an ID that can come
+The timeline view [#]_ visualizes log files, threads, and operations over time.
+The items are ordered top-to-bottom by their start time.  So, scrolling down
+will move forward in time.  An operation is identified by an ID that can come
 from multiple sources:
 
 * If the ID is in the log message, the log format can set the

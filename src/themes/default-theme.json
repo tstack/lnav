@@ -51,6 +51,12 @@
                     },
                     "edit": {
                         "value": "\u270F\uFE0F"
+                    },
+                    "file": {
+                        "value": "\ud83d\udcc4"
+                    },
+                    "thread": {
+                        "value": "\ud83e\uddf5"
                     }
                 },
                 "vars": {

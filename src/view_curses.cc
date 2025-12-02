@@ -966,6 +966,8 @@ view_colors::init_roles(const lnav_theme& lt,
 
              lt.lt_icon_play,
              lt.lt_icon_edit,
+             lt.lt_icon_file,
+             lt.lt_icon_thread,
          })
     {
         size_t index = 0;

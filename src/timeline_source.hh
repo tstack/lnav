@@ -153,7 +153,14 @@ public:
 
     timeline_subid_map gs_subid_map;
 
+    enum class row_type {
+        logfile,
+        thread,
+        opid,
+    };
+
     struct opid_row {
+        row_type or_type;
         string_fragment or_name;
         opid_time_range or_value;
         string_fragment or_description;
@@ -162,6 +169,7 @@ public:
                          lnav::map::small<size_t, std::string>>
             or_descriptions;
         size_t or_max_subid_width{0};
+        logfile* or_logfile{nullptr};
 
         bool operator<(const opid_row& rhs) const
         {

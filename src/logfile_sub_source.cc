@@ -2750,7 +2750,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
             values.lvv_thread_id_value.has_value()
                 ? values.lvv_thread_id_value.value()
                 : "",
-            attr_line_t().append("\U0001f9f5 ").append(tid_display),
+            attr_line_t()
+                .append(ui_icon_t::thread)
+                .append(" ")
+                .append(tid_display),
             [this]() -> std::vector<breadcrumb::possibility> {
                 std::set<std::string> poss_strs;
 

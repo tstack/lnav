@@ -67,6 +67,7 @@
 #include "logfile.cfg.hh"
 #include "piper.header.hh"
 #include "shared_buffer.hh"
+#include "text_format.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
@@ -1059,6 +1060,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             this->lf_format_match_messages.emplace_back(match_um);
             this->lf_text_format = text_format_t::TF_LOG;
             this->lf_format = curr->specialized();
+            this->lf_level_stats = {};
+            for (const auto& ll : this->lf_index) {
+                if (ll.is_continued()) {
+                    continue;
+                }
+                this->lf_level_stats.update_msg_count(ll.get_msg_level());
+            }
             this->lf_format_quality = winner.second.sm_quality;
             this->set_format_base_time(this->lf_format.get(), li);
             if (this->lf_format->lf_date_time.dts_fmt_lock != -1) {
@@ -1146,6 +1154,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         if (!this->lf_index.empty()) {
             auto& last_line = this->lf_index.back();
 
+            this->lf_level_stats.update_msg_count(last_line.get_msg_level());
             last_line.set_valid_utf(last_line.is_valid_utf()
                                     && li.li_utf8_scan_result.is_valid());
             last_line.set_has_ansi(last_line.has_ansi()

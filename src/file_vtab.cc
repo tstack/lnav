@@ -43,6 +43,7 @@
 #include "log_format.hh"
 #include "logfile.hh"
 #include "session_data.hh"
+#include "text_format.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 

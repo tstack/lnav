@@ -272,6 +272,19 @@ attr_line_t::with_ansi_string(const string_fragment& str)
     return *this;
 }
 
+attr_line_t&
+attr_line_t::append(ui_icon_t value)
+{
+    size_t start_len = this->al_string.length();
+
+    this->al_string.append("  ");
+    line_range lr{(int) start_len, (int) this->al_string.length()};
+
+    this->al_attrs.emplace_back(lr, VC_ICON.value(value));
+
+    return *this;
+}
+
 namespace text_stream {
 struct word {
     string_fragment w_word;

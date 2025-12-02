@@ -274,8 +274,8 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
     auto sel_begin_us = tr.tr_begin - lb;
     auto sel_end_us = tr.tr_end - lb;
 
-    require(sel_begin_us > 0us);
-    require(sel_end_us > 0us);
+    require(sel_begin_us >= 0us);
+    require(sel_end_us >= 0us);
 
     auto [height, width] = lv.get_dimensions();
     if (width <= CHART_INDENT) {
@@ -289,7 +289,8 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         .append("\u25b2"_warning)
         .append(" ")
         .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-        .append(" Operation"_h1);
+        .append(" ")
+        .append("Item"_h1);
     auto line_width = CHART_INDENT;
     auto mark_width = (double) (width - line_width);
     double span = (ub - lb).count();
@@ -578,6 +579,19 @@ timeline_source::text_value_for_line(textview_curses& tc,
             = attr_line_t::from_table_cell_content(row.or_name, MAX_OPID_WIDTH);
         auto truncated_desc = attr_line_t::from_table_cell_content(
             row.or_description, MAX_DESC_WIDTH);
+        std::optional<ui_icon_t> icon;
+        auto padding = 1;
+        switch (row.or_type) {
+            case row_type::logfile:
+                icon = ui_icon_t::file;
+                break;
+            case row_type::thread:
+                icon = ui_icon_t::thread;
+                break;
+            case row_type::opid:
+                padding = 3;
+                break;
+        }
         this->gs_rendered_line
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append("  ")
@@ -586,6 +600,8 @@ timeline_source::text_value_for_line(textview_curses& tc,
             .append(lnav::roles::warning(humanize::sparkline(
                 row.or_value.otr_level_stats.lls_warning_count, total_msgs)))
             .append("  ")
+            .append(icon)
+            .append(padding, ' ')
             .append(lnav::roles::identifier(truncated_name))
             .append(
                 this->gs_opid_width - truncated_name.utf8_length_or_length(),
@@ -733,6 +749,45 @@ timeline_source::rebuild_indexes()
             }
         }
 
+        auto path = string_fragment::from_str(lf->get_unique_path())
+                        .to_owned(this->gs_allocator);
+        auto lf_otr = opid_time_range{};
+        lf_otr.otr_range = lf->get_content_time_range();
+        lf_otr.otr_level_stats = lf->get_level_stats();
+        auto lf_row = opid_row{
+            row_type::logfile,
+            path,
+            lf_otr,
+            string_fragment::invalid(),
+        };
+        lf_row.or_logfile = lf;
+        this->gs_active_opids.emplace(path, lf_row);
+
+        {
+            auto r_tid_map = lf->get_thread_ids().readAccess();
+
+            for (const auto& [tid_sf, tid_meta] : r_tid_map->ltis_tid_ranges) {
+                auto active_iter = this->gs_active_opids.find(tid_sf);
+                if (active_iter == this->gs_active_opids.end()) {
+                    auto tid = tid_sf.to_owned(this->gs_allocator);
+                    auto tid_otr = opid_time_range{};
+                    tid_otr.otr_range = tid_meta.titr_range;
+                    tid_otr.otr_level_stats = tid_meta.titr_level_stats;
+                    this->gs_active_opids.emplace(
+                        tid,
+                        opid_row{
+                            row_type::thread,
+                            tid,
+                            tid_otr,
+                            string_fragment::invalid(),
+                        });
+                } else {
+                    active_iter->second.or_value.otr_range
+                        |= tid_meta.titr_range;
+                }
+            }
+        }
+
         auto format = lf->get_format();
         safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
             ld->get_file_ptr()->get_opids());
@@ -744,6 +799,7 @@ timeline_source::rebuild_indexes()
                 auto active_emp_res = this->gs_active_opids.emplace(
                     opid,
                     opid_row{
+                        row_type::opid,
                         opid,
                         otr,
                         string_fragment::invalid(),
@@ -1105,32 +1161,58 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto id_bloom_bits = row.or_name.bloom_bits();
     auto msg_count = 0;
     for (const auto& msg_line : *win) {
-        if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
-            continue;
-        }
-
-        const auto& lvv = msg_line.get_values();
-        if (!lvv.lvv_opid_value) {
-            continue;
-        }
-        auto opid_sf = lvv.lvv_opid_value.value();
-
-        if (opid_sf == row.or_name) {
-            for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
-                auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
-                auto cl = this->gs_lss.at(vl);
-                auto row_al = attr_line_t();
-                this->gs_log_view.textview_value_for_row(vl, row_al);
-                preview_content.append(row_al).append("\n");
-                this->gs_preview_rows.emplace_back(
-                    msg_line.get_logline().get_timeval(), cl);
-                ++cl;
-            }
-            msg_count += 1;
-            msgs_remaining -= 1;
-            if (msgs_remaining == 0) {
+        switch (row.or_type) {
+            case row_type::logfile:
+                if (msg_line.get_file_ptr() != row.or_logfile) {
+                    continue;
+                }
+                break;
+            case row_type::thread: {
+                if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
+                    continue;
+                }
+                const auto& lvv = msg_line.get_values();
+                if (!lvv.lvv_thread_id_value) {
+                    continue;
+                }
+                auto tid_sf = lvv.lvv_thread_id_value.value();
+                if (!(tid_sf == row.or_name)) {
+                    continue;
+                }
                 break;
             }
+            case row_type::opid: {
+                if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
+                    continue;
+                }
+
+                const auto& lvv = msg_line.get_values();
+                if (!lvv.lvv_opid_value) {
+                    continue;
+                }
+                auto opid_sf = lvv.lvv_opid_value.value();
+
+                if (!(opid_sf == row.or_name)) {
+                    continue;
+                }
+                break;
+            }
+        }
+
+        for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
+            auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
+            auto cl = this->gs_lss.at(vl);
+            auto row_al = attr_line_t();
+            this->gs_log_view.textview_value_for_row(vl, row_al);
+            preview_content.append(row_al).append("\n");
+            this->gs_preview_rows.emplace_back(
+                msg_line.get_logline().get_timeval(), cl);
+            ++cl;
+        }
+        msg_count += 1;
+        msgs_remaining -= 1;
+        if (msgs_remaining == 0) {
+            break;
         }
     }
 

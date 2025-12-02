@@ -109,6 +109,8 @@ struct lnav_theme {
 
     positioned_property<icon_config> lt_icon_play;
     positioned_property<icon_config> lt_icon_edit;
+    positioned_property<icon_config> lt_icon_file;
+    positioned_property<icon_config> lt_icon_thread;
 
     positioned_property<style_config> lt_style_identifier;
     positioned_property<style_config> lt_style_text;

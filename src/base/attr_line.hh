@@ -292,6 +292,8 @@ public:
         return *this;
     }
 
+    attr_line_t& append(ui_icon_t value);
+
     template<typename S>
     attr_line_t& append(S str, const string_attr_pair& value)
     {
@@ -339,6 +341,16 @@ public:
         line_range lr{(int) start_len, (int) this->al_string.length()};
 
         this->al_attrs.emplace_back(lr, VC_ROLE.value(value.second));
+
+        return *this;
+    }
+
+    template<typename T>
+    attr_line_t& append(const std::optional<T> &value)
+    {
+        if (value) {
+            this->append(*value);
+        }
 
         return *this;
     }

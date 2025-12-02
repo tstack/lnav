@@ -34,7 +34,6 @@
 
 #include <chrono>
 #include <filesystem>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -53,14 +52,12 @@
 #include "base/progress.hh"
 #include "base/result.h"
 #include "bookmarks.hh"
-#include "byte_array.hh"
 #include "file_options.hh"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "logfile_fwd.hh"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
-#include "text_format.hh"
 #include "unique_path.hh"
 
 /**
@@ -520,6 +517,11 @@ public:
 
     time_range get_content_time_range() const;
 
+    const log_level_stats& get_level_stats() const
+    {
+        return this->lf_level_stats;
+    }
+
 protected:
     /**
      * Process a line from the file.
@@ -574,6 +576,7 @@ private:
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     std::vector<logline_value_stats> lf_value_stats;
+    log_level_stats lf_level_stats;
     pattern_locks lf_pattern_locks;
     safe_opid_state lf_opids;
     safe_thread_id_state lf_thread_ids;

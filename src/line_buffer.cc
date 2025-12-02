@@ -633,10 +633,12 @@ line_buffer::load_next_buffer()
     ssize_t rc = 0;
     safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
 
+#if 0
     log_debug("BEGIN fd(%d) preload read of %zu at %lld",
               this->lb_fd.get(),
               this->lb_alt_buffer.value().available(),
               start + this->lb_alt_buffer->size());
+#endif
     /* ... read in the new data. */
     if (!this->lb_cached_fd && *gi) {
         if (this->lb_file_size != (ssize_t) -1 && this->in_range(start)
@@ -781,7 +783,6 @@ line_buffer::load_next_buffer()
             retval = true;
             break;
     }
-    // log_debug("END preload read");
 
     if (start > this->lb_last_line_offset) {
         const auto* line_start = this->lb_alt_buffer.value().begin();
@@ -808,7 +809,7 @@ line_buffer::load_next_buffer()
         } while (line_start != nullptr
                  && line_start < this->lb_alt_buffer->end());
     }
-    log_debug("END preload read");
+    // log_debug("END preload read");
 
     return retval;
 }

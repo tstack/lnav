@@ -185,14 +185,17 @@ Interface changes:
   close the completion popup, it was too easy to
   cancel the prompt.  Pressing `CTRL+]` will still
   close the prompt immediately.
-* The TIMELINE view header has been redesigned to be
-  one line that shows the time increments at the
-  current scale.  This approach should more clearly
-  convey the spans of time shown in the main part of the
-  view.  The previous design tried to show the overall
-  time and the current time frame.  But, the multi-line
-  header was hard to interpret and didn't make it clear
-  how large the time increments were.
+* The TIMELINE view has a few updates:
+  - The header has been redesigned to be one line that
+    shows the time increments at the current scale.
+    This approach should more clearly convey the spans
+    of time shown in the main part of the view.  The
+    previous design tried to show the overall time and
+    the current time frame.  But, the multi-line header
+    was hard to interpret and didn't make it clear how
+    large the time increments were.
+  - Log files and threads are now shown in the view
+    in addition to operations.
 * The HIST view now shows the year and inserts a spacer
   row in-between gaps in time.  The spacer row shows
   bullet points on a log scale to represent the amount

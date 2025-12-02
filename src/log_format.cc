@@ -1986,17 +1986,23 @@ external_log_format::scan(logfile& lf,
         }
 
         auto log_us = to_us(log_tv);
-        if (!fpat->p_opid_description_field_indexes.empty()) {
+        if (this->elf_opid_field.empty()
+            && !fpat->p_opid_description_field_indexes.empty())
+        {
+            auto empty_desc = true;
             hasher h;
-            for (auto& fidx : fpat->p_opid_description_field_indexes) {
+            for (const auto& fidx : fpat->p_opid_description_field_indexes) {
                 auto desc_cap = md[fidx];
                 if (desc_cap) {
                     h.update(desc_cap.value());
+                    empty_desc = false;
                 }
             }
-            h.to_string(tmp_opid_buf);
-            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
-                                                   sizeof(tmp_opid_buf) - 1);
+            if (!empty_desc) {
+                h.to_string(tmp_opid_buf);
+                opid_cap = string_fragment::from_bytes(
+                    tmp_opid_buf, sizeof(tmp_opid_buf) - 1);
+            }
         }
 
         auto duration_cap = md[fpat->p_duration_field_index];
@@ -2277,17 +2283,23 @@ external_log_format::annotate(logfile* lf,
 
     auto opid_cap = md[pat.p_opid_field_index];
 
-    if (!pat.p_opid_description_field_indexes.empty()) {
+    if (this->elf_opid_field.empty()
+        && !pat.p_opid_description_field_indexes.empty())
+    {
+        auto empty_desc = true;
         hasher h;
-        for (auto& fidx : pat.p_opid_description_field_indexes) {
+        for (const auto& fidx : pat.p_opid_description_field_indexes) {
             auto desc_cap = md[fidx];
             if (desc_cap) {
                 h.update(desc_cap.value());
+                empty_desc = false;
             }
         }
-        h.to_string(tmp_opid_buf);
-        opid_cap = string_fragment::from_bytes(tmp_opid_buf,
-                                               sizeof(tmp_opid_buf) - 1);
+        if (!empty_desc) {
+            h.to_string(tmp_opid_buf);
+            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
+                                                   sizeof(tmp_opid_buf) - 1);
+        }
     } else if (duration_cap && !opid_cap) {
         hasher h;
         h.update(line.to_string_fragment());
@@ -2611,6 +2623,9 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
         jlu->jlu_format->jlf_line_values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
+    }
+    if (jlu->jlu_format->elf_thread_id_field == field_name) {
+        jlu->jlu_format->jlf_line_values.lvv_thread_id_value = frag.to_string();
     }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];

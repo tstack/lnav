@@ -522,6 +522,16 @@
                                             "description": "Icon for a 'edit' button",
                                             "title": "/ui/theme-defs/<theme_name>/icons/edit",
                                             "$ref": "#/definitions/icon"
+                                        },
+                                        "file": {
+                                            "description": "Icon for files",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/file",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "thread": {
+                                            "description": "Icon for threads",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/thread",
+                                            "$ref": "#/definitions/icon"
                                         }
                                     },
                                     "additionalProperties": false
