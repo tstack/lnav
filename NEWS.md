@@ -179,6 +179,12 @@ Breaking changes:
 
 Interface changes:
 * Mouse mode is now enabled by default.
+* Aborting the prompt now requires two successive
+  presses of `Esc` (a message will pop up on the right
+  that mentions this).  Since `Esc` is also used to
+  close the completion popup, it was too easy to
+  cancel the prompt.  Pressing `CTRL+]` will still
+  close the prompt immediately.
 * The TIMELINE view header has been redesigned to be
   one line that shows the time increments at the
   current scale.  This approach should more clearly

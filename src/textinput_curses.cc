@@ -305,6 +305,7 @@ textinput_curses::set_content(std::string content)
     this->tc_left = 0;
     this->tc_top = 0;
     this->tc_cursor = {};
+    this->tc_abort_requested = false;
     this->clamp_point(this->tc_cursor);
     this->set_needs_update();
 }
@@ -856,6 +857,10 @@ textinput_curses::handle_key(const ncinput& ch)
         R"(^\s*(>\s*|(?:-|\*|1\.)?(?:\s+\[( |x|X)\])?\s+))");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
+    if (this->tc_abort_requested && ch.id != NCKEY_ESC) {
+        this->tc_abort_requested = false;
+        this->set_needs_update();
+    }
     if (this->tc_notice) {
         this->tc_notice = std::nullopt;
         switch (ch.id) {
@@ -1198,8 +1203,11 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->tc_popup.set_visible(false);
                 this->tc_complete_range = std::nullopt;
                 this->set_needs_update();
-            } else {
+            } else if (chid != NCKEY_ESC || this->tc_abort_requested) {
                 this->abort();
+            } else {
+                this->tc_abort_requested = true;
+                this->set_needs_update();
             }
 
             this->tc_selection = std::nullopt;
@@ -2064,6 +2072,7 @@ textinput_curses::do_update()
         row_count -= 1;
         y += 1;
     }
+    auto abort_msg_shown = false;
     for (auto curr_line = this->tc_top; curr_line < row_count && y < y_max;
          curr_line++, y++)
     {
@@ -2107,6 +2116,22 @@ textinput_curses::do_update()
             al.insert(0, this->tc_prefix);
         }
         mvwattrline(this->tc_window, y, this->vc_x, al, lr);
+
+        if (!abort_msg_shown && this->tc_abort_requested) {
+            static auto REQ_MSG = attr_line_t("  Press ")
+                                      .append("Esc"_hotkey)
+                                      .append(" to abort  ")
+                                      .with_attr_for_all(VC_ROLE.value(
+                                          role_t::VCR_STATUS));
+            auto msg_lr = line_range{0, 0 + dim.dr_width};
+            mvwattrline(
+                this->tc_window,
+                y,
+                this->vc_x + dim.dr_width - REQ_MSG.utf8_length_or_length(),
+                REQ_MSG,
+                msg_lr);
+            abort_msg_shown = true;
+        }
     }
     for (; y < y_max; y++) {
         static constexpr auto EMPTY_LR = line_range::empty_at(0);

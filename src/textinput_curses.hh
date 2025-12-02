@@ -510,6 +510,7 @@ public:
     std::optional<ui_clock::time_point> tc_last_tick_after_input;
     bool tc_timeout_fired{false};
     bool tc_in_popup_change{false};
+    bool tc_abort_requested{false};
 
     std::function<void(textinput_curses&)> tc_on_help;
     std::function<void(textinput_curses&)> tc_on_focus;
