@@ -190,10 +190,10 @@ backup_prog_rep()
     return {
         ";.save",
         backup_progress_t::INSTANCE.bp_status.load(),
-        backup_progress_t::INSTANCE.bp_instance.load(),
+        (size_t) backup_progress_t::INSTANCE.bp_instance.load(),
         "Backing up DB",
-        backup_progress_t::INSTANCE.bp_complete.load(),
-        backup_progress_t::INSTANCE.bp_total.load(),
+        (size_t) backup_progress_t::INSTANCE.bp_complete.load(),
+        (size_t) backup_progress_t::INSTANCE.bp_total.load(),
         *backup_progress_t::INSTANCE.bp_messages.readAccess(),
     };
 }
