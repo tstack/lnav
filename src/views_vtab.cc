@@ -28,6 +28,7 @@
  */
 
 #include <cstring>
+#include <vector>
 
 #include "views_vtab.hh"
 
@@ -46,7 +47,7 @@ using namespace lnav::roles::literals;
 
 template<>
 struct from_sqlite<lnav_view_t> {
-    inline lnav_view_t operator()(int argc, sqlite3_value** val, int argi)
+    lnav_view_t operator()(int argc, sqlite3_value** val, int argi)
     {
         const char* view_name = (const char*) sqlite3_value_text(val[argi]);
         auto view_index_opt = view_from_string(view_name);

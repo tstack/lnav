@@ -143,6 +143,7 @@ public:
 
     void promote_file(const std::shared_ptr<logfile>& lf) override
     {
+        auto* vtab_manager = injector::get<log_vtab_manager*>();
         auto& ftf = lnav_data.ld_files_to_front;
 
         ftf.remove_if([&lf](const auto& elem) {
@@ -159,7 +160,7 @@ public:
                 auto vt = format->get_vtab_impl();
 
                 if (vt != nullptr) {
-                    lnav_data.ld_vtab_manager->register_vtab(vt);
+                    vtab_manager->register_vtab(vt);
                 }
             }
             if (lf->get_open_options().loo_source == logfile_name_source::USER)

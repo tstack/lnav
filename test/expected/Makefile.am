@@ -1084,6 +1084,8 @@ dist_noinst_DATA = \
     test_sql_search_table.sh_df0fd242f57a96d40f466493938cda0789a094fa.out \
     test_sql_search_table.sh_ef9373a76853f345d06234f6e0fe11b5d40da27b.err \
     test_sql_search_table.sh_ef9373a76853f345d06234f6e0fe11b5d40da27b.out \
+    test_sql_search_table.sh_f009e3bef8830555dcca3302e6427ebd1ce6fb7a.err \
+    test_sql_search_table.sh_f009e3bef8830555dcca3302e6427ebd1ce6fb7a.out \
     test_sql_str_func.sh_00363f89638cb968584afc1ca0a4f52b2cf7a2ae.err \
     test_sql_str_func.sh_00363f89638cb968584afc1ca0a4f52b2cf7a2ae.out \
     test_sql_str_func.sh_005b9365ac99596e539f47c9fe432668c209b21f.err \

@@ -224,7 +224,7 @@ static auto bound_pollable_supervisor
     = injector::bind<pollable_supervisor>::to_singleton();
 
 static auto bound_active_files = injector::bind<file_collection>::to_instance(
-    +[]() { return &lnav_data.ld_active_files; });
+    +[] { return &lnav_data.ld_active_files; });
 
 static auto bound_sqlite_db
     = injector::bind<auto_sqlite3>::to_instance(&lnav_data.ld_db);
@@ -235,6 +235,9 @@ static auto bound_lnav_flags
 
 static auto bound_lnav_exec_context
     = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
+
+static auto bound_log_source
+    = injector::bind<logfile_sub_source>::to_instance(&lnav_data.ld_log_source);
 
 static auto bound_last_rel_time
     = injector::bind<relative_time, last_relative_time_tag>::to_singleton();
@@ -293,11 +296,12 @@ force_linking(services::main_t anno)
 }
 }  // namespace injector
 
-struct lnav_data_t lnav_data;
+lnav_data_t lnav_data;
 
 bool
 setup_logline_table(exec_context& ec)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     auto& log_view = lnav_data.ld_views[LNV_LOG];
     bool retval = false;
 
@@ -309,13 +313,9 @@ setup_logline_table(exec_context& ec)
             auto file_and_line_opt
                 = lnav_data.ld_log_source.find_line_with_file(cl);
             if (file_and_line_opt && file_and_line_opt->second->is_message()) {
-                lnav_data.ld_vtab_manager->unregister_vtab(
-                    logline.to_string_fragment());
-                lnav_data.ld_vtab_manager->register_vtab(
-                    std::make_shared<log_data_table>(lnav_data.ld_log_source,
-                                                     *lnav_data.ld_vtab_manager,
-                                                     cl,
-                                                     logline));
+                vtab_manager->unregister_vtab(logline.to_string_fragment());
+                vtab_manager->register_vtab(std::make_shared<log_data_table>(
+                    lnav_data.ld_log_source, *vtab_manager, cl, logline));
                 retval = true;
             }
         }
@@ -325,7 +325,7 @@ setup_logline_table(exec_context& ec)
 
     db_key_names = DEFAULT_DB_KEY_NAMES;
 
-    for (const auto& iter : *lnav_data.ld_vtab_manager) {
+    for (const auto& iter : *vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
     }
 
@@ -2621,8 +2621,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 void
 wait_for_children()
 {
-    std::vector<struct pollfd> pollfds;
-    struct timeval to = {0, 333000};
+    std::vector<pollfd> pollfds;
+    auto to = timeval{0, 333000};
     static auto* ps = injector::get<pollable_supervisor*>();
 
     for (auto iter = lnav_data.ld_children.begin();
@@ -2659,7 +2659,7 @@ wait_for_children()
             break;
         }
 
-        int rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
+        int rc = poll(pollfds.data(), pollfds.size(), to.tv_usec / 1000);
 
         if (rc < 0) {
             switch (errno) {
@@ -2924,7 +2924,9 @@ main(int argc, char* argv[])
     auto log_fos = std::make_unique<field_overlay_source>(
         lnav_data.ld_log_source, lnav_data.ld_text_source);
 
-    auto _vtab_cleanup = finally([] {
+    auto vtab_man_life
+        = injector::bind<log_vtab_manager>::to_scoped_singleton();
+    auto _vtab_cleanup = finally([&] {
         static const char* VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
@@ -2982,7 +2984,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         lnav_data.ld_active_files.clear();
 
         log_info("dropping tables");
-        lnav_data.ld_vtab_manager = nullptr;
+        vtab_man_life = {};
 
         std::vector<std::string> tables_to_drop;
         {
@@ -3525,8 +3527,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
 
-    lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
-        lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
 
     lnav_data.ld_log_source.set_exec_context(&lnav_data.ld_exec_context);
     lnav_data.ld_views[LNV_HELP]
@@ -3671,20 +3672,17 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     {
         auto op_guard = lnav_opid_guard::once("register_vtab");
 
-        lnav_data.ld_vtab_manager->register_vtab(
-            std::make_shared<all_logs_vtab>());
-        lnav_data.ld_vtab_manager->register_vtab(
-            std::make_shared<log_format_vtab_impl>(
-                log_format::find_root_format("generic_log")));
-        lnav_data.ld_vtab_manager->register_vtab(
-            std::make_shared<log_format_vtab_impl>(
-                log_format::find_root_format("lnav_piper_log")));
+        vtab_manager->register_vtab(std::make_shared<all_logs_vtab>());
+        vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
+            log_format::find_root_format("generic_log")));
+        vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
+            log_format::find_root_format("lnav_piper_log")));
 
         for (auto& iter : log_format::get_root_formats()) {
             auto lvi = iter->get_vtab_impl();
 
             if (lvi != nullptr) {
-                lnav_data.ld_vtab_manager->register_vtab(lvi);
+                vtab_manager->register_vtab(lvi);
             }
         }
 
@@ -3692,7 +3690,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                           ec.ec_global_vars,
                           lnav_data.ld_config_paths,
                           loader_errors);
-        load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
+        load_format_vtabs(vtab_manager, loader_errors);
 
         if (!loader_errors.empty()) {
             if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
@@ -4190,7 +4188,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     std::pair<Result<std::string, lnav::console::user_message>,
                               std::string>>
                     cmd_results;
-                textview_curses *tc;
+                textview_curses* tc;
                 bool output_view = true;
                 auto msg_cb_guard = lnav_data.ld_exec_context.add_msg_callback(
                     [](const auto& um) {

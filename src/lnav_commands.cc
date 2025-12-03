@@ -1542,6 +1542,7 @@ com_create_logline_table(exec_context& ec,
                          std::string cmdline,
                          std::vector<std::string>& args)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     std::string retval;
 
     if (args.size() == 2) {
@@ -1557,7 +1558,7 @@ com_create_logline_table(exec_context& ec,
         auto cl = lnav_data.ld_log_source.at_base(vl.value());
         auto ldt
             = std::make_shared<log_data_table>(lnav_data.ld_log_source,
-                                               *lnav_data.ld_vtab_manager,
+                                               *vtab_manager,
                                                cl,
                                                intern_string::lookup(args[1]));
         ldt->vi_provenance = log_vtab_impl::provenance_t::user;
@@ -1575,7 +1576,7 @@ com_create_logline_table(exec_context& ec,
             return Ok(std::string());
         }
 
-        auto errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
+        auto errmsg = vtab_manager->register_vtab(ldt);
         if (errmsg.empty()) {
             custom_logline_tables.insert(args[1]);
 #if 0
@@ -1600,6 +1601,7 @@ com_delete_logline_table(exec_context& ec,
                          std::string cmdline,
                          std::vector<std::string>& args)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     std::string retval;
 
     if (args.size() == 2) {
@@ -1612,7 +1614,7 @@ com_delete_logline_table(exec_context& ec,
             return Ok(std::string());
         }
 
-        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
+        std::string rc = vtab_manager->unregister_vtab(args[1]);
 
         if (rc.empty()) {
 #if 0
@@ -1637,6 +1639,7 @@ com_create_search_table(exec_context& ec,
                         std::string cmdline,
                         std::vector<std::string>& args)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     std::string retval;
 
     if (args.size() >= 2) {
@@ -1691,18 +1694,17 @@ com_create_search_table(exec_context& ec,
         }
 
         lst->vi_provenance = log_vtab_impl::provenance_t::user;
-        auto existing = lnav_data.ld_vtab_manager->lookup_impl(tab_name);
+        auto existing = vtab_manager->lookup_impl(tab_name);
         if (existing != nullptr) {
             if (existing->vi_provenance != log_vtab_impl::provenance_t::user) {
                 return ec.make_error(
                     FMT_STRING("a table with the name '{}' already exists"),
                     tab_name->to_string_fragment());
             }
-            lnav_data.ld_vtab_manager->unregister_vtab(
-                tab_name->to_string_fragment());
+            vtab_manager->unregister_vtab(tab_name->to_string_fragment());
         }
 
-        auto errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
+        auto errmsg = vtab_manager->register_vtab(lst);
         if (errmsg.empty()) {
             retval = "info: created new search table -- " + args[1];
         } else {
@@ -1720,6 +1722,7 @@ com_delete_search_table(exec_context& ec,
                         std::string cmdline,
                         std::vector<std::string>& args)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     std::string retval;
 
     if (args.size() < 2) {
@@ -1727,7 +1730,7 @@ com_delete_search_table(exec_context& ec,
     }
     for (auto lpc = size_t{1}; lpc < args.size(); lpc++) {
         auto& table_name = args[lpc];
-        auto tab = lnav_data.ld_vtab_manager->lookup_impl(table_name);
+        auto tab = vtab_manager->lookup_impl(table_name);
         if (tab == nullptr
             || dynamic_cast<log_search_table*>(tab.get()) == nullptr
             || tab->vi_provenance != log_vtab_impl::provenance_t::user)
@@ -1739,8 +1742,7 @@ com_delete_search_table(exec_context& ec,
             continue;
         }
 
-        auto rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
-
+        auto rc = vtab_manager->unregister_vtab(args[1]);
         if (rc.empty()) {
             retval = "info: deleted search table";
         } else {

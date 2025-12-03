@@ -376,14 +376,13 @@ grep_proc<LineType>::invalidate()
 
 template<typename LineType>
 void
-grep_proc<LineType>::update_poll_set(std::vector<struct pollfd>& pollfds)
+grep_proc<LineType>::update_poll_set(std::vector<pollfd>& pollfds)
 {
     if (this->gp_line_buffer.get_fd() != -1) {
-        pollfds.push_back(
-            (struct pollfd) {this->gp_line_buffer.get_fd(), POLLIN, 0});
+        pollfds.push_back(pollfd{this->gp_line_buffer.get_fd(), POLLIN, 0});
     }
     if (this->gp_err_pipe.get() != -1) {
-        pollfds.push_back((struct pollfd) {this->gp_err_pipe, POLLIN, 0});
+        pollfds.push_back(pollfd{this->gp_err_pipe, POLLIN, 0});
     }
 }
 

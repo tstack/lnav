@@ -224,6 +224,9 @@ Interface changes:
 * The `}` hotkey and `:next-section` command will now
   move to the next log message if the focused line is
   in the middle of a multi-line message.
+* The parser-details overlay now mentions any search
+  tables that match the focused line.  Now, you don't
+  have to remember the names of the tables.
 
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path

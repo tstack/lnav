@@ -58,6 +58,7 @@ void
 field_overlay_source::build_field_lines(const listview_curses& lv,
                                         vis_line_t row)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     auto& lss = this->fos_lss;
     auto& vc = view_colors::singleton();
 
@@ -256,7 +257,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     auto anchor_opt = this->fos_lss.anchor_for_row(row);
     if (anchor_opt) {
         auto permalink
-            = attr_line_t(" Permalink: ")
+            = attr_line_t(" ")
+                  .append("Permalink:"_h2)
+                  .append("    ")
                   .append(lnav::roles::hyperlink(anchor_opt.value()));
         this->fos_row_to_field_meta.emplace(
             this->fos_lines.size(), row_info{std::nullopt, anchor_opt.value()});
@@ -307,8 +310,27 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
     }
 
+    auto lf = this->fos_log_helper.ldh_file->get_format();
+    auto lffs = this->fos_log_helper.ldh_file->get_format_file_state();
+    if (!lf->get_pattern_regex(lffs.lffs_pattern_locks, cl).empty()) {
+        auto pattern_al
+            = attr_line_t(" ")
+                  .append("Pattern:"_h2)
+                  .append("      ")
+                  .append(lf->get_pattern_path(lffs.lffs_pattern_locks, cl))
+                  .append(" = ");
+        auto& pattern_str = pattern_al.get_string();
+        int skip = pattern_str.length();
+        pattern_str += lf->get_pattern_regex(lffs.lffs_pattern_locks, cl);
+        lnav::snippets::regex_highlighter(
+            pattern_al,
+            pattern_al.length(),
+            line_range{skip, (int) pattern_al.length()});
+        this->fos_lines.emplace_back(pattern_al);
+    }
+
     if (this->fos_log_helper.ldh_line_values.lvv_opid_value) {
-        auto opid_al = attr_line_t(" Operation ID: ");
+        auto opid_al = attr_line_t(" ").append("Operation ID:"_h2).append(" ");
 
         auto opid_str
             = this->fos_log_helper.ldh_line_values.lvv_opid_value.value();
@@ -326,22 +348,6 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
                                             row_info{std::nullopt, opid_str});
         this->fos_lines.emplace_back(opid_al);
-    }
-
-    auto lf = this->fos_log_helper.ldh_file->get_format();
-    auto lffs = this->fos_log_helper.ldh_file->get_format_file_state();
-    if (!lf->get_pattern_regex(lffs.lffs_pattern_locks, cl).empty()) {
-        attr_line_t pattern_al;
-        std::string& pattern_str = pattern_al.get_string();
-        pattern_str = " Pattern: "
-            + lf->get_pattern_path(lffs.lffs_pattern_locks, cl) + " = ";
-        int skip = pattern_str.length();
-        pattern_str += lf->get_pattern_regex(lffs.lffs_pattern_locks, cl);
-        lnav::snippets::regex_highlighter(
-            pattern_al,
-            pattern_al.length(),
-            line_range{skip, (int) pattern_al.length()});
-        this->fos_lines.emplace_back(pattern_al);
     }
 
     if (this->fos_log_helper.ldh_line_values.lvv_values.empty()) {
@@ -566,7 +572,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     } else if (!this->fos_log_helper.ldh_parser
                || this->fos_log_helper.ldh_parser->dp_pairs.empty())
     {
-        this->fos_lines.emplace_back(" No discovered message fields");
+        this->fos_lines.emplace_back(
+            attr_line_t(" ").append("No discovered message fields"_comment));
     } else {
         this->fos_lines.emplace_back(
             " Discovered fields for logline table from message "
@@ -602,6 +609,24 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 this->fos_unknown_key_size,
                 lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
         }
+    }
+
+    std::set<std::string> matching_tables;
+    for (const auto& [name_sf, vt] : *vtab_manager) {
+        if (vt->matches(this->fos_log_helper.ldh_line_values)) {
+            matching_tables.emplace(name_sf.to_string());
+        }
+    }
+    if (!matching_tables.empty()) {
+        this->fos_lines.emplace_back(
+            attr_line_t()
+                .append(
+                    matching_tables.size() == 1
+                        ? " The following SQL table contains this line: "_comment
+                        : " The following SQL tables contains this line: "_comment)
+                .join(matching_tables,
+                      VC_ROLE.value(role_t::VCR_VARIABLE),
+                      ", "));
     }
 }
 
@@ -821,9 +846,9 @@ void
 field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
 {
     auto& sa = this->fos_lines.back().get_attrs();
-    struct line_range lr(1, 2);
+    auto lr = line_range{1, 2};
 
-    auto graphic = (last_line ? NCACS_LLCORNER : NCACS_LTEE);
+    const auto* graphic = (last_line ? NCACS_LLCORNER : NCACS_LTEE);
     sa.emplace_back(lr, VC_GRAPHIC.value(graphic));
 
     lr.lr_start = 3 + key_size + 3;

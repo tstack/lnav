@@ -73,6 +73,8 @@ public:
                  string_attrs_t& sa,
                  logline_value_vector& values) override;
 
+    bool matches(logline_value_vector& values) override;
+
     std::shared_ptr<lnav::pcre2pp::code> lst_regex;
     lnav::pcre2pp::match_data lst_match_data;
     string_fragment lst_content;

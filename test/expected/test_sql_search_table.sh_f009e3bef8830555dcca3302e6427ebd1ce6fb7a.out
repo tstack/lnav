@@ -1,0 +1,30 @@
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+ Received Time: [1m2022-08-16T00:32:15.000000+0000[0m — [1min the future[0m  Format: [1m%b %d %H:%M:%S[0m  Default Zone: [32mnone[0m
+ [1mPermalink:[0m    #msg0005e650e14941c0-v1:9a25fa3ca96c7e5e2c2959751b860e18
+ [1mPattern:[0m      /syslog_log/regex/std = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m[32m([0m[1m[32m?:[0m[1m\S[0m[1m[32m{[0m3,8[1m[32m}[0m[1m\s[0m[1m[36m+[0m[1m\d[0m[1m[32m{[0m1,2[1m[32m}[0m [1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[36m|[0m[1m\d[0m[1m[32m{[0m4[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0mT[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m\.[1m\d[0m[1m[32m{[0m3,6[1m[32m}[0m[1m[32m)[0m[1m[36m?[0m[1m[32m([0m[1m[32m?:[0mZ[1m[36m|[0m[1m[32m([0m[1m[32m?:[0m\+[1m[36m|[0m-[1m[32m)[0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m)[0m[1m[32m)[0m[1m[32m)[0m[1m[32m([0m[1m[32m?:[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlog_hostname[1m[36m>[0m[1m[32m[[0ma-zA-Z0-9:[1m[32m][0m[1m[32m[[0m[1m[36m^[0m [1m[32m][0m[1m[36m+[0m[1m[32m[[0ma-zA-Z0-9[1m[32m][0m[1m[32m)[0m[1m[32m)[0m[1m[36m?[0m[1m[32m([0m[1m[32m?:[0m \[CLOUDINIT\][1m[32m)[0m[1m[36m?[0m[1m[32m([0m[1m[32m?:[0m[1m[32m([0m[1m[32m?:[0m syslogd [1m[32m[[0m[1m\d[0m\.[1m[32m][0m[1m[36m+[0m[1m[36m|[0m[1m[32m([0m[1m[32m?:[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlog_syslog_tag[1m[36m>[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mlog_procname[1m[36m>[0m[1m[32m([0m[1m[32m?:[0m[1m[32m[[0m[1m[36m^[0m\[:[1m[32m][0m[1m[36m+[0m[1m[36m|[0m[1m[32m[[0m[1m[36m^[0m :[1m[32m][0m[1m[36m+[0m[1m[32m)[0m[1m[32m)[0m[1m[32m([0m[1m[32m?:[0m\[[1m[32m([0m[1m[32m?[0m[1m[36m<[0mlog_pid[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\][1m[32m([0m[1m[32m?:[0m \([1m[32m[[0m[1m[36m^[0m\)[1m[32m][0m[1m[36m+[0m\)[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[32m)[0m[1m[32m)[0m:[1m\s[0m[1m[36m*[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m[1m[36m|[0m[33m:[0m[1m[36m?[0m[1m[32m([0m[1m[32m?:[0m[1m[32m([0m[1m[32m?:[0m ---[1m[32m)[0m[1m[36m?[0m last message repeated [1m\d[0m[1m[36m+[0m time[33ms[0m[1m[36m?[0m[1m[32m([0m[1m[32m?:[0m ---[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[32m)[0m
+ [1mOperation ID:[0m syslogd[314][32m (extracted from log message)[0m
+ Known message fields for table [1msyslog_log[0m:
+ | [1m[32m◆[0m 📊 log_hostname   = Tims-Air
+ | [1m[32m◆[0m 📊 log_syslog_tag = syslogd[314]
+ | [1m[32m◆[0m 📊 log_procname   = syslogd
+ | [1m[32m◆[0m 📊 log_pid        = 314
+ Discovered fields for logline table from message format: [1mConfiguration Notice:
+	ASL Module # claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL #[0m
+   Module = [1mcom.apple.cdscheduler[0m
+   col_0 = d[1matabase[0m
+[32m The following SQL table contains this line: [0m[4masl_mod[0m
+	ASL Module "com.apple.cdscheduler" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.install" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" sharing output destination "/var/log/asl" with ASL Module "com.apple.asl".
+	Output parameters from ASL Module "com.apple.asl" override any specified in ASL Module "com.apple.authd".
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" sharing output destination "/var/log/system.log" with ASL Module "com.apple.asl".
+	Output parameters from ASL Module "com.apple.asl" override any specified in ASL Module "com.apple.authd".
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.

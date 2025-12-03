@@ -1263,9 +1263,10 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
             }
             case help_parameter_format_t::HPF_LOGLINE_TABLE:
             case help_parameter_format_t::HPF_SEARCH_TABLE: {
+                auto* vtab_manager = injector::get<log_vtab_manager*>();
                 std::vector<std::string> poss_strs;
 
-                for (const auto& vt_pair : *lnav_data.ld_vtab_manager) {
+                for (const auto& vt_pair : *vtab_manager) {
                     auto is_search_table
                         = dynamic_cast<log_search_table*>(vt_pair.second.get())
                         != nullptr;

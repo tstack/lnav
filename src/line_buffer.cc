@@ -919,7 +919,7 @@ line_buffer::fill_range(file_off_t start,
     } else if (this->lb_fd != -1) {
         ssize_t rc;
 
-        log_debug("fd(%d) doing read", this->lb_fd.get());
+        // log_debug("fd(%d) doing read", this->lb_fd.get());
         /* Make sure there is enough space, then */
         this->ensure_available(start, max_length, dir);
 

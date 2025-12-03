@@ -413,8 +413,8 @@ vt_create(sqlite3* db,
     if (p_vt->vi == nullptr) {
         return SQLITE_ERROR;
     }
-    p_vt->tc = vm->get_view();
     p_vt->lss = vm->get_source();
+    p_vt->tc = p_vt->lss->get_view();
     rc = sqlite3_declare_vtab(db, p_vt->vi->get_table_statement().c_str());
 
     if (rc == SQLITE_OK) {
@@ -2676,10 +2676,8 @@ progress_callback(void* ptr)
     return retval;
 }
 
-log_vtab_manager::log_vtab_manager(sqlite3* memdb,
-                                   textview_curses& tc,
-                                   logfile_sub_source& lss)
-    : vm_db(memdb), vm_textview(tc), vm_source(lss)
+log_vtab_manager::log_vtab_manager(auto_sqlite3& memdb, logfile_sub_source& lss)
+    : vm_db(memdb), vm_source(lss)
 {
     sqlite3_create_module(
         this->vm_db, "log_vtab_impl", &generic_vtab_module, this);

@@ -29,5 +29,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.3
 
 run_cap_test ${lnav_test} -n \
+    -c ':create-search-table asl_mod ASL Module "(?<name>[^"]+)"' \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 2" \
+    ${test_dir}/logfile_syslog.3
+
+run_cap_test ${lnav_test} -n \
     -c ';SELECT * FROM mysql_slow_stats' \
     ${test_dir}/logfile_mysql_slow.0

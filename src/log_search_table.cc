@@ -1,4 +1,4 @@
-/**
+ /**
  * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
@@ -256,6 +256,14 @@ log_search_table::extract(logfile* lf,
         }
     }
     sa = this->lst_attrs_cache;
+}
+
+bool
+log_search_table::matches(logline_value_vector& values)
+{
+    return this->lst_regex->find_in(values.lvv_sbr.to_string_fragment())
+        .ignore_error()
+        .has_value();
 }
 
 void

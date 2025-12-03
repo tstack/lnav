@@ -28,6 +28,8 @@
  */
 
 #include <algorithm>
+#include <memory>
+#include <vector>
 
 #include "pollable.hh"
 
@@ -49,7 +51,7 @@ pollable::~pollable()
 }
 
 pollable_supervisor::update_result
-pollable_supervisor::update_poll_set(std::vector<struct pollfd>& pollfds)
+pollable_supervisor::update_poll_set(std::vector<pollfd>& pollfds)
 {
     update_result retval;
     size_t old_size = pollfds.size();
@@ -106,7 +108,7 @@ pollable_supervisor::count(pollable::category cat)
 }
 
 short
-pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
+pollfd_revents(const std::vector<pollfd>& pollfds, int fd)
 {
     return pollfds | lnav::itertools::find_if([fd](const auto& entry) {
                return entry.fd == fd;
@@ -116,7 +118,7 @@ pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd)
 }
 
 bool
-pollfd_ready(const std::vector<struct pollfd>& pollfds, int fd, short events)
+pollfd_ready(const std::vector<pollfd>& pollfds, int fd, short events)
 {
     return std::any_of(
         pollfds.begin(), pollfds.end(), [fd, events](const auto& entry) {

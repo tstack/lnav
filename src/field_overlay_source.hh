@@ -30,6 +30,7 @@
 #ifndef LNAV_FIELD_OVERLAY_SOURCE_H
 #define LNAV_FIELD_OVERLAY_SOURCE_H
 
+#include <functional>
 #include <optional>
 #include <stack>
 #include <vector>

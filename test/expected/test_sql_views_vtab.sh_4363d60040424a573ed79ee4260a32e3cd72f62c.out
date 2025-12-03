@@ -1,6 +1,6 @@
 2023-03-24T14:26:16.243Z renovate[7] INFO     Dependency extraction complete
  Received Time: [1m2023-03-24T14:26:16.243000+0000[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S.%f%z[0m  Default Zone: [32mnone[0m
- Permalink: #msg0005f7a62d108738-v1:d44cb353234fbbacfaf795d11079917f
+ [1mPermalink:[0m    #msg0005f7a62d108738-v1:d44cb353234fbbacfaf795d11079917f
  Known message fields for table [1mbunyan_log[0m:
  | [1m[32m◆[0m 📊 name     = renovate
  | [32m◇[0m 📊 hostname = renovate-gitlab-67c4bcb5-9ggbv
@@ -12,7 +12,7 @@
    [1mjget[0m(log_raw_text, [35m'/logContext'[0m) = [1mqjifsaDDI[0m
    [1mjget[0m(log_raw_text, [35m'/repository'[0m) = [1mwebgui/custom-icons-transformer[0m
    [1mjget[0m(log_raw_text, [35m'/stats'[0m) = [1m{"managers":{"gitlabci":{"fileCount":1,"depCount":1},"gitlabci-include":{"fileCount":1,"depCount":1},"npm":{"fileCount":1,"depCount":15}},"total":{"fileCount":3,"depCount":17}}[0m
- No discovered message fields
+ [32mNo discovered message fields[0m
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   baseBranch: main

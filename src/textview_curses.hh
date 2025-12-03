@@ -465,6 +465,8 @@ public:
 
     virtual void register_view(textview_curses* tc) { this->tss_view = tc; }
 
+    textview_curses* get_view() const { return this->tss_view; }
+
     virtual bool empty() const = 0;
 
     /**

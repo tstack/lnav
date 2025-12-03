@@ -267,9 +267,10 @@ rl_sql_help(textinput_curses& rc)
             sa, &lnav::sql::PRQL_FQID_ATTR, al.nearest_text(x));
     }
     if (ident_iter != sa.end()) {
+        auto* vtab_manager = injector::get<log_vtab_manager*>();
         auto ident = al.get_substring(ident_iter->sa_range);
         const intern_string_t intern_ident = intern_string::lookup(ident);
-        auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
+        auto vtab = vtab_manager->lookup_impl(intern_ident);
         auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
         std::string ddl;
 

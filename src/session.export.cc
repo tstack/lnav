@@ -33,6 +33,7 @@
 #include "base/itertools.hh"
 #include "bound_tags.hh"
 #include "lnav.hh"
+#include "log_vtab_impl.hh"
 #include "sqlitepp.client.hh"
 #include "sqlitepp.hh"
 #include "textview_curses.hh"
@@ -177,6 +178,7 @@ replace_home_dir(std::string path)
 Result<void, lnav::console::user_message>
 export_to(FILE* file)
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     static const char* BOOKMARK_QUERY = R"(
@@ -575,7 +577,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                    (int) tc.get_selection().value_or(tc.get_top()));
     }
 
-    for (const auto& [name, vi] : *lnav_data.ld_vtab_manager) {
+    for (const auto& [name, vi] : *vtab_manager) {
         if (vi->vi_provenance != log_vtab_impl::provenance_t::user) {
             continue;
         }

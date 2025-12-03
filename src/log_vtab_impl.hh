@@ -46,6 +46,7 @@
 #include "log_format_fwd.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
+#include "sqlitepp.hh"
 #include "vis_line.hh"
 
 class textview_curses;
@@ -336,6 +337,11 @@ public:
                          string_attrs_t& sa,
                          logline_value_vector& values);
 
+    virtual bool matches(logline_value_vector& values)
+    {
+        return false;
+    }
+
     struct column_index {
         robin_hood::
             unordered_map<string_fragment, std::deque<vis_line_t>, frag_hasher>
@@ -423,10 +429,11 @@ public:
     using iterator = std::map<string_fragment,
                               std::shared_ptr<log_vtab_impl>>::const_iterator;
 
-    log_vtab_manager(sqlite3* db, textview_curses& tc, logfile_sub_source& lss);
+    log_vtab_manager(auto_sqlite3& db, logfile_sub_source& lss);
     ~log_vtab_manager();
 
-    textview_curses* get_view() const { return &this->vm_textview; }
+    using injectable
+        = log_vtab_manager(auto_sqlite3&, logfile_sub_source&);
 
     logfile_sub_source* get_source() { return &this->vm_source; }
 
@@ -445,8 +452,7 @@ public:
     iterator end() const { return this->vm_impls.end(); }
 
 private:
-    sqlite3* vm_db;
-    textview_curses& vm_textview;
+    auto_sqlite3& vm_db;
     logfile_sub_source& vm_source;
     std::map<string_fragment, std::shared_ptr<log_vtab_impl>> vm_impls;
 };

@@ -134,6 +134,7 @@ view_from_string(const char* name)
 static void
 open_schema_view()
 {
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
     auto* schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
     std::string schema;
 
@@ -143,7 +144,7 @@ open_schema_view()
     schema += ENVIRON_CREATE_STMT;
     schema += STATIC_FILE_CREATE_STMT;
     schema += vtab_module_schemas;
-    for (const auto& vtab_iter : *lnav_data.ld_vtab_manager) {
+    for (const auto& vtab_iter : *vtab_manager) {
         schema += "\n" + vtab_iter.second->get_table_statement();
     }
 
