@@ -293,7 +293,8 @@ public:
     timeval get_timeval() const
     {
         return timeval{
-            this->get_time<std::chrono::seconds>().count(),
+            static_cast<decltype(timeval::tv_sec)>(
+                this->get_time<std::chrono::seconds>().count()),
             static_cast<decltype(timeval::tv_usec)>(
                 this->get_subsecond_time<std::chrono::microseconds>().count()),
         };
@@ -410,10 +411,7 @@ public:
         return this->get_timeval() <= rhs;
     }
 
-    void set_schema_computed(bool val)
-    {
-        this->ll_has_schema = val;
-    }
+    void set_schema_computed(bool val) { this->ll_has_schema = val; }
 
     bool has_schema() const { return this->ll_has_schema; }
 

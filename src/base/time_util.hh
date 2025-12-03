@@ -343,11 +343,13 @@ inline timeval
 to_timeval(std::chrono::microseconds us)
 {
     return {
-        std::chrono::duration_cast<std::chrono::seconds>(us).count(),
-        (int) (us.count()
-               % std::chrono::duration_cast<std::chrono::microseconds>(
-                     std::chrono::seconds{1})
-                     .count()),
+        static_cast<decltype(timeval::tv_usec)>(
+            std::chrono::duration_cast<std::chrono::seconds>(us).count()),
+        static_cast<decltype(timeval::tv_usec)>(
+            us.count()
+            % std::chrono::duration_cast<std::chrono::microseconds>(
+                  std::chrono::seconds{1})
+                  .count()),
     };
 }
 
