@@ -294,9 +294,3 @@ lab_color::avg(const lab_color& other) const
         (this->lc_b + other.lc_b) / 2.0,
     };
 }
-
-namespace styling {
-
-constexpr color_unit color_unit::EMPTY = color_unit{transparent{}};
-
-}  // namespace styling
