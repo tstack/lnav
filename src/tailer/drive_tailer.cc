@@ -107,6 +107,7 @@ main(int argc, char* const* argv)
         auto tailer_exe = exe_dir / "tailer";
 
         execlp(tailer_exe.c_str(), tailer_exe.c_str(), "-k", nullptr);
+        fprintf(stderr, "cannot exec tailer: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 

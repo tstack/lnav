@@ -14,6 +14,7 @@ TIME_FORMATS = \
     "%Y-%m-%d %H:%M:%S.%f" \
     "%Y-%m-%d %H:%M:%S,%L" \
     "%Y-%m-%d %H:%M:%S.%L" \
+    "%Y-%m-%d %H:%M:%S%Z" \
     "%Y-%m-%d %H:%M:%S%z" \
     "%Y-%m-%d %H:%M:%S %Z" \
     "%Y-%m-%d %H:%M:%S %z" \
@@ -23,18 +24,18 @@ TIME_FORMATS = \
     "%Y-%jT%H:%M:%S %p %Z" \
     "%Y-%m-%dT%H:%M:%S %p %Z" \
     "%Y-%jT%H:%M:%S.%f%z" \
+    "%Y-%m-%dT%H:%M:%S.%f%Z" \
     "%Y-%m-%dT%H:%M:%S.%f%z" \
+    "%y-%m-%dT%H:%M:%S.%f%Z" \
     "%y-%m-%dT%H:%M:%S.%f%z" \
     "%Y-%jT%H:%M:%S.%L%z" \
-    "%Y-%m-%dT%H:%M:%S.%L%z" \
-    "%y-%m-%dT%H:%M:%S.%L%z" \
     "%Y-%jT%H:%M:%S,%L%z" \
     "%Y-%m-%dT%H:%M:%S,%L%z" \
     "%y-%m-%dT%H:%M:%S,%L%z" \
     "%Y-%jT%H:%M:%S.%L%Z" \
     "%Y-%m-%dT%H:%M:%S.%L%Z" \
     "%y-%m-%dT%H:%M:%S.%L%Z" \
-    "%Y-%m-%dT%H:%M:%S%z" \
+    "%Y-%m-%dT%H:%M:%S%Z" \
     "%Y-%m-%dT%H:%M:%S%z" \
     "%Y-%jT%H:%M:%S" \
     "%Y-%m-%dT%H:%M:%S" \

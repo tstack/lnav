@@ -21,6 +21,12 @@ Features:
   the default for a particular file.  Files with
   content that lie completely outside of the cutoff
   will be closed to reduce resource usage.
+* Broadened support for viewing files on remote hosts.
+  The "tailer" program that is transferred to the
+  remote host to monitor files and perform other tasks
+  has been translated to Python3.  If the remote host
+  does not have Python, lnav will fall back to the APE
+  binary.
 * The "Files" panel now shows a progress bar for each
   file as it is being indexed and finishes with a
   check-mark if indexing was successful, a warning

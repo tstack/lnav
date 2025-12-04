@@ -108,15 +108,22 @@ file.
 
 .. note::
 
-  Remote file access is implemented by transferring an
-  `αcτµαlly pδrταblε εxεcµταblε <https://justine.lol/ape.html>`_ to the
-  destination and invoking it.  An APE binary can run on most any x86_64
-  machine and OS (i.e. MacOS, Linux, FreeBSD, Windows).  The binary is
-  baked into the lnav executable itself, so there is no extra setup that
+  Remote file access is implemented through a "tailer" executable that is
+  transferred to the host.  The tailer handles requests from lnav for
+  synchronizing file blocks, completing path names, previewing files,
+  and so on.
+
+  There are two implementations of the tailer: Python3 and an
+  `αcτµαlly pδrταblε εxεcµταblε <https://justine.lol/ape.html>`_.
+  If the target host does not have Python3 installed, the APE binary will
+  be used.  An APE binary can run on most any x86_64 machine and OS
+  (i.e. MacOS, Linux, FreeBSD, Windows).  The implementations are baked
+  into the lnav executable itself.  So, there is no extra setup that
   needs to be done on the remote machine.
   
-  The binary file is named ``tailer.bin.XXXXXX`` where *XXXXXX* is 6 random digits.
-  The file is, under normal circumstancies, deleted immediately.
+  The tailer is copied to the user's home directory and is named
+  ``tailer.bin.XXXXXX`` where *XXXXXX* is 6 random digits.
+  Under normal circumstances, the file should be deleted immediately.
 
 Command Output
 ^^^^^^^^^^^^^^

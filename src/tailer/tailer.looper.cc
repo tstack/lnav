@@ -28,22 +28,32 @@
  */
 
 #include <chrono>
+#include <cstdint>
+#include <filesystem>
 #include <future>
+#include <memory>
 #include <regex>
+#include <string>
 
 #include "tailer.looper.hh"
 
-#include <lnav.prompt.hh>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
+#include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
+#include "base/file_range.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "base/result.h"
 #include "config.h"
 #include "line_buffer.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
+#include "lnav.prompt.hh"
 #include "service_tags.hh"
 #include "tailer.h"
 #include "tailer.looper.cfg.hh"
@@ -326,7 +336,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
                                rp.p_locality.l_hostname);
     }
 
-    {
+    std::string cp_err;
+    for (const auto& tailer_impl : tailer_bin) {
         auto in_pipe = TRY(auto_pipe::for_child_fd(STDIN_FILENO));
         auto out_pipe = TRY(auto_pipe::for_child_fd(STDOUT_FILENO));
         auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
@@ -339,9 +350,13 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         if (child.in_child()) {
             auto arg_strs = create_ssh_args_from_config(ssh_dest);
             std::vector<char*> args;
+            auto cmd = fmt::format(cfg.c_transfer_cmd, tailer_bin_name);
 
-            arg_strs.emplace_back(
-                fmt::format(cfg.c_transfer_cmd, tailer_bin_name));
+            if (tailer_impl.get_name().endswith(".py")) {
+                cmd = fmt::format(FMT_STRING("command -v python3 && {}"),
+                                  cmd);
+            }
+            arg_strs.emplace_back(cmd);
 
             fmt::print(stderr,
                        "tailer({}): executing -- {}\n",
@@ -369,7 +384,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         log_debug("tailer(%s): writing to child", netloc.c_str());
         bool write_failed = false;
 
-        auto sfp = tailer_bin[0].to_string_fragment_producer();
+        auto sfp = tailer_impl.to_string_fragment_producer();
         while (true) {
             auto next_res = sfp->next();
             if (next_res.is<string_fragment_producer::eof>()) {
@@ -428,9 +443,16 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         {
             auto error_msg = error_queue.empty() ? "unknown"
                                                  : error_queue.back();
-            return Err(fmt::format(FMT_STRING("failed to ssh to host: {}"),
-                                   error_msg));
+            log_warning("tailer transfer failed: %s", error_msg.c_str());
+            cp_err = fmt::format(FMT_STRING("failed to ssh to host: {}"),
+                                 error_msg);
+            continue;
         }
+        cp_err.clear();
+        break;
+    }
+    if (!cp_err.empty()) {
+        return Err(cp_err);
     }
 
     update_tailer_progress(netloc, "Starting tailer...");
@@ -814,7 +836,7 @@ tailer::looper::host_tailer::loop_body()
                 auto buffer = auto_mem<unsigned char>::malloc(BUFFER_SIZE);
                 auto remaining = pob.pob_length;
                 auto remaining_offset = pob.pob_offset;
-                tailer::hash_frag thf;
+                hash_frag thf;
                 SHA256_CTX shactx;
                 sha256_init(&shactx);
 

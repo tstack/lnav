@@ -19,7 +19,8 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 dist_noinst_DATA = \
-    tailer.ape
+    tailer.ape \
+    tailer.main.py
 
 noinst_LIBRARIES = \
     libtailercommon.a \
@@ -50,8 +51,8 @@ libtailerpp_a_CPPFLAGS = \
 libtailerpp_a_SOURCES = \
     tailerpp.cc
 
-tailerbin.cc: tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
-	../../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin $(srcdir)/tailer.ape
+tailerbin.cc: tailer.main.py tailer.ape ../../tools/bin2c$(BUILD_EXEEXT)
+	../../tools/bin2c$(BUILD_EXEEXT) -n tailer_bin tailerbin $(srcdir)/tailer.main.py $(srcdir)/tailer.ape
 
 libtailerservice_a_CPPFLAGS = \
     $(AM_CPPFLAGS) \

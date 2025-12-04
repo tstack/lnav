@@ -65,7 +65,7 @@ int is_glob(const char *fn)
     return (strchr(fn, '*') != NULL ||
             strchr(fn, '?') != NULL ||
             strchr(fn, '[') != NULL);
-};
+}
 
 void list_init(struct list *l)
 {

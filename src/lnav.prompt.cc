@@ -1067,7 +1067,8 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     = poss_paths | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([&str](const std::string& path_str) {
                           auto escaped_path = shlex::escape(path_str);
-                          if (path_str.find_last_of("/\\") == std::string::npos
+                          if ((path_str.find_last_of("/\\") == std::string::npos
+                               && path_str.back() != ':')
                               || path_str == str)
                           {
                               escaped_path.push_back(' ');

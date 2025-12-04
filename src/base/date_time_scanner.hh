@@ -38,6 +38,7 @@
 #include <sys/types.h>
 
 #include "date/tz.h"
+#include "intern_string.hh"
 #include "time_util.hh"
 
 /**

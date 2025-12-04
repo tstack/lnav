@@ -29,9 +29,11 @@ add_subdirectory(yajl)
 add_subdirectory(yajlpp)
 
 add_executable(bin2c bin2c.hh ../tools/bin2c.c)
+target_include_directories(bin2c PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(bin2c ZLIB::ZLIB)
 
 add_executable(ptimec ptimec.hh ptimec.cc)
+
 
 set(TIME_FORMATS
         "@%@"
@@ -146,7 +148,10 @@ add_custom_command(
         COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc)
 
 add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_spec.hh ptimec_rt.cc time_fmts.cc)
-target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR} third-party/date/include)
+target_include_directories(lnavdt PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
+        third-party/date/include)
 
 function(bin2c)
     cmake_parse_arguments(BIN2C_ "" "VARNAME" "" ${ARGN})
@@ -221,7 +226,6 @@ set(FORMAT_FILES
         formats/snaplogic_log.json
         formats/sssd_log.json
         formats/strace_log.json
-        formats/sudo_log.json
         formats/syslog_log.json
         formats/s3_log.json
         formats/tcf_log.json

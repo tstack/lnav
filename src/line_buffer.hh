@@ -44,6 +44,7 @@
 
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
+#include "base/enum_util.hh"
 #include "base/file_range.hh"
 #include "base/is_utf8.hh"
 #include "base/lnav.gzip.hh"

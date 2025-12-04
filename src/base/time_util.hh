@@ -43,7 +43,6 @@
 #include "config.h"
 #include "date/date.h"
 #include "date/tz.h"
-#include "humanize.time.hh"
 
 inline std::chrono::microseconds
 to_us(const timeval& tv)

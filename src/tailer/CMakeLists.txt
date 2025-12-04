@@ -8,17 +8,25 @@ add_library(tailerpp tailerpp.hh tailerpp.cc)
 target_link_libraries(tailerpp base)
 
 add_custom_command(
-  OUTPUT tailerbin.h tailerbin.cc
-  COMMAND bin2c -n tailer_bin tailerbin tailer
-  DEPENDS bin2c tailer)
+        OUTPUT tailerbin.h tailerbin.cc
+        COMMAND bin2c -n tailer_bin tailerbin ${CMAKE_CURRENT_SOURCE_DIR}/tailer.main.py tailer
+        DEPENDS bin2c tailer)
 
-add_library(tailerservice tailer.looper.hh tailer.looper.cc
-                          tailer.looper.cfg.hh tailerbin.h tailerbin.cc)
-target_include_directories(tailerservice PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+add_library(tailerservice
+        tailer.looper.hh
+        tailer.looper.cc
+        tailer.looper.cfg.hh
+        tailerbin.h
+        tailerbin.cc)
+target_include_directories(tailerservice
+        PUBLIC
+        ../third-party/digestible/include
+        ${CMAKE_CURRENT_BINARY_DIR}
+)
 target_link_libraries(tailerservice base)
 
 add_executable(drive_tailer drive_tailer.cc)
 
 target_include_directories(drive_tailer PUBLIC . .. ../fmtlib
-                                               ${CMAKE_CURRENT_BINARY_DIR}/..)
+        ${CMAKE_CURRENT_BINARY_DIR}/..)
 target_link_libraries(drive_tailer base tailercommon tailerpp ZLIB::ZLIB)

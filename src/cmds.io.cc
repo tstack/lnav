@@ -35,6 +35,7 @@
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
+#include "base/humanize.time.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/paths.hh"
