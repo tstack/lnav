@@ -36,13 +36,11 @@
 #include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/func_util.hh"
-#include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "base/relative_time.hh"
 #include "base/text_format_enum.hh"
 #include "cmd.parser.hh"
 #include "config.h"
-#include "data_scanner.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
@@ -1104,6 +1102,14 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
                 if (compile_res.isErr()) {
                     auto ce = compile_res.unwrapErr();
                     auto um = lnav::console::to_user_message(INPUT_SRC, ce);
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
+                    this->ti_abort(top_view, ti, parent);
+                } else if (fs.get_filter(new_value) != nullptr) {
+                    auto snip
+                        = lnav::console::snippet::from(INPUT_SRC, new_value);
+                    auto um = lnav::console::user_message::error(
+                                  "Filter already exists")
+                                  .with_snippet(snip);
                     lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
                     this->ti_abort(top_view, ti, parent);
                 } else {
