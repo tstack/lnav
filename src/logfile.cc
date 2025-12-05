@@ -1544,6 +1544,18 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
             prev_range = li.li_file_range;
 
+            auto read_result
+                = this->lf_line_buffer.read_range(li.li_file_range);
+            if (read_result.isErr()) {
+                log_error("%s:read failure -- %s",
+                          this->lf_filename_as_string.c_str(),
+                          read_result.unwrapErr().c_str());
+                this->close();
+                return rebuild_result_t::INVALID;
+            }
+
+            auto sbr = read_result.unwrap();
+
             if (this->lf_format == nullptr
                 && !this->lf_options.loo_non_utf_is_visible
                 && !li.li_utf8_scan_result.is_valid())
@@ -1552,9 +1564,21 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                          this->lf_filename_as_string.c_str());
                 this->lf_indexing = false;
                 this->lf_options.loo_is_visible = false;
-                auto utf8_error_um
-                    = lnav::console::user_message::error("invalid UTF-8")
-                          .with_reason(
+                attr_line_t hex;
+                attr_line_builder alb(hex);
+                alb.append_as_hexdump(sbr.to_string_fragment());
+                auto snip = lnav::console::snippet::from(
+                    source_location{
+                        intern_string::lookup(this->lf_filename),
+                        (int) this->lf_index.size() + 1,
+                    },
+                    hex);
+                auto note_um
+                    = lnav::console::user_message::warning(
+                          attr_line_t("skipping indexing for ")
+                              .append_quoted(this->lf_filename))
+                          .with_reason("File contains invalid UTF-8")
+                          .with_note(
                               attr_line_t(li.li_utf8_scan_result.usr_message)
                                   .append(" at line ")
                                   .append(lnav::roles::number(fmt::to_string(
@@ -1563,11 +1587,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                   .append(lnav::roles::number(fmt::to_string(
                                       li.li_utf8_scan_result.usr_valid_frag
                                           .sf_end))))
+                          .with_snippet(snip)
                           .move();
-                auto note_um = lnav::console::user_message::warning(
-                                   "skipping indexing for file")
-                                   .with_reason(utf8_error_um)
-                                   .move();
                 this->lf_notes.writeAccess()->insert(note_type::not_utf,
                                                      note_um);
                 if (this->lf_logfile_observer != nullptr) {
@@ -1632,18 +1653,6 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         break;
                 }
             }
-
-            auto read_result
-                = this->lf_line_buffer.read_range(li.li_file_range);
-            if (read_result.isErr()) {
-                log_error("%s:read failure -- %s",
-                          this->lf_filename_as_string.c_str(),
-                          read_result.unwrapErr().c_str());
-                this->close();
-                return rebuild_result_t::INVALID;
-            }
-
-            auto sbr = read_result.unwrap();
 
             if (!li.li_utf8_scan_result.is_valid()) {
                 log_warning(

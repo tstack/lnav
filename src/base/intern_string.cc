@@ -237,14 +237,12 @@ string_fragment::consume_n(int amount) const
     };
 }
 
-string_fragment::split_result
+string_fragment::split_n_result
 string_fragment::split_n(int amount) const
 {
-    if (amount > this->length()) {
-        return std::nullopt;
-    }
+    amount = std::min(amount, this->length());
 
-    return std::make_pair(
+    return {
         string_fragment{
             this->sf_string,
             this->sf_begin,
@@ -254,7 +252,8 @@ string_fragment::split_n(int amount) const
             this->sf_string,
             this->sf_begin + amount,
             this->sf_end,
-        });
+        },
+    };
 }
 
 std::vector<string_fragment>

@@ -396,8 +396,10 @@ role_to_style(const role_t role,
         case role_t::VCR_HIDDEN:
         case role_t::VCR_WARNING:
         case role_t::VCR_RE_REPEAT:
+        case role_t::VCR_NON_ASCII:
             line_style |= fmt::fg(fmt::terminal_color::yellow);
             break;
+        case role_t::VCR_ASCII_CTRL:
         case role_t::VCR_COMMENT:
         case role_t::VCR_DIFF_ADD:
             line_style |= fmt::fg(fmt::terminal_color::green);
@@ -417,6 +419,7 @@ role_to_style(const role_t role,
             line_style
                 |= fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta);
             break;
+        case role_t::VCR_NULL:
         case role_t::VCR_KEYWORD:
         case role_t::VCR_RE_SPECIAL:
             line_style

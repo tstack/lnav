@@ -2083,8 +2083,12 @@ external_log_format::scan(logfile& lf,
             const value_def& vd = *ivd.ivd_value_def;
             auto num_cap = md[ivd.ivd_index];
 
+            if (vd.vd_meta.lvm_identifier) {
+                continue;
+            }
+
             if (num_cap && num_cap->is_valid()) {
-                const struct scaling_factor* scaling = nullptr;
+                const scaling_factor* scaling = nullptr;
 
                 if (ivd.ivd_unit_field_index >= 0) {
                     auto unit_cap = md[ivd.ivd_unit_field_index];

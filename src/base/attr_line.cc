@@ -324,13 +324,13 @@ consume(const string_fragment text)
     auto word_find_res
         = WORD_RE.find_in(text, PCRE2_NO_UTF_CHECK).ignore_error();
     if (word_find_res) {
-        auto split_res = text.split_n(word_find_res->f_all.length()).value();
+        auto split_res = text.split_n(word_find_res->f_all.length());
 
         return word{split_res.first, split_res.second};
     }
 
     if (isspace(text.front())) {
-        auto split_res = text.split_n(1).value();
+        auto split_res = text.split_n(1);
 
         return space{split_res.first, split_res.second};
     }
@@ -338,7 +338,7 @@ consume(const string_fragment text)
     auto space_find_res
         = SPACE_RE.find_in(text, PCRE2_NO_UTF_CHECK).ignore_error();
     if (space_find_res) {
-        auto split_res = text.split_n(space_find_res->f_all.length()).value();
+        auto split_res = text.split_n(space_find_res->f_all.length());
 
         return space{split_res.first, split_res.second};
     }
@@ -346,7 +346,7 @@ consume(const string_fragment text)
     auto next_char_byte_index = text.column_to_byte_index(1);
     auto split_res = text.split_n(next_char_byte_index);
 
-    return word{split_res->first, split_res->second};
+    return word{split_res.first, split_res.second};
 }
 
 }  // namespace text_stream
@@ -463,8 +463,8 @@ attr_line_t::insert(size_t index,
             require_ge(text_to_wrap.length(), pre_len);
             auto pre_pair = text_to_wrap.split_n(pre_len);
             next_chunk = text_stream::word{
-                pre_pair->first,
-                pre_pair->second,
+                pre_pair.first,
+                pre_pair.second,
             };
         }
         if (!next_chunk.valid()) {

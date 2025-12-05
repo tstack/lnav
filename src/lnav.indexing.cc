@@ -479,9 +479,20 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 void
 rebuild_indexes_repeatedly()
 {
-    for (size_t attempt = 0; attempt < 10 && rebuild_indexes().rir_changes > 0;
-         attempt++)
-    {
+    for (size_t attempt = 0; attempt < 50; attempt++) {
+        auto rebuild_res = rebuild_indexes();
+        if (!rebuild_res.rir_completed) {
+            log_info("rebuilding indexes did not finish, retrying...");
+            continue;
+        }
+        if (rebuild_res.rir_rescan_needed) {
+            log_info("rebuilding indexes needs a rescan...");
+            rescan_files(false);
+            continue;
+        }
+        if (rebuild_res.rir_changes == 0) {
+            break;
+        }
         log_info("continuing to rebuild indexes...");
     }
 }

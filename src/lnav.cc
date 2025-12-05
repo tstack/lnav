@@ -4299,7 +4299,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
                 }
 
-                for (auto& pair : cmd_results) {
+                for (const auto& pair : cmd_results) {
                     if (pair.first.isErr()) {
                         lnav::console::print(stderr, pair.first.unwrapErr());
                         output_view = false;

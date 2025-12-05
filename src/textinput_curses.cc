@@ -1358,11 +1358,8 @@ textinput_curses::handle_key(const ncinput& ch)
             } else if (!this->tc_selection) {
                 const auto& al = this->tc_lines[this->tc_cursor.y];
                 auto line_sf = al.to_string_fragment();
-                const auto [before, after]
-                    = line_sf
-                          .split_n(
-                              line_sf.column_to_byte_index(this->tc_cursor.x))
-                          .value();
+                const auto [before, after] = line_sf.split_n(
+                    line_sf.column_to_byte_index(this->tc_cursor.x));
                 auto match_opt = PREFIX_RE.capture_from(before)
                                      .into(md)
                                      .matches()
@@ -2118,11 +2115,11 @@ textinput_curses::do_update()
         mvwattrline(this->tc_window, y, this->vc_x, al, lr);
 
         if (!abort_msg_shown && this->tc_abort_requested) {
-            static auto REQ_MSG = attr_line_t("  Press ")
-                                      .append("Esc"_hotkey)
-                                      .append(" to abort  ")
-                                      .with_attr_for_all(VC_ROLE.value(
-                                          role_t::VCR_STATUS));
+            static auto REQ_MSG
+                = attr_line_t("  Press ")
+                      .append("Esc"_hotkey)
+                      .append(" to abort  ")
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
             auto msg_lr = line_range{0, 0 + dim.dr_width};
             mvwattrline(
                 this->tc_window,

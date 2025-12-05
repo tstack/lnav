@@ -601,7 +601,9 @@ struct string_fragment {
         return std::nullopt;
     }
 
-    split_result split_n(int amount) const;
+    using split_n_result = std::pair<string_fragment, string_fragment>;
+
+    split_n_result split_n(int amount) const;
 
     std::vector<string_fragment> split_lines() const;
 
