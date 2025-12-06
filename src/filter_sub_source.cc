@@ -933,6 +933,7 @@ filter_sub_source::text_filter_row::ti_change(textview_curses* top_view,
                 } else {
                     rc.tc_suggestion.clear();
                 }
+            } else if (new_value == this->tfr_filter->get_id()) {
             } else {
                 auto regex_res
                     = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
@@ -943,6 +944,9 @@ filter_sub_source::text_filter_row::ti_change(textview_curses* top_view,
                     auto pe = regex_res.unwrapErr();
                     lnav_data.ld_filter_help_status_source.fss_error.set_value(
                         "error: %s", pe.get_message().c_str());
+                } else if (fs.get_filter(new_value) != nullptr) {
+                    lnav_data.ld_filter_help_status_source.fss_error.set_value(
+                        "error: filter already exists");
                 } else {
                     auto& hm = top_view->get_highlights();
                     highlighter hl(regex_res.unwrap().to_shared());
@@ -1090,7 +1094,7 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
     auto new_value = ti.get_content();
 
     fs.fs_generation += 1;
-    if (new_value.empty()) {
+    if (new_value.empty() || new_value == this->tfr_filter->get_id()) {
         this->ti_abort(top_view, ti, parent);
     } else {
         switch (this->tfr_filter->get_lang()) {
