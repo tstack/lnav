@@ -114,7 +114,7 @@ com_export_session_to(exec_context& ec,
                                      open_res.unwrapErr());
             }
             outfile = open_res.unwrap();
-        } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        } else if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
             return ec.make_error("{} -- unavailable in secure mode", args[0]);
         } else {
             if ((outfile = fopen(fn.c_str(), "we")) == nullptr) {
@@ -292,7 +292,7 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     static const intern_string_t SRC = intern_string::lookup("path");
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -344,7 +344,7 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 static Result<std::string, lnav::console::user_message>
 com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -884,7 +884,7 @@ com_external_access(exec_context& ec,
         return ec.make_error("Expecting port number and API key");
     }
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("External access is not available in secure mode");
     }
 

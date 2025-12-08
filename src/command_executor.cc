@@ -557,7 +557,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_selection(0_vl);
                 lnav_data.ld_views[LNV_DB].set_left(0);
-                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
                     retval = "";
                     alt_msg = "";
                 } else if (dls.dls_row_cursors.size() == 1) {
@@ -879,7 +879,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
             // block the UI.
-            lnav_data.ld_flags & LNF_HEADLESS)
+            lnav_data.ld_flags.is_set<lnav_flags::headless>())
         {
             rescan_files();
             wait_for_pipers(std::nullopt);
@@ -966,13 +966,13 @@ execute_init_commands(
 
                 rescan_files();
                 auto deadline = ui_clock::now();
-                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
                     deadline += 5s;
                 } else {
                     deadline += 500ms;
                 }
                 wait_for_pipers(deadline);
-                if (lnav_data.ld_flags & LNF_HEADLESS
+                if (lnav_data.ld_flags.is_set<lnav_flags::headless>()
                     || lnav_data.ld_input_dispatcher.id_count == 0)
                 {
                     rebuild_indexes_repeatedly();

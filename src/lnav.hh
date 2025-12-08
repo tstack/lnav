@@ -48,6 +48,7 @@
 #include "base/isc.hh"
 #include "base/time_util.hh"
 #include "bottom_status_source.hh"
+#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "db_sub_source.hh"
@@ -137,7 +138,7 @@ struct lnav_data_t {
     sig_atomic_t ld_looping{true};
     sig_atomic_t ld_winched;
     sig_atomic_t ld_child_terminated;
-    unsigned long ld_flags;
+    lnav_flags_storage ld_flags;
     ncplane* ld_window;
     ln_mode_t ld_mode;
     ln_mode_t ld_last_config_mode{ln_mode_t::FILTER};

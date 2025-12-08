@@ -32,23 +32,19 @@
 #ifndef lnav_bound_tags_hh
 #define lnav_bound_tags_hh
 
+#include <cstdint>
+
+#include "base/enum_util.hh"
+
 struct last_relative_time_tag {};
 
 struct sql_cmd_map_tag {};
 
-enum {
-    LNB_HEADLESS,
-    LNB_MANAGEMENT,
-    LNB_SECURE_MODE,
+enum class lnav_flags : uint8_t {
+    headless,
+    secure_mode,
 };
 
-/** Flags set on the lnav command-line. */
-typedef enum {
-    LNF_HEADLESS = (1L << LNB_HEADLESS),
-    LNF_MANAGEMENT = (1L << LNB_MANAGEMENT),
-    LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
-} lnav_flags_t;
-
-struct lnav_flags_tag {};
+using lnav_flags_storage = lnav::enums::bitset<lnav_flags>;
 
 #endif

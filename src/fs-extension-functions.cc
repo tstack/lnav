@@ -206,9 +206,9 @@ sql_shell_exec(const char* cmd,
                std::optional<string_fragment> opts_json)
 {
     static const intern_string_t SRC = intern_string::lookup("options");
-    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
 
-    if (lnav_flags & LNF_SECURE_MODE) {
+    if (lnflags.is_set<lnav_flags::secure_mode>()) {
         throw sqlite_func_error("not available in secure mode");
     }
 

@@ -49,6 +49,7 @@
 #    define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 #endif
 #include <algorithm>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <set>
@@ -230,8 +231,7 @@ static auto bound_sqlite_db
     = injector::bind<auto_sqlite3>::to_instance(&lnav_data.ld_db);
 
 static auto bound_lnav_flags
-    = injector::bind<unsigned long, lnav_flags_tag>::to_instance(
-        &lnav_data.ld_flags);
+    = injector::bind<lnav_flags_storage>::to_instance(&lnav_data.ld_flags);
 
 static auto bound_lnav_exec_context
     = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
@@ -268,12 +268,6 @@ namespace injector {
 template<>
 void
 force_linking(last_relative_time_tag anno)
-{
-}
-
-template<>
-void
-force_linking(lnav_flags_tag anno)
 {
 }
 
@@ -2719,7 +2713,7 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
 
     if (warning_count > 0 && !mf.mf_print_warnings
         && verbosity != verbosity_t::quiet
-        && !(lnav_data.ld_flags & LNF_HEADLESS)
+        && !lnav_data.ld_flags.is_set<lnav_flags::headless>()
         && (std::filesystem::file_time_type::clock::now()
                 - lnav_data.ld_last_dot_lnav_time
             > 24h))
@@ -2794,7 +2788,7 @@ main(int argc, char* argv[])
      * "LNAVSECURE" environment variable is set by the user.
      */
     if (getenv("LNAVSECURE") != nullptr) {
-        lnav_data.ld_flags |= LNF_SECURE_MODE;
+        lnav_data.ld_flags.set<lnav_flags::secure_mode>();
     }
 
     // Set PAGER so that stuff run from `:sh` will just dump their
@@ -3109,7 +3103,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         app.add_flag("-W", mode_flags.mf_print_warnings);
         auto* headless_flag = app.add_flag(
             "-n",
-            [](size_t count) { lnav_data.ld_flags |= LNF_HEADLESS; },
+            [](size_t count) {
+                lnav_data.ld_flags.set<lnav_flags::headless>();
+            },
             "headless");
         auto* file_opt = app.add_option("file", file_args, "files");
 
@@ -3509,7 +3505,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return EXIT_SUCCESS;
     }
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         if (sqlite3_set_authorizer(
                 lnav_data.ld_db.in(), sqlite_authorizer, nullptr)
             != SQLITE_OK)
@@ -3552,7 +3548,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_tail_space(2_vl)
         .set_overlay_source(log_fos.get());
     auto sel_reload_delegate = [](textview_curses& tc) {
-        if (!(lnav_data.ld_flags & LNF_HEADLESS)
+        if (!lnav_data.ld_flags.is_set<lnav_flags::headless>()
             && lnav_config.lc_ui_movement.mode == config_movement_mode::CURSOR)
         {
             tc.set_selectable(true);
@@ -3854,12 +3850,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         else if (file_path_type == lnav::filesystem::path_type::pattern)
         {
             lnav_data.ld_active_files.fc_file_names[file_path]
-                .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                .with_follow(!lnav_data.ld_flags.is_set<lnav_flags::headless>())
                 .with_time_range(lnav_data.ld_default_time_range);
         } else if (lnav::filesystem::statp(file_path, &st) == -1) {
             if (file_path_type == lnav::filesystem::path_type::remote) {
                 lnav_data.ld_active_files.fc_file_names[file_path]
-                    .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                    .with_follow(
+                        !lnav_data.ld_flags.is_set<lnav_flags::headless>())
                     .with_time_range(lnav_data.ld_default_time_range);
             } else {
                 lnav::console::print(
@@ -3921,7 +3918,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 abspath.in(),
                 logfile_open_options()
                     .with_init_location(file_loc)
-                    .with_follow(!(lnav_data.ld_flags & LNF_HEADLESS))
+                    .with_follow(
+                        !lnav_data.ld_flags.is_set<lnav_flags::headless>())
                     .with_time_range(lnav_data.ld_default_time_range));
             if (file_loc.valid()) {
                 lnav_data.ld_files_to_front.emplace_back(abspath.in());
@@ -3999,7 +3997,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return retval;
     }
 
-    if (lnav_data.ld_flags & LNF_HEADLESS || mode_flags.mf_check_configs) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::headless>()
+        || mode_flags.mf_check_configs)
+    {
     } else if (!isatty(STDOUT_FILENO)) {
         lnav::console::print(
             stderr,
@@ -4086,7 +4086,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (!isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)
-        && !(lnav_data.ld_flags & LNF_HEADLESS))
+        && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
     {
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
@@ -4134,7 +4134,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             log_info("  sqlite=%s", sqlite3_version);
             log_info("  zlib=%s", zlibVersion());
             log_info("lnav_data:");
-            log_info("  flags=%lx", lnav_data.ld_flags);
+            log_info("  flags=%llx", lnav_data.ld_flags.bs_data);
             log_info("  commands:");
             for (auto cmd_iter = lnav_data.ld_commands.begin();
                  cmd_iter != lnav_data.ld_commands.end();
@@ -4151,7 +4151,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 log_info("    %s", file_iter->first.c_str());
             }
 
-            if (!(lnav_data.ld_flags & LNF_HEADLESS)
+            if (!lnav_data.ld_flags.is_set<lnav_flags::headless>()
                 && verbosity == verbosity_t::quiet && load_stdin
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
@@ -4173,7 +4173,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         || lnav_data.ld_active_files.fc_files[0]->size() < 24)
                     {
                         log_info("  input is smaller than screen, not paging");
-                        lnav_data.ld_flags |= LNF_HEADLESS;
+                        lnav_data.ld_flags.set<lnav_flags::headless>();
                         verbosity = verbosity_t::standard;
                         lnav_data.ld_views[LNV_LOG].set_top(0_vl);
                     }
@@ -4183,7 +4183,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
             }
 
-            if (lnav_data.ld_flags & LNF_HEADLESS) {
+            if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
                 std::vector<
                     std::pair<Result<std::string, lnav::console::user_message>,
                               std::string>>
@@ -4445,7 +4445,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         // When reading from stdin, tell the user where the capture
         // file is stored so they can look at it later.
-        if (stdin_url && !(lnav_data.ld_flags & LNF_HEADLESS)
+        if (stdin_url && !lnav_data.ld_flags.is_set<lnav_flags::headless>()
             && verbosity != verbosity_t::quiet)
         {
             file_size_t stdin_size = 0;

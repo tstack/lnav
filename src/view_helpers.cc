@@ -1282,7 +1282,7 @@ toggle_view(textview_curses* toggle_tc)
         if (toggle_tc == &lnav_data.ld_views[LNV_LOG]
             || toggle_tc == &lnav_data.ld_views[LNV_TEXT])
         {
-            if (lnav_data.ld_flags & LNF_HEADLESS) {
+            if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
                 rescan_files(true);
                 rebuild_indexes_repeatedly();
             }

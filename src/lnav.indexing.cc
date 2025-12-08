@@ -225,7 +225,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     bool scroll_downs[LNV__MAX];
     std::optional<text_time_translator::row_info> scroll_down_sels[LNV__MAX];
     rebuild_indexes_result_t retval;
-    bool is_headless = lnav_data.ld_flags & LNF_HEADLESS;
+    bool is_headless = lnav_data.ld_flags.is_set<lnav_flags::headless>();
 
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
@@ -468,7 +468,9 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
     };
 
-    if (retval.rir_changes > 0 && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+    if (retval.rir_changes > 0
+        && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
+    {
         lnav_data.ld_files_view.reload_data();
     }
     // log_trace("done");
@@ -601,7 +603,7 @@ rescan_files(bool req)
             delay = 30ms;
         }
         done = fc.fc_file_names.empty() && all_synced;
-        if (!done && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+        if (!done && !lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
             lnav_data.ld_files_view.set_needs_update();
             lnav_data.ld_files_view.do_update();
             lnav_data.ld_status_refresher(lnav::func::op_type::interactive);

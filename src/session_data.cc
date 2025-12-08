@@ -1700,7 +1700,7 @@ save_session_with_id(const std::string& session_id)
 void
 save_session()
 {
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         log_info("secure mode is enabled, not saving session");
         return;
     }

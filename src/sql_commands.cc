@@ -70,7 +70,7 @@ sql_cmd_dump(exec_context& ec,
              std::vector<std::string>& args)
 {
     static auto& lnav_db = injector::get<auto_sqlite3&>();
-    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
 
     std::string retval;
 
@@ -88,7 +88,7 @@ sql_cmd_dump(exec_context& ec,
         return ec.make_error("expecting a table name to dump");
     }
 
-    if (lnav_flags & LNF_SECURE_MODE) {
+    if (lnflags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -304,7 +304,7 @@ sql_cmd_save(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
 {
-    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
     std::string retval;
 
     if (args.empty()) {
@@ -316,7 +316,7 @@ sql_cmd_save(exec_context& ec,
         return ec.make_error("expecting a file name to write to");
     }
 
-    if (lnav_flags & LNF_SECURE_MODE) {
+    if (lnflags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -333,7 +333,7 @@ sql_cmd_read(exec_context& ec,
 {
     static const intern_string_t SRC = intern_string::lookup("cmdline");
     static auto& lnav_db = injector::get<auto_sqlite3&>();
-    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
 
     std::string retval;
 
@@ -342,7 +342,7 @@ sql_cmd_read(exec_context& ec,
         return Ok(retval);
     }
 
-    if (lnav_flags & LNF_SECURE_MODE) {
+    if (lnflags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 

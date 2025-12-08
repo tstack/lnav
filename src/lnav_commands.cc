@@ -2599,7 +2599,7 @@ com_config(exec_context& ec,
                     retval = fmt::format(
                         FMT_STRING("{} = {}"), option, trim(old_value));
                 }
-            } else if (lnav_data.ld_flags & LNF_SECURE_MODE
+            } else if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()
                        && !startswith(option, "/ui/"))
             {
                 return ec.make_error(":config {} -- unavailable in secure mode",
@@ -2688,7 +2688,9 @@ com_config(exec_context& ec,
                     if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
-                        if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
+                        if (!lnav_data.ld_flags
+                                 .is_set<lnav_flags::secure_mode>())
+                        {
                             save_config();
                         }
                     }
@@ -2735,7 +2737,7 @@ com_reset_config(exec_context& ec,
         if (!ec.ec_dry_run) {
             reset_config(option);
             rollback_lnav_config = lnav_config;
-            if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
+            if (!lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
                 save_config();
             }
         }

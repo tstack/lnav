@@ -352,7 +352,7 @@ com_save_to(exec_context& ec,
         auto holder = open_res.unwrap();
         toclose = outfile = holder.release();
         closer = holder.get_free_func<int (*)(FILE*)>();
-    } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    } else if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else if ((outfile = fopen(split_args[0].c_str(), mode)) == nullptr) {
         return ec.make_error("unable to open file -- {}", split_args[0]);
@@ -728,7 +728,9 @@ com_save_to(exec_context& ec,
 
         auto top = tc->get_top();
         auto bottom = tc->get_bottom();
-        if (lnav_data.ld_flags & LNF_HEADLESS && inner_height > 0_vl) {
+        if (lnav_data.ld_flags.is_set<lnav_flags::headless>()
+            && inner_height > 0_vl)
+        {
             bottom = inner_height - 1_vl;
         }
         auto screen_height = inner_height == 0 ? 0 : bottom - top + 1;
@@ -776,7 +778,7 @@ com_save_to(exec_context& ec,
         tc->set_word_wrap(wrapped);
         tc->set_top(orig_top);
 
-        if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+        if (!lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
             while (y + wrapped_count < dim.first + 2_vl) {
                 fmt::print(outfile, FMT_STRING("\n"));
                 ++y;
@@ -1005,7 +1007,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     static const intern_string_t SRC = intern_string::lookup("path");
     std::string retval;
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -1582,7 +1584,7 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     static const intern_string_t SRC = intern_string::lookup("path");
     std::string retval;
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -1752,7 +1754,7 @@ com_pipe_to(exec_context& ec,
 {
     std::string retval;
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
@@ -1981,7 +1983,7 @@ com_redirect_to(exec_context& ec,
         ec.set_output(split_args[0],
                       holder.release(),
                       holder.get_free_func<int (*)(FILE*)>());
-    } else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    } else if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     } else {
         FILE* file = fopen(split_args[0].c_str(), "w");

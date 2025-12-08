@@ -64,6 +64,15 @@ struct bitset {
         return this->bs_data & 1 << to_underlying(arg);
     }
 
+    template<T arg>
+    void set()
+    {
+        static_assert(to_underlying(arg) >= 0);
+        static_assert(to_underlying(arg) < sizeof(this->bs_data) * 8);
+
+        this->bs_data |= 1 << to_underlying(arg);
+    }
+
     void set(T arg) { this->bs_data |= 1 << to_underlying(arg); }
 
     uint64_t bs_data;

@@ -550,9 +550,9 @@ register_fstat_vtab(sqlite3* db)
     FSTAT_MODULE.vm_module.xBestIndex = rcBestIndex;
     FSTAT_MODULE.vm_module.xFilter = rcFilter;
 
-    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
 
-    if (lnav_flags & LNF_SECURE_MODE) {
+    if (lnflags.is_set<lnav_flags::secure_mode>()) {
         return SQLITE_OK;
     }
 
