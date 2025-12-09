@@ -162,4 +162,22 @@ count_digits(T n)
     return n == 0 ? 1 : 1 + std::floor(std::log10(std::abs(n)));
 }
 
+namespace lnav::math {
+
+template<typename T>
+T
+vmax(T a, T b)
+{
+    return (a > b) ? a : b;
+}
+
+template<typename T, typename... Args>
+T
+vmax(T a, T b, Args... args)
+{
+    return vmax(vmax(a, b), args...);
+}
+
+}  // namespace lnav::math
+
 #endif

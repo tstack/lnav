@@ -4172,10 +4172,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 {
                     log_info("  input fully consumed");
                     rebuild_indexes_repeatedly();
-                    if (lnav_data.ld_active_files.fc_files.empty()
-                        || lnav_data.ld_active_files.fc_files[0]->size()
-                            < term_size.ws_row - 3)
-                    {
+
+                    auto max_height = lnav::math::vmax(
+                        lnav_data.ld_log_source.text_line_count(),
+                        lnav_data.ld_text_source.text_line_count());
+
+                    if (max_height < term_size.ws_row - 3) {
                         log_info("  input is smaller than screen, not paging");
                         lnav_data.ld_flags.set<lnav_flags::headless>();
                         verbosity = verbosity_t::standard;
