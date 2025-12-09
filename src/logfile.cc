@@ -196,8 +196,8 @@ logfile::open(std::filesystem::path filename,
                          phdr.h_name.c_str());
                 lf->set_filename(phdr.h_name);
                 lf->lf_valid_filename = false;
-                if (phdr.h_demux_output == lnav::piper::demux_output_t::signal)
-                {
+                if (phdr.h_demux_output
+                    == lnav::piper::demux_output_t::signal) {
                     lf->lf_text_format = text_format_t::TF_LOG;
                 }
 
@@ -245,7 +245,8 @@ logfile::open(std::filesystem::path filename,
 logfile::logfile(std::filesystem::path filename,
                  const logfile_open_options& loo)
     : lf_filename(std::move(filename)),
-      lf_filename_as_string(lf_filename.string()), lf_options(loo)
+      lf_filename_as_string(lf_filename.string()), lf_options(loo),
+      lf_basename(lf_filename.filename())
 {
     this->lf_line_buffer.set_decompress_extra(true);
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);

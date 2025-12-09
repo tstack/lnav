@@ -196,12 +196,14 @@ private:
         void save_from(const textview_curses& tc)
         {
             this->fvs_top = tc.get_top();
-            this->fvs_selection = tc.get_selection().value_or(-1_vl);
+            this->fvs_selection = tc.get_selection();
         }
 
         void load_into(textview_curses& tc) const
         {
-            tc.set_selection(this->fvs_selection);
+            if (this->fvs_selection.has_value()) {
+                tc.set_selection(this->fvs_selection.value());
+            }
             tc.set_top(this->fvs_top);
         }
 
@@ -214,7 +216,7 @@ private:
 
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};
-        vis_line_t fvs_selection{0};
+        std::optional<vis_line_t> fvs_selection;
 
         time_t fvs_mtime;
         file_ssize_t fvs_file_size;

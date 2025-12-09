@@ -27,7 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <chrono>
+#include <iterator>
 #include <memory>
 #include <unordered_set>
 
@@ -939,12 +941,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         = std::make_unique<plain_text_source>();
                     iter->fvs_text_source->set_text_format(
                         lf->get_text_format());
-                    iter->fvs_text_source->register_view(this->tss_view);
                     if (parse_res.isOk()) {
                         auto& lf_meta = lf->get_embedded_metadata();
 
                         iter->fvs_text_source->replace_with(parse_res.unwrap());
-
                         if (!md_file.f_frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
                                 = {
@@ -971,6 +971,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
 
                         iter->fvs_text_source->replace_with(view_content);
                     }
+                    iter->fvs_text_source->register_view(this->tss_view);
                 } else {
                     log_error("unable to read markdown file: %s -- %s",
                               lf->get_path_for_key().c_str(),
@@ -1638,12 +1639,13 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
         log_info("%s", fmt::to_string(lf->get_filename()).c_str());
         log_info("  setting requested selection: %d",
                  (int) new_sel_opt.value());
-        iter->fvs_selection = new_sel_opt.value();
+        iter->fvs_selection = new_sel_opt;
         log_info("  actual top is now: %d", (int) iter->fvs_top);
-        log_info("  actual selection is now: %d", (int) iter->fvs_selection);
+        log_info("  actual selection is now: %d",
+                 (int) iter->fvs_selection.value());
 
         if (this->current_file() == lf) {
-            this->tss_view->set_selection(iter->fvs_selection);
+            this->tss_view->set_selection(iter->fvs_selection.value());
         }
     }
     iter->fvs_consumed_init_location = true;

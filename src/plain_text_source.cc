@@ -89,7 +89,9 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
     }
     this->tds_longest_line = this->compute_longest_line();
     if (this->tss_view != nullptr) {
-        this->tss_view->set_selection(0_vl);
+        if (this->tss_view->get_selection()) {
+            this->tss_view->set_selection(0_vl);
+        }
         this->tss_view->set_needs_update();
     }
     return *this;
@@ -115,7 +117,9 @@ plain_text_source::replace_with_mutable(attr_line_t& text_lines,
     }
     this->tds_longest_line = this->compute_longest_line();
     if (this->tss_view != nullptr) {
-        this->tss_view->set_selection(0_vl);
+        if (this->tss_view->get_selection()) {
+            this->tss_view->set_selection(0_vl);
+        }
         this->tss_view->set_needs_update();
     }
     return *this;
@@ -131,7 +135,9 @@ plain_text_source::replace_with(const std::vector<std::string>& text_lines)
     }
     this->tds_longest_line = this->compute_longest_line();
     if (this->tss_view != nullptr) {
-        this->tss_view->set_selection(0_vl);
+        if (this->tss_view->get_selection()) {
+            this->tss_view->set_selection(0_vl);
+        }
         this->tss_view->set_needs_update();
     }
     return *this;
@@ -148,7 +154,9 @@ plain_text_source::replace_with(const std::vector<attr_line_t>& text_lines)
     }
     this->tds_longest_line = this->compute_longest_line();
     if (this->tss_view != nullptr) {
-        this->tss_view->set_selection(0_vl);
+        if (this->tss_view->get_selection()) {
+            this->tss_view->set_selection(0_vl);
+        }
         this->tss_view->set_needs_update();
     }
     return *this;
