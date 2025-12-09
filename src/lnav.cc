@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -1483,8 +1484,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
                 lnav_data.ld_views[LNV_LOG].get_highlights()[{
                     highlight_source_t::CONFIGURATION,
-                    format->get_name().to_string() + "-" + hl.h_name}]
-                    = hl;
+                    format->get_name().to_string() + "-" + hl.h_name}] = hl;
             }
         }
     }
@@ -1519,7 +1519,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = bind_mem(&lnav::prompt::rl_external_edit, &prompt);
     }
 
-    lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
+    if (lnav_data.ld_view_stack.empty()) {
+        lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
+    }
 
     sb.push_back(clear_last_user_mark);
     sb.push_back(update_view_position);
@@ -1727,23 +1729,20 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         .on_click
         = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_LINE_NUMBER)
-        .on_click
-        = [](status_field&) {
-              auto cmd = fmt::format(
-                  FMT_STRING("prompt command : 'goto {}'"),
-                  (int) lnav_data.ld_view_stack.top().value()->get_top());
+        .on_click = [](status_field&) {
+        auto cmd = fmt::format(
+            FMT_STRING("prompt command : 'goto {}'"),
+            (int) lnav_data.ld_view_stack.top().value()->get_top());
 
-              execute_command(lnav_data.ld_exec_context, cmd);
-          };
+        execute_command(lnav_data.ld_exec_context, cmd);
+    };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_SEARCH_TERM)
-        .on_click
-        = [](status_field&) {
-              auto term
-                  = lnav_data.ld_view_stack.top().value()->get_current_search();
-              auto cmd = fmt::format(FMT_STRING("prompt search / '{}'"), term);
+        .on_click = [](status_field&) {
+        auto term = lnav_data.ld_view_stack.top().value()->get_current_search();
+        auto cmd = fmt::format(FMT_STRING("prompt search / '{}'"), term);
 
-              execute_command(lnav_data.ld_exec_context, cmd);
-          };
+        execute_command(lnav_data.ld_exec_context, cmd);
+    };
 
     lnav_data.ld_status[LNS_TOP].set_title("top");
     lnav_data.ld_status[LNS_TOP].set_y(0);
@@ -1768,12 +1767,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         &lnav_data.ld_doc_status_source);
     lnav_data.ld_preview_status_source[0]
         .statusview_value_for_field(preview_status_source::TSF_TOGGLE)
-        .on_click
-        = [](status_field&) {
-              lnav_data.ld_preview_status_source->update_toggle_msg(
-                  lnav_data.ld_preview_hidden);
-              lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
-          };
+        .on_click = [](status_field&) {
+        lnav_data.ld_preview_status_source->update_toggle_msg(
+            lnav_data.ld_preview_hidden);
+        lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
+    };
     lnav_data.ld_status[LNS_PREVIEW0].set_title("preview0");
     lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
         &lnav_data.ld_preview_status_source[0]);
@@ -2751,6 +2749,12 @@ main(int argc, char* argv[])
     std::string since_time;
     std::string until_time;
     const char* LANG = getenv("LANG");
+    winsize term_size{};
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &term_size) != 0) {
+        term_size.ws_col = 80;
+        term_size.ws_row = 24;
+    }
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.UTF-8", 1);
@@ -2828,15 +2832,14 @@ main(int argc, char* argv[])
         auto_mem<char> var_path;
 
         var_path = realpath("/var/log", nullptr);
-        options_coll.foc_pattern_to_options[fmt::format(FMT_STRING("{}/*"),
-                                                        var_path.in())]
-            = lnav::file_options{
-                {
-                    intern_string_t{},
-                    source_location{},
-                    curr_tz,
-                },
-            };
+        options_coll.foc_pattern_to_options[fmt::format(
+            FMT_STRING("{}/*"), var_path.in())] = lnav::file_options{
+            {
+                intern_string_t{},
+                source_location{},
+                curr_tz,
+            },
+        };
         options_hier->foh_path_to_collection.emplace(std::filesystem::path("/"),
                                                      options_coll);
     } catch (const std::runtime_error& e) {
@@ -4152,7 +4155,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
 
             if (!lnav_data.ld_flags.is_set<lnav_flags::headless>()
-                && verbosity == verbosity_t::quiet && load_stdin
+                && verbosity == verbosity_t::quiet
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
                 log_info("pager mode, waiting for input to be consumed");
@@ -4170,7 +4173,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     log_info("  input fully consumed");
                     rebuild_indexes_repeatedly();
                     if (lnav_data.ld_active_files.fc_files.empty()
-                        || lnav_data.ld_active_files.fc_files[0]->size() < 24)
+                        || lnav_data.ld_active_files.fc_files[0]->size()
+                            < term_size.ws_row - 3)
                     {
                         log_info("  input is smaller than screen, not paging");
                         lnav_data.ld_flags.set<lnav_flags::headless>();
