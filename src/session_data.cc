@@ -896,6 +896,24 @@ read_files(yajlpp_parse_context* ypc,
     return 1;
 }
 
+const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
+    {level_names[LEVEL_TRACE], LEVEL_TRACE},
+    {level_names[LEVEL_DEBUG5], LEVEL_DEBUG5},
+    {level_names[LEVEL_DEBUG4], LEVEL_DEBUG4},
+    {level_names[LEVEL_DEBUG3], LEVEL_DEBUG3},
+    {level_names[LEVEL_DEBUG2], LEVEL_DEBUG2},
+    {level_names[LEVEL_DEBUG], LEVEL_DEBUG},
+    {level_names[LEVEL_INFO], LEVEL_INFO},
+    {level_names[LEVEL_STATS], LEVEL_STATS},
+    {level_names[LEVEL_NOTICE], LEVEL_NOTICE},
+    {level_names[LEVEL_WARNING], LEVEL_WARNING},
+    {level_names[LEVEL_ERROR], LEVEL_ERROR},
+    {level_names[LEVEL_CRITICAL], LEVEL_CRITICAL},
+    {level_names[LEVEL_FATAL], LEVEL_FATAL},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const json_path_container view_def_handlers = {
     json_path_handler("top_line").for_field(&view_state::vs_top),
     json_path_handler("focused_line").for_field(&view_state::vs_selection),
@@ -903,10 +921,13 @@ static const json_path_container view_def_handlers = {
     json_path_handler("search").for_field(&view_state::vs_search),
     json_path_handler("word_wrap").for_field(&view_state::vs_word_wrap),
     json_path_handler("filtering").for_field(&view_state::vs_filtering),
+    json_path_handler("min_level")
+        .with_enum_values(LEVEL_ENUM)
+        .for_field(&view_state::vs_min_log_level),
     json_path_handler("commands#").for_field(&view_state::vs_commands),
 };
 
-static const struct json_path_container view_handlers = {
+static const json_path_container view_handlers = {
     yajlpp::pattern_property_handler("(?<view_name>[\\w\\-]+)")
         .with_obj_provider<view_state, session_data_t>(
             +[](const yajlpp_provider_context& ypc, session_data_t* root) {
@@ -924,13 +945,13 @@ static const struct json_path_container view_handlers = {
         .with_children(view_def_handlers),
 };
 
-static const struct json_path_container file_state_handlers = {
+static const json_path_container file_state_handlers = {
     yajlpp::property_handler("visible")
         .with_description("Indicates whether the file is visible or not")
         .for_field(&file_state::fs_is_visible),
 };
 
-static const struct json_path_container file_states_handlers = {
+static const json_path_container file_states_handlers = {
     yajlpp::pattern_property_handler(R"((?<filename>[^/]+))")
         .with_description("Map of file names to file state objects")
         .with_obj_provider<file_state, session_data_t>(
@@ -1677,6 +1698,11 @@ save_session_with_id(const std::string& session_id)
                     view_map.gen("filtering");
                     view_map.gen(tss->tss_apply_filters);
 
+                    if (tss->get_min_log_level() != LEVEL_UNKNOWN) {
+                        view_map.gen("min_level");
+                        view_map.gen(level_names[tss->get_min_log_level()]);
+                    }
+
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
 
@@ -1820,6 +1846,9 @@ lnav::session::apply_view_commands()
         auto* tss = tview.get_sub_source();
         if (tview.get_sub_source() != nullptr) {
             tss->tss_apply_filters = vs.vs_filtering;
+            if (vs.vs_min_log_level) {
+                tss->set_min_log_level(vs.vs_min_log_level.value());
+            }
             tss->add_commands_for_session([&](auto& cmd) {
                 auto cmd_sf = string_fragment::from_str(cmd)
                                   .split_when(string_fragment::tag1{' '})

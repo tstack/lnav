@@ -40,6 +40,7 @@
 #include "base/string_attr_type.hh"
 #include "format.scripts.hh"
 #include "help_text.hh"
+#include "lnav.prompt.hh"
 #include "mapbox/variant.hpp"
 #include "textinput.history.hh"
 #include "textinput_curses.hh"

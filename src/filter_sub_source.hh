@@ -31,8 +31,10 @@
 #define filter_sub_source_hh
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -117,29 +119,48 @@ public:
     };
 
     struct filter_row {
+        filter_row() = default;
         virtual ~filter_row() = default;
+
+        filter_row(const filter_row&) = delete;
+        filter_row(filter_row&&) = delete;
 
         virtual void value_for(const render_state& rs, attr_line_t& al) = 0;
         virtual bool handle_key(textview_curses* top_view, const ncinput& ch)
             = 0;
         virtual bool prime_text_input(textview_curses* top_view,
                                       textinput_curses& ti,
-                                      filter_sub_source& parent)
-            = 0;
+                                      filter_sub_source& parent) = 0;
         virtual void ti_change(textview_curses* top_view, textinput_curses& rc)
             = 0;
         virtual void ti_completion_request(textview_curses* top_view,
                                            textinput_curses& tc,
-                                           completion_request_type_t crt)
-            = 0;
+                                           completion_request_type_t crt) = 0;
         virtual void ti_perform(textview_curses* top_view,
                                 textinput_curses& tc,
-                                filter_sub_source& parent)
-            = 0;
+                                filter_sub_source& parent) = 0;
         virtual void ti_abort(textview_curses* top_view,
                               textinput_curses& tc,
-                              filter_sub_source& parent)
-            = 0;
+                              filter_sub_source& parent) = 0;
+    };
+
+    struct level_filter_row : filter_row {
+        void value_for(const render_state& rs, attr_line_t& al) override;
+        bool handle_key(textview_curses* top_view, const ncinput& ch) override;
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override;
+        void ti_change(textview_curses* top_view,
+                       textinput_curses& rc) override;
+        void ti_completion_request(textview_curses* top_view,
+                                   textinput_curses& tc,
+                                   completion_request_type_t crt) override;
+        void ti_perform(textview_curses* top_view,
+                        textinput_curses& tc,
+                        filter_sub_source& parent) override;
+        void ti_abort(textview_curses* top_view,
+                      textinput_curses& tc,
+                      filter_sub_source& parent) override;
     };
 
     struct time_filter_row : filter_row {
@@ -229,11 +250,27 @@ public:
 
     row_vector rows_for(textview_curses* tc) const;
 
+    template<typename T>
+    std::pair<vis_line_t, std::unique_ptr<filter_row>> find_row(
+        textview_curses* tc)
+    {
+        auto rows = this->rows_for(tc);
+        auto index = 0_vl;
+        for (auto& row : rows) {
+            if (dynamic_cast<T*>(row.get()) != nullptr) {
+                return {index, std::move(row)};
+            }
+            index += 1_vl;
+        }
+        ensure(false);
+    }
+
     std::shared_ptr<textinput_curses> fss_editor;
     lnav::textinput::history fss_regexp_history;
     lnav::textinput::history fss_sql_history;
     std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;
+    log_level_t fss_curr_level;
     std::optional<timeval> fss_min_time;
     std::optional<timeval> fss_max_time;
 

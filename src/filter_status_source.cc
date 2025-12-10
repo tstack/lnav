@@ -36,21 +36,22 @@
 #include "filter_sub_source.hh"
 #include "lnav.hh"
 
-static constexpr auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit "_frag;
-static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit "_frag;
+static constexpr auto TOGGLE_MSG = "Press " ANSI_HOTKEY("TAB") " to edit "_frag;
+static constexpr auto EXIT_MSG = "Press " ANSI_HOTKEY("ESC") " to exit "_frag;
 
 static constexpr auto CREATE_HELP
-    = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
-static constexpr auto CREATE_EXPR_HELP = "  " ANSI_BOLD("e") ": Edit SQL expr";
+    = "Create: " ANSI_HOTKEY("i") "n/" ANSI_HOTKEY("o") "ut";
+static constexpr auto CREATE_EXPR_HELP = "  SQL " ANSI_HOTKEY("e") "xpr";
+static constexpr auto CREATE_LEVEL_HELP = "  " ANSI_HOTKEY("l") "evel";
 static constexpr auto MIN_MAX_TIME_HELP
-    = ANSI_BOLD("m") "/" ANSI_BOLD("M") ": Set min/max time";
-static constexpr auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
-static constexpr auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
-static constexpr auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
-static constexpr auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
-static constexpr auto FILTERING_HELP = ANSI_BOLD("f") ": ";
-static constexpr auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
-static constexpr auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
+    = "  " ANSI_HOTKEY("m") "in/" ANSI_HOTKEY("M") "ax time";
+static constexpr auto ENABLE_HELP = ANSI_HOTKEY("SPC") ": ";
+static constexpr auto EDIT_HELP = ANSI_HOTKEY("ENTER") ": Edit";
+static constexpr auto TOGGLE_HELP = ANSI_HOTKEY("t") ": To ";
+static constexpr auto DELETE_HELP = ANSI_HOTKEY("D") ": Delete";
+static constexpr auto FILTERING_HELP = ANSI_HOTKEY("f") ": ";
+static constexpr auto JUMP_HELP = ANSI_HOTKEY("ENTER") ": Jump To";
+static constexpr auto CLOSE_HELP = ANSI_HOTKEY("X") ": Close";
 static constexpr auto FOCUS_DETAILS_HELP
     = ANSI_BOLD("CTRL-]") ": Focus on details view";
 
@@ -305,13 +306,16 @@ filter_help_status_source::statusview_fields()
             auto rows = fss->rows_for(tc);
             if (rows.empty()) {
                 this->fss_help.set_value(
-                    "  %s%s  %s",
+                    "  %s%s%s%s",
                     CREATE_HELP,
                     lss != nullptr ? CREATE_EXPR_HELP : "",
+                    lss != nullptr ? CREATE_LEVEL_HELP : "",
                     ttt != nullptr ? MIN_MAX_TIME_HELP : "");
             } else {
                 auto& row = rows[sel.value()];
                 auto* tfr = dynamic_cast<filter_sub_source::text_filter_row*>(
+                    row.get());
+                auto* tir = dynamic_cast<filter_sub_source::time_filter_row*>(
                     row.get());
                 if (editor->fss_editing) {
                     if (tfr != nullptr) {
@@ -333,17 +337,23 @@ filter_help_status_source::statusview_fields()
                                 "out:",
                                 lang);
                         }
-                    } else {
+                    } else if (tir != nullptr) {
                         this->fss_help.set_value(
                             "                           "
                             "Enter timestamp:");
+                    } else {
+                        this->fss_help.set_value(
+                            "                           "
+                            "Enter level:");
                     }
                 } else if (tfr != nullptr) {
                     auto& tf = tfr->tfr_filter;
                     this->fss_help.set_value(
-                        "  %s%s  %s%s  %s  %s%s  %s  %s%s",
+                        "  %s%s%s%s  %s%s  %s  %s%s  %s  %s%s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_LEVEL_HELP : "",
+                        ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                         ENABLE_HELP,
                         tf->is_enabled() ? "Disable" : "Enable ",
                         EDIT_HELP,
@@ -356,9 +366,11 @@ filter_help_status_source::statusview_fields()
                                                : "Enable Filtering");
                 } else {
                     this->fss_help.set_value(
-                        "  %s%s  %s  %s  %s%s",
+                        "  %s%s%s%s  %s  %s  %s%s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_LEVEL_HELP : "",
+                        ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                         EDIT_HELP,
                         DELETE_HELP,
                         FILTERING_HELP,

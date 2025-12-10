@@ -55,6 +55,7 @@
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "log_format_loader.hh"
+#include "log_level.hh"
 #include "sql_execute.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -696,24 +697,6 @@ static const struct json_path_container highlighter_def_handlers = {
         .with_synopsis("<enabled>")
         .with_description("This highlight can be nested in another highlight.")
         .for_field(&external_log_format::highlighter_def::hd_nestable),
-};
-
-static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
-    {level_names[LEVEL_TRACE], LEVEL_TRACE},
-    {level_names[LEVEL_DEBUG5], LEVEL_DEBUG5},
-    {level_names[LEVEL_DEBUG4], LEVEL_DEBUG4},
-    {level_names[LEVEL_DEBUG3], LEVEL_DEBUG3},
-    {level_names[LEVEL_DEBUG2], LEVEL_DEBUG2},
-    {level_names[LEVEL_DEBUG], LEVEL_DEBUG},
-    {level_names[LEVEL_INFO], LEVEL_INFO},
-    {level_names[LEVEL_STATS], LEVEL_STATS},
-    {level_names[LEVEL_NOTICE], LEVEL_NOTICE},
-    {level_names[LEVEL_WARNING], LEVEL_WARNING},
-    {level_names[LEVEL_ERROR], LEVEL_ERROR},
-    {level_names[LEVEL_CRITICAL], LEVEL_CRITICAL},
-    {level_names[LEVEL_FATAL], LEVEL_FATAL},
-
-    json_path_handler_base::ENUM_TERMINATOR,
 };
 
 static const struct json_path_container sample_handlers = {
@@ -1454,8 +1437,7 @@ load_formats(const std::vector<std::filesystem::path>& extra_paths,
         ypc_builtin.with_obj(ud)
             .with_handle(handle)
             .with_error_reporter(format_error_reporter)
-            .ypc_userdata
-            = &ud;
+            .ypc_userdata = &ud;
         yajl_config(handle, yajl_allow_comments, 1);
         auto sf = bsf.to_string_fragment_producer();
         ypc_builtin.parse(*sf);

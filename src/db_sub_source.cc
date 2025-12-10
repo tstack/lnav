@@ -43,6 +43,7 @@
 #include "base/types.hh"
 #include "config.h"
 #include "hist_source_T.hh"
+#include "log_level.hh"
 #include "scn/scan.h"
 #include "yajlpp/json_ptr.hh"
 #include "yajlpp/yajlpp_def.hh"

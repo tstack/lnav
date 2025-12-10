@@ -36,11 +36,13 @@
 #include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/func_util.hh"
+#include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "base/relative_time.hh"
 #include "base/text_format_enum.hh"
 #include "cmd.parser.hh"
 #include "config.h"
+#include "itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
@@ -158,6 +160,25 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             }
             return true;
         }
+        case 'l': {
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* tss = top_view->get_sub_source();
+            if (tss->get_min_log_level() == LEVEL_UNKNOWN) {
+                tss->set_min_log_level(LEVEL_TRACE);
+            }
+            const auto& [index, row]
+                = this->find_row<level_filter_row>(top_view);
+            lv.set_selection(index);
+            lv.reload_data();
+            this->fss_editing = true;
+            this->tss_view->set_enabled(false);
+            row->prime_text_input(top_view, *this->fss_editor, *this);
+            this->fss_editor->set_y(lv.get_y_for_selection());
+            this->fss_editor->set_visible(true);
+            this->fss_editor->focus();
+            this->tss_view->reload_data();
+            return true;
+        }
         case 'm': {
             auto* top_view = *lnav_data.ld_view_stack.top();
             auto* ttt = dynamic_cast<text_time_translator*>(
@@ -186,11 +207,10 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                     ttt->ttt_preview_min_time = this->fss_min_time;
                 }
 
-                lv.set_selection(0_vl);
+                const auto& [index, row]
+                    = this->find_row<min_time_filter_row>(top_view);
+                lv.set_selection(index);
                 lv.reload_data();
-
-                auto rows = this->rows_for(top_view);
-                auto& row = rows[0];
                 this->fss_editing = true;
                 this->tss_view->set_enabled(false);
                 row->prime_text_input(top_view, *this->fss_editor, *this);
@@ -230,12 +250,10 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                     ttt->ttt_preview_max_time = this->fss_max_time;
                 }
 
-                auto new_sel = ttt->get_min_row_time() ? 1_vl : 0_vl;
-                lv.set_selection(new_sel);
+                const auto& [index, row]
+                    = this->find_row<level_filter_row>(top_view);
+                lv.set_selection(index);
                 lv.reload_data();
-
-                auto rows = this->rows_for(top_view);
-                auto& row = rows[new_sel];
                 this->fss_editing = true;
                 this->tss_view->set_enabled(false);
                 row->prime_text_input(top_view, *this->fss_editor, *this);
@@ -668,6 +686,103 @@ filter_sub_source::min_time_filter_row::ti_abort(textview_curses* top_view,
         ttt->set_min_row_time(parent.fss_min_time.value());
     }
     tss->text_filters_changed();
+}
+
+void
+filter_sub_source::level_filter_row::value_for(const render_state& rs,
+                                               attr_line_t& al)
+{
+    auto lev = rs.rs_top_view->get_sub_source()->get_min_log_level();
+
+    al.append("  ").append("Level"_table_header).append("  ");
+    if (rs.rs_editing) {
+        al.append(fmt::format(FMT_STRING("{:>9}"), "-"),
+                  VC_ROLE.value(role_t::VCR_NUMBER));
+    } else {
+        al.append(
+            fmt::format(
+                FMT_STRING("{:>9}"),
+                rs.rs_top_view->get_sub_source()->tss_level_filtered_count),
+            VC_ROLE.value(role_t::VCR_NUMBER));
+    }
+    al.append(" hits ")
+        .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+        .append(" ")
+        .append(level_names[lev]);
+}
+
+bool
+filter_sub_source::level_filter_row::handle_key(textview_curses* top_view,
+                                                const ncinput& ch)
+{
+    switch (ch.eff_text[0]) {
+        case 'D':
+            top_view->get_sub_source()->set_min_log_level(LEVEL_UNKNOWN);
+            return true;
+    }
+    return false;
+}
+
+bool
+filter_sub_source::level_filter_row::prime_text_input(textview_curses* top_view,
+                                                      textinput_curses& ti,
+                                                      filter_sub_source& parent)
+{
+    auto* tss = top_view->get_sub_source();
+    auto lev = tss->get_min_log_level();
+    parent.fss_curr_level = lev;
+    tss->set_min_log_level(LEVEL_TRACE);
+    tss->text_filters_changed();
+    ti.set_content(level_names[lev].to_string());
+    ti.tc_selection
+        = ti.clamp_selection(textinput_curses::selected_range::from_mouse(
+            textinput_curses::input_point::home(),
+            textinput_curses::input_point::end()));
+    return true;
+}
+
+void
+filter_sub_source::level_filter_row::ti_change(textview_curses* top_view,
+                                               textinput_curses& rc)
+{
+    auto lev = rc.get_content();
+    top_view->get_sub_source()->tss_preview_min_log_level
+        = string2level(lev.c_str(), lev.size(), false);
+    this->ti_completion_request(
+        top_view, rc, completion_request_type_t::partial);
+}
+
+void
+filter_sub_source::level_filter_row::ti_completion_request(
+    textview_curses* top_view,
+    textinput_curses& tc,
+    completion_request_type_t crt)
+{
+    auto lev = tc.get_content();
+    auto poss = level_names | lnav::itertools::similar_to(lev)
+        | lnav::itertools::map([](const auto& elem) {
+                    return attr_line_t().append(elem).with_attr_for_all(
+                        lnav::prompt::SUBST_TEXT.value(elem.to_string()));
+                });
+    tc.open_popup_for_completion(0, poss);
+}
+
+void
+filter_sub_source::level_filter_row::ti_perform(textview_curses* top_view,
+                                                textinput_curses& tc,
+                                                filter_sub_source& parent)
+{
+    auto lev = tc.get_content();
+    auto new_level = string2level(lev.c_str(), lev.size(), false);
+    top_view->get_sub_source()->set_min_log_level(new_level);
+}
+
+void
+filter_sub_source::level_filter_row::ti_abort(textview_curses* top_view,
+                                              textinput_curses& tc,
+                                              filter_sub_source& parent)
+{
+    top_view->get_sub_source()->set_min_log_level(parent.fss_curr_level);
 }
 
 bool
@@ -1225,6 +1340,10 @@ filter_sub_source::rows_for(textview_curses* tc) const
                     std::make_unique<max_time_filter_row>(max_time.value()));
             }
         }
+    }
+
+    if (tss->get_min_log_level() != LEVEL_UNKNOWN) {
+        retval.emplace_back(std::make_unique<level_filter_row>());
     }
 
     auto& fs = tss->get_filters();

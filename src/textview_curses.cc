@@ -1289,6 +1289,7 @@ text_sub_source::clear_preview()
     if (ttt != nullptr) {
         ttt->clear_preview_times();
     }
+    this->tss_preview_min_log_level = std::nullopt;
 }
 
 void

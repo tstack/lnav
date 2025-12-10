@@ -306,6 +306,8 @@ textinput_curses::set_content(std::string content)
     this->tc_top = 0;
     this->tc_cursor = {};
     this->tc_abort_requested = false;
+    this->tc_drag_selection = std::nullopt;
+    this->tc_selection = std::nullopt;
     this->clamp_point(this->tc_cursor);
     this->set_needs_update();
 }

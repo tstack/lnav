@@ -2363,15 +2363,20 @@ com_set_min_log_level(exec_context& ec,
 {
     std::string retval;
 
-    if (ec.ec_dry_run) {
-        retval = "";
-    } else if (args.size() == 2) {
+    if (args.size() == 2) {
         auto& lss = lnav_data.ld_log_source;
         auto new_level = string2level(args[1].c_str(), args[1].size(), false);
-        lss.set_min_log_level(new_level);
-
-        retval = fmt::format(FMT_STRING("info: minimum log level is now -- {}"),
-                             level_names[new_level]);
+        if (ec.ec_dry_run) {
+            lss.tss_preview_min_log_level = new_level;
+            retval = fmt::format(
+                FMT_STRING("info: previewing with min log level -- {}"),
+                level_names[new_level]);
+        } else {
+            lss.set_min_log_level(new_level);
+            retval = fmt::format(
+                FMT_STRING("info: minimum log level is now -- {}"),
+                level_names[new_level]);
+        }
     } else {
         return ec.make_error("expecting a log level name");
     }

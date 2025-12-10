@@ -48,6 +48,7 @@
 
 #define ANSI_BOLD(msg)      ANSI_BOLD_START msg ANSI_NORM
 #define ANSI_UNDERLINE(msg) ANSI_UNDERLINE_START msg ANSI_NORM
+#define ANSI_HOTKEY(key)    ANSI_CSI "1;4m" key ANSI_NORM
 
 #define ANSI_ROLE(msg)        ANSI_CSI "%dO" msg ANSI_NORM
 #define ANSI_ROLE_FMT(msg)    ANSI_CSI "{}O" msg ANSI_NORM

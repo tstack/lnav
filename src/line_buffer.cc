@@ -56,6 +56,7 @@
 #include "fmtlib/fmt/format.h"
 #include "hasher.hh"
 #include "line_buffer.hh"
+#include "log_level.hh"
 #include "piper.header.hh"
 #include "scn/scan.h"
 #include "yajlpp/yajlpp_def.hh"
@@ -737,8 +738,7 @@ line_buffer::load_next_buffer()
         }
     }
 #endif
-    else
-    {
+    else {
         rc = pread(this->lb_cached_fd ? this->lb_cached_fd.value().get()
                                       : this->lb_fd.get(),
                    this->lb_alt_buffer.value().end(),
@@ -936,8 +936,7 @@ line_buffer::fill_range(file_off_t start,
                 this->lb_stats.s_decompressions += 1;
                 if (false && this->lb_last_line_offset > 0) {
                     this->lb_stats.s_hist[(this->lb_file_offset * 10)
-                                          / this->lb_last_line_offset]
-                        += 1;
+                                          / this->lb_last_line_offset] += 1;
                 }
                 rc = gi->read(this->lb_buffer.end(),
                               this->lb_file_offset + this->lb_buffer.size(),
@@ -1025,8 +1024,7 @@ line_buffer::fill_range(file_off_t start,
             this->lb_stats.s_preads += 1;
             if (false && this->lb_last_line_offset > 0) {
                 this->lb_stats.s_hist[(this->lb_file_offset * 10)
-                                      / this->lb_last_line_offset]
-                    += 1;
+                                      / this->lb_last_line_offset] += 1;
             }
 #if 0
             log_debug("%d: pread %lld",

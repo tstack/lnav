@@ -3,10 +3,12 @@
 
 Features:
 * The Filter configuration panel in the TUI now supports
-  editing the minimum/maximum times for the current
-  view.  Previously, only the `:hide-lines-before` and
+  editing the minimum log level and minimum/maximum
+  times for the current view.  Previously, only the
+  `:set-min-log-level`, `:hide-lines-before`, and
   `:hide-lines-after` commands could be used to set the
-  values.  Pressing `m` will create/set the minimum
+  values.  Pressing `l` will create/set the log level.
+  Pressing `m` will create/set the minimum
   time and pressing `Shift` + `M` will create/set the
   maximum time.  Live preview has also been added to
   show which lines will be filtered out when the min/max

@@ -596,12 +596,25 @@ public:
     virtual void add_commands_for_session(
         const std::function<void(const std::string&)>& receiver);
 
+    [[nodiscard]] log_level_t get_min_log_level() const { return this->tss_min_log_level; }
+
+    void set_min_log_level(log_level_t level)
+    {
+        if (this->tss_min_log_level != level) {
+            this->tss_min_log_level = level;
+            this->text_filters_changed();
+        }
+    }
+
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
+    uint64_t tss_level_filtered_count{0};
+    std::optional<log_level_t> tss_preview_min_log_level;
 
 protected:
     textview_curses* tss_view{nullptr};
     filter_stack tss_filters;
+    log_level_t tss_min_log_level{LEVEL_UNKNOWN};
 };
 
 class vis_location_history : public location_history {

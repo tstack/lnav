@@ -156,19 +156,9 @@ public:
 
     line_context_t get_line_context() const { return this->lss_line_context; }
 
-    log_level_t get_min_log_level() const { return this->lss_min_log_level; }
-
     void set_force_rebuild() { this->lss_force_rebuild = true; }
 
     bool is_rebuild_forced() const { return this->lss_force_rebuild; }
-
-    void set_min_log_level(log_level_t level)
-    {
-        if (this->lss_min_log_level != level) {
-            this->lss_min_log_level = level;
-            this->text_filters_changed();
-        }
-    }
 
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch);
 
@@ -756,7 +746,6 @@ private:
     logfile::iterator lss_token_line;
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE>
         lss_line_size_cache;
-    log_level_t lss_min_log_level{LEVEL_UNKNOWN};
     bool lss_marked_only{false};
     index_delegate* lss_index_delegate{nullptr};
     size_t lss_longest_line{0};

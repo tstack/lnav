@@ -52,6 +52,7 @@ struct view_state {
     bool vs_word_wrap{false};
     bool vs_filtering{true};
     std::vector<std::string> vs_commands;
+    std::optional<log_level_t> vs_min_log_level;
 };
 
 struct session_data_t {

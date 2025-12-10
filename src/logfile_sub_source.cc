@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <future>
 #include <optional>
 #include <string>
@@ -775,6 +776,14 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
+    if (this->tss_preview_min_log_level
+        && this->lss_token_line->get_msg_level()
+            < this->tss_preview_min_log_level)
+    {
+        auto color = styling::color_unit::from_palette(
+            lnav::enums::to_underlying(ansi_color::red));
+        value_out.emplace_back(line_range{0, 1}, VC_BACKGROUND.value(color));
+    }
     if (this->ttt_preview_min_time
         && this->lss_token_line->get_timeval() < this->ttt_preview_min_time)
     {
@@ -918,6 +927,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
         full_sort = true;
+        this->tss_level_filtered_count = 0;
         this->lss_index.clear();
     }
 
@@ -1074,6 +1084,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         force = true;
         retval = rebuild_result::rr_full_rebuild;
         full_sort = true;
+        this->tss_level_filtered_count = 0;
     }
 
     auto& vis_bm = this->tss_view->get_bookmarks();
@@ -1087,6 +1098,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         this->lss_index.clear();
         this->lss_filtered_index.clear();
+        this->tss_level_filtered_count = 0;
         this->lss_longest_line = 0;
         this->lss_basename_width = 0;
         this->lss_filename_width = 0;
@@ -1439,7 +1451,8 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     bm_files.clear();
 
     std::vector<const bookmark_type_t*> used_marks;
-    for (const auto* bmt : {
+    for (const auto* bmt :
+         {
              &textview_curses::BM_USER,
              &textview_curses::BM_USER_EXPR,
              &textview_curses::BM_PARTITION,
@@ -1489,6 +1502,7 @@ void
 logfile_sub_source::text_filters_changed()
 {
     this->lss_index_generation += 1;
+    this->tss_level_filtered_count = 0;
 
     if (this->lss_line_meta_changed) {
         this->invalidate_sql_filter();
@@ -2133,6 +2147,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
 bool
 logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
 {
+    auto retval = true;
+
     if (this->lss_marked_only) {
         auto found_mark = ll->is_marked() || ll->is_expr_marked();
         auto to_start_ll = ll;
@@ -2152,23 +2168,24 @@ logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
             ++to_end_ll;
         }
         if (!found_mark) {
-            return false;
+            retval = false;
         }
     }
 
-    if (ll->get_msg_level() < this->lss_min_log_level) {
-        return false;
+    if (ll->get_msg_level() < this->tss_min_log_level) {
+        this->tss_level_filtered_count += 1;
+        retval = false;
     }
 
     if (*ll < this->ttt_min_row_time) {
-        return false;
+        retval = false;
     }
 
     if (!(*ll <= this->ttt_max_row_time)) {
-        return false;
+        retval = false;
     }
 
-    return true;
+    return retval;
 }
 
 void
@@ -2922,8 +2939,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                       vis_line_t(line_from_top + line_number));
                               };
                     });
-                if (curr_node && !curr_node.value()->hn_parent->is_named_only())
-                {
+                if (curr_node
+                    && !curr_node.value()->hn_parent->is_named_only()) {
                     auto node = lnav::document::hier_node::lookup_path(
                         meta->m_sections_root.get(), path);
 
@@ -3547,6 +3564,6 @@ logfile_sub_source::update_filter_hash_state(hasher& h) const
             h.update(1);
         }
     }
-    h.update(this->lss_min_log_level);
+    h.update(this->tss_min_log_level);
     h.update(this->lss_marked_only);
 }

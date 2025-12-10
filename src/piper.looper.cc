@@ -49,6 +49,7 @@
 #include "hasher.hh"
 #include "line_buffer.hh"
 #include "lnav_config_fwd.hh"
+#include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "piper.header.hh"
 #include "piper.looper.cfg.hh"

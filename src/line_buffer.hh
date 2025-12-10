@@ -48,16 +48,16 @@
 #include "base/file_range.hh"
 #include "base/is_utf8.hh"
 #include "base/lnav.gzip.hh"
+#include "base/log_level_enum.hh"
 #include "base/piper.file.hh"
 #include "base/result.h"
-#include "log_level.hh"
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
 
 struct line_info {
     file_range li_file_range;
-    struct timeval li_timestamp{0, 0};
+    timeval li_timestamp{0, 0};
     log_level_t li_level{LEVEL_UNKNOWN};
     bool li_partial{false};
     utf8_scan_result li_utf8_scan_result{};

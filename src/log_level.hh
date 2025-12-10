@@ -38,8 +38,10 @@
 
 #include "base/intern_string.hh"
 #include "base/log_level_enum.hh"
+#include "yajlpp/yajlpp.hh"
 
 extern const std::array<string_fragment, LEVEL__MAX> level_names;
+extern const json_path_handler_base::enum_value_t LEVEL_ENUM[];
 
 constexpr size_t MAX_LEVEL_NAME_LEN = 8;
 
