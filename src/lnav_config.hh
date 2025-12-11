@@ -51,7 +51,6 @@
 #include "file_vtab.cfg.hh"
 #include "lnav_config_fwd.hh"
 #include "log.annotate.cfg.hh"
-#include "log_level.hh"
 #include "logfile.cfg.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "piper.looper.cfg.hh"

@@ -45,6 +45,37 @@ by pressing :kbd:`t`.
 .. [#] Log message timestamps are stored in the index with a resolution of
    microseconds.
 
+Standard Input
+^^^^^^^^^^^^^^
+
+Content piped into **lnav** will be captured and displayed as it comes in.
+Each line is timestamped as it arrives and is stored as part of the capture.
+To display the timestamps, pass the :option:`-t` option when invoking lnav.
+The time elapsed between lines can also be viewed by pressing
+:kbd:`Shift` + :kbd:`T`.  For example, if you wanted a basic measurement
+of what is taking a long time in a run of :code:`make`, you can pipe the
+output into lnav and enable the elapsed time column.
+
+By default, the captured output is saved in the work directory and a command
+is printed out to reopen the content.  You can get a listing
+of all captures by running the following :ref:`management<management_cli>`
+command:
+
+.. code-block:: bash
+
+    lnav -m piper list
+
+Captures that are older than 48 hours will be deleted on the next lnav
+invocation or you can run the following command to clean them up immediately:
+
+.. code-block:: bash
+
+    lnav -m piper clean
+
+In order to limit the amount of data captured, lnav will rotate the
+underlying files as needed.  To capture more/less data, adjust the options
+detailed in the :ref:`piper configuration<pipercfg>` section.
+
 Archive Support
 ^^^^^^^^^^^^^^^
 
@@ -194,12 +225,18 @@ example, when viewing a man page, the current section is displayed in
 the breadcrumb bar and you can jump to a section with the
 :ref:`:goto<goto>` command.
 
-You will probably want to pass the :option:`-q` option to suppress the
-message showing the path to the captured input.
+When setting the :envvar:`PAGER` variable, pass the :option:`-q` option
+to modify lnav's behavior to make it more amenable for this purpose:
 
 .. code-block:: bash
 
    export PAGER="lnav -q"
+
+With this option, lnav will:
+
+* Not save the piped content after exiting.
+* Print the content to the screen if it is less than the height of the
+  terminal.
 
 Searching
 ---------

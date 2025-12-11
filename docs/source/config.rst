@@ -475,6 +475,8 @@ command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/clipboard
 
+.. _pipercfg:
+
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/piper
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/definitions/clip-commands

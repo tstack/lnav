@@ -30,10 +30,14 @@
 #ifndef piper_looper_hh
 #define piper_looper_hh
 
+#include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <future>
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "base/auto_fd.hh"
 #include "base/lnav.console.hh"

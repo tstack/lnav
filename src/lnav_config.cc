@@ -41,7 +41,6 @@
 #include <fcntl.h>
 #include <fmt/format.h>
 #include <glob.h>
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +60,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "default-config.h"
+#include "log_level.hh"
 #include "scn/scan.h"
 #include "styling.hh"
 #include "view_curses.hh"
@@ -69,8 +69,8 @@
 
 using namespace std::chrono_literals;
 
-static const int MAX_CRASH_LOG_COUNT = 16;
-static const auto STDIN_CAPTURE_RETENTION = 24h;
+static constexpr int MAX_CRASH_LOG_COUNT = 16;
+static constexpr auto STDIN_CAPTURE_RETENTION = 24h;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -150,7 +150,7 @@ check_experimental(const char* feature_name)
 void
 ensure_dotlnav()
 {
-    static const char* subdirs[] = {
+    static const char* const subdirs[] = {
         "",
         "configs",
         "configs/default",

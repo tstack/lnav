@@ -50,10 +50,12 @@
 #    define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 #endif
 #include <algorithm>
+#include <exception>
 #include <filesystem>
 #include <map>
 #include <memory>
-#include <set>
+#include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -4451,28 +4453,33 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         // When reading from stdin, tell the user where the capture
         // file is stored so they can look at it later.
-        if (stdin_url && !lnav_data.ld_flags.is_set<lnav_flags::headless>()
-            && verbosity != verbosity_t::quiet)
-        {
-            file_size_t stdin_size = 0;
-            for (const auto& ent :
-                 std::filesystem::directory_iterator(stdin_dir))
-            {
-                stdin_size += ent.file_size();
-            }
+        if (stdin_url && !lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
+            if (verbosity == verbosity_t::quiet) {
+                std::error_code ec;
 
-            lnav::console::print(
-                stderr,
-                lnav::console::user_message::info(
-                    attr_line_t()
-                        .append(lnav::roles::number(humanize::file_size(
-                            stdin_size, humanize::alignment::none)))
-                        .append(" of data from stdin was captured and "
-                                "will be saved for one day.  You can "
-                                "reopen it by running:\n")
-                        .appendf(FMT_STRING("   {} "),
-                                 lnav_data.ld_program_name)
-                        .append(lnav::roles::file(stdin_url.value()))));
+                log_debug("removing stdin dir: %s", stdin_dir.c_str());
+                std::filesystem::remove_all(stdin_dir, ec);
+            } else {
+                file_size_t stdin_size = 0;
+                for (const auto& ent :
+                     std::filesystem::directory_iterator(stdin_dir))
+                {
+                    stdin_size += ent.file_size();
+                }
+
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::info(
+                        attr_line_t()
+                            .append(lnav::roles::number(humanize::file_size(
+                                stdin_size, humanize::alignment::none)))
+                            .append(" of data from stdin was captured and "
+                                    "will be saved for one day.  You can "
+                                    "reopen it by running:\n")
+                            .appendf(FMT_STRING("   {} "),
+                                     lnav_data.ld_program_name)
+                            .append(lnav::roles::file(stdin_url.value()))));
+            }
         }
     }
 

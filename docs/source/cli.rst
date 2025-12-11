@@ -99,6 +99,10 @@ Options
 
    Recursively load files from the given base directories.
 
+.. option:: -t
+
+   For data that was piped into lnav, show the timestamp for each line.
+
 .. option:: -V
 
    Print the version of lnav.
@@ -187,7 +191,8 @@ Subcommands
 
 .. option:: piper clean
 
-   Remove all of the files that stored data that was piped into **lnav**.
+   Remove all of the files that stored data that was piped into **lnav**
+   through stdin or a FIFO.
 
 .. option:: piper list
 
