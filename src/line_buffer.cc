@@ -1493,6 +1493,7 @@ line_buffer::peek_range(file_range fr,
             buf.resize(rc);
             return Ok(std::move(buf));
         }
+#ifdef HAVE_BZLIB_H
         if (this->lb_bz_file) {
             lock_hack::guard guard;
             char scratch[32 * 1024];
@@ -1550,6 +1551,9 @@ line_buffer::peek_range(file_range fr,
             buf.resize(rc);
             return Ok(std::move(buf));
         }
+#else
+        assert(!this->lb_bz_file);
+#endif
     }
 
     auto rc = pread(this->lb_fd, buf.data(), fr.fr_size, fr.fr_offset);
