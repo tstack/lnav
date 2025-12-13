@@ -36,6 +36,8 @@
 #include "filter_sub_source.hh"
 #include "lnav.hh"
 
+using namespace lnav::roles::literals;
+
 static constexpr auto TOGGLE_MSG = "Press " ANSI_HOTKEY("TAB") " to edit "_frag;
 static constexpr auto EXIT_MSG = "Press " ANSI_HOTKEY("ESC") " to exit "_frag;
 
@@ -242,9 +244,11 @@ filter_status_source::update_filtered(text_sub_source* tss)
                 retval = true;
             }
         } else {
-            retval = sf.set_value(
-                " \u2718 Filtering disabled, re-enable with " ANSI_BOLD_START
-                ":toggle-filtering" ANSI_NORM);
+            auto al = attr_line_t(" ")
+                          .append("  ", VC_ICON.value(ui_icon_t::warning))
+                          .append(" Filtering disabled, re-enable with ")
+                          .append(":toggle-filtering"_symbol);
+            retval = sf.set_value(al);
         }
         this->bss_last_filtered_count = curr_filtered_count;
     } else {

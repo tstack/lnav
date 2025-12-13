@@ -2225,10 +2225,12 @@ com_toggle_filtering(exec_context& ec,
     std::string retval;
 
     if (!ec.ec_dry_run) {
-        auto tc = *lnav_data.ld_view_stack.top();
-        auto tss = tc->get_sub_source();
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* tss = tc->get_sub_source();
 
         tss->toggle_apply_filters();
+        lnav_data.ld_filter_status_source.update_filtered(tss);
+        lnav_data.ld_status[LNS_FILTER].set_needs_update();
     }
 
     return Ok(retval);

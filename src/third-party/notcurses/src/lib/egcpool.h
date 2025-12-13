@@ -117,13 +117,13 @@ utf8_egc_len(const char* gcluster, int* colcount){
     if(uc_is_property_variation_selector(wc)){ // ends EGC
       ret += r;
       break;
-    }else if(wc == L'\u200d' || injoin){ // ZWJ is iswcntrl, so check it first
+    }else if(wc == L'\u200d'){ // ZWJ is iswcntrl, so check it first
       injoin = true;
       cols = 0;
     }else{
       cols = uc_width(wc, "UTF-8");
+      injoin = false;
       if(cols < 0){
-        injoin = false;
         if(iswspace(wc)){ // newline or tab
           *colcount = 1;
           return ret + 1;

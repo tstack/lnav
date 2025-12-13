@@ -875,6 +875,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                 = lnav::document::discover(content)
                                       .with_text_format(lf->get_text_format())
                                       .perform();
+                            log_info("  metadata indents size: %zu",
+                                     iter->fvs_metadata.m_indents.size());
                         }
                     } else {
                         auto errmsg = read_res.unwrapErr();

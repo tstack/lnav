@@ -79,6 +79,17 @@ status_field::set_value(const char* fmt, ...)
     return retval;
 }
 
+bool
+status_field::set_value(const attr_line_t& value)
+{
+    if (value.al_string == this->sf_value.al_string) {
+        return false;
+    }
+
+    this->sf_value = value;
+    return true;
+}
+
 void
 status_field::do_cylon()
 {

@@ -7890,7 +7890,7 @@
                 },
                 "x06": {
                     "id": "",
-                    "command": ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)",
+                    "command": ":toggle-filtering",
                     "alt-msg": ""
                 },
                 "x0c": {

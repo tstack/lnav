@@ -187,6 +187,8 @@ Breaking changes:
 
 Interface changes:
 * Mouse mode is now enabled by default.
+* The `CTRL+f` hotkey has been remapped to the
+  `:toggle-filtering` command.
 * Aborting the prompt now requires two successive
   presses of `Esc` (a message will pop up on the right
   that mentions this).  Since `Esc` is also used to

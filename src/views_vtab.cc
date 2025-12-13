@@ -331,8 +331,7 @@ CREATE TABLE lnav_db.lnav_views (
         switch (col) {
             case 0: {
                 const auto& vs = lnav_view_strings[view_index];
-                sqlite3_result_text(
-                    ctx, vs.data(), vs.length(), SQLITE_STATIC);
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
                 break;
             }
             case 1:
@@ -767,6 +766,8 @@ CREATE TABLE lnav_db.lnav_views (
         {
             tss->tss_apply_filters = do_filtering;
             tss->text_filters_changed();
+            lnav_data.ld_filter_status_source.update_filtered(tss);
+            lnav_data.ld_status[LNS_FILTER].set_needs_update();
         }
 
         return SQLITE_OK;
@@ -1373,11 +1374,11 @@ CREATE TABLE lnav_db.lnav_view_files (
 };
 
 auto a = injector::bind_multiple<vtab_module_base>()
-                    .add<vtab_module<lnav_views>>()
-                    .add<vtab_module<lnav_view_stack>>()
-                    .add<vtab_module<lnav_view_filters>>()
-                    .add<vtab_module<tvt_no_update<lnav_view_filter_stats>>>()
-                    .add<vtab_module<lnav_view_files>>();
+             .add<vtab_module<lnav_views>>()
+             .add<vtab_module<lnav_view_stack>>()
+             .add<vtab_module<lnav_view_filters>>()
+             .add<vtab_module<tvt_no_update<lnav_view_filter_stats>>>()
+             .add<vtab_module<lnav_view_files>>();
 
 }  // namespace
 

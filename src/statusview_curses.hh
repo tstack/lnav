@@ -68,6 +68,8 @@ public:
      */
     bool set_value(const char* fmt, ...);
 
+    bool set_value(const attr_line_t& value);
+
     void set_stitch_value(role_t left, role_t right);
 
     void set_left_pad(size_t val) { this->sf_left_pad = val; }

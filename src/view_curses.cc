@@ -260,7 +260,7 @@ view_curses::mvwattrline(ncplane* window,
                          int y,
                          const int x,
                          attr_line_t& al,
-                         const struct line_range& lr_chars,
+                         const line_range& lr_chars,
                          role_t base_role)
 {
     auto& sa = al.get_attrs();
@@ -286,9 +286,12 @@ view_curses::mvwattrline(ncplane* window,
         }
     }
 
+    auto last_ch_col_count = 0;
+    std::optional<int> join_start_index;
     for (size_t lpc = 0; lpc < line.size();) {
         int exp_start_index = expanded_line.size();
         auto ch = static_cast<unsigned char>(line[lpc]);
+        auto curr_ch_col_count = 0;
 
         if (char_index == lr_chars.lr_start) {
             lr_bytes.lr_start = exp_start_index;
@@ -299,8 +302,10 @@ view_curses::mvwattrline(ncplane* window,
 
         switch (ch) {
             case '\t': {
+                auto tab_size = 0;
                 do {
                     expanded_line.push_back(' ');
+                    tab_size += 1;
                     char_index += 1;
                     if (char_index == lr_chars.lr_start) {
                         lr_bytes.lr_start = expanded_line.size();
@@ -309,7 +314,8 @@ view_curses::mvwattrline(ncplane* window,
                         lr_bytes.lr_end = expanded_line.size();
                         retval.mr_chars_out = char_index;
                     }
-                } while (expanded_line.size() % 8);
+                } while (expanded_line.size() % 8 > 0);
+                curr_ch_col_count = tab_size;
                 utf_adjustments.emplace_back(
                     lpc, expanded_line.size() - exp_start_index - 1);
                 lpc += 1;
@@ -319,6 +325,7 @@ view_curses::mvwattrline(ncplane* window,
             case '\x1b':
                 expanded_line.append("\u238b");
                 utf_adjustments.emplace_back(lpc, -1);
+                curr_ch_col_count = 1;
                 char_index += 1;
                 lpc += 1;
                 break;
@@ -326,6 +333,7 @@ view_curses::mvwattrline(ncplane* window,
             case '\b':
                 expanded_line.append("\u232b");
                 utf_adjustments.emplace_back(lpc, -1);
+                curr_ch_col_count = 1;
                 char_index += 1;
                 lpc += 1;
                 break;
@@ -333,6 +341,7 @@ view_curses::mvwattrline(ncplane* window,
             case '\x07':
                 expanded_line.append("\U0001F514");
                 utf_adjustments.emplace_back(lpc, -1);
+                curr_ch_col_count = 1;
                 char_index += 1;
                 lpc += 1;
                 break;
@@ -340,6 +349,7 @@ view_curses::mvwattrline(ncplane* window,
             case '\r':
             case '\n':
                 expanded_line.push_back(' ');
+                curr_ch_col_count = 1;
                 char_index += 1;
                 lpc += 1;
                 break;
@@ -349,6 +359,7 @@ view_curses::mvwattrline(ncplane* window,
                     expanded_line.push_back(0xe2);
                     expanded_line.push_back(0x90);
                     expanded_line.push_back(0x80 + ch);
+                    curr_ch_col_count = 1;
                     char_index += 1;
                     lpc += 1;
                     break;
@@ -368,21 +379,26 @@ view_curses::mvwattrline(ncplane* window,
                         "error:%d:%zu:%s", y, x + lpc, read_res.unwrapErr());
                     expanded_line.resize(exp_read_start);
                     expanded_line.push_back('?');
+                    curr_ch_col_count = 1;
                     char_index += 1;
                     lpc = lpc_start + 1;
                 } else {
                     auto wch = read_res.unwrap();
+                    if (wch == L'\u200d') {
+                        join_start_index = char_index - last_ch_col_count;
+                        continue;
+                    }
                     auto wcw_res = uc_width(wch, "UTF-8");
                     if (wcw_res < 0) {
-                        log_trace(
-                            "uc_width(%x) does not recognize width character",
-                            wch);
+                        log_trace("uc_width(%x) does not recognize character",
+                                  wch);
                         wcw_res = 1;
                     }
                     if (lpc > (lpc_start + 1)) {
                         utf_adjustments.emplace_back(
                             lpc_start, wcw_res - (lpc - lpc_start));
                     }
+                    curr_ch_col_count = wcw_res;
                     char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
                         lr_bytes.lr_end = exp_start_index;
@@ -392,6 +408,15 @@ view_curses::mvwattrline(ncplane* window,
                 break;
             }
         }
+        if (join_start_index) {
+            curr_ch_col_count = std::max(last_ch_col_count, curr_ch_col_count);
+            char_index = join_start_index.value() + curr_ch_col_count;
+            if (char_index > lr_chars.lr_end) {
+                retval.mr_chars_out = char_index;
+            }
+            join_start_index = std::nullopt;
+        }
+        last_ch_col_count = curr_ch_col_count;
     }
     if (lr_bytes.lr_start == -1) {
         lr_bytes.lr_start = expanded_line.size();
@@ -947,7 +972,8 @@ view_colors::init_roles(const lnav_theme& lt,
     std::string err;
 
     size_t icon_index = 0;
-    for (const auto& ic : {
+    for (const auto& ic :
+         {
              lt.lt_icon_hidden,
              lt.lt_icon_ok,
              lt.lt_icon_info,
@@ -1167,8 +1193,7 @@ view_colors::init_roles(const lnav_theme& lt,
                 auto new_cursor_bg = this->match_color(
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
                 this->get_role_attrs(role_t::VCR_CURSOR_LINE)
-                    .ra_normal.ta_bg_color
-                    = new_cursor_bg;
+                    .ra_normal.ta_bg_color = new_cursor_bg;
             }
             if (lt.lt_style_popup.pp_value.sc_background_color.empty()) {
                 auto adjusted_cursor = bg_as_lab;
@@ -1192,8 +1217,7 @@ view_colors::init_roles(const lnav_theme& lt,
                 auto new_cursor_bg = this->match_color(
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
                 this->get_role_attrs(role_t::VCR_INLINE_CODE)
-                    .ra_normal.ta_bg_color
-                    = new_cursor_bg;
+                    .ra_normal.ta_bg_color = new_cursor_bg;
             }
             if (lt.lt_style_quoted_code.pp_value.sc_background_color.empty()) {
                 auto adjusted_cursor = bg_as_lab;
@@ -1205,11 +1229,9 @@ view_colors::init_roles(const lnav_theme& lt,
                 auto new_cursor_bg = this->match_color(
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
                 this->get_role_attrs(role_t::VCR_QUOTED_CODE)
-                    .ra_normal.ta_bg_color
-                    = new_cursor_bg;
+                    .ra_normal.ta_bg_color = new_cursor_bg;
                 this->get_role_attrs(role_t::VCR_CODE_BORDER)
-                    .ra_normal.ta_bg_color
-                    = new_cursor_bg;
+                    .ra_normal.ta_bg_color = new_cursor_bg;
             }
         }
     }

@@ -2114,7 +2114,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (lnav_data.ld_user_message_view.do_update()) {
             updated_views.emplace_back(&lnav_data.ld_user_message_view);
         }
-        if (ui_now >= next_status_update_time) {
+        if (ui_now >= next_status_update_time
+            || lnav_data.ld_status[LNS_FILTER].get_needs_update())
+        {
             if (exec_phase.scanning()) {
                 lnav_data.ld_files_view.set_needs_update();
             }
