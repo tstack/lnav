@@ -67,11 +67,11 @@ struct utf8 final {
             retval = 3;
         } else if (ch0 < 0xF8) {  // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
             retval = 4;
-        } else if (ch0 < 0xFC)
-        {  // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xFC) {  // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+                                  // 10xx_xxxx
             retval = 5;
-        } else if (ch0 < 0xFE)
-        {  // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xFE) {  // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx
+                                  // 10xx_xxxx 10xx_xxxx
             retval = 6;
         } else {
             return Err("The utf8 first char in sequence is incorrect");
@@ -92,6 +92,9 @@ struct utf8 final {
             return Err("The utf8 first char in sequence is incorrect");
         if (ch0 < 0xE0)  // 110x_xxxx 10xx_xxxx
         {
+            if (ch0 < 0xC2) {
+                return Err("The utf8 first char in sequence is incorrect");
+            }
             char_type const ch1 = read_fn();
             if (ch1 >> 6 != 2)
                 goto _err;
@@ -105,10 +108,16 @@ struct utf8 final {
             char_type const ch2 = read_fn();
             if (ch2 >> 6 != 2)
                 goto _err;
+            if ((ch0 == 0xE0 && ch1 < 0xA0) || (ch0 == 0xED && ch1 >= 0xA0)) {
+                return Err("Invalid UTF-8 sequence");
+            }
             return Ok((((uint32_t) ch0) << 12) + (ch1 << 6) + ch2 - 0xE2080);
         }
         if (ch0 < 0xF8)  // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
         {
+            if (ch0 > 0xF4) {
+                return Err("Invalid UTF-8 sequence (code point out of range)");
+            }
             char_type const ch1 = read_fn();
             if (ch1 >> 6 != 2)
                 goto _err;
@@ -118,6 +127,9 @@ struct utf8 final {
             char_type const ch3 = read_fn();
             if (ch3 >> 6 != 2)
                 goto _err;
+            if ((ch0 == 0xF0 && ch1 < 0x90) || (ch0 == 0xF4 && ch1 > 0x8F)) {
+                return Err("Invalid UTF-8 sequence (code point out of range)");
+            }
             return Ok((((uint32_t) ch0) << 18) + (ch1 << 12) + (ch2 << 6) + ch3
                       - 0x3C82080);
         }

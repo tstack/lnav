@@ -56,6 +56,7 @@
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "logfile_fwd.hh"
+#include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
 #include "unique_path.hh"
@@ -77,8 +78,7 @@ public:
      */
     virtual lnav::progress_result_t logfile_indexing(const logfile* lf,
                                                      file_off_t off,
-                                                     file_ssize_t total)
-        = 0;
+                                                     file_ssize_t total) = 0;
 };
 
 struct logfile_activity {
@@ -198,9 +198,15 @@ public:
 
     intern_string_t get_format_name() const;
 
-    text_format_t get_text_format() const { return this->lf_text_format; }
+    std::optional<text_format_t> get_text_format() const
+    {
+        return this->lf_text_format;
+    }
 
-    void set_text_format(text_format_t tf) { this->lf_text_format = tf; }
+    void set_text_format(std::optional<text_format_t> tf)
+    {
+        this->lf_text_format = tf;
+    }
 
     std::chrono::microseconds get_modified_time() const
     {
@@ -572,7 +578,7 @@ private:
     logline_observer* lf_logline_observer{nullptr};
     logfile_observer* lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};
-    text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
+    std::optional<text_format_t> lf_text_format;
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     std::vector<logline_value_stats> lf_value_stats;
@@ -643,8 +649,7 @@ public:
     virtual bool logline_new_lines(const logfile& lf,
                                    logfile::const_iterator ll_begin,
                                    logfile::const_iterator ll_end,
-                                   const shared_buffer_ref& sbr)
-        = 0;
+                                   const shared_buffer_ref& sbr) = 0;
 
     virtual void logline_eof(const logfile& lf) = 0;
 };

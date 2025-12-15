@@ -30,13 +30,17 @@
 #ifndef LNAV_PLAIN_TEXT_SOURCE_HH
 #define LNAV_PLAIN_TEXT_SOURCE_HH
 
+#include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "base/attr_line.hh"
 #include "base/file_range.hh"
+#include "base/intern_string.hh"
 #include "document.sections.hh"
 #include "textview_curses.hh"
+#include "vis_line.hh"
 
 class plain_text_source
     : public text_sub_source
@@ -74,7 +78,7 @@ public:
     }
 
     plain_text_source& replace_with_mutable(attr_line_t& text_lines,
-                                            text_format_t tf);
+                                            std::optional<text_format_t> tf);
 
     plain_text_source& replace_with(const attr_line_t& text_lines);
 
@@ -82,7 +86,7 @@ public:
 
     plain_text_source& replace_with(const std::vector<attr_line_t>& text_lines);
 
-    plain_text_source& replace_with(const char *str)
+    plain_text_source& replace_with(const char* str)
     {
         return this->replace_with(attr_line_t::from_ansi_str(str));
     }
@@ -110,11 +114,11 @@ public:
                               int row,
                               line_flags_t flags) override;
 
-    text_format_t get_text_format() const override;
+    std::optional<text_format_t> get_text_format() const override;
 
     const std::vector<text_line>& get_lines() const { return this->tds_lines; }
 
-    plain_text_source& set_text_format(text_format_t format)
+    plain_text_source& set_text_format(std::optional<text_format_t> format)
     {
         this->tds_text_format = format;
         return *this;
@@ -140,7 +144,7 @@ protected:
     std::optional<vis_line_t> line_for_offset(file_off_t off) const;
 
     std::vector<text_line> tds_lines;
-    text_format_t tds_text_format{text_format_t::TF_UNKNOWN};
+    std::optional<text_format_t> tds_text_format;
     size_t tds_longest_line{0};
     bool tds_reverse_selection{false};
     size_t tds_line_indent_size{0};

@@ -175,7 +175,7 @@ parse_file(const std::filesystem::path& src, const string_fragment& sf)
     thread_local auto md = FRONTMATTER_RE.create_match_data();
 
     auto frontmatter_sf = string_fragment{};
-    auto frontmatter_format = text_format_t::TF_UNKNOWN;
+    auto frontmatter_format = text_format_t::TF_PLAINTEXT;
     auto content_sf = sf;
 
     auto cap_res = FRONTMATTER_RE.capture_from(content_sf)

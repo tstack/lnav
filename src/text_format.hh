@@ -33,6 +33,7 @@
 #define text_format_hh
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
 #include <sys/types.h>
@@ -51,7 +52,7 @@ struct fmt::formatter<text_format_t> : formatter<string_view> {
     {
         string_view name = "unknown";
         if (lnav::enums::to_underlying(tf)
-            <= lnav::enums::to_underlying(text_format_t::TF_UNKNOWN))
+            <= lnav::enums::to_underlying(text_format_t::TF_PLAINTEXT))
         {
             name = TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(tf)]
                        .to_string_view();
@@ -65,9 +66,9 @@ struct fmt::formatter<text_format_t> : formatter<string_view> {
  *
  * @return The detected format.
  */
-text_format_t detect_text_format(string_fragment sf,
-                                 std::optional<std::filesystem::path> path
-                                 = std::nullopt);
+std::optional<text_format_t> detect_text_format(
+    string_fragment sf,
+    std::optional<std::filesystem::path> path = std::nullopt);
 
 struct text_format_meta_t {
     std::string tfm_filename;

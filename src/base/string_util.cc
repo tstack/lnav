@@ -39,6 +39,7 @@
 #include "is_utf8.hh"
 #include "lnav_log.hh"
 #include "scn/scan.h"
+#include "unistr.h"
 
 using namespace std::string_view_literals;
 
@@ -47,15 +48,16 @@ scrub_to_utf8(char* buffer, size_t length)
 {
     size_t index = 0;
     while (index < length) {
-        auto start_index = index;
-        auto ch_res = ww898::utf::utf8::read([buffer, &index, length]() {
-            if (index < length) {
-                return buffer[index++];
-            }
-            return '\x00';
-        });
-        if (ch_res.isErr()) {
-            buffer[start_index] = '?';
+        if (buffer[index] > 0) {
+            index += 1;
+            continue;
+        }
+
+        auto rc = u8_mblen((uint8_t*) &buffer[index], length - index);
+        if (rc <= 0) {
+            buffer[index] = '?';
+        } else {
+            index += rc;
         }
     }
 }
@@ -63,7 +65,7 @@ scrub_to_utf8(char* buffer, size_t length)
 void
 quote_content(auto_buffer& buf, const string_fragment& sf, char quote_char)
 {
-    for (char ch : sf) {
+    for (const char ch : sf) {
         if (ch == quote_char) {
             buf.push_back('\\').push_back(ch);
             continue;

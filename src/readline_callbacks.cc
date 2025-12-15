@@ -1654,7 +1654,7 @@ rl_callback(textinput_curses& rc)
                 const auto path_and_args = rc.get_content();
                 auto tmp_pair = open_temp_res.unwrap();
                 auto fd_copy = tmp_pair.second.dup();
-                auto tf = text_format_t::TF_UNKNOWN;
+                auto tf = text_format_t::TF_PLAINTEXT;
                 auto& dls = lnav_data.ld_db_row_source;
                 auto before_dls_gen = dls.dls_generation;
 

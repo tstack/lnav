@@ -609,12 +609,17 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             } else {
                 details.emplace_back(attr_line_t().append("  Piped"));
             }
-            details.emplace_back(
-                attr_line_t()
-                    .append("MIME Type"_h3)
-                    .right_justify(NAME_WIDTH)
-                    .append(": ")
-                    .append(fmt::to_string(lf->get_text_format())));
+            {
+                auto tf_opt = lf->get_text_format();
+                if (tf_opt) {
+                    details.emplace_back(
+                        attr_line_t()
+                            .append("MIME Type"_h3)
+                            .right_justify(NAME_WIDTH)
+                            .append(": ")
+                            .append(fmt::to_string(tf_opt.value())));
+                }
+            }
             auto ltime = std::chrono::seconds{
                 convert_log_time_to_local(lf->get_stat().st_mtime)};
             auto ltime_str = lnav::to_rfc3339_string(ltime, 'T');

@@ -161,8 +161,7 @@ logfile::open(std::filesystem::path filename,
     lf->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     lf->lf_indexing = lf->lf_options.loo_is_visible;
-    lf->lf_text_format
-        = lf->lf_options.loo_text_format.value_or(text_format_t::TF_UNKNOWN);
+    lf->lf_text_format = lf->lf_options.loo_text_format;
     lf->lf_format_match_messages = loo.loo_match_details;
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
@@ -1599,9 +1598,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
             size_t old_size = this->lf_index.size();
 
-            if (old_size == 0
-                && this->lf_text_format == text_format_t::TF_UNKNOWN)
-            {
+            if (old_size == 0 && !this->lf_text_format) {
                 auto fr = this->lf_line_buffer.get_available();
                 auto avail_data = this->lf_line_buffer.read_range(fr);
 
@@ -1609,7 +1606,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     = avail_data
                           .map([path = this->get_path(),
                                 this](const shared_buffer_ref& avail_sbr)
-                                   -> text_format_t {
+                                   -> std::optional<text_format_t> {
                               constexpr auto DETECT_LIMIT = 16 * 1024;
                               auto sbr_str = to_string(avail_sbr);
                               if (sbr_str.size() > DETECT_LIMIT) {
@@ -1630,28 +1627,30 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                   }
                               }
                               auto utf8_res = is_utf8(sbr_str);
-                              if (!utf8_res.is_valid()) {
-                                  return text_format_t::TF_BINARY;
-                              }
-                              if (utf8_res.usr_has_ansi) {
+                              if (utf8_res.is_valid()
+                                  && utf8_res.usr_has_ansi) {
                                   auto new_size = erase_ansi_escapes(sbr_str);
                                   sbr_str.resize(new_size);
                               }
                               return detect_text_format(sbr_str, path);
                           })
-                          .unwrapOr(text_format_t::TF_UNKNOWN);
-                log_debug("setting text format to %s",
-                          fmt::to_string(this->lf_text_format).c_str());
-                switch (this->lf_text_format) {
-                    case text_format_t::TF_DIFF:
-                    case text_format_t::TF_MAN:
-                    case text_format_t::TF_MARKDOWN:
-                        log_debug(
-                            "  file is text, disabling log format detection");
-                        this->lf_options.loo_detect_format = false;
-                        break;
-                    default:
-                        break;
+                          .unwrapOr(std::nullopt);
+                if (this->lf_text_format) {
+                    log_debug(
+                        "setting text format to %s",
+                        fmt::to_string(this->lf_text_format.value()).c_str());
+                    switch (this->lf_text_format.value()) {
+                        case text_format_t::TF_DIFF:
+                        case text_format_t::TF_MAN:
+                        case text_format_t::TF_MARKDOWN:
+                            log_debug(
+                                "  file is text, disabling log format "
+                                "detection");
+                            this->lf_options.loo_detect_format = false;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
 

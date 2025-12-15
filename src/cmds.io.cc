@@ -1551,9 +1551,6 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
 
                 auto tf = detect_text_format(al.get_string(), fn_str);
-                log_debug(":open preview text format: %s",
-                          fmt::to_string(tf).c_str());
-
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0].replace_with(al).set_text_format(

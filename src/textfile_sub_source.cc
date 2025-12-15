@@ -70,7 +70,7 @@ file_needs_reformatting(const std::shared_ptr<logfile>& lf)
         return false;
     }
 
-    switch (lf->get_text_format()) {
+    switch (lf->get_text_format().value_or(text_format_t::TF_BINARY)) {
         case text_format_t::TF_BINARY:
         case text_format_t::TF_DIFF:
             return false;
@@ -527,11 +527,11 @@ textfile_sub_source::get_filtered_count_for(size_t filter_index) const
     return lfo->lfo_filter_state.tfs_filter_hits[filter_index];
 }
 
-text_format_t
+std::optional<text_format_t>
 textfile_sub_source::get_text_format() const
 {
     if (this->tss_files.empty()) {
-        return text_format_t::TF_UNKNOWN;
+        return text_format_t::TF_PLAINTEXT;
     }
 
     return this->tss_files.front().fvs_file->get_text_format();
@@ -842,10 +842,13 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
 
                     if (read_res.isOk()) {
                         auto read_file_res = read_res.unwrap();
+                        auto tf_opt = lf->get_text_format();
 
-                        if (!read_file_res.rfr_range.fr_metadata.m_valid_utf) {
+                        if (!read_file_res.rfr_range.fr_metadata.m_valid_utf
+                            || !tf_opt)
+                        {
                             log_error(
-                                "%s: file has invalid UTF, skipping meta "
+                                "%s: file has no text format, skipping meta "
                                 "discovery",
                                 lf->get_path_for_key().c_str());
                             iter->fvs_mtime = st.st_mtime;
@@ -861,7 +864,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                               &content.get_attrs());
 
                             auto text_meta = extract_text_meta(
-                                content.get_string(), lf->get_text_format());
+                                content.get_string(), tf_opt.value());
                             if (text_meta) {
                                 lf->set_filename(text_meta->tfm_filename);
                                 lf->set_include_in_session(true);
@@ -873,7 +876,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             iter->fvs_file_indexed_size = lf->get_index_size();
                             iter->fvs_metadata
                                 = lnav::document::discover(content)
-                                      .with_text_format(lf->get_text_format())
+                                      .with_text_format(tf_opt.value())
                                       .perform();
                             log_info("  metadata indents size: %zu",
                                      iter->fvs_metadata.m_indents.size());
@@ -959,7 +962,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             lnav_db,
                             lnav::events::file::format_detected{
                                 lf->get_filename(),
-                                fmt::to_string(lf->get_text_format()),
+                                fmt::to_string(lf->get_text_format().value_or(
+                                    text_format_t::TF_BINARY)),
                             });
                     } else {
                         auto view_content
@@ -1595,8 +1599,9 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
             if (!this->tss_apply_default_init_location) {
                 return;
             }
-            switch (lf->get_text_format()) {
-                case text_format_t::TF_UNKNOWN:
+            auto tf = lf->get_text_format().value_or(text_format_t::TF_BINARY);
+            switch (tf) {
+                case text_format_t::TF_PLAINTEXT:
                 case text_format_t::TF_LOG: {
                     log_info("file open request to tail");
                     auto inner_height = lf->size();
@@ -1607,7 +1612,7 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
                 }
                 default:
                     log_info("file open is %s, moving to top",
-                             fmt::to_string(lf->get_text_format()).c_str());
+                             fmt::to_string(tf).c_str());
                     new_sel_opt = 0_vl;
                     break;
             }

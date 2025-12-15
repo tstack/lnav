@@ -2741,7 +2741,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     lf->read_full_message(msg_start_iter, sbr);
     attr_line_t al(to_string(sbr));
     if (!sbr.get_metadata().m_valid_utf) {
-        scrub_to_utf8(&al.al_string[0], al.al_string.length());
+        scrub_to_utf8(al.al_string.data(), al.al_string.length());
     }
     if (sbr.get_metadata().m_has_ansi) {
         // bleh

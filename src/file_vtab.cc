@@ -96,7 +96,9 @@ CREATE TABLE lnav_db.lnav_file (
                 to_sqlite(ctx, name);
                 break;
             case 3:
-                to_sqlite(ctx, fmt::to_string(lf->get_text_format()));
+                to_sqlite(ctx,
+                          fmt::to_string(lf->get_text_format().value_or(
+                              text_format_t::TF_BINARY)));
                 break;
             case 4:
                 to_sqlite(

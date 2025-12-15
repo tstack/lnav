@@ -56,10 +56,10 @@ enum class text_format_t : uint8_t {
     TF_RESTRUCTURED_TEXT,
     TF_INI,
     TF_CSV,
-    TF_UNKNOWN,
+    TF_PLAINTEXT,
 };
 
 constexpr auto text_format_count
-    = lnav::enums::to_underlying(text_format_t::TF_UNKNOWN) + 1;
+    = lnav::enums::to_underlying(text_format_t::TF_PLAINTEXT) + 1;
 
 #endif

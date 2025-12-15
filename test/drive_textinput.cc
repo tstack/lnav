@@ -101,8 +101,8 @@ static auto bound_sqlite_db
 
 static const std::map<std::string, std::pair<text_format_t, const char*>>
     CONTENT_MAP = {
-        {"empty", {text_format_t::TF_UNKNOWN, EMPTY}},
-        {"lorem", {text_format_t::TF_UNKNOWN, LOREM}},
+        {"empty", {text_format_t::TF_PLAINTEXT, EMPTY}},
+        {"lorem", {text_format_t::TF_PLAINTEXT, LOREM}},
         {"sql1", {text_format_t::TF_SQL, SQL1_CONTENT}},
         {"md1", {text_format_t::TF_MARKDOWN, MD1_CONTENT}},
 };
@@ -328,8 +328,10 @@ main(int argc, char** argv)
             tc.tc_text_format = iter->second.first;
             tc.set_content(iter->second.second);
         } else {
-            tc.tc_text_format = detect_text_format(
-                file_content, std::filesystem::path(argv[0]));
+            tc.tc_text_format
+                = detect_text_format(file_content,
+                                     std::filesystem::path(argv[0]))
+                      .value_or(text_format_t::TF_PLAINTEXT);
             tc.set_content(file_content);
         }
         tc.tc_on_abort = [&looping](auto& tc) { looping = false; };
@@ -339,7 +341,7 @@ main(int argc, char** argv)
                 case text_format_t::TF_MAN:
                 case text_format_t::TF_BINARY:
                 case text_format_t::TF_MARKDOWN:
-                case text_format_t::TF_UNKNOWN:
+                case text_format_t::TF_PLAINTEXT:
                     return;
                 default:
                     break;

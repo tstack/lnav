@@ -124,7 +124,7 @@ public:
 
     int get_filtered_count_for(size_t filter_index) const override;
 
-    text_format_t get_text_format() const override;
+    std::optional<text_format_t> get_text_format() const override;
 
     std::optional<location_history*> get_location_history() override
     {

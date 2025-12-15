@@ -593,7 +593,8 @@ textview_curses::handle_mouse(mouse_event& me)
                             auto ds = data_scanner(line_sf);
                             auto tf = this->tc_sub_source->get_text_format();
                             while (true) {
-                                auto tok_res = ds.tokenize2(tf);
+                                auto tok_res = ds.tokenize2(
+                                    tf.value_or(text_format_t::TF_PLAINTEXT));
                                 if (!tok_res) {
                                     break;
                                 }
@@ -614,8 +615,10 @@ textview_curses::handle_mouse(mouse_event& me)
                                 if (tok_sf.contains(cursor_sf)
                                     && tok.tr_token != data_token_t::DT_WHITE)
                                 {
-                                    auto group_tok
-                                        = ds.find_matching_bracket(tf, tok);
+                                    auto group_tok = ds.find_matching_bracket(
+                                        tf.value_or(
+                                            text_format_t::TF_PLAINTEXT),
+                                        tok);
                                     if (group_tok) {
                                         tok_sf = group_tok.value()
                                                      .to_string_fragment();
@@ -870,7 +873,9 @@ textview_curses::apply_highlights(attr_line_t& al,
     }
 
     auto source_format = this->tc_sub_source->get_text_format();
-    if (source_format == text_format_t::TF_BINARY) {
+    if (source_format.value_or(text_format_t::TF_BINARY)
+        == text_format_t::TF_BINARY)
+    {
         return;
     }
     for (const auto& tc_highlight : this->tc_highlights) {
@@ -878,7 +883,7 @@ textview_curses::apply_highlights(attr_line_t& al,
             = tc_highlight.first.first == highlight_source_t::INTERNAL
             || tc_highlight.first.first == highlight_source_t::THEME;
 
-        if (!tc_highlight.second.applies_to_format(source_format)) {
+        if (!tc_highlight.second.applies_to_format(source_format.value())) {
             continue;
         }
 
@@ -1418,8 +1423,7 @@ filter_stack::get_filter(const std::string& id)
     auto iter = this->fs_filters.begin();
     std::shared_ptr<text_filter> retval;
 
-    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {
-    }
+    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {}
     if (iter != this->fs_filters.end()) {
         retval = *iter;
     }
@@ -1432,8 +1436,7 @@ filter_stack::delete_filter(const std::string& id)
 {
     auto iter = this->fs_filters.begin();
 
-    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {
-    }
+    for (; iter != this->fs_filters.end() && (*iter)->get_id() != id; iter++) {}
     if (iter != this->fs_filters.end()) {
         this->fs_filters.erase(iter);
         this->fs_generation += 1;

@@ -121,7 +121,7 @@ struct exec_context {
 
     text_format_t get_output_format() const
     {
-        auto retval = text_format_t::TF_UNKNOWN;
+        auto retval = text_format_t::TF_PLAINTEXT;
 
         if (!this->ec_output_stack.empty()) {
             retval = this->ec_output_stack.back().od_format;
@@ -133,7 +133,7 @@ struct exec_context {
     {
         if (!this->ec_output_stack.empty()
             && this->ec_output_stack.back().od_format
-                == text_format_t::TF_UNKNOWN)
+                == text_format_t::TF_PLAINTEXT)
         {
             this->ec_output_stack.back().od_format = tf;
         }
@@ -212,7 +212,7 @@ struct exec_context {
                               std::string name = "default",
                               const std::optional<output_t>& file
                               = std::nullopt,
-                              text_format_t tf = text_format_t::TF_UNKNOWN);
+                              text_format_t tf = text_format_t::TF_PLAINTEXT);
 
         ~output_guard();
 
@@ -370,14 +370,14 @@ struct exec_context {
     struct output_desc {
         output_desc(std::string name,
                     std::optional<output_t> out,
-                    text_format_t tf = text_format_t::TF_UNKNOWN)
+                    text_format_t tf = text_format_t::TF_PLAINTEXT)
             : od_name(std::move(name)), od_output(std::move(out)), od_format(tf)
         {
         }
 
         std::string od_name;
         std::optional<output_t> od_output;
-        text_format_t od_format{text_format_t::TF_UNKNOWN};
+        text_format_t od_format{text_format_t::TF_PLAINTEXT};
     };
 
     std::vector<output_desc> ec_output_stack;

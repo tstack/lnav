@@ -452,7 +452,7 @@ filter_sub_source::rl_history(textinput_curses& tc)
             tc.open_popup_for_history(poss);
             break;
         }
-        case text_format_t::TF_UNKNOWN:
+        case text_format_t::TF_PLAINTEXT:
         case text_format_t::TF_SQL: {
             break;
         }
@@ -790,7 +790,7 @@ filter_sub_source::time_filter_row::prime_text_input(textview_curses* top_view,
                                                      textinput_curses& ti,
                                                      filter_sub_source& parent)
 {
-    ti.tc_text_format = text_format_t::TF_UNKNOWN;
+    ti.tc_text_format = text_format_t::TF_PLAINTEXT;
     ti.set_content(lnav::to_rfc3339_string(this->tfr_time, 'T'));
     return true;
 }

@@ -99,12 +99,15 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
 
 plain_text_source&
 plain_text_source::replace_with_mutable(attr_line_t& text_lines,
-                                        text_format_t tf)
+                                        std::optional<text_format_t> tf)
 {
     this->tds_text_format = tf;
     this->tds_lines.clear();
-    this->tds_doc_sections
-        = lnav::document::discover(text_lines).with_text_format(tf).perform();
+    if (tf) {
+        this->tds_doc_sections = lnav::document::discover(text_lines)
+                                     .with_text_format(tf.value())
+                                     .perform();
+    }
     file_off_t off = 0;
     auto lines = text_lines.split_lines();
     while (!lines.empty() && lines.back().empty()) {
@@ -167,7 +170,7 @@ plain_text_source::clear()
 {
     this->tds_lines.clear();
     this->tds_longest_line = 0;
-    this->tds_text_format = text_format_t::TF_UNKNOWN;
+    this->tds_text_format = text_format_t::TF_PLAINTEXT;
     if (this->tss_view != nullptr) {
         this->tss_view->set_needs_update();
     }
@@ -248,7 +251,7 @@ plain_text_source::text_size_for_line(textview_curses& tc,
     return this->tds_lines[row].tl_value.length();
 }
 
-text_format_t
+std::optional<text_format_t>
 plain_text_source::get_text_format() const
 {
     return this->tds_text_format;

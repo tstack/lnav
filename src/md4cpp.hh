@@ -159,7 +159,7 @@ text_auto_buffer escape_html(string_fragment content);
 
 struct file {
     string_fragment f_frontmatter;
-    text_format_t f_frontmatter_format{text_format_t::TF_UNKNOWN};
+    text_format_t f_frontmatter_format{text_format_t::TF_PLAINTEXT};
     string_fragment f_body;
 };
 

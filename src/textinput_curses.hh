@@ -475,7 +475,7 @@ public:
     std::optional<bool> tc_search_found;
     input_point tc_search_start_point;
 
-    text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
+    text_format_t tc_text_format{text_format_t::TF_PLAINTEXT};
     std::vector<attr_line_t> tc_lines;
     std::map<input_point, lnav::console::user_message> tc_marks;
     lnav::document::metadata tc_doc_meta;

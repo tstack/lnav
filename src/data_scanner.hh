@@ -213,7 +213,7 @@ public:
     };
 
     std::optional<tokenize_result> tokenize2(text_format_t tf
-                                             = text_format_t::TF_UNKNOWN);
+                                             = text_format_t::TF_PLAINTEXT);
 
     std::optional<tokenize_result> find_matching_bracket(text_format_t tf,
                                                          tokenize_result tr);
@@ -236,7 +236,7 @@ private:
     bool is_credit_card(string_fragment frag) const;
 
     std::optional<tokenize_result> tokenize_int(text_format_t tf
-                                                = text_format_t::TF_UNKNOWN);
+                                                = text_format_t::TF_PLAINTEXT);
 
     std::string ds_line;
     shared_buffer_ref ds_sbr;

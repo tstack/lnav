@@ -58,7 +58,8 @@ main(int argc, char* argv[])
             auto lr = line_range{0, static_cast<int>(content.length())};
             auto meta = lnav::document::discover(content)
                             .over_range(lr)
-                            .with_text_format(tf)
+                            .with_text_format(
+                                tf.value_or(text_format_t::TF_PLAINTEXT))
                             .perform();
 
             auto remaining = content_sf;

@@ -105,54 +105,60 @@ for_href(const std::string& href)
                     == CURLUE_OK)
                 {
                     auto path = std::filesystem::path{path_part.in()};
+                    auto tf_opt = detect_text_format(""_frag, path);
 
-                    switch (detect_text_format(""_frag, path)) {
-                        case text_format_t::TF_UNKNOWN:
-                        case text_format_t::TF_BINARY:
-                            break;
-                        default: {
-                            auto line = 0UL;
-                            auto col = 0UL;
+                    if (tf_opt.has_value()) {
+                        switch (tf_opt.value()) {
+                            case text_format_t::TF_PLAINTEXT:
+                            case text_format_t::TF_BINARY:
+                                break;
+                            default: {
+                                auto line = 0UL;
+                                auto col = 0UL;
 
-                            auto_mem<char> frag_part(curl_free);
-                            if (curl_url_get(cu,
-                                             CURLUPART_FRAGMENT,
-                                             frag_part.out(),
-                                             CURLU_URLDECODE)
-                                == CURLUE_OK)
-                            {
-                                static const auto FRAG_RE
-                                    = lnav::pcre2pp::code::from_const(
-                                        R"(^L(\d+)(?:C(\d+))?$)");
-                                thread_local auto match_data
-                                    = lnav::pcre2pp::match_data::unitialized();
-                                auto frag_sf = string_fragment::from_c_str(
-                                    frag_part.in());
-
-                                log_debug(" checking fragment for position: %s",
-                                          frag_part.in());
-                                if (FRAG_RE.capture_from(frag_sf)
-                                        .into(match_data)
-                                        .found_p())
+                                auto_mem<char> frag_part(curl_free);
+                                if (curl_url_get(cu,
+                                                 CURLUPART_FRAGMENT,
+                                                 frag_part.out(),
+                                                 CURLU_URLDECODE)
+                                    == CURLUE_OK)
                                 {
-                                    line = scn::scan_int<uint32_t>(
-                                               match_data[1]->to_string_view())
-                                               ->value();
-                                    if (match_data[2]) {
-                                        col = scn::scan_int<uint32_t>(
-                                                  match_data[2]
-                                                      ->to_string_view())
-                                                  ->value();
+                                    static const auto FRAG_RE
+                                        = lnav::pcre2pp::code::from_const(
+                                            R"(^L(\d+)(?:C(\d+))?$)");
+                                    thread_local auto match_data = lnav::
+                                        pcre2pp::match_data::unitialized();
+                                    auto frag_sf = string_fragment::from_c_str(
+                                        frag_part.in());
+
+                                    log_debug(
+                                        " checking fragment for position: %s",
+                                        frag_part.in());
+                                    if (FRAG_RE.capture_from(frag_sf)
+                                            .into(match_data)
+                                            .found_p())
+                                    {
+                                        line = scn::scan_int<uint32_t>(
+                                                   match_data[1]
+                                                       ->to_string_view())
+                                                   ->value();
+                                        if (match_data[2]) {
+                                            col = scn::scan_int<uint32_t>(
+                                                      match_data[2]
+                                                          ->to_string_view())
+                                                      ->value();
+                                        }
                                     }
                                 }
+                                log_info(
+                                    "Opening href with external editor: "
+                                    "%s:%lu:%lu",
+                                    path_part.in(),
+                                    line,
+                                    col);
+                                return external_editor::open(
+                                    path_part.in(), line, col);
                             }
-                            log_info(
-                                "Opening href with external editor: %s:%lu:%lu",
-                                path_part.in(),
-                                line,
-                                col);
-                            return external_editor::open(
-                                path_part.in(), line, col);
                         }
                     }
                 }

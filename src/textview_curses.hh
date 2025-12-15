@@ -565,9 +565,9 @@ public:
 
     virtual void update_filter_hash_state(hasher& h) const;
 
-    virtual text_format_t get_text_format() const
+    virtual std::optional<text_format_t> get_text_format() const
     {
-        return text_format_t::TF_UNKNOWN;
+        return text_format_t::TF_PLAINTEXT;
     }
 
     virtual std::optional<

@@ -42,7 +42,7 @@ struct script_metadata {
     std::string sm_name;
     std::string sm_synopsis;
     std::string sm_description;
-    text_format_t sm_output_format{text_format_t::TF_UNKNOWN};
+    text_format_t sm_output_format{text_format_t::TF_PLAINTEXT};
 };
 
 void extract_metadata_from_file(script_metadata& meta_inout);

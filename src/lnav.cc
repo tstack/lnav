@@ -1182,7 +1182,7 @@ ui_execute_init_commands(
     } else {
         auto tmp_pair = open_temp_res.unwrap();
         auto fd_copy = tmp_pair.second.dup();
-        auto tf = text_format_t::TF_UNKNOWN;
+        auto tf = text_format_t::TF_PLAINTEXT;
 
         {
             exec_context::output_guard og(

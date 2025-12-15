@@ -226,7 +226,7 @@ struct metadata_builder {
     std::vector<section_type_interval_t> mb_type_intervals;
     std::unique_ptr<hier_node> mb_root_node;
     std::set<size_t> mb_indents;
-    text_format_t mb_text_format{text_format_t::TF_UNKNOWN};
+    text_format_t mb_text_format{text_format_t::TF_PLAINTEXT};
     std::set<std::string> mb_words;
 
     metadata to_metadata() &&
@@ -445,7 +445,7 @@ public:
             case text_format_t::TF_TOML:
             case text_format_t::TF_INI:
             case text_format_t::TF_LOG:
-            case text_format_t::TF_UNKNOWN:
+            case text_format_t::TF_PLAINTEXT:
                 return true;
             default:
                 return false;

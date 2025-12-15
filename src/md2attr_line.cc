@@ -391,7 +391,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             padded_text.append("\u258c"_code_border).append(line).append("\n");
         }
         if (!padded_text.empty()) {
-            auto tf = tf_opt.value_or(text_format_t::TF_UNKNOWN);
+            auto tf = tf_opt.value_or(text_format_t::TF_PLAINTEXT);
             padded_text.with_attr_for_all(SA_PREFORMATTED.value())
                 .with_attr_for_all(SA_QUOTED_TEXT.value(tf));
             last_block.append("\n").append(padded_text);

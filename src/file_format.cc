@@ -119,20 +119,23 @@ detect_file_format(const std::filesystem::path& filename)
                 auto tf = detect_text_format(header_frag, filename);
                 auto looping = true;
 
-                switch (tf) {
-                    case text_format_t::TF_UNKNOWN:
-                    case text_format_t::TF_BINARY:
-                    case text_format_t::TF_LOG:
-                    case text_format_t::TF_JSON:
-                        log_info("file does not have a known text format: %s",
-                                 filename.c_str());
-                        break;
-                    default:
-                        log_info("file has text format: %s -> %d",
-                                 filename.c_str(),
-                                 tf);
-                        looping = false;
-                        break;
+                if (tf) {
+                    switch (tf.value()) {
+                        case text_format_t::TF_PLAINTEXT:
+                        case text_format_t::TF_BINARY:
+                        case text_format_t::TF_LOG:
+                        case text_format_t::TF_JSON:
+                            log_info(
+                                "file does not have a known text format: %s",
+                                filename.c_str());
+                            break;
+                        default:
+                            log_info("file has text format: %s -> %d",
+                                     filename.c_str(),
+                                     tf.value());
+                            looping = false;
+                            break;
+                    }
                 }
 
                 lnav::piper::multiplex_matcher mm;

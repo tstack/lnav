@@ -126,7 +126,7 @@ struct metadata {
     std::unique_ptr<hier_node> m_sections_root;
     section_types_tree_t m_section_types_tree;
     std::set<size_t> m_indents;
-    text_format_t m_text_format{text_format_t::TF_UNKNOWN};
+    text_format_t m_text_format{text_format_t::TF_PLAINTEXT};
     std::set<std::string> m_words;
 
     std::vector<section_key_t> path_for_range(size_t start, size_t stop);
@@ -162,7 +162,7 @@ struct discover_builder {
 
     attr_line_t& db_line;
     line_range db_range{0, -1};
-    text_format_t db_text_format{text_format_t::TF_UNKNOWN};
+    text_format_t db_text_format{text_format_t::TF_PLAINTEXT};
     bool db_save_words{false};
 };
 

@@ -1953,8 +1953,10 @@ lnav::session::restore_view_states()
             } else if (view_index == LNV_TEXT) {
                 auto lf = lnav_data.ld_text_source.current_file();
                 if (lf != nullptr) {
-                    switch (lf->get_text_format()) {
-                        case text_format_t::TF_UNKNOWN:
+                    switch (lf->get_text_format().value_or(
+                        text_format_t::TF_BINARY))
+                    {
+                        case text_format_t::TF_PLAINTEXT:
                         case text_format_t::TF_LOG: {
                             if (height > 0_vl) {
                                 tview.set_selection(height - 1_vl);

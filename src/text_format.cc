@@ -29,6 +29,7 @@
  * @file text_format.cc
  */
 
+#include <cctype>
 #include <filesystem>
 #include <optional>
 #include <set>
@@ -36,11 +37,11 @@
 
 #include "text_format.hh"
 
+#include "base/auto_mem.hh"
 #include "base/from_trait.hh"
 #include "base/intern_string.hh"
 #include "base/is_utf8.hh"
 #include "base/itertools.enumerate.hh"
-#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/result.h"
 #include "config.h"
@@ -73,7 +74,7 @@ constexpr string_fragment TEXT_FORMAT_STRINGS[text_format_count] = {
     "text/plain"_frag,
 };
 
-text_format_t
+std::optional<text_format_t>
 detect_text_format(string_fragment sf,
                    std::optional<std::filesystem::path> path)
 {
@@ -108,6 +109,7 @@ detect_text_format(string_fragment sf,
     static const auto LNAV_EXT = std::filesystem::path(".lnav");
     static const auto RST_EXT = std::filesystem::path(".rst");
     static const auto INI_EXT = std::filesystem::path(".ini");
+    static const auto TXT_EXT = std::filesystem::path(".txt");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -191,10 +193,7 @@ detect_text_format(string_fragment sf,
 )",
         PCRE2_MULTILINE | PCRE2_CASELESS | PCRE2_EXTENDED);
 
-    auto utf_res = is_utf8(sf);
-    if (!utf_res.is_valid()) {
-        return text_format_t::TF_UNKNOWN;
-    }
+    std::optional<text_format_t> retval;
 
     if (path) {
         while (FILTER_EXTS.count(path->extension()) > 0) {
@@ -258,6 +257,28 @@ detect_text_format(string_fragment sf,
         if (ext == INI_EXT) {
             return text_format_t::TF_INI;
         }
+
+        if (ext == TXT_EXT) {
+            retval = text_format_t::TF_PLAINTEXT;
+        }
+    }
+
+    auto utf_res = is_utf8(sf);
+    if (!utf_res.is_valid()) {
+        if (!sf.empty()) {
+            auto str_count = 0;
+
+            for (const auto& ch : sf) {
+                if (isprint(ch)) {
+                    str_count += 1;
+                }
+            }
+            if (((double) str_count / (double) sf.length()) < 0.70) {
+                retval = text_format_t::TF_BINARY;
+            }
+        }
+
+        return retval;
     }
 
     {
@@ -313,7 +334,7 @@ detect_text_format(string_fragment sf,
         return text_format_t::TF_INI;
     }
 
-    return text_format_t::TF_UNKNOWN;
+    return text_format_t::TF_PLAINTEXT;
 }
 
 std::optional<text_format_meta_t>

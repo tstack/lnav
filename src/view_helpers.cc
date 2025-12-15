@@ -1101,7 +1101,7 @@ update_hits(textview_curses* tc)
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0]
                     .replace_with(all_matches)
-                    .set_text_format(text_format_t::TF_UNKNOWN);
+                    .set_text_format(text_format_t::TF_PLAINTEXT);
                 last_preview_hash = match_hash;
             }
         }
