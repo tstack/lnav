@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include "lnav.hh"
 #include "readline_context.hh"
 
@@ -155,6 +157,77 @@ com_toggle_field(exec_context& ec,
 
     return Ok(retval);
 }
+    
+// Ensure this updates with text_format_enum.hh
+static const std::string_view file_type_strings[text_format_count] = {
+    [static_cast<int>(text_format_t::TF_BINARY)] = "binary",
+    [static_cast<int>(text_format_t::TF_C_LIKE)] = "c",
+    [static_cast<int>(text_format_t::TF_JAVA)] = "java",
+    [static_cast<int>(text_format_t::TF_JSON)] = "json",
+    [static_cast<int>(text_format_t::TF_LOG)] = "log",
+    [static_cast<int>(text_format_t::TF_MAKEFILE)] = "makefile",
+    [static_cast<int>(text_format_t::TF_MAN)] = "man",
+    [static_cast<int>(text_format_t::TF_MARKDOWN)] = "markdown",
+    [static_cast<int>(text_format_t::TF_PYTHON)] = "python",
+    [static_cast<int>(text_format_t::TF_PCRE)] = "pcre",
+    [static_cast<int>(text_format_t::TF_RUST)] = "rust",
+    [static_cast<int>(text_format_t::TF_SQL)] = "sql",
+    [static_cast<int>(text_format_t::TF_XML)] = "xml",
+    [static_cast<int>(text_format_t::TF_YAML)] = "yaml",
+    [static_cast<int>(text_format_t::TF_TOML)] = "toml",
+    [static_cast<int>(text_format_t::TF_DIFF)] = "diff",
+    [static_cast<int>(text_format_t::TF_SHELL_SCRIPT)] = "shell",
+    [static_cast<int>(text_format_t::TF_LNAV_SCRIPT)] = "lnav",
+    [static_cast<int>(text_format_t::TF_RESTRUCTURED_TEXT)] = "rst",
+    [static_cast<int>(text_format_t::TF_INI)] = "ini",
+    [static_cast<int>(text_format_t::TF_CSV)] = "csv",
+    [static_cast<int>(text_format_t::TF_UNKNOWN)] = "unknown",
+};
+
+static std::vector<string_fragment> get_text_source_enum() {
+    static std::vector<string_fragment> container{};
+
+    if (container.size() == 0) {
+        container.resize(text_format_count);
+        std::transform(std::cbegin(file_type_strings), std::cend(file_type_strings),
+                        container.begin(),
+                        [](std::string_view sv) {
+                            return string_fragment::from_string_view(sv);
+                        });
+    }
+
+    return container;
+}
+
+
+static std::optional<text_format_t> get_file_type_enum(std::string_view input) {
+    uint8_t idx = 0;
+    for (auto s : file_type_strings) {
+        if (s == input) {
+            return static_cast<text_format_t>(idx);
+        }
+        ++idx;
+    }
+
+    return std::nullopt;
+}
+
+static Result<std::string, lnav::console::user_message>
+set_text_source_type(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    if (args.size() != 2) {
+        return ec.make_error("specify a single type to set");
+    }
+    auto result = get_file_type_enum(args[1]);
+    if (result.has_value()) {
+        lnav_data.ld_text_source.current_file().get()->set_text_format(result.value());
+        return Ok(std::string{"successfully set format"});
+    } else {
+        return ec.make_error("invalid format type");
+    }
+}
 
 static readline_context::command_t DISPLAY_COMMANDS[] = {
     {
@@ -205,6 +278,18 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
             .with_example({"To show all the log_procname fields in all formats",
                            "log_procname"})
             .with_opposites({"hide-fields"})
+            .with_tags({"display"}),
+    },
+    {
+        "set-text-source-type",
+        set_text_source_type,
+        help_text(":set-text-source-type")
+            .with_summary("Sets the source type of the current buffer")
+            .with_parameter(
+                help_text("type", "The new source type to use")
+                    .with_enum_values(get_text_source_enum())
+                    .with_format(help_parameter_format_t::HPF_FORMAT_FIELD))
+            .with_example({"\":set-text-source-type binary\" to force the file into binary mode"})
             .with_tags({"display"}),
     },
 };
