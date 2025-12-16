@@ -1,0 +1,7 @@
+		<node>???????????í¹¤??</node>
+â–Œ Line 3 metadata
+  Hex dump of line with invalid UTF-8 content
+     09 09 3c 6e 6f 64 65 3e  3f 3f 3f 3f 3f 3f 3f 3f  __<node> ????????
+     3f 3f 3f ed b9 a4 3f 3f  3c 2f 6e 6f 64 65 3e     ???Ã—Ã—Ã—?? </node>
+	</sample>
+</tiptop>

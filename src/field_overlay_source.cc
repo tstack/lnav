@@ -31,6 +31,7 @@
 
 #include <curl/curl.h>
 
+#include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
@@ -84,6 +85,33 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
     if (!this->fos_contexts.empty()) {
         display = display || this->fos_contexts.top().c_show;
+    }
+
+    if (!ll->is_valid_utf()) {
+        auto sub_opts = subline_options{};
+        sub_opts.scrub_invalid_utf8 = false;
+        auto read_res = file->read_line(ll, sub_opts);
+        if (read_res.isOk()) {
+            auto sbr = read_res.unwrap();
+            attr_line_t al;
+            attr_line_builder alb(al);
+
+            alb.append_as_hexdump(sbr.to_string_fragment());
+            this->fos_lines.emplace_back(
+                attr_line_t("  ")
+                    .append(
+                        "Hex dump of line with invalid UTF-8 content"_table_header)
+                    .move());
+            al.split_lines(this->fos_lines);
+            auto first_line = true;
+            for (auto& al_line : this->fos_lines) {
+                if (first_line) {
+                    first_line = false;
+                    continue;
+                }
+                al_line.insert(0, 4, ' ');
+            }
+        }
     }
 
     if (!display) {

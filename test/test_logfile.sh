@@ -4,6 +4,10 @@ export TZ=UTC
 echo ${top_srcdir}
 echo ${top_builddir}
 
+run_cap_test ${lnav_test} -n \
+    -c ':goto 3' \
+    ${test_dir}/logfile_invalid_utf8.0
+
 printf '#Date:\t20\x800-2-02\n0\n' | run_cap_test \
     env TEST_COMMENT="short timestamp" ${lnav_test} -n
 

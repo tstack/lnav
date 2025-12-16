@@ -305,8 +305,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             sbr.get_metadata().m_has_ansi = false;
         }
     } else {
+        auto sub_opts = subline_options{};
+        sub_opts.scrub_invalid_utf8 = false;
         this->lss_token_value
-            = this->lss_token_file->read_line(this->lss_token_line)
+            = this->lss_token_file->read_line(this->lss_token_line, sub_opts)
                   .map([](auto sbr) { return to_string(sbr); })
                   .unwrapOr({});
         if (this->lss_token_line->has_ansi()) {
