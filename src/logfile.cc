@@ -1983,7 +1983,9 @@ logfile::read_line(iterator ll, subline_options opts)
         return this->lf_line_buffer.read_range(get_range_res)
             .map([&ll, &get_range_res, &opts, this](auto sbr) {
                 sbr.rtrim(is_line_ending);
-                if (!get_range_res.fr_metadata.m_valid_utf) {
+                if (opts.scrub_invalid_utf8
+                    && !get_range_res.fr_metadata.m_valid_utf)
+                {
                     scrub_to_utf8(sbr.get_writable_data(), sbr.length());
                     sbr.get_metadata().m_valid_utf = true;
                 }

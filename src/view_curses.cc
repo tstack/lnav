@@ -50,6 +50,7 @@
 #include "shlex.hh"
 #include "terminfo-files.h"
 #include "terminfo/terminfo.h"
+#include "unistr.h"
 #include "uniwidth.h"
 #include "xterm_mouse.hh"
 
@@ -365,25 +366,29 @@ view_curses::mvwattrline(ncplane* window,
                     break;
                 }
 
-                auto exp_read_start = expanded_line.size();
-                auto lpc_start = lpc;
-                auto read_res
-                    = ww898::utf::utf8::read([&line, &expanded_line, &lpc] {
-                          auto ch = line[lpc++];
-                          expanded_line.push_back(ch);
-                          return ch;
-                      });
-
-                if (read_res.isErr()) {
-                    log_trace(
-                        "error:%d:%zu:%s", y, x + lpc, read_res.unwrapErr());
-                    expanded_line.resize(exp_read_start);
-                    expanded_line.push_back('?');
+                if (ch <= 0x7f) {
+                    expanded_line.push_back(ch);
                     curr_ch_col_count = 1;
                     char_index += 1;
-                    lpc = lpc_start + 1;
+                    lpc += 1;
+                    break;
+                }
+
+                auto lpc_start = lpc;
+                ucs4_t wch;
+                auto read_res = u8_mbtoucr(
+                    &wch, (uint8_t*) line.data() + lpc, line.size() - lpc);
+                if (read_res <= 0) {
+                    expanded_line.append("\ufffd");
+                    sa.emplace_back(line_range{(int) lpc, (int) lpc + 1},
+                                    VC_ROLE.value(role_t::VCR_NON_ASCII));
+                    curr_ch_col_count = 1;
+                    char_index += 1;
+                    lpc += 1;
                 } else {
-                    auto wch = read_res.unwrap();
+                    for (size_t i = 0; i < read_res; i++) {
+                        expanded_line.push_back(line[lpc++]);
+                    }
                     if (wch == L'\u200d') {
                         join_start_index = char_index - last_ch_col_count;
                         continue;

@@ -173,13 +173,16 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     const auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
-    auto read_result = lf->read_line(ll);
+    auto read_opts = subline_options{};
+    read_opts.scrub_invalid_utf8 = false;
+    auto read_result = lf->read_line(ll, read_opts);
     this->tss_line_indent_size = 0;
     this->tss_plain_line_attrs.clear();
     if (read_result.isOk()) {
         auto sbr = read_result.unwrap();
         value_out = to_string(sbr);
-        if (sbr.get_metadata().m_has_ansi) {
+        const auto& meta = sbr.get_metadata();
+        if (meta.m_valid_utf && meta.m_has_ansi) {
             scrub_ansi_string(value_out, &this->tss_plain_line_attrs);
         }
         for (const auto& ch : value_out) {
@@ -852,7 +855,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                 "discovery",
                                 lf->get_path_for_key().c_str());
                             iter->fvs_mtime = st.st_mtime;
-                            iter->fvs_file_size = lf->get_index_size();
+                            iter->fvs_file_size = st.st_size;
+                            iter->fvs_file_indexed_size = lf->get_index_size();
+                            iter->fvs_error = "skipping meta discovery";
                         } else {
                             auto content
                                 = attr_line_t(read_file_res.rfr_content);

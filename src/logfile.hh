@@ -286,7 +286,7 @@ public:
 
     bool is_closed() const { return this->lf_is_closed; }
 
-    struct timeval original_line_time(iterator ll);
+    timeval original_line_time(iterator ll);
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll,
                                                      subline_options opts = {});

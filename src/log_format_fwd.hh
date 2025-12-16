@@ -487,7 +487,8 @@ struct subline_options {
                            const subline_options& rhs)
     {
         return lhs.full_message == rhs.full_message
-            && lhs.hash_hack == rhs.hash_hack;
+            && lhs.hash_hack == rhs.hash_hack
+            && lhs.scrub_invalid_utf8 == rhs.scrub_invalid_utf8;
     }
 
     friend bool operator!=(const subline_options& lhs,
@@ -498,6 +499,7 @@ struct subline_options {
 
     bool full_message{false};
     bool hash_hack{false};
+    bool scrub_invalid_utf8{true};
 };
 
 enum class value_kind_t : int {
