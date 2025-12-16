@@ -434,6 +434,7 @@ timeline_header_overlay::list_value_for_overlay(
 }
 std::optional<attr_line_t>
 timeline_header_overlay::list_header_for_overlay(const listview_curses& lv,
+                                                 media_t media,
                                                  vis_line_t line)
 {
     if (lv.get_overlay_selection()) {

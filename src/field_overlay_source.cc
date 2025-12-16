@@ -1072,18 +1072,20 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 
 std::optional<attr_line_t>
 field_overlay_source::list_header_for_overlay(const listview_curses& lv,
+                                              media_t media,
                                               vis_line_t vl)
 {
     attr_line_t retval;
 
     retval.append(this->fos_lss.get_filename_offset(), ' ');
     if (this->fos_contexts.top().c_show) {
-        retval
-            .appendf(FMT_STRING("\u258C Line {:L} parser details.  "
-                                "Press "),
-                     (int) vl)
-            .append("p"_hotkey)
-            .append(" to hide this panel.");
+        retval.appendf(FMT_STRING("\u258C Line {:L} parser details."),
+                       (int) vl);
+        if (media == media_t::display) {
+            retval.append("  Press ")
+                .append("p"_hotkey)
+                .append(" to hide this panel.");
+        }
     } else {
         retval.append("\u258C Line ")
             .append(
@@ -1091,18 +1093,20 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
             .append(" metadata");
     }
 
-    if (lv.get_overlay_selection()) {
-        retval.append("  ")
-            .append("SPC"_hotkey)
-            .append(": hide/show field  ")
-            .append("c"_hotkey)
-            .append(": copy field value  ")
-            .append("Esc"_hotkey)
-            .append(": exit this panel");
-    } else {
-        retval.append("  Press ")
-            .append("CTRL-]"_hotkey)
-            .append(" to focus on this panel");
+    if (media == media_t::display) {
+        if (lv.get_overlay_selection()) {
+            retval.append("  ")
+                .append("SPC"_hotkey)
+                .append(": hide/show field  ")
+                .append("c"_hotkey)
+                .append(": copy field value  ")
+                .append("Esc"_hotkey)
+                .append(": exit this panel");
+        } else {
+            retval.append("  Press ")
+                .append("CTRL-]"_hotkey)
+                .append(" to focus on this panel");
+        }
     }
 
     return retval;

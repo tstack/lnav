@@ -237,6 +237,10 @@ Interface changes:
 * The parser-details overlay now mentions any search
   tables that match the focused line.  Now, you don't
   have to remember the names of the tables.
+* If a text file contains invalid UTF-8 content, the
+  invalid bytes will be shown as the replacement
+  character (�) and, when the line is focused, an
+  overlay will show a hex dump of the line.
 
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path

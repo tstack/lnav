@@ -1,2 +1,3 @@
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+[4m▌ Line [0m[1m[4m2[0m[4m metadata[0m
  └ #[7mfoo[0m

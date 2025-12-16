@@ -718,12 +718,16 @@ println(FILE* file, const attr_line_t& al)
             for (auto lpc = start; lpc < actual_end;) {
                 auto cp_start = lpc;
                 auto read_res = ww898::utf::utf8::read(
-                    [&str, &lpc]() { return str[lpc++]; });
+                    [&str, &lpc] { return str[lpc++]; });
 
                 if (read_res.isErr()) {
-                    sub.append(fmt::format(
+                    fmt::print(file, line_style, FMT_STRING("{}"), sub);
+                    sub.clear();
+                    fmt::print(
+                        file,
+                        fmt::fg(fmt::terminal_color::yellow),
                         FMT_STRING("{:?}"),
-                        fmt::string_view{&str[cp_start], lpc - cp_start}));
+                        fmt::string_view{&str[cp_start], lpc - cp_start});
                     continue;
                 }
 

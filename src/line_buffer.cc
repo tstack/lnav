@@ -1270,9 +1270,10 @@ line_buffer::load_next_line(file_range prev_line)
             }
             retval.li_utf8_scan_result = scan_res;
             if (!scan_res.is_valid()) {
-                log_warning("fd(%d): line is not utf8 -- %lld",
+                log_warning("fd(%d): line is not utf8 -- %lld:%d",
                             this->lb_fd.get(),
-                            retval.li_file_range.fr_offset);
+                            retval.li_file_range.fr_offset,
+                            scan_res.usr_valid_frag.length());
             }
         }
 
@@ -1334,10 +1335,6 @@ line_buffer::load_next_line(file_range prev_line)
             }
 
             offset += retval.li_file_range.fr_size;
-
-            done = true;
-        } else if (!retval.li_utf8_scan_result.is_valid()) {
-            retval.li_partial = true;
             done = true;
         } else {
             if (!this->is_pipe() || !this->is_pipe_closed()) {

@@ -233,7 +233,7 @@ public:
                              attr_line_t& value_out) override;
 
     std::optional<attr_line_t> list_header_for_overlay(
-        const listview_curses& lv, vis_line_t line) override;
+        const listview_curses& lv, media_t media, vis_line_t line) override;
 
     void list_value_for_overlay(const listview_curses& lv,
                                 vis_line_t line,

@@ -126,7 +126,7 @@ public:
     }
 
     virtual std::optional<attr_line_t> list_header_for_overlay(
-        const listview_curses& lv, vis_line_t line)
+        const listview_curses& lv, media_t media, vis_line_t line)
     {
         return std::nullopt;
     }

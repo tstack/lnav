@@ -1,4 +1,5 @@
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
  │ [32mHello, [0m[1m[32mWorld[0m[32m![0m
  │ 
  └ [32mThis is [0m[32m[40m markdown [0m[32m now![0m

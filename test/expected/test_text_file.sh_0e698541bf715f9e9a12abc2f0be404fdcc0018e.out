@@ -1,0 +1,6 @@
+		<node>???????????[33m"\xed\xb9\xa4"[0m??</node>
+[4m Line [0m[1m[4m3[0m[4m at file offset [0m[1m[4m19[0m[4m contains invalid UTF-8 content, the following is a hex dump of the line[0m
+[32m 09[0m[32m 09[0m 3c 6e 6f 64 65 3e  3f 3f 3f 3f 3f 3f 3f 3f  [32m_[0m[32m_[0m<node> ????????
+ 3f 3f 3f[33m ed[0m[33m b9[0m[33m a4[0m 3f 3f  3c 2f 6e 6f 64 65 3e     ???[33m×[0m[33m×[0m[33m×[0m?? </node>
+	</sample>
+</root>

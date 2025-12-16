@@ -673,7 +673,9 @@ listview_curses::do_update()
                     if (row_overlay_content.size() > 1) {
                         auto hdr
                             = this->lv_overlay_source->list_header_for_overlay(
-                                *this, row);
+                                *this,
+                                list_overlay_source::media_t::display,
+                                row);
                         if (hdr) {
                             auto ov_hdr_attrs = text_attrs::with_underline();
                             auto ov_hdr = hdr.value();

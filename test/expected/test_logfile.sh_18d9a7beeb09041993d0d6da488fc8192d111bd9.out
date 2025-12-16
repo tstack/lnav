@@ -1,2 +1,5 @@
-#Date:	3/9/3/0? 2
+#Date:	3/9/3/0… 2
+ Line 1 at file offset 0 contains invalid UTF-8 content, the following is a hex dump of the line
+ 23 44 61 74 65 3a 09 33  2f 39 2f 33 2f 30 85 20  #Date:_3 /9/3/0Ã—_
+ 32                                                2
 0

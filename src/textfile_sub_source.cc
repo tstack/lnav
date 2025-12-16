@@ -1802,3 +1802,72 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
     value_out.with_attr_for_all(VC_STYLE.value(text_attrs::with_underline()));
     return true;
 }
+
+std::optional<attr_line_t>
+textfile_header_overlay::list_header_for_overlay(const listview_curses& lv,
+                                                 media_t media,
+                                                 vis_line_t line)
+{
+    return this->tho_hex_line_header;
+}
+
+void
+textfile_header_overlay::list_value_for_overlay(
+    const listview_curses& lv,
+    vis_line_t line,
+    std::vector<attr_line_t>& value_out)
+{
+    if (line != lv.get_selection()) {
+        return;
+    }
+
+    if (this->tho_src->empty() || line < 0) {
+        value_out.clear();
+        return;
+    }
+
+    const auto curr_iter = this->tho_src->current_file_state();
+    if (this->tho_src->tss_view_mode == textfile_sub_source::view_mode::rendered
+        && curr_iter->fvs_text_source)
+    {
+        return;
+    }
+    const auto& lf = curr_iter->fvs_file;
+    if (lf->get_text_format() == text_format_t::TF_BINARY) {
+        return;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr
+        || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+    {
+        value_out.clear();
+        return;
+    }
+
+    const auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+    if (ll->is_valid_utf()) {
+        return;
+    }
+
+    auto read_opts = subline_options{};
+    read_opts.scrub_invalid_utf8 = false;
+    auto read_result = lf->read_line(ll, read_opts);
+    if (read_result.isErr()) {
+        return;
+    }
+
+    auto sbr = read_result.unwrap();
+    attr_line_t al;
+    attr_line_builder alb(al);
+    alb.append_as_hexdump(sbr.to_string_fragment());
+    this->tho_hex_line_header
+        = attr_line_t(" Line ")
+              .append(lnav::roles::number(fmt::to_string(line + 1)))
+              .append(" at file offset ")
+              .append(lnav::roles::number(fmt::to_string(ll->get_offset())))
+              .append(
+                  " contains invalid UTF-8 content, the following is a hex "
+                  "dump of the line");
+    al.split_lines(value_out);
+}

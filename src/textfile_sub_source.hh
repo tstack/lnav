@@ -32,16 +32,20 @@
 
 #include <deque>
 #include <memory>
-#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "base/attr_line.hh"
 #include "base/file_range.hh"
 #include "document.sections.hh"
 #include "filter_observer.hh"
+#include "hasher.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
+
+class textfile_header_overlay;
 
 class textfile_sub_source
     : public text_sub_source
@@ -101,8 +105,7 @@ public:
         virtual ~scan_callback() = default;
 
         virtual void closed_files(
-            const std::vector<std::shared_ptr<logfile>>& files)
-            = 0;
+            const std::vector<std::shared_ptr<logfile>>& files) = 0;
         virtual void promote_file(const std::shared_ptr<logfile>& lf) = 0;
         virtual void scanned_file(const std::shared_ptr<logfile>& lf) = 0;
         virtual void renamed_file(const std::shared_ptr<logfile>& lf) = 0;
@@ -175,6 +178,8 @@ public:
     bool tss_apply_default_init_location{false};
 
 private:
+    friend textfile_header_overlay;
+
     void detach_observer(std::shared_ptr<logfile> lf)
     {
         auto* lfo = (line_filter_observer*) lf->get_logline_observer();
@@ -211,8 +216,8 @@ private:
 
         size_t text_line_width(view_mode mode, textview_curses& tc) const;
 
-        std::optional<vis_line_t>
-        row_for_anchor(view_mode mode, const std::string& id);
+        std::optional<vis_line_t> row_for_anchor(view_mode mode,
+                                                 const std::string& id);
 
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};
@@ -259,11 +264,19 @@ public:
                              int bottom,
                              attr_line_t& value_out) override;
 
+    std::optional<attr_line_t> list_header_for_overlay(
+        const listview_curses& lv, media_t media, vis_line_t line) override;
+
+    void list_value_for_overlay(const listview_curses& lv,
+                                vis_line_t line,
+                                std::vector<attr_line_t>& value_out) override;
+
 private:
     textfile_sub_source* tho_src;
     text_sub_source* tho_log_src;
     std::vector<attr_line_t> tho_static_lines;
     hasher::array_t tho_filter_state;
+    attr_line_t tho_hex_line_header;
 };
 
 #endif

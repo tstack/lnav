@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "base/intern_string.hh"
 #include "lnav.hh"
 #include "readline_context.hh"
 
@@ -117,14 +118,14 @@ com_toggle_field(exec_context& ec,
                                                  args[lpc].length() - dot - 1);
                 } else if (tc->get_inner_height() == 0) {
                     return ec.make_error("no log messages to hide");
-                } else if (sel) {
-                    auto cl = lss.at(sel.value());
+                } else {
+                    auto cl = lss.at(sel.value_or(0_vl));
                     auto lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
                 }
 
-                if (format->hide_field(name, hide)) {
+                if (format && format->hide_field(name, hide)) {
                     found_fields.push_back(args[lpc]);
                     if (hide) {
 #if 0

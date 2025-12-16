@@ -1,4 +1,5 @@
 [31m2025-04-11 22:14:12.837 +0000[0m[31m [[0m[31m1329108[0m[31m] [0m[31mERROR[0m[31m:  [0m[31msyntax error at or near "null" at character 510[0m
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
 [32m ├ org.postgresql.statement-error:[0m
 [32m │ [0m ▌[1m[36m[40mcreate[0m[37m[40m [0m[1m[36m[40mtable[0m[37m[40m [0m[1m[36m[40mif[0m[37m[40m [0m[1m[36m[40mnot[0m[37m[40m [0m[1m[36m[40mexists[0m[37m[40m [0m[37m[40mscrape_memory[0m[37m[40m [0m[1m[7m[31m[40m([0m[37m[40m                   [0m
 [32m │ [0m ▌[37m[40m    [0m[37m[40mid[0m[37m[40m [0m[37m[40msmallserial[0m[37m[40m [0m[1m[36m[40mprimary[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,                              [0m

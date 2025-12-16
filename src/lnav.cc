@@ -4419,6 +4419,18 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         if (los != nullptr) {
                             los->list_value_for_overlay(
                                 *tc, vl, row_overlay_content);
+                            if (!row_overlay_content.empty()) {
+                                auto hdr_opt = los->list_header_for_overlay(
+                                    *tc,
+                                    list_overlay_source::media_t::file,
+                                    vl);
+                                if (hdr_opt) {
+                                    auto hdr = hdr_opt.value();
+                                    hdr.with_attr_for_all(VC_STYLE.value(
+                                        text_attrs::with_underline()));
+                                    write_line_to(stdout, hdr);
+                                }
+                            }
                             for (const auto& ov_row : row_overlay_content) {
                                 write_line_to(stdout, ov_row);
                             }

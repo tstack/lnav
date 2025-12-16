@@ -991,6 +991,7 @@ db_label_source::reset_user_state()
 
 std::optional<attr_line_t>
 db_overlay_source::list_header_for_overlay(const listview_curses& lv,
+                                           media_t media,
                                            vis_line_t line)
 {
     attr_line_t retval;

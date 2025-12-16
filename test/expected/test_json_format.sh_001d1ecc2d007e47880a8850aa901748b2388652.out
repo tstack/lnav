@@ -1,4 +1,5 @@
 [offset: 444] {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG4", "msg": "D\bDe\betails...\n
+[4m▌ Line [0m[1m[4m9[0m[4m metadata[0m
    Invalid log message: JSON line failed to parse
 parse error: premature EOF
                                        {"ts": "2013-09-06T22:00:59.124

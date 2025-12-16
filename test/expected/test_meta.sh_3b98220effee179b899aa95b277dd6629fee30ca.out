@@ -1,4 +1,5 @@
 [31m2025-08-16 11:02:58.095 +0000[0m[31m [[0m[31m885178[0m[31m] [0m[31mERROR[0m[31m:  [0m[31minvalid input syntax for type json at character 61[0m
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
 [32m ├ org.postgresql.statement-error:[0m
 [32m │ [0m ▌[37m[40m    [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mnet[0m[37m[40m.[0m[37m[40mhttp_get[0m[37m[40m ([0m[35m[40m'https://google.com'[0m[1m[37m[40m::[0m[37m[40mtext[0m[37m[40m, [0m[35m[40m'''{}''::jsonb'[0m[1m[37m[40m::[0m[37m[40mjsonb[0m[37m[40m, [0m[35m[40m' ''{}''::jsonb'[0m[1m[37m[40m::[0m[37m[40mjsonb[0m[37m[40m, [0m[35m[40m' 5000'[0m[1m[37m[40m::[0m[1m[36m[40minteger[0m[37m[40m)    [0m
 [32m │ [0m
