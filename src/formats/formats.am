@@ -36,6 +36,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/openam_log.json \
     $(srcdir)/%reldir%/openamdb_log.json \
     $(srcdir)/%reldir%/openstack_log.json \
+    $(srcdir)/%reldir%/otel_collector_log.json \
     $(srcdir)/%reldir%/otlp_python_log.json \
     $(srcdir)/%reldir%/page_log.json \
     $(srcdir)/%reldir%/pcap_log.json \
