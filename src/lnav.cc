@@ -295,6 +295,8 @@ force_linking(services::main_t anno)
 
 lnav_data_t lnav_data;
 
+static auto nc_debug = false;
+
 bool
 setup_logline_table(exec_context& ec)
 {
@@ -1359,7 +1361,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
     notcurses_options nco = {};
     nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
-    nco.loglevel = NCLOGLEVEL_PANIC;
+    nco.loglevel = nc_debug ? NCLOGLEVEL_DEBUG : NCLOGLEVEL_PANIC;
     auto create_screen_res = screen_curses::create(nco);
 
     if (create_screen_res.isErr()) {
@@ -2748,7 +2750,8 @@ main(int argc, char* argv[])
     auto& ec = lnav_data.ld_exec_context;
     int retval = EXIT_SUCCESS;
 
-    bool exec_stdin = false, load_stdin = false;
+    auto exec_stdin = false;
+    auto load_stdin = false;
     mode_flags_t mode_flags;
     std::string since_time;
     std::string until_time;
@@ -3072,6 +3075,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                    lnav_data.ld_debug_log_name,
                    "Write debug messages to the given file.")
         ->type_name("FILE");
+    app.add_flag("-D", nc_debug, "Enable debugging of notcurses");
     app.add_option("-I", lnav_data.ld_config_paths, "include paths")
         ->check(CLI::ExistingDirectory)
         ->check([&arg_errors](std::string inc_path) -> std::string {

@@ -53,8 +53,8 @@ typedef HANDLE ipipe;
 typedef struct inputctx {
   // these two are not ringbuffers; we always move any leftover materia to the
   // front of the queue (it ought be a handful of bytes at most).
-  unsigned char tbuf[BUFSIZ]; // only used if we have distinct terminal fd
-  unsigned char ibuf[BUFSIZ]; // might be intermingled bulk/control data
+  unsigned char tbuf[4096]; // only used if we have distinct terminal fd
+  unsigned char ibuf[4096]; // might be intermingled bulk/control data
 
   int stdinfd;          // bulk in fd. always >= 0 (almost always 0). we do not
                         //  own this descriptor, and must not close() it.
@@ -2018,7 +2018,7 @@ create_inputctx(tinfo* ti, FILE* infp, int lmargin, int tmargin, int rmargin,
       i->looping = true;
     i->csize = 64;
     if( (i->csrs = malloc(sizeof(*i->csrs) * i->csize)) ){
-      i->isize = BUFSIZ;
+      i->isize = 4096;
       if( (i->inputs = malloc(sizeof(*i->inputs) * i->isize)) ){
         if(pthread_mutex_init(&i->ilock, NULL) == 0){
           if(pthread_condmonotonic_init(&i->icond) == 0){
@@ -2241,25 +2241,29 @@ read_input_nblock(int fd, unsigned char* buf, size_t buflen, int *bufused,
   if(space == 0){
     return;
   }
-  ssize_t r = read(fd, buf + *bufused, space);
-  if(r <= 0){
-    if(r < 0 && (errno != EAGAIN && errno != EBUSY && errno == EWOULDBLOCK)){
-      logwarn("couldn't read from %d (%s)", fd, strerror(errno));
-    }else{
-      if(r < 0){
-        logerror("error reading from %d (%s)", fd, strerror(errno));
-      }else{
-        logwarn("got EOF on %d", fd);
-      }
-      if(goteof){
-        *goteof = 1;
-      }
+    for (int attempts = 10; attempts > 0; --attempts) {
+        ssize_t r = read(fd, buf + *bufused, space);
+        if(r <= 0){
+            if(r < 0 && (errno != EAGAIN && errno != EBUSY && errno != EWOULDBLOCK)){
+                logwarn("couldn't read from %d (%s)", fd, strerror(errno));
+            }else{
+                if(r < 0){
+                    logerror("error reading from %d (%s)", fd, strerror(errno));
+                    usleep(1000);
+                    continue;
+                }
+                logwarn("got EOF on %d", fd);
+                if (goteof) {
+                    *goteof = 1;
+                }
+            }
+            return;
+        }
+        *bufused += r;
+        space -= r;
+        loginfo("read %" PRIdPTR "B from %d (%" PRIuPTR "B left)", r, fd, space);
+        return;
     }
-    return;
-  }
-  *bufused += r;
-  space -= r;
-  loginfo("read %" PRIdPTR "B from %d (%" PRIuPTR "B left)", r, fd, space);
 }
 
 // are terminal and stdin distinct for this inputctx?
@@ -2464,7 +2468,7 @@ static void
 process_melange(inputctx* ictx, const unsigned char* buf, int* bufused){
   int offset = 0;
   int origlen = *bufused;
-  while(*bufused){
+  while(*bufused && (origlen <= 32 || *bufused > 32)){
     logdebug("input %d (%u)/%d [0x%02x] (%c)", offset, ictx->amata.used,
              *bufused, buf[offset], isprint(buf[offset]) ? buf[offset] : ' ');
     int consumed = 0;
@@ -2473,7 +2477,7 @@ process_melange(inputctx* ictx, const unsigned char* buf, int* bufused){
       if(consumed < 0){
         if(ictx->midescape){
           if(*bufused != -consumed || consumed == -1){
-            logdebug("not midescape bufused=%d origlen=%d", *bufused, origlen);
+            logdebug("not midescape bufused=%d origlen=%d consumed=%d", *bufused, origlen, consumed);
             // not at the end; treat it as input. no need to move between
             // buffers; simply ensure we process it as input, and don't mark
             // anything as consumed.
@@ -2648,13 +2652,13 @@ block_on_input(inputctx* ictx, unsigned* rtfd, unsigned* rifd){
   int events;
 #if defined(__APPLE__)
       loginfo("select maxfd %d", maxfd);
-      struct timeval ts = {1, 0};
+      struct timeval ts = { ictx->ibufvalid == 0 ? 1 : 0, ictx->ibufvalid == 0 ? 0 : 10000};
       while ((events = select(maxfd + 1, &rfds, NULL, NULL, &ts)) <0) {
 #    elif defined(__MINGW32__)
   int timeoutms = nonblock ? 0 : -1;
   while((events = poll(pfds, pfdcount, timeoutms)) < 0){ // FIXME smask?
 #else
-  struct timespec ts = { .tv_sec = 1, .tv_nsec = 0, };
+  struct timespec ts = { .tv_sec = ictx->ibufvalid == 0 ? 1 : 0, .tv_nsec = ictx->ibufvalid == 0 ? 0 : 10000000, };
   struct timespec* pts = nonblock ? &ts : NULL;
   while((events = ppoll(pfds, pfdcount, pts, &smask)) < 0){
 #endif

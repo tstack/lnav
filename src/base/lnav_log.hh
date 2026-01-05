@@ -69,6 +69,11 @@ void log_rusage_raw(enum lnav_log_level_t level,
 #    define LNAV_ATTR_FORMAT_PRINTF(a, b)
 #endif
 
+void log_msgv(enum lnav_log_level_t level,
+              const char* src_file,
+              int line_number,
+              const char* fmt,
+              va_list args);
 void log_msg(enum lnav_log_level_t level,
              const char* src_file,
              int line_number,

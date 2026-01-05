@@ -71,11 +71,12 @@
 
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
+#include "auto_pid.hh"
 #include "enum_util.hh"
 #include "fs_util.hh"
 #include "lnav_log.hh"
+#include "notcurses/notcurses.h"
 #include "opt_util.hh"
-#include "auto_pid.hh"
 
 static constexpr size_t BUFFER_SIZE = 256 * 1024;
 static constexpr size_t MAX_LOG_LINE_SIZE = 2 * 1024;
@@ -328,7 +329,7 @@ static struct {
     size_t lr_length;
     off_t lr_frag_start{BUFFER_SIZE};
     off_t lr_frag_end;
-    char *lr_data{log_ring_data};
+    char* lr_data{log_ring_data};
 } log_ring;
 
 static constexpr const char* const LEVEL_NAMES[] = {
@@ -482,10 +483,23 @@ log_msg(lnav_log_level_t level,
         const char* fmt,
         ...)
 {
+    va_list args;
+
+    va_start(args, fmt);
+    log_msgv(level, src_file, line_number, fmt, args);
+    va_end(args);
+}
+
+void
+log_msgv(lnav_log_level_t level,
+         const char* src_file,
+         int line_number,
+         const char* fmt,
+         va_list args)
+{
     struct timeval curr_time;
     struct tm localtm;
     ssize_t prefix_size;
-    va_list args;
     ssize_t rc;
 
     if (level < lnav_log_level) {
@@ -508,7 +522,6 @@ log_msg(lnav_log_level_t level,
         src_file = last_slash;
     }
 
-    va_start(args, fmt);
     gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
     auto line = log_alloc();
@@ -554,7 +567,6 @@ log_msg(lnav_log_level_t level,
         fwrite(line, 1, prefix_size + rc + 1, file);
         fflush(file);
     };
-    va_end(args);
 }
 
 void
@@ -797,8 +809,7 @@ Or, you can send the following file to {PACKAGE_BUGREPORT}:
                 default: {
                     int status;
 
-                    while (wait(&status) < 0) {
-                    }
+                    while (wait(&status) < 0) {}
                     break;
                 }
             }
@@ -924,4 +935,42 @@ log_crash_recoverer::~log_crash_recoverer()
     if (iter != CRASH_LIST().end()) {
         CRASH_LIST().erase(iter);
     }
+}
+
+extern "C"
+{
+void
+nclog(ncloglevel_e level, const char* file, int line, const char* fmt, ...)
+{
+    lnav_log_level_t lnav_level = lnav_log_level_t::DEBUG;
+
+    switch (level) {
+        case NCLOGLEVEL_SILENT:
+            return;
+        case NCLOGLEVEL_PANIC:
+        case NCLOGLEVEL_FATAL:
+        case NCLOGLEVEL_ERROR:
+            lnav_level = lnav_log_level_t::ERROR;
+            break;
+        case NCLOGLEVEL_WARNING:
+            lnav_level = lnav_log_level_t::WARNING;
+            break;
+        case NCLOGLEVEL_INFO:
+            lnav_level = lnav_log_level_t::INFO;
+            break;
+        case NCLOGLEVEL_VERBOSE:
+        case NCLOGLEVEL_DEBUG:
+            lnav_level = lnav_log_level_t::DEBUG;
+            break;
+        case NCLOGLEVEL_TRACE:
+            lnav_level = lnav_log_level_t::TRACE;
+            break;
+    }
+
+    va_list args;
+
+    va_start(args, fmt);
+    log_msgv(lnav_level, file, line, fmt, args);
+    va_end(args);
+}
 }
