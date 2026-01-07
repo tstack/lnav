@@ -1235,6 +1235,7 @@ handoff_initial_responses_late(inputctx* ictx){
   }
   pthread_mutex_unlock(&ictx->ilock);
   if(sig){
+    set_fd_nonblocking(ictx->stdinfd, 1, NULL);
     pthread_cond_broadcast(&ictx->icond);
     loginfo("handing off initial responses");
   }
@@ -2030,9 +2031,11 @@ create_inputctx(tinfo* ti, FILE* infp, int lmargin, int tmargin, int rmargin,
                       if(getpipes(i->ipipes) == 0){
                         memset(&i->amata, 0, sizeof(i->amata));
                         if(prep_special_keys(i) == 0){
-                          if(set_fd_nonblocking(i->stdinfd, 1, &ti->stdio_blocking_save) == 0){
-                              logdebug("tty_check(%d) = %d",
-                                  i->stdinfd, tty_check(i->stdinfd));
+                          if(set_fd_nonblocking(i->stdinfd, 0, &ti->stdio_blocking_save) == 0){
+                            logdebug("tty_check(%d) = %d %d",
+                                     i->stdinfd,
+                                     tty_check(i->stdinfd),
+                                     ti->stdio_blocking_save);
                             i->termfd = tty_check(i->stdinfd) ? -1 : get_tty_fd(infp);
                             memset(i->initdata, 0, sizeof(*i->initdata));
                             if(sent_queries){
