@@ -2662,7 +2662,7 @@ block_on_input(inputctx* ictx, unsigned* rtfd, unsigned* rifd){
   while((events = poll(pfds, pfdcount, timeoutms)) < 0){ // FIXME smask?
 #else
   struct timespec ts = { .tv_sec = ictx->ibufvalid == 0 ? 1 : 0, .tv_nsec = ictx->ibufvalid == 0 ? 0 : 10000000, };
-  struct timespec* pts = nonblock ? &ts : NULL;
+  struct timespec* pts = nonblock || ictx->ibufvalid > 0 ? &ts : NULL;
   while((events = ppoll(pfds, pfdcount, pts, &smask)) < 0){
 #endif
     if(errno == EINTR){
