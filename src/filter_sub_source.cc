@@ -447,8 +447,15 @@ filter_sub_source::rl_history(textinput_curses& tc)
         case text_format_t::TF_PCRE: {
             std::vector<attr_line_t> poss;
             this->fss_regexp_history.query_entries(
-                tc.get_content(),
-                [&poss](const auto& e) { poss.emplace_back(e.e_content); });
+                tc.get_content(), [&poss, &tc](const auto& e) {
+                    auto al
+                        = attr_line_t::from_table_cell_content(e.e_content,
+                                                               tc.get_width())
+                              .highlight_fuzzy_matches(tc.get_content())
+                              .with_attr_for_all(
+                                  lnav::prompt::SUBST_TEXT.value(e.e_content));
+                    poss.emplace_back(al);
+                });
             tc.open_popup_for_history(poss);
             break;
         }
