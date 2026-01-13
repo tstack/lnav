@@ -32,7 +32,6 @@
 
 #include "textinput.history.hh"
 
-#include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "lnav.hh"

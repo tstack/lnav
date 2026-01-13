@@ -1274,7 +1274,7 @@ exec_context::execute(source_location loc, const std::string& cmdline)
 
     auto before_dls_gen = dls.dls_generation;
     if (this->get_provenance<mouse_input>() && !prompt.p_editor.is_enabled()) {
-        auto& hist = prompt.get_history_for(cmdline[0]);
+        auto& hist = prompt.get_history_for();
         hist_guard = hist.start_operation(cmdline.substr(1));
     }
 

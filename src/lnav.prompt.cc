@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "lnav.prompt.hh"
 
@@ -207,6 +208,8 @@ prompt::get()
         textinput::history::for_context("cmd"_frag),
         textinput::history::for_context("search"_frag),
         textinput::history::for_context("script"_frag),
+        textinput::history::for_context("regexp-filter"_frag),
+        lnav::textinput::history::for_context("sql-filter"_frag),
     };
 
     return retval;
@@ -287,26 +290,31 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
 
 void
 prompt::focus_for(textview_curses& tc,
+                  textinput_curses& editor,
+                  context_t context,
                   char sigil,
                   const std::vector<std::string>& args)
 {
-    this->p_editor.tc_suggestion.clear();
+    editor.tc_suggestion.clear();
     this->p_remote_paths.clear();
-    switch (sigil) {
-        case '|': {
+    this->p_current_context = context;
+    switch (context) {
+        case context_t::script: {
             this->p_scripts = find_format_scripts(lnav_data.ld_config_paths);
             break;
         }
-        case ':': {
+        case context_t::cmd: {
             this->refresh_config_completions();
             this->refresh_sql_completions(tc);
             this->refresh_sql_expr_completions(tc);
             break;
         }
-        case ';': {
+        case context_t::sql: {
             this->refresh_sql_completions(tc);
             break;
         }
+        default:
+            break;
     }
 
     for (const auto& [key, item] : this->p_sql_completions) {
@@ -314,9 +322,9 @@ prompt::focus_for(textview_curses& tc,
     }
 
     this->p_env_vars.clear();
-    switch (sigil) {
-        case ':':
-        case '|': {
+    switch (context) {
+        case context_t::cmd:
+        case context_t::script: {
             for (char** var = environ; *var != nullptr; var++) {
                 auto pair_sf = string_fragment::from_c_str(*var);
                 auto split_sf = pair_sf.split_when(string_fragment::tag1{'='});
@@ -330,17 +338,17 @@ prompt::focus_for(textview_curses& tc,
             break;
     }
 
-    this->p_editor.tc_prefix.clear();
+    editor.tc_prefix.clear();
     if (args.size() >= 3) {
-        this->p_editor.tc_prefix.al_string = args[2];
+        editor.tc_prefix.al_string = args[2];
     } else if (sigil) {
-        this->p_editor.tc_prefix.al_string.push_back(sigil);
+        editor.tc_prefix.al_string.push_back(sigil);
     }
-    this->p_editor.set_height(1);
-    this->p_editor.set_content(cget(args, 3).value_or(""));
-    this->p_editor.move_cursor_to(textinput_curses::input_point::end());
-    this->p_editor.tc_popup.set_title("");
-    this->p_editor.focus();
+    editor.set_height(1);
+    editor.set_content(cget(args, 3).value_or(""));
+    editor.move_cursor_to(textinput_curses::input_point::end());
+    editor.tc_popup.set_title("");
+    editor.focus();
 }
 
 void
@@ -477,31 +485,30 @@ prompt::rl_history_search(textinput_curses& tc)
 void
 prompt::rl_history(textinput_curses& tc)
 {
-    auto sigil = tc.tc_prefix.al_string.front();
-    auto& hist = this->get_history_for(sigil);
+    auto& hist = this->get_history_for();
     auto width = tc.get_width() - 1;
     auto pattern = tc.get_content();
     std::vector<attr_line_t> poss;
-    auto cb = [&poss, sigil, width, &pattern](
+    auto cb = [&poss, this, width, &pattern](
                   const textinput::history::entry& e) {
         auto icon = e.e_status == log_level_t::LEVEL_ERROR ? ui_icon_t::error
                                                            : ui_icon_t::ok;
         auto al = attr_line_t::from_table_cell_content(e.e_content, width)
                       .highlight_fuzzy_matches(pattern)
                       .with_attr_for_all(SUBST_TEXT.value(e.e_content));
-        switch (sigil) {
-            case ':':
+        switch (this->p_current_context) {
+            case context_t::cmd:
                 readline_command_highlighter(al, std::nullopt);
                 al.insert(0, "  ");
                 al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
-            case ';':
+            case context_t::sql:
                 readline_sql_highlighter(
                     al, lnav::sql::dialect::sqlite, std::nullopt);
                 al.insert(0, "  ");
                 al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
-            case '/':
+            case context_t::search:
                 readline_regex_highlighter(al, std::nullopt);
                 break;
         }
@@ -517,11 +524,11 @@ prompt::rl_history(textinput_curses& tc)
 void
 prompt::rl_completion(textinput_curses& tc)
 {
-    if (this->p_editor.tc_popup_type == textinput_curses::popup_type_t::history
+    if (tc.tc_popup_type == textinput_curses::popup_type_t::history
         && this->p_replace_from_history)
     {
-        this->p_editor.blur();
-        this->p_editor.tc_on_perform(tc);
+        tc.blur();
+        tc.tc_on_perform(tc);
         return;
     }
 
@@ -553,8 +560,8 @@ prompt::rl_popup_change(textinput_curses& tc)
         return;
     }
 
-    if (this->p_history_changes > 0 && !this->p_editor.tc_change_log.empty()) {
-        this->p_editor.tc_change_log.pop_back();
+    if (this->p_history_changes > 0 && !tc.tc_change_log.empty()) {
+        tc.tc_change_log.pop_back();
     }
 
     const auto& al

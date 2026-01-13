@@ -2851,7 +2851,8 @@ command_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::COMMAND);
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
-    prompt.focus_for(*tc, ':', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::cmd, ':', args);
 
     rl_set_help();
 }
@@ -2866,7 +2867,8 @@ script_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::EXEC);
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
-    prompt.focus_for(*tc, '|', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::script, '|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("Esc") " to abort)");
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
@@ -2883,7 +2885,8 @@ search_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::SEARCH);
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection().value_or(0_vl);
     lnav_data.ld_search_start_line = tc->get_selection().value_or(0_vl);
-    prompt.focus_for(*tc, '/', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::search, '/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help"_frag);
     lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
@@ -2902,7 +2905,8 @@ search_filters_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::SEARCH_FILTERS);
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     lnav_data.ld_filter_view.reload_data();
-    prompt.focus_for(*tc, '/', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::search, '/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -2917,7 +2921,8 @@ search_files_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SEARCH_FILES);
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    prompt.focus_for(*tc, '/', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::search, '/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -2932,7 +2937,8 @@ search_spectro_details_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SEARCH_SPECTRO_DETAILS);
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    prompt.focus_for(*tc, '/', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::search, '/', args);
 
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
@@ -2953,7 +2959,8 @@ sql_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SQL);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.focus_for(*tc, ';', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::sql, ';', args);
 
     lnav_data.ld_doc_status_source.set_title("Query Help"_frag);
     lnav_data.ld_doc_status_source.set_description(
@@ -2984,7 +2991,8 @@ user_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::USER);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.focus_for(*tc, '\0', args);
+    prompt.focus_for(
+        *tc, prompt.p_editor, lnav::prompt::context_t::cmd, '\0', args);
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();

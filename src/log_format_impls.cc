@@ -633,7 +633,7 @@ public:
         separated_string ss(sbr.get_data(), sbr.length());
         timeval tv;
         exttm tm;
-        auto found_ts = false;
+        size_t found_ts = 0;
         log_level_t level = LEVEL_INFO;
         uint64_t opid_bloom = 0;
         auto opid_cap = string_fragment::invalid();
@@ -662,7 +662,7 @@ public:
                         sf.data(), sf.length(), TIME_FMT, &tm, tv))
                 {
                     this->lf_timestamp_flags = tm.et_flags;
-                    found_ts = true;
+                    found_ts += 1;
                 }
             } else if (STATUS_CODE == fd.fd_meta.lvm_name) {
                 const auto sf = *iter;
@@ -703,7 +703,7 @@ public:
             }
         }
 
-        if (found_ts) {
+        if (found_ts == 1) {
             if (!this->lf_specialized) {
                 for (auto& ll : dst) {
                     ll.set_ignore(true);
@@ -760,7 +760,7 @@ public:
             return this->scan_int(dst, li, sbr, sbc);
         }
 
-        if (dst.empty() || dst.size() > 20 || sbr.empty()
+        if (dst.size() <= 2 || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
             return scan_no_match{"no header found"};
@@ -1444,7 +1444,8 @@ public:
         ws_separated_string ss(sbr.get_data(), sbr.length());
         timeval date_tv{0, 0}, time_tv{0, 0};
         exttm date_tm, time_tm;
-        bool found_date = false, found_time = false;
+        size_t found_date = 0;
+        size_t found_time = 0;
         log_level_t level = LEVEL_INFO;
 
         sbc.sbc_value_stats.resize(this->wlf_field_defs.size());
@@ -1496,7 +1497,7 @@ public:
                         sf.data(), sf.length(), nullptr, &date_tm, date_tv))
                 {
                     this->lf_timestamp_flags |= date_tm.et_flags;
-                    found_date = true;
+                    found_date += 1;
                 }
             } else if (F_TIME == fd.fd_name || F_TIME_LOCAL == fd.fd_name
                        || F_TIME_UTC == fd.fd_name)
@@ -1505,7 +1506,7 @@ public:
                         sf.data(), sf.length(), nullptr, &time_tm, time_tv))
                 {
                     this->lf_timestamp_flags |= time_tm.et_flags;
-                    found_time = true;
+                    found_time += 1;
                 }
             } else if (F_STATUS_CODE == fd.fd_name) {
                 if (!sf.empty() && sf[0] >= '4') {
@@ -1532,7 +1533,7 @@ public:
             }
         }
 
-        if (found_time) {
+        if (found_time == 1 && found_date <= 1) {
             auto tm = time_tm;
 
             if (found_date) {
@@ -1587,7 +1588,7 @@ public:
             return this->scan_int(dst, li, sbr, sbc);
         }
 
-        if (dst.empty() || dst.size() > 20 || sbr.empty()
+        if (dst.size() <= 2 || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
             return scan_no_match{"no header found"};
@@ -1958,7 +1959,7 @@ struct logfmt_pair_handler {
             char buf[1024];
             this->lph_dt_scanner.ftime(
                 buf, sizeof(buf), nullptr, this->lph_time_tm);
-            this->lph_found_time = true;
+            this->lph_found_time += 1;
         } else if (this->lph_key_frag.is_one_of("level"_frag, "lvl"_frag)) {
             this->lph_level
                 = string2level(value_frag.data(), value_frag.length());
@@ -1967,7 +1968,7 @@ struct logfmt_pair_handler {
     }
 
     date_time_scanner& lph_dt_scanner;
-    bool lph_found_time{false};
+    size_t lph_found_time{0};
     exttm lph_time_tm;
     timeval lph_tv{0, 0};
     log_level_t lph_level{log_level_t::LEVEL_INFO};
@@ -2104,11 +2105,11 @@ public:
             }
         }
 
-        if (lph.lph_found_time) {
+        if (lph.lph_found_time == 1) {
             this->lf_timestamp_flags = lph.lph_time_tm.et_flags;
             dst.emplace_back(
                 li.li_file_range.fr_offset, to_us(lph.lph_tv), lph.lph_level);
-            retval = scan_match{2000};
+            retval = scan_match{500};
         }
 
         return retval;
@@ -2125,7 +2126,7 @@ public:
         auto& sbr = values.lvv_sbr;
         auto p = logfmt::parser(sbr.to_string_fragment());
         auto done = false;
-        auto found_body = false;
+        size_t found_body = 0;
 
         while (!done) {
             auto parse_result = p.step();
@@ -2198,7 +2199,7 @@ public:
                     } else if (kvp.first.is_one_of("msg"_frag, "message"_frag))
                     {
                         sa.emplace_back(value_lr, SA_BODY.value());
-                        found_body = true;
+                        found_body += 1;
                     } else if (kvp.second.is<logfmt::parser::quoted_value>()
                                || kvp.second
                                       .is<logfmt::parser::unquoted_value>())
@@ -2236,7 +2237,7 @@ public:
                 });
         }
 
-        if (!found_body) {
+        if (found_body == 1) {
             sa.emplace_back(line_range::empty_at(sbr.length()),
                             SA_BODY.value());
         }

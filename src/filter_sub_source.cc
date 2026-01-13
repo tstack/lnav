@@ -54,11 +54,10 @@
 using namespace lnav::roles::literals;
 
 filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
-    : fss_editor(std::move(editor)),
-      fss_regexp_history(
-          lnav::textinput::history::for_context("regexp-filter"_frag)),
-      fss_sql_history(lnav::textinput::history::for_context("sql-filter"_frag))
+    : fss_editor(std::move(editor))
 {
+    static auto& prompt = lnav::prompt::get();
+
     this->fss_editor->set_visible(false);
     this->fss_editor->set_x(28);
     this->fss_editor->tc_popup.set_title("Pattern");
@@ -66,13 +65,13 @@ filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
     this->fss_editor->tc_on_change
         = bind_mem(&filter_sub_source::rl_change, this);
     this->fss_editor->tc_on_history_search
-        = bind_mem(&filter_sub_source::rl_history, this);
+        = bind_mem(&lnav::prompt::rl_history_search, &prompt);
     this->fss_editor->tc_on_history_list
-        = bind_mem(&filter_sub_source::rl_history, this);
+        = bind_mem(&lnav::prompt::rl_history_list, &prompt);
     this->fss_editor->tc_on_completion_request
         = bind_mem(&filter_sub_source::rl_completion_request, this);
     this->fss_editor->tc_on_completion
-        = bind_mem(&filter_sub_source::rl_completion, this);
+        = bind_mem(&lnav::prompt::rl_completion, &prompt);
     this->fss_editor->tc_on_perform
         = bind_mem(&filter_sub_source::rl_perform, this);
     this->fss_editor->tc_on_blur = bind_mem(&filter_sub_source::rl_blur, this);
@@ -433,40 +432,20 @@ filter_sub_source::text_size_for_line(textview_curses& tc,
 void
 filter_sub_source::rl_change(textinput_curses& rc)
 {
+    static auto& prompt = lnav::prompt::get();
+
+    if (rc.tc_popup_type == textinput_curses::popup_type_t::history
+        && !prompt.p_replace_from_history)
+    {
+        rc.tc_on_history_search(rc);
+        return;
+    }
+
     auto* top_view = *lnav_data.ld_view_stack.top();
     auto rows = this->rows_for(top_view);
     auto& row = rows[this->tss_view->get_selection().value()];
 
     row->ti_change(top_view, rc);
-}
-
-void
-filter_sub_source::rl_history(textinput_curses& tc)
-{
-    switch (tc.tc_text_format) {
-        case text_format_t::TF_PCRE: {
-            std::vector<attr_line_t> poss;
-            this->fss_regexp_history.query_entries(
-                tc.get_content(), [&poss, &tc](const auto& e) {
-                    auto al
-                        = attr_line_t::from_table_cell_content(e.e_content,
-                                                               tc.get_width())
-                              .highlight_fuzzy_matches(tc.get_content())
-                              .with_attr_for_all(
-                                  lnav::prompt::SUBST_TEXT.value(e.e_content));
-                    poss.emplace_back(al);
-                });
-            tc.open_popup_for_history(poss);
-            break;
-        }
-        case text_format_t::TF_PLAINTEXT:
-        case text_format_t::TF_SQL: {
-            break;
-        }
-        default:
-            ensure(false);
-            break;
-    }
 }
 
 void
@@ -1014,6 +993,10 @@ filter_sub_source::text_filter_row::prime_text_input(textview_curses* top_view,
 {
     static auto& prompt = lnav::prompt::get();
 
+    auto context = this->tfr_filter->get_lang() == filter_lang_t::SQL
+        ? lnav::prompt::context_t::sql_filter
+        : lnav::prompt::context_t::regex_filter;
+    prompt.focus_for(*top_view, ti, context, '\0', {});
     ti.tc_text_format = this->tfr_filter->get_lang() == filter_lang_t::SQL
         ? text_format_t::TF_SQL
         : text_format_t::TF_PCRE;
@@ -1210,6 +1193,7 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
                                                filter_sub_source& parent)
 {
     static const intern_string_t INPUT_SRC = intern_string::lookup("input");
+    static auto& prompt = lnav::prompt::get();
 
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
@@ -1249,7 +1233,7 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
                         this->tfr_filter->get_index(),
                         code_ptr);
 
-                    parent.fss_regexp_history.insert_plain_content(new_value);
+                    prompt.get_history_for().insert_plain_content(new_value);
 
                     auto iter
                         = std::find(fs.begin(), fs.end(), this->tfr_filter);
@@ -1289,6 +1273,7 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
                     lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
                     this->ti_abort(top_view, ti, parent);
                 } else {
+                    prompt.get_history_for().insert_plain_content(new_value);
                     lnav_data.ld_log_source.set_sql_filter(new_value,
                                                            stmt.release());
                     tss->text_filters_changed();

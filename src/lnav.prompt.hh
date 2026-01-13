@@ -40,7 +40,6 @@
 #include "base/string_attr_type.hh"
 #include "format.scripts.hh"
 #include "help_text.hh"
-#include "lnav.prompt.hh"
 #include "mapbox/variant.hpp"
 #include "textinput.history.hh"
 #include "textinput_curses.hh"
@@ -90,27 +89,44 @@ struct prompt {
         role_t sim_role;
     };
 
+    enum class context_t {
+        none,
+        sql,
+        cmd,
+        search,
+        script,
+        regex_filter,
+        sql_filter,
+    };
+
     lnav::textinput::history p_sql_history;
     lnav::textinput::history p_cmd_history;
     lnav::textinput::history p_search_history;
     lnav::textinput::history p_script_history;
+    lnav::textinput::history p_regexp_filter_history;
+    lnav::textinput::history p_sql_filter_history;
 
-    lnav::textinput::history& get_history_for(char sigil)
+    lnav::textinput::history& get_history_for()
     {
-        switch (sigil) {
-            case ':':
+        switch (this->p_current_context) {
+            case context_t::cmd:
                 return this->p_cmd_history;
-            case ';':
+            case context_t::sql:
                 return this->p_sql_history;
-            case '/':
+            case context_t::search:
                 return this->p_search_history;
-            case '|':
+            case context_t::script:
                 return this->p_script_history;
+            case context_t::regex_filter:
+                return this->p_regexp_filter_history;
+            case context_t::sql_filter:
+                return this->p_sql_filter_history;
             default:
                 ensure(false);
         }
     }
 
+    context_t p_current_context{context_t::none};
     std::map<std::string, std::string> p_env_vars;
     std::multimap<std::string, sql_item_t, strnatcaseless> p_sql_completions;
     std::set<std::string, strnatless> p_sql_completion_terms;
@@ -127,6 +143,8 @@ struct prompt {
     int32_t p_history_changes{0};
 
     void focus_for(textview_curses& tc,
+                   textinput_curses& editor,
+                   context_t context,
                    char sigil,
                    const std::vector<std::string>& args);
 

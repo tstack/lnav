@@ -95,8 +95,6 @@ public:
 
     void rl_change(textinput_curses& rc);
 
-    void rl_history(textinput_curses& tc);
-
     enum class completion_request_type_t {
         partial,
         full,
@@ -266,8 +264,6 @@ public:
     }
 
     std::shared_ptr<textinput_curses> fss_editor;
-    lnav::textinput::history fss_regexp_history;
-    lnav::textinput::history fss_sql_history;
     std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;
     log_level_t fss_curr_level;
