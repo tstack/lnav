@@ -4,6 +4,11 @@ export TZ=UTC
 export YES_COLOR=1
 export DUMP_CRASH=1
 
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":goto 0s" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -nN \
     -c ":goto -1"
 

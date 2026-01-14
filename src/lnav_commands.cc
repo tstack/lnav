@@ -826,7 +826,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     std::string retval;
 
-    std::string all_args = remaining_args(cmdline, args);
+    std::string all_args = trim(remaining_args(cmdline, args));
     auto* tc = *lnav_data.ld_view_stack.top();
     std::optional<vis_line_t> dst_vl;
     auto is_location = false;
@@ -867,7 +867,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
     }
 
-    if (dst_vl) {
+    if (all_args.empty() || dst_vl) {
     } else if (parse_res.isOk()) {
         if (ttt == nullptr) {
             return ec.make_error(
@@ -892,9 +892,13 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
 
         do {
+            auto orig_tv = tv;
             auto tm = rt.adjust(tv);
 
             tv = tm.to_timeval();
+            if (tv == orig_tv) {
+                break;
+            }
             auto new_vl_opt = ttt->row_for_time(tv);
             if (!new_vl_opt) {
                 break;

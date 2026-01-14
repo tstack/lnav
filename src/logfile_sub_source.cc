@@ -201,8 +201,8 @@ struct filtered_logline_cmp {
     {
         auto cl_lhs = llss_controller.lss_index[lhs].value();
         auto cl_rhs = llss_controller.lss_index[rhs].value();
-        auto ll_lhs = this->llss_controller.find_line(cl_lhs);
-        auto ll_rhs = this->llss_controller.find_line(cl_rhs);
+        const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
+        const auto* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
         if (ll_lhs == nullptr) {
             return true;
@@ -865,36 +865,8 @@ struct logline_cmp {
         return (*ll_lhs) < (*ll_rhs);
     }
 
-    bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
-    {
-        auto cl_lhs = llss_controller.lss_index[lhs].value();
-        auto cl_rhs = llss_controller.lss_index[rhs].value();
-        const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
-        const auto* ll_rhs = this->llss_controller.find_line(cl_rhs);
-
-        return (*ll_lhs) < (*ll_rhs);
-    }
-#if 0
-        bool operator()(const indexed_content &lhs, const indexed_content &rhs)
-        {
-            logline *ll_lhs = this->llss_controller.find_line(lhs.ic_value);
-            logline *ll_rhs = this->llss_controller.find_line(rhs.ic_value);
-
-            return (*ll_lhs) < (*ll_rhs);
-        }
-#endif
-
-#if 0
-    bool operator()(const content_line_t& lhs, const time_t& rhs) const
-    {
-        logline* ll_lhs = this->llss_controller.find_line(lhs);
-
-        return *ll_lhs < rhs;
-    }
-#endif
-
     bool operator()(const logfile_sub_source::indexed_content& lhs,
-                    const struct timeval& rhs) const
+                    const timeval& rhs) const
     {
         const auto* ll_lhs = this->llss_controller.find_line(lhs.value());
 
