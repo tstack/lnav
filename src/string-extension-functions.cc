@@ -215,10 +215,10 @@ mapbox::util::
 static json_string
 logfmt2json(string_fragment line)
 {
+    std::vector<string_fragment> unbound;
     logfmt::parser p(line);
     yajlpp_gen gen;
     yajl_gen_config(gen, yajl_gen_beautify, false);
-
     {
         yajlpp_map root(gen);
         bool done = false;
@@ -228,6 +228,10 @@ logfmt2json(string_fragment line)
 
             done = pair.match(
                 [](const logfmt::parser::end_of_input& eoi) { return true; },
+                [&unbound](const string_fragment& sf) {
+                    unbound.emplace_back(sf);
+                    return false;
+                },
                 [&root, &gen](const logfmt::parser::kvpair& kvp) {
                     root.gen(kvp.first);
 
@@ -272,6 +276,14 @@ logfmt2json(string_fragment line)
                 [](const logfmt::parser::error& e) -> bool {
                     throw sqlite_func_error("Invalid logfmt: {}", e.e_msg);
                 });
+        }
+
+        if (!unbound.empty()) {
+            root.gen("__unbound__");
+            yajlpp_array unbound_array(gen);
+            for (const auto& sf : unbound) {
+                unbound_array.gen(sf);
+            }
         }
     }
 

@@ -2037,6 +2037,9 @@ public:
                     done = true;
                     return scan_match{};
                 },
+                [](const string_fragment&) -> scan_result_t {
+                    return scan_incomplete{};
+                },
                 [&lph](const logfmt::parser::kvpair& kvp) -> scan_result_t {
                     lph.lph_key_frag = kvp.first;
 
@@ -2133,6 +2136,7 @@ public:
 
             done = parse_result.match(
                 [](const logfmt::parser::end_of_input&) { return true; },
+                [](const string_fragment&) { return false; },
                 [this, &sa, &values, &found_body](
                     const logfmt::parser::kvpair& kvp) {
                     auto value_frag = kvp.second.match(
@@ -2196,8 +2200,8 @@ public:
                     } else if (kvp.first.is_one_of("level"_frag, "lvl"_frag)) {
                         sa.emplace_back(value_lr, L_LEVEL.value());
                         known_field = true;
-                    } else if (kvp.first.is_one_of("msg"_frag, "message"_frag))
-                    {
+                    } else if (kvp.first.is_one_of("msg"_frag,
+                                                   "message"_frag)) {
                         sa.emplace_back(value_lr, SA_BODY.value());
                         found_body += 1;
                     } else if (kvp.second.is<logfmt::parser::quoted_value>()

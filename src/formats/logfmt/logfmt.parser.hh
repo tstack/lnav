@@ -32,8 +32,9 @@
 #ifndef lnav_logfmt_parser_hh
 #define lnav_logfmt_parser_hh
 
+#include <utility>
+
 #include "base/intern_string.hh"
-#include "base/result.h"
 #include "mapbox/variant.hpp"
 
 namespace logfmt {
@@ -76,6 +77,7 @@ public:
     using kvpair = std::pair<string_fragment, value_type>;
 
     using step_result = mapbox::util::variant<
+        string_fragment,
         end_of_input,
         kvpair,
         error

@@ -38,9 +38,9 @@
 logfmt::parser::parser(string_fragment sf) : p_next_input(sf) {}
 
 static bool
-is_not_eq(char ch)
+is_not_key(char ch)
 {
-    return ch != '=';
+    return !isalnum(ch) && ch != '_' && ch != '-' && ch != '.';
 }
 
 struct bare_value_predicate {
@@ -181,20 +181,25 @@ logfmt::parser::step()
         return end_of_input{};
     }
 
-    auto pair_opt = remaining.split_while(is_not_eq);
-
-    if (!pair_opt) {
+    auto [before, after] = remaining.split_when(string_fragment::tag1{'='});
+    if (before.empty()) {
         return error{remaining.sf_begin, "expecting key followed by '='"};
     }
 
-    auto key_frag = pair_opt->first;
-    auto after_eq = pair_opt->second.consume(string_fragment::tag1{'='});
-
-    if (!after_eq) {
-        return error{pair_opt->second.sf_begin, "expecting '='"};
+    if (before.sf_end == remaining.sf_end) {
+        this->p_next_input = after;
+        return before;
     }
 
-    auto value_start = after_eq.value();
+    auto [plain, key] = before.rsplit_when(is_not_key);
+    if (!plain.empty()) {
+        this->p_next_input = key;
+        this->p_next_input.sf_end = after.sf_end;
+        return plain;
+    }
+
+    auto key_frag = before;
+    auto value_start = after;
 
     if (value_start.startswith("\"")) {
         string_fragment::quoted_string_body qsb;

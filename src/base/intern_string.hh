@@ -586,11 +586,11 @@ struct string_fragment {
                     string_fragment{
                         this->sf_string,
                         this->sf_begin,
-                        this->sf_begin + curr,
+                        curr,
                     },
                     string_fragment{
                         this->sf_string,
-                        this->sf_begin + curr + 1,
+                        curr + 1,
                         this->sf_end,
                     });
             }
@@ -599,6 +599,35 @@ struct string_fragment {
         }
 
         return std::nullopt;
+    }
+
+    template<typename P>
+    split_when_result rsplit_when(P&& predicate) const
+    {
+        if (this->empty()) {
+            return std::make_pair(string_fragment{}, string_fragment{});
+        }
+
+        auto curr = this->sf_end - 1;
+        while (curr >= this->sf_begin) {
+            if (predicate(this->sf_string[curr])) {
+                return std::make_pair(
+                    string_fragment{
+                        this->sf_string,
+                        this->sf_begin,
+                        curr + 1,
+                    },
+                    string_fragment{
+                        this->sf_string,
+                        curr + 1,
+                        this->sf_end,
+                    });
+            }
+
+            curr -= 1;
+        }
+
+        return std::make_pair(string_fragment{}, *this);
     }
 
     using split_n_result = std::pair<string_fragment, string_fragment>;
