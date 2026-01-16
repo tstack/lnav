@@ -9,7 +9,7 @@
         "converter": {
             "header": {
                 "expr": {
-                    "otel_collector": ":header REGEXP '.*\"resourceLogs\".*'"
+                    "otel_collector": ":header REGEXP '.*227265736f757263654c6f677322.*'"
                 },
                 "size": 100
             },
@@ -52,15 +52,13 @@
             "trace": "TRACE"
         },
         "timestamp-field": "timestamp_ns",
-        "timestamp-divisor": 1000000,
+        "timestamp-format": [
+            "%9"
+        ],
         "body-field": "body",
         "opid-field": "trace_id",
         "hide-extra": true,
         "value": {
-            "timestamp_ns": {
-                "kind": "string",
-                "hidden": true
-            },
             "observed_ns": {
                 "kind": "string",
                 "hidden": true
