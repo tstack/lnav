@@ -23,6 +23,7 @@ BUILTIN_LNAVSCRIPTS = \
 BUILTIN_SHSCRIPTS = \
     $(srcdir)/scripts/com.vmware.btresolver.py \
     $(srcdir)/scripts/dump-pid.sh \
+    $(srcdir)/scripts/otel_collector_log-converter.sh \
     $(srcdir)/scripts/pcap_log-converter.sh \
     $(srcdir)/scripts/zookeeper.sql \
     $()

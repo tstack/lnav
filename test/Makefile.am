@@ -392,6 +392,7 @@ dist_noinst_DATA = \
 	logfile_mysql_slow.0 \
 	logfile_nested_json.json \
 	logfile_nextcloud.0 \
+	logfile_otel_collector.jsonl \
 	logfile_openam.0 \
 	logfile_partitions.0 \
 	logfile_pino.0 \

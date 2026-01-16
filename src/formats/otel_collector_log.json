@@ -1,0 +1,116 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "otel_collector_log": {
+        "title": "OpenTelemetry Collector File Exporter",
+        "description": "Format for OpenTelemetry Collector file exporter JSON logs",
+        "url": "https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/",
+        "file-type": "json",
+        "convert-to-local-time": true,
+        "converter": {
+            "header": {
+                "expr": {
+                    "otel_collector": ":header REGEXP '.*\"resourceLogs\".*'"
+                },
+                "size": 100
+            },
+            "command": "otel_collector_log-converter.sh"
+        },
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase",
+                "min-width": 5
+            },
+            " ",
+            {
+                "field": "service.name",
+                "default-value": "-",
+                "auto-width": true
+            },
+            " ",
+            {
+                "field": "body"
+            },
+            {
+                "field": "trace_id",
+                "prefix": " [trace:",
+                "suffix": "]",
+                "default-value": ""
+            }
+        ],
+        "level-field": "severity",
+        "level": {
+            "fatal": "FATAL",
+            "error": "ERROR",
+            "warning": "WARN",
+            "info": "INFO",
+            "debug": "DEBUG",
+            "trace": "TRACE"
+        },
+        "timestamp-field": "timestamp_ns",
+        "timestamp-divisor": 1000000,
+        "body-field": "body",
+        "opid-field": "trace_id",
+        "hide-extra": true,
+        "value": {
+            "timestamp_ns": {
+                "kind": "string",
+                "hidden": true
+            },
+            "observed_ns": {
+                "kind": "string",
+                "hidden": true
+            },
+            "severity_number": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "severity": {
+                "kind": "string",
+                "identifier": true
+            },
+            "body": {
+                "kind": "string"
+            },
+            "trace_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "span_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "flags": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "scope_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "service.name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "host.name": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            },
+            "deployment.environment": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            }
+        },
+        "sample": [
+            {
+                "line": "{\"timestamp_ns\":\"1700000000000000000\",\"severity\":\"INFO\",\"severity_number\":9,\"body\":\"Application started successfully\",\"trace_id\":\"abc123\",\"span_id\":\"def456\",\"scope_name\":\"app.main\",\"service.name\":\"my-service\"}"
+            }
+        ]
+    }
+}
