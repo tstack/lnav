@@ -87,6 +87,23 @@
     {
         "log_line": 11,
         "log_time": "2013-09-06 22:00:59.124817",
+        "log_level": "invalid",
+        "arr": null,
+        "obj": null,
+        "logger": null,
+        "lvl": null,
+        "user": null,
+        "log_part": null,
+        "log_idle_msecs": 0,
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "log_annotations": null,
+        "log_filters": null
+    },
+    {
+        "log_line": 12,
+        "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug3",
         "arr": null,
         "obj": null,
@@ -102,7 +119,7 @@
         "log_filters": null
     },
     {
-        "log_line": 13,
+        "log_line": 14,
         "log_time": "2013-09-06 22:00:59.124817",
         "log_level": "debug2",
         "arr": null,
@@ -119,7 +136,7 @@
         "log_filters": null
     },
     {
-        "log_line": 15,
+        "log_line": 16,
         "log_time": "2013-09-06 22:01:00.000000",
         "log_level": "debug",
         "arr": null,
@@ -136,7 +153,7 @@
         "log_filters": null
     },
     {
-        "log_line": 17,
+        "log_line": 18,
         "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "stats",
         "arr": null,
@@ -153,7 +170,7 @@
         "log_filters": null
     },
     {
-        "log_line": 19,
+        "log_line": 20,
         "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "warning",
         "arr": null,
@@ -170,7 +187,7 @@
         "log_filters": null
     },
     {
-        "log_line": 21,
+        "log_line": 22,
         "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "error",
         "arr": null,
@@ -187,7 +204,7 @@
         "log_filters": null
     },
     {
-        "log_line": 23,
+        "log_line": 24,
         "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "critical",
         "arr": null,
@@ -204,7 +221,7 @@
         "log_filters": null
     },
     {
-        "log_line": 25,
+        "log_line": 26,
         "log_time": "2013-09-06 22:01:49.124817",
         "log_level": "fatal",
         "arr": [

@@ -666,6 +666,16 @@ struct subcmd_format_t {
                     retval.emplace_back(um);
                 }
             },
+            [&retval, &sample](const log_format::scan_error& se) {
+                if (retval.empty()) {
+                    auto um = lnav::console::user_message::error(
+                        attr_line_t("test file did not match due to an error"));
+                    um.with_reason(se.se_message)
+                        .with_snippet(lnav::console::snippet::from(
+                            sample.s_line.pp_location, sample.s_line.pp_value));
+                    retval.emplace_back(um);
+                }
+            },
             [&retval, &sample](const log_format::scan_match& yep) mutable {
                 auto al = attr_line_t("test file matched format");
                 if (!sample.s_matched_regexes.empty()) {

@@ -1020,6 +1020,26 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         "more data required",
                         curr->get_name().c_str());
                 },
+                [this, curr](const log_format::scan_error& se) {
+                    this->lf_invalid_lines.ili_total += 1;
+                    if (this->lf_invalid_lines.ili_lines.size()
+                        >= invalid_line_info::MAX_INVALID_LINES)
+                    {
+                        return;
+                    }
+                    this->lf_invalid_lines.ili_lines.emplace_back(
+                        this->lf_index.size());
+                    this->lf_format_match_messages.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t()
+                                .append(lnav::roles::identifier(
+                                    curr->get_name().to_string()))
+                                .append(" failed to scan line ")
+                                .append(lnav::roles::number(
+                                    fmt::to_string(this->lf_index.size())))
+                                .append(": ")
+                                .append(se.se_message)));
+                },
                 [this, curr, prescan_size](
                     const log_format::scan_no_match& snm) {
                     if (this->lf_format == nullptr && prescan_size < 5) {

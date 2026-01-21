@@ -163,14 +163,18 @@ public:
         uint32_t sm_strikes{0};
     };
 
+    struct scan_error {
+        std::string se_message;
+    };
+
     struct scan_no_match {
         const char* snm_reason{nullptr};
     };
 
     struct scan_incomplete {};
 
-    using scan_result_t
-        = mapbox::util::variant<scan_match, scan_no_match, scan_incomplete>;
+    using scan_result_t = mapbox::util::
+        variant<scan_match, scan_no_match, scan_error, scan_incomplete>;
 
     virtual scan_result_t test_line(
         sample_t& sample, std::vector<lnav::console::user_message>& msgs);
@@ -188,8 +192,7 @@ public:
                                std::vector<logline>& dst,
                                const line_info& li,
                                shared_buffer_ref& sbr,
-                               scan_batch_context& sbc)
-        = 0;
+                               scan_batch_context& sbc) = 0;
 
     virtual bool scan_for_partial(const log_format_file_state& lffs,
                                   shared_buffer_ref& sbr,

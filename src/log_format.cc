@@ -67,6 +67,7 @@
 
 using namespace lnav::roles::literals;
 using namespace std::chrono_literals;
+using std::string_literals::operator""s;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -1150,6 +1151,7 @@ struct json_log_userdata {
     std::optional<string_fragment> jlu_tid_frag;
     std::optional<int64_t> jlu_tid_number;
     std::optional<std::string> jlu_subid;
+    std::optional<log_format::scan_error> jlu_scan_error;
     hasher jlu_opid_hasher;
     std::chrono::microseconds jlu_duration{0};
     exttm jlu_exttm;
@@ -1614,7 +1616,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
             return scan_no_match{"line is not a JSON object"};
         }
 
-        ll.set_time(dst.back().get_time<std::chrono::microseconds>());
+        if (!dst.empty()) {
+            ll.set_time(dst.back().get_time<std::chrono::microseconds>());
+        }
         ll.set_level(LEVEL_INVALID);
         dst.emplace_back(ll);
         return scan_match{0};
@@ -1659,6 +1663,18 @@ external_log_format::scan_json(std::vector<logline>& dst,
     if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok
         && yajl_complete_parse(handle) == yajl_status_ok)
     {
+        if (jlu.jlu_scan_error) {
+            if (this->lf_specialized) {
+                if (!dst.empty()) {
+                    ll.set_time(
+                        dst.back().get_time<std::chrono::microseconds>());
+                }
+                ll.set_level(LEVEL_INVALID);
+                dst.emplace_back(ll);
+                return scan_match{0};
+            }
+            return jlu.jlu_scan_error.value();
+        }
         if (ll.get_time<std::chrono::microseconds>().count() == 0) {
             if (this->lf_specialized) {
                 if (!dst.empty()) {
@@ -2532,6 +2548,11 @@ read_json_field(yajlpp_parse_context* ypc,
         if (last != nullptr) {
             jlu->jlu_format->lf_timestamp_flags = jlu->jlu_exttm.et_flags;
             jlu->jlu_base_line->set_time(tv_out);
+        } else {
+            jlu->jlu_scan_error = log_format::scan_error{fmt::format(
+                "failed to parse timestamp '{}' in string property '{}'",
+                frag,
+                field_name)};
         }
     } else if (jlu->jlu_format->elf_level_pointer.pp_value != nullptr) {
         if (jlu->jlu_format->elf_level_pointer.pp_value
@@ -2636,6 +2657,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
 
         // TODO add a timeval kind to logline_value
         if (jlu->jlu_line->is_time_skewed()
+            || jlu->jlu_line->get_msg_level() == LEVEL_INVALID
             || (jlu->jlu_format->lf_timestamp_flags
                 & (ETF_MICROS_SET | ETF_NANOS_SET | ETF_ZONE_SET)))
         {
@@ -2658,6 +2680,11 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                     == nullptr)
                 {
                     jlu->jlu_format->lf_date_time.relock(ls);
+                    jlu->jlu_scan_error = log_format::scan_error{
+                        fmt::format("failed to parse timestamp '{}' in string "
+                                    "property '{}'",
+                                    frag,
+                                    field_name)};
                 }
             }
             if (!jlu->jlu_subline_opts.hash_hack) {
@@ -2791,7 +2818,8 @@ external_log_format::get_subline(const log_format_file_state& lffs,
         yajl_status parse_status = yajl_parse(
             handle, (const unsigned char*) sbr.get_data(), sbr.length());
         if (parse_status != yajl_status_ok
-            || yajl_complete_parse(handle) != yajl_status_ok)
+            || yajl_complete_parse(handle) != yajl_status_ok
+            || jlu.jlu_scan_error)
         {
             unsigned char* msg;
             std::string full_msg;
@@ -2813,7 +2841,9 @@ external_log_format::get_subline(const log_format_file_state& lffs,
             this->jlf_line_values.clear();
             this->jlf_line_attrs.emplace_back(
                 line_range{0, -1},
-                SA_INVALID.value("JSON line failed to parse"));
+                SA_INVALID.value(jlu.jlu_scan_error
+                                     ? jlu.jlu_scan_error->se_message
+                                     : "JSON line failed to parse"));
         } else {
             std::vector<logline_value>::iterator lv_iter;
             bool used_values[this->jlf_line_values.lvv_values.size()];
@@ -3022,8 +3052,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             lv_iter->lv_sub_offset = sub_offset;
                             used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
-                                lv_iter)]
-                                = true;
+                                lv_iter)] = true;
 
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
@@ -3069,8 +3098,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             {
                                 used_values[distance(
                                     this->jlf_line_values.lvv_values.begin(),
-                                    lv_iter)]
-                                    = true;
+                                    lv_iter)] = true;
                             }
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
@@ -4365,8 +4393,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         for (const auto& vd : this->elf_value_def_order) {
             this->elf_value_def_frag_map[vd->vd_meta.lvm_name
-                                             .to_string_fragment()]
-                = vd.get();
+                                             .to_string_fragment()] = vd.get();
         }
     }
 
@@ -4607,12 +4634,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     = this->elf_value_defs.find(jfe.jfe_value.pp_value);
                 if (jfe.jfe_value.pp_value == ts) {
                     this->elf_value_defs[this->lf_timestamp_field]
-                        ->vd_meta.lvm_hidden
-                        = true;
+                        ->vd_meta.lvm_hidden = true;
                 } else if (jfe.jfe_value.pp_value == level_field) {
                     this->elf_value_defs[this->elf_level_field]
-                        ->vd_meta.lvm_hidden
-                        = true;
+                        ->vd_meta.lvm_hidden = true;
                 } else if (vd_iter == this->elf_value_defs.end()) {
                     errors.emplace_back(
                         lnav::console::user_message::error(
