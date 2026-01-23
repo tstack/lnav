@@ -35,6 +35,7 @@
 
 #include "file_converter_manager.hh"
 
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "base/auto_fd.hh"
@@ -155,6 +156,16 @@ convert(const external_file_format& eff, const std::string& filename)
     err_reader.detach();
 
     log_info("started converter %d to process file", child.in());
+    // wait a bit for the converter to startup so we have some data to look at
+    for (size_t attempt = 0; attempt < 50; attempt++) {
+        struct stat out_stat;
+
+        usleep(10000);
+        fstat(outfile.second, &out_stat);
+        if (out_stat.st_size > 0) {
+            break;
+        }
+    }
 
     return Ok(convert_result{
         std::move(child),

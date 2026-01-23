@@ -274,6 +274,9 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                 tss->to_front(cb.front_file);
             }
         }
+        if (cb.did_promotion) {
+            lnav_data.ld_view_stack.set_needs_update();
+        }
         if (cb.did_promotion && deadline) {
             // If there's a new log file, extend the deadline so it can be
             // indexed quickly.

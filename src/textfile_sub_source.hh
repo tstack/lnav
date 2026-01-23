@@ -223,9 +223,9 @@ private:
         vis_line_t fvs_top{0};
         std::optional<vis_line_t> fvs_selection;
 
-        time_t fvs_mtime;
-        file_ssize_t fvs_file_size;
-        file_off_t fvs_file_indexed_size;
+        time_t fvs_mtime{0};
+        file_ssize_t fvs_file_size{0};
+        file_off_t fvs_file_indexed_size{0};
         std::string fvs_error;
         std::unique_ptr<plain_text_source> fvs_text_source;
         lnav::document::metadata fvs_metadata;
