@@ -63,7 +63,7 @@ static const std::vector<std::chrono::microseconds> TIME_SPANS = {
 
 static constexpr size_t MAX_OPID_WIDTH = 80;
 static constexpr size_t MAX_DESC_WIDTH = 256;
-static constexpr int CHART_INDENT = 22;
+static constexpr int CHART_INDENT = 24;
 
 size_t
 abbrev_ftime(char* datebuf, size_t db_size, const tm& lb_tm, const tm& dt)
@@ -640,7 +640,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
 
             if (width > CHART_INDENT) {
                 width -= CHART_INDENT;
-                double span = (sel_ub - sel_lb).count();
+                const double span = (sel_ub - sel_lb).count();
                 auto us_per_ch = std::chrono::microseconds{
                     static_cast<int64_t>(ceil(span / (double) width))};
 
@@ -692,6 +692,7 @@ timeline_source::rebuild_indexes()
 
     auto op_guard = lnav_opid_guard::internal(op);
     auto& bm = this->tss_view->get_bookmarks();
+    auto& bm_files = bm[&logfile_sub_source::BM_FILES];
     auto& bm_errs = bm[&textview_curses::BM_ERRORS];
     auto& bm_warns = bm[&textview_curses::BM_WARNINGS];
 
@@ -982,6 +983,9 @@ timeline_source::rebuild_indexes()
         [](const auto* lhs, const auto* rhs) { return *lhs < *rhs; });
     for (size_t lpc = 0; lpc < this->gs_time_order.size(); lpc++) {
         const auto& row = *this->gs_time_order[lpc];
+        if (row.or_type == row_type::logfile) {
+            bm_files.insert_once(vis_line_t(lpc));
+        }
         if (row.or_value.otr_level_stats.lls_error_count > 0) {
             bm_errs.insert_once(vis_line_t(lpc));
         } else if (row.or_value.otr_level_stats.lls_warning_count > 0) {

@@ -1702,6 +1702,8 @@ dist_noinst_DATA = \
     test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.out \
     test_timeline.sh_070a540e6ae8971dec18b4b69dee2e550a1db20e.err \
     test_timeline.sh_070a540e6ae8971dec18b4b69dee2e550a1db20e.out \
+    test_timeline.sh_074ace0108a86fcf43408193a318587b85a181ab.err \
+    test_timeline.sh_074ace0108a86fcf43408193a318587b85a181ab.out \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.err \
     test_timeline.sh_0b9d98b7ae18fc6bb61ddff4e698b365c8352723.out \
     test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.err \

@@ -104,3 +104,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ":switch-to-view timeline" \
     ${test_dir}/logfile_rust_tracing.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":switch-to-view timeline" \
+    -c ":next-mark file" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log.1

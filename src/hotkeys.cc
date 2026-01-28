@@ -311,7 +311,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 'f':
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]
+                || tc == &lnav_data.ld_views[LNV_TIMELINE])
+            {
                 bm[&logfile_sub_source::BM_FILES].next(
                     tc->get_selection().value_or(0_vl))
                     | [&tc](auto vl) { tc->set_selection(vl); };
@@ -326,7 +328,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 'F':
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]
+                || tc == &lnav_data.ld_views[LNV_TIMELINE]) {
                 bm[&logfile_sub_source::BM_FILES].prev(
                     tc->get_selection().value_or(0_vl))
                     | [&tc](auto vl) {

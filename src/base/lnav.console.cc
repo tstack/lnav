@@ -28,12 +28,17 @@
  */
 
 #include <algorithm>
+#include <set>
 
 #include "lnav.console.hh"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "color_spaces.hh"
 #include "config.h"
 #include "fmt/color.h"
+#include "fmt/format.h"
 #include "itertools.hh"
 #include "lnav.console.into.hh"
 #include "lnav_log.hh"
