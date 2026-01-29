@@ -39,7 +39,7 @@ Q: How can I force a format for a file?
     command will check the file :code:`my_access.log` against the
     :code:`access_log` format:
 
-    .. prompt:: bash
+    .. code-block:: bash
 
         lnav -m format access_log test my_access.log
 
