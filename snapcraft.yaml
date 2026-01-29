@@ -2,8 +2,7 @@ name: lnav
 adopt-info: lnav
 summary: Log File Navigator
 description: |
-  The Log File Navigator, **lnav** for short, is an advanced log file viewer
-  for the small-scale.
+  The Log File Navigator is a log file viewer for the terminal.
 icon: docs/assets/images/favicon.png
 
 base: core22
