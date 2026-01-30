@@ -1,0 +1,55 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "gitea_log": {
+        "title": "Gitea",
+        "description": "The format used by the Gitea code forge. Default format is documented as the value of the `stdflags` flag.",
+        "url": "https://docs.gitea.com/administration/logging-configuration#flags",
+        "multiline": true,
+        "regex": {
+            "std": {
+                "pattern": "^(\\^.*m)?(?<timestamp>\\d{4}\/\\d{2}\/\\d{2} \\d{2}:\\d{2}:\\d{2}) (?<component>(\\^.*m)?.*(\\^.*m)?) (\\^.*m)?\\[(?<level>\\w+)](\\^.*m)? (?<body>.*)?$"
+            }
+        },
+        "value": {
+            "component": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "level": {
+            "critical": "^C(RITICAL)?",
+            "error": "^E(RROR)?",
+            "warning": "^W(ARNING)?",
+            "info": "^I(NFO)?",
+            "debug": "^D(EBUG)?",
+            "trace": "^T(RACE)?"
+        },
+        "sample": [
+            {
+                "line": "2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7",
+                "level": "info"
+            },
+            {
+                "line": "2023/09/24 22:16:01 routers/common/db.go:21:InitDBEngine() [INFO] Beginning ORM engine initialization.",
+                "level": "info"
+            },
+            {
+                "line": "2023/10/08 22:09:10 ...eb/routing/logger.go:68:func1() [I] router: polling   GET /user/events for 192.168.1.30:0, elapsed 3800.5ms @ events/events.go:18(events.Events)",
+                "level": "info"
+            },
+            {
+                "line": "2023/10/08 16:06:57 ...irror/mirror_pull.go:170:parseRemoteUpdateOutput() [W] parseRemoteUpdateOutput: unexpected update line \" * [new ref]           refs/pull/1319/merge -> refs/pull/1319/merge\"",
+                "level": "warning"
+            },
+            {
+                "line": "2023/10/08 02:37:48 ...eb/routing/logger.go:68:func1() [WARNING] router: slow      POST /user/login for 192.168.56.20:0, elapsed 3362.5ms @ auth/auth.go:170(auth.SignInPost)",
+                "level": "warning"
+            },
+            {
+                "line": "^[[36m2023/09/24 22:16:01 ^[[0m^[[32mcmd/web.go:175:^[[32mserveInstalled()^[[0m ^[[1;32m[I]^[[0m PING DATABASE mysql",
+                "level": "info"
+                // log line stored with terminal color codes
+            }
+        ]
+    }
+}
