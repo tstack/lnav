@@ -2,6 +2,7 @@
 FORMAT_FILES = \
     $(srcdir)/%reldir%/access_log.json \
     $(srcdir)/%reldir%/alb_log.json \
+    $(srcdir)/%reldir%/android_logcat_log.json \
     $(srcdir)/%reldir%/block_log.json \
     $(srcdir)/%reldir%/bunyan_log.json \
     $(srcdir)/%reldir%/caddy_log.json \
