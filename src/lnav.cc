@@ -2541,6 +2541,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (gather_pipers()) {
                 breadcrumb_view->set_needs_update();
             }
+            lnav_data.ld_files_view.reload_data();
 
             next_rescan_time = ui_clock::now();
             next_rebuild_time = next_rescan_time;
