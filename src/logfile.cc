@@ -914,8 +914,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file format: %s",
                               curr->get_name().get(),
-                              fmt::to_string(this->lf_options.loo_file_format)
-                                  .c_str());
+                              this->lf_options.loo_format_name->c_str());
                 }
                 continue;
             }
