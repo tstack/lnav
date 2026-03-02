@@ -548,6 +548,13 @@ Jul 02 10:22:40 2012 -- 672
 Oct 08 16:56:38 2014 -- 344
 EOF
 
+run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_generic_nanos.0
+
+check_output "generic_log nanosecond timestamp not parsed?" <<EOF
+Jan 01 00:00:00 2025 -- 123
+Jan 01 01:00:00 2025 -- 987
+EOF
+
 run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.0
 
 check_output "generic_log level interpreted incorrectly?" <<EOF
