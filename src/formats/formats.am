@@ -27,6 +27,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/katello_log.json \
     $(srcdir)/%reldir%/laravel_log.json \
     $(srcdir)/%reldir%/lnav_debug_log.json \
+    $(srcdir)/%reldir%/logcat_log.json \
     $(srcdir)/%reldir%/macosuni_log.json \
     $(srcdir)/%reldir%/mysql_error_log.json \
     $(srcdir)/%reldir%/mysql_gen_log.json \
