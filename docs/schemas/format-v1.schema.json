@@ -597,7 +597,7 @@
                     "title": "/<format_name>/partitions",
                     "type": "object",
                     "patternProperties": {
-                        "^([\\w:;\\._\\-]+)$": {
+                        "^([\\w:;\\._\\- ]+)$": {
                             "description": "The type of partition to apply",
                             "title": "/<format_name>/partitions/<partition_type>",
                             "type": "object",

@@ -1,13 +1,14 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "logcat_log": {
+        "title": "Android Logcat",
         "description": "Format for Android Logcat tested with the following formats verbs and adverbs: time,threadtime,usec,uid.",
         "regex": {
             "full": {
-                "pattern": "(?<time>\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3,})\\s+((?<uid>\\w+)\\s+)?(?<pid>\\d+)\\s+(?<tid>\\d+) (?<level>.) ((?<tag>\\w+)\\s*:)?(?<body>.*)"
+                "pattern": "(?<timestamp>\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3,})\\s+((?<uid>\\w+)\\s+)?(?<pid>\\d+)\\s+(?<tid>\\d+) (?<level>.) ((?<tag>\\w+)\\s*:)?(?<body>.*)"
             },
             "brieftime": {
-                "pattern": "^(?<time>\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3,}) (?<level>.)\\/(?<tag>\\w+)\\s*\\(\\s*(?<uid>\\d+)\\):(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3,}) (?<level>.)\\/(?<tag>\\w+)\\s*\\(\\s*(?<uid>\\d+)\\):(?<body>.*)$"
             }
         },
         "partitions": {
@@ -16,7 +17,6 @@
             }
         },
         "ordered-by-time": true,
-        "timestamp-field": "time",
         "timestamp-format": [
             "%m-%d %H:%M:%S.%L",
             "%m-%d %H:%M:%S.%f"
@@ -28,8 +28,8 @@
             "error": "^E",
             "warning": "^W",
             "info": "^I",
-            "debug5": "^D",
-            "debug2": "^V"
+            "debug": "^D",
+            "trace": "^V"
         },
         "value": {
             "level": {
@@ -38,9 +38,6 @@
             "tag": {
                 "kind": "string",
                 "identifier": false
-            },
-            "time": {
-                "kind": "string"
             },
             "body": {
                 "kind": "string"
@@ -67,7 +64,7 @@
         "sample": [
             {
                 "line": "05-26 11:18:41.509  1000 23402 23402 V VirtualCameraSession: processCaptureRequest: CaptureRequest { frameNumber:102 }   ",
-                "level": "debug2"
+                "level": "trace"
             },
             {
                 "line": "05-21 15:05:52.808  1047  1116  1240 E FMQ     : MQDescriptor is invalid or queue size is 0.",
@@ -79,11 +76,11 @@
             },
             {
                 "line": "05-26 14:57:03.870 V/Configuration( 1766): Updating configuration, locales updated from [] to [en_US]",
-                "level": "debug2"
+                "level": "trace"
             },
             {
                 "line": "06-06 14:26:44.749 13850 13850 D ScreenSharingSample: MediaProjection.Callback#onStop() called",
-                "level": "debug5"
+                "level": "debug"
             }
         ]
     }

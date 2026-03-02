@@ -844,7 +844,7 @@ static const struct json_path_container format_partition_def_handlers = {
 };
 
 static const struct json_path_container partition_handlers = {
-    yajlpp::pattern_property_handler(R"((?<partition_type>[\w:;\._\-]+))")
+    yajlpp::pattern_property_handler(R"((?<partition_type>[\w:;\._\- ]+))")
         .with_description("The type of partition to apply")
         .with_obj_provider(format_partition_def_provider)
         .with_children(format_partition_def_handlers),
