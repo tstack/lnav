@@ -170,7 +170,7 @@ file
 parse_file(const std::filesystem::path& src, const string_fragment& sf)
 {
     static const auto FRONTMATTER_RE = lnav::pcre2pp::code::from_const(
-        R"((?:^---\n(.*?)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
+        R"((?:\A^---\n(.*?)\n---\n|\A^\+\+\+\n(.*)\n\+\+\+\n))",
         PCRE2_MULTILINE | PCRE2_DOTALL);
     thread_local auto md = FRONTMATTER_RE.create_match_data();
 
