@@ -464,6 +464,62 @@ timeline_source::timeline_source(textview_curses& log_view,
     this->gs_preview_view.set_overlay_source(&this->gs_preview_overlay);
 }
 
+std::optional<timeline_source::row_type>
+timeline_source::row_type_from_string(const std::string& str)
+{
+    if (str == "logfile") {
+        return row_type::logfile;
+    }
+    if (str == "thread") {
+        return row_type::thread;
+    }
+    if (str == "opid") {
+        return row_type::opid;
+    }
+    if (str == "tag") {
+        return row_type::tag;
+    }
+    if (str == "partition") {
+        return row_type::partition;
+    }
+    return std::nullopt;
+}
+
+const char*
+timeline_source::row_type_to_string(row_type rt)
+{
+    switch (rt) {
+        case row_type::logfile:
+            return "logfile";
+        case row_type::thread:
+            return "thread";
+        case row_type::opid:
+            return "opid";
+        case row_type::tag:
+            return "tag";
+        case row_type::partition:
+            return "partition";
+    }
+    return "unknown";
+}
+
+void
+timeline_source::set_row_type_visibility(row_type rt, bool visible)
+{
+    if (visible) {
+        this->gs_hidden_row_types.erase(rt);
+    } else {
+        this->gs_hidden_row_types.insert(rt);
+    }
+}
+
+bool
+timeline_source::is_row_type_visible(row_type rt) const
+{
+    return this->gs_hidden_row_types.find(rt)
+        == this->gs_hidden_row_types.end();
+}
+
 bool
 timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
@@ -571,7 +627,7 @@ timeline_source::text_value_for_line(textview_curses& tc,
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
         auto duration_str = fmt::format(
-            FMT_STRING(" {: >13}"),
+            FMT_STRING("{: >13}"),
             humanize::time::duration::from_tv(to_timeval(duration))
                 .to_string());
 
@@ -601,6 +657,18 @@ timeline_source::text_value_for_line(textview_curses& tc,
                 icon = ui_icon_t::partition;
                 break;
         }
+        if (this->gs_preview_hidden_row_types.count(row.or_type) > 0) {
+            this->gs_rendered_line.append(
+                "-",
+                VC_STYLE.value(text_attrs{
+                    lnav::enums::to_underlying(text_attrs::style::blink),
+                    styling::color_unit::from_palette(
+                        lnav::enums::to_underlying(ansi_color::red)),
+                }));
+        } else {
+            this->gs_rendered_line.append(" ");
+        }
+
         this->gs_rendered_line
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append("  ")
@@ -1007,6 +1075,11 @@ timeline_source::rebuild_indexes()
             full_desc += pair.second.or_description;
         }
 
+        if (!this->is_row_type_visible(row.or_type)) {
+            this->gs_filtered_count += 1;
+            continue;
+        }
+
         shared_buffer sb_opid;
         shared_buffer_ref sbr_opid;
         sbr_opid.share(
@@ -1377,6 +1450,25 @@ timeline_source::text_filters_changed()
     this->rebuild_indexes();
     this->tss_view->reload_data();
     this->tss_view->redo_search();
+}
+
+void
+timeline_source::clear_preview()
+{
+    text_sub_source::clear_preview();
+    this->gs_preview_hidden_row_types.clear();
+}
+
+void
+timeline_source::add_commands_for_session(
+    const std::function<void(const std::string&)>& receiver)
+{
+    text_sub_source::add_commands_for_session(receiver);
+
+    for (const auto& rt : this->gs_hidden_row_types) {
+        receiver(fmt::format(FMT_STRING("hide-in-timeline {}"),
+                             row_type_to_string(rt)));
+    }
 }
 
 int

@@ -853,6 +853,29 @@
 ----
 
 
+.. _hide_in_timeline:
+
+:hide-in-timeline *row-type*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Hide rows of the given type(s) in the timeline view
+
+  **Parameters**
+    * **row-type** --- The type of row to hide
+
+  **Examples**
+    To hide logfile and thread rows:
+
+    .. code-block::  lnav
+
+      :hide-in-timeline logfile thread
+
+  **See Also**
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`
+
+----
+
+
 .. _hide_lines_after:
 
 :hide-lines-after *date*
@@ -1509,6 +1532,29 @@
   **Parameters**
     * **path** --- The path or glob pattern that specifies the files to show
 
+
+----
+
+
+.. _show_in_timeline:
+
+:show-in-timeline *row-type*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Show rows of the given type(s) that were previously hidden in the timeline view
+
+  **Parameters**
+    * **row-type** --- The type of row to show
+
+  **Examples**
+    To show logfile and thread rows:
+
+    .. code-block::  lnav
+
+      :show-in-timeline logfile thread
+
+  **See Also**
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`
 
 ----
 

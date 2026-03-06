@@ -57,6 +57,7 @@
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
 #include "tailer/tailer.looper.hh"
+#include "timeline_source.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -1792,6 +1793,12 @@ reset_session()
     rebuild_indexes(std::nullopt);
 
     lnav_data.ld_db_row_source.reset_user_state();
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+    if (tss != nullptr) {
+        tss->gs_hidden_row_types.clear();
+    }
 
     for (auto& tc : lnav_data.ld_views) {
         text_sub_source* tss = tc.get_sub_source();

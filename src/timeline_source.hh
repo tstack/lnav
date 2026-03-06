@@ -34,6 +34,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -99,6 +100,9 @@ public:
     void text_selection_changed(textview_curses& tc) override;
 
     void text_filters_changed() override;
+    void clear_preview() override;
+    void add_commands_for_session(
+        const std::function<void(const std::string&)>& receiver) override;
     int get_filtered_count() const override;
     int get_filtered_count_for(size_t filter_index) const override;
 
@@ -198,6 +202,15 @@ public:
         = robin_hood::unordered_set<string_fragment,
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
+
+    static std::optional<row_type> row_type_from_string(const std::string& str);
+    static const char* row_type_to_string(row_type rt);
+
+    void set_row_type_visibility(row_type rt, bool visible);
+    bool is_row_type_visible(row_type rt) const;
+
+    std::set<row_type> gs_hidden_row_types;
+    std::set<row_type> gs_preview_hidden_row_types;
 
     timeline_preview_overlay gs_preview_overlay;
     attr_line_t gs_rendered_line;

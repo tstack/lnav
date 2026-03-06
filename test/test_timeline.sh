@@ -119,3 +119,37 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     -c ":goto 0" \
     ${test_dir}/logfile_glog.0
+
+# hide opid rows in the timeline
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline opid' \
+    ${test_dir}/logfile_glog.0
+
+# hide multiple row types
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline logfile opid' \
+    ${test_dir}/logfile_glog.0
+
+# hide and then show
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline opid' \
+    -c ':show-in-timeline opid' \
+    ${test_dir}/logfile_glog.0
+
+# error: unknown row type
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline badtype' \
+    ${test_dir}/logfile_glog.0
+
+# error: no arguments
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline' \
+    ${test_dir}/logfile_glog.0

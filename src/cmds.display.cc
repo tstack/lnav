@@ -30,6 +30,7 @@
 #include "base/intern_string.hh"
 #include "lnav.hh"
 #include "readline_context.hh"
+#include "timeline_source.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_set_text_view_mode(exec_context& ec,
@@ -157,6 +158,67 @@ com_toggle_field(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_timeline_row_type_visibility(exec_context& ec,
+                                 std::string cmdline,
+                                 std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.size() < 2) {
+        auto* tss = static_cast<timeline_source*>(
+            lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+        tss->gs_preview_hidden_row_types.clear();
+        lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
+        return ec.make_error("Expecting a row type");
+    }
+
+    const auto hide = args[0] == "hide-in-timeline";
+    std::vector<std::string> found_types, unknown_types;
+
+    for (size_t lpc = 1; lpc < args.size(); lpc++) {
+        auto rt_opt = timeline_source::row_type_from_string(args[lpc]);
+        if (rt_opt) {
+            found_types.emplace_back(args[lpc]);
+        } else {
+            unknown_types.emplace_back(args[lpc]);
+        }
+    }
+
+    if (!unknown_types.empty()) {
+        return ec.make_error("unknown row type(s) -- {}",
+                             fmt::join(unknown_types, ", "));
+    }
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+    if (ec.ec_dry_run) {
+        tss->gs_preview_hidden_row_types.clear();
+        if (hide) {
+            for (const auto& type_name : found_types) {
+                auto rt_opt = timeline_source::row_type_from_string(type_name);
+                tss->gs_preview_hidden_row_types.insert(rt_opt.value());
+            }
+        }
+        lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
+        retval = "";
+    } else {
+        tss->gs_preview_hidden_row_types.clear();
+        for (const auto& type_name : found_types) {
+            auto rt_opt = timeline_source::row_type_from_string(type_name);
+            tss->set_row_type_visibility(rt_opt.value(), !hide);
+        }
+        tss->text_filters_changed();
+
+        auto visibility = hide ? "hiding" : "showing";
+        retval = fmt::format(FMT_STRING("info: {} row type(s) -- {}"),
+                             visibility,
+                             fmt::join(found_types, ", "));
+    }
+
+    return Ok(retval);
+}
+
 static readline_context::command_t DISPLAY_COMMANDS[] = {
     {
         "set-text-view-mode",
@@ -206,6 +268,46 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
             .with_example({"To show all the log_procname fields in all formats",
                            "log_procname"})
             .with_opposites({"hide-fields"})
+            .with_tags({"display"}),
+    },
+    {
+        "hide-in-timeline",
+        com_timeline_row_type_visibility,
+
+        help_text(":hide-in-timeline")
+            .with_summary("Hide rows of the given type(s) in the timeline "
+                          "view")
+            .with_parameter(help_text("row-type", "The type of row to hide")
+                                .one_or_more()
+                                .with_enum_values({
+                                    "logfile"_frag,
+                                    "thread"_frag,
+                                    "opid"_frag,
+                                    "tag"_frag,
+                                    "partition"_frag,
+                                }))
+            .with_example({"To hide logfile and thread rows", "logfile thread"})
+            .with_opposites({"show-in-timeline"})
+            .with_tags({"display"}),
+    },
+    {
+        "show-in-timeline",
+        com_timeline_row_type_visibility,
+
+        help_text(":show-in-timeline")
+            .with_summary("Show rows of the given type(s) that were "
+                          "previously hidden in the timeline view")
+            .with_parameter(help_text("row-type", "The type of row to show")
+                                .one_or_more()
+                                .with_enum_values({
+                                    "logfile"_frag,
+                                    "thread"_frag,
+                                    "opid"_frag,
+                                    "tag"_frag,
+                                    "partition"_frag,
+                                }))
+            .with_example({"To show logfile and thread rows", "logfile thread"})
+            .with_opposites({"hide-in-timeline"})
             .with_tags({"display"}),
     },
 };

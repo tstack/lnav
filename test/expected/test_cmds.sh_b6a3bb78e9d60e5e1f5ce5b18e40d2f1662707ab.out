@@ -1274,6 +1274,21 @@ For support questions, email:
          hide
 
 
+[4m:[0m[1m[4mhide-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Hide rows of the given type(s) in the timeline view
+[4mParameter[0m
+  [4mrow-type[0m   The type of row to hide
+             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
+[4mSee Also[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m, 
+  [1m:show-in-timeline[0m
+[4mExample[0m
+#1 To hide logfile and thread rows:
+   [37m[40m:[0m[1m[36m[40mhide-in-timeline[0m[37m[40m logfile thread                  [0m
+   
+
+
 [4m:[0m[1m[4mhide-lines-after[0m[4m [0m[4mdate[0m
 ══════════════════════════════════════════════════════════════════════
   Hide lines that come after the given date
@@ -1697,6 +1712,22 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path or glob pattern that specifies the files to
          show
+
+
+[4m:[0m[1m[4mshow-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Show rows of the given type(s) that were previously hidden in the
+  timeline view
+[4mParameter[0m
+  [4mrow-type[0m   The type of row to show
+             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
+[4mSee Also[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-in-timeline[0m, 
+  [1m:set-text-view-mode[0m
+[4mExample[0m
+#1 To show logfile and thread rows:
+   [37m[40m:[0m[1m[36m[40mshow-in-timeline[0m[37m[40m logfile thread                  [0m
+   
 
 
 [4m:[0m[1m[4mshow-lines-before-and-after[0m

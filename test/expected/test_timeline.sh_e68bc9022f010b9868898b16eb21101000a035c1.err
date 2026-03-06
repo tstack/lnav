@@ -1,0 +1,6 @@
+[1m[31m✘[0m [1m[31merror[0m: Expecting a row type
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:hide-in-timeline                       [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mhide-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Hide rows of the given type(s) in the timeline view

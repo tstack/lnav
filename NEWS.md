@@ -153,6 +153,11 @@ Features:
   instance extending to the end of the log.  Partition
   rows span from their start time to the next partition
   (or end of log).
+* Added `:hide-in-timeline` and `:show-in-timeline`
+  commands to control which row types (logfile, thread,
+  opid, tag, partition) are visible in the timeline view.
+  The `:hide-in-timeline` command supports live preview,
+  highlighting rows that would be hidden in red.
 * The `timestamp-point-of-reference` log format property
   has been added to specify the related of the timestamp
   to the operation that the message refers to, either:
