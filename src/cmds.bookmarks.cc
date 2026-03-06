@@ -64,6 +64,7 @@ com_goto_mark(exec_context& ec,
         &textview_curses::BM_USER,
         &textview_curses::BM_USER_EXPR,
         &textview_curses::BM_META,
+        &textview_curses::BM_PARTITION,
     };
 
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
