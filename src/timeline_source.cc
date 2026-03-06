@@ -912,7 +912,7 @@ timeline_source::rebuild_indexes()
 
     {
         static const auto START_RE = lnav::pcre2pp::code::from_const(
-            R"(^(?:start(?:ed)?|begin)|(?:start(?:ed)?|begin)$)",
+            R"(^(?:start(?:ed)?|begin)|\b(?:start(?:ed)?|begin)$)",
             PCRE2_CASELESS);
 
         std::vector<opid_row*> start_tags;
@@ -938,7 +938,7 @@ timeline_source::rebuild_indexes()
                 && start_tags[i]->or_name == start_tags[i + 1]->or_name)
             {
                 start_tags[i]->or_value.otr_range.tr_end
-                    = start_tags[i + 1]->or_value.otr_range.tr_begin;
+                    = start_tags[i + 1]->or_value.otr_range.tr_begin - 1us;
             } else {
                 start_tags[i]->or_value.otr_range.tr_end = last_log_time;
             }
