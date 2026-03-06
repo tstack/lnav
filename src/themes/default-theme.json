@@ -58,6 +58,12 @@
                     "thread": {
                         "value": "\ud83e\uddf5"
                     },
+                    "tag": {
+                        "value": "\ud83c\udff7\ufe0f"
+                    },
+                    "partition": {
+                        "value": "\u2291"
+                    },
                     "busy": {
                         "value": "\u23f3"
                     }

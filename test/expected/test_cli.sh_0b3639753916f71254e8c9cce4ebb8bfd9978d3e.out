@@ -248,6 +248,12 @@
                     "thread": {
                         "value": "🧵"
                     },
+                    "tag": {
+                        "value": "🏷️"
+                    },
+                    "partition": {
+                        "value": "⊑"
+                    },
                     "busy": {
                         "value": "⏳"
                     }
@@ -1141,6 +1147,12 @@
                     "thread": {
 
                     },
+                    "tag": {
+
+                    },
+                    "partition": {
+
+                    },
                     "busy": {
 
                     }
@@ -1977,6 +1989,12 @@
                     "thread": {
 
                     },
+                    "tag": {
+
+                    },
+                    "partition": {
+
+                    },
                     "busy": {
 
                     }
@@ -2810,6 +2828,12 @@
 
                     },
                     "thread": {
+
+                    },
+                    "tag": {
+
+                    },
+                    "partition": {
 
                     },
                     "busy": {
@@ -3682,6 +3706,12 @@
                     "thread": {
 
                     },
+                    "tag": {
+
+                    },
+                    "partition": {
+
+                    },
                     "busy": {
 
                     }
@@ -4518,6 +4548,12 @@
                     "thread": {
 
                     },
+                    "tag": {
+
+                    },
+                    "partition": {
+
+                    },
                     "busy": {
 
                     }
@@ -5351,6 +5387,12 @@
 
                     },
                     "thread": {
+
+                    },
+                    "tag": {
+
+                    },
+                    "partition": {
 
                     },
                     "busy": {
@@ -6197,6 +6239,12 @@
                     "thread": {
 
                     },
+                    "tag": {
+
+                    },
+                    "partition": {
+
+                    },
                     "busy": {
 
                     }
@@ -7039,6 +7087,12 @@
 
                     },
                     "thread": {
+
+                    },
+                    "tag": {
+
+                    },
+                    "partition": {
 
                     },
                     "busy": {

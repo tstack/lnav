@@ -533,6 +533,16 @@
                                             "title": "/ui/theme-defs/<theme_name>/icons/thread",
                                             "$ref": "#/definitions/icon"
                                         },
+                                        "tag": {
+                                            "description": "Icon for tags",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/tag",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "partition": {
+                                            "description": "Icon for partitions",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/partition",
+                                            "$ref": "#/definitions/icon"
+                                        },
                                         "busy": {
                                             "description": "Icon for a 'busy' status",
                                             "title": "/ui/theme-defs/<theme_name>/icons/busy",

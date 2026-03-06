@@ -110,3 +110,12 @@ run_cap_test ${lnav_test} -n \
     -c ":next-mark file" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ":partition-name middle" \
+    -c ":goto 5" \
+    -c ":partition-name end" \
+    -c ':switch-to-view timeline' \
+    -c ":goto 0" \
+    ${test_dir}/logfile_glog.0

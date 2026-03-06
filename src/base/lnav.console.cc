@@ -526,6 +526,10 @@ wchar_for_icon(ui_icon_t ic)
             return {U'\U0001f4c4', role_t::VCR_TEXT};
         case ui_icon_t::thread:
             return {U'\U0001F9F5', role_t::VCR_TEXT};
+        case ui_icon_t::tag:
+            return {U'\U0001F3F7', role_t::VCR_TEXT};
+        case ui_icon_t::partition:
+            return {U'\u2291', role_t::VCR_TEXT};
         case ui_icon_t::busy:
             return {U'\u23f3', role_t::VCR_TEXT};
     }

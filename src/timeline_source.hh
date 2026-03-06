@@ -157,6 +157,8 @@ public:
         logfile,
         thread,
         opid,
+        tag,
+        partition,
     };
 
     struct opid_row {

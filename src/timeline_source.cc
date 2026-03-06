@@ -47,6 +47,7 @@
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "md4cpp.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
 #include "sysclip.hh"
@@ -432,6 +433,7 @@ timeline_header_overlay::list_value_for_overlay(
             line_range{0, -1}, VC_STYLE.value(text_attrs::with_underline()));
     }
 }
+
 std::optional<attr_line_t>
 timeline_header_overlay::list_header_for_overlay(const listview_curses& lv,
                                                  media_t media,
@@ -592,6 +594,12 @@ timeline_source::text_value_for_line(textview_curses& tc,
             case row_type::opid:
                 padding = 3;
                 break;
+            case row_type::tag:
+                icon = ui_icon_t::tag;
+                break;
+            case row_type::partition:
+                icon = ui_icon_t::partition;
+                break;
         }
         this->gs_rendered_line
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
@@ -695,10 +703,14 @@ timeline_source::rebuild_indexes()
     auto& bm_files = bm[&logfile_sub_source::BM_FILES];
     auto& bm_errs = bm[&textview_curses::BM_ERRORS];
     auto& bm_warns = bm[&textview_curses::BM_WARNINGS];
+    auto& bm_meta = bm[&textview_curses::BM_META];
+    auto& bm_parts = bm[&textview_curses::BM_PARTITION];
 
     this->ts_rebuild_in_progress = true;
     bm_errs.clear();
     bm_warns.clear();
+    bm_meta.clear();
+    bm_parts.clear();
 
     this->gs_lower_bound = {};
     this->gs_upper_bound = {};
@@ -727,6 +739,7 @@ timeline_source::rebuild_indexes()
     }
 
     log_info("building opid table");
+    auto last_log_time = std::chrono::microseconds{};
     tlx::btree_map<std::chrono::microseconds, std::string> part_map;
     for (const auto& [index, ld] : lnav::itertools::enumerate(this->gs_lss)) {
         if (ld->get_file_ptr() == nullptr) {
@@ -742,12 +755,36 @@ timeline_source::rebuild_indexes()
         const auto& mark_meta = lf->get_bookmark_metadata();
         {
             for (const auto& [line_num, line_meta] : mark_meta) {
-                if (line_meta.bm_name.empty()) {
-                    continue;
-                }
                 const auto ll = std::next(lf->begin(), line_num);
-                part_map.insert2(ll->get_time<std::chrono::microseconds>(),
-                                 line_meta.bm_name);
+                if (!line_meta.bm_name.empty()) {
+                    part_map.insert2(ll->get_time<std::chrono::microseconds>(),
+                                     line_meta.bm_name);
+                }
+                for (const auto& tag : line_meta.bm_tags) {
+                    auto line_time = ll->get_time<std::chrono::microseconds>();
+                    auto tag_key = fmt::format(FMT_STRING("{}@{}:{}"),
+                                               tag,
+                                               lf->get_unique_path(),
+                                               line_time.count());
+                    auto tag_key_sf
+                        = string_fragment::from_str(tag_key).to_owned(
+                            this->gs_allocator);
+                    auto tag_name_sf = string_fragment::from_str(tag).to_owned(
+                        this->gs_allocator);
+                    auto tag_otr = opid_time_range{};
+                    tag_otr.otr_range.tr_begin = line_time;
+                    tag_otr.otr_range.tr_end = line_time;
+                    tag_otr.otr_level_stats.update_msg_count(
+                        ll->get_msg_level());
+                    this->gs_active_opids.emplace(
+                        tag_key_sf,
+                        opid_row{
+                            row_type::tag,
+                            tag_name_sf,
+                            tag_otr,
+                            string_fragment::invalid(),
+                        });
+                }
             }
         }
 
@@ -756,6 +793,9 @@ timeline_source::rebuild_indexes()
         auto lf_otr = opid_time_range{};
         lf_otr.otr_range = lf->get_content_time_range();
         lf_otr.otr_level_stats = lf->get_level_stats();
+        if (lf_otr.otr_range.tr_end > last_log_time) {
+            last_log_time = lf_otr.otr_range.tr_end;
+        }
         auto lf_row = opid_row{
             row_type::logfile,
             path,
@@ -869,6 +909,64 @@ timeline_source::rebuild_indexes()
     if (this->gs_index_progress) {
         this->gs_index_progress(std::nullopt);
     }
+
+    {
+        static const auto START_RE = lnav::pcre2pp::code::from_const(
+            R"(^(?:start(?:ed)?|begin)|(?:start(?:ed)?|begin)$)",
+            PCRE2_CASELESS);
+
+        std::vector<opid_row*> start_tags;
+        for (auto& pair : this->gs_active_opids) {
+            if (pair.second.or_type != row_type::tag) {
+                continue;
+            }
+            if (START_RE.find_in(pair.second.or_name).ignore_error()) {
+                start_tags.emplace_back(&pair.second);
+            }
+        }
+        std::stable_sort(start_tags.begin(),
+                         start_tags.end(),
+                         [](const auto* lhs, const auto* rhs) {
+                             if (lhs->or_name == rhs->or_name) {
+                                 return lhs->or_value.otr_range.tr_begin
+                                     < rhs->or_value.otr_range.tr_begin;
+                             }
+                             return lhs->or_name < rhs->or_name;
+                         });
+        for (size_t i = 0; i < start_tags.size(); i++) {
+            if (i + 1 < start_tags.size()
+                && start_tags[i]->or_name == start_tags[i + 1]->or_name)
+            {
+                start_tags[i]->or_value.otr_range.tr_end
+                    = start_tags[i + 1]->or_value.otr_range.tr_begin;
+            } else {
+                start_tags[i]->or_value.otr_range.tr_end = last_log_time;
+            }
+        }
+    }
+
+    for (auto part_iter = part_map.begin(); part_iter != part_map.end();
+         ++part_iter)
+    {
+        auto next_iter = std::next(part_iter);
+        auto part_name_sf = string_fragment::from_str(part_iter->second)
+                                .to_owned(this->gs_allocator);
+        auto part_otr = opid_time_range{};
+        part_otr.otr_range.tr_begin = part_iter->first;
+        if (next_iter != part_map.end()) {
+            part_otr.otr_range.tr_end = next_iter->first;
+        } else {
+            part_otr.otr_range.tr_end = last_log_time;
+        }
+        this->gs_active_opids.emplace(part_name_sf,
+                                      opid_row{
+                                          row_type::partition,
+                                          part_name_sf,
+                                          part_otr,
+                                          string_fragment::invalid(),
+                                      });
+    }
+
     log_info("active opids: %zu", this->gs_active_opids.size());
 
     size_t filtered_in_count = 0;
@@ -985,6 +1083,10 @@ timeline_source::rebuild_indexes()
         const auto& row = *this->gs_time_order[lpc];
         if (row.or_type == row_type::logfile) {
             bm_files.insert_once(vis_line_t(lpc));
+        } else if (row.or_type == row_type::tag) {
+            bm_meta.insert_once(vis_line_t(lpc));
+        } else if (row.or_type == row_type::partition) {
+            bm_parts.insert_once(vis_line_t(lpc));
         }
         if (row.or_value.otr_level_stats.lls_error_count > 0) {
             bm_errs.insert_once(vis_line_t(lpc));
@@ -1202,6 +1304,23 @@ timeline_source::text_selection_changed(textview_curses& tc)
                 }
                 break;
             }
+            case row_type::tag: {
+                const auto& bm
+                    = msg_line.get_file_ptr()->get_bookmark_metadata();
+                auto bm_iter = bm.find(msg_line.get_file_line_number());
+                if (bm_iter == bm.end()) {
+                    continue;
+                }
+                auto tag_name = row.or_name.to_string();
+                if (!(bm_iter->second.bm_tags
+                      | lnav::itertools::find(tag_name)))
+                {
+                    continue;
+                }
+                break;
+            }
+            case row_type::partition:
+                break;
         }
 
         for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {

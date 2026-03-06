@@ -144,6 +144,15 @@ Features:
   to specify the field that contains a duration in the
   log message.  If a duration is available, it will be
   used to calculate time spans in the TIMELINE view.
+* The TIMELINE view now shows rows for user-defined tags
+  and partitions.  Each tagged log line appears as a
+  separate entry in the timeline.  Tags whose names start
+  or end with "start", "started", or "begin"
+  (case-insensitive) will have their time range extended
+  to the next instance of the same tag, with the last
+  instance extending to the end of the log.  Partition
+  rows span from their start time to the next partition
+  (or end of log).
 * The `timestamp-point-of-reference` log format property
   has been added to specify the related of the timestamp
   to the operation that the message refers to, either:
