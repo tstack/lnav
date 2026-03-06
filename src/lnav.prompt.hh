@@ -126,6 +126,22 @@ struct prompt {
         }
     }
 
+    lnav::textinput::history& get_history_for(char ch)
+    {
+        switch (ch) {
+            case ';':
+                return this->p_sql_history;
+            case ':':
+                return this->p_cmd_history;
+            case '/':
+                return this->p_search_history;
+            case '|':
+                return this->p_script_history;
+            default:
+                ensure(false);
+        }
+    }
+
     context_t p_current_context{context_t::none};
     std::map<std::string, std::string> p_env_vars;
     std::multimap<std::string, sql_item_t, strnatcaseless> p_sql_completions;
