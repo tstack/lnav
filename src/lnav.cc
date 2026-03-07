@@ -1842,7 +1842,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     {
         auto* tss = static_cast<timeline_source*>(
             lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
-        tss->gs_index_progress
+        tss->ts_index_progress
             = [refresher](std::optional<timeline_source::progress_t> prog) {
                   if (prog) {
                       lnav_data.ld_bottom_source.update_loading(prog->p_curr,
@@ -3602,7 +3602,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         lnav_data.ld_timeline_details_source,
         lnav_data.ld_status[LNS_TIMELINE],
         lnav_data.ld_timeline_status_source);
-    timeline_view_source->gs_exec_context = &lnav_data.ld_exec_context;
+    timeline_view_source->ts_exec_context = &lnav_data.ld_exec_context;
     auto timeline_header_source
         = std::make_shared<timeline_header_overlay>(timeline_view_source);
     lnav_data.ld_views[LNV_TIMELINE]

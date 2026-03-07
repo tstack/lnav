@@ -1797,7 +1797,7 @@ reset_session()
     auto* tss = static_cast<timeline_source*>(
         lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
     if (tss != nullptr) {
-        tss->gs_hidden_row_types.clear();
+        tss->ts_hidden_row_types.clear();
     }
 
     for (auto& tc : lnav_data.ld_views) {

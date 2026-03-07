@@ -118,13 +118,13 @@ public:
     std::pair<std::chrono::microseconds, std::chrono::microseconds>
     get_time_bounds_for(int line);
 
-    textview_curses& gs_log_view;
-    logfile_sub_source& gs_lss;
-    textview_curses& gs_preview_view;
-    plain_text_source& gs_preview_source;
-    statusview_curses& gs_preview_status_view;
-    timeline_status_source& gs_preview_status_source;
-    ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
+    textview_curses& ts_log_view;
+    logfile_sub_source& ts_lss;
+    textview_curses& ts_preview_view;
+    plain_text_source& ts_preview_source;
+    statusview_curses& ts_preview_status_view;
+    timeline_status_source& ts_preview_status_source;
+    ArenaAlloc::Alloc<char> ts_allocator{64 * 1024};
     bool ts_rebuild_in_progress{false};
 
     struct opid_description_def_key {
@@ -155,7 +155,7 @@ public:
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
-    timeline_subid_map gs_subid_map;
+    timeline_subid_map ts_subid_map;
 
     enum class row_type {
         logfile,
@@ -209,23 +209,23 @@ public:
     void set_row_type_visibility(row_type rt, bool visible);
     bool is_row_type_visible(row_type rt) const;
 
-    std::set<row_type> gs_hidden_row_types;
-    std::set<row_type> gs_preview_hidden_row_types;
+    std::set<row_type> ts_hidden_row_types;
+    std::set<row_type> ts_preview_hidden_row_types;
 
-    timeline_preview_overlay gs_preview_overlay;
-    attr_line_t gs_rendered_line;
-    size_t gs_opid_width{0};
-    size_t gs_total_width{0};
-    timeline_opid_row_map gs_active_opids;
-    timeline_desc_map gs_descriptions;
-    std::vector<const opid_row*> gs_time_order;
-    std::chrono::microseconds gs_lower_bound{};
-    std::chrono::microseconds gs_upper_bound{};
-    size_t gs_filtered_count{0};
-    std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
-    exec_context* gs_exec_context{nullptr};
-    bool gs_preview_focused{false};
-    std::vector<row_info> gs_preview_rows;
+    timeline_preview_overlay ts_preview_overlay;
+    attr_line_t ts_rendered_line;
+    size_t ts_opid_width{0};
+    size_t ts_total_width{0};
+    timeline_opid_row_map ts_active_opids;
+    timeline_desc_map ts_descriptions;
+    std::vector<const opid_row*> ts_time_order;
+    std::chrono::microseconds ts_lower_bound{};
+    std::chrono::microseconds ts_upper_bound{};
+    size_t ts_filtered_count{0};
+    std::array<size_t, logfile_filter_state::MAX_FILTERS> ts_filter_hits{};
+    exec_context* ts_exec_context{nullptr};
+    bool ts_preview_focused{false};
+    std::vector<row_info> ts_preview_rows;
 
     struct progress_t {
         size_t p_curr{0};
@@ -233,7 +233,7 @@ public:
     };
 
     std::function<lnav::progress_result_t(std::optional<progress_t>)>
-        gs_index_progress;
+        ts_index_progress;
 };
 
 class timeline_header_overlay : public text_overlay_menu {

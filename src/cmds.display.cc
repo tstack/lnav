@@ -168,7 +168,7 @@ com_timeline_row_type_visibility(exec_context& ec,
     if (args.size() < 2) {
         auto* tss = static_cast<timeline_source*>(
             lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
-        tss->gs_preview_hidden_row_types.clear();
+        tss->ts_preview_hidden_row_types.clear();
         lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
         return ec.make_error("Expecting a row type");
     }
@@ -193,17 +193,17 @@ com_timeline_row_type_visibility(exec_context& ec,
     auto* tss = static_cast<timeline_source*>(
         lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
     if (ec.ec_dry_run) {
-        tss->gs_preview_hidden_row_types.clear();
+        tss->ts_preview_hidden_row_types.clear();
         if (hide) {
             for (const auto& type_name : found_types) {
                 auto rt_opt = timeline_source::row_type_from_string(type_name);
-                tss->gs_preview_hidden_row_types.insert(rt_opt.value());
+                tss->ts_preview_hidden_row_types.insert(rt_opt.value());
             }
         }
         lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
         retval = "";
     } else {
-        tss->gs_preview_hidden_row_types.clear();
+        tss->ts_preview_hidden_row_types.clear();
         for (const auto& type_name : found_types) {
             auto rt_opt = timeline_source::row_type_from_string(type_name);
             tss->set_row_type_visibility(rt_opt.value(), !hide);
