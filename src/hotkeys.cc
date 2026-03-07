@@ -191,6 +191,11 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         }
     }
 
+    // XXX
+    if (tc == &lnav_data.ld_views[LNV_TIMELINE] && tc->handle_key(ch)) {
+        return true;
+    }
+
     if (handle_keyseq(keyseq)) {
         return true;
     }
@@ -329,7 +334,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'F':
             if (tc == &lnav_data.ld_views[LNV_LOG]
-                || tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+                || tc == &lnav_data.ld_views[LNV_TIMELINE])
+            {
                 bm[&logfile_sub_source::BM_FILES].prev(
                     tc->get_selection().value_or(0_vl))
                     | [&tc](auto vl) {
