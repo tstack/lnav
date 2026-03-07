@@ -1380,6 +1380,8 @@ view_colors::init_roles(const lnav_theme& lt,
 
     this->get_role_attrs(role_t::VCR_INACTIVE_STATUS)
         = this->to_attrs(lt, lt.lt_style_inactive_status, reporter);
+    this->get_role_attrs(role_t::VCR_INACTIVE_WARN_STATUS)
+        = this->to_attrs(lt, lt.lt_style_inactive_warn_status, reporter);
     this->get_role_attrs(role_t::VCR_INACTIVE_ALERT_STATUS)
         = this->to_attrs(lt, lt.lt_style_inactive_alert_status, reporter);
 

@@ -335,6 +335,10 @@
             "color": "$fg_dim",
             "background-color": "#e6e6e6"
           },
+          "inactive-warn": {
+            "color": "$yellow",
+            "background-color": "#e6e6e6"
+          },
           "inactive-alert": {
             "color": "$red",
             "background-color": "#e6e6e6"

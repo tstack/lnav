@@ -175,6 +175,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_alert_status;
     positioned_property<style_config> lt_style_active_status;
     positioned_property<style_config> lt_style_inactive_status;
+    positioned_property<style_config> lt_style_inactive_warn_status;
     positioned_property<style_config> lt_style_inactive_alert_status;
     positioned_property<style_config> lt_style_file;
     positioned_property<style_config> lt_style_header[6];

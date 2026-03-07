@@ -41,6 +41,7 @@ public:
         TSF_STITCH_TITLE,
         TSF_DESCRIPTION,
         TSF_TOTAL,
+        TSF_WARNINGS,
         TSF_ERRORS,
 
         TSF__MAX
@@ -55,12 +56,15 @@ public:
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
-        this->tss_fields[TSF_DESCRIPTION].set_share(1);
+        this->tss_fields[TSF_DESCRIPTION].set_share(2);
+        this->tss_fields[TSF_WARNINGS].right_justify(true);
+        this->tss_fields[TSF_WARNINGS].set_role(role_t::VCR_WARN_STATUS);
+        this->tss_fields[TSF_WARNINGS].set_share(1);
         this->tss_fields[TSF_ERRORS].right_justify(true);
         this->tss_fields[TSF_ERRORS].set_role(role_t::VCR_ALERT_STATUS);
-        this->tss_fields[TSF_ERRORS].set_width(16);
+        this->tss_fields[TSF_ERRORS].set_share(1);
         this->tss_fields[TSF_TOTAL].right_justify(true);
-        this->tss_fields[TSF_TOTAL].set_width(28);
+        this->tss_fields[TSF_TOTAL].set_share(1);
     }
 
     size_t statusview_fields() override { return TSF__MAX; }

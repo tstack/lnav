@@ -183,6 +183,11 @@ statusview_curses::do_update()
                         {
                             sa.sa_value.get<role_t>()
                                 = role_t::VCR_INACTIVE_ALERT_STATUS;
+                        } else if (sa.sa_value.get<role_t>()
+                                   == role_t::VCR_WARN_STATUS)
+                        {
+                            sa.sa_value.get<role_t>()
+                                = role_t::VCR_INACTIVE_WARN_STATUS;
                         } else {
                             sa.sa_value = role_t::VCR_NONE;
                         }
@@ -221,6 +226,8 @@ statusview_curses::do_update()
             if (!this->sc_enabled) {
                 if (default_role == role_t::VCR_ALERT_STATUS) {
                     default_role = role_t::VCR_INACTIVE_ALERT_STATUS;
+                } else if (default_role == role_t::VCR_WARN_STATUS) {
+                    default_role = role_t::VCR_INACTIVE_WARN_STATUS;
                 } else if (default_role != role_t::VCR_STATUS_INFO) {
                     default_role = role_t::VCR_INACTIVE_STATUS;
                 }

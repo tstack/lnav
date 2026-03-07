@@ -273,6 +273,10 @@
                         "color": "$base01",
                         "background-color": "#d9d9a0"
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "#d9d9a0"
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "$base2"

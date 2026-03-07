@@ -290,6 +290,10 @@
                         "color": "#f0f0f0",
                         "background-color": "#0F1F2B"
                     },
+                    "inactive-warn": {
+                        "color": "#b39554",
+                        "background-color": "#0F1F2B"
+                    },
                     "inactive-alert": {
                         "color": "#ef5350",
                         "background-color": "#0F1F2B"

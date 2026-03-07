@@ -335,6 +335,10 @@
                         "color": "Silver",
                         "background-color": "Grey53"
                     },
+                    "inactive-warn": {
+                        "color": "Olive",
+                        "background-color": "Grey53"
+                    },
                     "inactive-alert": {
                         "color": "Maroon",
                         "background-color": "Grey53"

@@ -1092,6 +1092,10 @@ static const struct json_path_container theme_status_styles_handlers = {
         .with_description("Styling for activity in status bars")
         .for_child(&lnav_theme::lt_style_active_status)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("inactive-warn")
+        .with_description("Styling for inactive warning status bars")
+        .for_child(&lnav_theme::lt_style_inactive_warn_status)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("inactive-alert")
         .with_description("Styling for inactive alert status bars")
         .for_child(&lnav_theme::lt_style_inactive_alert_status)

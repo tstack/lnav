@@ -831,6 +831,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "Olive",
+                        "background-color": "Grey53",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "Maroon",
                         "background-color": "Grey53",
@@ -1730,6 +1738,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "$orange",
+                        "background-color": "#2f2f2f",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "#2f2f2f",
@@ -2572,6 +2588,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "Grey",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "Grey",
@@ -3408,6 +3432,14 @@
                     "active": {
                         "color": "$green",
                         "background-color": "#353535",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "#2f2f2f",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4289,6 +4321,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "#e6e6e6",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "#e6e6e6",
@@ -5131,6 +5171,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "#2f2f2f",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "#2f2f2f",
@@ -5967,6 +6015,14 @@
                     "active": {
                         "color": "#407e56",
                         "background-color": "#162d40",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "inactive-warn": {
+                        "color": "#b39554",
+                        "background-color": "#0F1F2B",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -6822,6 +6878,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "$base02",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "$base02",
@@ -7667,6 +7731,14 @@
                     "active": {
                         "color": "$green",
                         "background-color": "$base2",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "#d9d9a0",
                         "underline": false,
                         "bold": false,
                         "italic": false,

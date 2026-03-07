@@ -313,6 +313,10 @@
                         "color": "#555",
                         "background-color": "#2f2f2f"
                     },
+                    "inactive-warn": {
+                        "color": "$orange",
+                        "background-color": "#2f2f2f"
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "#2f2f2f"

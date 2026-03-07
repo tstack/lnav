@@ -297,6 +297,10 @@
                         "color": "$black",
                         "background-color": "Grey"
                     },
+                    "inactive-warn": {
+                        "color": "$yellow",
+                        "background-color": "Grey"
+                    },
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "Grey"

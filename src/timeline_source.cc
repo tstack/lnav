@@ -1163,7 +1163,8 @@ timeline_source::rebuild_indexes()
         }
         if (row.or_value.otr_level_stats.lls_error_count > 0) {
             bm_errs.insert_once(vis_line_t(lpc));
-        } else if (row.or_value.otr_level_stats.lls_warning_count > 0) {
+        }
+        if (row.or_value.otr_level_stats.lls_warning_count > 0) {
             bm_warns.insert_once(vis_line_t(lpc));
         }
     }
@@ -1422,14 +1423,20 @@ timeline_source::text_selection_changed(textview_curses& tc)
         this->ts_preview_status_source
             .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
             .set_value("");
-    } else if (err_count > 1) {
-        this->ts_preview_status_source
-            .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
-            .set_value("%'d errors", err_count);
     } else {
         this->ts_preview_status_source
             .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
-            .set_value("%'d error", err_count);
+            .set_value("\u2022 %'d", err_count);
+    }
+    auto warn_count = level_stats.lls_warning_count;
+    if (warn_count == 0) {
+        this->ts_preview_status_source
+            .statusview_value_for_field(timeline_status_source::TSF_WARNINGS)
+            .set_value("");
+    } else {
+        this->ts_preview_status_source
+            .statusview_value_for_field(timeline_status_source::TSF_WARNINGS)
+            .set_value("\u2022 %'d", warn_count);
     }
     if (msg_count < level_stats.lls_total_count) {
         this->ts_preview_status_source

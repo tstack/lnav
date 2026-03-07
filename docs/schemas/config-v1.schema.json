@@ -927,6 +927,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/active",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "inactive-warn": {
+                                            "description": "Styling for inactive warning status bars",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/inactive-warn",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "inactive-alert": {
                                             "description": "Styling for inactive alert status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/inactive-alert",
