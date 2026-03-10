@@ -120,12 +120,12 @@ CREATE TABLE IF NOT EXISTS regex101_entries (
 
 static const char* const BOOKMARK_LRU_STMT
     = "DELETE FROM bookmarks WHERE access_time <= "
-      "  (SELECT access_time FROM bookmarks "
+      "  (SELECT DISTINCT access_time FROM bookmarks "
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
 
 static const char* const NETLOC_LRU_STMT
     = "DELETE FROM recent_netlocs WHERE access_time <= "
-      "  (SELECT access_time FROM bookmarks "
+      "  (SELECT DISTINCT access_time FROM bookmarks "
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
 
 static const char* const UPGRADE_STMTS[] = {
@@ -1556,6 +1556,8 @@ save_time_bookmarks()
         sqlite3_reset(stmt.in());
     }
 
+    log_info("saved %d bookmarks", sqlite3_changes(db.in()));
+
     if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {
@@ -1569,12 +1571,20 @@ save_time_bookmarks()
         log_error("unable to delete old bookmarks -- %s", errmsg.in());
         return;
     }
+    auto bookmark_changes = sqlite3_changes(db.in());
+    if (bookmark_changes > 0) {
+        log_info("deleted %d old bookmarks", bookmark_changes);
+    }
 
     if (sqlite3_exec(db.in(), NETLOC_LRU_STMT, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {
         log_error("unable to delete old netlocs -- %s", errmsg.in());
         return;
+    }
+    auto netloc_changes = sqlite3_changes(db.in());
+    if (netloc_changes > 0) {
+        log_info("deleted %d old netlocs", netloc_changes);
     }
 }
 

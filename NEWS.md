@@ -40,6 +40,12 @@ Features:
   check-mark if indexing was successful, a warning
   sign if the file has some notes, or an error mark
   if something else happened.
+* The `:write-jsonlines-to` command now supports the LOG
+  view.  When lines are marked in the LOG view, the command
+  will write each marked log message as a JSON object with
+  the standard log fields (`log_path`, `log_time`,
+  `log_level`, `log_opid`, `log_line_link`) along with any
+  format-specific parsed values, comments, and tags.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

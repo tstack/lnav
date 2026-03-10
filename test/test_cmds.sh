@@ -431,6 +431,38 @@ run_cap_test ${lnav_test} -n \
     -c ':write-jsonlines-to -' \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test env TEST_COMMENT="write-jsonlines-to for marked log lines" \
+    ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":goto 2" \
+    -c ":mark" \
+    -c ":write-jsonlines-to -" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env TEST_COMMENT="write-jsonlines-to with comment and tag" \
+    ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":comment this is a test comment" \
+    -c ":tag #test-tag" \
+    -c ":write-jsonlines-to -" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env TEST_COMMENT="write-jsonlines-to for JSON log format" \
+    ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":goto 3" \
+    -c ":mark" \
+    -c ":write-jsonlines-to -" \
+    ${test_dir}/logfile_bunyan.0
+
+run_cap_test env TEST_COMMENT="write-jsonlines-to with no marks errors" \
+    ${lnav_test} -n \
+    -c ":write-jsonlines-to -" \
+    ${test_dir}/logfile_access_log.0
+
 # By setting the LNAVSECURE mode before executing the command, we will disable
 # the access to the write-json-to command and the output would just be the
 # actual display of select query rather than json output.

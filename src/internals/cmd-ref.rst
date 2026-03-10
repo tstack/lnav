@@ -1886,7 +1886,7 @@
 :write-jsonlines-to *\[--anonymize\]* *path*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Write SQL results to the given file in JSON Lines format
+  Write SQL results or marked log lines to the given file in JSON Lines format
 
   **Parameters**
     * **--anonymize** --- Anonymize the JSON values

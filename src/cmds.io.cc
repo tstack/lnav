@@ -49,6 +49,7 @@
 #include "lnav.hh"
 #include "lnav_commands.hh"
 #include "lnav_util.hh"
+#include "logline_window.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "shlex.hh"
@@ -304,12 +305,29 @@ com_save_to(exec_context& ec,
     lnav::text_anonymizer ta;
 
     if (args[0] == "write-csv-to" || args[0] == "write-json-to"
-        || args[0] == "write-json-cols-to" || args[0] == "write-jsonlines-to"
-        || args[0] == "write-cols-to" || args[0] == "write-table-to")
+        || args[0] == "write-json-cols-to" || args[0] == "write-cols-to"
+        || args[0] == "write-table-to")
     {
         if (dls.dls_headers.empty()) {
             return ec.make_error(
                 "no query result to write, use ';' to execute a query");
+        }
+    } else if (args[0] == "write-jsonlines-to") {
+        if (tc == &lnav_data.ld_views[LNV_DB]) {
+            if (dls.dls_headers.empty()) {
+                return ec.make_error(
+                    "no query result to write, use ';' to execute a query");
+            }
+        } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            all_user_marks = combined_user_marks(tc->get_bookmarks());
+            if (all_user_marks.empty()) {
+                return ec.make_error(
+                    "no lines marked to write, use 'm' to mark lines");
+            }
+        } else {
+            return ec.make_error(
+                "write-jsonlines-to is only supported for the LOG and DB "
+                "views");
         }
     } else if (args[0] == "write-raw-to" && tc == &lnav_data.ld_views[LNV_DB]) {
     } else if (args[0] != "write-screen-to" && args[0] != "write-view-to") {
@@ -703,21 +721,142 @@ com_save_to(exec_context& ec,
         yajl_gen_config(gen, yajl_gen_beautify, 0);
         yajl_gen_config(gen, yajl_gen_print_callback, yajl_writer, outfile);
 
-        for (size_t row = 0; row < dls.dls_row_cursors.size(); row++) {
-            if (ec.ec_dry_run && row > 10) {
-                break;
-            }
+        if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            auto& lss = lnav_data.ld_log_source;
 
-            json_write_row(ec, gen, row, ta, anonymize);
-            yajl_gen_reset(gen, "\n");
-            if (row > 0 && row % 1000 == 0) {
-                if (write_progress(row, dls.dls_row_cursors.size())
-                    == lnav::progress_result_t::interrupt)
-                {
+            for (auto iter = all_user_marks.bv_tree.begin();
+                 iter != all_user_marks.bv_tree.end();
+                 ++iter)
+            {
+                if (ec.ec_dry_run && line_count > 10) {
                     break;
                 }
+
+                auto lw = lss.window_at(*iter);
+
+                for (const auto& li : *lw) {
+                    const auto& values = li.get_values();
+                    const auto& ll = li.get_logline();
+
+                    {
+                        yajlpp_map obj_map(gen);
+
+                        obj_map.gen("log_path");
+                        obj_map.gen(li.get_file_ptr()->get_filename());
+
+                        obj_map.gen("log_time");
+                        {
+                            char ts[64];
+                            auto ts_len = sql_strftime(
+                                ts, sizeof(ts), ll.get_timeval(), 'T');
+                            obj_map.gen(ts, ts_len);
+                        }
+
+                        obj_map.gen("log_level");
+                        obj_map.gen(ll.get_level_name());
+
+                        if (values.lvv_opid_value) {
+                            obj_map.gen("log_opid");
+                            obj_map.gen(*values.lvv_opid_value);
+                        }
+
+                        auto hash_res = li.get_line_hash();
+                        if (hash_res.isOk()) {
+                            auto hash = hash_res.unwrap();
+                            auto link = fmt::format(
+                                FMT_STRING("#msg{:016x}-{}"),
+                                ll.get_time<std::chrono::microseconds>()
+                                    .count(),
+                                hash);
+                            obj_map.gen("log_line_link");
+                            obj_map.gen(link);
+                        }
+
+                        auto meta_opt = li.get_metadata();
+                        if (meta_opt) {
+                            auto* meta = *meta_opt;
+                            if (!meta->bm_comment.empty()) {
+                                obj_map.gen("log_comment");
+                                obj_map.gen(meta->bm_comment);
+                            }
+                            if (!meta->bm_tags.empty()) {
+                                obj_map.gen("log_tags");
+                                {
+                                    yajlpp_array arr(gen);
+                                    for (const auto& tag : meta->bm_tags) {
+                                        arr.gen(tag);
+                                    }
+                                }
+                            }
+                        }
+
+                        for (const auto& lv : values.lvv_values) {
+                            if (lv.lv_meta.lvm_hidden) {
+                                continue;
+                            }
+
+                            obj_map.gen(lv.lv_meta.lvm_name.get());
+                            switch (lv.lv_meta.lvm_kind) {
+                                case value_kind_t::VALUE_NULL:
+                                    obj_map.gen();
+                                    break;
+                                case value_kind_t::VALUE_BOOLEAN:
+                                    obj_map.gen(lv.lv_value.i ? true : false);
+                                    break;
+                                case value_kind_t::VALUE_INTEGER:
+                                    obj_map.gen(lv.lv_value.i);
+                                    break;
+                                case value_kind_t::VALUE_FLOAT:
+                                    obj_map.gen(lv.lv_value.d);
+                                    break;
+                                case value_kind_t::VALUE_JSON: {
+                                    auto tv = lv.text_value();
+                                    yajl_gen_number(gen, tv, lv.text_length());
+                                    break;
+                                }
+                                default: {
+                                    if (anonymize) {
+                                        auto anon = ta.next(std::string(
+                                            lv.text_value(), lv.text_length()));
+                                        obj_map.gen(anon);
+                                    } else {
+                                        obj_map.gen(lv.text_value(),
+                                                    lv.text_length());
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    yajl_gen_reset(gen, "\n");
+                }
+
+                if (line_count > 0 && line_count % 1000 == 0) {
+                    if (write_progress(line_count, all_user_marks.size())
+                        == lnav::progress_result_t::interrupt)
+                    {
+                        break;
+                    }
+                }
+                line_count += 1;
             }
-            line_count += 1;
+        } else {
+            for (size_t row = 0; row < dls.dls_row_cursors.size(); row++) {
+                if (ec.ec_dry_run && row > 10) {
+                    break;
+                }
+
+                json_write_row(ec, gen, row, ta, anonymize);
+                yajl_gen_reset(gen, "\n");
+                if (row > 0 && row % 1000 == 0) {
+                    if (write_progress(row, dls.dls_row_cursors.size())
+                        == lnav::progress_result_t::interrupt)
+                    {
+                        break;
+                    }
+                }
+                line_count += 1;
+            }
         }
     } else if (args[0] == "write-screen-to") {
         bool wrapped = tc->get_word_wrap();
@@ -2085,8 +2224,8 @@ static readline_context::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-jsonlines-to")
-            .with_summary("Write SQL results to the given file in "
-                          "JSON Lines format")
+            .with_summary("Write SQL results or marked log lines to "
+                          "the given file in JSON Lines format")
             .with_parameter(
                 help_text("--anonymize", "Anonymize the JSON values").flag())
             .with_parameter(

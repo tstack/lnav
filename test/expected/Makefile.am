@@ -138,6 +138,8 @@ dist_noinst_DATA = \
     test_cmds.sh_453054e29aaca4c2662c45c2a1f2f63f3510d8dd.out \
     test_cmds.sh_4b2d91b19008d5b775090e3ef87c111f9e603b15.err \
     test_cmds.sh_4b2d91b19008d5b775090e3ef87c111f9e603b15.out \
+    test_cmds.sh_4bfc979405febbde1edf6c956657b37256a1ff88.err \
+    test_cmds.sh_4bfc979405febbde1edf6c956657b37256a1ff88.out \
     test_cmds.sh_4dbe20c11056a07d2c7efb5ed15903050d628216.err \
     test_cmds.sh_4dbe20c11056a07d2c7efb5ed15903050d628216.out \
     test_cmds.sh_4f06183ed231669965965f5042fbbb507fa7deab.err \
@@ -148,6 +150,8 @@ dist_noinst_DATA = \
     test_cmds.sh_517d6b34e8de5a4cf17ee4d943fc3a01caa4a4e5.out \
     test_cmds.sh_53a9686102f69b07b034df291f554a00b265ed20.err \
     test_cmds.sh_53a9686102f69b07b034df291f554a00b265ed20.out \
+    test_cmds.sh_5518280f71bdee7b994cca9a079875277bf18a81.err \
+    test_cmds.sh_5518280f71bdee7b994cca9a079875277bf18a81.out \
     test_cmds.sh_55c2fd15ec2c7d96dbef7b36a42a1b7b42f90dbc.err \
     test_cmds.sh_55c2fd15ec2c7d96dbef7b36a42a1b7b42f90dbc.out \
     test_cmds.sh_5630626e6f68c3d4a2c3e5f27d024df5950b88b5.err \
@@ -278,6 +282,8 @@ dist_noinst_DATA = \
     test_cmds.sh_ca66660c973f76a3c2a147c7f5035bcb4e8a8bbc.out \
     test_cmds.sh_ccd326da92d1cacda63501cd1a3077381a18e8f2.err \
     test_cmds.sh_ccd326da92d1cacda63501cd1a3077381a18e8f2.out \
+    test_cmds.sh_ce7b9760eef52ab4306a9545e838bad7e973c63c.err \
+    test_cmds.sh_ce7b9760eef52ab4306a9545e838bad7e973c63c.out \
     test_cmds.sh_cff20a2543106972a5fc7ba89f4b8969437177fb.err \
     test_cmds.sh_cff20a2543106972a5fc7ba89f4b8969437177fb.out \
     test_cmds.sh_d1afefacbdd387f02562c8633968b0162a588502.err \
@@ -318,6 +324,8 @@ dist_noinst_DATA = \
     test_cmds.sh_ed5b73be0b991e0e8d6735e31df5b37c4286321b.out \
     test_cmds.sh_f788d5f5932905d09ecbd581040ec5ce76459da5.err \
     test_cmds.sh_f788d5f5932905d09ecbd581040ec5ce76459da5.out \
+    test_cmds.sh_f9493853566af3ecf0e3a5a079e6c0504bc44c34.err \
+    test_cmds.sh_f9493853566af3ecf0e3a5a079e6c0504bc44c34.out \
     test_cmds.sh_f9566350497edeab6c8e9995bdad965c835fc386.err \
     test_cmds.sh_f9566350497edeab6c8e9995bdad965c835fc386.out \
     test_cmds.sh_ff6faebbde8586e04bfadba14a3d2bb4451784ad.err \
