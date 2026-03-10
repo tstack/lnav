@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: unknown command: “writ-to”
+[36m =[0m [36mnote[0m: did you mean one of the following:
+           [1mwrite-table-to[0m - Write SQL results to the given file in a tabular format
+           [1mwrite-to[0m - Overwrite the given file with any marked lines in the current view
+           [1mwrite-raw-to[0m - In the log view, write the original log file content of the marked messages to the file.  In the DB view, the contents of the cells are written to the output file.
+           [1mwrite-csv-to[0m - Write SQL results to the given file in CSV format
+           [1mwrite-cols-to[0m - Write SQL results to the given file in a tabular format

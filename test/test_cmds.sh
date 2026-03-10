@@ -93,6 +93,11 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ":current-time" \
     "${test_dir}/logfile_access_log.*"
 
+run_cap_test env TEST_COMMENT="unknown command with suggestions" \
+    ${lnav_test} -n \
+    -c ":writ-to" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":write-to" \
     "${test_dir}/logfile_access_log.*"

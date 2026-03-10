@@ -45,6 +45,7 @@
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
+#include "itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
@@ -150,7 +151,29 @@ execute_command(exec_context& ec, const std::string& cmdline)
         readline_context::command_map_t::iterator iter;
 
         if ((iter = lnav_commands.find(args[0])) == lnav_commands.end()) {
-            return ec.make_error("unknown command - {}", args[0]);
+            auto cmd_names
+                = lnav_commands | lnav::itertools::map([](const auto& pair) {
+                      return pair.first.to_string();
+                  });
+            auto similar = cmd_names | lnav::itertools::similar_to(args[0]);
+            auto um = lnav::console::user_message::error(
+                attr_line_t("unknown command: ").append_quoted(args[0]));
+            if (!similar.empty()) {
+                auto note = attr_line_t("did you mean one of the following:\n");
+                for (const auto& name : similar) {
+                    auto cmd_iter = lnav_commands.find(name);
+                    note.append("  ").append(lnav::roles::symbol(name));
+                    if (cmd_iter != lnav_commands.end()
+                        && cmd_iter->second->c_help.ht_summary[0])
+                    {
+                        note.append(" - ").append(
+                            cmd_iter->second->c_help.ht_summary);
+                    }
+                    note.append("\n");
+                }
+                um.with_note(note);
+            }
+            return Err(um);
         }
 
         ec.ec_current_help = &iter->second->c_help;
