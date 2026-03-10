@@ -1883,12 +1883,13 @@
 
 .. _write_jsonlines_to:
 
-:write-jsonlines-to *\[--anonymize\]* *path*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:write-jsonlines-to *\[--all\]* *\[--anonymize\]* *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Write SQL results or marked log lines to the given file in JSON Lines format
+  Write SQL results or log lines to the given file in JSON Lines format
 
   **Parameters**
+    * **--all** --- Write all visible log lines instead of only marked lines
     * **--anonymize** --- Anonymize the JSON values
     * **path\*** --- The path to the file to write
 

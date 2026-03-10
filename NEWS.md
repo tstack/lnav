@@ -46,6 +46,8 @@ Features:
   the standard log fields (`log_path`, `log_time`,
   `log_level`, `log_opid`, `log_line_link`) along with any
   format-specific parsed values, comments, and tags.
+  The `--all` flag can be used to write all visible log
+  lines instead of only marked lines.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

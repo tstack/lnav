@@ -458,6 +458,11 @@ run_cap_test env TEST_COMMENT="write-jsonlines-to for JSON log format" \
     -c ":write-jsonlines-to -" \
     ${test_dir}/logfile_bunyan.0
 
+run_cap_test env TEST_COMMENT="write-jsonlines-to --all" \
+    ${lnav_test} -n \
+    -c ":write-jsonlines-to --all -" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test env TEST_COMMENT="write-jsonlines-to with no marks errors" \
     ${lnav_test} -n \
     -c ":write-jsonlines-to -" \
