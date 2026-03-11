@@ -1,0 +1,257 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "mongodb_json_log": {
+        "title": "MongoDB log",
+        "url": "https://www.mongodb.com/docs/manual/reference/log-messages/",
+        "description": "MongoDB structured JSON log format (4.4+)",
+        "file-type": "json",
+        "level-field": "s",
+        "body-field": "msg",
+        "timestamp-field": "t/$date",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "s",
+                "min-width": 1
+            },
+            " ",
+            {
+                "field": "c",
+                "min-width": 8,
+                "auto-width": true
+            },
+            " [",
+            {
+                "field": "ctx",
+                "min-width": 12,
+                "align": "right"
+            },
+            {
+                "prefix": "@",
+                "field": "attr/remote",
+                "default-value": "",
+                "auto-width": true
+            },
+            "] ",
+            {
+                "field": "msg"
+            },
+            {
+                "prefix": " \u2014 ",
+                "field": "attr/ns",
+                "default-value": ""
+            },
+            {
+                "prefix": ".",
+                "field": "attr/queryHash",
+                "default-value": ""
+            },
+            {
+                "prefix": " (\u2194 ",
+                "field": "attr/durationMillis",
+                "default-value": "",
+                "suffix": "ms"
+            },
+            {
+                "prefix": " ",
+                "field": "attr/planSummary",
+                "default-value": ""
+            },
+            {
+                "prefix": " \u2190 ",
+                "field": "attr/command/filter",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " \u2190 ",
+                "field": "attr/originatingCommand/filter",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " (",
+                "field": "attr/principalName",
+                "default-value": "",
+                "suffix": "@"
+            },
+            {
+                "field": "attr/authenticationDatabase",
+                "suffix": ")",
+                "default-value": ""
+            },
+            {
+                "prefix": "  ",
+                "field": "attr/doc",
+                "default-value": ""
+            },
+            {
+                "prefix": "  \u2014 ",
+                "field": "attr/message/msg",
+                "default-value": ""
+            },
+            {
+                "prefix": " UPDATE.",
+                "field": "attr/command/update",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " INSERT.",
+                "field": "attr/command/insert",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " DELETE.",
+                "field": "attr/command/delete",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " deleted ",
+                "field": "attr/numDeleted",
+                "default-value": "",
+                "suffix": " docs from"
+            },
+            {
+                "prefix": " ",
+                "field": "attr/namespace",
+                "default-value": "",
+                "suffix": ")"
+            }
+        ],
+        "level": {
+            "fatal": "F",
+            "error": "E",
+            "warning": "W",
+            "info": "I",
+            "debug": "D1",
+            "debug2": "D2",
+            "debug3": "D3",
+            "debug4": "D4",
+            "debug5": "D5"
+        },
+        "value": {
+            "s": {
+                "kind": "string",
+                "identifier": true,
+                "foreign-key": true
+            },
+            "c": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The component category of the log message"
+            },
+            "id": {
+                "kind": "integer",
+                "identifier": true,
+                "description": "The stable numeric identifier for the log statement",
+                "hidden": true
+            },
+            "ctx": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The thread or connection context"
+            },
+            "msg": {
+                "kind": "string",
+                "description": "The log message body"
+            },
+            "attr": {
+                "kind": "json",
+                "hidden": true,
+                "description": "Additional attributes for the log message"
+            },
+            "attr/authenticationDatabase": {
+                "kind": "string",
+                "description": "The authenticating database for a connection"
+            },
+            "attr/command/delete": {
+                "kind": "string",
+                "description": "The collection for a delete command",
+                "highlights": {
+                    "delete": {
+                        "color": "red"
+                    }
+                }
+            },
+            "attr/command/filter": {
+                "kind": "json",
+                "description": "The filter of the command for a query"
+            },
+            "attr/command/insert": {
+                "kind": "string",
+                "description": "The collection for an insert command",
+                "highlights": {
+                    "insert": {
+                        "color": "yellow"
+                    }
+                }
+            },
+            "attr/command/update": {
+                "kind": "string",
+                "description": "The collection for an update command",
+                "highlights": {
+                    "update": {
+                        "color": "yellow"
+                    }
+                }
+            },
+            "attr/doc": {
+                "kind": "json",
+                "description": "The document for a command"
+            },
+            "attr/durationMillis": {
+                "kind": "integer",
+                "description": "The duration of the operation in milliseconds"
+            },
+            "attr/message/msg": {
+                "kind": "string",
+                "description": "The wrapped log message"
+            },
+            "attr/namespace": {
+                "kind": "string",
+                "description": "The namespace for a query",
+                "identifier": true
+            },
+            "attr/ns" : {
+                "kind": "string",
+                "description": "The namespace for a query"
+            },
+            "attr/numDeleted": {
+                "kind": "integer",
+                "description": "The number of documents deleted"
+            },
+            "attr/originatingCommand/filter": {
+                "kind": "json",
+                "description": "The filter of the originating command for a query"
+            },
+            "attr/planSummary": {
+                "kind": "string",
+                "description": "The plan summary for a query"
+            },
+            "attr/principalName": {
+                "kind": "string",
+                "description": "The principal name for a connection"
+            },
+            "attr/queryHash": {
+                "kind": "string",
+                "description": "The hash for a query",
+                "identifier": true
+            },
+            "attr/remote": {
+                "kind": "string",
+                "description": "The remote address for a connection",
+                "identifier": true
+            },
+            "t": {
+                "kind": "json",
+                "hidden": true
+            }
+        }
+    }
+}

@@ -185,3 +185,11 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_ecs_log.json
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_mongodb.0
+
+run_cap_test ${lnav_test} -n \
+    -c ';select * from mongodb_json_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_mongodb.0

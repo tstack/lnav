@@ -1,5 +1,5 @@
-[INFO] 2023-10-01T02:39:09+00:00 twv 10.0.0.1  files_antivi Tried to scan non file[33m⋮[0m
-[INFO] 2023-10-01T02:39:09+00:00 twv           files_antivi Tried to scan non file[33m⋮[0m
-[4m[[0m[4mINFO[0m[4m] [0m[4m2023-10-01T02:50:03+00:00[0m[4m [0m[4mpZp[0m[4m [0m[4m         [0m[4m [0m[4mfulltextsear[0m[4m [0m[4mRequest: PUT http://elasticsearch:9200/nextcloud/_doc/files%3A1780281[0m[4m[33m⋮[0m
-[INFO] 2023-10-16T01:47:44+00:00 WO0 192...1.1 memories     Memories: Updated item successfully[33m⋮[0m
-[INFO] 2023-10-16T01:50:18+00:00 Sbl 192...1.1 files_versio Mark to expire /Documents/phat.txt next version should be 1697407738 or smaller. (prevTimestamp: 1697411338; step: 3600[33m⋮[0m
+[INFO] 2023-10-01T02:39:09+00:00 twv 10.0.0.1  files_antivi Tried t[35mo scan non file[0m[35m⋮[0m[35m[0m[33m"\x8b"[0m[35m[0m[33m⋮[0m
+[INFO] 2023-10-01T02:39:09+00:00 twv           files_antivi Tried t[35mo scan non file[0m[35m⋮[0m[35m[0m[33m"\x8b"[0m[35m[0m[33m⋮[0m
+[4m[35m[[0m[4m[35mINFO[0m[4m[35m] [0m[4m[35m2023-10-01T02:50:03+00:00[0m[4m[35m [0m[4m[35mpZp[0m[4m[35m [0m[4m[35m         [0m[4m[35m [0m[4m[35mfulltextsear[0m[4m[35m [0m[4m[35mRequest: PUT http://elasticsearch:9200/nextcloud/_doc/files%3A1780281[0m[4m[35m⋮[0m[4m[35m[0m[33m"\x8b"[0m[4m[35m[0m[4m[33m⋮[0m
+[INFO] 2023-10-16T01:47:44+00:00 WO0 192...1.1 memories     Memories: Updated item succ[35messfully[0m[35m⋮[0m[35m[0m[33m"\x8b"[0m[35m[0m[33m⋮[0m
+[INFO] 2023-10-16T01:50:18+00:00 Sbl 192...1.1 files_versio Mark to expire /Documents/phat.txt next version should be 1697407738 or smaller. (prevTimestamp: 16974113[35m38; step: 3600[0m[35m⋮[0m[35m[0m[33m"\x8b"[0m[35m[0m[33m⋮[0m

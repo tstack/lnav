@@ -29,6 +29,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/lnav_debug_log.json \
     $(srcdir)/%reldir%/logcat_log.json \
     $(srcdir)/%reldir%/macosuni_log.json \
+    $(srcdir)/%reldir%/mongodb_json_log.json \
     $(srcdir)/%reldir%/mysql_error_log.json \
     $(srcdir)/%reldir%/mysql_gen_log.json \
     $(srcdir)/%reldir%/mysql_slow_log.json \

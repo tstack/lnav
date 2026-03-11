@@ -48,6 +48,8 @@ Features:
   format-specific parsed values, comments, and tags.
   The `--all` flag can be used to write all visible log
   lines instead of only marked lines.
+* Added a log format for MongoDB's structured JSON log
+  format (4.4+).
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

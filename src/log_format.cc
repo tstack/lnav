@@ -1140,7 +1140,7 @@ struct json_log_userdata {
     yajl_handle jlu_handle{nullptr};
     const char* jlu_line_value{nullptr};
     size_t jlu_line_size{0};
-    size_t jlu_sub_start{0};
+    std::stack<size_t> jlu_sub_start;
     uint32_t jlu_quality{0};
     uint32_t jlu_strikes{0};
     std::vector<bool> jlu_format_hits;
@@ -1326,11 +1326,11 @@ json_array_start(void* ctx)
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
 
+    jlu->jlu_sub_start.push(yajl_get_bytes_consumed(jlu->jlu_handle) - 1);
     if (ypc->ypc_path_index_stack.size() == 2) {
         const auto* vd = jlu->get_field_def(ypc);
 
         jlu->add_sub_lines_for(vd, true, std::nullopt, nullptr, -1, nullptr);
-        jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
     }
 
     return 1;
@@ -1342,9 +1342,7 @@ json_array_start_const(void* ctx)
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
 
-    if (ypc->ypc_path_index_stack.size() == 2) {
-        jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
-    }
+    jlu->jlu_sub_start.push(yajl_get_bytes_consumed(jlu->jlu_handle) - 1);
 
     return 1;
 }
@@ -1354,12 +1352,19 @@ json_array_end(void* ctx)
 {
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (ypc->ypc_path_index_stack.size() == 1) {
-        const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    if (ypc->ypc_path_index_stack.size() == 1 || vd != nullptr) {
+        intern_string_t field_name;
+        if (vd != nullptr) {
+            field_name = vd->vd_meta.lvm_name;
+        } else {
+            field_name = ypc->get_path();
+        }
+        auto sub_start = jlu->jlu_sub_start.top();
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
         auto json_frag = string_fragment::from_byte_range(
-            jlu->jlu_shared_buffer.get_data(), jlu->jlu_sub_start, sub_end);
+            jlu->jlu_shared_buffer.get_data(), sub_start, sub_end);
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_JSON),
@@ -1368,6 +1373,7 @@ json_array_end(void* ctx)
             jlu->jlu_opid_desc_frag = json_frag;
         }
     }
+    jlu->jlu_sub_start.pop();
 
     return 1;
 }
@@ -1377,12 +1383,15 @@ read_array_end(void* ctx)
 {
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (ypc->ypc_path_index_stack.size() == 1) {
+    if (ypc->ypc_path_index_stack.size() == 1 || vd != nullptr) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
+        auto sub_start = jlu->jlu_sub_start.top();
+        jlu->jlu_sub_start.pop();
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
         auto json_frag = string_fragment::from_byte_range(
-            jlu->jlu_shared_buffer.get_data(), jlu->jlu_sub_start, sub_end);
+            jlu->jlu_shared_buffer.get_data(), sub_start, sub_end);
         if (field_name == jlu->jlu_format->elf_opid_field) {
             jlu->jlu_opid_desc_frag = json_frag;
         }
@@ -2233,7 +2242,7 @@ external_log_format::annotate(logfile* lf,
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         if (this->jlf_cached_opts.full_message) {
             values = this->jlf_line_values;
-            sa = this->jlf_line_attrs;
+            sa = this->jlf_attr_line.al_attrs;
         } else {
             values.lvv_sbr = this->jlf_line_values.lvv_sbr.clone();
             for (const auto& llv : this->jlf_line_values.lvv_values) {
@@ -2244,7 +2253,7 @@ external_log_format::annotate(logfile* lf,
                         -this->jlf_cached_sub_range.lr_start);
                 }
             }
-            for (const auto& attr : this->jlf_line_attrs) {
+            for (const auto& attr : this->jlf_attr_line.al_attrs) {
                 if (this->jlf_cached_sub_range.contains(attr.sa_range)) {
                     sa.emplace_back(attr);
                     sa.back().sa_range.shift(
@@ -2777,24 +2786,21 @@ external_log_format::get_subline(const log_format_file_state& lffs,
         this->lf_desc_captures.clear();
         this->lf_desc_allocator.reset();
         this->jlf_share_manager.invalidate_refs();
-        this->jlf_cached_line.clear();
+        this->jlf_attr_line.clear();
         this->jlf_line_values.clear();
         this->jlf_line_offsets.clear();
-        this->jlf_line_attrs.clear();
 
         auto line_frag = sbr.to_string_fragment();
 
         if (!line_frag.startswith("{")) {
-            this->jlf_cached_line.resize(line_frag.length());
-            memcpy(this->jlf_cached_line.data(),
-                   line_frag.data(),
-                   line_frag.length());
+            this->jlf_attr_line.al_string.assign(line_frag.data(),
+                                                 line_frag.length());
             this->jlf_line_values.clear();
             sbr.share(this->jlf_share_manager,
-                      &this->jlf_cached_line[0],
-                      this->jlf_cached_line.size());
+                      this->jlf_attr_line.al_string.data(),
+                      this->jlf_attr_line.al_string.size());
             this->jlf_line_values.lvv_sbr = sbr.clone();
-            this->jlf_line_attrs.emplace_back(
+            this->jlf_attr_line.al_attrs.emplace_back(
                 line_range{0, -1},
                 SA_INVALID.value(fmt::format(
                     FMT_STRING("line at offset {} is not a JSON-line"),
@@ -2836,11 +2842,10 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 yajl_free_error(handle, msg);
             }
 
-            this->jlf_cached_line.resize(full_msg.size());
-            memcpy(
-                this->jlf_cached_line.data(), full_msg.data(), full_msg.size());
+            this->jlf_attr_line.al_string.assign(full_msg.data(),
+                                                 full_msg.size());
             this->jlf_line_values.clear();
-            this->jlf_line_attrs.emplace_back(
+            this->jlf_attr_line.al_attrs.emplace_back(
                 line_range{0, -1},
                 SA_INVALID.value(jlu.jlu_scan_error
                                      ? jlu.jlu_scan_error->se_message
@@ -2917,7 +2922,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                     = intern_string::lookup("__timestamp__", -1);
                 static const intern_string_t level_field
                     = intern_string::lookup("__level__");
-                size_t begin_size = this->jlf_cached_line.size();
+                size_t begin_size = this->jlf_attr_line.al_string.size();
 
                 switch (jfe.jfe_type) {
                     case json_log_field::CONSTANT:
@@ -2948,7 +2953,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
                             }
-                            lr.lr_start = this->jlf_cached_line.size();
+                            lr.lr_start = this->jlf_attr_line.al_string.size();
 
                             if ((int) str.size() > jfe.jfe_max_width) {
                                 switch (jfe.jfe_overflow) {
@@ -2996,13 +3001,25 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             } else {
                                 sub_offset
                                     += std::count(str.begin(), str.end(), '\n');
-                                this->json_append(lffs, jfe, vd, str);
+                                if (vd->vd_meta.lvm_kind
+                                    == value_kind_t::VALUE_JSON)
+                                {
+                                    auto json_al = attr_line_t();
+                                    json_al.append(str);
+                                    highlight_syntax(text_format_t::TF_JSON,
+                                                     json_al,
+                                                     std::nullopt);
+                                    this->jlf_attr_line.append(json_al);
+                                } else {
+                                    this->json_append(lffs, jfe, vd, str);
+                                }
                             }
 
                             if (nl_pos == std::string::npos
                                 || opts.full_message)
                             {
-                                lr.lr_end = this->jlf_cached_line.size();
+                                lr.lr_end
+                                    = this->jlf_attr_line.al_string.size();
                             } else {
                                 lr.lr_end = lr.lr_start + nl_pos;
                             }
@@ -3010,43 +3027,43 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             if (lv_iter->lv_meta.lvm_name
                                 == this->lf_timestamp_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, L_TIMESTAMP.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_body_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_file_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_FILE.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_line_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_LINE.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_thread_id_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_THREAD_ID.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_duration_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_DURATION.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_level_field)
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, L_LEVEL.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                            == this->elf_opid_field
                                        && !lr.empty())
                             {
-                                this->jlf_line_attrs.emplace_back(
+                                this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
@@ -3083,10 +3100,10 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                                    jfe.jfe_ts_format.c_str(),
                                                    et);
                             }
-                            lr.lr_start = this->jlf_cached_line.size();
+                            lr.lr_start = this->jlf_attr_line.al_string.size();
                             this->json_append_to_cache(ts, ts_len);
-                            lr.lr_end = this->jlf_cached_line.size();
-                            this->jlf_line_attrs.emplace_back(
+                            lr.lr_end = this->jlf_attr_line.al_string.size();
+                            this->jlf_attr_line.al_attrs.emplace_back(
                                 lr, L_TIMESTAMP.value());
 
                             lv_iter = find_if(
@@ -3109,15 +3126,15 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                        == this->elf_level_field)
                         {
                             auto level_name = ll.get_level_name();
-                            lr.lr_start = this->jlf_cached_line.size();
+                            lr.lr_start = this->jlf_attr_line.al_string.size();
                             this->json_append(lffs, jfe, nullptr, level_name);
                             if (jfe.jfe_auto_width) {
                                 this->json_append_to_cache(
                                     MAX_LEVEL_NAME_LEN - level_name.length());
                             }
-                            lr.lr_end = this->jlf_cached_line.size();
-                            this->jlf_line_attrs.emplace_back(lr,
-                                                              L_LEVEL.value());
+                            lr.lr_end = this->jlf_attr_line.al_string.size();
+                            this->jlf_attr_line.al_attrs.emplace_back(
+                                lr, L_LEVEL.value());
                         } else if (!jfe.jfe_default_value.empty()) {
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
@@ -3133,21 +3150,23 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             case json_format_element::transform_t::NONE:
                                 break;
                             case json_format_element::transform_t::UPPERCASE:
-                                for (size_t cindex = begin_size;
-                                     cindex < this->jlf_cached_line.size();
+                                for (size_t cindex = begin_size; cindex
+                                     < this->jlf_attr_line.al_string.size();
                                      cindex++)
                                 {
-                                    this->jlf_cached_line[cindex] = toupper(
-                                        this->jlf_cached_line[cindex]);
+                                    this->jlf_attr_line.al_string[cindex]
+                                        = toupper(this->jlf_attr_line
+                                                      .al_string[cindex]);
                                 }
                                 break;
                             case json_format_element::transform_t::LOWERCASE:
-                                for (size_t cindex = begin_size;
-                                     cindex < this->jlf_cached_line.size();
+                                for (size_t cindex = begin_size; cindex
+                                     < this->jlf_attr_line.al_string.size();
                                      cindex++)
                                 {
-                                    this->jlf_cached_line[cindex] = tolower(
-                                        this->jlf_cached_line[cindex]);
+                                    this->jlf_attr_line.al_string[cindex]
+                                        = tolower(this->jlf_attr_line
+                                                      .al_string[cindex]);
                                 }
                                 break;
                             case json_format_element::transform_t::CAPITALIZE:
@@ -3155,15 +3174,17 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                      cindex < begin_size + 1;
                                      cindex++)
                                 {
-                                    this->jlf_cached_line[cindex] = toupper(
-                                        this->jlf_cached_line[cindex]);
+                                    this->jlf_attr_line.al_string[cindex]
+                                        = toupper(this->jlf_attr_line
+                                                      .al_string[cindex]);
                                 }
-                                for (size_t cindex = begin_size + 1;
-                                     cindex < this->jlf_cached_line.size();
+                                for (size_t cindex = begin_size + 1; cindex
+                                     < this->jlf_attr_line.al_string.size();
                                      cindex++)
                                 {
-                                    this->jlf_cached_line[cindex] = tolower(
-                                        this->jlf_cached_line[cindex]);
+                                    this->jlf_attr_line.al_string[cindex]
+                                        = tolower(this->jlf_attr_line
+                                                      .al_string[cindex]);
                                 }
                                 break;
                         }
@@ -3192,7 +3213,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 }
 
                 lv.lv_sub_offset = sub_offset;
-                lv.lv_origin.lr_start = this->jlf_cached_line.size() + 2
+                lv.lv_origin.lr_start = this->jlf_attr_line.al_string.size() + 2
                     + lv.lv_meta.lvm_name.size() + 2;
                 auto frag = string_fragment::from_str(str);
                 while (true) {
@@ -3202,13 +3223,14 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                     this->json_append_to_cache(
                         lv.lv_meta.lvm_name.to_string_fragment());
                     this->json_append_to_cache(": ", 2);
-                    lr.lr_start = this->jlf_cached_line.size();
+                    lr.lr_start = this->jlf_attr_line.al_string.size();
                     this->json_append_to_cache(utf_scan_res.usr_valid_frag);
-                    lr.lr_end = this->jlf_cached_line.size();
+                    lr.lr_end = this->jlf_attr_line.al_string.size();
                     if (lv.lv_meta.lvm_name == this->elf_body_field) {
-                        this->jlf_line_attrs.emplace_back(lr, SA_BODY.value());
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_BODY.value());
                     } else {
-                        this->jlf_line_attrs.emplace_back(
+                        this->jlf_attr_line.al_attrs.emplace_back(
                             lr, SA_EXTRA_CONTENT.value());
                     }
                     this->json_append_to_cache("\n", 1);
@@ -3219,23 +3241,24 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         break;
                     }
                 }
-                lv.lv_origin.lr_end = this->jlf_cached_line.size() - 1;
+                lv.lv_origin.lr_end = this->jlf_attr_line.al_string.size() - 1;
                 if (lv.lv_meta.lvm_name == this->elf_opid_field
                     && !lv.lv_origin.empty())
                 {
-                    this->jlf_line_attrs.emplace_back(lv.lv_origin,
-                                                      L_OPID.value());
+                    this->jlf_attr_line.al_attrs.emplace_back(lv.lv_origin,
+                                                              L_OPID.value());
                 }
             }
         }
 
         this->jlf_line_offsets.push_back(0);
-        for (size_t lpc = 0; lpc < this->jlf_cached_line.size(); lpc++) {
-            if (this->jlf_cached_line[lpc] == '\n') {
+        for (size_t lpc = 0; lpc < this->jlf_attr_line.al_string.size(); lpc++)
+        {
+            if (this->jlf_attr_line.al_string[lpc] == '\n') {
                 this->jlf_line_offsets.push_back(lpc + 1);
             }
         }
-        this->jlf_line_offsets.push_back(this->jlf_cached_line.size());
+        this->jlf_line_offsets.push_back(this->jlf_attr_line.al_string.size());
         this->jlf_cached_offset = ll.get_offset();
         this->jlf_cached_opts = opts;
     }
@@ -3251,9 +3274,9 @@ external_log_format::get_subline(const log_format_file_state& lffs,
         if ((ll.get_sub_offset() + 1) < (int) this->jlf_line_offsets.size()) {
             next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
         } else {
-            next_off = this->jlf_cached_line.size();
+            next_off = this->jlf_attr_line.al_string.size();
         }
-        if (next_off > 0 && this->jlf_cached_line[next_off - 1] == '\n'
+        if (next_off > 0 && this->jlf_attr_line.al_string[next_off - 1] == '\n'
             && this_off != next_off)
         {
             next_off -= 1;
@@ -3262,11 +3285,11 @@ external_log_format::get_subline(const log_format_file_state& lffs,
 
     if (opts.full_message) {
         sbr.share(this->jlf_share_manager,
-                  &this->jlf_cached_line[0],
-                  this->jlf_cached_line.size());
+                  this->jlf_attr_line.al_string.data(),
+                  this->jlf_attr_line.al_string.size());
     } else {
         sbr.share(this->jlf_share_manager,
-                  this->jlf_cached_line.data() + this_off,
+                  this->jlf_attr_line.al_string.data() + this_off,
                   next_off - this_off);
     }
     sbr.get_metadata().m_valid_utf = ll.is_valid_utf();
@@ -4394,6 +4417,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             auto& hd = hd_pair.second;
             text_attrs attrs;
 
+            if (hd.hd_pattern.pp_value == nullptr) {
+                hd.hd_pattern.pp_value
+                    = lnav::pcre2pp::code::from_const(".*").to_shared();
+            }
+
             if (!hd.hd_color.pp_value.empty()) {
                 attrs.ta_fg_color = vc.match_color(
                     styling::color_unit::from_str(hd.hd_color.pp_value)
@@ -4960,7 +4988,7 @@ external_log_format::specialized(int fmt_lock)
                        this->jlf_parse_context.get()),
             yajl_handle_deleter());
         yajl_config(this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
-        this->jlf_cached_line.reserve(16 * 1024);
+        this->jlf_attr_line.al_string.reserve(16 * 1024);
     }
 
     this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
@@ -5251,15 +5279,16 @@ pattern_for_lines::pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index)
 void
 logline_value_stats::merge(const logline_value_stats& other)
 {
+    if (other.lvs_width > this->lvs_width) {
+        this->lvs_width = other.lvs_width;
+    }
+
     if (other.lvs_count == 0) {
         return;
     }
 
     require(other.lvs_min_value <= other.lvs_max_value);
 
-    if (other.lvs_width > this->lvs_width) {
-        this->lvs_width = other.lvs_width;
-    }
     if (other.lvs_min_value < this->lvs_min_value) {
         this->lvs_min_value = other.lvs_min_value;
     }

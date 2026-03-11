@@ -1,0 +1,3 @@
+{"t":{"$date":"2026-03-10T20:58:09.401+00:00"},"s":"I",  "c":"NETWORK",  "id":22943,   "ctx":"listener","msg":"Connection accepted","attr":{"remote":"10.29.42.162:56982","uuid":"9b9119f8-f43a-475a-a4db-11e53d36bc00","connectionId":162095,"connectionCount":22461}}
+{"t":{"$date":"2026-03-10T20:58:09.525+00:00"},"s":"I",  "c":"COMMAND",  "id":51803,   "ctx":"conn162095","msg":"Slow query","attr":{"durationMillis":120,"ns":"mydb.users","planSummary":"IXSCAN { name: 1 }","queryHash":"ABC123"}}
+{"t":{"$date":"2026-03-10T20:58:10.004+00:00"},"s":"W",  "c":"STORAGE",  "id":22220,   "ctx":"initandlisten","msg":"Detected unclean shutdown"}

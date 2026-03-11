@@ -191,7 +191,8 @@
         "theme-defs": {
             "default": {
                 "vars": {
-                    "semantic_highlight_color": "semantic()"
+                    "semantic_highlight_color": "semantic()",
+                    "yellow": "Olive"
                 },
                 "icons": {
                     "hidden": {

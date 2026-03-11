@@ -69,7 +69,8 @@
                     }
                 },
                 "vars": {
-                    "semantic_highlight_color": "semantic()"
+                    "semantic_highlight_color": "semantic()",
+                    "yellow": "Olive"
                 },
                 "styles": {
                     "text": {

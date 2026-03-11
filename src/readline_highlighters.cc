@@ -31,6 +31,8 @@
 
 #include "readline_highlighters.hh"
 
+#include <yajl/api/yajl_parse.h>
+
 #include "base/attr_line.builder.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
@@ -566,6 +568,133 @@ readline_lnav_highlighter(attr_line_t& al, std::optional<int> x)
     }
 }
 
+namespace {
+
+struct json_hl_context {
+    const char* jhc_str;
+    yajl_handle jhc_handle;
+    attr_line_builder* jhc_alb;
+    int jhc_prev_consumed{0};
+
+    int consumed() const
+    {
+        return (int) yajl_get_bytes_consumed(this->jhc_handle);
+    }
+
+    void highlight_str(role_t role)
+    {
+        auto end = this->consumed();
+        auto start = end;
+        for (int i = this->jhc_prev_consumed; i < end; i++) {
+            if (this->jhc_str[i] == '"') {
+                start = i;
+                break;
+            }
+        }
+        this->jhc_alb->overlay_attr(line_range{start, end},
+                                    VC_ROLE.value(role));
+        this->jhc_prev_consumed = end;
+    }
+};
+
+int
+json_hl_null(void* ctx)
+{
+    auto* jctx = static_cast<json_hl_context*>(ctx);
+    auto end = jctx->consumed();
+    jctx->jhc_alb->overlay_attr(line_range{end - 4, end},
+                                VC_ROLE.value(role_t::VCR_KEYWORD));
+    jctx->jhc_prev_consumed = end;
+    return 1;
+}
+
+int
+json_hl_boolean(void* ctx, int boolVal)
+{
+    auto* jctx = static_cast<json_hl_context*>(ctx);
+    auto end = jctx->consumed();
+    auto len = boolVal ? 4 : 5;
+    jctx->jhc_alb->overlay_attr(line_range{end - len, end},
+                                VC_ROLE.value(role_t::VCR_KEYWORD));
+    jctx->jhc_prev_consumed = end;
+    return 1;
+}
+
+int
+json_hl_number(void* ctx, const char* numberVal, size_t numberLen)
+{
+    auto* jctx = static_cast<json_hl_context*>(ctx);
+    auto end = jctx->consumed();
+    jctx->jhc_alb->overlay_attr(line_range{end - (int) numberLen, end},
+                                VC_ROLE.value(role_t::VCR_NUMBER));
+    jctx->jhc_prev_consumed = end;
+    return 1;
+}
+
+int
+json_hl_string(void* ctx, const unsigned char*, size_t, yajl_string_props_t*)
+{
+    auto* jctx = static_cast<json_hl_context*>(ctx);
+    jctx->highlight_str(role_t::VCR_STRING);
+    return 1;
+}
+
+int
+json_hl_map_key(void* ctx, const unsigned char*, size_t, yajl_string_props_t*)
+{
+    auto* jctx = static_cast<json_hl_context*>(ctx);
+    jctx->highlight_str(role_t::VCR_VARIABLE);
+    return 1;
+}
+
+}  // namespace
+
+static void
+readline_json_highlighter(attr_line_t& al, std::optional<int> x)
+{
+    static const yajl_callbacks json_hl_callbacks = {
+        json_hl_null,
+        json_hl_boolean,
+        nullptr,
+        nullptr,
+        json_hl_number,
+        json_hl_string,
+        nullptr,
+        json_hl_map_key,
+        nullptr,
+        nullptr,
+        nullptr,
+    };
+
+    attr_line_builder alb(al);
+    const auto& str = al.get_string();
+
+    json_hl_context jctx;
+    jctx.jhc_str = str.c_str();
+    jctx.jhc_alb = &alb;
+
+    auto* handle = yajl_alloc(&json_hl_callbacks, nullptr, &jctx);
+    yajl_config(handle, yajl_allow_comments, 1);
+    yajl_config(handle, yajl_allow_trailing_garbage, 1);
+    jctx.jhc_handle = handle;
+
+    auto parse_status = yajl_parse(
+        handle,
+        reinterpret_cast<const unsigned char*>(str.c_str()),
+        str.size());
+    if (parse_status == yajl_status_ok) {
+        parse_status = yajl_complete_parse(handle);
+    }
+    if (parse_status == yajl_status_error) {
+        auto err_offset = (int) yajl_get_bytes_consumed(handle);
+        alb.overlay_attr_for_char(err_offset,
+                                  VC_STYLE.value(text_attrs::with_reverse()));
+        alb.overlay_attr_for_char(err_offset,
+                                  VC_ROLE.value(role_t::VCR_ERROR));
+    }
+    yajl_free(handle);
+}
+
 void
 highlight_syntax(text_format_t tf, attr_line_t& al, std::optional<int> x)
 {
@@ -584,6 +713,10 @@ highlight_syntax(text_format_t tf, attr_line_t& al, std::optional<int> x)
         }
         case text_format_t::TF_LNAV_SCRIPT: {
             readline_lnav_highlighter(al, x);
+            break;
+        }
+        case text_format_t::TF_JSON: {
+            readline_json_highlighter(al, x);
             break;
         }
         default:

@@ -421,9 +421,7 @@ public:
             return;
         }
 
-        const auto old_size = this->jlf_cached_line.size();
-        this->jlf_cached_line.resize(old_size + len);
-        memcpy(&this->jlf_cached_line[old_size], value, len);
+        this->jlf_attr_line.al_string.append(value, len);
     }
 
     void json_append_to_cache(const string_fragment& sf)
@@ -436,9 +434,7 @@ public:
         if (len <= 0) {
             return;
         }
-        const size_t old_size = this->jlf_cached_line.size();
-        this->jlf_cached_line.resize(old_size + len);
-        memset(&this->jlf_cached_line[old_size], ' ', len);
+        this->jlf_attr_line.al_string.append(len, ' ');
     }
 
     void json_append(const log_format_file_state& sbc,
@@ -464,8 +460,7 @@ public:
     line_range jlf_cached_sub_range;
     subline_options jlf_cached_opts{};
     std::vector<off_t> jlf_line_offsets;
-    std::vector<char> jlf_cached_line;
-    string_attrs_t jlf_line_attrs;
+    attr_line_t jlf_attr_line;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
     shared_buffer jlf_share_manager;
