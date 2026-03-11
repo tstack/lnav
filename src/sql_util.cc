@@ -2137,7 +2137,11 @@ annotate_prql_statement(attr_line_t& al)
                 saw_id_dot = true;
             } else {
                 fqids.emplace_back(id_start.value());
-                id_start = std::nullopt;
+                if (attr.sa_type == &PRQL_IDENTIFIER_ATTR) {
+                    id_start = attr.sa_range;
+                } else {
+                    id_start = std::nullopt;
+                }
                 saw_id_dot = false;
             }
         } else {

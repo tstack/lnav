@@ -961,6 +961,11 @@ static readline_context::command_t sql_commands[] = {
                 "To chart the values of ex_procname over time",
                 "from lnav_example_log | stats.hist ex_procname",
                 help_example::language::prql,
+            })
+            .with_example({
+                "To chart the values of ex_procname for every second",
+                "from lnav_example_log | stats.hist ex_procname slice:'1s'",
+                help_example::language::prql,
             }),
         nullptr,
         "prql-source",

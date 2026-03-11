@@ -5206,6 +5206,16 @@ stats.hist *col* *\[slice:'1h'\]* *\[top:10\]*
           tslice             v        
       2017-02⋯.000000 {"gw":3,"hw":1} 
 
+    To chart the values of ex_procname for every second:
+
+    .. code-block::  custsqlite
+
+      ;from lnav_example_log | stats.hist ex_procname slice:'1s'
+          tslice             v        
+      2017-02⋯.000000 {"gw":1,"hw":1} 
+      2017-02⋯.000000 {"gw":1}        
+      2017-02⋯.000000 {"gw":1}        
+
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
 

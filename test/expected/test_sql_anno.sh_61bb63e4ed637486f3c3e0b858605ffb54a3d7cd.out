@@ -5,6 +5,7 @@
       prql_stage                 -----------------------------
        prql_pipe                 -
        prql_fqid                   --------------
+       prql_fqid                                  -----------
       prql_stage                                              ---------
        prql_pipe                                              -
   prql_transform                                                ----
