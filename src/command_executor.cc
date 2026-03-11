@@ -155,7 +155,8 @@ execute_command(exec_context& ec, const std::string& cmdline)
                 = lnav_commands | lnav::itertools::map([](const auto& pair) {
                       return pair.first.to_string();
                   });
-            auto similar = cmd_names | lnav::itertools::similar_to(args[0]);
+            auto similar = cmd_names | lnav::itertools::similar_to(args[0])
+                | lnav::itertools::sorted();
             auto um = lnav::console::user_message::error(
                 attr_line_t("unknown command: ").append_quoted(args[0]));
             if (!similar.empty()) {
