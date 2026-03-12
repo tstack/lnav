@@ -50,6 +50,10 @@ Features:
   lines instead of only marked lines.
 * Added a log format for MongoDB's structured JSON log
   format (4.4+).
+* Added `"timestamp"` as a value kind for log format
+  definitions.  Fields with this kind will be parsed
+  and displayed in the local timezone, and SQL
+  queries will return them in a normalized format.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

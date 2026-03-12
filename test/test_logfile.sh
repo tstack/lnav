@@ -800,3 +800,17 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -S "2023-03-24T14:26:17" \
     ${test_dir}/logfile_bunyan.0
+
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_ts_value.0
+
+run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_ts_value.0
+
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';select session_start from ts_value_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_ts_value.0

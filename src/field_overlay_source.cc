@@ -465,6 +465,27 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         readline_sql_highlighter_int(
             al, lnav::sql::dialect::sqlite, std::nullopt, hl_range);
 
+        if (meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
+            auto dts = curr_format->build_time_scanner();
+            exttm tm;
+            timeval tv;
+
+            if (dts.scan(value_str.c_str(),
+                         value_str.size(),
+                         curr_format->get_timestamp_formats(),
+                         &tm,
+                         tv,
+                         true))
+            {
+                char ts[64];
+                tm.et_gmtoff = tm.et_orig_gmtoff;
+                auto len = dts.ftime(
+                    ts, sizeof(ts), curr_format->get_timestamp_formats(), tm);
+                ts[len] = '\0';
+                value_str = ts;
+            }
+        }
+
         al.append(" = ").append(scrub_ws(value_str.c_str()));
 
         this->fos_lines.emplace_back(al);

@@ -44,17 +44,17 @@ namespace lnav {
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
 ssize_t
-strftime_rfc3339(
-    char* buffer, size_t buffer_size, std::chrono::microseconds micros, char sep)
+strftime_rfc3339(char* buffer,
+                 size_t buffer_size,
+                 const struct tm& tm,
+                 std::chrono::microseconds micros,
+                 char sep)
 {
-    struct tm gmtm;
     int year, month, index = 0;
-    auto secs = std::chrono::duration_cast<std::chrono::seconds>(micros);
     auto micros_count = micros.count() % 1000000;
 
-    secs2tm(secs.count(), &gmtm);
-    year = gmtm.tm_year + 1900;
-    month = gmtm.tm_mon + 1;
+    year = tm.tm_year + 1900;
+    month = tm.tm_mon + 1;
     buffer[index++] = '0' + ((year / 1000) % 10);
     buffer[index++] = '0' + ((year / 100) % 10);
     buffer[index++] = '0' + ((year / 10) % 10);
@@ -63,17 +63,17 @@ strftime_rfc3339(
     buffer[index++] = '0' + ((month / 10) % 10);
     buffer[index++] = '0' + ((month / 1) % 10);
     buffer[index++] = '-';
-    buffer[index++] = '0' + ((gmtm.tm_mday / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_mday / 1) % 10);
+    buffer[index++] = '0' + ((tm.tm_mday / 10) % 10);
+    buffer[index++] = '0' + ((tm.tm_mday / 1) % 10);
     buffer[index++] = sep;
-    buffer[index++] = '0' + ((gmtm.tm_hour / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_hour / 1) % 10);
+    buffer[index++] = '0' + ((tm.tm_hour / 10) % 10);
+    buffer[index++] = '0' + ((tm.tm_hour / 1) % 10);
     buffer[index++] = ':';
-    buffer[index++] = '0' + ((gmtm.tm_min / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_min / 1) % 10);
+    buffer[index++] = '0' + ((tm.tm_min / 10) % 10);
+    buffer[index++] = '0' + ((tm.tm_min / 1) % 10);
     buffer[index++] = ':';
-    buffer[index++] = '0' + ((gmtm.tm_sec / 10) % 10);
-    buffer[index++] = '0' + ((gmtm.tm_sec / 1) % 10);
+    buffer[index++] = '0' + ((tm.tm_sec / 10) % 10);
+    buffer[index++] = '0' + ((tm.tm_sec / 1) % 10);
     buffer[index++] = '.';
     buffer[index++] = '0' + ((micros_count / 100000) % 10);
     buffer[index++] = '0' + ((micros_count / 10000) % 10);
@@ -84,6 +84,17 @@ strftime_rfc3339(
     buffer[index] = '\0';
 
     return index;
+}
+
+ssize_t
+strftime_rfc3339(
+    char* buffer, size_t buffer_size, std::chrono::microseconds micros, char sep)
+{
+    struct tm gmtm;
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(micros);
+
+    secs2tm(secs.count(), &gmtm);
+    return strftime_rfc3339(buffer, buffer_size, gmtm, micros, sep);
 }
 
 std::string

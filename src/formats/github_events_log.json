@@ -154,6 +154,15 @@
             "payload/pull_request/title": {
                 "kind": "string"
             },
+            "payload/pull_request/updated_at": {
+                "kind": "timestamp"
+            },
+            "payload/pull_request/merged_at": {
+                "kind": "timestamp"
+            },
+            "payload/pull_request/closed_at": {
+                "kind": "timestamp"
+            },
             "payload/issue/number": {
                 "kind": "integer",
                 "identifier": true

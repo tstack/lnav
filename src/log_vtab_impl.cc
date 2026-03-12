@@ -1313,12 +1313,39 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             }
                             case value_kind_t::VALUE_STRUCT:
                             case value_kind_t::VALUE_TEXT:
-                            case value_kind_t::VALUE_XML:
-                            case value_kind_t::VALUE_TIMESTAMP: {
+                            case value_kind_t::VALUE_XML: {
                                 sqlite3_result_text(ctx,
                                                     lv_iter->text_value(),
                                                     lv_iter->text_length(),
                                                     SQLITE_TRANSIENT);
+                                break;
+                            }
+                            case value_kind_t::VALUE_TIMESTAMP: {
+                                auto* fmt = lf->get_format_ptr();
+                                auto dts = fmt->build_time_scanner();
+                                exttm tm;
+                                timeval tv;
+
+                                if (dts.scan(lv_iter->text_value(),
+                                             lv_iter->text_length(),
+                                             fmt->get_timestamp_formats(),
+                                             &tm,
+                                             tv))
+                                {
+                                    char buffer[64];
+                                    sql_strftime(
+                                        buffer, sizeof(buffer), tv);
+                                    sqlite3_result_text(ctx,
+                                                        buffer,
+                                                        strlen(buffer),
+                                                        SQLITE_TRANSIENT);
+                                } else {
+                                    sqlite3_result_text(
+                                        ctx,
+                                        lv_iter->text_value(),
+                                        lv_iter->text_length(),
+                                        SQLITE_TRANSIENT);
+                                }
                                 break;
                             }
                             case value_kind_t::VALUE_W3C_QUOTED:

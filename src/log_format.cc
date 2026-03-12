@@ -714,6 +714,21 @@ logline_value_vector::operator=(const logline_value_vector& other)
 
 std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
 
+date_time_scanner
+log_format::build_time_scanner() const
+{
+    date_time_scanner retval;
+
+    retval.set_base_time(this->lf_date_time.dts_base_time,
+                         this->lf_date_time.dts_base_tm.et_tm);
+    if (this->lf_date_time.dts_default_zone != nullptr) {
+        retval.dts_default_zone = this->lf_date_time.dts_default_zone;
+    }
+    retval.dts_zoned_to_local = this->lf_date_time.dts_zoned_to_local;
+
+    return retval;
+}
+
 std::vector<std::shared_ptr<log_format>>&
 log_format::get_root_formats()
 {
@@ -2734,8 +2749,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         }
 
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-            jlu->jlu_format->get_value_meta(field_name,
-                                            value_kind_t::VALUE_TEXT),
+            jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_TEXT),
             string_fragment::from_byte_range(jlu->jlu_shared_buffer.get_data(),
                                              str_offset,
                                              str_offset + len));
@@ -2944,6 +2958,31 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                          [lv_iter->lv_meta.lvm_values_index
                                               .value()]
                                              .get();
+                            }
+                            if (lv_iter->lv_meta.lvm_kind
+                                == value_kind_t::VALUE_TIMESTAMP)
+                            {
+                                auto dts = this->build_time_scanner();
+                                exttm tm;
+                                timeval tv;
+
+                                if (dts.scan(str.c_str(),
+                                             str.size(),
+                                             this->get_timestamp_formats(),
+                                             &tm,
+                                             tv,
+                                             true))
+                                {
+                                    char ts[64];
+                                    tm.et_gmtoff = tm.et_orig_gmtoff;
+                                    auto len = dts.ftime(
+                                        ts,
+                                        sizeof(ts),
+                                        this->get_timestamp_formats(),
+                                        tm);
+                                    ts[len] = '\0';
+                                    str = ts;
+                                }
                             }
                             while (endswith(str, "\n")) {
                                 str.pop_back();
@@ -3208,6 +3247,31 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 }
 
                 auto str = lv.to_string();
+                if (lv.lv_meta.lvm_kind
+                    == value_kind_t::VALUE_TIMESTAMP)
+                {
+                    auto dts = this->build_time_scanner();
+                    exttm tm;
+                    timeval tv;
+
+                    if (dts.scan(str.c_str(),
+                                 str.size(),
+                                 this->get_timestamp_formats(),
+                                 &tm,
+                                 tv,
+                                 true))
+                    {
+                        char ts[64];
+                        tm.et_gmtoff = tm.et_orig_gmtoff;
+                        auto len = dts.ftime(
+                            ts,
+                            sizeof(ts),
+                            this->get_timestamp_formats(),
+                            tm);
+                        ts[len] = '\0';
+                        str = ts;
+                    }
+                }
                 while (endswith(str, "\n")) {
                     str.pop_back();
                 }
@@ -4346,6 +4410,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         if (vd->vd_meta.lvm_kind == value_kind_t::VALUE_UNKNOWN) {
+            log_warning("no kind set for %s, assuming text",
+                        vd->vd_meta.lvm_name.c_str());
             vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
         }
 
@@ -5142,7 +5208,13 @@ external_log_format::get_value_meta(yajlpp_parse_context* ypc,
 
     auto lvm = vd->vd_meta;
 
-    lvm.lvm_kind = kind;
+    switch (vd->vd_meta.lvm_kind) {
+        case value_kind_t::VALUE_TIMESTAMP:
+            break;
+        default:
+            lvm.lvm_kind = kind;
+            break;
+    }
     return lvm;
 }
 

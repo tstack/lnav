@@ -736,8 +736,7 @@ private:
     size_t lss_time_column_size{0};
     size_t lss_time_column_padding{0};
     logline_value_vector lss_token_values;
-    int lss_token_shift_start{0};
-    int lss_token_shift_size{0};
+    std::vector<std::pair<int, int>> lss_token_shifts;
     shared_buffer lss_share_manager;
     logfile::iterator lss_token_line;
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE>

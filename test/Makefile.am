@@ -425,6 +425,7 @@ dist_noinst_DATA = \
 	logfile_tcf.0 \
 	logfile_tcf.1 \
 	logfile_tcsh_history.0 \
+	logfile_ts_value.0 \
 	logfile_uwsgi.0 \
 	logfile_vami.0 \
 	logfile_vdsm.0 \
@@ -484,6 +485,7 @@ dist_noinst_DATA = \
 	formats/scripts/nested-redirecting.lnav \
 	formats/sqldir/init.sql \
 	formats/timestamp/format.json \
+	formats/timestamp_value/format.json \
 	formats/xmlmsg/format.json \
     log-samples/sample-057d6c669632ef9d07b6adec605f6bdeae19af27.txt \
     log-samples/sample-06aaa6f48a801f592558575d886864d6c3ab9ed4.txt \

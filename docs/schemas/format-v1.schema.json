@@ -387,7 +387,8 @@
                                         "json",
                                         "struct",
                                         "quoted",
-                                        "xml"
+                                        "xml",
+                                        "timestamp"
                                     ]
                                 },
                                 "collate": {

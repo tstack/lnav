@@ -1,0 +1,27 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "ts_value_log": {
+        "title": "Timestamp Value Test Log",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z) (?<level>\\w+) session_start=(?<session_start>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z) user=(?<user>\\S+) (?<body>.*)$"
+            }
+        },
+        "level-field": "level",
+        "body-field": "body",
+        "value": {
+            "session_start": {
+                "kind": "timestamp"
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "2024-01-01T15:00:00Z INFO session_start=2024-01-01T10:30:00Z user=alice logged in"
+            }
+        ]
+    }
+}

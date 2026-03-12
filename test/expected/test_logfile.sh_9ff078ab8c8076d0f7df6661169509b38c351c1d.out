@@ -1,0 +1,2 @@
+2024-01-01T15:00:00Z INFO session_start=2024-01-01T10:30:00Z user=alice logged in
+[33m2024-01-01T15:05:00Z[0m[33m [0m[33mWARN[0m[33m session_start=2024-01-01T14:00:00Z user=[0m[33mbob[0m[33m [0m[33msession expired[0m

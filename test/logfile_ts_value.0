@@ -1,0 +1,2 @@
+2024-01-01T15:00:00Z INFO session_start=2024-01-01T10:30:00Z user=alice logged in
+2024-01-01T15:05:00Z WARN session_start=2024-01-01T14:00:00Z user=bob session expired

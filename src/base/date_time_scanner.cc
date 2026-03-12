@@ -406,6 +406,7 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
         }
 #endif
     }
+    tm_out.et_orig_gmtoff = this->dts_local_offset_cache;
     tm_out.et_gmtoff = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     tm_out.et_tm.tm_gmtoff = 0;

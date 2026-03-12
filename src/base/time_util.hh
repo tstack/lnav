@@ -58,6 +58,12 @@ using time64_t = uint64_t;
 
 ssize_t strftime_rfc3339(char* buffer,
                          size_t buffer_size,
+                         const struct tm& tm,
+                         std::chrono::microseconds micros,
+                         char sep = ' ');
+
+ssize_t strftime_rfc3339(char* buffer,
+                         size_t buffer_size,
                          std::chrono::microseconds micros,
                          char sep = ' ');
 
@@ -161,6 +167,7 @@ struct exttm {
     int32_t et_nsec{0};
     unsigned int et_flags{0};
     long et_gmtoff{0};
+    long et_orig_gmtoff{0};
 
     exttm() { memset(&this->et_tm, 0, sizeof(this->et_tm)); }
 

@@ -193,3 +193,9 @@ run_cap_test ${lnav_test} -n \
     -c ';select * from mongodb_json_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_mongodb.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";select \"payload/pull_request/updated_at\", \"payload/pull_request/merged_at\", \"payload/pull_request/closed_at\" from github_events_log where type = 'PullRequestEvent' limit 1" \
+    -c ':write-csv-to -' \
+    ${test_dir}/gharchive_log.jsonl
+

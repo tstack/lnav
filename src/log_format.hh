@@ -278,6 +278,8 @@ public:
         return &this->lf_timestamp_format[0];
     }
 
+    date_time_scanner build_time_scanner() const;
+
     void check_for_new_year(std::vector<logline>& dst,
                             exttm log_tv,
                             timeval timeval1) const;

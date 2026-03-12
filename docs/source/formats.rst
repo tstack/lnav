@@ -361,7 +361,7 @@ object with the following fields:
   regexes.
 
   :kind: The type of data that was captured **string**, **integer**,
-    **float**, **json**, **quoted**.
+    **float**, **json**, **quoted**, **timestamp**.
   :collate: The name of the SQLite collation function for this value.
     The standard SQLite collation functions can be used as well as the
     ones defined by lnav, as described in :ref:`collators`.

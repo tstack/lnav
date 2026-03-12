@@ -319,8 +319,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                               &this->lss_token_al.al_attrs);
         }
     }
-    this->lss_token_shift_start = 0;
-    this->lss_token_shift_size = 0;
+    this->lss_token_shifts.clear();
 
     auto format = this->lss_token_file->get_format();
 
@@ -396,6 +395,56 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         this->lss_token_al.al_attrs.emplace_back(lr, SA_ORIGINAL_LINE.value());
     }
 
+    // Replace VALUE_TIMESTAMP fields right-to-left so that origins
+    // for earlier fields remain valid.
+    if (format->lf_date_time.dts_fmt_lock != -1) {
+        auto* fmt_ptr = format.get();
+
+        for (auto lv_iter = this->lss_token_values.lvv_values.rbegin();
+             lv_iter != this->lss_token_values.lvv_values.rend();
+             ++lv_iter)
+        {
+            if (lv_iter->lv_meta.lvm_kind != value_kind_t::VALUE_TIMESTAMP
+                || !lv_iter->lv_origin.is_valid())
+            {
+                continue;
+            }
+
+            auto dts = fmt_ptr->build_time_scanner();
+            exttm tm;
+            timeval tv;
+            auto val_sf = string_fragment::from_str_range(
+                value_out,
+                lv_iter->lv_origin.lr_start,
+                lv_iter->lv_origin.lr_end);
+
+            if (dts.scan(val_sf.data(),
+                         val_sf.length(),
+                         fmt_ptr->get_timestamp_formats(),
+                         &tm,
+                         tv,
+                         true))
+            {
+                char ts[64];
+                tm.et_gmtoff = tm.et_orig_gmtoff;
+                auto len = dts.ftime(ts,
+                                     sizeof(ts),
+                                     fmt_ptr->get_timestamp_formats(),
+                                     tm);
+                ts[len] = '\0';
+                value_out.replace(lv_iter->lv_origin.lr_start,
+                                  lv_iter->lv_origin.length(),
+                                  ts,
+                                  len);
+                auto shift = (int) (len - lv_iter->lv_origin.length());
+                if (shift != 0) {
+                    this->lss_token_shifts.emplace_back(
+                        lv_iter->lv_origin.lr_start, shift);
+                }
+            }
+        }
+    }
+
     std::optional<exttm> adjusted_tm;
     auto time_attr
         = find_string_attr(this->lss_token_al.al_attrs, &L_TIMESTAMP);
@@ -446,8 +495,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
             value_out.replace(
                 time_range.lr_start, time_range.length(), buffer, len);
-            this->lss_token_shift_start = time_range.lr_start;
-            this->lss_token_shift_size = len - time_range.length();
+            this->lss_token_shifts.emplace_back(
+                time_range.lr_start, (int) (len - time_range.length()));
         }
     }
 
@@ -625,10 +674,15 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             line_value.lv_origin, VC_ROLE.value(role_t::VCR_IDENTIFIER));
     }
 
-    if (this->lss_token_shift_size) {
-        shift_string_attrs(this->lss_token_al.al_attrs,
-                           this->lss_token_shift_start + 1,
-                           this->lss_token_shift_size);
+    // Apply shifts right-to-left so positions remain valid.
+    std::stable_sort(this->lss_token_shifts.begin(),
+                     this->lss_token_shifts.end(),
+                     [](const auto& a, const auto& b) {
+                         return a.first > b.first;
+                     });
+    for (const auto& shift : this->lss_token_shifts) {
+        shift_string_attrs(
+            this->lss_token_al.al_attrs, shift.first + 1, shift.second);
     }
 
     shift_string_attrs(this->lss_token_al.al_attrs, 0, 1);
