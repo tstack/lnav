@@ -1469,7 +1469,7 @@ com_clear_highlight(exec_context& ec,
         auto* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
 
-        args[1] = remaining_args(cmdline, args);
+        args[1] = remaining_args_frag(cmdline, args).to_string();
         auto hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
         if (hm_iter == hm.end()) {
             return ec.make_error("highlight does not exist -- {}", args[1]);
