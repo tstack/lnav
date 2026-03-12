@@ -104,8 +104,8 @@ Q: Why isn't a file being displayed?
 Q: How can I search for an exact word?
 --------------------------------------
 
-:Solution: Surround the word to search for with :code:`\b`.
+:Solution: Surround the word to search for with :code:`\\b`.
 
-:Details: The :code:`\b` means "word break" and matches a position where a
+:Details: The :code:`\\b` means "word break" and matches a position where a
   "word" ends.  That is, right before a space character, punctuation, etc,
   or at EOL.
