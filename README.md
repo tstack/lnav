@@ -209,3 +209,10 @@ certificate by [SignPath Foundation](https://signpath.org/).
 This program will not transfer any information to other networked systems
 unless specifically requested by the user or the person installing or
 operating it.
+
+## Acknowledgements
+
+Many thanks to:
+
+* GitHub Sponsors
+* Anthropic for including lnav in the Claude for Open Source Program
