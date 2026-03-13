@@ -64,20 +64,21 @@ com_sticky_header(exec_context& ec,
     } else if (!ec.ec_dry_run) {
         auto* tc = *lnav_data.ld_view_stack.top();
         auto sel = tc->get_selection();
-        if (sel) {
-            auto result = tc->toggle_user_mark(
-                &textview_curses::BM_STICKY, sel.value());
-            tc->set_needs_update();
+        if (!sel) {
+            return ec.make_error("no line is selected");
+        }
+        auto result = tc->toggle_user_mark(
+            &textview_curses::BM_STICKY, sel.value());
+        tc->set_needs_update();
 
-            if (result.mtr_marked > 0) {
-                retval = fmt::format(
-                    FMT_STRING("info: line {} pinned as a sticky header"),
-                    (int) sel.value());
-            } else {
-                retval = fmt::format(
-                    FMT_STRING("info: line {} unpinned from sticky headers"),
-                    (int) sel.value());
-            }
+        if (result.mtr_marked > 0) {
+            retval = fmt::format(
+                FMT_STRING("info: line {} pinned as a sticky header"),
+                (int) sel.value());
+        } else {
+            retval = fmt::format(
+                FMT_STRING("info: line {} unpinned from sticky headers"),
+                (int) sel.value());
         }
     }
 
