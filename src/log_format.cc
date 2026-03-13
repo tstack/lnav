@@ -1867,7 +1867,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             line_count = msg_frag.count('\n') + 1;
             yajl_free_error(handle, msg);
         }
-        if (!this->lf_specialized) {
+        if (!this->lf_specialized || dst.empty()) {
             return scan_no_match{"JSON parsing failed"};
         }
         for (int lpc = 0; lpc < line_count; lpc++) {
