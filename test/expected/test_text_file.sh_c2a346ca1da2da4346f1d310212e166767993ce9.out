@@ -27,6 +27,9 @@
                     "search_placeholder": "",
                     "possibilities": [
                         {
+                            "display_value": "Acknowledgements"
+                        },
+                        {
                             "display_value": "Code Signing Policy"
                         },
                         {
