@@ -644,6 +644,29 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":toggle-sticky-header" \
+    -c ":goto 4" \
+    ${test_dir}/logfile_filter.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":toggle-sticky-header" \
+    -c ":goto 2" \
+    -c ":toggle-sticky-header" \
+    -c ":goto 6" \
+    ${test_dir}/logfile_filter.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":toggle-sticky-header" \
+    -c ":goto 4" \
+    -c ":goto 0" \
+    -c ":toggle-sticky-header" \
+    -c ":goto 4" \
+    ${test_dir}/logfile_filter.0
+
+run_cap_test ${lnav_test} -n \
     -c ":zoom-to bad" \
     ${test_dir}/logfile_access_log.0
 

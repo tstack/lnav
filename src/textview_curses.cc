@@ -209,6 +209,8 @@ const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_SEARCH("search");
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_META("meta");
 const DIST_SLICE(bm_types)
     bookmark_type_t textview_curses::BM_PARTITION("partition");
+const DIST_SLICE(bm_types)
+    bookmark_type_t textview_curses::BM_STICKY("sticky");
 
 textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
@@ -1097,11 +1099,13 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
     this->set_needs_update();
 }
 
-void
+textview_curses::mark_toggle_result
 textview_curses::toggle_user_mark(const bookmark_type_t* bm,
                                   vis_line_t start_line,
                                   vis_line_t end_line)
 {
+    mark_toggle_result retval;
+
     if (end_line == -1) {
         end_line = start_line;
     }
@@ -1110,7 +1114,7 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
     }
 
     if (start_line >= this->get_inner_height()) {
-        return;
+        return retval;
     }
     if (end_line >= this->get_inner_height()) {
         end_line = vis_line_t(this->get_inner_height() - 1);
@@ -1120,6 +1124,9 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
         auto [insert_iter, added] = bv.insert_once(curr_line);
         if (!added) {
             bv.erase(curr_line);
+            retval.mtr_unmarked += 1;
+        } else {
+            retval.mtr_marked += 1;
         }
         if (this->tc_sub_source) {
             this->tc_sub_source->text_mark(bm, curr_line, added);
@@ -1127,6 +1134,8 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
     }
     this->search_range(start_line, end_line + 1_vl);
     this->search_new_data();
+
+    return retval;
 }
 
 void

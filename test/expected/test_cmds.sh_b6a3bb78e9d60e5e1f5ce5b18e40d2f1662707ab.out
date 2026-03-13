@@ -804,6 +804,14 @@ For support questions, email:
   Clear the adjusted time for the focused line in the view
 
 
+[4m:[0m[1m[4mclear-all-sticky-headers[0m
+══════════════════════════════════════════════════════════════════════
+  Clear all sticky header bookmarks in the current view
+[4mSee Also[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m, 
+  [1m:toggle-sticky-header[0m
+
 [4m:[0m[1m[4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Clear the breakpoints that match the given glob pattern
@@ -847,7 +855,8 @@ For support questions, email:
   [4mpattern[0m   The regular expression previously used with
             :highlight
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To clear the highlight with the pattern 'foobar':
    [37m[40m:[0m[1m[36m[40mclear-highlight[0m[37m[40m foobar                           [0m
@@ -860,7 +869,8 @@ For support questions, email:
 [4mParameter[0m
   [4mfield[0m   The name of highlighted field
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight-field[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:highlight-field[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To clear the highlights for the 'sc_status' field:
    [37m[40m:[0m[1m[36m[40mclear-highlight-field[0m[37m[40m sc_status                  [0m
@@ -871,7 +881,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Clear the mark expression
 [4mSee Also[0m
-  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:mark-expr[0m, [1m:next-mark[0m, [1m:prev-mark[0m
+  [1m:clear-all-sticky-headers[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:mark-expr[0m, 
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mclear-partition[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1053,7 +1064,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Disable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1099,7 +1111,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Enable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:disable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:disable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4meval[0m[4m [0m[4mcommand[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1254,7 +1267,8 @@ For support questions, email:
                be used where the field name is prefixed by the format
                name and a dot to hide any field.
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:set-text-view-mode[0m, [1m:show-fields[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:set-text-view-mode[0m, 
+  [1m:show-fields[0m, [1m:toggle-sticky-header[0m
 [4mExamples[0m
 #1 To hide the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m log_procname                         [0m
@@ -1281,8 +1295,8 @@ For support questions, email:
   [4mrow-type[0m   The type of row to hide
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m, 
-  [1m:show-in-timeline[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:show-in-timeline[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To hide logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mhide-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1329,8 +1343,9 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Hide lines that have not been bookmarked
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m
+  [1m:clear-all-sticky-headers[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, 
+  [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1339,7 +1354,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
-  [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, 
+  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To highlight numbers with three or more digits:
    [37m[40m:[0m[1m[36m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
@@ -1359,8 +1375,8 @@ For support questions, email:
   [4mfield[0m         The name of the field to highlight
   [4mpattern[0m       The regular expression to match
 [4mSee Also[0m
-  [1m:clear-highlight-field[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-highlight-field[0m, [1m:enable-word-wrap[0m, 
+  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To color status values that start with '2' green:
    [37m[40m:[0m[1m[36m[40mhighlight-field[0m[37m[40m --color=green sc_status [0m[1m[36m[40m^[0m[37m[40m2[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[37m[40m     [0m
@@ -1376,7 +1392,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Toggle the bookmark state for the focused line in the current view
 [4mSee Also[0m
-  [1m:hide-unmarked-lines[0m, [1m:next-mark[0m, [1m:prev-mark[0m
+  [1m:clear-all-sticky-headers[0m, [1m:hide-unmarked-lines[0m, [1m:next-mark[0m, 
+  [1m:prev-mark[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mmark-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1386,7 +1403,8 @@ For support questions, email:
          The message values can be accessed using column names
          prefixed with a colon
 [4mSee Also[0m
-  [1m:clear-mark-expr[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-mark-expr[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To mark lines from 'dhclient' that mention 'eth0':
    [37m[40m:[0m[1m[36m[40mmark-expr[0m[37m[40m [0m[37m[40m:log_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[35m[40m'dhclient'[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m [0m[37m[40m:log_body[0m[37m[40m [0m[1m[36m[40mLIKE[0m[37m[40m [0m[35m[40m'%eth0%'[0m
@@ -1406,10 +1424,11 @@ For support questions, email:
 [4mParameter[0m
   [4mtype[0m   The type of bookmark -- error, warning, search,
          user, file, meta
-         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
+         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, 
-  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:clear-all-sticky-headers[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-location[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the next error:
    [37m[40m:[0m[1m[36m[40mnext-mark[0m[37m[40m error                                  [0m
@@ -1509,11 +1528,11 @@ For support questions, email:
 [4mParameter[0m
   [4mtype[0m   The type of bookmark -- error, warning, search,
          user, file, meta
-         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
+         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, 
-  [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-section[0m, 
-  [1m:relative-goto[0m
+  [1m:clear-all-sticky-headers[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the previous error:
    [37m[40m:[0m[1m[36m[40mprev-mark[0m[37m[40m error                                  [0m
@@ -1677,7 +1696,8 @@ For support questions, email:
   [4mmode[0m   The display mode
          [4mValues[0m: [1mraw[0m|[1mrendered[0m
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1699,7 +1719,8 @@ For support questions, email:
 [4mParameter[0m
   [4mfield-name[0m   The name of the field to show
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To show all the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mshow-fields[0m[37m[40m log_procname                         [0m
@@ -1722,8 +1743,8 @@ For support questions, email:
   [4mrow-type[0m   The type of row to show
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-in-timeline[0m, 
-  [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:hide-in-timeline[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To show logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mshow-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1746,9 +1767,9 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Show lines that have not been bookmarked
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, 
-  [1m:prev-mark[0m, [1m:toggle-filtering[0m
+  [1m:clear-all-sticky-headers[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1814,6 +1835,15 @@ For support questions, email:
 [4mSee Also[0m
   [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
   [1m:hide-unmarked-lines[0m
+
+[4m:[0m[1m[4mtoggle-sticky-header[0m
+══════════════════════════════════════════════════════════════════════
+  Toggle the sticky header state for the focused line in the current
+  view
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-all-sticky-headers[0m, 
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m
 
 [4m:[0m[1m[4mtoggle-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════

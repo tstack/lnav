@@ -1753,6 +1753,40 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             }
             return true;
         }
+
+    }
+
+    if (this->tho_src->text_line_count() > 0) {
+        auto& tc = dynamic_cast<textview_curses&>(
+            const_cast<listview_curses&>(lv));
+        const auto& sticky_bv
+            = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+        if (!sticky_bv.empty()) {
+            auto top = lv.get_top();
+            int sticky_index = 0;
+            for (auto iter = sticky_bv.bv_tree.begin();
+                 iter != sticky_bv.bv_tree.end();
+                 ++iter)
+            {
+                if (*iter >= top) {
+                    break;
+                }
+                if (y == sticky_index) {
+                    tc.textview_value_for_row(*iter, value_out);
+                    value_out.with_attr_for_all(
+                        VC_ROLE.value(role_t::VCR_STATUS));
+                    auto next_iter = std::next(iter);
+                    if (next_iter == sticky_bv.bv_tree.end()
+                        || *next_iter >= top)
+                    {
+                        value_out.with_attr_for_all(
+                            VC_STYLE.value(text_attrs::with_underline()));
+                    }
+                    return true;
+                }
+                sticky_index++;
+            }
+        }
     }
 
     if (y != 0) {

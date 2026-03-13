@@ -147,6 +147,19 @@
 ----
 
 
+.. _clear_all_sticky_headers:
+
+:clear-all-sticky-headers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Clear all sticky header bookmarks in the current view
+
+  **See Also**
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`, :ref:`toggle_sticky_header`
+
+----
+
+
 .. _clear_breakpoint:
 
 :clear-breakpoint *pattern*
@@ -228,7 +241,7 @@
       :clear-highlight foobar
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -251,7 +264,7 @@
       :clear-highlight-field sc_status
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -264,7 +277,7 @@
   Clear the mark expression
 
   **See Also**
-    :ref:`hide_unmarked_lines`, :ref:`mark_expr`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+    :ref:`clear_all_sticky_headers`, :ref:`hide_unmarked_lines`, :ref:`mark_expr`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -546,7 +559,7 @@
   Disable word-wrapping for the current view
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -606,7 +619,7 @@
   Enable word-wrapping for the current view
 
   **See Also**
-    :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -834,7 +847,7 @@
       :hide-fields syslog_log.log_procname
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`set_text_view_mode`, :ref:`show_fields`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`set_text_view_mode`, :ref:`show_fields`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -871,7 +884,7 @@
       :hide-in-timeline logfile thread
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -942,7 +955,7 @@
   Hide lines that have not been bookmarked
 
   **See Also**
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -965,7 +978,7 @@
       :highlight \d{3,}
 
   **See Also**
-    :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -995,7 +1008,7 @@
       :highlight-field --color=green sc_status ^2.*
 
   **See Also**
-    :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1019,7 +1032,7 @@
   Toggle the bookmark state for the focused line in the current view
 
   **See Also**
-    :ref:`hide_unmarked_lines`, :ref:`next_mark`, :ref:`prev_mark`
+    :ref:`clear_all_sticky_headers`, :ref:`hide_unmarked_lines`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1042,7 +1055,7 @@
       :mark-expr :log_procname = 'dhclient' AND :log_body LIKE '%eth0%'
 
   **See Also**
-    :ref:`clear_mark_expr`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_mark_expr`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1078,7 +1091,7 @@
       :next-mark error
 
   **See Also**
-    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`clear_all_sticky_headers`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1227,7 +1240,7 @@
       :prev-mark error
 
   **See Also**
-    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`clear_all_sticky_headers`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1477,7 +1490,7 @@
     * **mode\*** --- The display mode
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1517,7 +1530,7 @@
       :show-fields log_procname
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1554,7 +1567,7 @@
       :show-in-timeline logfile thread
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1591,7 +1604,7 @@
   Show lines that have not been bookmarked
 
   **See Also**
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1702,6 +1715,19 @@
 
   **See Also**
     :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _toggle_sticky_header:
+
+:toggle-sticky-header
+^^^^^^^^^^^^^^^^^^^^^
+
+  Toggle the sticky header state for the focused line in the current view
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`
 
 ----
 

@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     tags text DEFAULT '',
     annotations text DEFAULT NULL,
     log_opid text DEFAULT NULL,
+    sticky integer DEFAULT 0,
 
     PRIMARY KEY (log_time, log_format, log_hash, session_time)
 );
@@ -133,6 +134,7 @@ static const char* const UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN tags text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN annotations text DEFAULT NULL;)",
     R"(ALTER TABLE bookmarks ADD COLUMN log_opid text DEFAULT NULL;)",
+    R"(ALTER TABLE bookmarks ADD COLUMN sticky integer DEFAULT 0;)",
 };
 
 static constexpr size_t MAX_SESSIONS = 8;
@@ -418,6 +420,7 @@ load_time_bookmarks()
          tags,
          annotations,
          log_opid,
+         sticky,
          session_time=? AS same_session
        FROM bookmarks WHERE
          log_time BETWEEN ? AND ? AND
@@ -561,6 +564,7 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 7);
                     const auto annotations = sqlite3_column_text(stmt.in(), 8);
                     const auto log_opid = sqlite3_column_text(stmt.in(), 9);
+                    int sticky = sqlite3_column_int(stmt.in(), 10);
                     timeval log_tv;
                     exttm log_tm;
 
@@ -571,7 +575,7 @@ load_time_bookmarks()
                         continue;
                     }
 
-                    if (part_name == nullptr) {
+                    if (part_name == nullptr && !sticky) {
                         continue;
                     }
 
@@ -729,13 +733,17 @@ load_time_bookmarks()
                             lf->set_logline_opid(line_number, opid_sf);
                             meta = true;
                         }
-                        if (!meta) {
+                        if (!meta && part_name != nullptr) {
                             marked_session_lines.emplace_back(
                                 lf->original_line_time(line_iter),
                                 format->get_name(),
                                 line_hash);
                             lss.set_user_mark(&textview_curses::BM_USER,
                                               line_cl);
+                        }
+                        if (sticky) {
+                            lss.set_user_mark(
+                                &textview_curses::BM_STICKY, line_cl);
                         }
                         reload_needed = true;
                         break;
@@ -1071,15 +1079,22 @@ yajl_writer(void* context, const char* str, size_t len)
 static void
 save_user_bookmarks(sqlite3* db,
                     sqlite3_stmt* stmt,
-                    bookmark_vector<content_line_t>& user_marks)
+                    bookmark_vector<content_line_t>& user_marks,
+                    bookmark_vector<content_line_t>& sticky_marks)
 {
     auto& lss = lnav_data.ld_log_source;
 
-    for (auto iter = user_marks.bv_tree.begin();
-         iter != user_marks.bv_tree.end();
-         ++iter)
-    {
-        content_line_t cl = *iter;
+    // Collect all lines that are either user-marked or sticky
+    tlx::btree_set<content_line_t> all_lines;
+    for (const auto& cl : user_marks.bv_tree) {
+        all_lines.insert(cl);
+    }
+    for (const auto& cl : sticky_marks.bv_tree) {
+        all_lines.insert(cl);
+    }
+
+    for (const auto& cl_const : all_lines) {
+        auto cl = cl_const;
         auto lf = lss.find(cl);
         if (lf == nullptr) {
             continue;
@@ -1114,8 +1129,26 @@ save_user_bookmarks(sqlite3* db,
             continue;
         }
 
-        if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log hash -- %s", sqlite3_errmsg(db));
+        auto is_user = user_marks.bv_tree.find(cl)
+            != user_marks.bv_tree.end();
+        auto is_sticky = sticky_marks.bv_tree.find(cl)
+            != sticky_marks.bv_tree.end();
+
+        // Use part_name "" for user marks, null for sticky-only
+        if (is_user) {
+            if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT)
+                != SQLITE_OK)
+            {
+                log_error("could not bind part name -- %s",
+                          sqlite3_errmsg(db));
+                return;
+            }
+        } else {
+            sqlite3_bind_null(stmt, 5);
+        }
+
+        if (sqlite3_bind_int(stmt, 10, is_sticky ? 1 : 0) != SQLITE_OK) {
+            log_error("could not bind sticky -- %s", sqlite3_errmsg(db));
             return;
         }
 
@@ -1245,6 +1278,8 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
             bind_to_sqlite(stmt, 9, line_meta.bm_opid);
         }
 
+        sqlite3_bind_int(stmt, 10, 0);
+
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             log_error("could not execute bookmark insert statement -- %s",
                       sqlite3_errmsg(db));
@@ -1363,8 +1398,9 @@ save_time_bookmarks()
     if (sqlite3_prepare_v2(db.in(),
                            "REPLACE INTO bookmarks"
                            " (log_time, log_format, log_hash, session_time, "
-                           "part_name, comment, tags, annotations, log_opid)"
-                           " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                           "part_name, comment, tags, annotations, log_opid,"
+                           " sticky)"
+                           " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                            -1,
                            stmt.out(),
                            nullptr)
@@ -1408,6 +1444,8 @@ save_time_bookmarks()
                 return;
             }
 
+            sqlite3_bind_int(stmt.in(), 10, 0);
+
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
                 log_error("could not execute bookmark insert statement -- %s",
                           sqlite3_errmsg(db));
@@ -1418,7 +1456,10 @@ save_time_bookmarks()
         }
     }
 
-    save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_USER]);
+    save_user_bookmarks(db.in(),
+                        stmt.in(),
+                        bm[&textview_curses::BM_USER],
+                        bm[&textview_curses::BM_STICKY]);
     for (const auto& ldd : lss) {
         auto* lf = ldd->get_file_ptr();
         if (lf == nullptr) {
@@ -1823,6 +1864,7 @@ reset_session()
         tc.get_bookmarks()[&textview_curses::BM_USER].clear();
         tss->text_clear_marks(&textview_curses::BM_META);
         tc.get_bookmarks()[&textview_curses::BM_META].clear();
+        tc.get_bookmarks()[&textview_curses::BM_STICKY].clear();
         tc.reload_data();
     }
 

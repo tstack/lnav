@@ -689,6 +689,7 @@ public:
     const static bookmark_type_t BM_SEARCH;
     const static bookmark_type_t BM_META;
     const static bookmark_type_t BM_PARTITION;
+    const static bookmark_type_t BM_STICKY;
 
     textview_curses();
 
@@ -719,9 +720,14 @@ public:
 
     const vis_bookmarks& get_bookmarks() const { return this->tc_bookmarks; }
 
-    void toggle_user_mark(const bookmark_type_t* bm,
-                          vis_line_t start_line,
-                          vis_line_t end_line = vis_line_t(-1));
+    struct mark_toggle_result {
+        int mtr_marked{0};
+        int mtr_unmarked{0};
+    };
+
+    mark_toggle_result toggle_user_mark(const bookmark_type_t* bm,
+                                        vis_line_t start_line,
+                                        vis_line_t end_line = vis_line_t(-1));
 
     void set_user_mark(const bookmark_type_t* bm, vis_line_t vl, bool marked);
 

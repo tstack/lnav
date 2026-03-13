@@ -65,7 +65,7 @@ const std::unordered_set<string_fragment, frag_hasher>
     log_vtab_impl::RESERVED_COLUMNS = {
         "log_line"_frag,        "log_time"_frag,        "log_level"_frag,
         "log_part"_frag,        "log_actual_time"_frag, "log_idle_msecs"_frag,
-        "log_mark"_frag,        "log_comment"_frag,     "log_tags"_frag,
+        "log_mark"_frag,        "log_sticky_mark"_frag, "log_comment"_frag,     "log_tags"_frag,
         "log_annotations"_frag, "log_filters"_frag,     "log_opid"_frag,
         "log_user_opid"_frag,   "log_format"_frag,      "log_format_regex"_frag,
         "log_time_msecs"_frag,  "log_path"_frag,        "log_unique_path"_frag,
@@ -87,6 +87,7 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_actual_time  DATETIME HIDDEN,                   -- The timestamp from the original log file for this message
   log_idle_msecs   INTEGER,                           -- The difference in time between this messages and the previous
   log_mark         BOOLEAN,                           -- True if the log message was marked
+  log_sticky_mark  BOOLEAN HIDDEN,                    -- True if the log message is a sticky header
   log_comment      TEXT,                              -- The comment for this message
   log_tags         TEXT,                              -- A JSON list of tags for this message
   log_annotations  TEXT,                              -- A JSON object of annotations for this messages
@@ -113,6 +114,7 @@ enum class log_footer_columns : uint32_t {
     actual_time,
     idle_msecs,
     mark,
+    sticky_mark,
     comment,
     tags,
     annotations,
@@ -880,6 +882,16 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                     case log_footer_columns::mark: {
                         sqlite3_result_int(ctx, ll->is_marked());
+                        break;
+                    }
+                    case log_footer_columns::sticky_mark: {
+                        auto& sticky_bv = vt->tc->get_bookmarks()
+                            [&textview_curses::BM_STICKY];
+                        sqlite3_result_int(
+                            ctx,
+                            sticky_bv.bv_tree.find(
+                                vc->log_cursor.lc_curr_line)
+                                != sticky_bv.bv_tree.end());
                         break;
                     }
                     case log_footer_columns::comment: {
@@ -1876,6 +1888,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::actual_time:
                         case log_footer_columns::idle_msecs:
                         case log_footer_columns::mark:
+                        case log_footer_columns::sticky_mark:
                         case log_footer_columns::comment:
                         case log_footer_columns::tags:
                         case log_footer_columns::annotations:
@@ -2365,6 +2378,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::actual_time:
                         case log_footer_columns::idle_msecs:
                         case log_footer_columns::mark:
+                        case log_footer_columns::sticky_mark:
                         case log_footer_columns::comment:
                         case log_footer_columns::tags:
                         case log_footer_columns::annotations:
@@ -2475,6 +2489,8 @@ vt_update(sqlite3_vtab* tab,
         int64_t rowid = sqlite3_value_int64(argv[0]) >> 8;
         int val = sqlite3_value_int(
             argv[2 + vt->footer_index(log_footer_columns::mark)]);
+        int sticky_val = sqlite3_value_int(
+            argv[2 + vt->footer_index(log_footer_columns::sticky_mark)]);
         vis_line_t vrowid(rowid);
         auto win = vt->lss->window_at(vrowid);
         const auto msg_info = *win->begin();
@@ -2624,6 +2640,8 @@ vt_update(sqlite3_vtab* tab,
         }
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vrowid, val);
+        vt->tc->set_user_mark(
+            &textview_curses::BM_STICKY, vrowid, sticky_val);
         rowid += 1;
         while ((size_t) rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);

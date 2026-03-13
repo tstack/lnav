@@ -1,0 +1,10 @@
+[1m[4m[35mDec  6 13:01:34[0m[1m[4m[35m [0m[1m[4m[35mubu-mac[0m[1m[4m[35m [0m[1m[4m[35mavahi-daemon[0m[1m[4m[35m[[0m[1m[4m[35m786[0m[1m[4m[35m][0m[1m[4m[35m: [0m[1m[4m[35mJoining mDNS multicast group on interface virbr0.IPv4 with address [0m[1m[4m[35m192.168.122.1[0m[1m[4m[35m.[0m
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: compile time options: IPv6 GNU-getopt DBus i18n IDN DHCP DHCPv6 no-Lua TFTP conntrack ipset auth
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: DHCP, IP range 192.168.122.2 -- 192.168.122.254, lease time 1h
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: DHCP, sockets bound exclusively to interface virbr0
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: reading /etc/resolv.conf
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: using nameserver 192.168.1.1#53
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /etc/hosts - 5 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /var/lib/libvirt/dnsmasq/default.addnhosts - 0 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: read /var/lib/libvirt/dnsmasq/default.hostsfile
+Dec  6 13:05:01 ubu-mac CRON[3883]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)

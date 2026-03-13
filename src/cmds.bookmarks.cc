@@ -54,6 +54,65 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 static Result<std::string, lnav::console::user_message>
+com_sticky_header(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (lnav_data.ld_view_stack.empty()) {
+    } else if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto sel = tc->get_selection();
+        if (sel) {
+            auto result = tc->toggle_user_mark(
+                &textview_curses::BM_STICKY, sel.value());
+            tc->set_needs_update();
+
+            if (result.mtr_marked > 0) {
+                retval = fmt::format(
+                    FMT_STRING("info: line {} pinned as a sticky header"),
+                    (int) sel.value());
+            } else {
+                retval = fmt::format(
+                    FMT_STRING("info: line {} unpinned from sticky headers"),
+                    (int) sel.value());
+            }
+        }
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_clear_sticky_headers(exec_context& ec,
+                         std::string cmdline,
+                         std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (lnav_data.ld_view_stack.empty()) {
+    } else if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto& bv = tc->get_bookmarks()[&textview_curses::BM_STICKY];
+        auto count = bv.size();
+        // Copy to avoid modifying while iterating
+        std::vector<vis_line_t> sticky_lines;
+        for (const auto& row : bv.bv_tree) {
+            sticky_lines.push_back(row);
+        }
+        for (const auto& row : sticky_lines) {
+            tc->toggle_user_mark(&textview_curses::BM_STICKY, row);
+        }
+        tc->set_needs_update();
+        retval = fmt::format(
+            FMT_STRING("info: cleared {} sticky header(s)"), count);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_goto_mark(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -65,6 +124,7 @@ com_goto_mark(exec_context& ec,
         &textview_curses::BM_USER_EXPR,
         &textview_curses::BM_META,
         &textview_curses::BM_PARTITION,
+        &textview_curses::BM_STICKY,
     };
 
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
@@ -203,6 +263,26 @@ init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map)
                         .with_enum_values(bookmark_type_t::get_type_names()))
                 .with_example({"To go to the previous error", "error"})
                 .with_tags({"bookmarks", "navigation"}),
+        },
+
+        {
+            "toggle-sticky-header",
+            com_sticky_header,
+
+            help_text(":toggle-sticky-header")
+                .with_summary(
+                    "Toggle the sticky header state for the focused line "
+                    "in the current view")
+                .with_tags({"bookmarks", "display"}),
+        },
+        {
+            "clear-all-sticky-headers",
+            com_clear_sticky_headers,
+
+            help_text(":clear-all-sticky-headers")
+                .with_summary(
+                    "Clear all sticky header bookmarks in the current view")
+                .with_tags({"bookmarks", "display"}),
         },
     };
 

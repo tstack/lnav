@@ -28,6 +28,29 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_plain.0
 
 run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 4' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 3' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 8' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 4' \
+    -c ':goto 1' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 4' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
     ${top_srcdir}/README.md
 
 run_cap_test ${lnav_test} -n -c ':goto #badanchor' \

@@ -938,6 +938,36 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 {
     auto& exec_phase = injector::get<lnav::exec_phase&>();
     if (media != media_t::display) {
+        auto& tc = dynamic_cast<textview_curses&>(
+            const_cast<listview_curses&>(lv));
+        const auto& sticky_bv
+            = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+        if (!sticky_bv.empty()) {
+            auto top = lv.get_top();
+            int sticky_index = 0;
+            for (auto iter = sticky_bv.bv_tree.begin();
+                 iter != sticky_bv.bv_tree.end();
+                 ++iter)
+            {
+                if (*iter >= top) {
+                    break;
+                }
+                if (y == sticky_index) {
+                    tc.textview_value_for_row(*iter, value_out);
+                    value_out.with_attr_for_all(
+                        VC_ROLE.value(role_t::VCR_STATUS));
+                    auto next_iter = std::next(iter);
+                    if (next_iter == sticky_bv.bv_tree.end()
+                        || *next_iter >= top)
+                    {
+                        value_out.with_attr_for_all(
+                            VC_STYLE.value(text_attrs::with_underline()));
+                    }
+                    return true;
+                }
+                sticky_index++;
+            }
+        }
         return false;
     }
 
@@ -1043,7 +1073,12 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
         auto top = lv.get_top();
         if (top < vis_line_t(this->fos_lss.text_line_count())) {
             auto cl = this->fos_lss.at(top);
-            if (!this->fos_header_line || this->fos_header_line.value() != cl
+            auto& tc = dynamic_cast<textview_curses&>(
+                const_cast<listview_curses&>(lv));
+            auto has_sticky
+                = !tc.get_bookmarks()[&textview_curses::BM_STICKY].empty();
+            if (has_sticky || !this->fos_header_line
+                || this->fos_header_line.value() != cl
                 || !this->fos_header_line_context
                 || this->fos_header_line_context.value()
                     != this->fos_lss.get_line_context()
@@ -1067,6 +1102,19 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         header_top -= 1_vl;
                     }
                     this->fos_static_lines.clear();
+
+                    // Add sticky header lines that are above the viewport
+                    const auto& sticky_bv
+                        = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+                    for (const auto& sticky_vl : sticky_bv.bv_tree) {
+                        if (sticky_vl >= top) {
+                            break;
+                        }
+                        auto al = attr_line_t();
+                        tc.textview_value_for_row(sticky_vl, al);
+                        this->fos_static_lines.emplace_back(al);
+                    }
+
                     if (header_top < 0_vl) {
                         auto al = attr_line_t();
                         auto filtered_before
@@ -1084,17 +1132,12 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         al.with_attr_for_all(
                             VC_STYLE.value(text_attrs::with_italic()));
                         this->fos_static_lines.emplace_back(al);
-                        apply_status_attrs(this->fos_static_lines);
                     } else {
-                        this->fos_static_lines.resize(1);
-                        auto& al = this->fos_static_lines.front();
-                        auto& tc = dynamic_cast<textview_curses&>(
-                            const_cast<listview_curses&>(lv));
+                        auto al = attr_line_t();
                         tc.textview_value_for_row(header_top, al);
-                        if ((top - header_top) > 1 && line->is_continued()) {
-                            apply_status_attrs(this->fos_static_lines);
-                        }
+                        this->fos_static_lines.emplace_back(al);
                     }
+                    apply_status_attrs(this->fos_static_lines);
                     this->fos_header_line = cl;
                     this->fos_header_line_context
                         = this->fos_lss.get_line_context();

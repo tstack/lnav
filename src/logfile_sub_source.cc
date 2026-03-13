@@ -1552,6 +1552,7 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
              &textview_curses::BM_USER_EXPR,
              &textview_curses::BM_PARTITION,
              &textview_curses::BM_META,
+             &textview_curses::BM_STICKY,
          })
     {
         bm[bmt].clear();

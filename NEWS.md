@@ -54,6 +54,14 @@ Features:
   definitions.  Fields with this kind will be parsed
   and displayed in the local timezone, and SQL
   queries will return them in a normalized format.
+* Added the `:toggle-sticky-header` command to pin a
+  line to the top of the view as a sticky header.
+  Sticky headers remain visible as you scroll past
+  them, making it easy to keep context lines in view.
+  The `:clear-all-sticky-headers` command removes all
+  sticky headers in the current view.  A hidden
+  `log_sticky_mark` column is available in log tables
+  to get/set the sticky state via SQL.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,
