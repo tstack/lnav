@@ -41,12 +41,12 @@ ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     size_t zone_len = len - off_inout;
     stack_buf allocator;
-    auto* zone = allocator.allocate(zone_len + 1);
+    auto* zone = allocator.allocate(zone_len + 2);
     const char* end_of_date;
 
     memcpy(zone, &str[off_inout], zone_len);
     zone[zone_len] = '\0';
-    if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != NULL) {
+    if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != nullptr) {
         off_inout += end_of_date - zone;
         // Some formats append a dot, maybe to align a 3 letter abbrev with the
         // four letter ones?
@@ -68,14 +68,11 @@ ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         if (alpha_len > 0 && (alpha_len >= (off_t) zone_len
                               || zone[alpha_len] != '.'))
         {
-            auto* dotted = allocator.allocate(zone_len + 2);
-            memcpy(dotted, zone, alpha_len);
-            dotted[alpha_len] = '.';
-            memcpy(dotted + alpha_len + 1, zone + alpha_len,
-                   zone_len - alpha_len);
-            dotted[zone_len + 1] = '\0';
-            if ((end_of_date = strptime(dotted, "%b", &dst->et_tm)) != NULL) {
-                auto consumed = end_of_date - dotted;
+            memmove(zone + alpha_len + 1, zone + alpha_len,
+                    zone_len - alpha_len + 1);
+            zone[alpha_len] = '.';
+            if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != nullptr) {
+                auto consumed = end_of_date - zone;
                 // Subtract the inserted dot from consumed length if strptime
                 // consumed past it
                 if (consumed > alpha_len) {
