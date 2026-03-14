@@ -413,10 +413,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             auto dts = fmt_ptr->build_time_scanner();
             exttm tm;
             timeval tv;
-            auto val_sf = string_fragment::from_str_range(
-                value_out,
-                lv_iter->lv_origin.lr_start,
-                lv_iter->lv_origin.lr_end);
+            auto val_sf
+                = string_fragment::from_str_range(value_out,
+                                                  lv_iter->lv_origin.lr_start,
+                                                  lv_iter->lv_origin.lr_end);
 
             if (dts.scan(val_sf.data(),
                          val_sf.length(),
@@ -427,10 +427,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             {
                 char ts[64];
                 tm.et_gmtoff = tm.et_orig_gmtoff;
-                auto len = dts.ftime(ts,
-                                     sizeof(ts),
-                                     fmt_ptr->get_timestamp_formats(),
-                                     tm);
+                auto len = dts.ftime(
+                    ts, sizeof(ts), fmt_ptr->get_timestamp_formats(), tm);
                 ts[len] = '\0';
                 value_out.replace(lv_iter->lv_origin.lr_start,
                                   lv_iter->lv_origin.length(),
@@ -675,11 +673,10 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     }
 
     // Apply shifts right-to-left so positions remain valid.
-    std::stable_sort(this->lss_token_shifts.begin(),
-                     this->lss_token_shifts.end(),
-                     [](const auto& a, const auto& b) {
-                         return a.first > b.first;
-                     });
+    std::stable_sort(
+        this->lss_token_shifts.begin(),
+        this->lss_token_shifts.end(),
+        [](const auto& a, const auto& b) { return a.first > b.first; });
     for (const auto& shift : this->lss_token_shifts) {
         shift_string_attrs(
             this->lss_token_al.al_attrs, shift.first + 1, shift.second);
@@ -2316,7 +2313,8 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
     if (bm == &textview_curses::BM_META
         && this->lss_meta_grepper.gps_proc != nullptr)
     {
-        this->tss_view->search_range(line, line + 1_vl);
+        this->tss_view->search_range(
+            line, grep_proc<vis_line_t>::until_line(line + 1_vl));
         this->tss_view->search_new_data();
     }
 }

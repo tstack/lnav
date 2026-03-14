@@ -198,13 +198,13 @@ public:
     };
 
     template<typename T>
-    request_until_t until_line(T line)
+    static request_until_t until_line(T line)
     {
         return {until_type_t::line, LineType(line)};
     }
 
     template<typename T>
-    request_until_t until_eof(T line)
+    static request_until_t until_eof(T line)
     {
         return {until_type_t::eof, LineType(line)};
     }

@@ -135,8 +135,7 @@ public:
     };
 
     virtual bool matches(std::optional<line_source> ls,
-                         const shared_buffer_ref& line)
-        = 0;
+                         const shared_buffer_ref& line) = 0;
 
     virtual std::string to_command() const = 0;
 
@@ -429,8 +428,7 @@ public:
         = 0;
 
     virtual std::optional<vis_line_t> loc_history_forward(
-        vis_line_t current_top)
-        = 0;
+        vis_line_t current_top) = 0;
 
     const static int MAX_SIZE = 100;
 
@@ -496,13 +494,11 @@ public:
     virtual line_info text_value_for_line(textview_curses& tc,
                                           int line,
                                           std::string& value_out,
-                                          line_flags_t flags = 0)
-        = 0;
+                                          line_flags_t flags = 0) = 0;
 
     virtual size_t text_size_for_line(textview_curses& tc,
                                       int line,
-                                      line_flags_t raw = 0)
-        = 0;
+                                      line_flags_t raw = 0) = 0;
 
     /**
      * Inform the source that the given line has been marked/unmarked.  This
@@ -596,7 +592,10 @@ public:
     virtual void add_commands_for_session(
         const std::function<void(const std::string&)>& receiver);
 
-    [[nodiscard]] log_level_t get_min_log_level() const { return this->tss_min_log_level; }
+    [[nodiscard]] log_level_t get_min_log_level() const
+    {
+        return this->tss_min_log_level;
+    }
 
     void set_min_log_level(log_level_t level)
     {
@@ -665,8 +664,7 @@ public:
     virtual ~text_detail_provider() = default;
 
     virtual std::optional<json_string> text_row_details(
-        const textview_curses& tc)
-        = 0;
+        const textview_curses& tc) = 0;
 };
 
 /**
@@ -873,7 +871,8 @@ public:
 
     void redo_search();
 
-    void search_range(vis_line_t start, vis_line_t stop = -1_vl);
+    void search_range(vis_line_t start,
+                      grep_proc<vis_line_t>::request_until_t stop);
 
     void search_new_data(vis_line_t start = -1_vl);
 

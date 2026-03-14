@@ -1097,7 +1097,7 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
     }
 
     if (marked) {
-        this->search_range(vl, vl + 1_vl);
+        this->search_range(vl, grep_proc<vis_line_t>::until_line(vl + 1_vl));
         this->search_new_data();
     }
     this->set_needs_update();
@@ -1136,7 +1136,8 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
             this->tc_sub_source->text_mark(bm, curr_line, added);
         }
     }
-    this->search_range(start_line, end_line + 1_vl);
+    this->search_range(start_line,
+                       grep_proc<vis_line_t>::until_line(end_line + 1_vl));
     this->search_new_data();
 
     return retval;
@@ -1168,26 +1169,30 @@ textview_curses::redo_search()
 }
 
 void
-textview_curses::search_range(vis_line_t start, vis_line_t stop)
+textview_curses::search_range(vis_line_t start,
+                              grep_proc<vis_line_t>::request_until_t stop)
 {
     if (this->tc_search_child) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
         auto* gp = this->tc_search_child->get_grep_proc();
-        gp->queue_request(start, gp->until_line(stop));
+        gp->queue_request(start, stop);
     }
     if (this->tc_source_search_child) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
-        this->tc_source_search_child->queue_request(
-            start, this->tc_source_search_child->until_line(stop));
+        this->tc_source_search_child->queue_request(start, stop);
     }
 }
 
 void
 textview_curses::search_new_data(vis_line_t start)
 {
-    this->search_range(start);
+    if (this->tc_sub_source != nullptr) {
+        this->search_range(start,
+                           grep_proc<vis_line_t>::until_eof(
+                               this->tc_sub_source->text_line_count()));
+    }
     if (this->tc_search_child) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
