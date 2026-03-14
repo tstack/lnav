@@ -57,6 +57,38 @@ ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         return true;
     }
 
+    // Some locales (e.g., es_ES on macOS) use abbreviated months with a
+    // trailing dot ("ene.", "feb."). If the input lacks the dot, insert one
+    // after the alphabetic prefix and retry.
+    {
+        off_t alpha_len = 0;
+        while (alpha_len < (off_t) zone_len && isalpha(zone[alpha_len])) {
+            alpha_len++;
+        }
+        if (alpha_len > 0 && (alpha_len >= (off_t) zone_len
+                              || zone[alpha_len] != '.'))
+        {
+            auto* dotted = allocator.allocate(zone_len + 2);
+            memcpy(dotted, zone, alpha_len);
+            dotted[alpha_len] = '.';
+            memcpy(dotted + alpha_len + 1, zone + alpha_len,
+                   zone_len - alpha_len);
+            dotted[zone_len + 1] = '\0';
+            if ((end_of_date = strptime(dotted, "%b", &dst->et_tm)) != NULL) {
+                auto consumed = end_of_date - dotted;
+                // Subtract the inserted dot from consumed length if strptime
+                // consumed past it
+                if (consumed > alpha_len) {
+                    off_inout += consumed - 1;
+                } else {
+                    off_inout += consumed;
+                }
+                dst->et_flags |= ETF_MONTH_SET;
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
