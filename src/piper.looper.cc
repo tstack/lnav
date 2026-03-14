@@ -160,6 +160,7 @@ environ_to_map()
 struct demux_json_userdata {
     const demux_json_def* dju_def;
     ArenaAlloc::Alloc<char>* dju_arena;
+    string_fragment dju_input;
     string_fragment dju_timestamp;
     string_fragment dju_mux_id;
     string_fragment dju_body;
@@ -183,6 +184,10 @@ demux_json_string(yajlpp_parse_context* ypc,
     auto* dju = static_cast<demux_json_userdata*>(ypc->ypc_userdata);
     auto path_sf = ypc->get_path_as_string_fragment();
     auto value_sf = string_fragment::from_bytes(str, len);
+    if (str < dju->dju_input.udata() ||
+        dju->dju_input.udata() + dju->dju_input.length() < str) {
+        value_sf = value_sf.to_owned(*dju->dju_arena);
+    }
 
     if (path_sf == dju->dju_def->djd_timestamp) {
         dju->dju_timestamp = value_sf;
@@ -656,6 +661,7 @@ looper::loop()
                         yajl_alloc(&ypc.ypc_callbacks, &yallocs, &ypc));
                     ypc.with_handle(yhandle.in());
                     dju.dju_def = curr_demux_json_def;
+                    dju.dju_input = body_sf;
                     dju.clear();
 
                     if (ypc.parse_doc(body_sf)) {
