@@ -115,12 +115,6 @@ grep_proc<LineType>::start()
 
     require(this->invariant());
 
-    if (this->gp_sink) {
-        // XXX hack to make sure threads used by line_buffer are not active
-        // before the fork.
-        this->gp_sink->grep_quiesce();
-    }
-
     log_info("grep_proc(%p): start with highest %d",
              this,
              (int) this->gp_highest_line);
@@ -128,6 +122,13 @@ grep_proc<LineType>::start()
         log_debug("grep_proc(%p): nothing to do?", this);
         return;
     }
+
+    if (this->gp_sink) {
+        // XXX hack to make sure threads used by line_buffer are not active
+        // before the fork.
+        this->gp_sink->grep_quiesce();
+    }
+
     for (const auto& [index, elem] : lnav::itertools::enumerate(this->gp_queue))
     {
         log_info("  queue[%lu]: [%d:%d)",

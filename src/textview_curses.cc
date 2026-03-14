@@ -1005,10 +1005,12 @@ textview_curses::execute_search(const std::string& regex_orig)
                 top -= REVERSE_SEARCH_OFFSET;
             }
             this->tc_search_op_id = std::move(op_guard).suspend();
-            gp->queue_request(
-                top, gp->until_eof(this->tc_sub_source->text_line_count()));
-            if (top > 0) {
-                gp->queue_request(0_vl, gp->until_line(top));
+            if (this->tc_sub_source != nullptr) {
+                gp->queue_request(
+                    top, gp->until_eof(this->tc_sub_source->text_line_count()));
+                if (top > 0) {
+                    gp->queue_request(0_vl, gp->until_line(top));
+                }
             }
             this->tc_search_start_time = std::chrono::steady_clock::now();
             this->tc_search_duration = std::nullopt;
