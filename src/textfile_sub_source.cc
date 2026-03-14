@@ -92,8 +92,8 @@ textfile_sub_source::text_line_count()
     size_t retval = 0;
 
     if (!this->tss_files.empty()) {
-        retval
-            = this->current_file_state()->text_line_count(this->tss_view_mode);
+        retval = (*this->current_file_state())
+                     ->text_line_count(this->tss_view_mode);
     }
 
     return retval;
@@ -107,7 +107,7 @@ textfile_sub_source::text_line_width(textview_curses& tc)
         return 0;
     }
 
-    return iter->text_line_width(this->tss_view_mode, tc);
+    return (*iter)->text_line_width(this->tss_view_mode, tc);
 }
 
 line_info
@@ -122,12 +122,12 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     const auto curr_iter = this->current_file_state();
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        curr_iter->fvs_text_source->text_value_for_line(
-            tc, line, value_out, flags);
+        (*curr_iter)
+            ->fvs_text_source->text_value_for_line(tc, line, value_out, flags);
         return {};
     }
 
@@ -216,13 +216,13 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
     if (curr_iter == this->tss_files.end()) {
         return;
     }
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
 
     auto lr = line_range{0, -1};
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        curr_iter->fvs_text_source->text_attrs_for_line(tc, row, value_out);
+        (*curr_iter)->fvs_text_source->text_attrs_for_line(tc, row, value_out);
     } else if (lf->get_text_format() == text_format_t::TF_BINARY) {
         value_out = this->tss_hex_line.get_attrs();
     } else {
@@ -265,12 +265,12 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                 }
             }
 
-            if (curr_iter->fvs_metadata.m_sections_root) {
+            if ((*curr_iter)->fvs_metadata.m_sections_root) {
                 auto ll_next_iter = ll + 1;
                 auto end_offset = (ll_next_iter == lf->end())
                     ? lf->get_index_size() - 1
                     : ll_next_iter->get_offset() - 1;
-                const auto& meta = curr_iter->fvs_metadata;
+                const auto& meta = (*curr_iter)->fvs_metadata;
                 meta.m_section_types_tree.visit_overlapping(
                     lf->get_line_content_offset(ll),
                     end_offset,
@@ -329,9 +329,9 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
 
     if (!this->tss_files.empty()) {
         const auto curr_iter = this->current_file_state();
-        const auto& lf = curr_iter->fvs_file;
+        const auto& lf = (*curr_iter)->fvs_file;
         if (this->tss_view_mode == view_mode::raw
-            || !curr_iter->fvs_text_source)
+            || !(*curr_iter)->fvs_text_source)
         {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
@@ -349,8 +349,8 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
                 }
             }
         } else {
-            retval = curr_iter->fvs_text_source->text_size_for_line(
-                tc, line, flags);
+            retval = (*curr_iter)
+                         ->fvs_text_source->text_size_for_line(tc, line, flags);
         }
     }
 
@@ -360,17 +360,17 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
 void
 textfile_sub_source::to_front(const std::shared_ptr<logfile>& lf)
 {
-    const auto iter
-        = std::find(this->tss_files.begin(), this->tss_files.end(), lf);
+    const auto iter = std::find_if(
+        this->tss_files.begin(), this->tss_files.end(), [&lf](const auto& fvs) {
+            return fvs->fvs_file == lf;
+        });
     if (iter == this->tss_files.end()) {
         return;
     }
-    this->tss_files.front().save_from(*this->tss_view);
-    auto fvs = std::move(*iter);
-    this->tss_files.erase(iter);
-    this->tss_files.emplace_front(std::move(fvs));
+    this->tss_files.front()->save_from(*this->tss_view);
+    std::swap(*this->tss_files.begin(), *iter);
     this->set_time_offset(false);
-    fvs.load_into(*this->tss_view);
+    this->tss_files.front()->load_into(*this->tss_view);
     this->tss_view->reload_data();
 }
 
@@ -380,8 +380,8 @@ textfile_sub_source::rotate_left()
     if (this->tss_files.size() > 1) {
         this->tss_files.emplace_back(std::move(this->tss_files.front()));
         this->tss_files.pop_front();
-        this->tss_files.back().save_from(*this->tss_view);
-        this->tss_files.front().load_into(*this->tss_view);
+        this->tss_files.back()->save_from(*this->tss_view);
+        this->tss_files.front()->load_into(*this->tss_view);
         this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
@@ -393,11 +393,11 @@ void
 textfile_sub_source::rotate_right()
 {
     if (this->tss_files.size() > 1) {
-        this->tss_files.front().save_from(*this->tss_view);
+        this->tss_files.front()->save_from(*this->tss_view);
         auto fvs = std::move(this->tss_files.back());
         this->tss_files.emplace_front(std::move(fvs));
         this->tss_files.pop_back();
-        this->tss_files.front().load_into(*this->tss_view);
+        this->tss_files.front()->load_into(*this->tss_view);
         this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
@@ -408,14 +408,17 @@ textfile_sub_source::rotate_right()
 void
 textfile_sub_source::remove(const std::shared_ptr<logfile>& lf)
 {
-    auto iter = std::find(this->tss_files.begin(), this->tss_files.end(), lf);
+    auto iter = std::find_if(
+        this->tss_files.begin(), this->tss_files.end(), [&lf](const auto& fvs) {
+            return fvs->fvs_file == lf;
+        });
     if (iter != this->tss_files.end()) {
         this->tss_files.erase(iter);
         this->detach_observer(lf);
     }
     this->set_time_offset(false);
     if (!this->tss_files.empty()) {
-        this->tss_files.front().load_into(*this->tss_view);
+        this->tss_files.front()->load_into(*this->tss_view);
     }
     this->tss_view->reload_data();
 }
@@ -425,7 +428,7 @@ textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 {
     auto* lfo = new line_filter_observer(this->get_filters(), lf);
     lf->set_logline_observer(lfo);
-    this->tss_files.emplace_back(lf);
+    this->tss_files.emplace_back(std::make_shared<file_view_state>(lf));
 }
 
 void
@@ -477,14 +480,15 @@ textfile_sub_source::scroll_invoked(textview_curses* tc)
 {
     const auto curr_iter = this->current_file_state();
     if (curr_iter == this->tss_files.end()
-        || curr_iter->fvs_file->get_text_format() == text_format_t::TF_BINARY)
+        || (*curr_iter)->fvs_file->get_text_format()
+            == text_format_t::TF_BINARY)
     {
         return;
     }
 
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
         return;
     }
@@ -508,9 +512,9 @@ textfile_sub_source::get_filtered_count() const
 
     if (curr_iter != this->tss_files.end()) {
         if (this->tss_view_mode == view_mode::raw
-            || !curr_iter->fvs_text_source)
+            || !(*curr_iter)->fvs_text_source)
         {
-            const auto& lf = curr_iter->fvs_file;
+            const auto& lf = (*curr_iter)->fvs_file;
             auto* lfo = (line_filter_observer*) lf->get_logline_observer();
             retval = lf->size() - lfo->lfo_filter_state.tfs_index.size();
         }
@@ -538,7 +542,7 @@ textfile_sub_source::get_text_format() const
         return text_format_t::TF_PLAINTEXT;
     }
 
-    return this->tss_files.front().fvs_file->get_text_format();
+    return this->tss_files.front()->fvs_file->get_text_format();
 }
 
 static attr_line_t
@@ -570,21 +574,22 @@ textfile_sub_source::text_crumbs_for_line(
     }
 
     const auto curr_iter = this->current_file_state();
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     crumbs.emplace_back(
         lf->get_unique_path(),
         to_display(lf),
         [this]() {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
-                           lf.fvs_file->get_path_for_key(),
-                           to_display(lf.fvs_file),
+                           lf->fvs_file->get_path_for_key(),
+                           to_display(lf->fvs_file),
                        };
                    });
         },
         [this](const auto& key) {
             auto lf_opt = this->tss_files
-                | lnav::itertools::map([](const auto& x) { return x.fvs_file; })
+                | lnav::itertools::map(
+                              [](const auto& x) { return x->fvs_file; })
                 | lnav::itertools::find_if([&key](const auto& elem) {
                               return key.template get<std::string>()
                                   == elem->get_path_for_key();
@@ -622,10 +627,10 @@ textfile_sub_source::text_crumbs_for_line(
     }
 
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        curr_iter->fvs_text_source->text_crumbs_for_line(line, crumbs);
-    } else if (curr_iter->fvs_metadata.m_sections_tree.empty()) {
+        (*curr_iter)->fvs_text_source->text_crumbs_for_line(line, crumbs);
+    } else if ((*curr_iter)->fvs_metadata.m_sections_tree.empty()) {
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
@@ -641,72 +646,82 @@ textfile_sub_source::text_crumbs_for_line(
             : ll_next_iter->get_offset() - 1;
         const auto initial_size = crumbs.size();
 
-        curr_iter->fvs_metadata.m_sections_tree.visit_overlapping(
-            lf->get_line_content_offset(ll_iter),
-            end_offset,
-            [&crumbs, initial_size, meta = &curr_iter->fvs_metadata, this, lf](
-                const auto& iv) {
-                auto path = crumbs | lnav::itertools::skip(initial_size)
-                    | lnav::itertools::map(&breadcrumb::crumb::c_key)
-                    | lnav::itertools::append(iv.value);
-                auto curr_node = lnav::document::hier_node::lookup_path(
-                    meta->m_sections_root.get(), path);
-                crumbs.emplace_back(
-                    iv.value,
-                    [meta, path]() { return meta->possibility_provider(path); },
-                    [this, curr_node, path, lf](const auto& key) {
-                        if (!curr_node) {
-                            return;
-                        }
-                        auto* parent_node = curr_node.value()->hn_parent;
-                        if (parent_node == nullptr) {
-                            return;
-                        }
-                        key.match(
-                            [this, parent_node](const std::string& str) {
-                                auto sib_iter
-                                    = parent_node->hn_named_children.find(str);
-                                if (sib_iter
-                                    == parent_node->hn_named_children.end()) {
-                                    return;
-                                }
-                                this->set_top_from_off(
-                                    sib_iter->second->hn_start);
-                            },
-                            [this, parent_node](size_t index) {
-                                if (index >= parent_node->hn_children.size()) {
-                                    return;
-                                }
-                                auto sib
-                                    = parent_node->hn_children[index].get();
-                                this->set_top_from_off(sib->hn_start);
-                            });
-                    });
-                if (curr_node
-                    && curr_node.value()->hn_parent->hn_children.size()
-                        != curr_node.value()
-                               ->hn_parent->hn_named_children.size())
-                {
-                    auto node = lnav::document::hier_node::lookup_path(
+        (*curr_iter)
+            ->fvs_metadata.m_sections_tree.visit_overlapping(
+                lf->get_line_content_offset(ll_iter),
+                end_offset,
+                [&crumbs,
+                 initial_size,
+                 meta = &(*curr_iter)->fvs_metadata,
+                 this,
+                 lf](const auto& iv) {
+                    auto path = crumbs | lnav::itertools::skip(initial_size)
+                        | lnav::itertools::map(&breadcrumb::crumb::c_key)
+                        | lnav::itertools::append(iv.value);
+                    auto curr_node = lnav::document::hier_node::lookup_path(
                         meta->m_sections_root.get(), path);
+                    crumbs.emplace_back(
+                        iv.value,
+                        [meta, path]() {
+                            return meta->possibility_provider(path);
+                        },
+                        [this, curr_node, path, lf](const auto& key) {
+                            if (!curr_node) {
+                                return;
+                            }
+                            auto* parent_node = curr_node.value()->hn_parent;
+                            if (parent_node == nullptr) {
+                                return;
+                            }
+                            key.match(
+                                [this, parent_node](const std::string& str) {
+                                    auto sib_iter
+                                        = parent_node->hn_named_children.find(
+                                            str);
+                                    if (sib_iter
+                                        == parent_node->hn_named_children
+                                               .end()) {
+                                        return;
+                                    }
+                                    this->set_top_from_off(
+                                        sib_iter->second->hn_start);
+                                },
+                                [this, parent_node](size_t index) {
+                                    if (index
+                                        >= parent_node->hn_children.size()) {
+                                        return;
+                                    }
+                                    auto sib
+                                        = parent_node->hn_children[index].get();
+                                    this->set_top_from_off(sib->hn_start);
+                                });
+                        });
+                    if (curr_node
+                        && curr_node.value()->hn_parent->hn_children.size()
+                            != curr_node.value()
+                                   ->hn_parent->hn_named_children.size())
+                    {
+                        auto node = lnav::document::hier_node::lookup_path(
+                            meta->m_sections_root.get(), path);
 
-                    crumbs.back().c_expected_input
-                        = curr_node.value()
-                              ->hn_parent->hn_named_children.empty()
-                        ? breadcrumb::crumb::expected_input_t::index
-                        : breadcrumb::crumb::expected_input_t::index_or_exact;
-                    crumbs.back().with_possible_range(
-                        node | lnav::itertools::map([](const auto hn) {
-                            return hn->hn_parent->hn_children.size();
-                        })
-                        | lnav::itertools::unwrap_or(size_t{0}));
-                }
-            });
+                        crumbs.back().c_expected_input
+                            = curr_node.value()
+                                  ->hn_parent->hn_named_children.empty()
+                            ? breadcrumb::crumb::expected_input_t::index
+                            : breadcrumb::crumb::expected_input_t::
+                                  index_or_exact;
+                        crumbs.back().with_possible_range(
+                            node | lnav::itertools::map([](const auto hn) {
+                                return hn->hn_parent->hn_children.size();
+                            })
+                            | lnav::itertools::unwrap_or(size_t{0}));
+                    }
+                });
 
         auto path = crumbs | lnav::itertools::skip(initial_size)
             | lnav::itertools::map(&breadcrumb::crumb::c_key);
         auto node = lnav::document::hier_node::lookup_path(
-            curr_iter->fvs_metadata.m_sections_root.get(), path);
+            (*curr_iter)->fvs_metadata.m_sections_root.get(), path);
 
         if (node && !node.value()->hn_children.empty()) {
             auto poss_provider = [curr_node = node.value()]() {
@@ -770,7 +785,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             break;
         }
 
-        std::shared_ptr<logfile> lf = iter->fvs_file;
+        std::shared_ptr<logfile> lf = (*iter)->fvs_file;
 
         if (lf->is_closed()) {
             iter = this->tss_files.erase(iter);
@@ -820,29 +835,31 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 if (!new_data) {
                     // Only invalidate the meta if the file is small, or we
                     // found some meta previously.
-                    if ((st.st_mtime != iter->fvs_mtime
-                         || st.st_size != iter->fvs_file_size
-                         || lf->get_index_size() != iter->fvs_file_indexed_size)
-                        && (st.st_size < 10 * 1024 || iter->fvs_file_size == 0
-                            || !iter->fvs_metadata.m_sections_tree.empty()))
+                    if ((st.st_mtime != (*iter)->fvs_mtime
+                         || st.st_size != (*iter)->fvs_file_size
+                         || lf->get_index_size()
+                             != (*iter)->fvs_file_indexed_size)
+                        && (st.st_size < 10 * 1024
+                            || (*iter)->fvs_file_size == 0
+                            || !(*iter)->fvs_metadata.m_sections_tree.empty()))
                     {
                         log_debug(
                             "text file has changed, invalidating metadata.  "
                             "old: {mtime: %ld size: %lld isize: %lld}, new: "
                             "{mtime: %ld size: %lld isize: %lld}",
-                            iter->fvs_mtime,
-                            iter->fvs_file_size,
-                            iter->fvs_file_indexed_size,
+                            (*iter)->fvs_mtime,
+                            (*iter)->fvs_file_size,
+                            (*iter)->fvs_file_indexed_size,
                             st.st_mtime,
                             st.st_size,
                             lf->get_index_size());
-                        iter->fvs_metadata = {};
-                        iter->fvs_error.clear();
+                        (*iter)->fvs_metadata = {};
+                        (*iter)->fvs_error.clear();
                     }
                 }
 
-                if (!iter->fvs_metadata.m_sections_root
-                    && iter->fvs_error.empty())
+                if (!(*iter)->fvs_metadata.m_sections_root
+                    && (*iter)->fvs_error.empty())
                 {
                     auto read_res
                         = lf->read_file(logfile::read_format_t::with_framing);
@@ -858,10 +875,11 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                 "%s: file has no text format, skipping meta "
                                 "discovery",
                                 lf->get_path_for_key().c_str());
-                            iter->fvs_mtime = st.st_mtime;
-                            iter->fvs_file_size = st.st_size;
-                            iter->fvs_file_indexed_size = lf->get_index_size();
-                            iter->fvs_error = "skipping meta discovery";
+                            (*iter)->fvs_mtime = st.st_mtime;
+                            (*iter)->fvs_file_size = st.st_size;
+                            (*iter)->fvs_file_indexed_size
+                                = lf->get_index_size();
+                            (*iter)->fvs_error = "skipping meta discovery";
                         } else {
                             auto content
                                 = attr_line_t(read_file_res.rfr_content);
@@ -880,15 +898,16 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                 callback.renamed_file(lf);
                             }
 
-                            iter->fvs_mtime = st.st_mtime;
-                            iter->fvs_file_size = st.st_size;
-                            iter->fvs_file_indexed_size = lf->get_index_size();
-                            iter->fvs_metadata
+                            (*iter)->fvs_mtime = st.st_mtime;
+                            (*iter)->fvs_file_size = st.st_size;
+                            (*iter)->fvs_file_indexed_size
+                                = lf->get_index_size();
+                            (*iter)->fvs_metadata
                                 = lnav::document::discover(content)
                                       .with_text_format(tf_opt.value())
                                       .perform();
                             log_info("  metadata indents size: %zu",
-                                     iter->fvs_metadata.m_indents.size());
+                                     (*iter)->fvs_metadata.m_indents.size());
                         }
                     } else {
                         auto errmsg = read_res.unwrapErr();
@@ -896,10 +915,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             "%s: unable to read file for meta discover -- %s",
                             lf->get_path_for_key().c_str(),
                             errmsg.c_str());
-                        iter->fvs_mtime = st.st_mtime;
-                        iter->fvs_file_size = st.st_size;
-                        iter->fvs_file_indexed_size = lf->get_index_size();
-                        iter->fvs_error = errmsg;
+                        (*iter)->fvs_mtime = st.st_mtime;
+                        (*iter)->fvs_file_size = st.st_size;
+                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
+                        (*iter)->fvs_error = errmsg;
                     }
                 }
             }
@@ -919,17 +938,18 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             }
 
             if (lf->get_text_format() == text_format_t::TF_MARKDOWN) {
-                if (iter->fvs_text_source) {
-                    if (iter->fvs_file_size == st.st_size
-                        && iter->fvs_file_indexed_size == lf->get_index_size()
-                        && iter->fvs_mtime == st.st_mtime)
+                if ((*iter)->fvs_text_source) {
+                    if ((*iter)->fvs_file_size == st.st_size
+                        && (*iter)->fvs_file_indexed_size
+                            == lf->get_index_size()
+                        && (*iter)->fvs_mtime == st.st_mtime)
                     {
                         ++iter;
                         continue;
                     }
                     log_info("markdown file has been updated, re-rendering: %s",
                              lf->get_path_for_key().c_str());
-                    iter->fvs_text_source = nullptr;
+                    (*iter)->fvs_text_source = nullptr;
                 }
 
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
@@ -948,17 +968,18 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     }
                     auto parse_res = md4cpp::parse(md_file.f_body, mdal);
 
-                    iter->fvs_mtime = st.st_mtime;
-                    iter->fvs_file_indexed_size = lf->get_index_size();
-                    iter->fvs_file_size = st.st_size;
-                    iter->fvs_text_source
+                    (*iter)->fvs_mtime = st.st_mtime;
+                    (*iter)->fvs_file_indexed_size = lf->get_index_size();
+                    (*iter)->fvs_file_size = st.st_size;
+                    (*iter)->fvs_text_source
                         = std::make_unique<plain_text_source>();
-                    iter->fvs_text_source->set_text_format(
+                    (*iter)->fvs_text_source->set_text_format(
                         lf->get_text_format());
                     if (parse_res.isOk()) {
                         auto& lf_meta = lf->get_embedded_metadata();
 
-                        iter->fvs_text_source->replace_with(parse_res.unwrap());
+                        (*iter)->fvs_text_source->replace_with(
+                            parse_res.unwrap());
                         if (!md_file.f_frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
                                 = {
@@ -984,28 +1005,28 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             attr_line_t::from_ansi_str(
                                 read_file_res.rfr_content.c_str()));
 
-                        iter->fvs_text_source->replace_with(view_content);
+                        (*iter)->fvs_text_source->replace_with(view_content);
                     }
-                    iter->fvs_text_source->register_view(this->tss_view);
+                    (*iter)->fvs_text_source->register_view(this->tss_view);
                 } else {
                     log_error("unable to read markdown file: %s -- %s",
                               lf->get_path_for_key().c_str(),
                               read_res.unwrapErr().c_str());
                 }
             } else if (file_needs_reformatting(lf) && !new_data) {
-                if (iter->fvs_file_size == st.st_size
-                    && iter->fvs_file_indexed_size == lf->get_index_size()
-                    && iter->fvs_mtime == st.st_mtime
-                    && (!iter->fvs_error.empty()
-                        || iter->fvs_text_source != nullptr))
+                if ((*iter)->fvs_file_size == st.st_size
+                    && (*iter)->fvs_file_indexed_size == lf->get_index_size()
+                    && (*iter)->fvs_mtime == st.st_mtime
+                    && (!(*iter)->fvs_error.empty()
+                        || (*iter)->fvs_text_source != nullptr))
                 {
                     ++iter;
                     continue;
                 }
                 log_info("pretty file has been updated, re-rendering: %s",
                          lf->get_path_for_key().c_str());
-                iter->fvs_text_source = nullptr;
-                iter->fvs_error.clear();
+                (*iter)->fvs_text_source = nullptr;
+                (*iter)->fvs_error.clear();
 
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
                 if (read_res.isOk()) {
@@ -1018,35 +1039,35 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         attr_line_t pretty_al;
 
                         pp.append_to(pretty_al);
-                        iter->fvs_mtime = st.st_mtime;
-                        iter->fvs_file_indexed_size = lf->get_index_size();
-                        iter->fvs_file_size = st.st_size;
-                        iter->fvs_text_source
+                        (*iter)->fvs_mtime = st.st_mtime;
+                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
+                        (*iter)->fvs_file_size = st.st_size;
+                        (*iter)->fvs_text_source
                             = std::make_unique<plain_text_source>();
-                        iter->fvs_text_source->set_text_format(
+                        (*iter)->fvs_text_source->set_text_format(
                             lf->get_text_format());
-                        iter->fvs_text_source->register_view(this->tss_view);
-                        iter->fvs_text_source->replace_with_mutable(
+                        (*iter)->fvs_text_source->register_view(this->tss_view);
+                        (*iter)->fvs_text_source->replace_with_mutable(
                             pretty_al, lf->get_text_format());
                     } else {
                         log_error(
                             "unable to read file to pretty-print: %s -- file "
                             "is not valid UTF-8",
                             lf->get_path_for_key().c_str());
-                        iter->fvs_mtime = st.st_mtime;
-                        iter->fvs_file_indexed_size = lf->get_index_size();
-                        iter->fvs_file_size = st.st_size;
-                        iter->fvs_error = "file is not valid UTF-8";
+                        (*iter)->fvs_mtime = st.st_mtime;
+                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
+                        (*iter)->fvs_file_size = st.st_size;
+                        (*iter)->fvs_error = "file is not valid UTF-8";
                     }
                 } else {
                     auto errmsg = read_res.unwrapErr();
                     log_error("unable to read file to pretty-print: %s -- %s",
                               lf->get_path_for_key().c_str(),
                               errmsg.c_str());
-                    iter->fvs_mtime = st.st_mtime;
-                    iter->fvs_file_indexed_size = lf->get_index_size();
-                    iter->fvs_file_size = st.st_size;
-                    iter->fvs_error = errmsg;
+                    (*iter)->fvs_mtime = st.st_mtime;
+                    (*iter)->fvs_file_indexed_size = lf->get_index_size();
+                    (*iter)->fvs_file_size = st.st_size;
+                    (*iter)->fvs_error = errmsg;
                 }
             }
         } catch (const line_buffer::error& e) {
@@ -1062,7 +1083,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
     if (!closed_files.empty()) {
         callback.closed_files(closed_files);
         if (!this->tss_files.empty()) {
-            this->tss_files.front().load_into(*this->tss_view);
+            this->tss_files.front()->load_into(*this->tss_view);
         }
         this->tss_view->set_needs_update();
     }
@@ -1098,7 +1119,7 @@ void
 textfile_sub_source::quiesce()
 {
     for (auto& lf : this->tss_files) {
-        lf.fvs_file->quiesce();
+        lf->fvs_file->quiesce();
     }
 }
 
@@ -1224,7 +1245,7 @@ textfile_sub_source::row_for_anchor(const std::string& id)
         return std::nullopt;
     }
 
-    return curr_iter->row_for_anchor(this->tss_view_mode, id);
+    return (*curr_iter)->row_for_anchor(this->tss_view_mode, id);
 }
 
 static void
@@ -1277,12 +1298,12 @@ textfile_sub_source::get_anchors()
     }
 
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        return curr_iter->fvs_text_source->get_anchors();
+        return (*curr_iter)->fvs_text_source->get_anchors();
     }
 
-    const auto& meta = curr_iter->fvs_metadata;
+    const auto& meta = (*curr_iter)->fvs_metadata;
     if (meta.m_sections_root == nullptr) {
         return retval;
     }
@@ -1363,23 +1384,23 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
         return std::nullopt;
     }
 
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     log_debug("adjacent_anchor: %s:L%d:%s",
               lf->get_path_for_key().c_str(),
               (int) vl,
               dir == text_anchors::direction::prev ? "prev" : "next");
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        return curr_iter->fvs_text_source->adjacent_anchor(vl, dir);
+        return (*curr_iter)->fvs_text_source->adjacent_anchor(vl, dir);
     }
 
-    if (!curr_iter->fvs_metadata.m_sections_root) {
+    if (!(*curr_iter)->fvs_metadata.m_sections_root) {
         log_debug("  no metadata available");
         return std::nullopt;
     }
 
-    auto& md = curr_iter->fvs_metadata;
+    auto& md = (*curr_iter)->fvs_metadata;
     const auto* lfo
         = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()
@@ -1499,21 +1520,21 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
     }
 
     if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
-        return curr_iter->fvs_text_source->anchor_for_row(vl);
+        return (*curr_iter)->fvs_text_source->anchor_for_row(vl);
     }
 
-    if (!curr_iter->fvs_metadata.m_sections_root) {
+    if (!(*curr_iter)->fvs_metadata.m_sections_root) {
         return std::nullopt;
     }
 
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()) {
         return std::nullopt;
     }
-    auto& md = curr_iter->fvs_metadata;
+    auto& md = (*curr_iter)->fvs_metadata;
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto line_offsets = lf->get_file_range(ll_iter, false);
     auto path_for_line
@@ -1550,13 +1571,13 @@ textfile_sub_source::to_front(const std::string& filename)
 {
     auto lf_opt = this->tss_files
         | lnav::itertools::find_if([&filename](const auto& elem) {
-                      return elem.fvs_file->get_filename() == filename;
+                      return elem->fvs_file->get_filename() == filename;
                   });
     if (!lf_opt) {
         return false;
     }
 
-    this->to_front(lf_opt.value()->fvs_file);
+    this->to_front((*lf_opt.value())->fvs_file);
 
     return true;
 }
@@ -1584,7 +1605,7 @@ textfile_sub_source::get_effective_view_mode() const
     const auto curr_iter = this->current_file_state();
     if (curr_iter != this->tss_files.end()) {
         if (this->tss_view_mode == view_mode::rendered
-            && curr_iter->fvs_text_source)
+            && (*curr_iter)->fvs_text_source)
         {
             retval = view_mode::rendered;
         }
@@ -1596,11 +1617,11 @@ textfile_sub_source::get_effective_view_mode() const
 void
 textfile_sub_source::move_to_init_location(file_iterator& iter)
 {
-    if (iter->fvs_consumed_init_location) {
+    if ((*iter)->fvs_consumed_init_location) {
         return;
     }
 
-    auto& lf = iter->fvs_file;
+    auto& lf = (*iter)->fvs_file;
     std::optional<vis_line_t> new_sel_opt;
     require(lf->get_open_options().loo_init_location.valid());
     lf->get_open_options().loo_init_location.match(
@@ -1635,7 +1656,7 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
         },
         [this, &new_sel_opt, &iter](int vl) {
             log_info("file open request to jump to line: %d", vl);
-            auto height = iter->text_line_count(this->tss_view_mode);
+            auto height = (*iter)->text_line_count(this->tss_view_mode);
             if (vl < 0) {
                 vl += height;
                 if (vl < 0) {
@@ -1648,23 +1669,23 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
         },
         [this, &new_sel_opt, &iter](const std::string& loc) {
             log_info("file open request to jump to anchor: %s", loc.c_str());
-            new_sel_opt = iter->row_for_anchor(this->tss_view_mode, loc);
+            new_sel_opt = (*iter)->row_for_anchor(this->tss_view_mode, loc);
         });
 
     if (new_sel_opt) {
         log_info("%s", fmt::to_string(lf->get_filename()).c_str());
         log_info("  setting requested selection: %d",
                  (int) new_sel_opt.value());
-        iter->fvs_selection = new_sel_opt;
-        log_info("  actual top is now: %d", (int) iter->fvs_top);
+        (*iter)->fvs_selection = new_sel_opt;
+        log_info("  actual top is now: %d", (int) (*iter)->fvs_top);
         log_info("  actual selection is now: %d",
-                 (int) iter->fvs_selection.value());
+                 (int) (*iter)->fvs_selection.value());
 
         if (this->current_file() == lf) {
-            this->tss_view->set_selection(iter->fvs_selection.value());
+            this->tss_view->set_selection((*iter)->fvs_selection.value());
         }
     }
-    iter->fvs_consumed_init_location = true;
+    (*iter)->fvs_consumed_init_location = true;
 }
 
 textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src,
@@ -1753,14 +1774,12 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             }
             return true;
         }
-
     }
 
     if (this->tho_src->text_line_count() > 0) {
-        auto& tc = dynamic_cast<textview_curses&>(
-            const_cast<listview_curses&>(lv));
-        const auto& sticky_bv
-            = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+        auto& tc
+            = dynamic_cast<textview_curses&>(const_cast<listview_curses&>(lv));
+        const auto& sticky_bv = tc.get_bookmarks()[&textview_curses::BM_STICKY];
         if (!sticky_bv.empty()) {
             auto top = lv.get_top();
             int sticky_index = 0;
@@ -1866,11 +1885,11 @@ textfile_header_overlay::list_value_for_overlay(
 
     const auto curr_iter = this->tho_src->current_file_state();
     if (this->tho_src->tss_view_mode == textfile_sub_source::view_mode::rendered
-        && curr_iter->fvs_text_source)
+        && (*curr_iter)->fvs_text_source)
     {
         return;
     }
-    const auto& lf = curr_iter->fvs_file;
+    const auto& lf = (*curr_iter)->fvs_file;
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
         return;
     }

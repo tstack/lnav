@@ -61,7 +61,9 @@ Features:
   The `:clear-all-sticky-headers` command removes all
   sticky headers in the current view.  A hidden
   `log_sticky_mark` column is available in log tables
-  to get/set the sticky state via SQL.
+  to get/set the sticky state via SQL.  Sticky headers
+  and user bookmarks are saved and restored across
+  sessions for both log and text views.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,

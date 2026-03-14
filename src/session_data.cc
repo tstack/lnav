@@ -117,6 +117,19 @@ CREATE TABLE IF NOT EXISTS regex101_entries (
        regex_name   <> '' AND
        permalink    <> '')
 );
+
+CREATE TABLE IF NOT EXISTS text_bookmarks (
+    file_path    text NOT NULL,
+    line_number  integer NOT NULL,
+    line_hash    text NOT NULL,
+    mark_type    text NOT NULL DEFAULT 'user',
+    session_time integer NOT NULL,
+
+    PRIMARY KEY (file_path, line_number, mark_type),
+
+    CHECK(line_number >= 0),
+    CHECK(mark_type IN ('user', 'sticky'))
+);
 )";
 
 static const char* const BOOKMARK_LRU_STMT
@@ -128,6 +141,11 @@ static const char* const NETLOC_LRU_STMT
     = "DELETE FROM recent_netlocs WHERE access_time <= "
       "  (SELECT DISTINCT access_time FROM bookmarks "
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
+
+static const char* const TEXT_BOOKMARK_LRU_STMT
+    = "DELETE FROM text_bookmarks WHERE session_time <= "
+      "  (SELECT DISTINCT session_time FROM text_bookmarks "
+      "   ORDER BY session_time DESC LIMIT 1 OFFSET 50000)";
 
 static const char* const UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
@@ -404,6 +422,8 @@ scan_sessions()
 
     return std::make_optional(session_file_names.back());
 }
+
+static void load_text_bookmarks(sqlite3* db);
 
 void
 load_time_bookmarks()
@@ -742,8 +762,8 @@ load_time_bookmarks()
                                               line_cl);
                         }
                         if (sticky) {
-                            lss.set_user_mark(
-                                &textview_curses::BM_STICKY, line_cl);
+                            lss.set_user_mark(&textview_curses::BM_STICKY,
+                                              line_cl);
                         }
                         reload_needed = true;
                         break;
@@ -894,6 +914,8 @@ load_time_bookmarks()
     if (reload_needed) {
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
+
+    load_text_bookmarks(db.in());
 }
 
 static int
@@ -1129,18 +1151,16 @@ save_user_bookmarks(sqlite3* db,
             continue;
         }
 
-        auto is_user = user_marks.bv_tree.find(cl)
-            != user_marks.bv_tree.end();
-        auto is_sticky = sticky_marks.bv_tree.find(cl)
-            != sticky_marks.bv_tree.end();
+        auto is_user = user_marks.bv_tree.find(cl) != user_marks.bv_tree.end();
+        auto is_sticky
+            = sticky_marks.bv_tree.find(cl) != sticky_marks.bv_tree.end();
 
         // Use part_name "" for user marks, null for sticky-only
         if (is_user) {
             if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT)
                 != SQLITE_OK)
             {
-                log_error("could not bind part name -- %s",
-                          sqlite3_errmsg(db));
+                log_error("could not bind part name -- %s", sqlite3_errmsg(db));
                 return;
             }
         } else {
@@ -1292,6 +1312,228 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
 
         sqlite3_reset(stmt);
     }
+}
+
+static void
+save_text_bookmarks(sqlite3* db)
+{
+    auto& tss = lnav_data.ld_text_source;
+
+    if (tss.empty()) {
+        return;
+    }
+
+    tss.copy_bookmarks_to_current_file();
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+
+    if (sqlite3_prepare_v2(db,
+                           "DELETE FROM text_bookmarks WHERE session_time = ?",
+                           -1,
+                           stmt.out(),
+                           nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare text_bookmarks delete -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+    sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_time);
+    if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+        log_error("could not execute text_bookmarks delete -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+
+    if (sqlite3_prepare_v2(
+            db,
+            "REPLACE INTO text_bookmarks"
+            " (file_path, line_number, line_hash, mark_type, session_time)"
+            " VALUES (?, ?, ?, ?, ?)",
+            -1,
+            stmt.out(),
+            nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare text_bookmarks replace statement -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+
+    for (const auto& fvs : tss.get_file_states()) {
+        auto& lf = fvs->fvs_file;
+        if (lf == nullptr || lf->size() == 0) {
+            continue;
+        }
+
+        auto file_path = lf->get_path_for_key().string();
+        auto line_count = static_cast<int>(lf->size());
+
+        static const bookmark_type_t* SAVE_TYPES[] = {
+            &textview_curses::BM_USER,
+            &textview_curses::BM_STICKY,
+        };
+
+        for (const auto* bm_type : SAVE_TYPES) {
+            auto& bv = fvs->fvs_bookmarks[bm_type];
+            if (bv.empty()) {
+                continue;
+            }
+
+            for (const auto& vl : bv.bv_tree) {
+                if (static_cast<int>(vl) >= line_count) {
+                    continue;
+                }
+
+                auto line_iter = lf->begin() + static_cast<int>(vl);
+                auto fr = lf->get_file_range(line_iter, false);
+                auto read_result = lf->read_range(fr);
+
+                if (read_result.isErr()) {
+                    continue;
+                }
+
+                auto line_hash
+                    = read_result
+                          .map([](auto sbr) {
+                              return hasher()
+                                  .update(sbr.get_data(), sbr.length())
+                                  .to_string();
+                          })
+                          .unwrap();
+
+                sqlite3_clear_bindings(stmt.in());
+                bind_to_sqlite(stmt.in(), 1, file_path);
+                sqlite3_bind_int(stmt.in(), 2, static_cast<int>(vl));
+                bind_to_sqlite(stmt.in(), 3, line_hash);
+                bind_to_sqlite(stmt.in(), 4, bm_type->get_name());
+                sqlite3_bind_int64(stmt.in(), 5, lnav_data.ld_session_time);
+
+                if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+                    log_error("could not execute text_bookmarks insert -- %s",
+                              sqlite3_errmsg(db));
+                    return;
+                }
+
+                sqlite3_reset(stmt.in());
+            }
+        }
+    }
+}
+
+static void
+load_text_bookmarks(sqlite3* db)
+{
+    static const char* const TEXT_BOOKMARK_STMT = R"(
+        SELECT line_number, line_hash, mark_type
+        FROM text_bookmarks
+        WHERE file_path = ?
+        ORDER BY line_number
+    )";
+
+    auto& tss = lnav_data.ld_text_source;
+    auto& tc = lnav_data.ld_views[LNV_TEXT];
+
+    if (tss.empty()) {
+        return;
+    }
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    if (sqlite3_prepare_v2(db, TEXT_BOOKMARK_STMT, -1, stmt.out(), nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare text_bookmarks select -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+
+    for (const auto& fvs : tss.get_file_states()) {
+        auto& lf = fvs->fvs_file;
+        if (lf == nullptr || lf->size() == 0) {
+            continue;
+        }
+
+        auto file_path = lf->get_path_for_key().string();
+        auto line_count = static_cast<int>(lf->size());
+        sqlite3_reset(stmt.in());
+        sqlite3_clear_bindings(stmt.in());
+        bind_to_sqlite(stmt.in(), 1, file_path);
+
+        bool done = false;
+        while (!done) {
+            auto rc = sqlite3_step(stmt.in());
+
+            switch (rc) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+
+                case SQLITE_ROW: {
+                    auto line_number = sqlite3_column_int(stmt.in(), 0);
+                    auto* stored_hash
+                        = (const char*) sqlite3_column_text(stmt.in(), 1);
+                    auto* mark_type
+                        = (const char*) sqlite3_column_text(stmt.in(), 2);
+
+                    if (line_number >= line_count) {
+                        continue;
+                    }
+
+                    auto bm_type_opt = bookmark_type_t::find_type(mark_type);
+                    if (!bm_type_opt) {
+                        continue;
+                    }
+
+                    auto line_iter = lf->begin() + line_number;
+                    auto fr = lf->get_file_range(line_iter, false);
+                    auto read_result = lf->read_range(fr);
+
+                    if (read_result.isErr()) {
+                        continue;
+                    }
+
+                    auto line_hash
+                        = read_result
+                              .map([](auto sbr) {
+                                  return hasher()
+                                      .update(sbr.get_data(), sbr.length())
+                                      .to_string();
+                              })
+                              .unwrap();
+
+                    if (line_hash != stored_hash) {
+                        log_warning("text bookmark hash mismatch at %s:%d",
+                                    file_path.c_str(),
+                                    line_number);
+                        continue;
+                    }
+
+                    auto vl = vis_line_t(line_number);
+                    fvs->fvs_bookmarks[bm_type_opt.value()].insert_once(vl);
+                    break;
+                }
+
+                default:
+                    log_error("text bookmark select error: %d -- %s",
+                              rc,
+                              sqlite3_errmsg(db));
+                    done = true;
+                    break;
+            }
+        }
+    }
+
+    // Copy the front file's bookmarks into the textview
+    if (!tss.get_file_states().empty()) {
+        auto& front = tss.get_file_states().front();
+        tc.get_bookmarks()[&textview_curses::BM_USER]
+            = front->fvs_bookmarks[&textview_curses::BM_USER];
+        tc.get_bookmarks()[&textview_curses::BM_STICKY]
+            = front->fvs_bookmarks[&textview_curses::BM_STICKY];
+    }
+
+    tc.reload_data();
 }
 
 static void
@@ -1597,6 +1839,8 @@ save_time_bookmarks()
         sqlite3_reset(stmt.in());
     }
 
+    save_text_bookmarks(db.in());
+
     log_info("saved %d bookmarks", sqlite3_changes(db.in()));
 
     if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out())
@@ -1626,6 +1870,18 @@ save_time_bookmarks()
     auto netloc_changes = sqlite3_changes(db.in());
     if (netloc_changes > 0) {
         log_info("deleted %d old netlocs", netloc_changes);
+    }
+
+    if (sqlite3_exec(
+            db.in(), TEXT_BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out())
+        != SQLITE_OK)
+    {
+        log_error("unable to delete old text bookmarks -- %s", errmsg.in());
+        return;
+    }
+    auto text_bm_changes = sqlite3_changes(db.in());
+    if (text_bm_changes > 0) {
+        log_info("deleted %d old text bookmarks", text_bm_changes);
     }
 }
 
@@ -1866,6 +2122,10 @@ reset_session()
         tc.get_bookmarks()[&textview_curses::BM_META].clear();
         tc.get_bookmarks()[&textview_curses::BM_STICKY].clear();
         tc.reload_data();
+    }
+
+    for (auto& fvs : lnav_data.ld_text_source.get_file_states()) {
+        fvs->fvs_bookmarks.clear();
     }
 
     lnav_data.ld_filter_view.reload_data();

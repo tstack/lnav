@@ -223,3 +223,19 @@ run_cap_test ${lnav_test} -nq \
     -c ":create-search-table pg_users user=(?<user_name>\w+)" \
     -c ":export-session-to -" \
     support-dump/logfile_postgres.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# sticky header saved in session for text file
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':toggle-sticky-header' \
+    -c ':save-session' \
+    ${test_dir}/textfile_plain.0
+
+# sticky header restored from session for text file
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 4' \
+    ${test_dir}/textfile_plain.0

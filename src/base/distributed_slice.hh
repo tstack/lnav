@@ -114,6 +114,11 @@ struct dist_slice_container {
             }
         }
 
+        void swap(slice_indexed_array& other)
+        {
+            this->sia_array.swap(other.sia_array);
+        }
+
     private:
         const dist_slice_container& sia_slices;
         std::vector<U> sia_array;

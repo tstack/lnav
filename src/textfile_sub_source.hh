@@ -83,7 +83,7 @@ public:
             return nullptr;
         }
 
-        return this->tss_files.front().fvs_file;
+        return this->tss_files.front()->fvs_file;
     }
 
     void to_front(const std::shared_ptr<logfile>& lf);
@@ -177,16 +177,6 @@ public:
 
     bool tss_apply_default_init_location{false};
 
-private:
-    friend textfile_header_overlay;
-
-    void detach_observer(std::shared_ptr<logfile> lf)
-    {
-        auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-        lf->set_logline_observer(nullptr);
-        delete lfo;
-    }
-
     struct file_view_state {
         explicit file_view_state(const std::shared_ptr<logfile>& f)
             : fvs_file(f)
@@ -198,14 +188,16 @@ private:
             return this->fvs_file == lf;
         }
 
-        void save_from(const textview_curses& tc)
+        void save_from(textview_curses& tc)
         {
             this->fvs_top = tc.get_top();
             this->fvs_selection = tc.get_selection();
+            this->fvs_bookmarks.swap(tc.get_bookmarks());
         }
 
-        void load_into(textview_curses& tc) const
+        void load_into(textview_curses& tc)
         {
+            tc.get_bookmarks().swap(this->fvs_bookmarks);
             if (this->fvs_selection.has_value()) {
                 tc.set_selection(this->fvs_selection.value());
             }
@@ -222,6 +214,7 @@ private:
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};
         std::optional<vis_line_t> fvs_selection;
+        vis_bookmarks fvs_bookmarks{vis_bookmarks_t::create_array()};
 
         time_t fvs_mtime{0};
         file_ssize_t fvs_file_size{0};
@@ -232,8 +225,36 @@ private:
         bool fvs_consumed_init_location{false};
     };
 
-    using file_iterator = std::deque<file_view_state>::iterator;
-    using const_file_iterator = std::deque<file_view_state>::const_iterator;
+    using file_iterator
+        = std::deque<std::shared_ptr<file_view_state>>::iterator;
+    using const_file_iterator
+        = std::deque<std::shared_ptr<file_view_state>>::const_iterator;
+
+    std::deque<std::shared_ptr<file_view_state>>& get_file_states()
+    {
+        return this->tss_files;
+    }
+
+    void copy_bookmarks_to_current_file()
+    {
+        if (!this->tss_files.empty() && this->tss_view != nullptr) {
+            auto& front = this->tss_files.front();
+            front->fvs_bookmarks[&textview_curses::BM_USER]
+                = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
+            front->fvs_bookmarks[&textview_curses::BM_STICKY]
+                = this->tss_view->get_bookmarks()[&textview_curses::BM_STICKY];
+        }
+    }
+
+private:
+    friend textfile_header_overlay;
+
+    void detach_observer(std::shared_ptr<logfile> lf)
+    {
+        auto* lfo = (line_filter_observer*) lf->get_logline_observer();
+        lf->set_logline_observer(nullptr);
+        delete lfo;
+    }
 
     void move_to_init_location(file_iterator& iter);
 
@@ -244,7 +265,7 @@ private:
         return this->tss_files.cbegin();
     }
 
-    std::deque<file_view_state> tss_files;
+    std::deque<std::shared_ptr<file_view_state>> tss_files;
     size_t tss_line_indent_size{0};
     bool tss_last_scan_aborted{false};
     attr_line_t tss_hex_line;
