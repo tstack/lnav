@@ -1380,7 +1380,6 @@ com_highlight_field(exec_context& ec,
         ? trim(remaining_args(cmdline, args, name_index + 1))
         : std::string(".*");
 
-    log_debug("pat %s", pat.c_str());
     std::vector<std::string> cli_args(args.begin() + 1,
                                       args.begin() + name_index + 1);
     std::vector<lnav::console::user_message> errors;

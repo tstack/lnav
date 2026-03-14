@@ -138,6 +138,7 @@ set(TIME_FORMATS
         "%Y-%m"
         "%Y/%m/%d"
         "%Y/%m"
+        "%b %d"
 )
 
 set(GEN_SRCS "")

@@ -144,7 +144,8 @@ date_time_scanner::scan(const char* time_dest,
                     }
                     tv_out.tv_sec = gmt;
                     tv_out.tv_usec = 0;
-                    tm_out->et_flags = ETF_DAY_SET | ETF_MONTH_SET
+                    tm_out->et_flags = ETF_HOUR_SET | ETF_MINUTE_SET
+                        | ETF_SECOND_SET | ETF_DAY_SET | ETF_MONTH_SET
                         | ETF_YEAR_SET | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME
                         | ETF_ZONE_SET;
 
@@ -328,6 +329,31 @@ date_time_scanner::scan(const char* time_dest,
                 this->dts_fmt_len = off;
                 tm_out->et_flags |= ETF_SUB_NOT_IN_FORMAT;
                 retval = time_dest + this->dts_fmt_len;
+            }
+        }
+    }
+
+    if (retval != nullptr) {
+        if (!(tm_out->et_flags
+              & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET)))
+        {
+            tm_out->et_nsec = 0;
+            tv_out.tv_usec = 0;
+            if (!(tm_out->et_flags & ETF_SECOND_SET)) {
+                tm_out->et_tm.tm_sec = 0;
+                if (!(tm_out->et_flags & ETF_MINUTE_SET)) {
+                    tm_out->et_tm.tm_min = 0;
+                    if (!(tm_out->et_flags & ETF_HOUR_SET)) {
+                        tm_out->et_tm.tm_hour = 0;
+                        if (!(tm_out->et_flags & ETF_DAY_SET)) {
+                            tm_out->et_tm.tm_mday = 1;
+                            if (!(tm_out->et_flags & ETF_MONTH_SET)) {
+                                tm_out->et_tm.tm_mon = 0;
+                            }
+                        }
+                    }
+                }
+                tv_out.tv_sec = tm2sec(&tm_out->et_tm);
             }
         }
     }

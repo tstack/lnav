@@ -80,12 +80,18 @@ com_hide_line(exec_context& ec,
                   "relative time";
         }
     } else if (args.size() >= 2) {
-        std::string all_args = remaining_args(cmdline, args);
+        auto all_args = remaining_args(cmdline, args);
         date_time_scanner dts;
         timeval tv_abs;
         std::optional<timeval> tv_opt;
         auto parse_res = relative_time::from_str(all_args);
 
+        {
+            auto curr_time = time(nullptr);
+            tm base_tm;
+            localtime_r(&curr_time, &base_tm);
+            dts.set_base_time(curr_time, base_tm);
+        }
         if (parse_res.isOk()) {
             if (tc->get_inner_height() > 0) {
                 exttm tm;

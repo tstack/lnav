@@ -164,6 +164,20 @@ TEST_CASE("date_time_scanner")
         dts.ftime(ts, sizeof(ts), nullptr, tm);
 
         CHECK(std::string(ts) == std::string("2014-02-11 16:12:34.123450Z"));
+
+        {
+            const auto feb26 = string_fragment::from_const("Feb 26");
+            date_time_scanner dts2;
+            exttm tm2;
+            timeval tv2;
+            dts2.set_base_time(tv.tv_sec, tm.et_tm);
+            CHECK(dts2.scan(feb26.data(), feb26.length(), nullptr, &tm2, tv2)
+                  != nullptr);
+            CHECK(tm2.et_nsec == 0);
+            CHECK(tm2.et_tm.tm_sec == 0);
+            CHECK(tm2.et_tm.tm_min == 0);
+            CHECK(tm2.et_tm.tm_hour == 0);
+        }
     }
 
     {
