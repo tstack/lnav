@@ -123,8 +123,8 @@ main(int argc, char* argv[])
         my_source ms;
         grep_proc<vis_line_t> gp(code, ms, psuperv);
 
-        gp.queue_request(10_vl, 14_vl);
-        gp.queue_request(0_vl, 3_vl);
+        gp.queue_request(10_vl, gp.until_line(14_vl));
+        gp.queue_request(0_vl, gp.until_line(3_vl));
         gp.start();
         looper(gp);
     }
@@ -135,7 +135,7 @@ main(int argc, char* argv[])
             = new grep_proc<vis_line_t>(code, mss, psuperv);
         int status;
 
-        gp->queue_request();
+        gp->queue_request(-1_vl, gp->until_eof(1));
         gp->start();
 
         assert(wait3(&status, WNOHANG, NULL) == 0);

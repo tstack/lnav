@@ -130,7 +130,7 @@ main(int argc, char* argv[])
             grep_proc<vis_line_t> gp(co, ms, psuperv);
 
             gp.set_sink(&msink);
-            gp.queue_request();
+            gp.queue_request(0_vl, gp.until_eof(1));
             gp.start();
 
             while (!msink.ms_finished) {

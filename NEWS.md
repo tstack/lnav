@@ -286,6 +286,12 @@ Interface changes:
   character (�) and, when the line is focused, an
   overlay will show a hex dump of the line.
 
+Performance:
+* Searches now run in parallel using multiple child
+  processes.  Large line ranges are split into chunks
+  and distributed across available CPU cores, speeding
+  up search in large files.
+
 Bug Fixes:
 * If a file path contains a hash (`#`), check if the path
   exists before splitting around the hash and treating it

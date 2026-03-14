@@ -34,7 +34,9 @@
 
 #include <deque>
 #include <exception>
+#include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <poll.h>
@@ -43,8 +45,10 @@
 #include <unistd.h>
 
 #include "base/auto_fd.hh"
+#include "base/auto_pid.hh"
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"
+#include "mapbox/variant.hpp"
 #include "pcrepp/pcre2pp.hh"
 #include "pollable.hh"
 
@@ -183,26 +187,35 @@ public:
     /** @return The sink to send results to. */
     grep_proc_sink<LineType>* get_sink() { return this->gp_sink; }
 
+    enum class until_type_t {
+        line,
+        eof,
+    };
+
+    struct request_until_t {
+        until_type_t ru_type;
+        LineType ru_line;
+    };
+
+    template<typename T>
+    request_until_t until_line(T line)
+    {
+        return {until_type_t::line, LineType(line)};
+    }
+
+    template<typename T>
+    request_until_t until_eof(T line)
+    {
+        return {until_type_t::eof, LineType(line)};
+    }
+
     /**
      * Queue a request to search the input between the given line numbers.
      *
      * @param start The line number to start the search at.
-     * @param stop The line number to stop the search at (exclusive) or -1 to
-     * read until the end-of-file.
+     * @param stop The stop condition.
      */
-    grep_proc& queue_request(LineType start = LineType(0),
-                             LineType stop = LineType(-1))
-    {
-        require(start != -1 || stop == -1);
-        require(stop == -1 || start < stop);
-
-        this->gp_queue.emplace_back(start, stop);
-        if (this->gp_sink) {
-            this->gp_sink->grep_begin(*this, start, stop);
-        }
-
-        return *this;
-    }
+    grep_proc& queue_request(LineType start, request_until_t stop);
 
     /**
      * Start the search requests that have been queued up with queue_request.
@@ -218,20 +231,22 @@ public:
      */
     void check_poll_set(const std::vector<struct pollfd>& pollfds) override;
 
-    /** Check the invariants for this object. */
-    bool invariant()
-    {
-        if (this->gp_child_started) {
-            require(this->gp_child > 0);
-            require(this->gp_line_buffer.get_fd() != -1);
-        } else {
-            /* require(this->gp_child == -1); XXX doesnt work with static destr
-             */
-            require(this->gp_line_buffer.get_fd() == -1);
-        }
+    bool children_active() const { return !this->gp_children.empty(); }
 
-        return true;
-    }
+    /** Check the invariants for this object. */
+    bool invariant() { return true; }
+
+    struct child_state {
+        auto_pid<process_state::running> cs_child;
+        auto_fd cs_err_pipe;
+        line_buffer cs_line_buffer;
+        file_range cs_pipe_range;
+
+        explicit child_state(auto_pid<process_state::running> child)
+            : cs_child(std::move(child))
+        {
+        }
+    };
 
 protected:
     /**
@@ -256,19 +271,11 @@ protected:
     std::shared_ptr<lnav::pcre2pp::code> gp_pcre;
     grep_proc_source<LineType>& gp_source; /*< The data source delegate. */
 
-    auto_fd gp_err_pipe; /*< Standard error from the child. */
-    line_buffer gp_line_buffer; /*< Standard out from the child. */
-    file_range gp_pipe_range;
-
-    pid_t gp_child{-1}; /*<
-                         * The child's pid or zero in the
-                         * child.
-                         */
-    bool gp_child_started{false}; /*< True if the child was start()'d. */
+    std::vector<std::unique_ptr<child_state>> gp_children;
     size_t gp_child_queue_size{0};
 
     /** The queue of search requests. */
-    std::deque<std::pair<LineType, LineType> > gp_queue;
+    std::deque<std::pair<LineType, request_until_t>> gp_queue;
     LineType gp_last_line{0}; /*<
                                * The last line number received from
                                * the child.  For multiple matches,

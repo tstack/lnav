@@ -209,8 +209,7 @@ const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_SEARCH("search");
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_META("meta");
 const DIST_SLICE(bm_types)
     bookmark_type_t textview_curses::BM_PARTITION("partition");
-const DIST_SLICE(bm_types)
-    bookmark_type_t textview_curses::BM_STICKY("sticky");
+const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_STICKY("sticky");
 
 textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
@@ -1006,9 +1005,10 @@ textview_curses::execute_search(const std::string& regex_orig)
                 top -= REVERSE_SEARCH_OFFSET;
             }
             this->tc_search_op_id = std::move(op_guard).suspend();
-            gp->queue_request(top);
+            gp->queue_request(
+                top, gp->until_eof(this->tc_sub_source->text_line_count()));
             if (top > 0) {
-                gp->queue_request(0_vl, top);
+                gp->queue_request(0_vl, gp->until_line(top));
             }
             this->tc_search_start_time = std::chrono::steady_clock::now();
             this->tc_search_duration = std::nullopt;
@@ -1027,7 +1027,9 @@ textview_curses::execute_search(const std::string& regex_orig)
                             code, *pair.first);
 
                     sgp->set_sink(pair.second);
-                    sgp->queue_request(0_vl);
+                    sgp->queue_request(
+                        0_vl,
+                        sgp->until_eof(this->tc_sub_source->text_line_count()));
                     sgp->start();
 
                     this->tc_source_search_child = sgp;
@@ -1149,11 +1151,15 @@ textview_curses::redo_search()
 
         gp->invalidate();
         this->match_reset();
-        gp->queue_request(0_vl).start();
+        gp->queue_request(0_vl,
+                          gp->until_eof(this->tc_sub_source->text_line_count()))
+            .start();
 
         if (this->tc_source_search_child) {
             this->tc_source_search_child->invalidate()
-                .queue_request(0_vl)
+                .queue_request(0_vl,
+                               this->tc_source_search_child->until_eof(
+                                   this->tc_sub_source->text_line_count()))
                 .start();
         }
     }
@@ -1165,12 +1171,14 @@ textview_curses::search_range(vis_line_t start, vis_line_t stop)
     if (this->tc_search_child) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
-        this->tc_search_child->get_grep_proc()->queue_request(start, stop);
+        auto* gp = this->tc_search_child->get_grep_proc();
+        gp->queue_request(start, gp->until_line(stop));
     }
     if (this->tc_source_search_child) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
-        this->tc_source_search_child->queue_request(start, stop);
+        this->tc_source_search_child->queue_request(
+            start, this->tc_source_search_child->until_line(stop));
     }
 }
 
