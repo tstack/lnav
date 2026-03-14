@@ -322,7 +322,8 @@ arena_realloc(void* ctx, void* ptr, size_t sz)
         auto* header = (alloc_header*) (((char*) ptr) - sizeof(alloc_header));
         memcpy(&new_header->ah_bits, &header->ah_bits, header->ah_size);
     }
-    return &new_header->ah_size;
+    new_header->ah_size = sz;
+    return &new_header->ah_bits;
 }
 
 static void
