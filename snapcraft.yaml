@@ -76,6 +76,7 @@ parts:
       - libunistring-dev
       - zlib1g-dev
       - libbz2-dev
+      - execstack
     stage-packages:
       - zlib1g
       - git-core
