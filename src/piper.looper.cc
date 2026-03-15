@@ -31,8 +31,12 @@
 #include <filesystem>
 #include <future>
 #include <map>
+#include <memory>
+#include <optional>
+#include <string>
 #include <thread>
-#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "piper.looper.hh"
 
@@ -43,6 +47,8 @@
 #include "base/date_time_scanner.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/lnav.console.hh"
+#include "base/lnav_log.hh"
 #include "base/piper.file.hh"
 #include "base/time_util.hh"
 #include "config.h"
@@ -184,8 +190,9 @@ demux_json_string(yajlpp_parse_context* ypc,
     auto* dju = static_cast<demux_json_userdata*>(ypc->ypc_userdata);
     auto path_sf = ypc->get_path_as_string_fragment();
     auto value_sf = string_fragment::from_bytes(str, len);
-    if (str < dju->dju_input.udata() ||
-        dju->dju_input.udata() + dju->dju_input.length() < str) {
+    if (str < dju->dju_input.udata()
+        || dju->dju_input.udata() + dju->dju_input.length() < str)
+    {
         value_sf = value_sf.to_owned(*dju->dju_arena);
     }
 
@@ -941,9 +948,10 @@ cleanup()
                 for (const auto& entry :
                      std::filesystem::directory_iterator(cache_subdir, ec))
                 {
-                    auto mtime = std::filesystem::last_write_time(entry.path());
-                    auto exp_time = mtime + cfg.c_ttl;
-                    if (now < exp_time) {
+                    auto entry_mtime
+                        = std::filesystem::last_write_time(entry.path());
+                    auto entry_exp_time = entry_mtime + cfg.c_ttl;
+                    if (now < entry_exp_time) {
                         is_recent = true;
                         break;
                     }
