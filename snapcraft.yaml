@@ -62,7 +62,7 @@ parts:
       ${CRAFT_PROJECT_DIR}/snap/local/scriptlets/selective-checkout --force-snapshot
     override-build: |
       craftctl default
-      execstack --clear-execstack src/lnav
+      execstack --clear-execstack $SNAPCRAFT_PART_INSTALL/usr/bin/lnav
     build-packages:
       - git
       - curl
