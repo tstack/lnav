@@ -89,8 +89,7 @@ const char* const lnav_view_titles[LNV__MAX] = {
 };
 
 const char* const
-    lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1]
-    = {
+    lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1] = {
         "PAGING",
         "BREADCRUMBS",
         "FILTER",
@@ -1849,7 +1848,9 @@ lnav_behavior::mouse_event(
                     break;
                 }
             }
-            if (this->lb_last_view == nullptr) {
+            if (this->lb_last_view == nullptr
+                && !lnav_data.ld_view_stack.empty())
+            {
                 auto* tc = *(lnav_data.ld_view_stack.top());
                 if (tc->contains(me.me_x, me.me_y)) {
                     me.me_press_y = me.me_y - tc->get_y();
