@@ -276,16 +276,11 @@ protected:
 
     /** The queue of search requests. */
     std::deque<std::pair<LineType, request_until_t>> gp_queue;
-    LineType gp_last_line{0}; /*<
-                               * The last line number received from
-                               * the child.  For multiple matches,
-                               * the line number is only sent once.
-                               */
-    LineType gp_highest_line; /*< The highest numbered line processed
-                               * by the grep child process.  This
-                               * value is used when the start line
-                               * for a queued request is -1.
-                               */
+    LineType gp_highest_line{0}; /*< The highest numbered line processed
+                                  * by the grep child process.  This
+                                  * value is used when the start line
+                                  * for a queued request is -1.
+                                  */
     grep_proc_sink<LineType>* gp_sink{nullptr}; /*< The sink delegate. */
     grep_proc_control* gp_control{nullptr}; /*< The control delegate. */
 };

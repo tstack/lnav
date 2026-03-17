@@ -1155,11 +1155,11 @@ ftime_z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline void
 ftime_Z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
-    if (tm.et_flags & ETF_Z_IS_UTC) {
+    if (tm.et_gmtoff == 0 && tm.et_flags & ETF_Z_IS_UTC) {
         PTIME_APPEND('U');
         PTIME_APPEND('T');
         PTIME_APPEND('C');
-    } else if (tm.et_flags & ETF_Z_IS_GMT) {
+    } else if (tm.et_gmtoff == 0 && tm.et_flags & ETF_Z_IS_GMT) {
         PTIME_APPEND('G');
         PTIME_APPEND('M');
         PTIME_APPEND('T');

@@ -398,8 +398,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     // Replace VALUE_TIMESTAMP fields right-to-left so that origins
     // for earlier fields remain valid.
     if (format->lf_date_time.dts_fmt_lock != -1) {
-        auto* fmt_ptr = format.get();
-
         for (auto lv_iter = this->lss_token_values.lvv_values.rbegin();
              lv_iter != this->lss_token_values.lvv_values.rend();
              ++lv_iter)
@@ -410,35 +408,14 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 continue;
             }
 
-            auto dts = fmt_ptr->build_time_scanner();
-            exttm tm;
-            timeval tv;
-            auto val_sf
-                = string_fragment::from_str_range(value_out,
-                                                  lv_iter->lv_origin.lr_start,
-                                                  lv_iter->lv_origin.lr_end);
-
-            if (dts.scan(val_sf.data(),
-                         val_sf.length(),
-                         fmt_ptr->get_timestamp_formats(),
-                         &tm,
-                         tv,
-                         true))
-            {
-                char ts[64];
-                tm.et_gmtoff = tm.et_orig_gmtoff;
-                auto len = dts.ftime(
-                    ts, sizeof(ts), fmt_ptr->get_timestamp_formats(), tm);
-                ts[len] = '\0';
-                value_out.replace(lv_iter->lv_origin.lr_start,
-                                  lv_iter->lv_origin.length(),
-                                  ts,
-                                  len);
-                auto shift = (int) (len - lv_iter->lv_origin.length());
-                if (shift != 0) {
-                    this->lss_token_shifts.emplace_back(
-                        lv_iter->lv_origin.lr_start, shift);
-                }
+            auto ts_str = lv_iter->to_string();
+            value_out.replace(lv_iter->lv_origin.lr_start,
+                              lv_iter->lv_origin.length(),
+                              ts_str);
+            auto shift = (int) (ts_str.size() - lv_iter->lv_origin.length());
+            if (shift != 0) {
+                this->lss_token_shifts.emplace_back(lv_iter->lv_origin.lr_start,
+                                                    shift);
             }
         }
     }

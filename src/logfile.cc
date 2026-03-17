@@ -842,9 +842,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                .get_time<std::chrono::microseconds>();
         }
         if (this->lf_format != nullptr) {
-            best_match = std::make_pair(
-                this->lf_format.get(),
-                log_format::scan_match{this->lf_format_quality});
+            best_match = std::make_pair(this->lf_format.get(),
+                                        log_format::scan_match{
+                                            this->lf_format_quality,
+                                            0,
+                                            this->lf_format_precision,
+                                        });
         }
 
         /*
@@ -951,21 +954,47 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         && this->lf_format->lf_root_format == curr.get()
                         && best_match->first == this->lf_format.get())
                     {
+                        log_info(
+                            "  scan with format (%s) matched with quality of "
+                            "%d.%d and %d strikes",
+                            curr->get_name().c_str(),
+                            sm.sm_quality,
+                            sm.sm_precision,
+                            sm.sm_strikes);
+                        if (sm.sm_quality > this->lf_format_quality) {
+                            this->lf_format_quality = sm.sm_quality;
+                        }
+                        if (sm.sm_precision > this->lf_format_precision) {
+                            this->lf_format_precision = sm.sm_precision;
+                        }
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;
                     } else if (!best_match
                                || (sm.sm_quality > best_match->second.sm_quality
                                    || (sm.sm_quality
                                            == best_match->second.sm_quality
-                                       && sm.sm_strikes
-                                           < best_match->second.sm_strikes)))
+                                       && (sm.sm_precision
+                                               > best_match->second.sm_precision
+                                           || sm.sm_strikes
+                                               < best_match->second
+                                                     .sm_strikes))))
                     {
                         log_info(
                             "  scan with format (%s) matched with quality of "
-                            "%d and %d strikes",
+                            "%d.%d and %d strikes",
                             curr->get_name().c_str(),
                             sm.sm_quality,
+                            sm.sm_precision,
                             sm.sm_strikes);
+                        if (best_match) {
+                            log_info(
+                                "    replacing previous match with %s "
+                                "(quality=%d.%d; strikes=%d)",
+                                best_match->first->get_name().c_str(),
+                                best_match->second.sm_quality,
+                                best_match->second.sm_precision,
+                                best_match->second.sm_strikes);
+                        }
 
                         sbc.sbc_opids = sbc_tmp.sbc_opids;
                         sbc.sbc_tids = sbc_tmp.sbc_tids;
@@ -982,7 +1011,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                   .with_note(
                                       attr_line_t("match quality is ")
                                           .append(lnav::roles::number(
-                                              fmt::to_string(sm.sm_quality)))
+                                              fmt::format(FMT_STRING("{}.{}"),
+                                                          sm.sm_quality,
+                                                          sm.sm_precision)))
                                           .append(" with ")
                                           .append(lnav::roles::number(
                                               fmt::to_string(sm.sm_strikes)))
@@ -1001,11 +1032,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                     } else {
                         log_trace(
                             "  scan with format (%s) matched, but "
-                            "is lower quality (%d < %d) or more strikes (%d "
-                            "vs. %d)",
+                            "is lower quality (%d.%d < %d.%d) or more strikes "
+                            "(%d vs. %d)",
                             curr->get_name().c_str(),
                             sm.sm_quality,
+                            sm.sm_precision,
                             best_match->second.sm_quality,
+                            best_match->second.sm_precision,
                             sm.sm_strikes,
                             best_match->second.sm_strikes);
                         while (this->lf_index.size() > prev_index_size) {
@@ -1058,12 +1091,15 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
         if (best_match
             && (this->lf_format == nullptr
-                || ((this->lf_format->lf_root_format != best_match->first)
-                    && best_match->second.sm_quality
-                        > this->lf_format_quality)))
+                || ((this->lf_format->lf_root_format
+                     != best_match->first->lf_root_format)
+                    && (best_match->second.sm_quality > this->lf_format_quality
+                        || best_match->second.sm_precision
+                            > this->lf_format_precision))))
         {
             auto winner = best_match.value();
             auto* curr = winner.first;
+            auto format_changed = this->lf_format.get() != nullptr;
             log_info("%s:%zu:log format found -- %s",
                      this->lf_filename_as_string.c_str(),
                      this->lf_index.size(),
@@ -1087,6 +1123,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_level_stats.update_msg_count(ll.get_msg_level());
             }
             this->lf_format_quality = winner.second.sm_quality;
+            this->lf_format_precision = winner.second.sm_precision;
             this->set_format_base_time(this->lf_format.get(), li);
             if (this->lf_format->lf_date_time.dts_fmt_lock != -1) {
                 this->lf_content_id
@@ -1135,27 +1172,40 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_applicable_partitioners.emplace_back(pd_pair.second);
             }
 
-            /*
-             * We'll go ahead and assume that any previous lines were
-             * written out at the same time as the last one, so we need to
-             * go back and update everything.
-             */
-            const auto& last_line = this->lf_index.back();
-
-            require_lt(starting_index_size, this->lf_index.size());
-            for (size_t lpc = 0; lpc < starting_index_size; lpc++) {
-                if (this->lf_format->lf_multiline) {
-                    this->lf_index[lpc].set_time(
-                        last_line.get_time<std::chrono::microseconds>());
-                    if (this->lf_format->lf_structured) {
-                        this->lf_index[lpc].set_ignore(true);
-                    }
-                } else {
-                    this->lf_index[lpc].set_time(
-                        last_line.get_time<std::chrono::microseconds>());
-                    this->lf_index[lpc].set_level(LEVEL_INVALID);
-                }
+            if (format_changed) {
+                this->lf_index_size = 0;
+                this->lf_level_stats = log_level_stats{};
+                this->lf_longest_line = 0;
+                this->lf_out_of_time_order_count = 0;
+                this->lf_opids.writeAccess()->clear();
+                this->lf_thread_ids.writeAccess()->clear();
+                this->lf_value_stats.clear();
+                this->lf_pattern_locks.pl_lines.clear();
+                this->lf_index.clear();
                 retval = true;
+            } else {
+                /*
+                 * We'll go ahead and assume that any previous lines were
+                 * written out at the same time as the last one, so we need to
+                 * go back and update everything.
+                 */
+                const auto& last_line = this->lf_index.back();
+
+                require_lt(starting_index_size, this->lf_index.size());
+                for (size_t lpc = 0; lpc < starting_index_size; lpc++) {
+                    if (this->lf_format->lf_multiline) {
+                        this->lf_index[lpc].set_time(
+                            last_line.get_time<std::chrono::microseconds>());
+                        if (this->lf_format->lf_structured) {
+                            this->lf_index[lpc].set_ignore(true);
+                        }
+                    } else {
+                        this->lf_index[lpc].set_time(
+                            last_line.get_time<std::chrono::microseconds>());
+                        this->lf_index[lpc].set_level(LEVEL_INVALID);
+                    }
+                    retval = true;
+                }
             }
 
             found = best_match->second;
@@ -1182,6 +1232,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 if (this->lf_invalid_lines.ili_lines.size()
                     < invalid_line_info::MAX_INVALID_LINES)
                 {
+                    log_debug("%s:%d:invalid line for format %s: %.*s",
+                              this->lf_filename_as_string.c_str(),
+                              this->lf_index.size() - 1,
+                              this->lf_format->get_name().c_str(),
+                              sbr.length(),
+                              sbr.get_data());
                     this->lf_invalid_lines.ili_lines.push_back(
                         this->lf_index.size() - 1);
                 }
@@ -1248,7 +1304,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         new_line.set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
     }
 
-    if (this->lf_format != nullptr
+    if (this->lf_format != nullptr && !this->lf_index.empty()
         && this->lf_index.back().get_time<std::chrono::microseconds>()
             > this->lf_options.loo_time_range.tr_end)
     {
@@ -1705,6 +1761,13 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                            li.li_utf8_scan_result.usr_column_width_guess);
             this->lf_partial_line = li.li_partial;
             sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
+            if (sort_needed && this->lf_index.empty()) {
+                if (limit < 1000) {
+                    limit = 1000;
+                }
+                prev_range = file_range{0};
+                continue;
+            }
 
             if (old_size > this->lf_index.size()) {
                 old_size = 0;

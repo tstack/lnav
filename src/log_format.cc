@@ -1105,9 +1105,13 @@ struct json_log_userdata {
                     .first
                 == field_frag)
         {
-            return format
+            auto retval = format
                 ->elf_value_def_read_order[this->jlu_read_order_index++]
                 .second;
+            if (retval != nullptr) {
+                this->jlu_precision += 1;
+            }
+            return retval;
         }
 
         format->elf_value_def_read_order.resize(this->jlu_read_order_index);
@@ -1116,6 +1120,9 @@ struct json_log_userdata {
             format->elf_value_def_read_order.emplace_back(vd_iter->first,
                                                           vd_iter->second);
             this->jlu_read_order_index += 1;
+            if (vd_iter->second != nullptr) {
+                this->jlu_precision += 1;
+            }
             return vd_iter->second;
         }
 
@@ -1158,6 +1165,7 @@ struct json_log_userdata {
     std::stack<size_t> jlu_sub_start;
     uint32_t jlu_quality{0};
     uint32_t jlu_strikes{0};
+    uint32_t jlu_precision{0};
     std::vector<bool> jlu_format_hits;
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
@@ -1884,7 +1892,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
     if (jlu.jlu_quality > 0) {
         jlu.jlu_quality += 3000;
     }
-    return scan_match{jlu.jlu_quality, jlu.jlu_strikes};
+    return scan_match{jlu.jlu_quality, jlu.jlu_strikes, jlu.jlu_precision};
 }
 
 log_format::scan_result_t
@@ -2411,9 +2419,37 @@ external_log_format::annotate(logfile* lf,
         }
 
         if (cap) {
-            values.lvv_values.emplace_back(
-                vd.vd_meta, line, to_line_range(cap.value()));
-            values.lvv_values.back().apply_scaling(scaling);
+            if (vd.vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
+                auto dts = this->build_time_scanner();
+                exttm tm;
+                timeval tv;
+                auto val_sf = cap.value();
+
+                if (dts.scan(val_sf.data(),
+                             val_sf.length(),
+                             this->get_timestamp_formats(),
+                             &tm,
+                             tv,
+                             true))
+                {
+                    char ts[64];
+                    tm.et_gmtoff = tm.et_orig_gmtoff;
+                    auto len = dts.ftime(
+                        ts, sizeof(ts), this->get_timestamp_formats(), tm);
+                    ts[len] = '\0';
+                    values.lvv_values.emplace_back(vd.vd_meta,
+                                                   std::string{ts, len});
+                    values.lvv_values.back().lv_origin
+                        = to_line_range(cap.value());
+                } else {
+                    values.lvv_values.emplace_back(
+                        vd.vd_meta, line, to_line_range(cap.value()));
+                }
+            } else {
+                values.lvv_values.emplace_back(
+                    vd.vd_meta, line, to_line_range(cap.value()));
+                values.lvv_values.back().apply_scaling(scaling);
+            }
         } else {
             values.lvv_values.emplace_back(vd.vd_meta);
         }
@@ -2734,6 +2770,35 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
             std::string{time_buf});
+    } else if (vd != nullptr
+               && vd->vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP)
+    {
+        auto dts = jlu->jlu_format->build_time_scanner();
+        exttm tm;
+        timeval tv;
+
+        if (dts.scan((const char*) str,
+                     len,
+                     jlu->jlu_format->get_timestamp_formats(),
+                     &tm,
+                     tv,
+                     true))
+        {
+            char ts[64];
+            tm.et_gmtoff = tm.et_orig_gmtoff;
+            auto tslen = dts.ftime(
+                ts, sizeof(ts), jlu->jlu_format->get_timestamp_formats(), tm);
+            ts[tslen] = '\0';
+            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+                jlu->jlu_format->get_value_meta(
+                    ypc, vd, value_kind_t::VALUE_TIMESTAMP),
+                std::string{(const char*) ts, tslen});
+        } else {
+            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+                jlu->jlu_format->get_value_meta(
+                    ypc, vd, value_kind_t::VALUE_TEXT),
+                std::string{(const char*) str, len});
+        }
     } else if (jlu->jlu_shared_buffer.contains((const char*) str)) {
         auto str_offset = (int) ((const char*) str - jlu->jlu_line_value);
         if (field_name == jlu->jlu_format->elf_body_field) {
@@ -2958,31 +3023,6 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                          [lv_iter->lv_meta.lvm_values_index
                                               .value()]
                                              .get();
-                            }
-                            if (lv_iter->lv_meta.lvm_kind
-                                == value_kind_t::VALUE_TIMESTAMP)
-                            {
-                                auto dts = this->build_time_scanner();
-                                exttm tm;
-                                timeval tv;
-
-                                if (dts.scan(str.c_str(),
-                                             str.size(),
-                                             this->get_timestamp_formats(),
-                                             &tm,
-                                             tv,
-                                             true))
-                                {
-                                    char ts[64];
-                                    tm.et_gmtoff = tm.et_orig_gmtoff;
-                                    auto len = dts.ftime(
-                                        ts,
-                                        sizeof(ts),
-                                        this->get_timestamp_formats(),
-                                        tm);
-                                    ts[len] = '\0';
-                                    str = ts;
-                                }
                             }
                             while (endswith(str, "\n")) {
                                 str.pop_back();
@@ -3247,31 +3287,6 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 }
 
                 auto str = lv.to_string();
-                if (lv.lv_meta.lvm_kind
-                    == value_kind_t::VALUE_TIMESTAMP)
-                {
-                    auto dts = this->build_time_scanner();
-                    exttm tm;
-                    timeval tv;
-
-                    if (dts.scan(str.c_str(),
-                                 str.size(),
-                                 this->get_timestamp_formats(),
-                                 &tm,
-                                 tv,
-                                 true))
-                    {
-                        char ts[64];
-                        tm.et_gmtoff = tm.et_orig_gmtoff;
-                        auto len = dts.ftime(
-                            ts,
-                            sizeof(ts),
-                            this->get_timestamp_formats(),
-                            tm);
-                        ts[len] = '\0';
-                        str = ts;
-                    }
-                }
                 while (endswith(str, "\n")) {
                     str.pop_back();
                 }

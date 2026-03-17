@@ -268,13 +268,12 @@ grep_proc<LineType>::child_loop()
             }
         }
 
-        if (line != -1 && stop_line.ru_type == until_type_t::eof) {
+        if (line > 0 && stop_line.ru_type == until_type_t::eof) {
             // When scanning to the end of the source, we need to return the
             // highest line that was seen so that the next request that
             // continues from the end works properly.
             fmt::println(stdout, FMT_STRING("h{}"), line - 1);
         }
-        this->gp_highest_line = line - 1_vl;
         this->child_term();
     }
 }
@@ -315,16 +314,18 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
     auto sv = line.to_string_view();
     auto h_scan_res = scn::scan<int>(sv, "h{}");
     if (h_scan_res) {
-        this->gp_highest_line = LineType{h_scan_res->value()};
+        auto highest_line = LineType{h_scan_res->value()};
+        if (highest_line > this->gp_highest_line) {
+            this->gp_highest_line = highest_line;
+        }
     } else {
         auto ll_scan_res = scn::scan<int>(sv, "{}");
         if (ll_scan_res) {
-            this->gp_last_line = LineType{ll_scan_res->value()};
+            auto last_line = LineType{ll_scan_res->value()};
             /* Starting a new line with matches. */
-            ensure(this->gp_last_line >= 0);
             /* Pass the match offsets to the sink delegate. */
             if (this->gp_sink != nullptr) {
-                this->gp_sink->grep_match(*this, this->gp_last_line);
+                this->gp_sink->grep_match(*this, last_line);
             }
         } else {
             log_error(
@@ -452,6 +453,7 @@ grep_proc<LineType>::invalidate()
         }
     }
     this->gp_queue.clear();
+    this->gp_highest_line = LineType{0};
     this->cleanup();
     return *this;
 }

@@ -138,6 +138,12 @@ struct log_opid_state {
                                        const string_fragment& subid,
                                        const std::chrono::microseconds& us,
                                        log_level_t level);
+
+    void clear()
+    {
+        this->los_opid_ranges.clear();
+        this->los_sub_in_use.clear();
+    }
 };
 
 struct thread_id_time_range {
@@ -166,6 +172,8 @@ struct log_thread_id_state {
     log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
                                            const string_fragment& tid,
                                            const std::chrono::microseconds& us);
+
+    void clear() { this->ltis_tid_ranges.clear(); }
 };
 
 struct logline_value_stats {
