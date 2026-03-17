@@ -1132,12 +1132,15 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         al.with_attr_for_all(
                             VC_STYLE.value(text_attrs::with_italic()));
                         this->fos_static_lines.emplace_back(al);
+                        apply_status_attrs(this->fos_static_lines);
                     } else {
                         auto al = attr_line_t();
                         tc.textview_value_for_row(header_top, al);
                         this->fos_static_lines.emplace_back(al);
+                        if ((top - header_top) > 1 && line->is_continued()) {
+                            apply_status_attrs(this->fos_static_lines);
+                        }
                     }
-                    apply_status_attrs(this->fos_static_lines);
                     this->fos_header_line = cl;
                     this->fos_header_line_context
                         = this->fos_lss.get_line_context();
