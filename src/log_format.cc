@@ -1105,9 +1105,9 @@ struct json_log_userdata {
                     .first
                 == field_frag)
         {
-            auto retval = format
-                ->elf_value_def_read_order[this->jlu_read_order_index++]
-                .second;
+            auto retval
+                = format->elf_value_def_read_order[this->jlu_read_order_index++]
+                      .second;
             if (retval != nullptr) {
                 this->jlu_precision += 1;
             }
@@ -3080,8 +3080,9 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             } else {
                                 sub_offset
                                     += std::count(str.begin(), str.end(), '\n');
-                                if (vd->vd_meta.lvm_kind
-                                    == value_kind_t::VALUE_JSON)
+                                if (vd != nullptr
+                                    && vd->vd_meta.lvm_kind
+                                        == value_kind_t::VALUE_JSON)
                                 {
                                     auto json_al = attr_line_t();
                                     json_al.append(str);
