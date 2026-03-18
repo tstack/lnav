@@ -62,15 +62,7 @@ parts:
       ${CRAFT_PROJECT_DIR}/snap/local/scriptlets/selective-checkout --force-snapshot
     override-build: |
       craftctl default
-      # Get the machine architecture
-      ARCH=$(uname -m)
-      # Check if the architecture is x86_64 (amd64)
-      if [ "$ARCH" = "x86_64" ]; then
-        echo "Architecture $ARCH confirmed. Running execstack..."
-        execstack --clear-execstack $SNAPCRAFT_PART_INSTALL/usr/bin/lnav
-      else
-        echo "Skipping: execstack is not supported on $ARCH architecture."
-      fi
+      execstack --clear-execstack $SNAPCRAFT_PART_INSTALL/usr/bin/lnav || true
     build-packages:
       - git
       - curl
