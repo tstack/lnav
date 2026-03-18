@@ -558,8 +558,7 @@ private:
     std::string lf_content_id;
     struct stat lf_stat{};
     std::shared_ptr<log_format> lf_format;
-    uint32_t lf_format_quality{0};
-    uint32_t lf_format_precision{0};
+    log_format_scan_match lf_format_match;
     std::vector<logline> lf_index;
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};

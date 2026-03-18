@@ -158,11 +158,7 @@ public:
         return name_matched{};
     }
 
-    struct scan_match {
-        uint32_t sm_quality{0};
-        uint32_t sm_strikes{0};
-        uint32_t sm_precision{0};
-    };
+    using scan_match = log_format_scan_match;
 
     struct scan_error {
         std::string se_message;

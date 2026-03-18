@@ -842,12 +842,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                .get_time<std::chrono::microseconds>();
         }
         if (this->lf_format != nullptr) {
-            best_match = std::make_pair(this->lf_format.get(),
-                                        log_format::scan_match{
-                                            this->lf_format_quality,
-                                            0,
-                                            this->lf_format_precision,
-                                        });
+            best_match
+                = std::make_pair(this->lf_format.get(), this->lf_format_match);
         }
 
         /*
@@ -961,23 +957,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             sm.sm_quality,
                             sm.sm_precision,
                             sm.sm_strikes);
-                        if (sm.sm_quality > this->lf_format_quality) {
-                            this->lf_format_quality = sm.sm_quality;
-                        }
-                        if (sm.sm_precision > this->lf_format_precision) {
-                            this->lf_format_precision = sm.sm_precision;
-                        }
+                        this->lf_format_match.merge_best(sm);
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;
                     } else if (!best_match
-                               || (sm.sm_quality > best_match->second.sm_quality
-                                   || (sm.sm_quality
-                                           == best_match->second.sm_quality
-                                       && (sm.sm_precision
-                                               > best_match->second.sm_precision
-                                           || sm.sm_strikes
-                                               < best_match->second
-                                                     .sm_strikes))))
+                               || sm.is_better_than(best_match->second))
                     {
                         log_info(
                             "  scan with format (%s) matched with quality of "
@@ -1093,9 +1077,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             && (this->lf_format == nullptr
                 || ((this->lf_format->lf_root_format
                      != best_match->first->lf_root_format)
-                    && (best_match->second.sm_quality > this->lf_format_quality
-                        || best_match->second.sm_precision
-                            > this->lf_format_precision))))
+                    && best_match->second.is_better_than(
+                        this->lf_format_match))))
         {
             auto winner = best_match.value();
             auto* curr = winner.first;
@@ -1122,8 +1105,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 }
                 this->lf_level_stats.update_msg_count(ll.get_msg_level());
             }
-            this->lf_format_quality = winner.second.sm_quality;
-            this->lf_format_precision = winner.second.sm_precision;
+            this->lf_format_match = winner.second;
             this->set_format_base_time(this->lf_format.get(), li);
             if (this->lf_format->lf_date_time.dts_fmt_lock != -1) {
                 this->lf_content_id

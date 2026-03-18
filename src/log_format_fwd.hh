@@ -713,4 +713,36 @@ struct logline_value_vector {
     std::optional<std::string> lvv_thread_id_value;
 };
 
+struct log_format_scan_match {
+    uint32_t sm_quality{0};
+    uint32_t sm_strikes{0};
+    uint32_t sm_precision{0};
+
+    // Higher quality wins, then higher precision, then fewer strikes.
+    bool is_better_than(const log_format_scan_match& other) const
+    {
+        if (this->sm_quality != other.sm_quality) {
+            return this->sm_quality > other.sm_quality;
+        }
+        if (this->sm_precision != other.sm_precision) {
+            return this->sm_precision > other.sm_precision;
+        }
+        return this->sm_strikes < other.sm_strikes;
+    }
+
+    // Take the best of each field independently.
+    void merge_best(const log_format_scan_match& other)
+    {
+        if (other.sm_quality > this->sm_quality) {
+            this->sm_quality = other.sm_quality;
+        }
+        if (other.sm_precision > this->sm_precision) {
+            this->sm_precision = other.sm_precision;
+        }
+        if (other.sm_strikes < this->sm_strikes) {
+            this->sm_strikes = other.sm_strikes;
+        }
+    }
+};
+
 #endif
