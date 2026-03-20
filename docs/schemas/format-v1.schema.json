@@ -179,6 +179,11 @@
                     "description": "The name of the source line field in the log message pattern",
                     "type": "string"
                 },
+                "src-location-field": {
+                    "title": "/<format_name>/src-location-field",
+                    "description": "The name of the field that contains the source file and line number",
+                    "type": "string"
+                },
                 "duration-field": {
                     "title": "/<format_name>/duration-field",
                     "description": "The name of the duration field in the log message pattern",

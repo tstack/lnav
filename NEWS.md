@@ -82,9 +82,9 @@ Features:
     statements.
   - Log formats can now specify source file/line and
     thread ID with the `src-file-field`, `src-line-field`,
-    and `thread-id-field` properties. These fields can
-    then be accessed in the SQL vtables as `log_src_file`,
-    `log_src_line`, and `log_thread_id`.
+    `src-location-field`, and `thread-id-field` properties.
+    These fields can then be accessed in the SQL vtables
+    as `log_src_file`, `log_src_line`, and `log_thread_id`.
   - The `:breakpoint`, `:toggle-breakpoint`, and
     `:clear-breakpoints` commands have been added to
     support setting/clearing breakpoints for log messages.

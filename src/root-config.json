@@ -147,6 +147,12 @@
         },
         "external-editor": {
             "impls": {
+                "IntelliJ": {
+                    "config-dir": ".idea",
+                    "prefers": "^.*(?:\\.java|\\.kt)$",
+                    "test": "command -v idea",
+                    "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\""
+                },
                 "CLion": {
                     "config-dir": ".idea",
                     "test": "command -v clion",

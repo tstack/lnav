@@ -1070,6 +1070,10 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the source line field in the log message pattern")
         .for_field(&external_log_format::elf_src_line_field),
+    json_path_handler("src-location-field")
+        .with_description("The name of the field that contains the source file "
+                          "and line number")
+        .for_field(&external_log_format::elf_src_loc_field),
     json_path_handler("duration-field")
         .with_description(
             "The name of the duration field in the log message pattern")

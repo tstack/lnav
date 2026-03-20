@@ -3115,6 +3115,31 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
+                                       == this->elf_src_loc_field)
+                            {
+                                size_t digits = 0;
+                                for (auto str_iter = str.rbegin();
+                                     str_iter != str.rend();
+                                     ++str_iter)
+                                {
+                                    if (isdigit(*str_iter)) {
+                                        digits += 1;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                auto diff = str.size() - digits;
+                                auto file_lr = lr;
+                                file_lr.lr_end -= digits + 1;
+                                auto line_lr = lr;
+                                line_lr.lr_start += diff;
+                                this->jlf_attr_line.al_attrs.emplace_back(
+                                    lr, SA_SRC_LOC.value());
+                                this->jlf_attr_line.al_attrs.emplace_back(
+                                    file_lr, SA_SRC_FILE.value());
+                                this->jlf_attr_line.al_attrs.emplace_back(
+                                    line_lr, SA_SRC_LINE.value());
+                            } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_file_field)
                             {
                                 this->jlf_attr_line.al_attrs.emplace_back(
