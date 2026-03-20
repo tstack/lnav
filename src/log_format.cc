@@ -5135,14 +5135,6 @@ external_log_format::value_line_count(scan_batch_context& sbc,
 {
     value_line_count_result retval;
 
-    if (vd == nullptr) {
-        if (this->jlf_hide_extra || !top_level) {
-            retval.vlcr_count = 0;
-        }
-
-        return retval;
-    }
-
     if (str != nullptr && props != nullptr && !val) {
         auto frag = string_fragment::from_bytes(str, len);
         while (frag.endswith("\n")) {
@@ -5151,6 +5143,14 @@ external_log_format::value_line_count(scan_batch_context& sbc,
         }
         retval.vlcr_has_ansi |= props->has_ansi;
         retval.vlcr_count += props->line_feeds;
+    }
+
+    if (vd == nullptr) {
+        if (this->jlf_hide_extra || !top_level) {
+            retval.vlcr_count = 0;
+        }
+
+        return retval;
     }
 
     if (vd->vd_meta.lvm_values_index) {
