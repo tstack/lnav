@@ -12,4 +12,4 @@ log_line,log_time,log_level,arr,obj,logger,lvl,user,log_part,log_idle_msecs,log_
 20,2013-09-06 22:01:49.124817,warning,<NULL>,<NULL>,<NULL>,WARNING,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
 22,2013-09-06 22:01:49.124817,error,<NULL>,<NULL>,<NULL>,ERROR,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
 24,2013-09-06 22:01:49.124817,critical,<NULL>,<NULL>,<NULL>,CRITICAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-26,2013-09-06 22:01:49.124817,fatal,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>,FATAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+30,2013-09-06 22:01:49.124817,fatal,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>,FATAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
