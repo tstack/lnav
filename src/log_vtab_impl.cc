@@ -2159,13 +2159,13 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             if (!vl_opt) {
 #ifdef DEBUG_INDEXING
                 log_warning("cannot find row with begin time: %d",
-                            log_time_range->vtr_begin.value().tv_sec);
+                            log_time_range->vtr_begin.value().count());
 #endif
                 p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
             } else {
 #ifdef DEBUG_INDEXING
                 log_debug("found row with begin time: %d -> %d",
-                          log_time_range->vtr_begin.value(),
+                          log_time_range->vtr_begin.value().count(),
                           vl_opt.value());
 #endif
                 p_cur->log_cursor.lc_curr_line = vl_opt.value();
