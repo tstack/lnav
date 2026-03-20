@@ -129,6 +129,12 @@
                     "config-dir": ".idea",
                     "prefers": ""
                 },
+                "IntelliJ": {
+                    "test": "command -v idea",
+                    "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\"",
+                    "config-dir": ".idea",
+                    "prefers": "^.*(?:\\.java|\\.kt)$"
+                },
                 "RustRover": {
                     "test": "command -v rustrover",
                     "command": "rustrover --line ${LINE} --column ${COL} \"$FILE_PATH\"",
