@@ -616,7 +616,7 @@ attr_line_t::subline(size_t start, size_t len) const
                                      std::make_pair(sa.sa_type, sa.sa_value));
         const auto& last_lr = retval.al_attrs.back().sa_range;
 
-        ensure(last_lr.lr_end <= (int) retval.al_string.length());
+        require_ge((int) retval.al_string.length(), last_lr.lr_end);
     }
 
     return retval;
@@ -907,9 +907,9 @@ line_range::shift(int32_t start, int32_t amount)
             this->lr_end = std::max(0, this->lr_end + amount);
         }
     } else if (this->lr_end != -1) {
-        if (start < this->lr_end) {
+        if (start <= this->lr_end) {
             if (amount < 0 && amount < (start - this->lr_end)) {
-                this->lr_end = start;
+                this->lr_end = start + amount;
             } else {
                 this->lr_end = std::max(this->lr_start, this->lr_end + amount);
             }

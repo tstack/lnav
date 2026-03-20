@@ -411,7 +411,7 @@ open_pretty_view()
 
         for (auto vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             auto cl = lss.at(vl);
-            auto lf = lss.find_file_ptr(cl);
+            auto* lf = lss.find_file_ptr(cl);
             auto ll = lf->begin() + cl;
 
             if (line_count > 0_vl && !ll->is_message()) {
@@ -456,6 +456,7 @@ open_pretty_view()
                 const auto orig_lr
                     = find_string_attr_range(al.get_attrs(), &SA_ORIGINAL_LINE);
                 require(orig_lr.is_valid());
+                require_ge(al.al_string.length(), orig_lr.lr_end);
             }
             scrub_ansi_string(al.get_string(), &al.get_attrs());
             if (log_tc->get_hide_fields()) {
@@ -465,6 +466,7 @@ open_pretty_view()
             const auto orig_lr
                 = find_string_attr_range(al.get_attrs(), &SA_ORIGINAL_LINE);
             require(orig_lr.is_valid());
+            require_ge(al.al_string.length(), orig_lr.lr_end);
             const auto body_lr
                 = find_string_attr_range(al.get_attrs(), &SA_BODY);
             auto orig_al = al.subline(orig_lr.lr_start, orig_lr.length());
