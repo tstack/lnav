@@ -461,8 +461,8 @@ view_curses::mvwattrline(ncplane* window,
     for (auto iter = sa.cbegin(); iter != sa.cend(); ++iter) {
         auto attr_range = iter->sa_range;
 
-        require(attr_range.lr_start >= 0);
-        require(attr_range.lr_end >= -1);
+        require_ge(attr_range.lr_start, 0);
+        require_ge(attr_range.lr_end, -1);
 
         if (!(iter->sa_type == &VC_ROLE || iter->sa_type == &VC_ROLE_FG
               || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC

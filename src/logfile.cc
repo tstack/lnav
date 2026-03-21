@@ -1781,6 +1781,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     this->get_content_size());
 
                 if (indexing_res == lnav::progress_result_t::interrupt) {
+                    log_debug("indexing interrupted");
                     break;
                 }
             }
@@ -2297,15 +2298,15 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
         if (retval > 0 && !this->lf_partial_line) {
             retval -= 1;
         }
+        require_ge(retval, 0);
     } else {
         retval = next_line->get_offset() - ll->get_offset() - 1;
         if (!include_continues) {
             this->lf_next_line_cache
                 = std::make_optional(std::make_pair(ll->get_offset(), retval));
         }
+        require_ge(retval, 0);
     }
-
-    require_ge(retval, 0);
 
     return {retval, line_count, meta};
 }

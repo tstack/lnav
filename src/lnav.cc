@@ -988,6 +988,7 @@ struct refresh_status_bars {
     {
         static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
         static auto& prompt = lnav::prompt::get();
+        static auto& exec_phase = injector::get<lnav::exec_phase&>();
         static const auto cancel_msg
             = lnav::console::user_message::info(
                   attr_line_t("performing operation, press ")
@@ -1003,33 +1004,33 @@ struct refresh_status_bars {
         }
 
         gettimeofday(&current_time, nullptr);
-        while (notcurses_get_nblock(this->rsb_screen->get_notcurses(), &ch) > 0)
-        {
-            lnav_data.ld_user_message_source.clear();
+        auto time_diff = current_time - this->rsb_last_loop_read_time;
+        if (to_us(time_diff) > (exec_phase.interactive() ? 100ms : 2s)) {
+            while (notcurses_get_nblock(this->rsb_screen->get_notcurses(), &ch)
+                   > 0)
+            {
+                lnav_data.ld_user_message_source.clear();
+                if ((!exec_phase.interactive() && ch.id == 'q')
+                    || (ncinput_ctrl_p(&ch) && ch.id == ']'))
+                {
+                    lnav_data.ld_bottom_source.update_loading(0, 0);
+                    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+                    retval = lnav::progress_result_t::interrupt;
+                } else {
+                    log_warning(
+                        "ignoring input while refreshing status bars: %x",
+                        ch.id);
+                }
 
-            alerter::singleton().new_input(ch);
+                ncinput_free_paste_content(&ch);
 
-            lnav_data.ld_input_dispatcher.new_input(
-                current_time, this->rsb_screen->get_notcurses(), ch);
-
-            lnav_data.ld_view_stack.top() | [ch](auto tc) {
-                lnav_data.ld_key_repeat_history.update(ch.id, tc->get_top());
-            };
-
-            if (ncinput_ctrl_p(&ch) && ch.id == ']') {
-                lnav_data.ld_bottom_source.update_loading(0, 0);
-                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-                retval = lnav::progress_result_t::interrupt;
-            }
-
-            ncinput_free_paste_content(&ch);
-
-            if (!lnav_data.ld_looping) {
-                // No reason to keep processing input after the
-                // user has quit.  The view stack will also be
-                // empty, which will cause issues.
-                retval = lnav::progress_result_t::interrupt;
-                break;
+                if (!lnav_data.ld_looping) {
+                    // No reason to keep processing input after the
+                    // user has quit.  The view stack will also be
+                    // empty, which will cause issues.
+                    retval = lnav::progress_result_t::interrupt;
+                    break;
+                }
             }
         }
 
@@ -1084,6 +1085,7 @@ struct refresh_status_bars {
 
     screen_curses* rsb_screen;
     std::shared_ptr<top_status_source> rsb_top_source;
+    timeval rsb_last_loop_read_time{0};
 };
 
 static void
@@ -2274,6 +2276,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         gettimeofday(&current_time, nullptr);
         ui_now = ui_clock::now();
         lb.tick(current_time);
+        refresher->rsb_last_loop_read_time = current_time;
 
         got_user_input = false;
         if (rc < 0) {

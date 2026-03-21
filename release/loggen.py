@@ -211,7 +211,7 @@ FILES = [
 ]
 
 COUNTER = 0
-while COUNTER < 5000:
+while COUNTER < 500000:
     loop_inc = datetime.timedelta(seconds=random.weibullvariate(1, 1.5) * 500)
     ACCESS_LOG_CURR_TIME += loop_inc
     SYSLOG_LOG_CURR_TIME += loop_inc
@@ -230,6 +230,6 @@ while COUNTER < 5000:
                     fp.write(next(gen))
                 # if random.uniform(0.0, 1.0) < 0.010:
                 #    fp.truncate(0)
-            time.sleep(random.uniform(0.01, 0.02))
+            time.sleep(random.uniform(0.0001, 0.0002))
             # if random.uniform(0.0, 1.0) < 0.001:
             #    os.remove(fname)

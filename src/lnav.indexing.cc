@@ -215,8 +215,15 @@ rebuild_indexes_result_t
 rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
     static auto op = lnav_operation{"rebuild_indexes"};
-
     static auto& exec_phase = injector::get<lnav::exec_phase&>();
+    thread_local size_t rdepth;
+
+    if (rdepth > 0) {
+        log_warning("skipping nested rebuild");
+        return {0, false, true};
+    }
+
+    auto recurse_guard = lnav::recursion_preventer{&rdepth};
     auto op_guard = lnav_opid_guard::internal(op);
 
     auto& lss = lnav_data.ld_log_source;
@@ -484,6 +491,14 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 void
 rebuild_indexes_repeatedly()
 {
+    thread_local size_t rdepth;
+
+    if (rdepth > 0) {
+        log_warning("skipping nested rebuild");
+        return;
+    }
+
+    auto recurse_guard = lnav::recursion_preventer{&rdepth};
     for (size_t attempt = 0; attempt < 50; attempt++) {
         auto rebuild_res = rebuild_indexes();
         if (!rebuild_res.rir_completed) {

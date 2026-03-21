@@ -48,6 +48,27 @@ struct guard_helper {
     bool gh_enabled{true};
 };
 
+struct recursion_preventer : guard_helper {
+    explicit recursion_preventer(size_t* depth) : rp_depth(depth)
+    {
+        *rp_depth += 1;
+    }
+
+    recursion_preventer(const recursion_preventer&) = delete;
+    recursion_preventer& operator=(const recursion_preventer&) = delete;
+    recursion_preventer& operator=(recursion_preventer&&) = default;
+    recursion_preventer(recursion_preventer&&) = default;
+
+    ~recursion_preventer()
+    {
+        if (this->gh_enabled) {
+            *rp_depth -= 1;
+        }
+    }
+
+    size_t* rp_depth{nullptr};
+};
+
 }  // namespace lnav
 
 #endif

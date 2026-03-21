@@ -2393,6 +2393,7 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                     return;
                 }
 
+                log_error("  property path: %s", path.c_str());
                 auto loc_iter
                     = lnav_config_locations.find(intern_string::lookup(path));
                 auto has_loc = loc_iter != lnav_config_locations.end();
