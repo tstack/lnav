@@ -907,7 +907,7 @@ line_range::shift(int32_t start, int32_t amount)
             this->lr_end = std::max(0, this->lr_end + amount);
         }
     } else if (this->lr_end != -1) {
-        if (start <= this->lr_end) {
+        if (start < this->lr_end) {
             if (amount < 0 && amount < (start - this->lr_end)) {
                 this->lr_end = start + amount;
             } else {

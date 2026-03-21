@@ -49,6 +49,18 @@ main(int argc, char* argv[])
     printf("BEGIN test\n");
 
     {
+        auto input = std::string("\x1b[33mHello\x1b[0m");
+        string_attrs_t sa;
+
+        auto lr = line_range{0, (int) input.size()};
+        sa.emplace_back(lr, SA_ORIGINAL_LINE.value());
+
+        scrub_ansi_string(input, &sa);
+        assert(sa[0].sa_range.lr_end == input.size());
+        assert("Hello" == input);
+    }
+
+    {
         auto input = std::string("\0Hello", 6);
         string_attrs_t sa;
 

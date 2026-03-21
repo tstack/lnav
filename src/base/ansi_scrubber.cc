@@ -465,7 +465,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         }
         if (md[1] || md[3] || md[5]) {
             if (sa != nullptr) {
-                shift_string_attrs(*sa, sf.sf_begin, -sf.length());
+                shift_string_attrs(*sa, sf.sf_begin - erased, -sf.length());
                 if (has_attrs) {
                     for (auto tmp_sa_curr = tmp_sa_open;
                          tmp_sa_curr < tmp_sa.size();
