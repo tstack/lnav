@@ -151,7 +151,9 @@ $(srcdir)/third-party/lnav-rs-ext/lnav_rs_ext.cxx.cc: $(srcdir)/third-party/lnav
 	(cd $(srcdir)/third-party/lnav-rs-ext/ && $(CXXBRIDGE) src/lib.rs) > $@
 endif
 
-$(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs $(srcdir)/third-party/lnav-rs-ext/src/ext_access.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/lnav-rs-ext/src/lib.rs \
+  $(srcdir)/third-party/lnav-rs-ext/src/ext_access.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.lock \
+  $(srcdir)/third-party/lnav-rs-ext/src/ext_access.rs $(srcdir)/third-party/lnav-rs-ext/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
 	env CARGO_TARGET_DIR=third-party/lnav-rs-ext/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
