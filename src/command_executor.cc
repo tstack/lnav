@@ -1009,7 +1009,7 @@ execute_init_commands(
                     setup_initial_view_stack();
                 }
 
-                lnav::progress_tracker::instance().wait_for_completion();
+                lnav::progress_tracker::instance().wait_for_completion(&lnav_data.ld_status_refresher);
             }
         }
     }

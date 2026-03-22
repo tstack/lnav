@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "distributed_slice.hh"
+#include "func_util.hh"
 #include "lnav.console.hh"
 #include "safe/safe.h"
 
@@ -51,6 +52,67 @@ enum class progress_status_t : uint8_t {
     idle,
     working,
 };
+
+namespace func {
+
+enum class op_type {
+    blocking,
+    interactive,
+};
+
+class scoped_cb {
+public:
+    using callback_type = std::function<progress_result_t(op_type)>;
+
+    class guard {
+    public:
+        explicit guard(scoped_cb* owner) : g_owner(owner) {}
+
+        guard(const guard&) = delete;
+        guard& operator=(const guard&) = delete;
+
+        guard(guard&& gu) noexcept : g_owner(std::exchange(gu.g_owner, nullptr))
+        {
+        }
+
+        guard& operator=(guard&& gu) noexcept
+        {
+            this->g_owner = std::exchange(gu.g_owner, nullptr);
+            return *this;
+        }
+
+        ~guard()
+        {
+            if (this->g_owner != nullptr) {
+                this->g_owner->s_callback = {};
+            }
+        }
+
+    private:
+        scoped_cb* g_owner;
+    };
+
+    guard install(callback_type cb)
+    {
+        this->s_callback = std::move(cb);
+
+        return guard{this};
+    }
+
+    progress_result_t operator()(op_type ot) const
+    {
+        if (s_callback) {
+            return s_callback(ot);
+        }
+
+        return progress_result_t::ok;
+    }
+
+private:
+    callback_type s_callback;
+};
+
+}  // namespace func
 
 struct task_progress {
     std::string tp_id;
@@ -73,7 +135,7 @@ struct progress_tracker {
 
     static safe_task_container& get_tasks();
 
-    void wait_for_completion();
+    void wait_for_completion(func::scoped_cb* scoped_cb);
 
     void notify_completion();
 

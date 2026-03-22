@@ -29,6 +29,8 @@
 
 #include "progress.hh"
 
+using namespace std::chrono_literals;
+
 namespace lnav {
 
 progress_tracker&
@@ -46,7 +48,7 @@ progress_tracker::get_tasks()
 }
 
 void
-progress_tracker::wait_for_completion()
+progress_tracker::wait_for_completion(func::scoped_cb* scoped_cb)
 {
     std::unique_lock<std::mutex> lock(this->pt_mutex);
 
@@ -65,9 +67,12 @@ progress_tracker::wait_for_completion()
     }
 
     auto init_version = this->pt_version;
-    this->pt_cv.wait(lock, [&] {
-        return this->pt_abort || init_version != this->pt_version;
-    });
+    while (!this->pt_abort && init_version == this->pt_version) {
+        this->pt_cv.wait_for(lock, 100ms);
+        if (scoped_cb != nullptr) {
+            (*scoped_cb)(func::op_type::blocking);
+        }
+    }
 }
 
 void

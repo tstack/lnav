@@ -33,8 +33,6 @@
 #include <functional>
 #include <utility>
 
-#include "progress.hh"
-
 template<typename F, typename FrontArg>
 decltype(auto)
 bind_mem(F&& f, FrontArg&& frontArg)
@@ -68,63 +66,6 @@ struct noop_func {
 };
 
 namespace lnav::func {
-
-enum class op_type {
-    blocking,
-    interactive,
-};
-
-class scoped_cb {
-public:
-    using callback_type = std::function<progress_result_t(op_type)>;
-
-    class guard {
-    public:
-        explicit guard(scoped_cb* owner) : g_owner(owner) {}
-
-        guard(const guard&) = delete;
-        guard& operator=(const guard&) = delete;
-
-        guard(guard&& gu) noexcept : g_owner(std::exchange(gu.g_owner, nullptr))
-        {
-        }
-
-        guard& operator=(guard&& gu) noexcept
-        {
-            this->g_owner = std::exchange(gu.g_owner, nullptr);
-            return *this;
-        }
-
-        ~guard()
-        {
-            if (this->g_owner != nullptr) {
-                this->g_owner->s_callback = {};
-            }
-        }
-
-    private:
-        scoped_cb* g_owner;
-    };
-
-    guard install(callback_type cb)
-    {
-        this->s_callback = std::move(cb);
-
-        return guard{this};
-    }
-
-    progress_result_t operator()(op_type ot) const
-    {
-        if (s_callback) {
-            return s_callback(ot);
-        }
-
-        return progress_result_t::ok;
-    }
-
-private:
-    callback_type s_callback;
-};
 
 template<typename Fn,
          typename... Args,
