@@ -310,6 +310,26 @@ logfile::file_options_have_changed()
     return tz_changed;
 }
 
+void
+logfile::reset_internal_state_for_reindex()
+{
+    this->lf_index.clear();
+    this->lf_index_size = 0;
+    this->lf_level_stats = {};
+    this->lf_partial_line = false;
+    this->lf_longest_line = 0;
+    this->lf_sort_needed = true;
+    this->lf_out_of_time_order_count = 0;
+    this->lf_pattern_locks.pl_lines.clear();
+    this->lf_value_stats.clear();
+    this->lf_opids.writeAccess()->clear();
+    this->lf_thread_ids.writeAccess()->clear();
+    this->lf_allocator.reset();
+    if (this->lf_logline_observer) {
+        this->lf_logline_observer->logline_clear(*this);
+    }
+}
+
 logfile::map_entry_result
 logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
 {
@@ -1155,15 +1175,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             }
 
             if (format_changed) {
-                this->lf_index_size = 0;
-                this->lf_level_stats = log_level_stats{};
-                this->lf_longest_line = 0;
-                this->lf_out_of_time_order_count = 0;
-                this->lf_opids.writeAccess()->clear();
-                this->lf_thread_ids.writeAccess()->clear();
-                this->lf_value_stats.clear();
-                this->lf_pattern_locks.pl_lines.clear();
-                this->lf_index.clear();
+                this->reset_internal_state_for_reindex();
                 retval = true;
             } else {
                 /*
@@ -1361,29 +1373,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     {
         log_info("%s: format has changed, rebuilding",
                  this->lf_filename_as_string.c_str());
-        this->lf_index.clear();
-        this->lf_index_size = 0;
-        this->lf_partial_line = false;
-        this->lf_longest_line = 0;
-        this->lf_sort_needed = true;
-        this->lf_pattern_locks.pl_lines.clear();
-        this->lf_value_stats.clear();
-        {
-            safe::WriteAccess<safe_opid_state> writable_opid_map(
-                this->lf_opids);
-
-            writable_opid_map->los_opid_ranges.clear();
-            writable_opid_map->los_sub_in_use.clear();
-        }
-        {
-            auto tids = this->lf_thread_ids.writeAccess();
-
-            tids->ltis_tid_ranges.clear();
-        }
-        this->lf_allocator.reset();
-        if (this->lf_logline_observer) {
-            this->lf_logline_observer->logline_clear(*this);
-        }
+        this->reset_internal_state_for_reindex();
     }
     this->lf_zoned_to_local_state = dts_cfg.c_zoned_to_local;
 

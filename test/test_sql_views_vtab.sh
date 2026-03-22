@@ -128,6 +128,12 @@ view_name,filter_id,hits
 log,1,2
 EOF
 
+run_cap_test ${lnav_test} -n \
+    -c ":filter-in hello" \
+    -c ";SELECT * FROM lnav_view_filter_stats" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_filter.1
+
 run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters (view_name, language, pattern) VALUES ('log', 'sql', ':sc_bytes = 134')" \
     ${test_dir}/logfile_access_log.0

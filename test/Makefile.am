@@ -359,6 +359,7 @@ dist_noinst_DATA = \
 	logfile_epoch.0 \
 	logfile_epoch.1 \
 	logfile_filter.0 \
+	logfile_filter.1 \
 	logfile_for_join.0 \
 	logfile_generic.0 \
 	logfile_generic.1 \

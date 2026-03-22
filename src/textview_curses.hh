@@ -84,8 +84,10 @@ public:
     int tfs_filter_hits[MAX_FILTERS];
     bool tfs_message_matched[MAX_FILTERS];
     size_t tfs_lines_for_message[MAX_FILTERS];
+    size_t tfs_hits_for_message[MAX_FILTERS];
     bool tfs_last_message_matched[MAX_FILTERS];
     size_t tfs_last_lines_for_message[MAX_FILTERS];
+    size_t tfs_last_hits_for_message[MAX_FILTERS];
     std::vector<uint32_t> tfs_mask;
     std::vector<uint32_t> tfs_index;
 };

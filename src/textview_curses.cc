@@ -58,6 +58,8 @@ text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
         = lfs.tfs_last_message_matched[this->lf_index];
     lfs.tfs_lines_for_message[this->lf_index]
         = lfs.tfs_last_lines_for_message[this->lf_index];
+    lfs.tfs_hits_for_message[this->lf_index]
+        = lfs.tfs_last_hits_for_message[this->lf_index];
 
     for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++)
     {
@@ -92,6 +94,9 @@ text_filter::add_line(logfile_filter_state& lfs,
     lfs.tfs_message_matched[this->lf_index]
         = lfs.tfs_message_matched[this->lf_index] || retval;
     lfs.tfs_lines_for_message[this->lf_index] += 1;
+    if (retval) {
+        lfs.tfs_hits_for_message[this->lf_index] += 1;
+    }
 
     return retval;
 }
@@ -117,16 +122,18 @@ text_filter::end_of_message(logfile_filter_state& lfs)
             lfs.tfs_mask[line_number] &= ~mask;
         }
         lfs.tfs_filter_count[this->lf_index] += 1;
-        if (lfs.tfs_message_matched[this->lf_index]) {
-            lfs.tfs_filter_hits[this->lf_index] += 1;
-        }
     }
+    lfs.tfs_filter_hits[this->lf_index]
+        += lfs.tfs_hits_for_message[this->lf_index];
     lfs.tfs_last_message_matched[this->lf_index]
         = lfs.tfs_message_matched[this->lf_index];
     lfs.tfs_last_lines_for_message[this->lf_index]
         = lfs.tfs_lines_for_message[this->lf_index];
+    lfs.tfs_last_hits_for_message[this->lf_index]
+        = lfs.tfs_hits_for_message[this->lf_index];
     lfs.tfs_message_matched[this->lf_index] = false;
     lfs.tfs_lines_for_message[this->lf_index] = 0;
+    lfs.tfs_hits_for_message[this->lf_index] = 0;
 }
 
 void
@@ -1604,6 +1611,7 @@ logfile_filter_state::logfile_filter_state(std::shared_ptr<logfile> lf)
     memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
     memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
     memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+    memset(this->tfs_hits_for_message, 0, sizeof(this->tfs_hits_for_message));
     memset(this->tfs_last_message_matched,
            0,
            sizeof(this->tfs_last_message_matched));
@@ -1623,10 +1631,12 @@ logfile_filter_state::clear()
 void
 logfile_filter_state::clear_for_rebuild()
 {
+    log_debug("clearing filter state");
     memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
     memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
     memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
     memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+    memset(this->tfs_hits_for_message, 0, sizeof(this->tfs_hits_for_message));
     memset(this->tfs_last_message_matched,
            0,
            sizeof(this->tfs_last_message_matched));
@@ -1644,6 +1654,7 @@ logfile_filter_state::clear_filter_state(size_t index)
     this->tfs_filter_hits[index] = 0;
     this->tfs_message_matched[index] = false;
     this->tfs_lines_for_message[index] = 0;
+    this->tfs_hits_for_message[index] = 0;
     this->tfs_last_message_matched[index] = false;
     this->tfs_last_lines_for_message[index] = 0;
 }

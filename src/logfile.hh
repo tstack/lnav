@@ -547,6 +547,8 @@ private:
 
     bool file_options_have_changed();
 
+    void reset_internal_state_for_reindex();
+
     std::filesystem::path lf_filename;
     std::string lf_filename_as_string;
     logfile_open_options lf_options;
