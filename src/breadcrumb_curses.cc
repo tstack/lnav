@@ -171,8 +171,8 @@ breadcrumb_curses::reload_data()
         if (found_poss_opt) {
             selected_value = std::distance(this->bc_similar_values.begin(),
                                            found_poss_opt.value());
-        } else {
-            selected_value = std::nullopt;
+        } else if (!this->bc_current_search.empty()) {
+            selected_value = 0;
         }
     }
 
