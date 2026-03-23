@@ -1406,6 +1406,8 @@ dist_noinst_DATA = \
     test_sql_views_vtab.sh_a7a7fd577f710aa8b0ad5a94fdfb35daea75e06c.out \
     test_sql_views_vtab.sh_ac1f6e9a88608ef8939f9c2f7061a25a86742d46.err \
     test_sql_views_vtab.sh_ac1f6e9a88608ef8939f9c2f7061a25a86742d46.out \
+    test_sql_views_vtab.sh_ac3dccf64da73926e1b01afefc9e64f14648d784.err \
+    test_sql_views_vtab.sh_ac3dccf64da73926e1b01afefc9e64f14648d784.out \
     test_sql_views_vtab.sh_ade121f29bedea0d1a54452cc994b2302ad9dabb.err \
     test_sql_views_vtab.sh_ade121f29bedea0d1a54452cc994b2302ad9dabb.out \
     test_sql_views_vtab.sh_c851bdf3ba2f56fac5a216457b2d11a109e77f03.err \
