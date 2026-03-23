@@ -172,7 +172,7 @@ breadcrumb_curses::reload_data()
             selected_value = std::distance(this->bc_similar_values.begin(),
                                            found_poss_opt.value());
         } else {
-            selected_value = 0;
+            selected_value = std::nullopt;
         }
     }
 
