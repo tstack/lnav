@@ -34,6 +34,8 @@
 
 #include "date_time_scanner.hh"
 
+#include <time.h>
+
 #include "config.h"
 #include "date_time_scanner.cfg.hh"
 #include "humanize.time.hh"
@@ -458,6 +460,12 @@ point::from(string_fragment in, std::optional<timeval> ref_point)
         timeval tv_abs;
         exttm tm;
 
+        {
+            auto curr_time = ::time(nullptr);
+            struct tm base_tm;
+            localtime_r(&curr_time, &base_tm);
+            dts.set_base_time(curr_time, base_tm);
+        }
         auto scan_end = dts.scan(in.data(), in.length(), nullptr, &tm, tv_abs);
         if (scan_end != nullptr) {
             size_t matched_size = scan_end - in.data();
