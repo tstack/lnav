@@ -44,6 +44,7 @@
 #include "log_vtab_impl.hh"
 #include "md2attr_line.hh"
 #include "msg.text.hh"
+#include "pretty_printer.hh"
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
@@ -607,16 +608,34 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             attr_line_t(" Variables from ")
                 .append(lnav::roles::hyperlink(src_link_with_href)));
         for (const auto& [name, value] : this->fos_log_helper.ldh_src_vars) {
-            auto al = attr_line_t("   ")
-                          .append(lnav::roles::variable(name))
-                          .append(" = ")
-                          .append(value);
-            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
-                                                row_info{
-                                                    std::nullopt,
-                                                    value,
-                                                });
-            this->fos_lines.emplace_back(al);
+            attr_line_t pretty_value;
+            data_scanner ds(value);
+            pretty_printer pp(&ds, string_attrs_t{});
+            pp.append_to(pretty_value);
+            auto tf_opt = detect_text_format(value);
+            if (tf_opt) {
+                highlight_syntax(tf_opt.value(), pretty_value, std::nullopt);
+            }
+            auto pretty_lines = pretty_value.rtrim().split_lines();
+            auto prefix = attr_line_t("   ")
+                              .append(lnav::roles::variable(name))
+                              .append(" = ");
+            if (pretty_lines.size() == 1) {
+                pretty_lines[0].insert(0, prefix);
+            } else {
+                pretty_lines.insert(pretty_lines.begin(), prefix);
+            }
+            for (size_t lpc = 0; lpc < pretty_lines.size(); lpc++) {
+                if (lpc > 0) {
+                    pretty_lines[lpc].insert(0, "     ");
+                }
+                this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                    row_info{
+                                                        std::nullopt,
+                                                        value,
+                                                    });
+                this->fos_lines.emplace_back(pretty_lines[lpc]);
+            }
         }
     } else if (!this->fos_log_helper.ldh_parser
                || this->fos_log_helper.ldh_parser->dp_pairs.empty())
@@ -938,10 +957,9 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 {
     auto& exec_phase = injector::get<lnav::exec_phase&>();
     if (media != media_t::display) {
-        auto& tc = dynamic_cast<textview_curses&>(
-            const_cast<listview_curses&>(lv));
-        const auto& sticky_bv
-            = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+        auto& tc
+            = dynamic_cast<textview_curses&>(const_cast<listview_curses&>(lv));
+        const auto& sticky_bv = tc.get_bookmarks()[&textview_curses::BM_STICKY];
         if (!sticky_bv.empty()) {
             auto top = lv.get_top();
             int sticky_index = 0;

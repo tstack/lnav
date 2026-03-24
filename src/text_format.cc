@@ -160,7 +160,7 @@ detect_text_format(string_fragment sf,
     static const auto SQL_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "create\\s+table\\s+|"
-        "select\\s+.+\\s+from\\s+|"
+        "select\\s+.+\\s+(?:from|where)\\s+|"
         "insert\\s+into\\s+.+\\s+"
         "values"
         ")",
