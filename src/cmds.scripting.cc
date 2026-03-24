@@ -255,7 +255,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         log_debug("Expanded command to evaluate: %s", expanded_cmd.c_str());
 
         if (expanded_cmd.empty()) {
-            return ec.make_error("empty result after evaluation");
+            return Ok(retval);
         }
 
         if (ec.ec_dry_run) {

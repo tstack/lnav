@@ -149,7 +149,7 @@
             "impls": {
                 "IntelliJ": {
                     "config-dir": ".idea",
-                    "prefers": "^.*(?:\\.java|\\.kt)$",
+                    "prefers": "^.*(?:\\.java|\\.kt|\\.py)$",
                     "test": "command -v idea",
                     "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\""
                 },

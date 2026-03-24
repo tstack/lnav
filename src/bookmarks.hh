@@ -138,6 +138,11 @@ public:
         return retval;
     }
 
+    bool contains(LineType vl)
+    {
+        return this->bv_tree.find(vl) != this->bv_tree.end();
+    }
+
     std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
     {
         auto lb = this->bv_tree.lower_bound(start);

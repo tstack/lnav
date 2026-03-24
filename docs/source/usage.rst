@@ -235,8 +235,8 @@ to modify lnav's behavior to make it more amenable for this purpose:
 With this option, lnav will:
 
 * Not save the piped content after exiting.
-* Print the content to the screen if it is less than the height of the
-  terminal.
+* Print any marked lines to the screen OR all lines if the total
+  height is less than the terminal height.
 
 Searching
 ---------

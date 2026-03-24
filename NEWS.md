@@ -64,6 +64,13 @@ Features:
   to get/set the sticky state via SQL.  Sticky headers
   and user bookmarks are saved and restored across
   sessions for both log and text views.
+* In pager mode (activated by the `-q` flag), the input
+  will always be written to the terminal if it is
+  smaller than the height.  Previously, if the input
+  took awhile to generate, nothing would be written.
+  Also, when the input is larger than the terminal
+  height, any marked lines will be written to the
+  terminal.
 * Introducing "Log-Oriented Debugging", a collection of
   features to streamline mapping log messages back to
   the source code that generated them.  For example,
@@ -96,6 +103,10 @@ Features:
     breakpoints have been added, you can press `F7`/`F8`
     to move to the previous/next log message that
     matches a breakpoint.
+  - If the log format specifies source file/line fields,
+    the first character of the source file will be
+    underlined and can be clicked to open the source
+    file at the given log message.
 * The `all_opids` and `all_thread_ids` virtual tables
   have been added to make it simple to discover all of
   the operations and threads across all log files.  The

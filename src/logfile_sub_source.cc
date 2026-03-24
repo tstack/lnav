@@ -843,7 +843,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         this->lss_token_al.al_attrs.emplace_back(lr,
                                                  VC_COMMAND.value(ui_command{
                                                      source_location{},
-                                                     ":toggle-breakpoint",
+                                                     "|lnav-open-source",
                                                  }));
     }
 

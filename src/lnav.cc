@@ -4443,14 +4443,33 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             } else {
                 init_session();
 
-                guard_termios gt(STDIN_FILENO);
-                lnav_log_orig_termios = gt.get_termios();
+                {
+                    guard_termios gt(STDIN_FILENO);
+                    lnav_log_orig_termios = gt.get_termios();
 
-                looper();
+                    looper();
 
-                dup2(STDOUT_FILENO, STDERR_FILENO);
+                    dup2(STDOUT_FILENO, STDERR_FILENO);
 
-                signal(SIGINT, SIG_DFL);
+                    signal(SIGINT, SIG_DFL);
+                }
+
+                if (stdin_url && verbosity == verbosity_t::quiet) {
+                    auto& tc = lnav_data.ld_views[LNV_TEXT];
+                    auto& bv = tc.get_bookmarks()[&textview_curses::BM_USER];
+                    tc.tc_mark_style = std::nullopt;
+                    bool is_short = tc.get_inner_height() < term_size.ws_row - 3;
+                    if (is_short || !bv.empty()) {
+                        for (auto vl = 0_vl; vl < tc.get_inner_height(); ++vl) {
+                            if (!is_short && !bv.contains(vl)) {
+                                continue;
+                            }
+                            std::vector<attr_line_t> rows(1);
+                            tc.listview_value_for_rows(tc, vl, rows);
+                            write_line_to(stdout, rows[0]);
+                        }
+                    }
+                }
             }
 
             log_info("exiting main loop");
