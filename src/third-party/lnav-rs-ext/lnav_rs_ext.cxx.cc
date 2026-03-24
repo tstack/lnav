@@ -12,6 +12,20 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#if __cplusplus >= 201703L
+#include <string_view>
+#endif
+#if __cplusplus >= 202002L
+#include <ranges>
+#endif
+
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
+#endif // __clang__
+#endif // __GNUC__
 
 namespace rust {
 inline namespace cxxbridge1 {
@@ -51,6 +65,10 @@ public:
   String(const char *, std::size_t);
   String(const char16_t *);
   String(const char16_t *, std::size_t);
+#ifdef __cpp_char8_t
+  String(const char8_t *s);
+  String(const char8_t *s, std::size_t len);
+#endif
 
   static String lossy(const std::string &) noexcept;
   static String lossy(const char *) noexcept;
@@ -58,8 +76,8 @@ public:
   static String lossy(const char16_t *) noexcept;
   static String lossy(const char16_t *, std::size_t) noexcept;
 
-  String &operator=(const String &) &noexcept;
-  String &operator=(String &&) &noexcept;
+  String &operator=(const String &) & noexcept;
+  String &operator=(String &&) & noexcept;
 
   explicit operator std::string() const;
 
@@ -114,9 +132,12 @@ public:
   Str(const char *);
   Str(const char *, std::size_t);
 
-  Str &operator=(const Str &) &noexcept = default;
+  Str &operator=(const Str &) & noexcept = default;
 
   explicit operator std::string() const;
+#if __cplusplus >= 201703L
+  explicit operator std::string_view() const;
+#endif
 
   const char *data() const noexcept;
   std::size_t size() const noexcept;
@@ -161,8 +182,8 @@ template <>
 struct copy_assignable_if<false> {
   copy_assignable_if() noexcept = default;
   copy_assignable_if(const copy_assignable_if &) noexcept = default;
-  copy_assignable_if &operator=(const copy_assignable_if &) &noexcept = delete;
-  copy_assignable_if &operator=(copy_assignable_if &&) &noexcept = default;
+  copy_assignable_if &operator=(const copy_assignable_if &) & noexcept = delete;
+  copy_assignable_if &operator=(copy_assignable_if &&) & noexcept = default;
 };
 } // namespace detail
 
@@ -175,8 +196,11 @@ public:
   Slice() noexcept;
   Slice(T *, std::size_t count) noexcept;
 
-  Slice &operator=(const Slice<T> &) &noexcept = default;
-  Slice &operator=(Slice<T> &&) &noexcept = default;
+  template <typename C>
+  explicit Slice(C &c) : Slice(c.data(), c.size()) {}
+
+  Slice &operator=(const Slice<T> &) & noexcept = default;
+  Slice &operator=(Slice<T> &&) & noexcept = default;
 
   T *data() const noexcept;
   std::size_t size() const noexcept;
@@ -208,10 +232,20 @@ private:
   std::array<std::uintptr_t, 2> repr;
 };
 
+#ifdef __cpp_deduction_guides
+template <typename C>
+explicit Slice(C &c)
+    -> Slice<std::remove_reference_t<decltype(*std::declval<C>().data())>>;
+#endif // __cpp_deduction_guides
+
 template <typename T>
 class Slice<T>::iterator final {
 public:
+#if __cplusplus >= 202002L
+  using iterator_category = std::contiguous_iterator_tag;
+#else
   using iterator_category = std::random_access_iterator_tag;
+#endif
   using value_type = T;
   using difference_type = std::ptrdiff_t;
   using pointer = typename std::add_pointer<T>::type;
@@ -229,6 +263,9 @@ public:
   iterator &operator+=(difference_type) noexcept;
   iterator &operator-=(difference_type) noexcept;
   iterator operator+(difference_type) const noexcept;
+  friend inline iterator operator+(difference_type lhs, iterator rhs) noexcept {
+    return rhs + lhs;
+  }
   iterator operator-(difference_type) const noexcept;
   difference_type operator-(const iterator &) const noexcept;
 
@@ -244,6 +281,11 @@ private:
   void *pos;
   std::size_t stride;
 };
+
+#if __cplusplus >= 202002L
+static_assert(std::ranges::contiguous_range<rust::Slice<const uint8_t>>);
+static_assert(std::contiguous_iterator<rust::Slice<const uint8_t>::iterator>);
+#endif
 
 template <typename T>
 Slice<T>::Slice() noexcept {
@@ -467,7 +509,7 @@ public:
   Vec(Vec &&) noexcept;
   ~Vec() noexcept;
 
-  Vec &operator=(Vec &&) &noexcept;
+  Vec &operator=(Vec &&) & noexcept;
   Vec &operator=(const Vec &) &;
 
   std::size_t size() const noexcept;
@@ -541,7 +583,7 @@ Vec<T>::~Vec() noexcept {
 }
 
 template <typename T>
-Vec<T> &Vec<T>::operator=(Vec &&other) &noexcept {
+Vec<T> &Vec<T>::operator=(Vec &&other) & noexcept {
   this->drop();
   this->repr = other.repr;
   new (&other) Vec();
@@ -779,8 +821,23 @@ union MaybeUninit {
   MaybeUninit() {}
   ~MaybeUninit() {}
 };
+
+namespace {
+template <bool> struct deleter_if {
+  template <typename T> void operator()(T *) {}
+};
+template <> struct deleter_if<true> {
+  template <typename T> void operator()(T *ptr) { ptr->~T(); }
+};
+} // namespace
 } // namespace cxxbridge1
 } // namespace rust
+
+#if __cplusplus >= 201402L
+#define CXX_DEFAULT_VALUE(value) = value
+#else
+#define CXX_DEFAULT_VALUE(value)
+#endif
 
 namespace lnav_rs_ext {
   struct ExtError;
@@ -829,10 +886,10 @@ enum class Status : ::std::uint8_t {
 struct ExtProgress final {
   ::rust::String id;
   ::lnav_rs_ext::Status status;
-  ::std::size_t version;
+  ::std::size_t version CXX_DEFAULT_VALUE(0);
   ::rust::String current_step;
-  ::std::uint64_t completed;
-  ::std::uint64_t total;
+  ::std::uint64_t completed CXX_DEFAULT_VALUE(0);
+  ::std::uint64_t total CXX_DEFAULT_VALUE(0);
   ::rust::Vec<::lnav_rs_ext::ExtError> messages;
 
   using IsRelocatable = ::std::true_type;
@@ -842,9 +899,9 @@ struct ExtProgress final {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$Options
 struct Options final {
-  bool format;
+  bool format CXX_DEFAULT_VALUE(false);
   ::rust::String target;
-  bool signature_comment;
+  bool signature_comment CXX_DEFAULT_VALUE(false);
 
   using IsRelocatable = ::std::true_type;
 };
@@ -918,8 +975,8 @@ struct VarPair final {
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$SourceDetails
 struct SourceDetails final {
   ::rust::String file;
-  ::std::size_t begin_line;
-  ::std::size_t end_line;
+  ::std::size_t begin_line CXX_DEFAULT_VALUE(0);
+  ::std::size_t end_line CXX_DEFAULT_VALUE(0);
   ::rust::String name;
   ::rust::Str language;
 
@@ -952,7 +1009,7 @@ struct ViewStates final {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 struct PollInput final {
-  ::std::size_t last_event_id;
+  ::std::size_t last_event_id CXX_DEFAULT_VALUE(0);
   ::lnav_rs_ext::ViewStates view_states;
   ::rust::Vec<::std::size_t> task_states;
 
@@ -986,7 +1043,7 @@ struct ExecError final {
 struct ExecResult final {
   ::rust::String status;
   ::rust::String content_type;
-  ::std::int32_t content_fd;
+  ::std::int32_t content_fd CXX_DEFAULT_VALUE(0);
   ::lnav_rs_ext::ExecError error;
 
   using IsRelocatable = ::std::true_type;
@@ -1007,7 +1064,7 @@ enum class LnavLogLevel : ::std::uint8_t {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 struct StartExtResult final {
-  ::std::uint16_t port;
+  ::std::uint16_t port CXX_DEFAULT_VALUE(0);
   ::rust::String error;
 
   using IsRelocatable = ::std::true_type;
@@ -1015,121 +1072,121 @@ struct StartExtResult final {
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 
 extern "C" {
-void lnav_rs_ext$cxxbridge1$version_info(::rust::String *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$194$version_info(::rust::String *return$) noexcept {
   ::rust::String (*version_info$)() = ::lnav_rs_ext::version_info;
   new (return$) ::rust::String(version_info$());
 }
 
-void lnav_rs_ext$cxxbridge1$longpoll(::lnav_rs_ext::PollInput const &poll_inpout, ::lnav_rs_ext::PollResult *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$194$longpoll(::lnav_rs_ext::PollInput const &poll_inpout, ::lnav_rs_ext::PollResult *return$) noexcept {
   ::lnav_rs_ext::PollResult (*longpoll$)(::lnav_rs_ext::PollInput const &) = ::lnav_rs_ext::longpoll;
   new (return$) ::lnav_rs_ext::PollResult(longpoll$(poll_inpout));
 }
 
-void lnav_rs_ext$cxxbridge1$notify_pollers() noexcept {
+void lnav_rs_ext$cxxbridge1$194$notify_pollers() noexcept {
   void (*notify_pollers$)() = ::lnav_rs_ext::notify_pollers;
   notify_pollers$();
 }
 
-void lnav_rs_ext$cxxbridge1$notify_completion() noexcept {
+void lnav_rs_ext$cxxbridge1$194$notify_completion() noexcept {
   void (*notify_completion$)() = ::lnav_rs_ext::notify_completion;
   notify_completion$();
 }
 
-void lnav_rs_ext$cxxbridge1$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::rust::Vec<::lnav_rs_ext::VarPair> const *vars, ::lnav_rs_ext::ExecResult *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$194$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::rust::Vec<::lnav_rs_ext::VarPair> const *vars, ::lnav_rs_ext::ExecResult *return$) noexcept {
   ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String, ::rust::String, ::rust::Vec<::lnav_rs_ext::VarPair>) = ::lnav_rs_ext::execute_external_command;
   new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs), ::rust::Vec<::lnav_rs_ext::VarPair>(::rust::unsafe_bitcopy, *vars)));
 }
 
-void lnav_rs_ext$cxxbridge1$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {
+void lnav_rs_ext$cxxbridge1$194$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {
   void (*get_static_file$)(::rust::Str, ::rust::Vec<::std::uint8_t> &) = ::lnav_rs_ext::get_static_file;
   get_static_file$(path, dst);
 }
 
-::lnav_rs_ext::LnavLogLevel lnav_rs_ext$cxxbridge1$get_lnav_log_level() noexcept {
+::lnav_rs_ext::LnavLogLevel lnav_rs_ext$cxxbridge1$194$get_lnav_log_level() noexcept {
   ::lnav_rs_ext::LnavLogLevel (*get_lnav_log_level$)() = ::lnav_rs_ext::get_lnav_log_level;
   return get_lnav_log_level$();
 }
 
-void lnav_rs_ext$cxxbridge1$log_msg(::lnav_rs_ext::LnavLogLevel level, ::rust::Str file, ::std::uint32_t line, ::rust::Str msg) noexcept {
+void lnav_rs_ext$cxxbridge1$194$log_msg(::lnav_rs_ext::LnavLogLevel level, ::rust::Str file, ::std::uint32_t line, ::rust::Str msg) noexcept {
   void (*log_msg$)(::lnav_rs_ext::LnavLogLevel, ::rust::Str, ::std::uint32_t, ::rust::Str) = ::lnav_rs_ext::log_msg;
   log_msg$(level, file, line, msg);
 }
 
-void lnav_rs_ext$cxxbridge1$init_ext() noexcept;
+void lnav_rs_ext$cxxbridge1$194$init_ext() noexcept;
 
-void lnav_rs_ext$cxxbridge1$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$194$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
 
-::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$add_src_root(::rust::String *path) noexcept;
+::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$194$add_src_root(::rust::String *path) noexcept;
 
-void lnav_rs_ext$cxxbridge1$discover_srcs() noexcept;
+void lnav_rs_ext$cxxbridge1$194$discover_srcs() noexcept;
 
-void lnav_rs_ext$cxxbridge1$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$194$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
 
-::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
+::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$194$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
 
-::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
+::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$194$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
 
-void lnav_rs_ext$cxxbridge1$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$194$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$194$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$set_one_time_password(::rust::String *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$194$set_one_time_password(::rust::String *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$stop_ext_access() noexcept;
+void lnav_rs_ext$cxxbridge1$194$stop_ext_access() noexcept;
 } // extern "C"
 
 void init_ext() noexcept {
-  lnav_rs_ext$cxxbridge1$init_ext();
+  lnav_rs_ext$cxxbridge1$194$init_ext();
 }
 
 ::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::CompileResult2> return$;
-  lnav_rs_ext$cxxbridge1$compile_tree(tree, options, &return$.value);
+  lnav_rs_ext$cxxbridge1$194$compile_tree(tree, options, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::std::unique_ptr<::lnav_rs_ext::ExtError> add_src_root(::rust::String path) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::ExtError>(lnav_rs_ext$cxxbridge1$add_src_root(&path));
+  return ::std::unique_ptr<::lnav_rs_ext::ExtError>(lnav_rs_ext$cxxbridge1$194$add_src_root(&path));
 }
 
 void discover_srcs() noexcept {
-  lnav_rs_ext$cxxbridge1$discover_srcs();
+  lnav_rs_ext$cxxbridge1$194$discover_srcs();
 }
 
 ::lnav_rs_ext::ExtProgress get_status() noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::ExtProgress> return$;
-  lnav_rs_ext$cxxbridge1$get_status(&return$.value);
+  lnav_rs_ext$cxxbridge1$194$get_status(&return$.value);
   return ::std::move(return$.value);
 }
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$find_log_statement(file, line, body));
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$194$find_log_statement(file, line, body));
 }
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$find_log_statement_json(file, line, body));
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$194$find_log_statement_json(file, line, body));
 }
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {
   ::rust::MaybeUninit<::rust::Vec<::lnav_rs_ext::FindLogResult>> return$;
-  lnav_rs_ext$cxxbridge1$get_log_statements_for(file, &return$.value);
+  lnav_rs_ext$cxxbridge1$194$get_log_statements_for(file, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::StartExtResult> return$;
-  lnav_rs_ext$cxxbridge1$start_ext_access(port, &api_key, &return$.value);
+  lnav_rs_ext$cxxbridge1$194$start_ext_access(port, &api_key, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::rust::String set_one_time_password() noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  lnav_rs_ext$cxxbridge1$set_one_time_password(&return$.value);
+  lnav_rs_ext$cxxbridge1$194$set_one_time_password(&return$.value);
   return ::std::move(return$.value);
 }
 
 void stop_ext_access() noexcept {
-  lnav_rs_ext$cxxbridge1$stop_ext_access();
+  lnav_rs_ext$cxxbridge1$194$stop_ext_access();
 }
 } // namespace lnav_rs_ext
 
@@ -1179,6 +1236,7 @@ void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$reserve_total(::rust::Vec
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$set_len(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$truncate(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
 
+static_assert(::rust::detail::is_complete<::std::remove_extent<::lnav_rs_ext::ExtError>::type>::value, "definition of `::lnav_rs_ext::ExtError` is required");
 static_assert(sizeof(::std::unique_ptr<::lnav_rs_ext::ExtError>) == sizeof(void *), "");
 static_assert(alignof(::std::unique_ptr<::lnav_rs_ext::ExtError>) == alignof(void *), "");
 void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$null(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr) noexcept {
@@ -1189,19 +1247,20 @@ void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$null(::std::unique_ptr<::lnav_rs
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::ExtError>(uninit);
   return uninit;
 }
-void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$raw(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr, ::lnav_rs_ext::ExtError *raw) noexcept {
+void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$raw(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr, ::std::unique_ptr<::lnav_rs_ext::ExtError>::pointer raw) noexcept {
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::ExtError>(raw);
 }
-::lnav_rs_ext::ExtError const *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$get(::std::unique_ptr<::lnav_rs_ext::ExtError> const &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::ExtError>::element_type const *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$get(::std::unique_ptr<::lnav_rs_ext::ExtError> const &ptr) noexcept {
   return ptr.get();
 }
-::lnav_rs_ext::ExtError *cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$release(::std::unique_ptr<::lnav_rs_ext::ExtError> &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::ExtError>::pointer cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$release(::std::unique_ptr<::lnav_rs_ext::ExtError> &ptr) noexcept {
   return ptr.release();
 }
 void cxxbridge1$unique_ptr$lnav_rs_ext$ExtError$drop(::std::unique_ptr<::lnav_rs_ext::ExtError> *ptr) noexcept {
-  ptr->~unique_ptr();
+  ::rust::deleter_if<::rust::detail::is_complete<::lnav_rs_ext::ExtError>::value>{}(ptr);
 }
 
+static_assert(::rust::detail::is_complete<::std::remove_extent<::lnav_rs_ext::FindLogResult>::type>::value, "definition of `::lnav_rs_ext::FindLogResult` is required");
 static_assert(sizeof(::std::unique_ptr<::lnav_rs_ext::FindLogResult>) == sizeof(void *), "");
 static_assert(alignof(::std::unique_ptr<::lnav_rs_ext::FindLogResult>) == alignof(void *), "");
 void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$null(::std::unique_ptr<::lnav_rs_ext::FindLogResult> *ptr) noexcept {
@@ -1212,19 +1271,20 @@ void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$null(::std::unique_ptr<::ln
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(uninit);
   return uninit;
 }
-void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$raw(::std::unique_ptr<::lnav_rs_ext::FindLogResult> *ptr, ::lnav_rs_ext::FindLogResult *raw) noexcept {
+void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$raw(::std::unique_ptr<::lnav_rs_ext::FindLogResult> *ptr, ::std::unique_ptr<::lnav_rs_ext::FindLogResult>::pointer raw) noexcept {
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(raw);
 }
-::lnav_rs_ext::FindLogResult const *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$get(::std::unique_ptr<::lnav_rs_ext::FindLogResult> const &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::FindLogResult>::element_type const *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$get(::std::unique_ptr<::lnav_rs_ext::FindLogResult> const &ptr) noexcept {
   return ptr.get();
 }
-::lnav_rs_ext::FindLogResult *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$release(::std::unique_ptr<::lnav_rs_ext::FindLogResult> &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::FindLogResult>::pointer cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$release(::std::unique_ptr<::lnav_rs_ext::FindLogResult> &ptr) noexcept {
   return ptr.release();
 }
 void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResult$drop(::std::unique_ptr<::lnav_rs_ext::FindLogResult> *ptr) noexcept {
-  ptr->~unique_ptr();
+  ::rust::deleter_if<::rust::detail::is_complete<::lnav_rs_ext::FindLogResult>::value>{}(ptr);
 }
 
+static_assert(::rust::detail::is_complete<::std::remove_extent<::lnav_rs_ext::FindLogResultJson>::type>::value, "definition of `::lnav_rs_ext::FindLogResultJson` is required");
 static_assert(sizeof(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>) == sizeof(void *), "");
 static_assert(alignof(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>) == alignof(void *), "");
 void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$null(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> *ptr) noexcept {
@@ -1235,17 +1295,17 @@ void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$null(::std::unique_ptr<
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(uninit);
   return uninit;
 }
-void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$raw(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> *ptr, ::lnav_rs_ext::FindLogResultJson *raw) noexcept {
+void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$raw(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> *ptr, ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>::pointer raw) noexcept {
   ::new (ptr) ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(raw);
 }
-::lnav_rs_ext::FindLogResultJson const *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$get(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> const &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>::element_type const *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$get(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> const &ptr) noexcept {
   return ptr.get();
 }
-::lnav_rs_ext::FindLogResultJson *cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$release(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> &ptr) noexcept {
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>::pointer cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$release(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> &ptr) noexcept {
   return ptr.release();
 }
 void cxxbridge1$unique_ptr$lnav_rs_ext$FindLogResultJson$drop(::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> *ptr) noexcept {
-  ptr->~unique_ptr();
+  ::rust::deleter_if<::rust::detail::is_complete<::lnav_rs_ext::FindLogResultJson>::value>{}(ptr);
 }
 
 void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$new(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;

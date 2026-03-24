@@ -133,7 +133,7 @@
                     "test": "command -v idea",
                     "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\"",
                     "config-dir": ".idea",
-                    "prefers": "^.*(?:\\.java|\\.kt)$"
+                    "prefers": "^.*(?:\\.java|\\.kt|\\.py)$"
                 },
                 "RustRover": {
                     "test": "command -v rustrover",
