@@ -66,7 +66,7 @@ RUN curl -sSL https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5
     make install PREFIX=/fake.root && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.zlib.net/zlib-1.3.1.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.zlib.net/zlib-1.3.2.tar.gz | tar xvzC /extract/ && \
     cd /extract/zlib-* && ./configure --prefix=/fake.root --static && \
     make -j2 && \
     make install && \
