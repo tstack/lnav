@@ -3,11 +3,13 @@
 # @description: Open the source file for the focused log message.
 #
 
+;SELECT raise_error('Unable to locate source file: ' || log_src_file,
+                    'Log message could not be found in any source trees added with :add-source-path')
+   FROM lnav_focused_msg
+  WHERE log_msg_src IS NULL
+
 ;SELECT jget(log_msg_src, '/file', NULL) AS file_path,
         jget(log_msg_src, '/begin_line', NULL) AS begin_line
    FROM lnav_focused_msg
-;SELECT raise_error('Unable to locate source file: ' || $file_path,
-                    'Use :add-source-path to add a source path.')
-  WHERE $file_path IS NULL
 ;SELECT unparse_url(json_object('scheme', 'file', 'path', $file_path, 'fragment', format('L%d', $begin_line))) AS url
 :xopen $url

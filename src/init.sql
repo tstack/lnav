@@ -128,7 +128,10 @@ SELECT *,
        log_body,
        log_raw_text,
        log_line_hash,
-       log_line_link
+       log_line_link,
+       log_src_file,
+       log_src_line,
+       log_thread_id
 FROM all_logs
 WHERE log_line = log_msg_line();
 
