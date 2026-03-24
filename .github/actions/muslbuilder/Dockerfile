@@ -6,8 +6,6 @@ RUN apk add --no-cache \
     automake \
     build-base \
     curl \
-    ncurses \
-    ncurses-terminfo \
     nodejs \
     zip
 
@@ -21,35 +19,6 @@ ENV SQLITE_CFLAGS="\
     -DSQLITE_ENABLE_JSON1 \
     -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT \
     "
-
-ENV NCURSES_FALLBACKS="\
-alacritty,\
-ansi,\
-cygwin,\
-Eterm,\
-Eterm-256color,\
-foot,\
-gnome,\
-gnome-256color,\
-kitty,\
-konsole,\
-konsole-256color,\
-linux,\
-putty,\
-rio,\
-rxvt,\
-rxvt-256color,\
-screen,\
-screen-16color,\
-screen-256color,\
-tmux,\
-tmux-256color,\
-vt100,\
-vt220,\
-wezterm,\
-xterm,\
-xterm-256color\
-"
 
 RUN curl -sSL https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz | tar xvzC /extract/ && \
     cd /extract/bzip* && \
@@ -92,23 +61,6 @@ RUN curl -sSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.4
      make -j2 && \
      make install && \
      cd /extract && rm -rf *
-
-RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /extract/ && \
-    cd /extract/ncurses-* && \
-    ./configure --prefix=/fake.root \
-        --enable-ext-mouse \
-        --enable-sigwinch \
-        --enable-ext-colors \
-        --enable-widec \
-        --enable-termcap \
-        --with-fallbacks=$NCURSES_FALLBACKS \
-        --without-shared \
-        --without-progs \
-        --without-manpages \
-        --without-tests \
-    && \
-    make -j2 install && \
-    cd /extract && rm -rf *
 
 RUN curl -sSL https://www.openssl.org/source/openssl-1.0.2u.tar.gz | tar xvzC /extract/ && \
     cd /extract/openssl-* && \
