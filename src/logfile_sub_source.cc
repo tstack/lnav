@@ -63,6 +63,8 @@
 #include "scn/scan.h"
 #include "shlex.hh"
 #include "sql_util.hh"
+#include "sqlitepp.hh"
+#include "sqlitepp.client.hh"
 #include "tlx/container/btree_set.hpp"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
@@ -3655,6 +3657,21 @@ logfile_sub_source::add_commands_for_session(
                                      format->get_name().to_string(),
                                      fs_pair.first.to_string()));
             }
+        }
+    }
+
+    {
+        static auto& lnav_db = injector::get<auto_sqlite3&>();
+        static const auto BP_QUERY = R"(
+                            SELECT description FROM lnav_log_breakpoints
+                        )";
+        auto bp_stmt = prepare_stmt(lnav_db.in(), BP_QUERY);
+        if (bp_stmt.isOk()) {
+            auto stmt = bp_stmt.unwrap();
+            stmt.for_each_row<std::string>([&](const std::string& desc) {
+                receiver(fmt::format(FMT_STRING("breakpoint {}"), desc));
+                return false;
+            });
         }
     }
 }

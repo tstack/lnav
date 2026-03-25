@@ -734,8 +734,12 @@ dist_noinst_DATA = \
     test_sessions.sh_639b83ce8f67975dfdc7086946ec287b43b6fa8c.out \
     test_sessions.sh_68a89b56c5e7f7db620084cca1eb547cbb19a2c9.err \
     test_sessions.sh_68a89b56c5e7f7db620084cca1eb547cbb19a2c9.out \
+    test_sessions.sh_6c6038294702aefea639f8669cd9a044bd744e18.err \
+    test_sessions.sh_6c6038294702aefea639f8669cd9a044bd744e18.out \
     test_sessions.sh_6d87ff483d5785c58fb271a405ff1c35e4f83cd9.err \
     test_sessions.sh_6d87ff483d5785c58fb271a405ff1c35e4f83cd9.out \
+    test_sessions.sh_72ccbbeb0bc5d74d4f2b3cd09da9ff15af591aa4.err \
+    test_sessions.sh_72ccbbeb0bc5d74d4f2b3cd09da9ff15af591aa4.out \
     test_sessions.sh_7f4805745c6551e9f3ecbb809ffb4cfe8bce9c6f.err \
     test_sessions.sh_7f4805745c6551e9f3ecbb809ffb4cfe8bce9c6f.out \
     test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.err \

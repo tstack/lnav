@@ -227,6 +227,22 @@ run_cap_test ${lnav_test} -nq \
 rm -rf ./sessions
 mkdir -p $HOME
 
+# breakpoint saved in session
+run_cap_test ${lnav_test} -nq \
+    -c ":breakpoint logging_unittest.cc:259" \
+    -c ":save-session" \
+    ${test_dir}/logfile_glog.0
+
+# breakpoint restored from session
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT description FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
 # sticky header saved in session for text file
 run_cap_test ${lnav_test} -n \
     -c ':goto 1' \

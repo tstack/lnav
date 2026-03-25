@@ -2090,6 +2090,13 @@ reset_session()
     }
 
     // XXX clean this up
+    {
+        auto del_res = prepare_stmt(lnav_data.ld_db.in(),
+                                    "DELETE FROM lnav_log_breakpoints");
+        if (del_res.isOk()) {
+            del_res.unwrap().execute();
+        }
+    }
     lnav_data.ld_log_source.lss_highlighters.clear();
     lnav_data.ld_log_source.set_force_rebuild();
     lnav_data.ld_log_source.set_marked_only(false);
