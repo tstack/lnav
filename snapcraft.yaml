@@ -4,6 +4,11 @@ summary: Log File Navigator
 description: |
   The Log File Navigator is a log file viewer for the terminal.
 icon: docs/assets/images/favicon.png
+contact: support@lnav.org
+website: https://lnav.org
+issues: https://github.com/tstack/lnav/issues
+source-code: https://github.com/tstack/lnav
+donation: https://github.com/sponsors/tstack
 
 base: core22
 grade: stable
