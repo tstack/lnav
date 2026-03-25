@@ -4,11 +4,6 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "Event fired when a log message is detected by a watch expression.",
     "properties": {
-        "$schema": {
-            "title": "/$schema",
-            "type": "string",
-            "const": "https://lnav.org/event-log-msg-detected-v1.schema.json"
-        },
         "watch-name": {
             "title": "/watch-name",
             "description": "The name of the watch expression that matched this log message",

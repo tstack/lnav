@@ -1322,6 +1322,10 @@ yajlpp_gen_context::gen()
 {
     yajlpp_map root(this->ygc_handle);
 
+    if (!this->ygc_handlers->jpc_schema_id.empty()) {
+        root.gen("$schema");
+        root.gen(this->ygc_handlers->jpc_schema_id);
+    }
     for (const auto& jph : this->ygc_handlers->jpc_children) {
         jph.gen(*this, this->ygc_handle);
     }
