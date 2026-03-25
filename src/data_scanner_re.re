@@ -213,6 +213,10 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
                break;
            }
            cap_inner.c_begin += 3;
+           if (tf == text_format_t::TF_DIFF) {
+               this->ds_next_offset = cap_all.c_end;
+               return tokenize_result{DT_QUOTED_STRING, cap_all, cap_inner, this->ds_input.sf_string};
+           }
            goto yyc_dbldocstring;
        }
 
