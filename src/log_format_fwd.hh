@@ -706,6 +706,8 @@ struct logline_value_vector {
 
     logline_value_vector& operator=(const logline_value_vector& other);
 
+    void shift_origins_by(const line_range& cover, int32_t amount);
+
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
     std::optional<std::string> lvv_opid_value;

@@ -535,6 +535,7 @@ add_library(
         db_sub_source.cc
         dump_internals.cc
         elem_to_json.cc
+        breakpoint_vtab.cc
         environ_vtab.cc
         ext.longpoll.cc
         extension-functions.cc

@@ -1,9 +1,25 @@
 
 dist_noinst_DATA = \
+    test_breakpoints.sh_0fb9bc0a657beeed8017b23a538e55870bf09905.err \
+    test_breakpoints.sh_0fb9bc0a657beeed8017b23a538e55870bf09905.out \
+    test_breakpoints.sh_46ac6c23d7ff2932c12c16cd306721faa999d474.err \
+    test_breakpoints.sh_46ac6c23d7ff2932c12c16cd306721faa999d474.out \
+    test_breakpoints.sh_4f7d8b59b337f6b22d198916a862407ae6e10b39.err \
+    test_breakpoints.sh_4f7d8b59b337f6b22d198916a862407ae6e10b39.out \
     test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.err \
     test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.out \
+    test_breakpoints.sh_5a5729c566bf0b35130cc6ff70b797bedfc73060.err \
+    test_breakpoints.sh_5a5729c566bf0b35130cc6ff70b797bedfc73060.out \
+    test_breakpoints.sh_967c0ffe19fd9b02d6e0b4a537f73295e862352a.err \
+    test_breakpoints.sh_967c0ffe19fd9b02d6e0b4a537f73295e862352a.out \
+    test_breakpoints.sh_a2a63828e6b2f83f33b6dbe4f2d42c7832d0fe9c.err \
+    test_breakpoints.sh_a2a63828e6b2f83f33b6dbe4f2d42c7832d0fe9c.out \
     test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.err \
     test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.out \
+    test_breakpoints.sh_c62dec68ff06e3ba352d01b9c3c9a6730fe961c8.err \
+    test_breakpoints.sh_c62dec68ff06e3ba352d01b9c3c9a6730fe961c8.out \
+    test_breakpoints.sh_d2e8794bb97382282760cafc9aced6acc7e91d57.err \
+    test_breakpoints.sh_d2e8794bb97382282760cafc9aced6acc7e91d57.out \
     test_cli.sh_055f61f394343c1906cd4e8de59264c5401f5ed4.err \
     test_cli.sh_055f61f394343c1906cd4e8de59264c5401f5ed4.out \
     test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.err \

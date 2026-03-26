@@ -33,6 +33,7 @@
 #define logfile_sub_source_hh
 
 #include <array>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -57,6 +58,17 @@ int sqlite3_finalize(sqlite3_stmt* pStmt);
 }
 
 class logfile_sub_source;
+
+struct breakpoint_info {
+    enum class source_type : int {
+        src_location,
+        message_schema,
+    };
+
+    std::string bp_description;
+    source_type bp_source{source_type::src_location};
+    bool bp_enabled{true};
+};
 
 class index_delegate {
 public:
@@ -224,6 +236,16 @@ public:
     bookmarks<content_line_t>::type& get_user_bookmarks()
     {
         return this->lss_user_marks;
+    }
+
+    std::map<std::string, breakpoint_info>& get_breakpoints()
+    {
+        return this->lss_breakpoints;
+    }
+
+    const std::map<std::string, breakpoint_info>& get_breakpoints() const
+    {
+        return this->lss_breakpoints;
     }
 
     bookmark_metadata& get_bookmark_metadata(content_line_t cl);
@@ -721,6 +743,7 @@ private:
     std::vector<uint32_t> lss_filtered_index;
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
+    std::map<std::string, breakpoint_info> lss_breakpoints;
     bookmarks<content_line_t>::type lss_user_marks{
         bookmarks<content_line_t>::create_array()};
     auto_mem<sqlite3_stmt> lss_marker_stmt{sqlite3_finalize};

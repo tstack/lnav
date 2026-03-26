@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <fnmatch.h>
+
 #include <string>
 #include <vector>
 
@@ -44,7 +46,6 @@
 #include "pcrepp/pcre2pp.hh"
 #include "readline_context.hh"
 #include "shlex.hh"
-#include "sqlitepp.client.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_breakpoint(exec_context& ec,
@@ -54,9 +55,6 @@ com_breakpoint(exec_context& ec,
     static const intern_string_t SRC = intern_string::lookup("point");
     static const auto POINT_RE
         = lnav::pcre2pp::code::from_const(R"(^(?:([^:\s]+):)?([^:]+):(\d+)$)");
-    static const auto STMT = R"(
-    REPLACE INTO lnav_log_breakpoints (schema_id, description) VALUES (?, ?)
-)";
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
     std::string retval;
 
@@ -77,6 +75,7 @@ com_breakpoint(exec_context& ec,
 
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto& bps = lnav_data.ld_log_source.get_breakpoints();
     auto split_args = split_args_res.unwrap()
         | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
@@ -111,17 +110,16 @@ com_breakpoint(exec_context& ec,
 
                 if (ldh.ldh_parser) {
                     auto desc = fmt::format(FMT_STRING("{}:#:0"), format_name);
-                    auto prep_res
-                        = prepare_stmt(lnav_data.ld_db.in(),
-                                       STMT,
-                                       ldh.ldh_parser->dp_schema_id.to_string(),
-                                       desc);
-                    auto stmt = prep_res.unwrap();
-                    auto exec_res = stmt.execute();
-                    if (exec_res.isErr()) {
-                        return ec.make_error("failed to insert breakpoint: {}",
-                                             exec_res.unwrapErr());
-                    }
+                    auto schema_id
+                        = ldh.ldh_parser->dp_schema_id.to_string();
+                    log_info("adding breakpoint: %s %s",
+                             schema_id.c_str(),
+                             desc.c_str());
+                    bps[schema_id] = breakpoint_info{
+                        desc,
+                        breakpoint_info::source_type::message_schema,
+                        true,
+                    };
                 }
             }
         }
@@ -168,14 +166,11 @@ com_breakpoint(exec_context& ec,
 
             log_info(
                 "adding breakpoint: %s %s", schema_id.c_str(), desc.c_str());
-            auto prep_res
-                = prepare_stmt(lnav_data.ld_db.in(), STMT, schema_id, desc);
-            auto stmt = prep_res.unwrap();
-            auto exec_res = stmt.execute();
-            if (exec_res.isErr()) {
-                return ec.make_error("failed to insert breakpoint: {}",
-                                     exec_res.unwrapErr());
-            }
+            bps[schema_id] = breakpoint_info{
+                desc,
+                breakpoint_info::source_type::src_location,
+                true,
+            };
         } else {
             auto um = ec.make_error_msg("Invalid breakpoint: {}", point)
                           .with_help(
@@ -193,20 +188,41 @@ com_breakpoint(exec_context& ec,
     return Ok(retval);
 }
 
+static std::string
+get_current_line_schema_id(logfile_sub_source& lss, vis_line_t vl)
+{
+    auto win = lss.window_at(vl);
+    for (const auto& msg : *win) {
+        auto format_name
+            = msg.get_file_ptr()->get_format_name().to_string_fragment();
+        auto src_file_sf = msg.get_string_for_attr(SA_SRC_FILE);
+        auto src_line_sf = msg.get_string_for_attr(SA_SRC_LINE);
+        if (src_file_sf && src_line_sf) {
+            auto h = hasher();
+            h.update(format_name);
+            h.update(src_file_sf.value());
+            h.update(src_line_sf.value());
+            return h.to_string();
+        }
+
+        log_data_helper ldh(lss);
+        ldh.load_line(vl, true);
+        ldh.parse_body();
+
+        if (ldh.ldh_parser) {
+            return ldh.ldh_parser->dp_schema_id.to_string();
+        }
+    }
+
+    return {};
+}
+
 static Result<std::string, lnav::console::user_message>
 com_clear_breakpoint(exec_context& ec,
                      std::string cmdline,
                      std::vector<std::string>& args)
 {
     static const intern_string_t SRC = intern_string::lookup("pattern");
-    static const auto STMT = R"(
-    DELETE FROM lnav_log_breakpoints WHERE description GLOB ?
-)";
-    static const auto DELETE_CURRENT = R"(
-    DELETE FROM lnav_log_breakpoints WHERE schema_id = (
-      SELECT log_msg_schema FROM all_logs WHERE log_line = log_msg_line())
-)";
-    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
     std::string retval;
 
     auto pat = trim(remaining_args(cmdline, args));
@@ -228,6 +244,7 @@ com_clear_breakpoint(exec_context& ec,
         return Ok(retval);
     }
 
+    auto& bps = lnav_data.ld_log_source.get_breakpoints();
     auto split_args = split_args_res.unwrap()
         | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
@@ -239,22 +256,20 @@ com_clear_breakpoint(exec_context& ec,
                 "A pattern must be given if not in the LOG view");
         }
 
-        auto prep_res = prepare_stmt(lnav_data.ld_db.in(), DELETE_CURRENT);
-        auto stmt = prep_res.unwrap();
-        auto exec_res = stmt.execute();
-        if (exec_res.isErr()) {
-            return ec.make_error("failed to clear breakpoint: {}",
-                                 exec_res.unwrapErr());
+        auto schema_id
+            = get_current_line_schema_id(*lss, tc->get_selection().value());
+        if (!schema_id.empty()) {
+            bps.erase(schema_id);
         }
     }
 
     for (const auto& pat_arg : split_args) {
-        auto prep_res = prepare_stmt(lnav_data.ld_db.in(), STMT, pat_arg);
-        auto stmt = prep_res.unwrap();
-        auto exec_res = stmt.execute();
-        if (exec_res.isErr()) {
-            return ec.make_error("failed to clear breakpoint: {}",
-                                 exec_res.unwrapErr());
+        for (auto iter = bps.begin(); iter != bps.end();) {
+            if (fnmatch(pat_arg.c_str(), iter->second.bp_description.c_str(), 0) == 0) {
+                iter = bps.erase(iter);
+            } else {
+                ++iter;
+            }
         }
     }
 
@@ -276,19 +291,16 @@ com_toggle_breakpoint(exec_context& ec,
         return ec.make_error("The LOG view is empty");
     }
 
-    std::string retval;
+    auto* tc = &lnav_data.ld_views[LNV_LOG];
+    auto& bps = lnav_data.ld_log_source.get_breakpoints();
+    auto schema_id
+        = get_current_line_schema_id(lnav_data.ld_log_source,
+                                     tc->get_selection().value());
 
-    static const auto CHECK_STMT = R"(
-    SELECT schema_id FROM lnav_log_breakpoints WHERE schema_id IN (
-        SELECT log_msg_schema FROM all_logs WHERE log_line = log_msg_line())
-)";
-    auto prep_res = prepare_stmt(lnav_data.ld_db.in(), CHECK_STMT);
-    auto stmt = prep_res.unwrap();
-    auto row = stmt.fetch_row<std::string>();
-    if (row.is<prepared_stmt::end_of_rows>()) {
-        return com_breakpoint(ec, cmdline, args);
+    if (!schema_id.empty() && bps.count(schema_id) > 0) {
+        return com_clear_breakpoint(ec, cmdline, args);
     }
-    return com_clear_breakpoint(ec, cmdline, args);
+    return com_breakpoint(ec, cmdline, args);
 }
 
 static readline_context::command_t BREAKPOINT_COMMANDS[] = {

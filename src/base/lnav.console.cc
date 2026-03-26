@@ -517,7 +517,10 @@ wchar_for_icon(ui_icon_t ic)
             return {U'\U0001F132', role_t::VCR_ERROR};
         case ui_icon_t::log_level_fatal:
             return {U'\U0001F135', role_t::VCR_ERROR};
-
+        case ui_icon_t::breakpoint:
+            return {U'\u25CF', role_t::VCR_ERROR};
+        case ui_icon_t::disabled_breakpoint:
+            return {U'\u25CB', role_t::VCR_WARNING};
         case ui_icon_t::play:
             return {U'\u25b6', role_t::VCR_TEXT};
         case ui_icon_t::edit:

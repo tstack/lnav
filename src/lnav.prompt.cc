@@ -867,7 +867,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
     static const auto KNOWN_BREAKPOINT_STMT = R"(
     SELECT description
       FROM lnav_log_breakpoints
-     WHERE instr(description, ':#:') = 0
+     WHERE type = 'src_location'
 )";
 
     std::vector<attr_line_t> retval;

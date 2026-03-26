@@ -294,6 +294,8 @@ public:
 
     attr_line_t& append(ui_icon_t value);
 
+    attr_line_t& insert(size_t index, ui_icon_t value);
+
     template<typename S>
     attr_line_t& append(S str, const string_attr_pair& value)
     {

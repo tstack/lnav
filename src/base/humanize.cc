@@ -66,6 +66,9 @@ try_from(const string_fragment& sf)
     if (md[integer]) {
         auto scan_res = scn::scan_value<int64_t>(md[integer]->to_string_view());
 
+        if (!scan_res) {
+            return std::nullopt;
+        }
         return scan_res->value();
     }
 

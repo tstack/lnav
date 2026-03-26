@@ -196,12 +196,3 @@ FROM lnav_views;
 
 CREATE UNIQUE INDEX lnav_db.lnav_views_echo_index ON lnav_views_echo (name);
 
-CREATE TABLE lnav_db.lnav_log_breakpoints (
-    schema_id TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL,
-
-    CHECK (
-        schema_id REGEXP '[0-9a-f]{32}' AND
-        description REGEXP '[^:\s]+:[^:]+:\d+'
-    )
-);

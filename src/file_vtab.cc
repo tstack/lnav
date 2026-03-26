@@ -390,5 +390,3 @@ auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
                             .add<injectable_lnav_file_metadata>();
 
 }  // namespace
-
-DIST_SLICE(inject_bind) int lnav_file_vtab = 1;

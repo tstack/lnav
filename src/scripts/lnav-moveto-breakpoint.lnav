@@ -33,7 +33,7 @@
   FROM all_logs
   WHERE
     log_line $line_cmp log_msg_line() AND
-    EXISTS (SELECT 1 FROM lnav_log_breakpoints WHERE schema_id = log_msg_schema)
+    EXISTS (SELECT 1 FROM lnav_log_breakpoints WHERE schema_id = log_msg_schema AND enabled = 1)
   ORDER BY log_line $line_order
   LIMIT 1
 

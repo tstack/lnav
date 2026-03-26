@@ -707,6 +707,15 @@ static const json_path_container theme_icons_handlers = {
         .for_child(&lnav_theme::lt_icon_log_level_fatal)
         .with_children(icon_config_handlers),
 
+    yajlpp::property_handler("breakpoint")
+        .with_description("Icon for a breakpoint marker")
+        .for_child(&lnav_theme::lt_icon_breakpoint)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("disabled-breakpoint")
+        .with_description("Icon for a disabled breakpoint marker")
+        .for_child(&lnav_theme::lt_icon_disabled_breakpoint)
+        .with_children(icon_config_handlers),
+
     yajlpp::property_handler("play")
         .with_description("Icon for a 'play' button")
         .for_child(&lnav_theme::lt_icon_play)

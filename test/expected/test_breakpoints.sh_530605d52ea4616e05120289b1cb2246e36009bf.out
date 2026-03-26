@@ -1,5 +1,5 @@
-I0517 15:04:22.619642  952452992 [4ml[0mogging_unittest.cc:259] Log if every 1, iteration 19
-I0517 15:04:22.619740   52452992 [4ml[0mogging_unittest.cc:259] Log if every 1, iteration 20
+I0517 15:04:22.619642  952452992 [1m[31m●[0m[4ml[0mogging_unittest.cc:259] Log if every 1, iteration 19
+I0517 15:04:22.619740   52452992 [1m[31m●[0m[4ml[0mogging_unittest.cc:259] Log if every 1, iteration 20
 [33mW[0m[33m0517 15:04:22.619751[0m[33m    [0m[33m2452992[0m[33m [0m[4m[33ml[0m[33mogging_unittest.cc[0m[33m:[0m[33m263[0m[33m] [0m[33mlog_if this[0m
 I0517 15:04:22.619760     452992 [4ml[0mogging_unittest.cc:267] array
 I0517 15:04:22.619768      52992 [4ml[0mogging_unittest.cc:269] const array

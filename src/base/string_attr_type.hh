@@ -65,6 +65,9 @@ enum class ui_icon_t : int32_t {
     log_level_critical,
     log_level_fatal,
 
+    breakpoint,
+    disabled_breakpoint,
+
     play,
     edit,
     file,

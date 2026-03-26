@@ -995,6 +995,9 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_log_level_critical,
              lt.lt_icon_log_level_fatal,
 
+             lt.lt_icon_breakpoint,
+             lt.lt_icon_disabled_breakpoint,
+
              lt.lt_icon_play,
              lt.lt_icon_edit,
              lt.lt_icon_file,
@@ -1033,7 +1036,11 @@ view_colors::init_roles(const lnav_theme& lt,
                     case ui_icon_t::log_level_error:
                     case ui_icon_t::log_level_fatal:
                     case ui_icon_t::log_level_critical:
+                    case ui_icon_t::breakpoint:
                         icon_role = role_t::VCR_ERROR;
+                        break;
+                    case ui_icon_t::disabled_breakpoint:
+                        icon_role = role_t::VCR_WARNING;
                         break;
                     case ui_icon_t::play:
                         icon_role = role_t::VCR_OK;

@@ -617,6 +617,7 @@ libdiag_a_SOURCES = \
 
 PLUGIN_SRCS = \
 	all_ids_vtabs.cc \
+	breakpoint_vtab.cc \
 	file_vtab.cc
 
 if HAVE_WINDRES

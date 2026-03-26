@@ -285,6 +285,19 @@ attr_line_t::append(ui_icon_t value)
     return *this;
 }
 
+attr_line_t&
+attr_line_t::insert(size_t index, ui_icon_t value)
+{
+    size_t start_len = this->al_string.length();
+
+    this->insert(index, "  ");
+    line_range lr{(int) index, (int) index + 2};
+
+    this->al_attrs.emplace_back(lr, VC_ICON.value(value));
+
+    return *this;
+}
+
 namespace text_stream {
 struct word {
     string_fragment w_word;

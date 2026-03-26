@@ -107,6 +107,9 @@ struct lnav_theme {
     positioned_property<icon_config> lt_icon_log_level_critical;
     positioned_property<icon_config> lt_icon_log_level_fatal;
 
+    positioned_property<icon_config> lt_icon_breakpoint;
+    positioned_property<icon_config> lt_icon_disabled_breakpoint;
+
     positioned_property<icon_config> lt_icon_play;
     positioned_property<icon_config> lt_icon_edit;
     positioned_property<icon_config> lt_icon_file;

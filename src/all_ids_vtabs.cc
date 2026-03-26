@@ -364,5 +364,3 @@ auto all_vtabs_binder = injector::bind_multiple<vtab_module_base>()
                             .add<vtab_module<tvt_no_update<all_thread_ids>>>();
 
 }  // namespace
-
-DIST_SLICE(inject_bind) int lnav_all_ids = 3;

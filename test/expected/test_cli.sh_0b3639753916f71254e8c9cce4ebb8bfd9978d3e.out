@@ -244,6 +244,12 @@
                     "log-level-fatal": {
                         "value": "🄵"
                     },
+                    "breakpoint": {
+                        "value": "●"
+                    },
+                    "disabled-breakpoint": {
+                        "value": "○"
+                    },
                     "play": {
                         "value": "▶"
                     },
@@ -1151,6 +1157,12 @@
                     "log-level-fatal": {
 
                     },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
+
+                    },
                     "play": {
 
                     },
@@ -2001,6 +2013,12 @@
                     "log-level-fatal": {
 
                     },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
+
+                    },
                     "play": {
 
                     },
@@ -2848,6 +2866,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
 
                     },
                     "play": {
@@ -3734,6 +3758,12 @@
                     "log-level-fatal": {
 
                     },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
+
+                    },
                     "play": {
 
                     },
@@ -4584,6 +4614,12 @@
                     "log-level-fatal": {
 
                     },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
+
+                    },
                     "play": {
 
                     },
@@ -5431,6 +5467,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
 
                     },
                     "play": {
@@ -6291,6 +6333,12 @@
                     "log-level-fatal": {
 
                     },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
+
+                    },
                     "play": {
 
                     },
@@ -7147,6 +7195,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "breakpoint": {
+
+                    },
+                    "disabled-breakpoint": {
 
                     },
                     "play": {

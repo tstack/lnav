@@ -1,0 +1,2 @@
+schema_id,description,type,enabled
+aaaabbbbccccddddeeeeffffaaaabbbb,glog_log:foo.cc:42,src_location,1

@@ -513,6 +513,16 @@
                                             "title": "/ui/theme-defs/<theme_name>/icons/log-level-fatal",
                                             "$ref": "#/definitions/icon"
                                         },
+                                        "breakpoint": {
+                                            "description": "Icon for a breakpoint marker",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/breakpoint",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "disabled-breakpoint": {
+                                            "description": "Icon for a disabled breakpoint marker",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/disabled-breakpoint",
+                                            "$ref": "#/definitions/icon"
+                                        },
                                         "play": {
                                             "description": "Icon for a 'play' button",
                                             "title": "/ui/theme-defs/<theme_name>/icons/play",

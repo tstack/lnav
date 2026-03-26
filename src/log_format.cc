@@ -683,6 +683,17 @@ logline_value::text_value_fragment() const
 }
 
 void
+logline_value_vector::shift_origins_by(const line_range& cover, int32_t amount)
+{
+    for (auto& lv : this->lvv_values) {
+        if (!lv.lv_origin.is_valid()) {
+            continue;
+        }
+        lv.lv_origin.shift_range(cover, amount);
+    }
+}
+
+void
 logline_value_vector::clear()
 {
     this->lvv_values.clear();

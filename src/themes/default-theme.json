@@ -46,6 +46,12 @@
                     "log-level-fatal": {
                         "value": "\uD83C\uDD35"
                     },
+                    "breakpoint": {
+                        "value": "\u25CF"
+                    },
+                    "disabled-breakpoint": {
+                        "value": "\u25CB"
+                    },
                     "play": {
                         "value": "\u25b6"
                     },

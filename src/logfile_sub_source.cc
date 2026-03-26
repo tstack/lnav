@@ -63,8 +63,8 @@
 #include "scn/scan.h"
 #include "shlex.hh"
 #include "sql_util.hh"
-#include "sqlitepp.hh"
 #include "sqlitepp.client.hh"
+#include "sqlitepp.hh"
 #include "tlx/container/btree_set.hpp"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
@@ -323,9 +323,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
     this->lss_token_shifts.clear();
 
-    auto format = this->lss_token_file->get_format();
-
-    value_out = this->lss_token_al.al_string;
+    auto format = this->lss_token_file->get_format_ptr();
 
     auto& sbr = this->lss_token_values.lvv_sbr;
 
@@ -336,6 +334,52 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                      line,
                      this->lss_token_al.al_attrs,
                      this->lss_token_values);
+
+    auto src_file_attr
+        = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_FILE);
+    if (src_file_attr != this->lss_token_al.al_attrs.end()) {
+        auto src_file_sf = this->lss_token_al.to_string_fragment(src_file_attr);
+        log_debug("src_file %d:%d %s",
+                  src_file_attr->sa_range.lr_start,
+                  src_file_attr->sa_range.lr_end,
+                  src_file_sf.to_string().c_str());
+        auto lr = src_file_attr->sa_range;
+        lr.lr_end = lr.lr_start + 1;
+        auto break_ta = text_attrs::with_underline();
+        this->lss_token_al.with_attr({lr, VC_STYLE.value(break_ta)})
+            .with_attr({lr,
+                        VC_COMMAND.value(ui_command{
+                            source_location{},
+                            "|lnav-open-source",
+                        })});
+        if (!this->lss_breakpoints.empty()) {
+            auto src_line_attr
+                = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_LINE);
+            if (src_line_attr != this->lss_token_al.al_attrs.end()) {
+                auto h = hasher();
+                auto src_line_sf
+                    = this->lss_token_al.to_string_fragment(src_line_attr);
+                h.update(format->get_name().to_string_fragment());
+                h.update(src_file_sf);
+                h.update(src_line_sf);
+
+                auto schema = h.to_string();
+                auto& breakpoints = this->lss_breakpoints;
+                auto it = breakpoints.find(schema);
+                if (it != breakpoints.end()) {
+                    lr.lr_end = lr.lr_start;
+                    this->lss_token_al.insert(
+                        lr.lr_start,
+                        it->second.bp_enabled
+                            ? ui_icon_t::breakpoint
+                            : ui_icon_t::disabled_breakpoint);
+                    this->lss_token_values.shift_origins_by(lr, 2);
+                }
+            }
+        }
+    }
+
+    value_out = this->lss_token_al.al_string;
 
     for (const auto& hl : format->lf_highlighters) {
         auto hl_range = line_range{0, -1};
@@ -833,20 +877,6 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             this->lss_token_al.al_attrs.emplace_back(
                 lr, L_META.value(line_meta_opt.value()));
         }
-    }
-
-    auto src_file_attr
-        = get_string_attr(this->lss_token_al.al_attrs, SA_SRC_FILE);
-    if (src_file_attr) {
-        auto lr = src_file_attr->saw_string_attr->sa_range;
-        lr.lr_end = lr.lr_start + 1;
-        this->lss_token_al.al_attrs.emplace_back(
-            lr, VC_STYLE.value(text_attrs::with_underline()));
-        this->lss_token_al.al_attrs.emplace_back(lr,
-                                                 VC_COMMAND.value(ui_command{
-                                                     source_location{},
-                                                     "|lnav-open-source",
-                                                 }));
     }
 
     if (this->lss_time_column_size == 0) {
@@ -3660,19 +3690,11 @@ logfile_sub_source::add_commands_for_session(
         }
     }
 
-    {
-        static auto& lnav_db = injector::get<auto_sqlite3&>();
-        static const auto BP_QUERY = R"(
-                            SELECT description FROM lnav_log_breakpoints
-                        )";
-        auto bp_stmt = prepare_stmt(lnav_db.in(), BP_QUERY);
-        if (bp_stmt.isOk()) {
-            auto stmt = bp_stmt.unwrap();
-            stmt.for_each_row<std::string>([&](const std::string& desc) {
-                receiver(fmt::format(FMT_STRING("breakpoint {}"), desc));
-                return false;
-            });
+    for (const auto& [schema_id, bp] : this->lss_breakpoints) {
+        if (bp.bp_source != breakpoint_info::source_type::src_location) {
+            continue;
         }
+        receiver(fmt::format(FMT_STRING("breakpoint {}"), bp.bp_description));
     }
 }
 
