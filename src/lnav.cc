@@ -4011,16 +4011,26 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         || mode_flags.mf_check_configs)
     {
     } else if (!isatty(STDOUT_FILENO)) {
-        lnav::console::print(
-            stderr,
-            lnav::console::user_message::error(
-                "unable to display interactive text UI")
-                .with_reason("stdout is not a TTY")
-                .with_help(attr_line_t("pass the ")
-                               .append("-n"_symbol)
-                               .append(" option to run lnav in headless mode "
-                                       "or don't redirect stdout")));
-        retval = EXIT_FAILURE;
+        if (load_stdin && !isatty(STDIN_FILENO)
+            && verbosity == verbosity_t::quiet
+            && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
+        {
+            log_debug("pager mode, but output is redirected")
+                lnav_data.ld_flags.set<lnav_flags::headless>();
+            verbosity = verbosity_t::standard;
+        } else {
+            lnav::console::print(
+                stderr,
+                lnav::console::user_message::error(
+                    "unable to display interactive text UI")
+                    .with_reason("stdout is not a TTY")
+                    .with_help(
+                        attr_line_t("pass the ")
+                            .append("-n"_symbol)
+                            .append(" option to run lnav in headless mode "
+                                    "or don't redirect stdout")));
+            retval = EXIT_FAILURE;
+        }
     }
 
     std::optional<std::string> stdin_url;
@@ -4458,7 +4468,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     auto& tc = lnav_data.ld_views[LNV_TEXT];
                     auto& bv = tc.get_bookmarks()[&textview_curses::BM_USER];
                     tc.tc_mark_style = std::nullopt;
-                    bool is_short = tc.get_inner_height() < term_size.ws_row - 3;
+                    bool is_short
+                        = tc.get_inner_height() < term_size.ws_row - 3;
                     if (is_short || !bv.empty()) {
                         for (auto vl = 0_vl; vl < tc.get_inner_height(); ++vl) {
                             if (!is_short && !bv.contains(vl)) {
