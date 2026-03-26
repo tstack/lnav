@@ -99,6 +99,9 @@ Features:
     focused line in the LOG view.  Once breakpoints have
     been added, you can press `F7`/`F8` to move to the
     previous/next log message that matches a breakpoint.
+  - The `:disable-breakpoint` and `:enable-breakpoint`
+    commands have been added to allow disabling a
+    breakpoint without deleting it.
   - If the log format specifies source file/line fields
     and a breakpoint is set, a red bullet point will be
     inserted to signify the presence of a breakpoint.

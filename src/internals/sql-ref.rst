@@ -3501,14 +3501,15 @@ radians(*degrees*)
 
 .. _raise_error:
 
-raise_error(*msg*, *\[reason\]*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+raise_error(*msg*, *\[reason\]*, *\[help\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Raises an error with the given message when executed
 
   **Parameters**
     * **msg\*** --- The error message
     * **reason** --- The reason the error occurred
+    * **help** --- A possible resolution to the error
 
   **Examples**
     To raise an error if a variable is not set:

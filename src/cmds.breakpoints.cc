@@ -303,6 +303,205 @@ com_toggle_breakpoint(exec_context& ec,
     return com_breakpoint(ec, cmdline, args);
 }
 
+static std::string
+schema_id_for_point(const std::string& point,
+                    logfile_sub_source* lss,
+                    textview_curses* tc)
+{
+    static const auto POINT_RE
+        = lnav::pcre2pp::code::from_const(R"(^(?:([^:\s]+):)?([^:]+):(\d+)$)");
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
+    if (POINT_RE.capture_from(point).into(md).found_p()) {
+        std::string format_name;
+
+        if (md[1]) {
+            format_name = md[1]->to_string();
+        } else if (lss != nullptr) {
+            auto line_pair = lss->find_line_with_file(tc->get_selection());
+            if (line_pair) {
+                format_name = line_pair->first->get_format_name().to_string();
+            }
+        }
+
+        if (!format_name.empty()) {
+            auto h = hasher();
+            h.update(format_name);
+            h.update(md[2].value());
+            h.update(md[3].value());
+            return h.to_string();
+        }
+    }
+
+    return {};
+}
+
+static Result<std::string, lnav::console::user_message>
+com_disable_breakpoint(exec_context& ec,
+                       std::string cmdline,
+                       std::vector<std::string>& args)
+{
+    static const intern_string_t SRC = intern_string::lookup("point");
+    std::string retval;
+
+    auto pat = trim(remaining_args(cmdline, args));
+    shlex lexer(pat);
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error(
+                  "unable to parse breakpoint")
+                  .with_reason(split_err.se_error.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err.se_error)))
+                  .move();
+
+        return Err(um);
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto& bps = lnav_data.ld_log_source.get_breakpoints();
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
+
+    if (ec.ec_dry_run) {
+        return Ok(retval);
+    }
+
+    std::vector<std::string> disabled;
+
+    if (split_args.empty()) {
+        if (lss == nullptr) {
+            return ec.make_error(
+                "A breakpoint definition must be given if the "
+                "top view is not the LOG view");
+        }
+
+        auto schema_id
+            = get_current_line_schema_id(*lss, tc->get_selection().value());
+        if (schema_id.empty()) {
+            return ec.make_error(
+                "Could not determine schema for the current line");
+        }
+
+        auto it = bps.find(schema_id);
+        if (it == bps.end()) {
+            return ec.make_error("No breakpoint set for the current line");
+        }
+
+        it->second.bp_enabled = false;
+        disabled.emplace_back(it->second.bp_description);
+    }
+
+    for (const auto& point : split_args) {
+        auto schema_id = schema_id_for_point(point, lss, tc);
+        if (schema_id.empty()) {
+            return ec.make_error("Invalid breakpoint: {}", point);
+        }
+
+        auto it = bps.find(schema_id);
+        if (it == bps.end()) {
+            return ec.make_error("No breakpoint matching: {}", point);
+        }
+
+        it->second.bp_enabled = false;
+        disabled.emplace_back(it->second.bp_description);
+    }
+
+    if (!disabled.empty()) {
+        retval = fmt::format(FMT_STRING("info: disabled breakpoints -- {}"),
+                             fmt::join(disabled, ", "));
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_enable_breakpoint(exec_context& ec,
+                      std::string cmdline,
+                      std::vector<std::string>& args)
+{
+    static const intern_string_t SRC = intern_string::lookup("point");
+    std::string retval;
+
+    auto pat = trim(remaining_args(cmdline, args));
+    shlex lexer(pat);
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error(
+                  "unable to parse breakpoint")
+                  .with_reason(split_err.se_error.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err.se_error)))
+                  .move();
+
+        return Err(um);
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+    auto& bps = lnav_data.ld_log_source.get_breakpoints();
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
+
+    std::vector<std::string> enabled;
+
+    if (split_args.empty()) {
+        if (lss == nullptr) {
+            return ec.make_error(
+                "A breakpoint definition must be given if the "
+                "top view is not the LOG view");
+        }
+
+        auto schema_id
+            = get_current_line_schema_id(*lss, tc->get_selection().value());
+        if (schema_id.empty()) {
+            return ec.make_error(
+                "Could not determine schema for the current line");
+        }
+
+        auto it = bps.find(schema_id);
+        if (it != bps.end()) {
+            if (ec.ec_dry_run) {
+                return Ok(retval);
+            }
+            it->second.bp_enabled = true;
+            enabled.emplace_back(it->second.bp_description);
+        } else {
+            return com_breakpoint(ec, cmdline, args);
+        }
+    }
+
+    for (const auto& point : split_args) {
+        auto schema_id = schema_id_for_point(point, lss, tc);
+        if (schema_id.empty()) {
+            return ec.make_error("Invalid breakpoint: {}", point);
+        }
+
+        auto it = bps.find(schema_id);
+        if (it != bps.end()) {
+            if (ec.ec_dry_run) {
+                continue;
+            }
+            it->second.bp_enabled = true;
+            enabled.emplace_back(it->second.bp_description);
+        } else {
+            return com_breakpoint(ec, cmdline, args);
+        }
+    }
+
+    if (!enabled.empty()) {
+        retval = fmt::format(FMT_STRING("info: enabled breakpoints -- {}"),
+                             fmt::join(enabled, ", "));
+    }
+
+    return Ok(retval);
+}
+
 static readline_context::command_t BREAKPOINT_COMMANDS[] = {
     {
         "breakpoint",
@@ -345,6 +544,36 @@ static readline_context::command_t BREAKPOINT_COMMANDS[] = {
                     .with_format(help_parameter_format_t::HPF_KNOWN_BREAKPOINT)
                     .one_or_more())
             .with_example({"To clear all breakpoints", "*"}),
+    },
+    {
+        "disable-breakpoint",
+        com_disable_breakpoint,
+        help_text(":disable-breakpoint")
+            .with_summary(
+                "Disable a breakpoint for the given "
+                "[<format>:]<file>:<line> tuples "
+                "or the current line")
+            .with_parameter(
+                help_text("point")
+                    .with_summary(
+                        "The file and line number of the breakpoint")
+                    .with_format(help_parameter_format_t::HPF_BREAKPOINT)
+                    .zero_or_more()),
+    },
+    {
+        "enable-breakpoint",
+        com_enable_breakpoint,
+        help_text(":enable-breakpoint")
+            .with_summary(
+                "Enable or create a breakpoint for the given "
+                "[<format>:]<file>:<line> tuples "
+                "or the current line")
+            .with_parameter(
+                help_text("point")
+                    .with_summary(
+                        "The file and line number of the breakpoint")
+                    .with_format(help_parameter_format_t::HPF_BREAKPOINT)
+                    .zero_or_more()),
     },
 };
 

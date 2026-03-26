@@ -125,12 +125,17 @@ sql_lnav_version()
 }
 
 static int64_t
-sql_error(const char* str, std::optional<string_fragment> reason)
+sql_error(const char* str,
+          std::optional<string_fragment> reason,
+          std::optional<string_fragment> help)
 {
     auto um = lnav::console::user_message::error(str);
 
     if (reason) {
         um.with_reason(reason->to_string());
+    }
+    if (help) {
+        um.with_help(help->to_string());
     }
     throw um;
 }
@@ -201,6 +206,9 @@ state_extension_functions(struct FuncDef** basic_funcs,
                 .with_parameter({"msg", "The error message"})
                 .with_parameter(
                     help_text("reason", "The reason the error occurred")
+                        .optional())
+                .with_parameter(
+                    help_text("help", "A possible resolution to the error")
                         .optional())
                 .with_example({
                     "To raise an error if a variable is not set",

@@ -4,18 +4,32 @@ dist_noinst_DATA = \
     test_breakpoints.sh_0fb9bc0a657beeed8017b23a538e55870bf09905.out \
     test_breakpoints.sh_46ac6c23d7ff2932c12c16cd306721faa999d474.err \
     test_breakpoints.sh_46ac6c23d7ff2932c12c16cd306721faa999d474.out \
+    test_breakpoints.sh_4d84ec676af57eab9292cff05e9faaa2db9127a0.err \
+    test_breakpoints.sh_4d84ec676af57eab9292cff05e9faaa2db9127a0.out \
     test_breakpoints.sh_4f7d8b59b337f6b22d198916a862407ae6e10b39.err \
     test_breakpoints.sh_4f7d8b59b337f6b22d198916a862407ae6e10b39.out \
     test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.err \
     test_breakpoints.sh_530605d52ea4616e05120289b1cb2246e36009bf.out \
     test_breakpoints.sh_5a5729c566bf0b35130cc6ff70b797bedfc73060.err \
     test_breakpoints.sh_5a5729c566bf0b35130cc6ff70b797bedfc73060.out \
+    test_breakpoints.sh_65b209f89eb81f3acb433858b01470f16aa4da20.err \
+    test_breakpoints.sh_65b209f89eb81f3acb433858b01470f16aa4da20.out \
+    test_breakpoints.sh_684a478d8dad1031a69b621541fd4356d1256619.err \
+    test_breakpoints.sh_684a478d8dad1031a69b621541fd4356d1256619.out \
+    test_breakpoints.sh_9613e85ec025682a45ea610c299c1248dd0569a1.err \
+    test_breakpoints.sh_9613e85ec025682a45ea610c299c1248dd0569a1.out \
     test_breakpoints.sh_967c0ffe19fd9b02d6e0b4a537f73295e862352a.err \
     test_breakpoints.sh_967c0ffe19fd9b02d6e0b4a537f73295e862352a.out \
     test_breakpoints.sh_a2a63828e6b2f83f33b6dbe4f2d42c7832d0fe9c.err \
     test_breakpoints.sh_a2a63828e6b2f83f33b6dbe4f2d42c7832d0fe9c.out \
+    test_breakpoints.sh_af27c00709a309f6ee38a97cfe2e21d289017981.err \
+    test_breakpoints.sh_af27c00709a309f6ee38a97cfe2e21d289017981.out \
+    test_breakpoints.sh_afc23710feaced92c29ce39fb52f835d9b1b824f.err \
+    test_breakpoints.sh_afc23710feaced92c29ce39fb52f835d9b1b824f.out \
     test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.err \
     test_breakpoints.sh_b4000f210d18582a69aa472b5e8b6b4f39da075d.out \
+    test_breakpoints.sh_b69871e079896559d683bafea4196bc8071efe28.err \
+    test_breakpoints.sh_b69871e079896559d683bafea4196bc8071efe28.out \
     test_breakpoints.sh_c62dec68ff06e3ba352d01b9c3c9a6730fe961c8.err \
     test_breakpoints.sh_c62dec68ff06e3ba352d01b9c3c9a6730fe961c8.out \
     test_breakpoints.sh_d2e8794bb97382282760cafc9aced6acc7e91d57.err \

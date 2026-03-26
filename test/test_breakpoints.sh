@@ -64,3 +64,54 @@ run_cap_test ${lnav_test} -n \
     -c ":breakpoint logging_unittest.cc:259" \
     -c ";UPDATE lnav_log_breakpoints SET schema_id = 'bad'" \
     ${test_dir}/logfile_glog.0
+
+# disable-breakpoint on the current line
+run_cap_test ${lnav_test} -n \
+    -c ":breakpoint logging_unittest.cc:259" \
+    -c ":disable-breakpoint" \
+    -c ";SELECT description, enabled FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+# disable-breakpoint with a point argument
+run_cap_test ${lnav_test} -n \
+    -c ":breakpoint logging_unittest.cc:259" \
+    -c ":disable-breakpoint logging_unittest.cc:259" \
+    -c ";SELECT description, enabled FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+# disable-breakpoint when no breakpoint is set
+run_cap_test ${lnav_test} -n \
+    -c ":disable-breakpoint" \
+    ${test_dir}/logfile_glog.0
+
+# enable-breakpoint re-enables a disabled breakpoint
+run_cap_test ${lnav_test} -n \
+    -c ":breakpoint logging_unittest.cc:259" \
+    -c ":disable-breakpoint" \
+    -c ":enable-breakpoint" \
+    -c ";SELECT description, enabled FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+# enable-breakpoint with a point argument re-enables
+run_cap_test ${lnav_test} -n \
+    -c ":breakpoint logging_unittest.cc:259" \
+    -c ":disable-breakpoint logging_unittest.cc:259" \
+    -c ":enable-breakpoint logging_unittest.cc:259" \
+    -c ";SELECT description, enabled FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+# enable-breakpoint creates a new breakpoint if none exists
+run_cap_test ${lnav_test} -n \
+    -c ":enable-breakpoint logging_unittest.cc:259" \
+    -c ";SELECT description, enabled FROM lnav_log_breakpoints" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_glog.0
+
+# disable-breakpoint with a non-matching point
+run_cap_test ${lnav_test} -n \
+    -c ":disable-breakpoint no_such_file.cc:999" \
+    ${test_dir}/logfile_glog.0

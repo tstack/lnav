@@ -813,7 +813,7 @@ textview_curses::handle_mouse(mouse_event& me)
                     }
                 }
                 if (this->tc_on_click) {
-                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin, me);
                 }
             }
             if (mouse_line.is<overlay_content>()) {
@@ -848,7 +848,7 @@ textview_curses::handle_mouse(mouse_event& me)
                     }
                 }
                 if (this->tc_on_click) {
-                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin, me);
                 }
             }
             if (this->tc_delegate != nullptr) {

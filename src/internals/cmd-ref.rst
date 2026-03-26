@@ -528,6 +528,20 @@
 ----
 
 
+.. _disable_breakpoint:
+
+:disable-breakpoint *point*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Disable a breakpoint for the given [<format>:]<file>:<line> tuples or the current line
+
+  **Parameters**
+    * **point** --- The file and line number of the breakpoint
+
+
+----
+
+
 .. _disable_filter:
 
 :disable-filter *pattern*
@@ -584,6 +598,20 @@
 
   **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+
+----
+
+
+.. _enable_breakpoint:
+
+:enable-breakpoint *point*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Enable or create a breakpoint for the given [<format>:]<file>:<line> tuples or the current line
+
+  **Parameters**
+    * **point** --- The file and line number of the breakpoint
+
 
 ----
 

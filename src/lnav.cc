@@ -1578,7 +1578,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
     };
-    auto click_handler = [](textview_curses& tc, const attr_line_t& al, int x) {
+    auto click_handler = [](textview_curses& tc,
+                            const attr_line_t& al,
+                            int x,
+                            const mouse_event& me) {
         if (tc.tc_selected_text) {
             return;
         }

@@ -5,17 +5,22 @@
 
 ;SELECT
     CASE
-      WHEN count(*) = 0 THEN raise_error('Cannot move to breakpoint', 'No breakpoints have been set yet')
+      WHEN name != 'log' THEN
+        raise_error('Cannot move to breakpoint',
+                    'Breakpoints are only supported in the LOG view')
+      ELSE 1
+    END
+  FROM lnav_top_view
+  UNION ALL
+  SELECT
+    CASE
+      WHEN count(*) = 0 THEN
+        raise_error('Cannot move to breakpoint',
+                    'No breakpoints have been set yet',
+                    'Use CTRL-B or the :breakpoint command to set a breakpoint')
       ELSE 1
     END
   FROM lnav_log_breakpoints
-  UNION ALL
- SELECT
-    CASE
-      WHEN name != 'log' THEN raise_error('Cannot move to breakpoint', 'Breakpoints are only supported in the LOG view')
-      ELSE 1
-    END
-  FROM lnav_top_view;
 
 ;SELECT
     CASE $1

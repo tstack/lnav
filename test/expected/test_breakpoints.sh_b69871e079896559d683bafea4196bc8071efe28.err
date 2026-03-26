@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: No breakpoint matching: no_such_file.cc:999
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mdisable-breakpoint[0m[37m[40m no_such_file.cc:999 [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mdisable-breakpoint[0m[4m [0m[4mpoint[0m
+         ══════════════════════════════════════════════════════════════════════
+           Disable a breakpoint for the given [<format>:]<file>:<line> tuples
+           or the current line

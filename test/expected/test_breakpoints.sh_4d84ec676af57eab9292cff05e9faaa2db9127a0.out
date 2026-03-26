@@ -1,0 +1,3 @@
+description,enabled
+glog_log:logging_unittest.cc:259,1
+glog_log:logging_unittest.cc:253,1
