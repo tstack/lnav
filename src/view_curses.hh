@@ -295,6 +295,8 @@ enum class mouse_button_t {
     BUTTON_SCROLL_DOWN,
 };
 
+string_fragment to_string_fragment(mouse_button_t mb);
+
 enum class mouse_button_state_t {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_DRAGGED,

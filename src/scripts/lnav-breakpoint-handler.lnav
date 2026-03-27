@@ -1,0 +1,13 @@
+#
+# @synopsis: lnav-breakpoint-handler
+# @description: Handle a mouse button click on a breakpoint bullet.
+#
+
+;SELECT $1 as mouse_button
+;SELECT CASE $mouse_button
+  WHEN 'left' THEN ';UPDATE lnav_log_breakpoints SET enabled = NOT enabled WHERE schema_id = (SELECT log_msg_schema FROM lnav_focused_msg)'
+  WHEN 'right' THEN ':toggle-breakpoint'
+  ELSE ':echo ' || $mouse_button || ' click not supported'
+ END AS cmd
+
+:eval $cmd

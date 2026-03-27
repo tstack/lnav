@@ -105,10 +105,14 @@ Features:
   - If the log format specifies source file/line fields
     and a breakpoint is set, a red bullet point will be
     inserted to signify the presence of a breakpoint.
+    Left-clicking on the bullet will toggle enabling/
+    disabling the breakpoint.  A right-click will
+    delete the breakpoint.
     In addition, if the `:add-source-path` command has
     been used, the first character of the source file
-    will be underlined and can be clicked to open the
-    source file at the given log message.
+    will be underlined and can be left-clicked to open
+    the source file at the given log message.  A
+    right-click will set a breakpoint.
 * The `all_opids` and `all_thread_ids` virtual tables
   have been added to make it simple to discover all of
   the operations and threads across all log files.  The

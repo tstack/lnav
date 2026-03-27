@@ -134,6 +134,20 @@ struct utf_to_display_adjustment {
     }
 };
 
+string_fragment to_string_fragment(mouse_button_t mb)
+{
+    switch (mb) {
+        case mouse_button_t::BUTTON_LEFT:
+            return "left"_frag;
+        case mouse_button_t::BUTTON_MIDDLE:
+            return "middle"_frag;
+        case mouse_button_t::BUTTON_RIGHT:
+            return "right"_frag;
+        default:
+            return "unknown"_frag;
+    }
+}
+
 bool
 mouse_event::is_click(mouse_button_t button) const
 {

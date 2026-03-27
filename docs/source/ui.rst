@@ -294,7 +294,7 @@ message.  Inside the overlay, the following hotkeys are supported:
     link in a log message comment, or compared to the :code:`log_line_link`
     link in log tables.
 
-The source file name for each message can be displayed by scrolling left.
+The log file name for each message can be displayed by scrolling left.
 Scrolling left once will show the shortened version of the file name relative
 to the other files that are loaded.  In the shortened version, the unique
 portion of the file name will be in square brackets.  Scrolling left a second

@@ -339,10 +339,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_FILE);
     if (src_file_attr != this->lss_token_al.al_attrs.end()) {
         auto src_file_sf = this->lss_token_al.to_string_fragment(src_file_attr);
-        log_debug("src_file %d:%d %s",
-                  src_file_attr->sa_range.lr_start,
-                  src_file_attr->sa_range.lr_end,
-                  src_file_sf.to_string().c_str());
         auto lr = src_file_attr->sa_range;
         lr.lr_end = lr.lr_start + 1;
         auto break_ta = text_attrs::with_underline();
@@ -350,7 +346,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             .with_attr({lr,
                         VC_COMMAND.value(ui_command{
                             source_location{},
-                            "|lnav-open-source",
+                            "|lnav-src-loc-handler $mouse_button",
                         })});
         if (!this->lss_breakpoints.empty()) {
             auto src_line_attr
@@ -370,9 +366,15 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     lr.lr_end = lr.lr_start;
                     this->lss_token_al.insert(
                         lr.lr_start,
-                        it->second.bp_enabled
-                            ? ui_icon_t::breakpoint
-                            : ui_icon_t::disabled_breakpoint);
+                        it->second.bp_enabled ? ui_icon_t::breakpoint
+                                              : ui_icon_t::disabled_breakpoint);
+                    lr.lr_end += 2;
+                    this->lss_token_al.with_attr(
+                        {lr,
+                         VC_COMMAND.value(ui_command{
+                             source_location{},
+                             "|lnav-breakpoint-handler $mouse_button",
+                         })});
                     this->lss_token_values.shift_origins_by(lr, 2);
                 }
             }

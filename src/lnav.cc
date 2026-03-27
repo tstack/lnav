@@ -1581,9 +1581,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     auto click_handler = [](textview_curses& tc,
                             const attr_line_t& al,
                             int x,
-                            const mouse_event& me) {
+                            const mouse_event& me) -> bool {
         if (tc.tc_selected_text) {
-            return;
+            return false;
         }
         static auto& prompt = lnav::prompt::get();
         static auto& ec = lnav_data.ld_exec_context;
@@ -1591,11 +1591,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
         if (cmd_iter != al.al_attrs.end()) {
             auto cmd = cmd_iter->sa_value.get<ui_command>();
-            auto exec_res = ec.execute(cmd.uc_location, cmd.uc_command);
+            auto mouse_button_sf = to_string_fragment(me.me_button);
+            auto exec_res = ec.execute_with(
+                cmd.uc_location,
+                cmd.uc_command,
+                std::make_pair("mouse_button", mouse_button_sf.to_string()));
             if (exec_res.isOk()) {
                 auto val = exec_res.unwrap();
                 prompt.p_editor.set_inactive_value(val);
             }
+            return true;
         }
         auto link_iter
             = find_string_attr_containing(al.get_attrs(), &VC_HYPERLINK, x);
@@ -1606,7 +1611,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                 ":xopen $href",
                                 std::make_pair("href", href));
             }
+            return true;
         }
+        return false;
     };
     for (auto& ld_view : lnav_data.ld_views) {
         ld_view.set_window(lnav_data.ld_window);

@@ -753,20 +753,6 @@ textview_curses::handle_mouse(mouse_event& me)
                 }
             }
             this->tc_text_selection_active = false;
-            if (this->tc_press_line.is<main_content>()
-                && mouse_line.is<main_content>()
-                && me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX))
-            {
-                auto* lov = this->get_overlay_source();
-                if (lov != nullptr
-                    && (!lov->get_show_details_in_overlay()
-                        || this->tc_selection_at_press
-                            == this->get_selection()))
-                {
-                    this->set_show_details_in_overlay(
-                        !lov->get_show_details_in_overlay());
-                }
-            }
             if (this->vc_enabled) {
                 if (this->tc_selection_start) {
                     this->toggle_user_mark(&BM_USER,
@@ -785,35 +771,54 @@ textview_curses::handle_mouse(mouse_event& me)
                 auto cursor_sf = line_sf.sub_cell_range(
                     mc.mc_line_range.lr_start + me.me_x,
                     mc.mc_line_range.lr_start + me.me_x);
-                auto link_iter = find_string_attr_containing(
-                    al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
-                if (link_iter != al.get_attrs().end()) {
-                    auto href = link_iter->sa_value.get<std::string>();
-                    auto* ta = dynamic_cast<text_anchors*>(this->tc_sub_source);
-
-                    if (me.me_button == mouse_button_t::BUTTON_LEFT
-                        && ta != nullptr && startswith(href, "#")
-                        && !startswith(href, "#/frontmatter"))
-                    {
-                        auto row_opt = ta->row_for_anchor(href);
-
-                        if (row_opt.has_value()) {
-                            this->set_selection(row_opt.value());
-                        }
-                    } else {
-                        this->tc_selected_text = selected_text_info{
-                            me.me_x,
-                            mc.mc_line,
-                            link_iter->sa_range,
-                            al.get_attrs(),
-                            al.to_string_fragment(link_iter).to_string(),
-                            href,
-                        };
-                        this->set_needs_update();
-                    }
-                }
+                auto consumed = false;
                 if (this->tc_on_click) {
-                    this->tc_on_click(*this, al, cursor_sf.sf_begin, me);
+                    consumed
+                        = this->tc_on_click(*this, al, cursor_sf.sf_begin, me);
+                }
+                if (!consumed) {
+                    if (this->tc_press_line.is<main_content>()
+                        && me.is_click_in(
+                            mouse_button_t::BUTTON_RIGHT, 0, INT_MAX))
+                    {
+                        auto* lov = this->get_overlay_source();
+                        if (lov != nullptr
+                            && (!lov->get_show_details_in_overlay()
+                                || this->tc_selection_at_press
+                                    == this->get_selection()))
+                        {
+                            this->set_show_details_in_overlay(
+                                !lov->get_show_details_in_overlay());
+                        }
+                    }
+                    auto link_iter = find_string_attr_containing(
+                        al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
+                    if (link_iter != al.get_attrs().end()) {
+                        auto href = link_iter->sa_value.get<std::string>();
+                        auto* ta
+                            = dynamic_cast<text_anchors*>(this->tc_sub_source);
+
+                        if (me.me_button == mouse_button_t::BUTTON_LEFT
+                            && ta != nullptr && startswith(href, "#")
+                            && !startswith(href, "#/frontmatter"))
+                        {
+                            auto row_opt = ta->row_for_anchor(href);
+
+                            if (row_opt.has_value()) {
+                                this->set_selection(row_opt.value());
+                            }
+                        } else {
+                            this->tc_selected_text = selected_text_info{
+                                me.me_x,
+                                mc.mc_line,
+                                link_iter->sa_range,
+                                al.get_attrs(),
+                                al.to_string_fragment(link_iter).to_string(),
+                                href,
+                            };
+                            this->set_needs_update();
+                        }
+                    }
                 }
             }
             if (mouse_line.is<overlay_content>()) {

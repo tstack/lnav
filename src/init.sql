@@ -109,6 +109,7 @@ END;
 
 CREATE VIEW lnav_db.lnav_focused_msg AS
 SELECT *,
+       log_msg_schema,
        log_part,
        log_actual_time,
        log_idle_msecs,
