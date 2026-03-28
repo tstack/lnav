@@ -708,11 +708,14 @@ struct logline_value_vector {
 
     void shift_origins_by(const line_range& cover, int32_t amount);
 
+    ArenaAlloc::Alloc<char> lvv_allocator{8 * 1024};
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
     std::optional<std::string> lvv_opid_value;
     opid_provenance lvv_opid_provenance{opid_provenance::none};
-    std::optional<std::string> lvv_thread_id_value;
+    std::optional<string_fragment> lvv_thread_id_value;
+    std::optional<string_fragment> lvv_src_file_value;
+    std::optional<string_fragment> lvv_src_line_value;
 };
 
 struct log_format_scan_match {

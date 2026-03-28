@@ -701,13 +701,20 @@ logline_value_vector::clear()
     this->lvv_opid_value = std::nullopt;
     this->lvv_opid_provenance = opid_provenance::none;
     this->lvv_thread_id_value = std::nullopt;
+    this->lvv_src_file_value = std::nullopt;
+    this->lvv_src_line_value = std::nullopt;
 }
 
 logline_value_vector::logline_value_vector(const logline_value_vector& other)
     : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
       lvv_opid_value(other.lvv_opid_value),
       lvv_opid_provenance(other.lvv_opid_provenance),
-      lvv_thread_id_value(other.lvv_thread_id_value)
+      lvv_thread_id_value(
+          to_owned(other.lvv_thread_id_value, this->lvv_allocator)),
+      lvv_src_file_value(
+          to_owned(other.lvv_src_file_value, this->lvv_allocator)),
+      lvv_src_line_value(
+          to_owned(other.lvv_src_line_value, this->lvv_allocator))
 {
 }
 
@@ -718,7 +725,12 @@ logline_value_vector::operator=(const logline_value_vector& other)
     this->lvv_values = other.lvv_values;
     this->lvv_opid_value = other.lvv_opid_value;
     this->lvv_opid_provenance = other.lvv_opid_provenance;
-    this->lvv_thread_id_value = other.lvv_thread_id_value;
+    this->lvv_thread_id_value
+        = to_owned(other.lvv_thread_id_value, this->lvv_allocator);
+    this->lvv_src_file_value
+        = to_owned(other.lvv_src_file_value, this->lvv_allocator);
+    this->lvv_src_line_value
+        = to_owned(other.lvv_src_line_value, this->lvv_allocator);
 
     return *this;
 }
@@ -1735,7 +1747,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_tid_frag) {
             this->jlf_line_values.lvv_thread_id_value
-                = jlu.jlu_tid_frag->to_string();
+                = jlu.jlu_tid_frag->to_owned(
+                    this->jlf_line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator,
                 jlu.jlu_tid_frag.value(),
@@ -2299,7 +2312,12 @@ external_log_format::annotate(logfile* lf,
             values.lvv_opid_provenance
                 = this->jlf_line_values.lvv_opid_provenance;
             values.lvv_thread_id_value
-                = this->jlf_line_values.lvv_thread_id_value;
+                = to_owned(this->jlf_line_values.lvv_thread_id_value,
+                           values.lvv_allocator);
+            values.lvv_src_file_value = to_owned(
+                this->jlf_line_values.lvv_src_file_value, values.lvv_allocator);
+            values.lvv_src_line_value = to_owned(
+                this->jlf_line_values.lvv_src_line_value, values.lvv_allocator);
         }
         log_format::annotate(lf, line_number, sa, values);
         return;
@@ -2393,15 +2411,20 @@ external_log_format::annotate(logfile* lf,
     if (src_file_cap) {
         sa.emplace_back(to_line_range(src_file_cap.value()),
                         SA_SRC_FILE.value());
+        values.lvv_src_file_value
+            = src_file_cap->to_owned(values.lvv_allocator);
     }
     if (src_line_cap) {
         sa.emplace_back(to_line_range(src_line_cap.value()),
                         SA_SRC_LINE.value());
+        values.lvv_src_line_value
+            = src_line_cap->to_owned(values.lvv_allocator);
     }
     if (thread_id_cap) {
         sa.emplace_back(to_line_range(thread_id_cap.value()),
                         SA_THREAD_ID.value());
-        values.lvv_thread_id_value = thread_id_cap->to_string();
+        values.lvv_thread_id_value
+            = thread_id_cap->to_owned(values.lvv_allocator);
     }
     if (duration_cap) {
         sa.emplace_back(to_line_range(duration_cap.value()),
@@ -2722,7 +2745,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             = logline_value_vector::opid_provenance::file;
     }
     if (jlu->jlu_format->elf_thread_id_field == field_name) {
-        jlu->jlu_format->jlf_line_values.lvv_thread_id_value = frag.to_string();
+        jlu->jlu_format->jlf_line_values.lvv_thread_id_value
+            = frag.to_owned(jlu->jlu_format->jlf_line_values.lvv_allocator);
     }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
@@ -2954,11 +2978,19 @@ external_log_format::get_subline(const log_format_file_state& lffs,
             }
 
             if (jlu.jlu_tid_number) {
+                char tid_buf[128];
+                auto to_n_res = fmt::format_to_n(tid_buf,
+                                                 sizeof(tid_buf) - 1,
+                                                 FMT_STRING("{}"),
+                                                 jlu.jlu_tid_number.value());
+                *to_n_res.out = '\0';
                 this->jlf_line_values.lvv_thread_id_value
-                    = fmt::to_string(jlu.jlu_tid_number.value());
+                    = string_fragment::from_c_str(tid_buf).to_owned(
+                        this->jlf_line_values.lvv_allocator);
             } else if (jlu.jlu_tid_frag) {
                 this->jlf_line_values.lvv_thread_id_value
-                    = jlu.jlu_tid_frag->to_string();
+                    = jlu.jlu_tid_frag->to_owned(
+                        this->jlf_line_values.lvv_allocator);
             }
 
             if (this->elf_opid_field.empty()
@@ -3141,25 +3173,57 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                 }
                                 auto diff = str.size() - digits;
                                 auto file_lr = lr;
-                                file_lr.lr_end -= digits + 1;
+                                file_lr.lr_end -= digits;
                                 auto line_lr = lr;
                                 line_lr.lr_start += diff;
+                                if (digits > 0) {
+                                    file_lr.lr_end -= 1;
+                                    line_lr.lr_start += 1;
+                                }
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_LOC.value());
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     file_lr, SA_SRC_FILE.value());
+                                this->jlf_line_values.lvv_src_file_value
+                                    = this->jlf_attr_line
+                                          .to_string_fragment(
+                                              this->jlf_attr_line.al_attrs
+                                                  .back())
+                                          .to_owned(this->jlf_line_values
+                                                        .lvv_allocator);
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     line_lr, SA_SRC_LINE.value());
+                                this->jlf_line_values.lvv_src_line_value
+                                    = this->jlf_attr_line
+                                          .to_string_fragment(
+                                              this->jlf_attr_line.al_attrs
+                                                  .back())
+                                          .to_owned(this->jlf_line_values
+                                                        .lvv_allocator);
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_file_field)
                             {
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_FILE.value());
+                                this->jlf_line_values.lvv_src_file_value
+                                    = this->jlf_attr_line
+                                          .to_string_fragment(
+                                              this->jlf_attr_line.al_attrs
+                                                  .back())
+                                          .to_owned(this->jlf_line_values
+                                                        .lvv_allocator);
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_src_line_field)
                             {
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_LINE.value());
+                                this->jlf_line_values.lvv_src_line_value
+                                    = this->jlf_attr_line
+                                          .to_string_fragment(
+                                              this->jlf_attr_line.al_attrs
+                                                  .back())
+                                          .to_owned(this->jlf_line_values
+                                                        .lvv_allocator);
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_thread_id_field)
                             {

@@ -115,25 +115,23 @@ all_logs_vtab::extract(logfile* lf,
         body.lr_end = line.length();
     }
     auto body_sf = line.to_string_fragment(body);
-    auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
-    auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
-    auto src_file_sf = line.to_string_fragment(src_file);
-    auto src_line_sf = line.to_string_fragment(src_line);
+    auto src_file_sf = sub_values.lvv_src_file_value;
+    auto src_line_sf = sub_values.lvv_src_line_value;
     auto h = hasher();
-    if (src_file_sf.is_valid() && src_line_sf.is_valid()) {
+    if (src_file_sf && src_line_sf) {
         h.update(format->get_name().c_str());
-        h.update(src_file_sf);
-        h.update(src_line_sf);
+        h.update(src_file_sf.value());
+        h.update(src_line_sf.value());
     }
 #ifdef HAVE_RUST_DEPS
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;
-    if (src_file_sf.is_valid()) {
-        file_rust_str = rust::Str(src_file_sf.data(), src_file_sf.length());
+    if (src_file_sf) {
+        file_rust_str = rust::Str(src_file_sf->data(), src_file_sf->length());
     }
-    if (src_line_sf.is_valid()) {
+    if (src_line_sf) {
         auto scan_res
-            = scn::scan_int<decltype(lineno)>(src_line_sf.to_string_view());
+            = scn::scan_int<decltype(lineno)>(src_line_sf->to_string_view());
         if (scan_res) {
             lineno = scan_res->value();
         }
@@ -142,7 +140,7 @@ all_logs_vtab::extract(logfile* lf,
     auto find_res = lnav_rs_ext::find_log_statement_json(
         file_rust_str, lineno, body_rust_str);
     if (find_res != nullptr) {
-        if (!src_file_sf.is_valid() || !src_line_sf.is_valid()) {
+        if (!src_file_sf || !src_line_sf) {
             h.update(find_res->src.c_str());
             h.update(find_res->pattern.c_str());
         }
@@ -175,7 +173,7 @@ all_logs_vtab::extract(logfile* lf,
 
         elements_to_json(gen, dp, &dp.dp_pairs);
 
-        auto schema_id = (src_file_sf.is_valid() && src_line_sf.is_valid())
+        auto schema_id = (src_file_sf && src_line_sf)
             ? h.to_string()
             : dp.dp_schema_id.to_string();
         values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
@@ -184,9 +182,14 @@ all_logs_vtab::extract(logfile* lf,
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());
     }
-    values.lvv_thread_id_value = std::move(sub_values.lvv_thread_id_value);
+    values.lvv_thread_id_value
+        = to_owned(sub_values.lvv_thread_id_value, values.lvv_allocator);
     values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
     values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
+    values.lvv_src_file_value
+        = to_owned(sub_values.lvv_src_file_value, values.lvv_allocator);
+    values.lvv_src_line_value
+        = to_owned(sub_values.lvv_src_line_value, values.lvv_allocator);
 }
 
 bool

@@ -322,7 +322,7 @@ to_sqlite(sqlite3_context* ctx, auto_mem<char> str)
 
 template<typename T>
 void
-to_sqlite(sqlite3_context* ctx, std::optional<T>& val)
+to_sqlite(sqlite3_context* ctx, const std::optional<T>& val)
 {
     if (val.has_value()) {
         to_sqlite(ctx, val.value());
@@ -333,10 +333,10 @@ to_sqlite(sqlite3_context* ctx, std::optional<T>& val)
 
 template<typename T>
 void
-to_sqlite(sqlite3_context* ctx, std::optional<T> val)
+to_sqlite(sqlite3_context* ctx, std::optional<T>&& val)
 {
     if (val.has_value()) {
-        to_sqlite(ctx, std::move(val.value()));
+        to_sqlite(ctx, std::move(val).value());
     } else {
         sqlite3_result_null(ctx);
     }

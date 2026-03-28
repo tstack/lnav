@@ -1355,13 +1355,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 auto win = lss->window_at(tc.get_top(), tc.get_bottom());
                 for (const auto& msg : *win) {
                     auto format_name = msg.get_file_ptr()->get_format_name();
-                    auto src_file_sf = msg.get_string_for_attr(SA_SRC_FILE);
-                    auto src_line_sf = msg.get_string_for_attr(SA_SRC_LINE);
-                    if (src_file_sf && src_line_sf) {
-                        poss_strs.emplace(fmt::format(FMT_STRING("{}:{}:{}"),
-                                                      format_name,
-                                                      src_file_sf.value(),
-                                                      src_line_sf.value()));
+                    const auto& lvv = msg.get_values();
+                    if (lvv.lvv_src_file_value && lvv.lvv_src_line_value) {
+                        poss_strs.emplace(
+                            fmt::format(FMT_STRING("{}:{}:{}"),
+                                        format_name,
+                                        lvv.lvv_src_file_value.value(),
+                                        lvv.lvv_src_line_value.value()));
                     }
                 }
                 retval = poss_strs | lnav::itertools::similar_to(str, 10)

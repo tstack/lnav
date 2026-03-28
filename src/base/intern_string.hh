@@ -1118,6 +1118,17 @@ to_string_fragment(const std::string_view& sv)
     return string_fragment::from_bytes(sv.data(), sv.length());
 }
 
+template<typename A>
+std::optional<string_fragment>
+to_owned(std::optional<string_fragment> sf, A allocator)
+{
+    if (!sf) {
+        return sf;
+    }
+
+    return sf->to_owned(allocator);
+}
+
 struct frag_hasher {
     size_t operator()(const string_fragment& sf) const
     {

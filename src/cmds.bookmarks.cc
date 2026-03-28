@@ -28,9 +28,11 @@
  */
 
 #include <string>
+#include <vector>
 
 #include "base/itertools.hh"
 #include "base/result.h"
+#include "command_executor.hh"
 #include "lnav.hh"
 #include "lnav_commands.hh"
 
@@ -67,8 +69,8 @@ com_sticky_header(exec_context& ec,
         if (!sel) {
             return ec.make_error("no line is selected");
         }
-        auto result = tc->toggle_user_mark(
-            &textview_curses::BM_STICKY, sel.value());
+        auto result
+            = tc->toggle_user_mark(&textview_curses::BM_STICKY, sel.value());
         tc->set_needs_update();
 
         if (result.mtr_marked > 0) {
@@ -106,8 +108,8 @@ com_clear_sticky_headers(exec_context& ec,
             tc->toggle_user_mark(&textview_curses::BM_STICKY, row);
         }
         tc->set_needs_update();
-        retval = fmt::format(
-            FMT_STRING("info: cleared {} sticky header(s)"), count);
+        retval = fmt::format(FMT_STRING("info: cleared {} sticky header(s)"),
+                             count);
     }
 
     return Ok(retval);

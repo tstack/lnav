@@ -1102,6 +1102,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                     != this->fos_lss.get_line_context()
                 || this->fos_header_has_time_offset
                     != this->fos_lss.is_time_offset_enabled()
+                || this->fos_header_has_hidden_fields != tc.get_hide_fields()
                 || this->fos_header_has_time_preview
                     != (this->fos_lss.ttt_preview_min_time.has_value()
                         || this->fos_lss.ttt_preview_max_time.has_value()))
@@ -1164,6 +1165,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         = this->fos_lss.get_line_context();
                     this->fos_header_has_time_offset
                         = this->fos_lss.is_time_offset_enabled();
+                    this->fos_header_has_hidden_fields = tc.get_hide_fields();
                     this->fos_header_has_time_preview
                         = (this->fos_lss.ttt_preview_min_time.has_value()
                            || this->fos_lss.ttt_preview_max_time.has_value());

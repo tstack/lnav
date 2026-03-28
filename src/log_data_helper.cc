@@ -165,9 +165,8 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
                                                   node_path,
                                                   attr.name());
 
-                                this->ldh_xml_pairs[std::make_pair(col_name,
-                                                                   attr_path)]
-                                    = attr.value();
+                                this->ldh_xml_pairs[std::make_pair(
+                                    col_name, attr_path)] = attr.value();
                             }
 
                             if (xpath_node.node().text().empty()) {
@@ -217,16 +216,14 @@ log_data_helper::parse_body()
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;
     auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
-    auto src_file = find_string_attr_range(sa, &SA_SRC_FILE);
-    if (src_file.is_valid()) {
-        auto src_file_sf = sbr.to_string_fragment(src_file);
-        file_rust_str = rust::Str(src_file_sf.data(), src_file_sf.length());
+    if (this->ldh_line_values.lvv_src_file_value) {
+        file_rust_str
+            = rust::Str(this->ldh_line_values.lvv_src_file_value->data(),
+                        this->ldh_line_values.lvv_src_file_value->length());
     }
-    auto src_line = find_string_attr_range(sa, &SA_SRC_LINE);
-    if (src_line.is_valid()) {
-        auto src_line_sf = sbr.to_string_fragment(src_line);
-        auto scan_res
-            = scn::scan_int<decltype(lineno)>(src_line_sf.to_string_view());
+    if (this->ldh_line_values.lvv_src_line_value) {
+        auto scan_res = scn::scan_int<decltype(lineno)>(
+            this->ldh_line_values.lvv_src_line_value->to_string_view());
         if (scan_res) {
             lineno = scan_res->value();
         }

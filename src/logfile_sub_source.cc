@@ -338,7 +338,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     auto src_file_attr
         = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_FILE);
     if (src_file_attr != this->lss_token_al.al_attrs.end()) {
-        auto src_file_sf = this->lss_token_al.to_string_fragment(src_file_attr);
         auto lr = src_file_attr->sa_range;
         lr.lr_end = lr.lr_start + 1;
         auto break_ta = text_attrs::with_underline();
@@ -349,15 +348,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                             "|lnav-src-loc-handler $mouse_button",
                         })});
         if (!this->lss_breakpoints.empty()) {
-            auto src_line_attr
-                = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_LINE);
-            if (src_line_attr != this->lss_token_al.al_attrs.end()) {
+            if (this->lss_token_values.lvv_src_line_value) {
                 auto h = hasher();
-                auto src_line_sf
-                    = this->lss_token_al.to_string_fragment(src_line_attr);
                 h.update(format->get_name().to_string_fragment());
-                h.update(src_file_sf);
-                h.update(src_line_sf);
+                h.update(this->lss_token_values.lvv_src_file_value.value());
+                h.update(this->lss_token_values.lvv_src_line_value.value());
 
                 auto schema = h.to_string();
                 auto& breakpoints = this->lss_breakpoints;
@@ -2866,15 +2861,16 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 'The corresponding log messages might have been filtered out')))
           WHERE name = 'log'
         )";
-        static const std::string ELLIPSIS = "\u22ef";
+        static const auto ELLIPSIS = "\u22ef"_frag;
 
         auto tid_display = values.lvv_thread_id_value.has_value()
             ? lnav::roles::identifier(values.lvv_thread_id_value.value())
             : lnav::roles::hidden(ELLIPSIS);
         crumbs.emplace_back(
-            values.lvv_thread_id_value.has_value()
-                ? values.lvv_thread_id_value.value()
-                : "",
+            (values.lvv_thread_id_value.has_value()
+                 ? values.lvv_thread_id_value.value()
+                 : ""_frag)
+                .to_string(),
             attr_line_t()
                 .append(ui_icon_t::thread)
                 .append(" ")

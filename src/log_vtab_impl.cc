@@ -63,15 +63,15 @@ thread_local _log_vtab_data log_vtab_data;
 
 const std::unordered_set<string_fragment, frag_hasher>
     log_vtab_impl::RESERVED_COLUMNS = {
-        "log_line"_frag,        "log_time"_frag,        "log_level"_frag,
-        "log_part"_frag,        "log_actual_time"_frag, "log_idle_msecs"_frag,
-        "log_mark"_frag,        "log_sticky_mark"_frag, "log_comment"_frag,     "log_tags"_frag,
-        "log_annotations"_frag, "log_filters"_frag,     "log_opid"_frag,
-        "log_user_opid"_frag,   "log_format"_frag,      "log_format_regex"_frag,
-        "log_time_msecs"_frag,  "log_path"_frag,        "log_unique_path"_frag,
-        "log_text"_frag,        "log_body"_frag,        "log_raw_text"_frag,
-        "log_line_hash"_frag,   "log_line_link"_frag,   "log_src_file"_frag,
-        "log_src_line"_frag,    "log_thread_id"_frag,
+        "log_line"_frag,         "log_time"_frag,        "log_level"_frag,
+        "log_part"_frag,         "log_actual_time"_frag, "log_idle_msecs"_frag,
+        "log_mark"_frag,         "log_sticky_mark"_frag, "log_comment"_frag,
+        "log_tags"_frag,         "log_annotations"_frag, "log_filters"_frag,
+        "log_opid"_frag,         "log_user_opid"_frag,   "log_format"_frag,
+        "log_format_regex"_frag, "log_time_msecs"_frag,  "log_path"_frag,
+        "log_unique_path"_frag,  "log_text"_frag,        "log_body"_frag,
+        "log_raw_text"_frag,     "log_line_hash"_frag,   "log_line_link"_frag,
+        "log_src_file"_frag,     "log_src_line"_frag,    "log_thread_id"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -886,11 +886,10 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                     case log_footer_columns::sticky_mark: {
                         auto& sticky_bv = vt->tc->get_bookmarks()
-                            [&textview_curses::BM_STICKY];
+                                              [&textview_curses::BM_STICKY];
                         sqlite3_result_int(
                             ctx,
-                            sticky_bv.bv_tree.find(
-                                vc->log_cursor.lc_curr_line)
+                            sticky_bv.bv_tree.find(vc->log_cursor.lc_curr_line)
                                 != sticky_bv.bv_tree.end());
                         break;
                     }
@@ -1162,19 +1161,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 lf, line_number, vc->attrs, vc->line_values);
                         }
 
-                        auto src_range
-                            = find_string_attr_range(vc->attrs, &SA_SRC_FILE);
-                        if (!src_range.is_valid()) {
-                            sqlite3_result_null(ctx);
-                        } else {
-                            const char* msg_start
-                                = vc->line_values.lvv_sbr.get_data();
-
-                            sqlite3_result_text(ctx,
-                                                &msg_start[src_range.lr_start],
-                                                src_range.length(),
-                                                SQLITE_TRANSIENT);
-                        }
+                        to_sqlite(ctx, vc->line_values.lvv_src_file_value);
                         break;
                     }
                     case log_footer_columns::src_line: {
@@ -1186,19 +1173,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 lf, line_number, vc->attrs, vc->line_values);
                         }
 
-                        auto src_range
-                            = find_string_attr_range(vc->attrs, &SA_SRC_LINE);
-                        if (!src_range.is_valid()) {
-                            sqlite3_result_null(ctx);
-                        } else {
-                            const char* msg_start
-                                = vc->line_values.lvv_sbr.get_data();
-
-                            sqlite3_result_text(ctx,
-                                                &msg_start[src_range.lr_start],
-                                                src_range.length(),
-                                                SQLITE_TRANSIENT);
-                        }
+                        to_sqlite(ctx, vc->line_values.lvv_src_line_value);
                         break;
                     }
                     case log_footer_columns::thread_id: {
@@ -1210,13 +1185,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 lf, line_number, vc->attrs, vc->line_values);
                         }
 
-                        if (vc->line_values.lvv_thread_id_value) {
-                            to_sqlite(
-                                ctx,
-                                vc->line_values.lvv_thread_id_value.value());
-                        } else {
-                            sqlite3_result_null(ctx);
-                        }
+                        to_sqlite(ctx, vc->line_values.lvv_thread_id_value);
                         break;
                     }
                 }
@@ -1345,18 +1314,16 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                              tv))
                                 {
                                     char buffer[64];
-                                    sql_strftime(
-                                        buffer, sizeof(buffer), tv);
+                                    sql_strftime(buffer, sizeof(buffer), tv);
                                     sqlite3_result_text(ctx,
                                                         buffer,
                                                         strlen(buffer),
                                                         SQLITE_TRANSIENT);
                                 } else {
-                                    sqlite3_result_text(
-                                        ctx,
-                                        lv_iter->text_value(),
-                                        lv_iter->text_length(),
-                                        SQLITE_TRANSIENT);
+                                    sqlite3_result_text(ctx,
+                                                        lv_iter->text_value(),
+                                                        lv_iter->text_length(),
+                                                        SQLITE_TRANSIENT);
                                 }
                                 break;
                             }
@@ -2640,8 +2607,7 @@ vt_update(sqlite3_vtab* tab,
         }
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vrowid, val);
-        vt->tc->set_user_mark(
-            &textview_curses::BM_STICKY, vrowid, sticky_val);
+        vt->tc->set_user_mark(&textview_curses::BM_STICKY, vrowid, sticky_val);
         rowid += 1;
         while ((size_t) rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);

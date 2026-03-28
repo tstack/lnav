@@ -27,10 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <fnmatch.h>
-
 #include <string>
 #include <vector>
+
+#include <fnmatch.h>
 
 #include "base/intern_string.hh"
 #include "base/itertools.hh"
@@ -92,15 +92,14 @@ com_breakpoint(exec_context& ec,
 
         auto win = lss->window_at(tc->get_selection().value());
         for (const auto& msg : *win) {
+            const auto& lvv = msg.get_values();
             auto format_name
                 = msg.get_file_ptr()->get_format_name().to_string_fragment();
-            auto src_file_sf = msg.get_string_for_attr(SA_SRC_FILE);
-            auto src_line_sf = msg.get_string_for_attr(SA_SRC_LINE);
-            if (src_file_sf && src_line_sf) {
+            if (lvv.lvv_src_file_value && lvv.lvv_src_line_value) {
                 auto point = fmt::format(FMT_STRING("{}:{}:{}"),
                                          format_name,
-                                         src_file_sf.value(),
-                                         src_line_sf.value());
+                                         lvv.lvv_src_file_value.value(),
+                                         lvv.lvv_src_line_value.value());
                 split_args.emplace_back(point);
             } else {
                 log_data_helper ldh(*lss);
@@ -110,8 +109,7 @@ com_breakpoint(exec_context& ec,
 
                 if (ldh.ldh_parser) {
                     auto desc = fmt::format(FMT_STRING("{}:#:0"), format_name);
-                    auto schema_id
-                        = ldh.ldh_parser->dp_schema_id.to_string();
+                    auto schema_id = ldh.ldh_parser->dp_schema_id.to_string();
                     log_info("adding breakpoint: %s %s",
                              schema_id.c_str(),
                              desc.c_str());
@@ -195,13 +193,12 @@ get_current_line_schema_id(logfile_sub_source& lss, vis_line_t vl)
     for (const auto& msg : *win) {
         auto format_name
             = msg.get_file_ptr()->get_format_name().to_string_fragment();
-        auto src_file_sf = msg.get_string_for_attr(SA_SRC_FILE);
-        auto src_line_sf = msg.get_string_for_attr(SA_SRC_LINE);
-        if (src_file_sf && src_line_sf) {
+        const auto& lvv = msg.get_values();
+        if (lvv.lvv_src_file_value && lvv.lvv_src_line_value) {
             auto h = hasher();
             h.update(format_name);
-            h.update(src_file_sf.value());
-            h.update(src_line_sf.value());
+            h.update(lvv.lvv_src_file_value.value());
+            h.update(lvv.lvv_src_line_value.value());
             return h.to_string();
         }
 
@@ -265,7 +262,9 @@ com_clear_breakpoint(exec_context& ec,
 
     for (const auto& pat_arg : split_args) {
         for (auto iter = bps.begin(); iter != bps.end();) {
-            if (fnmatch(pat_arg.c_str(), iter->second.bp_description.c_str(), 0) == 0) {
+            if (fnmatch(pat_arg.c_str(), iter->second.bp_description.c_str(), 0)
+                == 0)
+            {
                 iter = bps.erase(iter);
             } else {
                 ++iter;
@@ -293,9 +292,8 @@ com_toggle_breakpoint(exec_context& ec,
 
     auto* tc = &lnav_data.ld_views[LNV_LOG];
     auto& bps = lnav_data.ld_log_source.get_breakpoints();
-    auto schema_id
-        = get_current_line_schema_id(lnav_data.ld_log_source,
-                                     tc->get_selection().value());
+    auto schema_id = get_current_line_schema_id(lnav_data.ld_log_source,
+                                                tc->get_selection().value());
 
     if (!schema_id.empty() && bps.count(schema_id) > 0) {
         return com_clear_breakpoint(ec, cmdline, args);
@@ -350,8 +348,7 @@ com_disable_breakpoint(exec_context& ec,
     if (split_args_res.isErr()) {
         auto split_err = split_args_res.unwrapErr();
         auto um
-            = lnav::console::user_message::error(
-                  "unable to parse breakpoint")
+            = lnav::console::user_message::error("unable to parse breakpoint")
                   .with_reason(split_err.se_error.te_msg)
                   .with_snippet(lnav::console::snippet::from(
                       SRC, lexer.to_attr_line(split_err.se_error)))
@@ -432,8 +429,7 @@ com_enable_breakpoint(exec_context& ec,
     if (split_args_res.isErr()) {
         auto split_err = split_args_res.unwrapErr();
         auto um
-            = lnav::console::user_message::error(
-                  "unable to parse breakpoint")
+            = lnav::console::user_message::error("unable to parse breakpoint")
                   .with_reason(split_err.se_error.te_msg)
                   .with_snippet(lnav::console::snippet::from(
                       SRC, lexer.to_attr_line(split_err.se_error)))
@@ -549,14 +545,12 @@ static readline_context::command_t BREAKPOINT_COMMANDS[] = {
         "disable-breakpoint",
         com_disable_breakpoint,
         help_text(":disable-breakpoint")
-            .with_summary(
-                "Disable a breakpoint for the given "
-                "[<format>:]<file>:<line> tuples "
-                "or the current line")
+            .with_summary("Disable a breakpoint for the given "
+                          "[<format>:]<file>:<line> tuples "
+                          "or the current line")
             .with_parameter(
                 help_text("point")
-                    .with_summary(
-                        "The file and line number of the breakpoint")
+                    .with_summary("The file and line number of the breakpoint")
                     .with_format(help_parameter_format_t::HPF_BREAKPOINT)
                     .zero_or_more()),
     },
@@ -564,14 +558,12 @@ static readline_context::command_t BREAKPOINT_COMMANDS[] = {
         "enable-breakpoint",
         com_enable_breakpoint,
         help_text(":enable-breakpoint")
-            .with_summary(
-                "Enable or create a breakpoint for the given "
-                "[<format>:]<file>:<line> tuples "
-                "or the current line")
+            .with_summary("Enable or create a breakpoint for the given "
+                          "[<format>:]<file>:<line> tuples "
+                          "or the current line")
             .with_parameter(
                 help_text("point")
-                    .with_summary(
-                        "The file and line number of the breakpoint")
+                    .with_summary("The file and line number of the breakpoint")
                     .with_format(help_parameter_format_t::HPF_BREAKPOINT)
                     .zero_or_more()),
     },
