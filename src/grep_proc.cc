@@ -317,6 +317,9 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
         auto highest_line = LineType{h_scan_res->value()};
         if (highest_line > this->gp_highest_line) {
             this->gp_highest_line = highest_line;
+            log_debug("grep_proc(%p): highest line is now %d",
+                      this,
+                      (int) this->gp_highest_line);
         }
     } else {
         auto ll_scan_res = scn::scan<int>(sv, "{}");
@@ -447,6 +450,7 @@ template<typename LineType>
 grep_proc<LineType>&
 grep_proc<LineType>::invalidate()
 {
+    log_debug("grep_proc(%p): invalidated", this);
     if (this->gp_sink) {
         for (size_t lpc = 0; lpc < this->gp_queue.size(); lpc++) {
             this->gp_sink->grep_end(*this);
