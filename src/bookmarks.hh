@@ -151,7 +151,7 @@ public:
             return std::make_pair(lb, this->bv_tree.end());
         }
 
-        auto up = this->bv_tree.upper_bound(stop);
+        auto up = this->bv_tree.lower_bound(stop);
 
         return std::make_pair(lb, up);
     }
