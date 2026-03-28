@@ -50,6 +50,8 @@ Features:
   lines instead of only marked lines.
 * Added a log format for MongoDB's structured JSON log
   format (4.4+).
+* Added a log format for the Robot Framework's debug
+  log file format.
 * Added `"timestamp"` as a value kind for log format
   definitions.  Fields with this kind will be parsed
   and displayed in the local timezone, and SQL

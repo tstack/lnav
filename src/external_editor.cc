@@ -43,11 +43,11 @@
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "base/paths.hh"
 #include "base/result.h"
 #include "base/time_util.hh"
 #include "external_editor.cfg.hh"
 #include "fmt/format.h"
-#include "shlex.hh"
 
 namespace lnav::external_editor {
 
@@ -55,6 +55,8 @@ static time64_t
 get_config_dir_mtime(const std::filesystem::path& path,
                      const std::filesystem::path& config_dir)
 {
+    static const auto HOME_PATH = lnav::paths::userhome();
+
     if (config_dir.empty()) {
         return 0;
     }
@@ -63,16 +65,38 @@ get_config_dir_mtime(const std::filesystem::path& path,
     std::error_code ec;
 
     while (!parent.empty()) {
+        if (parent == HOME_PATH) {
+            break;
+        }
         auto config_path = parent / config_dir;
+        log_trace("  checking editor config dir: %s", config_path.c_str());
         auto mtime = std::filesystem::last_write_time(config_path, ec);
         if (!ec) {
             time64_t retval = mtime.time_since_epoch().count();
 
-            log_debug("  found editor config dir: %s (%lld)",
+            log_debug("    found editor config dir: %s (%lld)",
                       config_path.c_str(),
                       retval);
             return retval;
         }
+
+        for (const auto& sib : std::filesystem::directory_iterator(parent)) {
+            if (!sib.is_directory()) {
+                continue;
+            }
+
+            auto sib_config_path = sib.path() / config_dir;
+            auto mtime = std::filesystem::last_write_time(config_path, ec);
+            if (!ec) {
+                time64_t retval = mtime.time_since_epoch().count();
+
+                log_debug("    found editor config dir: %s (%lld)",
+                          config_path.c_str(),
+                          retval);
+                return retval;
+            }
+        }
+
         auto new_parent = parent.parent_path();
         if (new_parent == parent) {
             return 0;

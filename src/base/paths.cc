@@ -137,4 +137,17 @@ workdir()
     return tmp_path / std::filesystem::path(subdir_name);
 }
 
+std::filesystem::path userhome()
+{
+    if (auto home_env = getenv_opt("HOME")) {
+        auto home_path = std::filesystem::path(home_env.value());
+
+        if (std::filesystem::is_directory(home_path)) {
+            return home_path;
+        }
+    }
+
+    return std::filesystem::path("/");
+}
+
 }  // namespace lnav::paths

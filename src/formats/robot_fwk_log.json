@@ -1,0 +1,41 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "robot_fwk_log": {
+        "title": "Robot Framework debug log",
+        "description": "Robot Framework debug log",
+        "url": [
+            "https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#debug-file"
+        ],
+        "regex": {
+            "op": {
+                "pattern": "(?<timestamp>\\d{8} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) - (?<level>TRACE|DEBUG|INFO|WARN|ERROR|FAIL) - \\+-* (?:START|END) (?<opid>[^[(]+)\\s+(?<body>.*)"
+            },
+            "std": {
+                "pattern": "(?<timestamp>\\d{8} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) - (?<level>TRACE|DEBUG|INFO|WARN|ERROR|FAIL) - (?!\\+)(?<body>.*)"
+            }
+        },
+        "opid-field": "opid",
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "partitions": {
+            "test-start": {
+                "description": "The start of a test",
+                "pattern": "START TEST: (?<name>[^[]+) \\["
+            }
+        },
+        "sample": [
+            {
+                "line": "20260327 11:34:21.908 - INFO - + START SUITE: Test Scheduler Plex [ ]"
+            },
+            {
+                "line": "20260327 11:34:21.909 - DEBUG - Test timeout 5 minutes active. 300.0 seconds left."
+            }
+        ]
+    }
+}

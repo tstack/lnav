@@ -32,8 +32,7 @@
 
 #include <filesystem>
 
-namespace lnav {
-namespace paths {
+namespace lnav::paths {
 
 #ifdef __CYGWIN__
 static const char WINDOWS_FILE_PATH_SEPARATOR = '\\';
@@ -52,7 +51,11 @@ std::filesystem::path dotlnav();
 
 std::filesystem::path workdir();
 
-}  // namespace paths
-}  // namespace lnav
+/**
+ * @return The user's home directory
+ */
+std::filesystem::path userhome();
+
+}  // namespace lnav::paths
 
 #endif
