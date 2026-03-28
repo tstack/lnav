@@ -535,7 +535,6 @@ add_library(
         db_sub_source.cc
         dump_internals.cc
         elem_to_json.cc
-        breakpoint_vtab.cc
         environ_vtab.cc
         ext.longpoll.cc
         extension-functions.cc
@@ -862,7 +861,7 @@ add_library(
         third-party/hat-trie/include/tsl/array-hash/array_set.h
 )
 
-set(lnav_SRCS lnav.cc file_vtab.cc all_ids_vtabs.cc)
+set(lnav_SRCS lnav.cc file_vtab.cc all_ids_vtabs.cc breakpoint_vtab.cc)
 
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
