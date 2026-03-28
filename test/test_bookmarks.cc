@@ -47,11 +47,6 @@ main(int argc, char* argv[])
 
     bv.insert_once(vis_line_t(4));
     bv.insert_once(vis_line_t(3));
-#if 0
-    assert(bv[0] == 2);
-    assert(bv[1] == 3);
-    assert(bv[2] == 4);
-#endif
 
     {
         auto range = bv.equal_range(0_vl, 5_vl);
@@ -66,6 +61,12 @@ main(int argc, char* argv[])
         assert(*range.first == 4_vl);
         ++range.first;
         assert(range.first == range.second);
+    }
+
+    {
+        auto range = bv.equal_range(3_vl, 4_vl);
+
+        assert(std::next(range.first) == range.second);
     }
 
     {
