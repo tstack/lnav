@@ -123,6 +123,14 @@ public:
 
     void text_filters_changed() override;
 
+    void text_mark(const bookmark_type_t* bm,
+                   vis_line_t line,
+                   bool added) override;
+
+    void text_clear_marks(const bookmark_type_t* bm) override;
+
+    void text_update_marks(vis_bookmarks& bm) override;
+
     int get_filtered_count() const override;
 
     int get_filtered_count_for(size_t filter_index) const override;
@@ -215,6 +223,9 @@ public:
         vis_line_t fvs_top{0};
         std::optional<vis_line_t> fvs_selection;
         vis_bookmarks fvs_bookmarks{vis_bookmarks_t::create_array()};
+
+        bookmarks<uint32_t>::type fvs_content_marks{
+            bookmarks<uint32_t>::create_array()};
 
         time_t fvs_mtime{0};
         file_ssize_t fvs_file_size{0};

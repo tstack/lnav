@@ -28,6 +28,14 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_plain.0
 
 run_cap_test ${lnav_test} -n \
+    -c ':goto 5' \
+    -c ':mark' \
+    -c ':filter-out Lorem' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
     -c ':goto 1' \
     -c ':toggle-sticky-header' \
     -c ':goto 4' \

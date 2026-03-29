@@ -1382,7 +1382,7 @@ save_text_bookmarks(sqlite3* db)
         };
 
         for (const auto* bm_type : SAVE_TYPES) {
-            auto& bv = fvs->fvs_bookmarks[bm_type];
+            auto& bv = fvs->fvs_content_marks[bm_type];
             if (bv.empty()) {
                 continue;
             }
@@ -1518,6 +1518,8 @@ load_text_bookmarks(sqlite3* db)
 
                     auto vl = vis_line_t(line_number);
                     fvs->fvs_bookmarks[bm_type_opt.value()].insert_once(vl);
+                    fvs->fvs_content_marks[bm_type_opt.value()].insert_once(
+                        static_cast<uint32_t>(line_number));
                     break;
                 }
 

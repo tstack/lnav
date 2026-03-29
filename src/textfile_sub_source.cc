@@ -432,6 +432,87 @@ textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 }
 
 void
+textfile_sub_source::text_mark(const bookmark_type_t* bm,
+                               vis_line_t line,
+                               bool added)
+{
+    if (this->tss_files.empty()) {
+        return;
+    }
+
+    auto& front = this->tss_files.front();
+    auto lf = front->fvs_file;
+    if (lf == nullptr) {
+        return;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr
+        || line < 0_vl
+        || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+    {
+        return;
+    }
+
+    auto cl = lfo->lfo_filter_state.tfs_index[static_cast<int>(line)];
+    if (added) {
+        front->fvs_content_marks[bm].insert_once(cl);
+    } else {
+        front->fvs_content_marks[bm].erase(cl);
+    }
+}
+
+void
+textfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
+{
+    if (this->tss_files.empty()) {
+        return;
+    }
+
+    auto& front = this->tss_files.front();
+    front->fvs_content_marks[bm].clear();
+}
+
+void
+textfile_sub_source::text_update_marks(vis_bookmarks& bm)
+{
+    if (this->tss_files.empty()) {
+        return;
+    }
+
+    auto& front = this->tss_files.front();
+    auto lf = front->fvs_file;
+    if (lf == nullptr) {
+        return;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr) {
+        return;
+    }
+
+    static const bookmark_type_t* MARK_TYPES[] = {
+        &textview_curses::BM_USER,
+        &textview_curses::BM_STICKY,
+    };
+
+    for (const auto* bmt : MARK_TYPES) {
+        bm[bmt].clear();
+        if (front->fvs_content_marks[bmt].empty()) {
+            continue;
+        }
+
+        auto& tfs = lfo->lfo_filter_state.tfs_index;
+        for (uint32_t vl = 0; vl < tfs.size(); ++vl) {
+            auto cl = tfs[vl];
+            if (front->fvs_content_marks[bmt].bv_tree.count(cl) > 0) {
+                bm[bmt].insert_once(vis_line_t(vl));
+            }
+        }
+    }
+}
+
+void
 textfile_sub_source::text_filters_changed()
 {
     auto lf = this->current_file();
@@ -465,6 +546,7 @@ textfile_sub_source::text_filters_changed()
         lfo->lfo_filter_state.tfs_index.push_back(lpc);
     }
 
+    this->tss_view->reload_data();
     this->tss_view->redo_search();
 
     auto iter = std::lower_bound(lfo->lfo_filter_state.tfs_index.begin(),
