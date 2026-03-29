@@ -470,6 +470,7 @@ load_time_bookmarks()
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     bool reload_needed = false;
+    bool meta_loaded = false;
     auto_mem<char, sqlite3_free> errmsg;
 
     log_info("loading bookmark db: %s", db_path.c_str());
@@ -753,7 +754,9 @@ load_time_bookmarks()
                             lf->set_logline_opid(line_number, opid_sf);
                             meta = true;
                         }
-                        if (!meta && part_name != nullptr) {
+                        if (meta) {
+                            meta_loaded = true;
+                        } else if (part_name != nullptr) {
                             marked_session_lines.emplace_back(
                                 lf->original_line_time(line_iter),
                                 format->get_name(),
@@ -912,6 +915,10 @@ load_time_bookmarks()
     log_info("END select time_offset");
 
     if (reload_needed) {
+        if (meta_loaded) {
+            lss.set_line_meta_changed();
+            lss.text_filters_changed();
+        }
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 

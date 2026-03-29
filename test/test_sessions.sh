@@ -243,6 +243,24 @@ run_cap_test ${lnav_test} -n \
 rm -rf ./sessions
 mkdir -p $HOME
 
+# tag filter-expr saved in session
+run_cap_test ${lnav_test} -nq \
+    -c ":goto 0" \
+    -c ":tag #bad" \
+    -c ":filter-expr not json_contains(:log_tags, '#bad')" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.0
+
+# tag filter-expr restored from session
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT log_line, log_tags FROM access_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
 # sticky header saved in session for text file
 run_cap_test ${lnav_test} -n \
     -c ':goto 1' \

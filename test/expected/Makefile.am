@@ -812,6 +812,10 @@ dist_noinst_DATA = \
     test_sessions.sh_e988439404f2e97604641c8d087855f3efe052e4.out \
     test_sessions.sh_ee6e1b95e6b4d67eecb842dccb5830e78720a0d2.err \
     test_sessions.sh_ee6e1b95e6b4d67eecb842dccb5830e78720a0d2.out \
+    test_sessions.sh_f02cc1d1dbd8e77ca386d79709a9f2037cbf24d3.err \
+    test_sessions.sh_f02cc1d1dbd8e77ca386d79709a9f2037cbf24d3.out \
+    test_sessions.sh_f3838c3a080fed8fdb4420f961feaa9cdec1263f.err \
+    test_sessions.sh_f3838c3a080fed8fdb4420f961feaa9cdec1263f.out \
     test_sessions.sh_f7c38467cfbd76234192d5f641fa017e3a12cdb0.err \
     test_sessions.sh_f7c38467cfbd76234192d5f641fa017e3a12cdb0.out \
     test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.err \

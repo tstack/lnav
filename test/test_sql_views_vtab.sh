@@ -15,6 +15,8 @@ log,logfile_access_log.0,1
 log,logfile_access_log.1,1
 EOF
 
+touch -t 200711030923 ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
     -c ":write-csv-to -" \

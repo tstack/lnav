@@ -363,7 +363,8 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
 
         if (retval.rir_completed && !retval.rir_rescan_needed) {
-            std::unordered_map<std::string, std::list<std::shared_ptr<logfile>>>
+            std::unordered_map<std::string,
+                               std::vector<std::shared_ptr<logfile>>>
                 id_to_files;
             auto reload = false;
 
@@ -379,23 +380,25 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                     continue;
                 }
 
-                lf.sort([](const auto& left, const auto& right) {
-                    const auto& lst = left->get_stat();
-                    const auto& rst = right->get_stat();
-                    return rst.st_size < lst.st_size
-                        || (rst.st_size == lst.st_size
-                            && rst.st_mtime < lst.st_mtime);
-                });
+                std::sort(lf.begin(),
+                          lf.end(),
+                          [](const auto& left, const auto& right) {
+                              const auto& lst = left->get_stat();
+                              const auto& rst = right->get_stat();
+                              return lst.st_size < rst.st_size
+                                  || (lst.st_size == rst.st_size
+                                      && rst.st_mtime < lst.st_mtime);
+                          });
 
-                const auto& dupe_name = lf.front()->get_unique_path();
+                const auto& dupe_name = lf.back()->get_unique_path();
                 log_info(
                     "Keeping duplicated file: %s; size=%lld; mtime=%ld; "
                     "path=%s",
-                    lf.front()->get_content_id().c_str(),
-                    lf.front()->get_stat().st_size,
-                    lf.front()->get_stat().st_mtime,
-                    lf.front()->get_filename_as_string().c_str());
-                lf.pop_front();
+                    lf.back()->get_content_id().c_str(),
+                    lf.back()->get_stat().st_size,
+                    lf.back()->get_stat().st_mtime,
+                    lf.back()->get_filename_as_string().c_str());
+                lf.pop_back();
                 std::for_each(
                     lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
                         if (lf->mark_as_duplicate(dupe_name)) {
