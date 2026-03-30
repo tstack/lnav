@@ -1167,7 +1167,7 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
                 } else {
                     attr_line_t al;
                     dos.list_static_overlay(
-                        db_tc, list_overlay_source::media_t::display, 0, 1, al);
+                        db_tc, list_overlay_source::media_t::file, 0, 1, al);
                     result.append(al);
                     for (int lpc = 0; lpc < (int) dls.text_line_count(); lpc++)
                     {

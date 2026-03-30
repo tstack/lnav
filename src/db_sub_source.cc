@@ -1228,8 +1228,25 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
-    auto& line = value_out.get_string();
     const auto* dls = this->dos_labels;
+
+    if (dls->dls_headers.empty()) {
+        if (media == media_t::display) {
+            value_out.append(
+                "The results of SQLite queries are shown in this view. "
+                "Press ");
+            value_out.append(lnav::roles::keyword(";"));
+            value_out.append(" to execute a query.");
+            value_out.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_STATUS));
+            value_out.with_attr_for_all(
+                VC_STYLE.value(text_attrs::with_underline()));
+            return true;
+        }
+        return false;
+    }
+
+    auto& line = value_out.get_string();
     auto& sa = value_out.get_attrs();
 
     for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++) {
