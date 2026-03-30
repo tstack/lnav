@@ -324,6 +324,8 @@ Bug Fixes:
   synchronizes bookmarks with the LOG view.
 * Session state should no longer override commands
   passed on the command-line.
+* Marks in the TEXT view are now stable after filtering
+  is applied.
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging
