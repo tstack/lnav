@@ -234,6 +234,16 @@ public:
 
     std::function<lnav::progress_result_t(std::optional<progress_t>)>
         ts_index_progress;
+
+    struct pending_bookmark {
+        row_type pb_row_type;
+        std::string pb_row_name;
+        const bookmark_type_t* pb_mark_type;
+    };
+
+    std::vector<pending_bookmark> ts_pending_bookmarks;
+
+    void apply_pending_bookmarks();
 };
 
 class timeline_header_overlay : public text_overlay_menu {

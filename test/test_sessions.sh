@@ -261,6 +261,42 @@ run_cap_test ${lnav_test} -n \
 rm -rf ./sessions
 mkdir -p $HOME
 
+# user bookmark saved in session for timeline view
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    -c ':mark' \
+    -c ':save-session' \
+    ${test_dir}/logfile_vmw_log.0
+
+# user bookmark restored from session for timeline view
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_vmw_log.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# sticky header saved in session for timeline view
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    -c ':toggle-sticky-header' \
+    -c ':goto 1' \
+    -c ':save-session' \
+    ${test_dir}/logfile_vmw_log.0
+
+# sticky header restored from session for timeline view
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':switch-to-view timeline' \
+    -c ':goto 1' \
+    ${test_dir}/logfile_vmw_log.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
 # sticky header saved in session for text file
 run_cap_test ${lnav_test} -n \
     -c ':goto 1' \

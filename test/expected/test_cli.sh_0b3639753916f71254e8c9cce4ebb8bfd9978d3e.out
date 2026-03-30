@@ -8123,6 +8123,11 @@
                     "command": ":reset-session",
                     "alt-msg": ""
                 },
+                "x13": {
+                    "id": "",
+                    "command": ":toggle-sticky-header",
+                    "alt-msg": ""
+                },
                 "x15": {
                     "id": "",
                     "command": ";UPDATE lnav_top_view SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END)",

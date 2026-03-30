@@ -204,8 +204,8 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         return true;
     }
 
-    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
-    auto* text_accel_p = dynamic_cast<text_accel_source*>(tc->get_sub_source());
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc_tss);
+    auto* text_accel_p = dynamic_cast<text_accel_source*>(tc_tss);
 
     /* process the command keystroke */
     switch (ch.eff_text[0]) {
@@ -272,8 +272,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         }
 
         case 'C':
-            if (lss) {
-                lss->text_clear_marks(&textview_curses::BM_USER);
+            if (tc_tss != nullptr) {
+                tc_tss->text_clear_marks(&textview_curses::BM_USER);
             }
 
             lnav_data.ld_select_start.erase(tc);

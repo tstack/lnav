@@ -167,6 +167,7 @@ open_timeline_view(textview_curses* last_tc)
     if (!timeline_src->rebuild_indexes()) {
         return false;
     }
+    timeline_src->apply_pending_bookmarks();
     timeline_tc->reload_data();
     timeline_tc->redo_search();
     auto sel = timeline_tc->get_selection();

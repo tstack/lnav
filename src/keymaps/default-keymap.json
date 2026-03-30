@@ -33,6 +33,9 @@
                     "command": ":toggle-breakpoint",
                     "alt-msg": "${keymap_def_breakpoint}"
                 },
+                "x13": {
+                    "command": ":toggle-sticky-header"
+                },
                 "x31": {
                     "command": ":goto next 10 minutes after the hour"
                 },

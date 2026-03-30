@@ -239,6 +239,9 @@ Bookmarks
      - Copy marked lines to the clipboard
    * - :kbd:`Shift` + :kbd:`c`
      - Clear marked lines
+   * - :kbd:`Ctrl` + :kbd:`s`
+     - Toggle a sticky header for the focused line.  Sticky headers remain
+       visible at the top of the view as you scroll past them.
 
 .. _hotkeys_display:
 
@@ -306,6 +309,10 @@ Display
        keeping it fixed at the top of the current screen.
    * - :kbd:`=`
      - Pause/unpause loading of new file data.
+   * - :kbd:`X`
+     - Close the current text file or log file.
+   * - :kbd:`F2`
+     - Toggle mouse support.
 
 Session
 -------

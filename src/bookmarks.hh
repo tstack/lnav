@@ -143,7 +143,8 @@ public:
         return this->bv_tree.find(vl) != this->bv_tree.end();
     }
 
-    std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
+    std::pair<const_iterator, const_iterator> equal_range(LineType start,
+                                                          LineType stop) const
     {
         auto lb = this->bv_tree.lower_bound(start);
 
@@ -156,10 +157,13 @@ public:
         return std::make_pair(lb, up);
     }
 
-    void erase(LineType vl)
+    size_t erase(LineType vl)
     {
-        this->bv_tree.erase(vl);
-        this->bv_generation += 1;
+        auto retval = this->bv_tree.erase(vl);
+        if (retval > 0) {
+            this->bv_generation += 1;
+        }
+        return retval;
     }
 
     /**

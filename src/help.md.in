@@ -131,8 +131,8 @@ of information. The top line displays:
   next status line at the top, which is an interactive breadcrumb bar.
 
 The second status line at the top displays breadcrumbs for the top line
-in the main view. Pressing `ENTER` will focus input on the breadcrumb
-bar, the cursor keys can be used to select a breadcrumb. The common
+in the main view. Pressing the backtick key (`` ` ``) will focus input
+on the breadcrumb bar, the cursor keys can be used to select a breadcrumb. The common
 breadcrumbs are:
 
 * The name of the current view.
@@ -190,7 +190,7 @@ that you can always use `q` to pop the top view off of the stack.
 | **q**           | Leave the current view or quit the program when in the log file view.                                                                                                                                                             |
 | Q               | Similar to `q`, except it will try to sync the top time between the current and former views. For example, when leaving the spectrogram view with `Q`, the top time in that view will be matched to the top time in the log view. |
 | TAB             | Toggle focusing on the filter editor or the main view.                                                                                                                                                                            |
-| ENTER           | Focus on the breadcrumb bar.                                                                                                                                                                                                      |
+| \` (backtick)   | Focus on the breadcrumb bar.                                                                                                                                                                                                      |
 | a/A             | Restore the view that was previously popped with `q`/`Q`. The `A` hotkey will try to match the top times between the two views.                                                                                                   |
 | X               | Close the current text file or log file.                                                                                                                                                                                          |
 
@@ -243,6 +243,7 @@ that you can always use `q` to pop the top view off of the stack.
 | K      | Like `J` except it toggles the mark on the previous line.                                                                                                                                                   |
 | c      | Copy the marked text to the X11 selection buffer or OS X clipboard.                                                                                                                                         |
 | C      | Clear all marked lines.                                                                                                                                                                                     |
+| CTRL-S | Toggle a sticky header for the focused line. Sticky headers remain visible at the top of the view as you scroll past them.                                                                                  |
 
 ### Display options
 

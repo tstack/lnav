@@ -43,7 +43,6 @@
 #include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
-#include "crashd.client.hh"
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "md4cpp.hh"
@@ -261,91 +260,110 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
-    if (y > 0) {
-        return false;
-    }
-
-    auto sel = lv.get_selection().value_or(0_vl);
-    if (sel < this->gho_src->tss_view->get_top()) {
-        return true;
-    }
-    const auto& row = *this->gho_src->ts_time_order[sel];
-    auto tr = row.or_value.otr_range;
-    auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
-    auto sel_begin_us = tr.tr_begin - lb;
-    auto sel_end_us = tr.tr_end - lb;
-
-    require(sel_begin_us >= 0us);
-    require(sel_end_us >= 0us);
-
-    auto [height, width] = lv.get_dimensions();
-    if (width <= CHART_INDENT) {
-        return true;
-    }
-
-    value_out.append("   Duration   "_h1)
-        .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-        .append(" ")
-        .append("\u2718"_error)
-        .append("\u25b2"_warning)
-        .append(" ")
-        .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-        .append(" ")
-        .append("Item"_h1);
-    auto line_width = CHART_INDENT;
-    auto mark_width = (double) (width - line_width);
-    double span = (ub - lb).count();
-    auto us_per_ch
-        = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
-    require(us_per_ch > 0us);
-    auto us_per_inc = us_per_ch * 10;
-    auto lr = line_range{
-        static_cast<int>(CHART_INDENT + floor(sel_begin_us / us_per_ch)),
-        static_cast<int>(CHART_INDENT + ceil(sel_end_us / us_per_ch)),
-        line_range::unit::codepoint,
-    };
-    if (lr.lr_start == lr.lr_end) {
-        lr.lr_end += 1;
-    }
-    if (lr.lr_end > width) {
-        lr.lr_end = -1;
-    }
-    require(lr.lr_start >= 0);
-    value_out.get_attrs().emplace_back(lr,
-                                       VC_ROLE.value(role_t::VCR_CURSOR_LINE));
-    auto total_us = std::chrono::microseconds{0};
-    std::vector<std::string> durations;
-    auto remaining_width = mark_width - 10;
-    auto max_width = size_t{0};
-    while (remaining_width > 0) {
-        total_us += us_per_inc;
-        auto dur = humanize::time::duration::from_tv(to_timeval(total_us));
-        if (us_per_inc > 24 * 1h) {
-            dur.with_resolution(24 * 1h);
-        } else if (us_per_inc > 1h) {
-            dur.with_resolution(1h);
-        } else if (us_per_inc > 1min) {
-            dur.with_resolution(1min);
-        } else if (us_per_inc > 2s) {
-            dur.with_resolution(1s);
+    if (y == 0) {
+        auto sel = lv.get_selection().value_or(0_vl);
+        if (sel < this->gho_src->tss_view->get_top()) {
+            return true;
         }
-        durations.emplace_back(dur.to_string());
-        max_width = std::max(durations.back().size(), max_width);
-        remaining_width -= 10;
-    }
-    for (auto& label : durations) {
-        line_width += 10;
-        value_out.pad_to(line_width)
+        const auto& row = *this->gho_src->ts_time_order[sel];
+        auto tr = row.or_value.otr_range;
+        auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
+        auto sel_begin_us = tr.tr_begin - lb;
+        auto sel_end_us = tr.tr_end - lb;
+
+        require(sel_begin_us >= 0us);
+        require(sel_end_us >= 0us);
+
+        auto [height, width] = lv.get_dimensions();
+        if (width <= CHART_INDENT) {
+            return true;
+        }
+
+        value_out.append("   Duration   "_h1)
             .append("|", VC_GRAPHIC.value(NCACS_VLINE))
-            .append(max_width - label.size(), ' ')
-            .append(label);
+            .append(" ")
+            .append("\u2718"_error)
+            .append("\u25b2"_warning)
+            .append(" ")
+            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+            .append(" ")
+            .append("Item"_h1);
+        auto line_width = CHART_INDENT;
+        auto mark_width = (double) (width - line_width);
+        double span = (ub - lb).count();
+        auto us_per_ch
+            = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
+        require(us_per_ch > 0us);
+        auto us_per_inc = us_per_ch * 10;
+        auto lr = line_range{
+            static_cast<int>(CHART_INDENT + floor(sel_begin_us / us_per_ch)),
+            static_cast<int>(CHART_INDENT + ceil(sel_end_us / us_per_ch)),
+            line_range::unit::codepoint,
+        };
+        if (lr.lr_start == lr.lr_end) {
+            lr.lr_end += 1;
+        }
+        if (lr.lr_end > width) {
+            lr.lr_end = -1;
+        }
+        require(lr.lr_start >= 0);
+        value_out.get_attrs().emplace_back(
+            lr, VC_ROLE.value(role_t::VCR_CURSOR_LINE));
+        auto total_us = std::chrono::microseconds{0};
+        std::vector<std::string> durations;
+        auto remaining_width = mark_width - 10;
+        auto max_width = size_t{0};
+        while (remaining_width > 0) {
+            total_us += us_per_inc;
+            auto dur = humanize::time::duration::from_tv(to_timeval(total_us));
+            if (us_per_inc > 24 * 1h) {
+                dur.with_resolution(24 * 1h);
+            } else if (us_per_inc > 1h) {
+                dur.with_resolution(1h);
+            } else if (us_per_inc > 1min) {
+                dur.with_resolution(1min);
+            } else if (us_per_inc > 2s) {
+                dur.with_resolution(1s);
+            }
+            durations.emplace_back(dur.to_string());
+            max_width = std::max(durations.back().size(), max_width);
+            remaining_width -= 10;
+        }
+        for (auto& label : durations) {
+            line_width += 10;
+            value_out.pad_to(line_width)
+                .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+                .append(max_width - label.size(), ' ')
+                .append(label);
+        }
+
+        auto hdr_attrs = text_attrs::with_underline();
+        value_out.with_attr_for_all(VC_STYLE.value(hdr_attrs))
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
+
+        return true;
     }
 
-    auto hdr_attrs = text_attrs::with_underline();
-    value_out.with_attr_for_all(VC_STYLE.value(hdr_attrs))
-        .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
+    auto& tc = dynamic_cast<textview_curses&>(const_cast<listview_curses&>(lv));
+    const auto& sticky_bv = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+    auto top = lv.get_top();
+    auto sticky_range = sticky_bv.equal_range(0_vl, top);
+    auto sticky_index = y - 1;
+    if (sticky_index < static_cast<int>(
+            std::distance(sticky_range.first, sticky_range.second)))
+    {
+        auto iter = std::next(sticky_range.first, sticky_index);
+        tc.textview_value_for_row(*iter, value_out);
+        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+        auto next_iter = std::next(iter);
+        if (next_iter == sticky_range.second) {
+            value_out.with_attr_for_all(
+                VC_STYLE.value(text_attrs::with_underline()));
+        }
+        return true;
+    }
 
-    return true;
+    return false;
 }
 void
 timeline_header_overlay::list_value_for_overlay(
@@ -775,10 +793,28 @@ timeline_source::rebuild_indexes()
     auto& bm_parts = bm[&textview_curses::BM_PARTITION];
 
     this->ts_rebuild_in_progress = true;
-    bm_errs.clear();
-    bm_warns.clear();
-    bm_meta.clear();
-    bm_parts.clear();
+
+    static const bookmark_type_t* PRESERVE_TYPES[] = {
+        &textview_curses::BM_USER,
+        &textview_curses::BM_STICKY,
+    };
+    for (const auto* bm_type : PRESERVE_TYPES) {
+        auto& bv = bm[bm_type];
+        for (const auto& vl : bv.bv_tree) {
+            auto line = static_cast<size_t>(vl);
+            if (line < this->ts_time_order.size()) {
+                const auto& row = *this->ts_time_order[line];
+                this->ts_pending_bookmarks.emplace_back(pending_bookmark{
+                    row.or_type,
+                    row.or_name.to_string(),
+                    bm_type,
+                });
+            }
+        }
+        bv.clear();
+    }
+
+    bm.clear();
 
     this->ts_lower_bound = {};
     this->ts_upper_bound = {};
@@ -1047,6 +1083,7 @@ timeline_source::rebuild_indexes()
         }
     }
     this->ts_filter_hits = {};
+
     this->ts_time_order.clear();
     this->ts_time_order.reserve(this->ts_active_opids.size());
     for (auto& pair : this->ts_active_opids) {
@@ -1173,6 +1210,8 @@ timeline_source::rebuild_indexes()
     this->ts_total_width
         = std::max<size_t>(22 + this->ts_opid_width + max_desc_width,
                            1 + 16 + 5 + 8 + 5 + 16 + 1 /* header */);
+
+    this->apply_pending_bookmarks();
 
     this->tss_view->set_needs_update();
     this->ts_rebuild_in_progress = false;
@@ -1476,6 +1515,27 @@ timeline_source::add_commands_for_session(
         receiver(fmt::format(FMT_STRING("hide-in-timeline {}"),
                              row_type_to_string(rt)));
     }
+}
+
+void
+timeline_source::apply_pending_bookmarks()
+{
+    if (this->ts_pending_bookmarks.empty()) {
+        return;
+    }
+
+    auto* tc = this->tss_view;
+    for (const auto& pb : this->ts_pending_bookmarks) {
+        auto row_name_sf = string_fragment::from_str(pb.pb_row_name);
+        for (size_t lpc = 0; lpc < this->ts_time_order.size(); lpc++) {
+            const auto& row = *this->ts_time_order[lpc];
+            if (row.or_name == row_name_sf && row.or_type == pb.pb_row_type) {
+                tc->set_user_mark(pb.pb_mark_type, vis_line_t(lpc), true);
+                break;
+            }
+        }
+    }
+    this->ts_pending_bookmarks.clear();
 }
 
 int

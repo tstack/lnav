@@ -65,7 +65,8 @@ Features:
   `log_sticky_mark` column is available in log tables
   to get/set the sticky state via SQL.  Sticky headers
   and user bookmarks are saved and restored across
-  sessions for both log and text views.
+  sessions for both log and text views.  The command
+  is bound to `CTRL+S` by default.
 * In pager mode (activated by the `-q` flag), the input
   will always be written to the terminal if it is
   smaller than the height.  Previously, if the input

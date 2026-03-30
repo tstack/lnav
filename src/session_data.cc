@@ -118,16 +118,27 @@ CREATE TABLE IF NOT EXISTS regex101_entries (
        permalink    <> '')
 );
 
-CREATE TABLE IF NOT EXISTS text_bookmarks (
+CREATE TABLE IF NOT EXISTS text_bookmarks2 (
     file_path    text NOT NULL,
     line_number  integer NOT NULL,
     line_hash    text NOT NULL,
     mark_type    text NOT NULL DEFAULT 'user',
     session_time integer NOT NULL,
 
-    PRIMARY KEY (file_path, line_number, mark_type),
+    PRIMARY KEY (file_path, line_number, mark_type, session_time),
 
     CHECK(line_number >= 0),
+    CHECK(mark_type IN ('user', 'sticky'))
+);
+
+CREATE TABLE IF NOT EXISTS timeline_bookmarks (
+    row_type     text NOT NULL,
+    row_name     text NOT NULL,
+    mark_type    text NOT NULL DEFAULT 'sticky',
+    session_time integer NOT NULL,
+
+    PRIMARY KEY (row_type, row_name, mark_type, session_time),
+
     CHECK(mark_type IN ('user', 'sticky'))
 );
 )";
@@ -143,8 +154,13 @@ static const char* const NETLOC_LRU_STMT
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
 
 static const char* const TEXT_BOOKMARK_LRU_STMT
-    = "DELETE FROM text_bookmarks WHERE session_time <= "
-      "  (SELECT DISTINCT session_time FROM text_bookmarks "
+    = "DELETE FROM text_bookmarks2 WHERE session_time <= "
+      "  (SELECT DISTINCT session_time FROM text_bookmarks2 "
+      "   ORDER BY session_time DESC LIMIT 1 OFFSET 50000)";
+
+static const char* const TIMELINE_BOOKMARK_LRU_STMT
+    = "DELETE FROM timeline_bookmarks WHERE session_time <= "
+      "  (SELECT DISTINCT session_time FROM timeline_bookmarks "
       "   ORDER BY session_time DESC LIMIT 1 OFFSET 50000)";
 
 static const char* const UPGRADE_STMTS[] = {
@@ -153,6 +169,7 @@ static const char* const UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN annotations text DEFAULT NULL;)",
     R"(ALTER TABLE bookmarks ADD COLUMN log_opid text DEFAULT NULL;)",
     R"(ALTER TABLE bookmarks ADD COLUMN sticky integer DEFAULT 0;)",
+    R"(DROP TABLE IF EXISTS text_bookmarks;)",
 };
 
 static constexpr size_t MAX_SESSIONS = 8;
@@ -424,6 +441,7 @@ scan_sessions()
 }
 
 static void load_text_bookmarks(sqlite3* db);
+static void load_timeline_bookmarks(sqlite3* db);
 
 void
 load_time_bookmarks()
@@ -923,6 +941,7 @@ load_time_bookmarks()
     }
 
     load_text_bookmarks(db.in());
+    load_timeline_bookmarks(db.in());
 }
 
 static int
@@ -1335,7 +1354,7 @@ save_text_bookmarks(sqlite3* db)
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
     if (sqlite3_prepare_v2(db,
-                           "DELETE FROM text_bookmarks WHERE session_time = ?",
+                           "DELETE FROM text_bookmarks2 WHERE session_time = ?",
                            -1,
                            stmt.out(),
                            nullptr)
@@ -1345,7 +1364,7 @@ save_text_bookmarks(sqlite3* db)
                   sqlite3_errmsg(db));
         return;
     }
-    sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_time);
+    sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time);
     if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
         log_error("could not execute text_bookmarks delete -- %s",
                   sqlite3_errmsg(db));
@@ -1354,7 +1373,7 @@ save_text_bookmarks(sqlite3* db)
 
     if (sqlite3_prepare_v2(
             db,
-            "REPLACE INTO text_bookmarks"
+            "REPLACE INTO text_bookmarks2"
             " (file_path, line_number, line_hash, mark_type, session_time)"
             " VALUES (?, ?, ?, ?, ?)",
             -1,
@@ -1432,10 +1451,11 @@ static void
 load_text_bookmarks(sqlite3* db)
 {
     static const char* const TEXT_BOOKMARK_STMT = R"(
-        SELECT line_number, line_hash, mark_type
-        FROM text_bookmarks
+        SELECT line_number, line_hash, mark_type, session_time,
+               session_time=? AS same_session
+        FROM text_bookmarks2
         WHERE file_path = ?
-        ORDER BY line_number
+        ORDER BY same_session DESC, session_time DESC
     )";
 
     auto& tss = lnav_data.ld_text_source;
@@ -1464,8 +1484,11 @@ load_text_bookmarks(sqlite3* db)
         auto line_count = static_cast<int>(lf->size());
         sqlite3_reset(stmt.in());
         sqlite3_clear_bindings(stmt.in());
-        bind_to_sqlite(stmt.in(), 1, file_path);
+        sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time);
+        bind_to_sqlite(stmt.in(), 2, file_path);
 
+        size_t mark_count = 0;
+        int64_t last_session_time = -1;
         bool done = false;
         while (!done) {
             auto rc = sqlite3_step(stmt.in());
@@ -1478,10 +1501,18 @@ load_text_bookmarks(sqlite3* db)
 
                 case SQLITE_ROW: {
                     auto line_number = sqlite3_column_int(stmt.in(), 0);
-                    auto* stored_hash
+                    const auto* stored_hash
                         = (const char*) sqlite3_column_text(stmt.in(), 1);
-                    auto* mark_type
+                    const auto* mark_type
                         = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    auto session_time = sqlite3_column_int64(stmt.in(), 3);
+
+                    if (last_session_time == -1) {
+                        last_session_time = session_time;
+                    } else if (last_session_time != session_time) {
+                        done = true;
+                        continue;
+                    }
 
                     if (line_number >= line_count) {
                         continue;
@@ -1520,6 +1551,7 @@ load_text_bookmarks(sqlite3* db)
                     fvs->fvs_bookmarks[bm_type_opt.value()].insert_once(vl);
                     fvs->fvs_content_marks[bm_type_opt.value()].insert_once(
                         static_cast<uint32_t>(line_number));
+                    mark_count += 1;
                     break;
                 }
 
@@ -1531,6 +1563,8 @@ load_text_bookmarks(sqlite3* db)
                     break;
             }
         }
+        log_debug(
+            "loaded %zu text bookmarks from %s", mark_count, file_path.c_str());
     }
 
     // Copy the front file's bookmarks into the textview
@@ -1543,6 +1577,180 @@ load_text_bookmarks(sqlite3* db)
     }
 
     tc.reload_data();
+}
+
+static void
+save_timeline_bookmarks(sqlite3* db)
+{
+    auto& tc = lnav_data.ld_views[LNV_TIMELINE];
+    auto* tss = static_cast<timeline_source*>(tc.get_sub_source());
+
+    if (tss == nullptr) {
+        return;
+    }
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+
+    if (sqlite3_prepare_v2(db,
+                           "DELETE FROM timeline_bookmarks"
+                           " WHERE session_time = ?",
+                           -1,
+                           stmt.out(),
+                           nullptr)
+        != SQLITE_OK)
+    {
+        log_error("could not prepare timeline_bookmarks delete -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+    sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time);
+    if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+        log_error("could not execute timeline_bookmarks delete -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+
+    if (sqlite3_prepare_v2(db,
+                           "REPLACE INTO timeline_bookmarks"
+                           " (row_type, row_name, mark_type, session_time)"
+                           " VALUES (?, ?, ?, ?)",
+                           -1,
+                           stmt.out(),
+                           nullptr)
+        != SQLITE_OK)
+    {
+        log_error(
+            "could not prepare timeline_bookmarks replace statement -- %s",
+            sqlite3_errmsg(db));
+        return;
+    }
+
+    static const bookmark_type_t* SAVE_TYPES[] = {
+        &textview_curses::BM_USER,
+        &textview_curses::BM_STICKY,
+    };
+
+    for (const auto* bm_type : SAVE_TYPES) {
+        const auto& bv = tc.get_bookmarks()[bm_type];
+        if (bv.empty()) {
+            continue;
+        }
+
+        for (const auto& vl : bv.bv_tree) {
+            auto line = static_cast<size_t>(vl);
+            if (line >= tss->ts_time_order.size()) {
+                continue;
+            }
+
+            const auto& row = *tss->ts_time_order[line];
+
+            sqlite3_clear_bindings(stmt.in());
+            bind_to_sqlite(
+                stmt.in(), 1, timeline_source::row_type_to_string(row.or_type));
+            bind_to_sqlite(stmt.in(), 2, row.or_name.to_string());
+            bind_to_sqlite(stmt.in(), 3, bm_type->get_name());
+            sqlite3_bind_int64(stmt.in(), 4, lnav_data.ld_session_time);
+
+            if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+                log_error("could not execute timeline_bookmarks insert -- %s",
+                          sqlite3_errmsg(db));
+                return;
+            }
+
+            sqlite3_reset(stmt.in());
+        }
+    }
+}
+
+static void
+load_timeline_bookmarks(sqlite3* db)
+{
+    static const char* const TIMELINE_BOOKMARK_STMT = R"(
+        SELECT row_type, row_name, mark_type, session_time,
+               session_time=? AS same_session
+        FROM timeline_bookmarks
+        ORDER BY same_session DESC, session_time DESC
+    )";
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+
+    if (tss == nullptr) {
+        return;
+    }
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    if (sqlite3_prepare_v2(db, TIMELINE_BOOKMARK_STMT, -1, stmt.out(), nullptr)
+        != SQLITE_OK)
+    {
+        log_debug("could not prepare timeline_bookmarks select -- %s",
+                  sqlite3_errmsg(db));
+        return;
+    }
+
+    sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time);
+
+    int64_t last_session_time = -1;
+    bool done = false;
+    while (!done) {
+        auto rc = sqlite3_step(stmt.in());
+
+        switch (rc) {
+            case SQLITE_OK:
+            case SQLITE_DONE:
+                done = true;
+                break;
+
+            case SQLITE_ROW: {
+                auto* row_type_str
+                    = (const char*) sqlite3_column_text(stmt.in(), 0);
+                auto* row_name
+                    = (const char*) sqlite3_column_text(stmt.in(), 1);
+                auto* mark_type
+                    = (const char*) sqlite3_column_text(stmt.in(), 2);
+                auto session_time = sqlite3_column_int64(stmt.in(), 3);
+
+                if (last_session_time == -1) {
+                    last_session_time = session_time;
+                } else if (last_session_time != session_time) {
+                    done = true;
+                    continue;
+                }
+
+                if (row_type_str == nullptr || row_name == nullptr
+                    || mark_type == nullptr)
+                {
+                    continue;
+                }
+
+                auto bm_type_opt = bookmark_type_t::find_type(mark_type);
+                if (!bm_type_opt) {
+                    continue;
+                }
+
+                auto rt_opt = timeline_source::row_type_from_string(
+                    row_type_str);
+                if (!rt_opt) {
+                    continue;
+                }
+
+                tss->ts_pending_bookmarks.emplace_back(
+                    timeline_source::pending_bookmark{
+                        rt_opt.value(),
+                        row_name,
+                        bm_type_opt.value(),
+                    });
+                break;
+            }
+
+            default:
+                log_error("timeline bookmark select error: %d -- %s",
+                          rc,
+                          sqlite3_errmsg(db));
+                done = true;
+                break;
+        }
+    }
 }
 
 static void
@@ -1848,9 +2056,11 @@ save_time_bookmarks()
         sqlite3_reset(stmt.in());
     }
 
+    log_info("saved %d log bookmarks", sqlite3_changes(db.in()));
     save_text_bookmarks(db.in());
-
-    log_info("saved %d bookmarks", sqlite3_changes(db.in()));
+    log_info("saved %d text bookmarks", sqlite3_changes(db.in()));
+    save_timeline_bookmarks(db.in());
+    log_info("saved %d timeline bookmarks", sqlite3_changes(db.in()));
 
     if (sqlite3_exec(db.in(), "COMMIT", nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
@@ -1891,6 +2101,22 @@ save_time_bookmarks()
     auto text_bm_changes = sqlite3_changes(db.in());
     if (text_bm_changes > 0) {
         log_info("deleted %d old text bookmarks", text_bm_changes);
+    }
+
+    if (sqlite3_exec(db.in(),
+                     TIMELINE_BOOKMARK_LRU_STMT,
+                     nullptr,
+                     nullptr,
+                     errmsg.out())
+        != SQLITE_OK)
+    {
+        log_error("unable to delete old timeline bookmarks -- %s",
+                  errmsg.in());
+        return;
+    }
+    auto timeline_bm_changes = sqlite3_changes(db.in());
+    if (timeline_bm_changes > 0) {
+        log_info("deleted %d old timeline bookmarks", timeline_bm_changes);
     }
 }
 
@@ -2114,6 +2340,7 @@ reset_session()
         lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
     if (tss != nullptr) {
         tss->ts_hidden_row_types.clear();
+        tss->ts_pending_bookmarks.clear();
     }
 
     for (auto& tc : lnav_data.ld_views) {

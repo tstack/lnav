@@ -1100,9 +1100,16 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
     auto& bv = this->tc_bookmarks[bm];
 
     if (marked) {
-        bv.insert_once(vl);
+        auto insert_res = bv.insert_once(vl);
+        if (!insert_res.second) {
+            // already inserted
+            return;
+        }
     } else {
-        bv.erase(vl);
+        if (bv.erase(vl) == 0) {
+            // not a bookmark
+            return;
+        }
     }
     if (this->tc_sub_source) {
         this->tc_sub_source->text_mark(bm, vl, marked);
