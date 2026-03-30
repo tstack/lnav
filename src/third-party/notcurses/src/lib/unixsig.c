@@ -5,6 +5,7 @@
 
 // primarily drive ownership off an atomic, safely used within a signal handler
 static void* _Atomic signal_nc = NULL;
+static pid_t signal_pid = 0;
 
 #ifdef __MINGW32__
 int block_signals(sigset_t* old_blocked_signals){
@@ -143,6 +144,10 @@ invoke_old(const struct sigaction* old, int signo, siginfo_t* sinfo, void* v){
 // of SIG{ILL, INT, SEGV, ABRT, QUIT, TERM}. godspeed you, black emperor!
 static void
 fatal_handler(int signo, siginfo_t* siginfo, void* v){
+    pid_t curr_pid = getpid();
+    if(curr_pid != signal_pid) {
+        return;
+    }
   notcurses* nc = atomic_load(&signal_nc);
   if(nc){
     fatal_callback(nc);
@@ -185,6 +190,7 @@ int setup_signals(void* vnc, bool no_quit_sigs, bool no_winch_sigs,
     return -1;
   }
   pthread_mutex_lock(&lock);
+  signal_pid = getpid();
   if(!no_winch_sigs){
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sigwinch_handler;

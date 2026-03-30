@@ -50,6 +50,7 @@
 #include "shlex.hh"
 #include "terminfo-files.h"
 #include "terminfo/terminfo.h"
+#include "termios_guard.hh"
 #include "unistr.h"
 #include "uniwidth.h"
 #include "xterm_mouse.hh"
@@ -1696,4 +1697,14 @@ terminfo_load_from_internal(const char* term_name)
 
     return nullptr;
 }
+}
+
+
+guard_termios::~guard_termios()
+{
+    if (isatty(this->gt_fd)
+        && tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1)
+    {
+        perror("tcsetattr");
+    }
 }

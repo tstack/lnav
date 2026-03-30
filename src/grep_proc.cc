@@ -177,15 +177,18 @@ grep_proc<LineType>::start()
         }
         auto child = child_res.unwrap();
 
+        if (child.in_child()) {
+            // Need to do this before the after_fork() stuff below
+            lnav::pid::in_child = true;
+            signal(SIGINT, SIG_DFL);
+            signal(SIGTERM, SIG_DFL);
+        }
+
         in_pipe.after_fork(child.in());
         out_pipe.after_fork(child.in());
         err_pipe.after_fork(child.in());
 
         if (child.in_child()) {
-            lnav::pid::in_child = true;
-            signal(SIGINT, SIG_DFL);
-            signal(SIGTERM, SIG_DFL);
-
             this->gp_queue = std::move(sub_queues[i]);
             this->child_init();
             this->child_loop();
@@ -283,6 +286,7 @@ void
 grep_proc<LineType>::cleanup()
 {
     for (auto& cs_ptr : this->gp_children) {
+        log_warning("terminating grep child %d", cs_ptr->cs_child.in());
         kill(cs_ptr->cs_child.in(), SIGTERM);
     }
     for (auto& cs_ptr : this->gp_children) {
@@ -415,7 +419,9 @@ grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd>& pollfds)
                     cs.cs_pipe_range.clear();
                     cs.cs_line_buffer.reset();
                     auto finished = std::move(cs.cs_child).wait_for_child();
-                    log_info("grep child %d finished", finished.in());
+                    log_info("grep child %d finished with %d",
+                             finished.in(),
+                             finished.status());
                     any_finished = true;
                 }
             } catch (line_buffer::error& e) {

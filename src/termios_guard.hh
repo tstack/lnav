@@ -61,14 +61,7 @@ public:
      * Restore the TTY termios settings that were captured when this object was
      * instantiated.
      */
-    ~guard_termios()
-    {
-        if (isatty(this->gt_fd)
-            && tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1)
-        {
-            perror("tcsetattr");
-        }
-    }
+    ~guard_termios();
 
     const struct termios* get_termios() const { return &this->gt_termios; }
 
