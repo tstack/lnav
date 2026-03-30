@@ -692,9 +692,14 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
 
     if (this->ss_cached_line_count == 0) {
         value_out
-            .append(lnav::roles::error("error: no data available, use the "))
+            .append(
+                "The SPECTRO view visualizes numeric LOG/DB data over time. "
+                "Use the ")
             .append_quoted(lnav::roles::keyword(":spectrogram"))
-            .append(lnav::roles::error(" command to visualize numeric data"));
+            .append(" command to populate this view");
+        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+        value_out.with_attr_for_all(
+            VC_STYLE.value(text_attrs::with_underline()));
         return true;
     }
 
