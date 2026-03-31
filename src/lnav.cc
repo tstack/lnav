@@ -1630,13 +1630,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_views[LNV_SPECTRO].tc_cursor_role = std::nullopt;
     lnav_data.ld_views[LNV_SPECTRO].tc_disabled_cursor_role = std::nullopt;
 
-    lnav_data.ld_views[LNV_DB].set_supports_marks(true);
-    lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
-    lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);
     lnav_data.ld_views[LNV_LOG].set_supports_marks(true);
     lnav_data.ld_views[LNV_TEXT].set_supports_marks(true);
+    lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
+    lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);
+    lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_SCHEMA].set_supports_marks(true);
     lnav_data.ld_views[LNV_PRETTY].set_supports_marks(true);
+    lnav_data.ld_views[LNV_TIMELINE].set_supports_marks(true);
 
     lnav_data.ld_doc_view.set_title("Documentation");
     lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
