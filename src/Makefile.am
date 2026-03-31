@@ -188,6 +188,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(srcdir)/third-party/hat-trie/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
+	-I$(top_srcdir)/src/third-party/scnlib/src/deps \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \

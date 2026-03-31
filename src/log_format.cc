@@ -50,6 +50,7 @@
 #include "bookmarks.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "fast_float/single_include/fast_float/fast_float.h"
 #include "fmt/format.h"
 #include "lnav_util.hh"
 #include "log_format_ext.hh"
@@ -2155,7 +2156,7 @@ external_log_format::scan(logfile& lf,
             const value_def& vd = *ivd.ivd_value_def;
             auto num_cap = md[ivd.ivd_index];
 
-            if (vd.vd_meta.lvm_identifier) {
+            if (vd.vd_meta.lvm_identifier || vd.vd_meta.lvm_foreign_key) {
                 continue;
             }
 
@@ -2181,10 +2182,11 @@ external_log_format::scan(logfile& lf,
                 std::optional<double> dvalue_opt;
                 switch (vd.vd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER: {
-                        auto scan_res
-                            = scn::scan_int<int64_t>(num_cap->to_string_view());
-                        if (scan_res) {
-                            dvalue_opt = scan_res->value();
+                        int64_t ivalue;
+                        auto from_res = fast_float::from_chars(
+                            num_cap->begin(), num_cap->end(), ivalue);
+                        if (from_res.ec == std::errc()) {
+                            dvalue_opt = ivalue;
                         }
                         break;
                     }

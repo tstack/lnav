@@ -427,7 +427,11 @@ target_include_directories(
         cppscnlib PRIVATE
         third-party/scnlib/src
         third-party/scnlib/src/deps/fast_float/single_include)
-target_include_directories(cppscnlib PUBLIC third-party/scnlib/include)
+target_include_directories(
+        cppscnlib PUBLIC
+        third-party/scnlib/include
+        third-party/scnlib/src/deps
+)
 
 add_library(
         base64 STATIC
