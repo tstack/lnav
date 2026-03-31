@@ -657,64 +657,77 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 auto start_win_iter = start_win->begin();
                 const auto& opid_opt
                     = start_win_iter->get_values().lvv_opid_value;
-                if (!opid_opt) {
-                    alerter::singleton().chime(
-                        "Log message does not contain an opid");
-                    prompt.p_editor.set_inactive_value(
-                        lnav::console::user_message::error(
-                            "Log message does not contain an opid")
-                            .to_attr_line());
-                } else {
-                    const auto& start_line = start_win_iter->get_logline();
-                    auto lvv = start_win_iter->get_values();
-                    auto opid_bloom
-                        = string_fragment::from_str(opid_opt.value())
-                              .bloom_bits();
-                    auto next_win
-                        = lss->window_to_end(start_win_iter->get_vis_line());
-                    auto next_win_iter = next_win->begin();
-                    bool found = false;
+                auto lvv = start_win_iter->get_values();
+                auto opid_bloom = opid_opt
+                    ? string_fragment::from_str(opid_opt.value()).bloom_bits()
+                    : uint64_t{0};
+                auto next_win
+                    = lss->window_to_end(start_win_iter->get_vis_line());
+                auto next_win_iter = next_win->begin();
+                std::optional<vis_line_t> next_line_opt;
 
-                    while (true) {
-                        if (ch.id == 'o') {
-                            ++next_win_iter;
-                            if (next_win_iter == next_win->end()) {
-                                break;
-                            }
-                        } else {
-                            if (next_win_iter->get_vis_line() == 0) {
-                                break;
-                            }
-                            --next_win_iter;
+                while (true) {
+                    if (ch.id == 'o') {
+                        ++next_win_iter;
+                        if (next_win_iter == next_win->end()) {
+                            break;
                         }
+                    } else {
+                        if (next_win_iter->get_vis_line() == 0) {
+                            break;
+                        }
+                        --next_win_iter;
+                    }
+                    if (opid_opt) {
+                        // check the bloom before reading the message in
                         const auto& next_line = next_win_iter->get_logline();
                         if (!next_line.match_bloom_bits(opid_bloom)) {
                             continue;
                         }
-                        const auto& next_opid_opt
-                            = next_win_iter->get_values().lvv_opid_value;
-                        if (!next_opid_opt
-                            || opid_opt.value() != next_opid_opt.value())
-                        {
-                            continue;
-                        }
-                        found = true;
-                        break;
                     }
-                    if (found) {
+                    // slow path, need to read the message
+                    const auto& next_opid_opt
+                        = next_win_iter->get_values().lvv_opid_value;
+                    if (!opid_opt) {
+                        if (next_opid_opt) {
+                            next_line_opt = next_win_iter->get_vis_line();
+                            break;
+                        }
+                        continue;
+                    }
+                    if (!next_opid_opt
+                        || opid_opt.value() != next_opid_opt.value())
+                    {
+                        continue;
+                    }
+                    next_line_opt = next_win_iter->get_vis_line();
+                    break;
+                }
+                if (next_line_opt) {
+                    if (opid_opt) {
                         prompt.p_editor.clear_inactive_value();
-                        tc->set_selection(next_win_iter->get_vis_line());
                     } else {
                         prompt.p_editor.set_inactive_value(
-                            lnav::console::user_message::error(
-                                attr_line_t(
-                                    "No more messages found with opid: ")
-                                    .append(
-                                        lnav::roles::symbol(opid_opt.value())))
+                            lnav::console::user_message::info(
+                                attr_line_t("Found message with an opid"))
                                 .to_attr_line());
-                        alerter::singleton().chime(
-                            "no more messages found with opid");
                     }
+                    tc->set_selection(next_line_opt.value());
+                } else if (opid_opt) {
+                    prompt.p_editor.set_inactive_value(
+                        lnav::console::user_message::error(
+                            attr_line_t("No more messages found with opid: ")
+                                .append(lnav::roles::symbol(opid_opt.value())))
+                            .to_attr_line());
+                    alerter::singleton().chime(
+                        "no more messages found with opid");
+                } else {
+                    prompt.p_editor.set_inactive_value(
+                        lnav::console::user_message::error(
+                            "No messages found with an opid")
+                            .to_attr_line());
+                    alerter::singleton().chime(
+                        "no messages found with an opid");
                 }
             }
             break;
