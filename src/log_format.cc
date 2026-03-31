@@ -3180,7 +3180,6 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                 line_lr.lr_start += diff;
                                 if (digits > 0) {
                                     file_lr.lr_end -= 1;
-                                    line_lr.lr_start += 1;
                                 }
                                 this->jlf_attr_line.al_attrs.emplace_back(
                                     lr, SA_SRC_LOC.value());
@@ -4181,11 +4180,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     for (auto& od_pair : *this->lf_opid_description_def) {
+        od_pair.second.od_name = od_pair.first;
         od_pair.second.od_index = this->lf_opid_description_def_vec->size();
         this->lf_opid_description_def_vec->emplace_back(&od_pair.second);
     }
 
     for (auto& od_pair : *this->lf_subid_description_def) {
+        od_pair.second.od_name = od_pair.first;
         od_pair.second.od_index = this->lf_subid_description_def_vec->size();
         this->lf_subid_description_def_vec->emplace_back(&od_pair.second);
     }

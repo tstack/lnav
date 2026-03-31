@@ -68,8 +68,11 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, const char* str)
 inline int
 bind_to_sqlite(sqlite3_stmt* stmt, int index, intern_string_t ist)
 {
+    if (ist.empty()) {
+        return sqlite3_bind_null(stmt, index);
+    }
     return sqlite3_bind_text(
-        stmt, index, ist.get(), ist.size(), SQLITE_TRANSIENT);
+        stmt, index, ist.get(), ist.size(), SQLITE_STATIC);
 }
 
 inline int
@@ -90,6 +93,16 @@ inline int
 bind_to_sqlite(sqlite3_stmt* stmt, int index, int64_t i)
 {
     return sqlite3_bind_int64(stmt, index, i);
+}
+
+template<typename T>
+int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::optional<T>& v)
+{
+    if (v.has_value()) {
+        return bind_to_sqlite(stmt, index, v.value());
+    }
+    return sqlite3_bind_null(stmt, index);
 }
 
 template<typename... Args, std::size_t... Idx>

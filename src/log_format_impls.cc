@@ -590,7 +590,7 @@ public:
         auto desc_v = std::make_shared<std::vector<opid_descriptor>>();
         desc_v->emplace({});
         auto emplace_res = this->lf_opid_description_def->emplace(
-            get_opid_desc(), opid_descriptors{desc_v, 0});
+            get_opid_desc(), opid_descriptors{{}, desc_v, 0});
         this->lf_opid_description_def_vec->emplace_back(
             &emplace_res.first->second);
     }

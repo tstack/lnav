@@ -55,6 +55,7 @@ CREATE TABLE lnav_db.all_opids (
     errors INTEGER,         -- The number of error messages associated with this ID
     warnings INTEGER,       -- The number of warning messages associated with this ID
     total INTEGER,          -- The total number of messages associated with this ID
+    definition TEXT,        -- The name of the opid description from the log format, if available
     description TEXT        -- A description of the operation
 );
 )";
@@ -63,6 +64,7 @@ CREATE TABLE lnav_db.all_opids (
         struct opid_time_pair {
             std::string otp_opid;
             opid_time_range otp_range;
+            intern_string_t otp_name;
             std::string otp_description;
 
             bool operator<(const opid_time_pair& rhs) const
@@ -100,6 +102,7 @@ CREATE TABLE lnav_db.all_opids (
                             auto desc_iter
                                 = format->lf_opid_description_def_vec->at(
                                     om.otr_description.lod_index.value());
+                            gather_iter->second.otp_name = desc_iter->od_name;
                             gather_iter->second.otp_description
                                 = desc_iter->to_string(
                                     om.otr_description.lod_elements);
@@ -182,6 +185,10 @@ CREATE TABLE lnav_db.all_opids (
                 break;
             }
             case 7: {
+                to_sqlite(ctx, vc.c_iter->otp_name);
+                break;
+            }
+            case 8: {
                 if (vc.c_iter->otp_description.empty()) {
                     sqlite3_result_null(ctx);
                 } else {
@@ -217,6 +224,7 @@ CREATE TABLE lnav_db.all_opids (
                    int64_t errors,
                    int64_t warnings,
                    int64_t total,
+                   std::optional<string_fragment> definition,
                    std::optional<string_fragment> description)
     {
         if (description) {

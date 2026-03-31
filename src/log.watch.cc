@@ -40,6 +40,7 @@
 #include "logfile_sub_source.cfg.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
+#include "sqlitepp.client.hh"
 #include "sqlitepp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -240,15 +241,19 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             if (strcmp(name, ":log_opid") == 0) {
-                if (values.lvv_opid_value) {
-                    sqlite3_bind_text(stmt,
-                                      lpc + 1,
-                                      values.lvv_opid_value->c_str(),
-                                      values.lvv_opid_value->length(),
-                                      SQLITE_STATIC);
-                } else {
-                    sqlite3_bind_null(stmt, lpc + 1);
-                }
+                bind_to_sqlite(stmt, lpc + 1, values.lvv_opid_value);
+                continue;
+            }
+            if (strcmp(name, ":log_src_file") == 0) {
+                bind_to_sqlite(stmt, lpc + 1, values.lvv_src_file_value);
+                continue;
+            }
+            if (strcmp(name, ":log_src_line") == 0) {
+                bind_to_sqlite(stmt, lpc + 1, values.lvv_src_line_value);
+                continue;
+            }
+            if (strcmp(name, ":log_thread_id") == 0) {
+                bind_to_sqlite(stmt, lpc + 1, values.lvv_thread_id_value);
                 continue;
             }
             if (strcmp(name, ":log_raw_text") == 0) {

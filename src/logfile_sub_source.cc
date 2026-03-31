@@ -1600,6 +1600,9 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 void
 logfile_sub_source::text_filters_changed()
 {
+    static auto op = lnav_operation{"text_filters_changed"};
+
+    auto op_guard = lnav_opid_guard::internal(op);
     this->lss_index_generation += 1;
     this->tss_level_filtered_count = 0;
 
@@ -1608,6 +1611,7 @@ logfile_sub_source::text_filters_changed()
         this->lss_line_meta_changed = false;
     }
 
+    log_debug("filtering files");
     for (auto& ld : *this) {
         auto* lf = ld->get_file_ptr();
 
@@ -1619,6 +1623,7 @@ logfile_sub_source::text_filters_changed()
     }
 
     if (this->lss_force_rebuild) {
+        log_debug("skipping update since in the middle of force rebuild");
         return;
     }
 
@@ -1679,9 +1684,11 @@ logfile_sub_source::text_filters_changed()
     }
 
     if (this->tss_view != nullptr) {
+        log_debug("reloading view");
         this->tss_view->reload_data();
         this->tss_view->redo_search();
     }
+    log_debug("finished filter update");
 }
 
 std::optional<json_string>
@@ -2173,18 +2180,6 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
-        if (strcmp(name, ":log_opid") == 0) {
-            if (values.lvv_opid_value) {
-                sqlite3_bind_text(stmt,
-                                  lpc + 1,
-                                  values.lvv_opid_value->c_str(),
-                                  values.lvv_opid_value->length(),
-                                  SQLITE_STATIC);
-            } else {
-                sqlite3_bind_null(stmt, lpc + 1);
-            }
-            continue;
-        }
         if (strcmp(name, ":log_raw_text") == 0) {
             auto res = lf->read_raw_message(ll);
 
@@ -2196,6 +2191,43 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
                                   raw_sbr.length(),
                                   SQLITE_STATIC);
             }
+            continue;
+        }
+        if (strcmp(name, ":log_opid") == 0) {
+            bind_to_sqlite(stmt, lpc + 1, values.lvv_opid_value);
+            continue;
+        }
+        if (strcmp(name, ":log_opid_definition") == 0) {
+            if (values.lvv_opid_value) {
+                auto opids = lf->get_opids().readAccess();
+
+                auto iter = opids->los_opid_ranges.find(
+                    values.lvv_opid_value.value());
+                if (iter != opids->los_opid_ranges.end()
+                    && iter->second.otr_description.lod_index)
+                {
+                    const auto& opid_def
+                        = (*format->lf_opid_description_def_vec)
+                            [iter->second.otr_description.lod_index.value()];
+                    bind_to_sqlite(stmt, lpc + 1, opid_def->od_name);
+                } else {
+                    sqlite3_bind_null(stmt, lpc + 1);
+                }
+            } else {
+                sqlite3_bind_null(stmt, lpc + 1);
+            }
+            continue;
+        }
+        if (strcmp(name, ":log_src_file") == 0) {
+            bind_to_sqlite(stmt, lpc + 1, values.lvv_src_file_value);
+            continue;
+        }
+        if (strcmp(name, ":log_src_line") == 0) {
+            bind_to_sqlite(stmt, lpc + 1, values.lvv_src_line_value);
+            continue;
+        }
+        if (strcmp(name, ":log_thread_id") == 0) {
+            bind_to_sqlite(stmt, lpc + 1, values.lvv_thread_id_value);
             continue;
         }
         for (const auto& lv : values.lvv_values) {
@@ -3641,10 +3673,6 @@ logfile_sub_source::add_commands_for_session(
     auto mark_expr = this->get_sql_marker_text();
     if (!mark_expr.empty()) {
         receiver(fmt::format(FMT_STRING("mark-expr {}"), mark_expr));
-    }
-    auto filter_expr = this->get_sql_filter_text();
-    if (!filter_expr.empty()) {
-        receiver(fmt::format(FMT_STRING("filter-expr {}"), filter_expr));
     }
 
     for (const auto& hl : this->lss_highlighters) {

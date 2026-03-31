@@ -253,14 +253,20 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
         ":log_time_msecs",
         ":log_mark",
         ":log_comment",
+        ":log_annotations",
         ":log_tags",
-        ":log_opid",
         ":log_format",
+        ":log_format_regex",
         ":log_path",
         ":log_unique_path",
         ":log_text",
         ":log_body",
         ":log_raw_text",
+        ":log_opid",
+        ":log_opid_definition",
+        ":log_src_file",
+        ":log_src_line",
+        ":log_thread_id",
     };
 
     this->insert_sql_completion("log_line", sql_format_column_t{});

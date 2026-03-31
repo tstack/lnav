@@ -429,7 +429,7 @@ public:
     };
 
     using note_map = lnav::map::small<note_type, lnav::console::user_message>;
-    using safe_notes = safe::Safe<note_map>;
+    using safe_notes = safe::Safe<note_map, std::recursive_mutex>;
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
 
@@ -448,7 +448,7 @@ public:
         };
     }
 
-    using safe_opid_state = safe::Safe<log_opid_state>;
+    using safe_opid_state = safe::Safe<log_opid_state, std::recursive_mutex>;
 
     safe_opid_state& get_opids() { return this->lf_opids; }
 

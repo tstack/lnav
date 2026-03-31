@@ -359,6 +359,7 @@ public:
     };
 
     struct opid_descriptors {
+        intern_string_t od_name;
         std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
         size_t od_index{0};
 

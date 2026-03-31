@@ -700,12 +700,18 @@ load_time_bookmarks()
                             lss.set_user_mark(&textview_curses::BM_PARTITION,
                                               line_cl);
                             bm_meta[line_number].bm_name = part_name;
+                            if (!meta) {
+                                log_debug("  loaded partition bookmark");
+                            }
                             meta = true;
                         }
                         if (comment != nullptr && comment[0] != '\0') {
                             lss.set_user_mark(&textview_curses::BM_META,
                                               line_cl);
                             bm_meta[line_number].bm_comment = comment;
+                            if (!meta) {
+                                log_debug("  loaded message comment");
+                            }
                             meta = true;
                         }
                         if (tags != nullptr && tags[0] != '\0') {
@@ -735,6 +741,9 @@ load_time_bookmarks()
                                         elem->u.string);
                                 }
                             }
+                            if (!meta) {
+                                log_debug("  loaded tags");
+                            }
                             meta = true;
                         }
                         if (annotations != nullptr && annotations[0] != '\0') {
@@ -745,7 +754,10 @@ load_time_bookmarks()
                                 = string_fragment::from_c_str(annotations);
                             auto parse_res
                                 = logmsg_annotations_handlers.parser_for(SRC)
-                                      .of(anno_sf);
+                            .of(anno_sf);
+                            if (!meta) {
+                                log_debug("  loaded message annotation");
+                            }
                             if (parse_res.isErr()) {
                                 log_error(
                                     "unable to parse annotations JSON -- "
@@ -770,6 +782,9 @@ load_time_bookmarks()
                             auto opid_sf
                                 = string_fragment::from_c_str(log_opid);
                             lf->set_logline_opid(line_number, opid_sf);
+                            if (!meta) {
+                                log_debug("  loaded user opid");
+                            }
                             meta = true;
                         }
                         if (meta) {

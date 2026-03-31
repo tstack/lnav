@@ -270,6 +270,16 @@ to_sqlite(sqlite3_context* ctx, const string_fragment& sf)
 }
 
 inline void
+to_sqlite(sqlite3_context* ctx, const intern_string_t& str)
+{
+    if (str.empty()) {
+        sqlite3_result_null(ctx);
+    } else {
+        sqlite3_result_text(ctx, str.data(), str.size(), SQLITE_STATIC);
+    }
+}
+
+inline void
 to_sqlite(sqlite3_context* ctx, const timeval& tv)
 {
     char buffer[64];

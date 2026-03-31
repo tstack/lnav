@@ -63,15 +63,34 @@ thread_local _log_vtab_data log_vtab_data;
 
 const std::unordered_set<string_fragment, frag_hasher>
     log_vtab_impl::RESERVED_COLUMNS = {
-        "log_line"_frag,         "log_time"_frag,        "log_level"_frag,
-        "log_part"_frag,         "log_actual_time"_frag, "log_idle_msecs"_frag,
-        "log_mark"_frag,         "log_sticky_mark"_frag, "log_comment"_frag,
-        "log_tags"_frag,         "log_annotations"_frag, "log_filters"_frag,
-        "log_opid"_frag,         "log_user_opid"_frag,   "log_format"_frag,
-        "log_format_regex"_frag, "log_time_msecs"_frag,  "log_path"_frag,
-        "log_unique_path"_frag,  "log_text"_frag,        "log_body"_frag,
-        "log_raw_text"_frag,     "log_line_hash"_frag,   "log_line_link"_frag,
-        "log_src_file"_frag,     "log_src_line"_frag,    "log_thread_id"_frag,
+        "log_line"_frag,
+        "log_time"_frag,
+        "log_level"_frag,
+        "log_part"_frag,
+        "log_actual_time"_frag,
+        "log_idle_msecs"_frag,
+        "log_mark"_frag,
+        "log_sticky_mark"_frag,
+        "log_comment"_frag,
+        "log_tags"_frag,
+        "log_annotations"_frag,
+        "log_filters"_frag,
+        "log_opid"_frag,
+        "log_user_opid"_frag,
+        "log_opid_definition"_frag,
+        "log_format"_frag,
+        "log_format_regex"_frag,
+        "log_time_msecs"_frag,
+        "log_path"_frag,
+        "log_unique_path"_frag,
+        "log_text"_frag,
+        "log_body"_frag,
+        "log_raw_text"_frag,
+        "log_line_hash"_frag,
+        "log_line_link"_frag,
+        "log_src_file"_frag,
+        "log_src_line"_frag,
+        "log_thread_id"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -94,6 +113,7 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_filters      TEXT,                              -- A JSON list of filter IDs that matched this message
   log_opid         TEXT HIDDEN,                       -- The message's OPID from the log message or user
   log_user_opid    TEXT HIDDEN,                       -- The message's OPID as set by the user
+  log_opid_definition TEXT HIDDEN,                    -- The matching OPID description definition
   log_format       TEXT HIDDEN,                       -- The name of the log file format
   log_format_regex TEXT HIDDEN,                       -- The name of the regex used to parse this log message
   log_time_msecs   INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
@@ -121,6 +141,7 @@ enum class log_footer_columns : uint32_t {
     filters,
     opid,
     user_opid,
+    opid_definition,
     format,
     format_regex,
     time_msecs,
@@ -1027,6 +1048,37 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
                         break;
                     }
+                    case log_footer_columns::opid_definition: {
+                        if (vc->line_values.lvv_values.empty()) {
+                            vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
+                        }
+
+                        if (vc->line_values.lvv_opid_value) {
+                            auto opids = lf->get_opids().readAccess();
+
+                            auto iter = opids->los_opid_ranges.find(
+                                vc->line_values.lvv_opid_value.value());
+                            if (iter != opids->los_opid_ranges.end()
+                                && iter->second.otr_description.lod_index)
+                            {
+                                const auto& opid_def
+                                    = (*lf->get_format_ptr()
+                                            ->lf_opid_description_def_vec)
+                                        [iter->second.otr_description.lod_index
+                                             .value()];
+                                to_sqlite(ctx, opid_def->od_name);
+                            } else {
+                                sqlite3_result_null(ctx);
+                            }
+                        } else {
+                            sqlite3_result_null(ctx);
+                        }
+                        break;
+                    }
                     case log_footer_columns::format: {
                         auto format_name = lf->get_format_name();
                         sqlite3_result_text(ctx,
@@ -1864,6 +1916,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
                         case log_footer_columns::line_hash:
+                        case log_footer_columns::opid_definition:
                         case log_footer_columns::src_file:
                         case log_footer_columns::src_line:
                             break;
@@ -2354,6 +2407,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
                         case log_footer_columns::line_hash:
+                        case log_footer_columns::opid_definition:
                         case log_footer_columns::src_file:
                         case log_footer_columns::src_line:
                             break;
