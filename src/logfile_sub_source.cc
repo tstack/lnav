@@ -2113,8 +2113,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
                 {
                     yajlpp_array arr(gen);
 
-                    for (const auto& str : meta.bm_tags) {
-                        arr.gen(str);
+                    for (const auto& entry : meta.bm_tags) {
+                        arr.gen(entry.te_tag);
                     }
                 }
 
@@ -2607,8 +2607,8 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
         }
 
         value_out.append("\x1c");
-        for (const auto& tag : bm.bm_tags) {
-            value_out.append(tag);
+        for (const auto& entry : bm.bm_tags) {
+            value_out.append(entry.te_tag);
             value_out.append("\x1c");
         }
         value_out.append("\x1c");

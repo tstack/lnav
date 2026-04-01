@@ -44,10 +44,11 @@ typed_json_path_container<logmsg_annotations> logmsg_annotations_handlers = {
 };
 
 void
-bookmark_metadata::add_tag(const std::string& tag)
+bookmark_metadata::add_tag(const std::string& tag, meta_source src)
 {
-    if (!(this->bm_tags | lnav::itertools::find(tag))) {
-        this->bm_tags.emplace_back(tag);
+    auto iter = std::find(this->bm_tags.begin(), this->bm_tags.end(), tag);
+    if (iter == this->bm_tags.end()) {
+        this->bm_tags.emplace_back(tag_entry{tag, src});
     }
 }
 
@@ -72,6 +73,12 @@ bookmark_metadata::empty(bookmark_metadata::categories props) const
             return this->bm_name.empty() && this->bm_opid.empty()
                 && this->bm_comment.empty() && this->bm_tags.empty()
                 && this->bm_annotations.la_pairs.empty();
+        case categories::session:
+            return (this->bm_name.empty()
+                    || this->bm_name_source == meta_source::format)
+                && this->bm_opid.empty() && this->bm_comment.empty()
+                && this->user_tag_count() == 0
+                && this->bm_annotations.la_pairs.empty();
         case categories::partition:
             return this->bm_name.empty();
         case categories::notes:
@@ -81,6 +88,15 @@ bookmark_metadata::empty(bookmark_metadata::categories props) const
             return this->bm_opid.empty();
     }
     ensure(false);
+}
+
+size_t
+bookmark_metadata::user_tag_count() const
+{
+    return std::count_if(
+        this->bm_tags.begin(), this->bm_tags.end(), [](const auto& tag) {
+            return tag.te_source == meta_source::user;
+        });
 }
 
 void

@@ -56,6 +56,7 @@ struct bookmark_metadata {
         partition = 0x01,
         notes = 0x02,
         opid = 0x04,
+        session = 0x08,
     };
 
     bool has(categories props) const
@@ -83,15 +84,35 @@ struct bookmark_metadata {
         return false;
     }
 
+    enum class meta_source {
+        user,
+        format,
+    };
+
     std::string bm_name;
+    meta_source bm_name_source{meta_source::user};
     std::string bm_opid;
     std::string bm_comment;
     logmsg_annotations bm_annotations;
-    std::vector<std::string> bm_tags;
 
-    void add_tag(const std::string& tag);
+    struct tag_entry {
+        std::string te_tag;
+        meta_source te_source{meta_source::user};
+
+        bool operator==(const std::string& rhs) const
+        {
+            return this->te_tag == rhs;
+        }
+    };
+
+    std::vector<tag_entry> bm_tags;
+
+    void add_tag(const std::string& tag,
+                 meta_source src = meta_source::user);
 
     bool remove_tag(const std::string& tag);
+
+    size_t user_tag_count() const;
 
     bool empty(categories props) const;
 

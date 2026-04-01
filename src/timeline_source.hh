@@ -171,9 +171,9 @@ public:
         opid_time_range or_value;
         string_fragment or_description;
         opid_description_defs or_description_defs;
-        lnav::map::small<opid_description_def_key,
-                         lnav::map::small<size_t, std::string>>
-            or_descriptions;
+        std::optional<std::chrono::microseconds> or_description_begin;
+        opid_description_def_key or_description_def_key;
+        lnav::map::small<size_t, std::string> or_description_value;
         size_t or_max_subid_width{0};
         logfile* or_logfile{nullptr};
 

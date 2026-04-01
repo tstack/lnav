@@ -188,8 +188,8 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
             if (bm_opt) {
                 const auto& bm = *(bm_opt.value());
 
-                for (const auto& tag : bm.bm_tags) {
-                    tag_array.gen(tag);
+                for (const auto& entry : bm.bm_tags) {
+                    tag_array.gen(entry.te_tag);
                 }
             }
         }

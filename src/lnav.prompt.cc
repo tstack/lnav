@@ -981,6 +981,8 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     return {};
                 }
                 retval = bm_opt.value()->bm_tags
+                    | lnav::itertools::map(
+                          &bookmark_metadata::tag_entry::te_tag)
                     | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::sorted()
                     | lnav::itertools::map([](const auto& x) {

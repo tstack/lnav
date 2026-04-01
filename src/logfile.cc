@@ -1817,7 +1817,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             std::distance(this->begin(), curr_ll));
 
                         this->lf_bookmark_metadata[line_number].add_tag(
-                            td->ftd_name);
+                            td->ftd_name,
+                            bookmark_metadata::meta_source::format);
                     }
                 }
 
@@ -1847,6 +1848,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
                         this->lf_bookmark_metadata[line_number].bm_name
                             = part_md.to_string();
+                        this->lf_bookmark_metadata[line_number].bm_name_source
+                            = bookmark_metadata::meta_source::format;
                     }
                 }
 

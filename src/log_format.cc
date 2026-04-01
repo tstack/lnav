@@ -129,8 +129,12 @@ opid_time_range::clear()
 opid_time_range&
 opid_time_range::operator|=(const opid_time_range& rhs)
 {
+    if (rhs.otr_range.tr_begin < this->otr_range.tr_begin) {
+        this->otr_description = rhs.otr_description;
+    } else {
+        this->otr_description |= rhs.otr_description;
+    }
     this->otr_range |= rhs.otr_range;
-    this->otr_description |= rhs.otr_description;
     this->otr_level_stats |= rhs.otr_level_stats;
     for (const auto& rhs_sub : rhs.otr_sub_ops) {
         bool found = false;

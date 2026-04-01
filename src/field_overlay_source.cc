@@ -839,9 +839,9 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
         attr_line_t al;
 
         al.with_string(" \u2514");
-        for (const auto& str : line_meta.bm_tags) {
-            al.append(1, ' ').append(str,
-                                     VC_STYLE.value(vc.attrs_for_ident(str)));
+        for (const auto& entry : line_meta.bm_tags) {
+            al.append(1, ' ').append(entry.te_tag,
+                                     VC_STYLE.value(vc.attrs_for_ident(entry.te_tag)));
         }
 
         al.insert(0, filename_width, ' ');

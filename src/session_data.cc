@@ -1262,19 +1262,24 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
         }
 
         const auto& line_meta = bm_pair.second;
-        if (line_meta.empty(bookmark_metadata::categories::any)) {
+        if (line_meta.empty(bookmark_metadata::categories::session)) {
             continue;
         }
 
-        if (sqlite3_bind_text(stmt,
-                              5,
-                              line_meta.bm_name.c_str(),
-                              line_meta.bm_name.length(),
-                              SQLITE_TRANSIENT)
-            != SQLITE_OK)
+        if (line_meta.bm_name_source
+            == bookmark_metadata::meta_source::user)
         {
-            log_error("could not bind part name -- %s", sqlite3_errmsg(db));
-            return;
+            if (sqlite3_bind_text(stmt,
+                                  5,
+                                  line_meta.bm_name.c_str(),
+                                  line_meta.bm_name.length(),
+                                  SQLITE_TRANSIENT)
+                != SQLITE_OK)
+            {
+                log_error("could not bind part name -- %s",
+                          sqlite3_errmsg(db));
+                return;
+            }
         }
 
         if (sqlite3_bind_text(stmt,
@@ -1290,7 +1295,7 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
 
         std::string tags;
 
-        if (!line_meta.bm_tags.empty()) {
+        {
             yajlpp_gen gen;
 
             yajl_gen_config(gen, yajl_gen_beautify, false);
@@ -1298,12 +1303,20 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
             {
                 yajlpp_array arr(gen);
 
-                for (const auto& str : line_meta.bm_tags) {
-                    arr.gen(str);
+                for (const auto& entry : line_meta.bm_tags) {
+                    if (entry.te_source
+                        == bookmark_metadata::meta_source::user)
+                    {
+                        arr.gen(entry.te_tag);
+                    }
                 }
             }
 
             tags = gen.to_string_fragment().to_string();
+
+            if (tags == "[]") {
+                tags.clear();
+            }
         }
 
         if (sqlite3_bind_text(

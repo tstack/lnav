@@ -285,8 +285,8 @@ json_write_logmsg(yajl_gen handle,
                 obj_map.gen("log_tags");
                 {
                     yajlpp_array arr(handle);
-                    for (const auto& tag : meta->bm_tags) {
-                        arr.gen(tag);
+                    for (const auto& entry : meta->bm_tags) {
+                        arr.gen(entry.te_tag);
                     }
                 }
             }

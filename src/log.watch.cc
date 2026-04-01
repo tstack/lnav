@@ -281,8 +281,8 @@ eval_with(logfile& lf, logfile::iterator ll)
                     {
                         yajlpp_array arr(gen);
 
-                        for (const auto& str : meta.bm_tags) {
-                            arr.gen(str);
+                        for (const auto& entry : meta.bm_tags) {
+                            arr.gen(entry.te_tag);
                         }
                     }
 

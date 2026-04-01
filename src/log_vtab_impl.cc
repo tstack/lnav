@@ -947,8 +947,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             {
                                 yajlpp_array arr(gen);
 
-                                for (const auto& str : meta.bm_tags) {
-                                    arr.gen(str);
+                                for (const auto& entry : meta.bm_tags) {
+                                    arr.gen(entry.te_tag);
                                 }
                             }
 
@@ -2487,12 +2487,16 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     return SQLITE_OK;
 }
 
+struct parsed_tags {
+    std::vector<std::string> pt_tags;
+};
+
 static const struct json_path_container tags_handler = {
     json_path_handler("#")
         .with_synopsis("tag")
         .with_description("A tag for the log line")
         .with_pattern(R"(^#[^\s]+$)")
-        .for_field(&bookmark_metadata::bm_tags),
+        .for_field(&parsed_tags::pt_tags),
 };
 
 static int
@@ -2531,6 +2535,7 @@ vt_update(sqlite3_vtab* tab,
                 argv,
                 2 + vt->footer_index(log_footer_columns::user_opid));
         bookmark_metadata tmp_bm;
+        parsed_tags tmp_tags;
 
         if (log_user_opid) {
             log_opid = log_user_opid;
@@ -2550,7 +2555,7 @@ vt_update(sqlite3_vtab* tab,
                                          ypc.ypc_userdata);
                     errors.emplace_back(msg);
                 })
-                .with_obj(tmp_bm);
+                .with_obj(tmp_tags);
             ypc.parse_doc(log_tags.value());
             if (!errors.empty()) {
                 auto top_error
@@ -2638,12 +2643,12 @@ vt_update(sqlite3_vtab* tab,
             }
             if (log_tags) {
                 line_meta.bm_tags.clear();
-                for (const auto& tag : tmp_bm.bm_tags) {
+                for (const auto& tag : tmp_tags.pt_tags) {
                     line_meta.add_tag(tag);
                 }
 
-                for (const auto& tag : line_meta.bm_tags) {
-                    bookmark_metadata::KNOWN_TAGS.insert(tag);
+                for (const auto& entry : line_meta.bm_tags) {
+                    bookmark_metadata::KNOWN_TAGS.insert(entry.te_tag);
                 }
             } else {
                 line_meta.bm_tags.clear();

@@ -864,17 +864,17 @@ timeline_source::rebuild_indexes()
                     part_map.insert2(ll->get_time<std::chrono::microseconds>(),
                                      line_meta.bm_name);
                 }
-                for (const auto& tag : line_meta.bm_tags) {
+                for (const auto& entry : line_meta.bm_tags) {
                     auto line_time = ll->get_time<std::chrono::microseconds>();
                     auto tag_key = fmt::format(FMT_STRING("{}@{}:{}"),
-                                               tag,
+                                               entry.te_tag,
                                                lf->get_unique_path(),
                                                line_time.count());
                     auto tag_key_sf
                         = string_fragment::from_str(tag_key).to_owned(
                             this->ts_allocator);
-                    auto tag_name_sf = string_fragment::from_str(tag).to_owned(
-                        this->ts_allocator);
+                    auto tag_name_sf = string_fragment::from_str(entry.te_tag)
+                                           .to_owned(this->ts_allocator);
                     auto tag_otr = opid_time_range{};
                     tag_otr.otr_range.tr_begin = line_time;
                     tag_otr.otr_range.tr_end = line_time;
@@ -986,9 +986,14 @@ timeline_source::rebuild_indexes()
                                                             *desc_def_iter);
                 }
 
-                auto& all_descs = row.or_descriptions;
-                const auto& new_desc_v = otr.otr_description.lod_elements;
-                all_descs.insert(desc_key, new_desc_v);
+                if (!row.or_description_begin
+                    || otr.otr_range.tr_begin
+                        < row.or_description_begin.value())
+                {
+                    row.or_description_begin = otr.otr_range.tr_begin;
+                    row.or_description_def_key = desc_key;
+                    row.or_description_value = otr.otr_description.lod_elements;
+                }
             } else if (!otr.otr_description.lod_elements.empty()) {
                 auto desc_sf = string_fragment::from_str(
                     otr.otr_description.lod_elements.values().front());
@@ -1092,15 +1097,15 @@ timeline_source::rebuild_indexes()
         std::string full_desc;
         if (row.or_description.empty()) {
             const auto& desc_defs = row.or_description_defs.odd_defs;
-            if (!row.or_descriptions.empty()) {
+            if (row.or_description_begin) {
                 auto desc_def_opt
-                    = desc_defs.value_for(row.or_descriptions.keys().front());
+                    = desc_defs.value_for(row.or_description_def_key);
                 if (desc_def_opt) {
                     full_desc = desc_def_opt.value()->to_string(
-                        row.or_descriptions.values().front());
+                        row.or_description_value);
                 }
             }
-            row.or_descriptions.clear();
+            row.or_description_begin = std::nullopt;
             auto full_desc_sf = string_fragment::from_str(full_desc);
             auto desc_sf_iter = this->ts_descriptions.find(full_desc_sf);
             if (desc_sf_iter == this->ts_descriptions.end()) {

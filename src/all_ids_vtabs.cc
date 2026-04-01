@@ -89,14 +89,22 @@ CREATE TABLE lnav_db.all_opids (
                 for (const auto& [key, om] : lf_opids->los_opid_ranges) {
                     auto key_str = key.to_string();
                     auto gather_iter = gather_map.find(key_str);
+                    auto earlier_desc = false;
                     if (gather_iter == gather_map.end()) {
                         auto emplace_res = gather_map.emplace(
                             key_str, opid_time_pair{key_str, om});
                         gather_iter = emplace_res.first;
                     } else {
+                        if (om.otr_range
+                            < gather_iter->second.otp_range.otr_range)
+                        {
+                            earlier_desc = true;
+                        }
                         gather_iter->second.otp_range |= om;
                     }
-                    if (gather_iter->second.otp_description.empty()) {
+                    if (earlier_desc
+                        || gather_iter->second.otp_description.empty())
+                    {
                         auto format = lf->get_format();
                         if (om.otr_description.lod_index.has_value()) {
                             auto desc_iter
