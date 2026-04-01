@@ -1201,11 +1201,30 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                 }
             }
 
-            auto value_al = attr_line_t::from_table_cell_content(sf, 1000);
-            al.append(": ").append(value_al);
-            al.al_attrs.emplace_back(
-                line_range{0, -1},
-                DBA_DETAILS.value(gen.to_string_fragment().to_string()));
+            al.append(": ");
+            auto sf_line_count = sf.trim("\n").count('\n') + 1;
+            if (sf_line_count > 1) {
+                al.al_attrs.emplace_back(
+                    line_range{0, -1},
+                    DBA_DETAILS.value(gen.to_string_fragment().to_string()));
+                value_out.emplace_back(al);
+                for (auto& line_al : attr_line_t().append(sf).split_lines()) {
+                    line_al.insert(0, "\t");
+                    line_al.al_attrs.emplace_back(
+                        line_range{0, -1},
+                        DBA_DETAILS.value(
+                            gen.to_string_fragment().to_string()));
+                    value_out.emplace_back(line_al);
+                }
+
+                al.clear();
+            } else {
+                auto value_al = attr_line_t::from_table_cell_content(sf, 1000);
+                al.append(value_al);
+                al.al_attrs.emplace_back(
+                    line_range{0, -1},
+                    DBA_DETAILS.value(gen.to_string_fragment().to_string()));
+            }
         }
 
         if (!al.empty()) {
@@ -1237,8 +1256,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
                 "Press ");
             value_out.append(lnav::roles::keyword(";"));
             value_out.append(" to execute a query.");
-            value_out.with_attr_for_all(
-                VC_ROLE.value(role_t::VCR_STATUS));
+            value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
             value_out.with_attr_for_all(
                 VC_STYLE.value(text_attrs::with_underline()));
             return true;
