@@ -297,6 +297,18 @@ run_cap_test ${lnav_test} -n \
 rm -rf ./sessions
 mkdir -p $HOME
 
+# format-defined partitions should not be saved in the session
+run_cap_test ${lnav_test} -nq \
+    -I ${test_dir} \
+    -c ':save-session' \
+    ${test_dir}/logfile_partitions.0
+
+run_cap_test sqlite3 ${HOME}/.lnav/log_metadata.db \
+    "SELECT count(*) FROM bookmarks WHERE part_name IS NOT NULL AND part_name != ''"
+
+rm -rf ./sessions
+mkdir -p $HOME
+
 # sticky header saved in session for text file
 run_cap_test ${lnav_test} -n \
     -c ':goto 1' \
