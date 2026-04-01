@@ -701,6 +701,7 @@ timeline_source::text_value_for_line(textview_curses& tc,
             .append(
                 this->ts_opid_width - truncated_name.utf8_length_or_length(),
                 ' ')
+            .append(" ")
             .append(truncated_desc);
         this->ts_rendered_line.with_attr_for_all(
             VC_ROLE.value(role_t::VCR_COMMENT));
@@ -1170,8 +1171,8 @@ timeline_source::rebuild_indexes()
             }
         }
 
-        if (pair.second.or_name.length() > this->ts_opid_width) {
-            this->ts_opid_width = pair.second.or_name.length();
+        if (pair.second.or_name.column_width() > this->ts_opid_width) {
+            this->ts_opid_width = pair.second.or_name.column_width();
         }
         if (full_desc.size() > max_desc_width) {
             max_desc_width = full_desc.size();

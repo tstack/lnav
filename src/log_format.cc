@@ -322,7 +322,11 @@ log_format::opid_descriptors::to_string(
     std::string retval;
 
     for (size_t lpc = 0; lpc < this->od_descriptors->size(); lpc++) {
-        retval.append(this->od_descriptors->at(lpc).od_prefix);
+        if (this->od_descriptors->at(lpc).od_prefix) {
+            retval.append(this->od_descriptors->at(lpc).od_prefix.value());
+        } else if (lpc > 0) {
+            retval.append(" ");
+        }
         auto val = lod.value_for(lpc);
         if (val) {
             retval.append(*val.value());

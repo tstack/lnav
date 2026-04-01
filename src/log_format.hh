@@ -351,7 +351,7 @@ public:
     struct opid_descriptor {
         positioned_property<intern_string_t> od_field;
         factory_container<lnav::pcre2pp::code> od_extractor;
-        std::string od_prefix{" "};
+        std::optional<std::string> od_prefix;
         std::string od_suffix;
         std::string od_joiner{", "};
 
