@@ -1219,7 +1219,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
                 al.clear();
             } else {
-                auto value_al = attr_line_t::from_table_cell_content(sf, 1000);
+                auto value_al = attr_line_t().append(sf.trim("\n"));
                 al.append(value_al);
                 al.al_attrs.emplace_back(
                     line_range{0, -1},
