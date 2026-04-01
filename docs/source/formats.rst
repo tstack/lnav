@@ -333,8 +333,8 @@ object with the following fields:
 :duration-field: The name of the field that contains the duration of an
   operation.
 
-:hide-extra: A boolean for JSON logs that indicates whether fields not
-  present in the line-format should be displayed on their own lines.
+:hide-extra: A boolean for JSON logs that, when :code:`true`, hides fields
+  not defined in the :code:`value` object.
 
 :level: A mapping of error levels to regular expressions.  During scanning
   the contents of the capture group specified by *level-field* will be

@@ -49,7 +49,7 @@
                 },
                 "hide-extra": {
                     "title": "/<format_name>/hide-extra",
-                    "description": "Specifies whether extra values in JSON logs should be displayed",
+                    "description": "If 'true', JSON-log values that are not defined in the 'value' object are hidden",
                     "type": "boolean"
                 },
                 "multiline": {

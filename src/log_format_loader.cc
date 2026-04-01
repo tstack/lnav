@@ -1003,8 +1003,8 @@ const struct json_path_container format_handlers = {
         .for_field(&external_log_format::lf_date_time,
                    &date_time_scanner::dts_local_time),
     json_path_handler("hide-extra")
-        .with_description(
-            "Specifies whether extra values in JSON logs should be displayed")
+        .with_description("If 'true', JSON-log values that are not defined in "
+                          "the 'value' object are hidden")
         .for_field(&external_log_format::jlf_hide_extra),
     json_path_handler("multiline")
         .with_description("Indicates that log messages can span multiple lines")
