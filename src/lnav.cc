@@ -2562,7 +2562,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             next_status_update_time = next_rescan_time;
         }
 
-        if (lnav_data.ld_view_stack.empty()) {
+        if (!exec_phase.spinning_up() && lnav_data.ld_view_stack.empty()) {
             log_info("no more views, exiting...");
             lnav_data.ld_looping = false;
         } else if (lnav_data.ld_view_stack.size() == 1

@@ -75,7 +75,8 @@ listview_curses::contains(int x, int y)
 }
 
 void
-listview_curses::update_top_from_selection()
+listview_curses::update_top_from_selection(
+    std::optional<vis_line_t> old_top, std::optional<vis_line_t> old_selection)
 {
     if (!this->lv_selectable) {
         return;
@@ -110,16 +111,29 @@ listview_curses::update_top_from_selection()
     auto layout = this->layout_for_row(this->lv_selection);
     auto min_top_for_sel
         = vis_line_t(this->lv_selection - layout.lr_above_line_heights.size());
-    if (this->lv_top > this->lv_selection) {
-        if (this->lv_head_space > 0_vl) {
-            this->set_top(this->lv_selection
-                          - vis_line_t(layout.lr_above_line_heights.size())
-                              / 2_vl);
-        } else {
-            this->lv_top = this->lv_selection;
+    auto rel_offset = 0_vl;
+
+    if (old_top && old_selection && old_selection.value() > old_top.value()) {
+        auto new_rel_offset = old_selection.value() - old_top.value();
+        if (new_rel_offset < (height - layout.lr_desired_row_height)) {
+            rel_offset = new_rel_offset;
         }
+    }
+
+    if (this->lv_top > this->lv_selection) {
+        auto new_top = this->lv_selection;
+        if (this->lv_top < rel_offset) {
+            new_top = 0_vl;
+        } else {
+            new_top -= rel_offset;
+        }
+        this->set_top(new_top);
     } else if (this->lv_top < min_top_for_sel) {
-        this->set_top(min_top_for_sel);
+        auto new_top = min_top_for_sel;
+        if (rel_offset > 0_vl && rel_offset < this->lv_selection) {
+            new_top = this->lv_selection - rel_offset;
+        }
+        this->set_top(new_top);
     } else if (this->lv_top == this->lv_selection && this->lv_head_space > 0_vl)
     {
         if (!layout.lr_above_line_heights.empty()) {
@@ -1462,8 +1476,10 @@ listview_curses::set_selection(vis_line_t sel)
         return;
     }
 
+    auto old_top = this->lv_top;
+    auto old_sel = this->get_selection();
     this->set_selection_without_context(sel);
-    this->update_top_from_selection();
+    this->update_top_from_selection(old_top, old_sel);
 }
 
 vis_line_t

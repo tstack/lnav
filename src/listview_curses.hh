@@ -72,8 +72,7 @@ public:
         = 0;
 
     virtual size_t listview_size_for_row(const listview_curses& lv,
-                                         vis_line_t row)
-        = 0;
+                                         vis_line_t row) = 0;
 
     virtual bool listview_is_row_selectable(const listview_curses& lv,
                                             vis_line_t row)
@@ -547,7 +546,10 @@ protected:
         }
     }
 
-    void update_top_from_selection();
+    void update_top_from_selection(std::optional<vis_line_t> old_top
+                                   = std::nullopt,
+                                   std::optional<vis_line_t> old_sel
+                                   = std::nullopt);
 
     vis_line_t get_overlay_top(vis_line_t row,
                                size_t count,

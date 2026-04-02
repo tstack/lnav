@@ -2426,6 +2426,7 @@ lnav::session::apply_view_commands()
         const auto& vs = session_data.sd_view_states[view_index];
         auto& tview = lnav_data.ld_views[view_index];
 
+        log_debug("  view: %s", tview.get_title().c_str());
         lnav::set::small<std::string> curr_cmds;
         auto* tss = tview.get_sub_source();
         if (tview.get_sub_source() != nullptr) {
