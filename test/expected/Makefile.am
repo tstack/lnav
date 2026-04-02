@@ -386,6 +386,8 @@ dist_noinst_DATA = \
     test_demux.sh_7fe671a697d452ffc56a49ddb605538b23fe744e.out \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.err \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.out \
+    test_demux.sh_af12fa086853bd5eb8967d8df7cf24fd0337b815.err \
+    test_demux.sh_af12fa086853bd5eb8967d8df7cf24fd0337b815.out \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.err \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.out \
     test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.err \
@@ -530,8 +532,12 @@ dist_noinst_DATA = \
     test_logfile.sh_341e491abcf8772422bafb8b0eaea6492da230f6.out \
     test_logfile.sh_3fc6bfd8a6160817211f3e14fde957af75b9dbe7.err \
     test_logfile.sh_3fc6bfd8a6160817211f3e14fde957af75b9dbe7.out \
+    test_logfile.sh_438ab9544c6e77fdab0726762ae5eabe93b47e3b.err \
+    test_logfile.sh_438ab9544c6e77fdab0726762ae5eabe93b47e3b.out \
     test_logfile.sh_4a2a907fcb069b8d6e65961a7b2e796d6c3a87b1.err \
     test_logfile.sh_4a2a907fcb069b8d6e65961a7b2e796d6c3a87b1.out \
+    test_logfile.sh_4c4c80c159b6cd067a83eaefd07ba737e65af3e8.err \
+    test_logfile.sh_4c4c80c159b6cd067a83eaefd07ba737e65af3e8.out \
     test_logfile.sh_4f6472800fd625a8ffe16a1f392053590246c1a2.err \
     test_logfile.sh_4f6472800fd625a8ffe16a1f392053590246c1a2.out \
     test_logfile.sh_6602faf7817c494c33e32da7ee95f13aa9210d01.err \
