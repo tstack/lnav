@@ -703,7 +703,7 @@ public:
 
     attr_line_t& wrap_with(text_wrap_settings* tws);
 
-    void apply_hide();
+    void apply_hide(bool enabled);
 
     attr_line_t& highlight_fuzzy_matches(const std::string& pattern);
 

@@ -715,12 +715,12 @@ attr_line_t::nearest_text(size_t x) const
 }
 
 void
-attr_line_t::apply_hide()
+attr_line_t::apply_hide(bool enabled)
 {
     auto& sa = this->al_attrs;
 
     for (auto& sattr : sa) {
-        if (sattr.sa_type == &SA_HIDDEN) {
+        if (enabled && sattr.sa_type == &SA_HIDDEN) {
             auto icon = sattr.sa_value.get<ui_icon_t>();
             auto& lr = sattr.sa_range;
 

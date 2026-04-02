@@ -936,9 +936,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         this->apply_highlights(value_out, body, orig_line);
     }
 
-    if (this->tc_hide_fields) {
-        value_out.apply_hide();
-    }
+    value_out.apply_hide(this->tc_hide_fields);
 
     const auto& user_marks = this->tc_bookmarks[&BM_USER];
     const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];

@@ -460,9 +460,7 @@ open_pretty_view()
                 require_ge(al.al_string.length(), orig_lr.lr_end);
             }
             scrub_ansi_string(al.get_string(), &al.get_attrs());
-            if (log_tc->get_hide_fields()) {
-                al.apply_hide();
-            }
+            al.apply_hide(log_tc->get_hide_fields());
 
             const auto orig_lr
                 = find_string_attr_range(al.get_attrs(), &SA_ORIGINAL_LINE);
