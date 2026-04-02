@@ -1474,6 +1474,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                   lnav_data.ld_user_message_view.reload_data();
                   lnav_data.ld_user_message_expiration
                       = std::chrono::steady_clock::now() + 20s;
+                  lnav::prompt::get().p_editor.clear_inactive_value();
               }
           });
 
@@ -1587,6 +1588,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
         static auto& prompt = lnav::prompt::get();
         static auto& ec = lnav_data.ld_exec_context;
+        auto prov_guard = ec.with_provenance(exec_context::mouse_input{});
         auto cmd_iter
             = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
         if (cmd_iter != al.al_attrs.end()) {

@@ -7,6 +7,7 @@
     CASE
       WHEN name != 'log' THEN
         raise_error('Cannot move to breakpoint',
+                    NULL,
                     'Breakpoints are only supported in the LOG view')
       ELSE 1
     END

@@ -4,7 +4,8 @@
 #
 
 ;SELECT raise_error('Unable to locate source file: ' || log_src_file,
-                    'Log message could not be found in any source trees added with :add-source-path')
+                    'Log message could not be found',
+                    'Use :add-source-path to add a path to search for source code.')
    FROM lnav_focused_msg
   WHERE log_msg_src IS NULL
 

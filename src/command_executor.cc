@@ -526,7 +526,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                                   .with_note(bound_note)
                                   .move();
 
-                    if (!ec.get_provenance<exec_context::keyboard_input>()) {
+                    if (ec.get_provenance<exec_context::keyboard_input>()
+                        || ec.get_provenance<exec_context::mouse_input>())
+                    {
+                        auto um_copy = um;
+                        um_copy.with_context_snippets(ec.ec_source);
+                        auto err_al = um_copy.to_attr_line();
+                        log_error("SQL error: %s", err_al.al_string.c_str());
+                    } else {
                         um.with_context_snippets(ec.ec_source)
                             .remove_internal_snippets();
                     }
@@ -1009,7 +1016,8 @@ execute_init_commands(
                     setup_initial_view_stack();
                 }
 
-                lnav::progress_tracker::instance().wait_for_completion(&lnav_data.ld_status_refresher);
+                lnav::progress_tracker::instance().wait_for_completion(
+                    &lnav_data.ld_status_refresher);
             }
         }
     }
@@ -1335,7 +1343,9 @@ exec_context::add_error_context(lnav::console::user_message& um) const
             break;
     }
 
-    if (!this->get_provenance<keyboard_input>() && um.um_snippets.empty()) {
+    if (!this->get_provenance<keyboard_input>()
+        && !this->get_provenance<mouse_input>() && um.um_snippets.empty())
+    {
         um.with_snippets(this->ec_source);
         um.remove_internal_snippets();
     }

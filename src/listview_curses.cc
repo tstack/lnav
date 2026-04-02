@@ -122,7 +122,7 @@ listview_curses::update_top_from_selection(
 
     if (this->lv_top > this->lv_selection) {
         auto new_top = this->lv_selection;
-        if (this->lv_top < rel_offset) {
+        if (new_top < rel_offset) {
             new_top = 0_vl;
         } else {
             new_top -= rel_offset;
