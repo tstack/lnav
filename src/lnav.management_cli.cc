@@ -1133,7 +1133,7 @@ struct subcmd_piper_t {
             if (std::filesystem::exists(hdr_path)) {
                 auto hdr_read_res = lnav::filesystem::read_file(hdr_path);
                 if (hdr_read_res.isOk()) {
-                    auto hdr = string_fragment::from_str(hdr_read_res.unwrap());
+                    auto hdr = hdr_read_res.unwrap();
                     auto parse_res
                         = lnav::piper::header_handlers.parser_for(SRC).of(hdr);
                     if (parse_res.isOk()) {
