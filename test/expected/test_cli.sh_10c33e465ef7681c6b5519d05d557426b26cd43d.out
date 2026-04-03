@@ -1,1 +1,2 @@
+[33m          just now[0m  [1mpiper://p-a26139c5f6676157dcad9cdb4dd7d859-000[0m [1m  17.0 B[0m “[32msh-0 cat ${test_dir}/textfile_broken_gz.txt.gz[0m”
 [33m          just now[0m  [1mpiper://p-07e825e95ea8778bfebcb5653a30dac4-000[0m [1m 653.0 B[0m “[32msh-0 cat ${test_dir}/textfile_plain.0[0m”

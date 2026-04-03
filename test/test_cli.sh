@@ -55,6 +55,8 @@ rm -rf ./piper-tmp
 mkdir piper-tmp
 run_cap_test ${lnav_test} -n -e 'cat ${test_dir}/textfile_plain.0'
 
+run_cap_test ${lnav_test} -n -e 'cat ${test_dir}/textfile_broken_gz.txt.gz'
+
 run_cap_test ${lnav_test} -m piper list
 
 PIPER_URL=$(env NO_COLOR=1 ${lnav_test} -m -q piper list | tail -1 | sed -r -e 's;.*(piper://[^ ]+).*;\1;g')

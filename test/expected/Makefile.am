@@ -60,6 +60,8 @@ dist_noinst_DATA = \
     test_cli.sh_5a08fb5360e41bc1a880c04112af35604d3eaea0.out \
     test_cli.sh_64555477e8795379ae33a3dbca8113cf7111ff2b.err \
     test_cli.sh_64555477e8795379ae33a3dbca8113cf7111ff2b.out \
+    test_cli.sh_6cfac339052dc16f0e0ce6afbc835660e9e6da54.err \
+    test_cli.sh_6cfac339052dc16f0e0ce6afbc835660e9e6da54.out \
     test_cli.sh_6d8527ea7806e393f848e29abed8c45acc7be2d2.err \
     test_cli.sh_6d8527ea7806e393f848e29abed8c45acc7be2d2.out \
     test_cli.sh_712cb8b623e9230d97008a8b7d06df1ea76c37af.err \
