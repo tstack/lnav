@@ -306,6 +306,14 @@ run_cap_test ${lnav_test} -nq \
 run_cap_test sqlite3 ${HOME}/.lnav/log_metadata.db \
     "SELECT count(*) FROM bookmarks WHERE part_name IS NOT NULL AND part_name != ''"
 
+# format-defined partitions should survive a session reset
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':reset-session' \
+    -c ';SELECT log_line, log_part FROM syslog_log WHERE log_part IS NOT NULL' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_partitions.0
+
 rm -rf ./sessions
 mkdir -p $HOME
 

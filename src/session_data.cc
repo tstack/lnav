@@ -2364,19 +2364,17 @@ reset_session()
     }
 
     for (auto& tc : lnav_data.ld_views) {
-        text_sub_source* tss = tc.get_sub_source();
+        auto* tss = tc.get_sub_source();
 
         if (tss == nullptr) {
             continue;
         }
         tss->get_filters().clear_filters();
         tss->tss_apply_filters = true;
-        tss->text_filters_changed();
         tss->text_clear_marks(&textview_curses::BM_USER);
         tc.get_bookmarks()[&textview_curses::BM_USER].clear();
-        tss->text_clear_marks(&textview_curses::BM_META);
-        tc.get_bookmarks()[&textview_curses::BM_META].clear();
         tc.get_bookmarks()[&textview_curses::BM_STICKY].clear();
+        tss->text_filters_changed();
         tc.reload_data();
     }
 

@@ -3239,7 +3239,32 @@ logfile_sub_source::clear_bookmark_metadata()
             continue;
         }
 
-        ld->get_file_ptr()->get_bookmark_metadata().clear();
+        auto& bm_map = ld->get_file_ptr()->get_bookmark_metadata();
+        auto iter = bm_map.begin();
+        while (iter != bm_map.end()) {
+            auto& meta = iter->second;
+            meta.bm_comment.clear();
+            meta.bm_annotations.la_pairs.clear();
+            meta.bm_opid.clear();
+            if (meta.bm_name_source == bookmark_metadata::meta_source::user) {
+                meta.bm_name.clear();
+            }
+            auto tag_iter = meta.bm_tags.begin();
+            while (tag_iter != meta.bm_tags.end()) {
+                if (tag_iter->te_source
+                    == bookmark_metadata::meta_source::user)
+                {
+                    tag_iter = meta.bm_tags.erase(tag_iter);
+                } else {
+                    ++tag_iter;
+                }
+            }
+            if (meta.empty(bookmark_metadata::categories::any)) {
+                iter = bm_map.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
     }
 }
 
