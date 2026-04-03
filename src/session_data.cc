@@ -754,7 +754,7 @@ load_time_bookmarks()
                                 = string_fragment::from_c_str(annotations);
                             auto parse_res
                                 = logmsg_annotations_handlers.parser_for(SRC)
-                            .of(anno_sf);
+                                      .of(anno_sf);
                             if (!meta) {
                                 log_debug("  loaded message annotation");
                             }
@@ -1266,9 +1266,7 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
             continue;
         }
 
-        if (line_meta.bm_name_source
-            == bookmark_metadata::meta_source::user)
-        {
+        if (line_meta.bm_name_source == bookmark_metadata::meta_source::user) {
             if (sqlite3_bind_text(stmt,
                                   5,
                                   line_meta.bm_name.c_str(),
@@ -1276,8 +1274,7 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
                                   SQLITE_TRANSIENT)
                 != SQLITE_OK)
             {
-                log_error("could not bind part name -- %s",
-                          sqlite3_errmsg(db));
+                log_error("could not bind part name -- %s", sqlite3_errmsg(db));
                 return;
             }
         }
@@ -1304,8 +1301,7 @@ save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
                 yajlpp_array arr(gen);
 
                 for (const auto& entry : line_meta.bm_tags) {
-                    if (entry.te_source
-                        == bookmark_metadata::meta_source::user)
+                    if (entry.te_source == bookmark_metadata::meta_source::user)
                     {
                         arr.gen(entry.te_tag);
                     }
@@ -1756,8 +1752,8 @@ load_timeline_bookmarks(sqlite3* db)
                     continue;
                 }
 
-                auto rt_opt = timeline_source::row_type_from_string(
-                    row_type_str);
+                auto rt_opt
+                    = timeline_source::row_type_from_string(row_type_str);
                 if (!rt_opt) {
                     continue;
                 }
@@ -2131,15 +2127,11 @@ save_time_bookmarks()
         log_info("deleted %d old text bookmarks", text_bm_changes);
     }
 
-    if (sqlite3_exec(db.in(),
-                     TIMELINE_BOOKMARK_LRU_STMT,
-                     nullptr,
-                     nullptr,
-                     errmsg.out())
+    if (sqlite3_exec(
+            db.in(), TIMELINE_BOOKMARK_LRU_STMT, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)
     {
-        log_error("unable to delete old timeline bookmarks -- %s",
-                  errmsg.in());
+        log_error("unable to delete old timeline bookmarks -- %s", errmsg.in());
         return;
     }
     auto timeline_bm_changes = sqlite3_changes(db.in());
@@ -2441,9 +2433,16 @@ lnav::session::apply_view_commands()
                 curr_cmds.insert(cmd_sf.to_string());
             });
         }
+        if (vs.vs_commands.empty()) {
+            continue;
+        }
+        auto pop_view = false;
+        if (lnav_data.ld_view_stack.top() != &tview) {
+            toggle_view(&tview);
+            pop_view = true;
+        }
         for (const auto& cmdline : vs.vs_commands) {
             auto cmdline_sf = string_fragment::from_str(cmdline);
-            auto active = ensure_view(&tview);
             auto [cmd_sf, _cmdline_rem]
                 = cmdline_sf.split_when(string_fragment::tag1{' '});
             if (curr_cmds.contains(cmd_sf.to_string())) {
@@ -2464,17 +2463,17 @@ lnav::session::apply_view_commands()
                               .get_string()
                               .c_str());
             }
-            if (!active) {
-                lnav_data.ld_view_stack.pop_back();
-                lnav_data.ld_view_stack.top() | [](auto* tc) {
-                    // XXX
-                    if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
-                        auto tss = tc->get_sub_source();
-                        tss->text_filters_changed();
-                        tc->reload_data();
-                    }
-                };
-            }
+        }
+        if (pop_view) {
+            lnav_data.ld_view_stack.pop_back();
+            lnav_data.ld_view_stack.top() | [](auto* tc) {
+                // XXX
+                if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+                    auto tss = tc->get_sub_source();
+                    tss->text_filters_changed();
+                    tc->reload_data();
+                }
+            };
         }
     }
 }
