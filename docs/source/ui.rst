@@ -21,7 +21,7 @@ loaded.  There are other views for displaying content like plaintext files
 and SQL results.  The :ref:`ui_views` section describes the characteristics of
 each view in more detail.  You can switch to the different views using the
 hotkeys described in the :ref:`hotkeys_display` section or by pressing
-:kbd:`ENTER` to activate the breadcrumb bar, moving to the first crumb, and
+:kbd:`\`` to activate the breadcrumb bar, moving to the first crumb, and
 then selecting the desired view.  You can switch back to the previous view by
 pressing :kbd:`q`.  You can switch forward to the new view by pressing
 :kbd:`a`.  If the views are time-based (e.g. log and histogram), pressing
@@ -220,7 +220,28 @@ and moving within the command-line.
 Views
 -----
 
-The accessible content within lnav is separated into the following views.
+The accessible content within lnav is separated into multiple views.
+The LOG view is shown by default when log files are detected.  You can
+switch to the TEXT view by pressing :kbd:`t` and to the HELP view by
+pressing :kbd:`?`.  Other views can be reached through the breadcrumb
+bar (press :kbd:`\`` and select a view from the first crumb) or with the
+:ref:`:switch-to-view<switch_to_view>` command.  Pressing :kbd:`q` will
+return to the previous view and :kbd:`a` will go forward again.  For
+time-based views (e.g. LOG, HIST, TIMELINE), pressing :kbd:`Shift` +
+:kbd:`Q` and :kbd:`Shift` + :kbd:`A` will switch views while keeping
+the focused time in sync.
+
+The LOG and TEXT views support pinning important log lines to the top of the
+view so they remain visible as you scroll.  This is useful for keeping context
+visible, such as a request header, session start message, or a CSV header.
+
+To pin the focused line as a sticky header, press :kbd:`CTRL` + :kbd:`s` or
+use the :ref:`:toggle-sticky-header<toggle_sticky_header>` command.  Pinned
+lines are displayed at the top of the view with the status bar
+styling.  Running the command again on a pinned line will unpin it.
+To remove all sticky headers at once, use the
+:ref:`:clear-all-sticky-headers<clear_all_sticky_headers>` command.
+
 
 LOG
 ^^^
