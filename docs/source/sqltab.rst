@@ -11,6 +11,7 @@ the following tables/views:
 * `lnav_events`_
 * `lnav_file`_
 * `lnav_file_metadata`_
+* `lnav_log_breakpoints`_
 * `lnav_user_notifications`_
 * `lnav_views`_
 * `lnav_views_echo`_
@@ -146,6 +147,40 @@ loaded file.  Currently,
       :code:`mimetype` will be :code:`application/toml`.
 :mimetype: The MIME type of the metadata.
 :content: The metadata itself.
+
+
+.. _table_lnav_log_breakpoints:
+
+lnav_log_breakpoints
+--------------------
+
+The :code:`lnav_log_breakpoints` table allows you to view and manage
+breakpoints set on log messages.  Breakpoints mark log messages that
+share a particular source file location or message schema, making it
+easy to navigate between related log lines using the :kbd:`F7` and
+:kbd:`F8` keys.
+
+You can :code:`SELECT`, :code:`INSERT`, :code:`UPDATE`, and
+:code:`DELETE` breakpoints through this table.  The columns in the
+table are as follows:
+
+:schema_id: The schema identifier for the breakpoint.  This value
+  matches the :code:`log_msg_schema` column in the :code:`all_logs`
+  table.
+:description: A human-readable description of the breakpoint
+  (e.g. :code:`format_name:file.cc:42`).
+:type: The source of the schema ID, either :code:`src_location` or
+  :code:`message_schema`.
+:enabled: Indicates whether the breakpoint is active (1 or 0).
+
+.. code-block:: custsqlite
+
+    ;SELECT * FROM lnav_log_breakpoints
+
+    ;UPDATE lnav_log_breakpoints SET enabled = 0 WHERE description LIKE '%main.cc%'
+
+    ;DELETE FROM lnav_log_breakpoints WHERE description LIKE '%test%'
+
 
 .. _table_lnav_user_notifications:
 

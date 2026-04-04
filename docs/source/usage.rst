@@ -300,6 +300,43 @@ Log level
 To hide messages below a certain log level, you can use the
 :ref:`:set-min-log-level<set_min_log_level>` command.
 
+
+Log-oriented Debugging
+----------------------
+
+Breakpoints
+^^^^^^^^^^^
+
+Breakpoints let you mark log messages that originate from a particular
+source file location (e.g. :code:`main.cc:42`) or that share a common
+message schema.  Log messages that have a source location and match a
+breakpoint will be highlighted with a red circle, making it easy to spot
+related messages as you scroll through logs.
+
+To toggle a breakpoint on the focused log message, press :kbd:`Ctrl` +
+:kbd:`B` or use the :ref:`:breakpoint<breakpoint>` command.
+You can also set breakpoints explicitly with the
+:ref:`:breakpoint<breakpoint>` command, specifying a
+:code:`[format:]file:line` location.
+
+Once breakpoints are set, you can jump between matching log messages
+using the :kbd:`F7` and :kbd:`F8` keys to move to the previous and next
+breakpoint hit, respectively.
+
+Breakpoints can be disabled without deleting them using the
+:ref:`:toggle-breakpoint<toggle_breakpoint>` command.
+The :ref:`lnav_log_breakpoints<table_lnav_log_breakpoints>`
+SQL table, which allows you to query, insert, update, and delete breakpoints.
+For example, to disable all breakpoints matching a file:
+
+.. code-block:: custsqlite
+
+    ;UPDATE lnav_log_breakpoints SET enabled = 0 WHERE description LIKE '%main.cc%'
+
+Breakpoints are saved as part of the session, so they will be restored
+the next time you open the same files.
+
+
 .. _search_tables:
 
 Search Tables
