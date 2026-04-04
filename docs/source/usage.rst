@@ -313,6 +313,14 @@ message schema.  Log messages that have a source location and match a
 breakpoint will be highlighted with a red circle, making it easy to spot
 related messages as you scroll through logs.
 
+.. figure:: lnav-breakpoint-dot.png
+    :align: center
+    :figwidth: 90%
+
+    A screenshot of lnav's logs where a breakpoint is set.  The red
+    circle next to the source file name and line indicates the location
+    of the breakpoint.
+
 To toggle a breakpoint on the focused log message, press :kbd:`Ctrl` +
 :kbd:`B` or use the :ref:`:breakpoint<breakpoint>` command.
 You can also set breakpoints explicitly with the
