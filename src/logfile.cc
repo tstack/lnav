@@ -1226,11 +1226,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 if (this->lf_invalid_lines.ili_lines.size()
                     < invalid_line_info::MAX_INVALID_LINES)
                 {
-                    log_debug("%s:%d:invalid line for format %s: %.*s",
+                    log_debug("%s:%zu:invalid line for format %s: %.*s",
                               this->lf_filename_as_string.c_str(),
                               this->lf_index.size() - 1,
                               this->lf_format->get_name().c_str(),
-                              sbr.length(),
+                              (int) sbr.length(),
                               sbr.get_data());
                     this->lf_invalid_lines.ili_lines.push_back(
                         this->lf_index.size() - 1);
@@ -1332,21 +1332,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
-            if (!this->lf_invalidated_opids.contains(bm_pair.second.bm_opid)) {
-                continue;
-            }
-
-            auto opid_iter
-                = writeOpids->los_opid_ranges.find(bm_pair.second.bm_opid);
-            if (opid_iter == writeOpids->los_opid_ranges.end()) {
-                log_warning("opid not in ranges: %s",
-                            bm_pair.second.bm_opid.c_str());
+            auto inv_iter
+                = this->lf_invalidated_opids.find(bm_pair.second.bm_opid);
+            if (inv_iter == this->lf_invalidated_opids.end()) {
                 continue;
             }
 
             if (bm_pair.first >= this->lf_index.size()) {
                 log_warning("stale bookmark: %d", bm_pair.first);
                 continue;
+            }
+
+            auto opid_iter
+                = writeOpids->los_opid_ranges.find(bm_pair.second.bm_opid);
+            if (opid_iter == writeOpids->los_opid_ranges.end()) {
+                writeOpids->los_opid_ranges.emplace(*inv_iter,
+                                                    opid_time_range{});
             }
 
             auto& ll = this->lf_index[bm_pair.first];
@@ -2570,7 +2571,8 @@ logfile::clear_logline_opid(uint32_t line_number)
 
     if (iter->second.empty(bookmark_metadata::categories::any)) {
         this->lf_bookmark_metadata.erase(iter);
-
+    }
+    {
         auto writeOpids = this->lf_opids.writeAccess();
 
         auto otr_iter = writeOpids->los_opid_ranges.find(opid_sf);
@@ -2588,8 +2590,8 @@ logfile::clear_logline_opid(uint32_t line_number)
             return;
         }
 
-        otr_iter->second.clear();
-        this->lf_invalidated_opids.insert(opid_sf);
+        this->lf_invalidated_opids.insert(otr_iter->first);
+        writeOpids->los_opid_ranges.erase(otr_iter);
     }
 }
 

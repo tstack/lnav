@@ -1112,6 +1112,9 @@ timeline_source::rebuild_indexes()
             if (desc_sf_iter == this->ts_descriptions.end()) {
                 full_desc_sf = string_fragment::from_str(full_desc).to_owned(
                     this->ts_allocator);
+                this->ts_descriptions.insert(full_desc_sf);
+            } else {
+                full_desc_sf = *desc_sf_iter;
             }
             pair.second.or_description = full_desc_sf;
         } else {

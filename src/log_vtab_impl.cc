@@ -2537,9 +2537,6 @@ vt_update(sqlite3_vtab* tab,
         bookmark_metadata tmp_bm;
         parsed_tags tmp_tags;
 
-        if (log_user_opid) {
-            log_opid = log_user_opid;
-        }
         if (log_tags) {
             std::vector<lnav::console::user_message> errors;
             yajlpp_parse_context ypc(vt->vi->get_tags_name(), &tags_handler);
@@ -2595,14 +2592,6 @@ vt_update(sqlite3_vtab* tab,
             vt->lss->set_line_meta_changed();
         }
 
-        if (!has_meta && part_name == nullptr
-            && (!log_opid
-                || msg_info.get_values().lvv_opid_provenance
-                    == logline_value_vector::opid_provenance::file))
-        {
-            vt->lss->erase_bookmark_metadata(vrowid);
-        }
-
         if (part_name) {
             auto& line_meta = vt->lss->get_bookmark_metadata(vrowid);
             line_meta.bm_name = std::string((const char*) part_name);
@@ -2627,6 +2616,15 @@ vt_update(sqlite3_vtab* tab,
         {
             msg_info.get_file_ptr()->clear_logline_opid(
                 msg_info.get_file_line_number());
+            vt->lss->set_line_meta_changed();
+        }
+
+        if (!has_meta && part_name == nullptr
+            && (!log_opid
+                || msg_info.get_values().lvv_opid_provenance
+                    == logline_value_vector::opid_provenance::file))
+        {
+            vt->lss->erase_bookmark_metadata(vrowid);
         }
 
         if (has_meta) {
