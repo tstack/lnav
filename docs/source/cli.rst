@@ -113,7 +113,8 @@ Options
 
 .. option:: -q
 
-   Do not print informational messages.
+   Do not print informational messages and behave in a manner compatible
+   with being used as a PAGER.
 
 
 .. _management_cli:

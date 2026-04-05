@@ -283,6 +283,17 @@ object with the following fields:
   :micro: for microseconds
   :nano: for nanoseconds
 
+:timestamp-point-of-reference: (v0.14.0+) Specifies the relationship of the
+  timestamp to the operation that the message refers to.  This is used in
+  conjunction with :code:`duration-field` to determine time spans in the
+  TIMELINE view.  The following values are supported:
+
+  :send: The timestamp indicates when the message was sent/logged.
+    This is the default.
+  :start: The timestamp indicates when the operation started.  The
+    operation's time span will extend from the timestamp to the
+    timestamp plus the duration.
+
 :ordered-by-time: (v0.8.3+) Indicates that the order of messages in the file
   is time-based.  Files that are not naturally ordered by time will be sorted
   in order to display them in the correct order.  Note that this sorting can
@@ -302,6 +313,17 @@ object with the following fields:
   logs, the opid field can be a path (e.g. "foo/bar/opid") if the field is
   nested in an object and it MUST be included in the "line-format" for the
   'o' hotkeys to work.
+
+  (v0.14.0+) For JSON-lines logs, the opid field can refer to a JSON array
+  or object.  The OPID will be computed by hashing the contents of the
+  array or object and the description will be the container itself.  For
+  example, the :code:`spans` array in a Rust tracing log message.
+
+  To construct an OPID from multiple fields, leave :code:`opid-field` blank
+  and create a single :code:`opid/description` definition with a
+  :code:`format` array.  The content of the format fields will be hashed to
+  create the OPID.  For example, the built-in :code:`access_log` format uses
+  :code:`c_ip` and :code:`cs_user_agent` as the OPID.
 
 :opid: This object contains further options related to OP IDs:
 
@@ -331,7 +353,22 @@ object with the following fields:
   the :code:`all_thread_ids` table.
 
 :duration-field: The name of the field that contains the duration of an
-  operation.
+  operation.  If a duration is available, it will be used to calculate
+  time spans in the TIMELINE view.
+
+:src-file-field: (v0.14.0+) The name of the field that contains the source
+  file name where the log statement originated.  This field is accessible
+  in SQL queries as the :code:`log_src_file` column.
+
+:src-line-field: (v0.14.0+) The name of the field that contains the source
+  line number where the log statement originated.  This field is accessible
+  in SQL queries as the :code:`log_src_line` column.
+
+:src-location-field: (v0.14.0+) The name of a field that contains both the
+  source file and line number as a combined value (e.g. :code:`file.c:42`).
+  This is an alternative to using both :code:`src-file-field` and
+  :code:`src-line-field` separately.  The field will be parsed to populate
+  the :code:`log_src_file` and :code:`log_src_line` SQL columns.
 
 :hide-extra: A boolean for JSON logs that, when :code:`true`, hides fields
   not defined in the :code:`value` object.
@@ -389,6 +426,37 @@ object with the following fields:
         ;SELECT :sc_status || ' (' || (
             SELECT message FROM http_status_codes
                 WHERE status = :sc_status) || ') '
+
+  :highlights: (v0.14.0+) This object contains definitions for patterns to
+    be highlighted within this specific field, rather than across the whole
+    log line.  Each entry should have a name and a definition with the
+    following fields:
+
+    :pattern: The regular expression to match within the field value.
+    :color: The foreground color for the highlight.  Colors can be specified
+      using hexadecimal notation (e.g. :code:`#aabbcc`) or using a color
+      name.
+    :background-color: The background color for the highlight.
+    :underline: If true, underline the matched text.
+    :blink: If true, blink the matched text.
+    :nestable: If true, this highlight can be applied to text contained
+      within another highlight.  Defaults to :code:`true`.
+
+    For example, the following highlights Java package names within a
+    :code:`tag` field:
+
+    .. code-block:: json
+
+        "tag": {
+            "kind": "string",
+            "identifier": true,
+            "highlights": {
+                "package": {
+                    "pattern": "((([a-z]+\\\\.){2,})[a-z]+)(?=[ '\\\"])",
+                    "color": "#97d1F6"
+                }
+            }
+        }
 
 :tags: This object contains the tags that should automatically be added to
   log messages.

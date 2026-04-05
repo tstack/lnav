@@ -205,6 +205,9 @@ will activate a corresponding prompt:
 The prompt has emacs-like keyboard shortcuts that can be used for editing
 and moving within the command-line.
 
+To cancel the prompt, you must press :kbd:`Esc` twice.  This is to prevent
+accidentally closing the prompt when closing a completion popup.
+
 .. note::
 
     Commands can also be executed by pasting a snippet when focused on
@@ -231,9 +234,10 @@ time-based views (e.g. LOG, HIST, TIMELINE), pressing :kbd:`Shift` +
 :kbd:`Q` and :kbd:`Shift` + :kbd:`A` will switch views while keeping
 the focused time in sync.
 
-The LOG and TEXT views support pinning important log lines to the top of the
-view so they remain visible as you scroll.  This is useful for keeping context
-visible, such as a request header, session start message, or a CSV header.
+The LOG, TEXT, and TIMELINE views support pinning important log lines to the
+top of the view so they remain visible as you scroll.  This is useful for
+keeping context visible, such as a request header, session start message,
+or a CSV header.
 
 To pin the focused line as a sticky header, press :kbd:`CTRL` + :kbd:`s` or
 use the :ref:`:toggle-sticky-header<toggle_sticky_header>` command.  Pinned
@@ -374,6 +378,22 @@ If the document has some recognizable structure, the breadcrumb bar will
 be updated with the path to the focused line.  The following document types
 are recognized: JSON, XML, TOML, man, diff, and Markdown.
 
+Binary Files
+""""""""""""
+
+Files that contain binary data will be displayed as a hexdump.  Each line
+shows 16 bytes as hex values followed by their character representations.
+The following byte types are highlighted to make them easier to identify:
+
+* **NULL bytes** (0x00) -- displayed as a diamond (◊) in the character column.
+* **ASCII control characters and whitespace** -- whitespace characters are
+  displayed as an underscore (_) and control characters as a bullet (•).
+* **Non-ASCII bytes** -- displayed as a multiplication sign (×) in the
+  character column.
+
+Printable ASCII characters are displayed as-is without any special styling.
+
+
 Markdown
 """"""""
 
@@ -445,10 +465,11 @@ TIMELINE
    VMWare Update Manager.  Most rows show API requests as they
    are received and processed.
 
-The timeline view [#]_ visualizes log files, threads, and operations over time.
-The items are ordered top-to-bottom by their start time.  So, scrolling down
-will move forward in time.  An operation is identified by an ID that can come
-from multiple sources:
+The timeline view [#]_ visualizes operations, log files, threads, tags, and
+partitions over time. The items are ordered top-to-bottom by their start time.
+So, scrolling down will move forward in time.
+
+An operation is identified by an ID that can come from multiple sources:
 
 * If the ID is in the log message, the log format can set the
   :code:`opid-field` property.  This option is useful if the software
@@ -467,24 +488,25 @@ from multiple sources:
   can be set manually by doing an :code:`UPDATE` of the :code:`log_opid`
   column on the log vtable.
 
-The time span of an operation is determined by the earliest and latest
-timestamps of messages that have the same OP ID.  If the log messages
+The time span of an item is determined by the earliest and latest
+timestamps of messages associated with the item.  If the log messages
 contain a duration, that will also be used in the calculation.  The
 span is shown in the view using a reverse-video bar.  The time
-scale of the view is automatically adjusted to fit the operations at
+scale of the view is automatically adjusted to fit the item at
 the top and bottom.  The current scale is shown in the header.
 
 Each row in the view shows:
 
-* The duration of the operation
+* The duration of the item.
 * Sparklines showing the number of errors and warnings relative to the
-  total number of messages associated with the OP ID.
-* The OP ID itself.
-* A description of the operation as captured from the log messages or
-  as set by doing an :code:`UPDATE` of the :code:`all_opids` table.
+  total number of messages associated with the item.
+* The ID of the item.
+* A description of the item.  For operations, the description is captured
+  from the log message or a description can be set by doing an
+  :code:`UPDATE` of the :code:`all_opids` table.
 
 The preview panel at the bottom of the display will show the
-messages associated with the focused operation.
+messages associated with the focused item.
 
 The following hotkeys can be useful in this view:
 
