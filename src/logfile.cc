@@ -2527,7 +2527,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     auto& ll = this->lf_index[line_number];
     auto log_us = ll.get_time<std::chrono::microseconds>();
     auto opid_iter = write_opids->insert_op(
-        this->lf_allocator, opid, log_us, timestamp_point_of_reference_t::send);
+        this->lf_allocator, opid, log_us, timestamp_point_of_reference_t::end);
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());

@@ -61,7 +61,7 @@
 class log_format;
 
 enum class timestamp_point_of_reference_t : uint8_t {
-    send,
+    end,
     start,
 };
 

@@ -288,7 +288,7 @@ object with the following fields:
   conjunction with :code:`duration-field` to determine time spans in the
   TIMELINE view.  The following values are supported:
 
-  :send: The timestamp indicates when the message was sent/logged.
+  :end: The timestamp indicates when the message was sent/logged.
     This is the default.
   :start: The timestamp indicates when the operation started.  The
     operation's time span will extend from the timestamp to the

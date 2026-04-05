@@ -155,7 +155,7 @@
                     "description": "The relation of the timestamp to the operation that the message refers to.",
                     "type": "string",
                     "enum": [
-                        "send",
+                        "end",
                         "start"
                     ]
                 },

@@ -448,7 +448,7 @@ static constexpr json_path_handler_base::enum_value_t SUBSECOND_UNIT_ENUM[] = {
 };
 
 static constexpr json_path_handler_base::enum_value_t TS_POR_ENUM[] = {
-    {"send"_frag, timestamp_point_of_reference_t::send},
+    {"end"_frag, timestamp_point_of_reference_t::end},
     {"start"_frag, timestamp_point_of_reference_t::start},
 
     json_path_handler_base::ENUM_TERMINATOR,

@@ -235,7 +235,7 @@ log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
     if (duration > 0us) {
         auto other_us = us;
         switch (poref) {
-            case timestamp_point_of_reference_t::send:
+            case timestamp_point_of_reference_t::end:
                 other_us -= duration;
                 break;
             case timestamp_point_of_reference_t::start:

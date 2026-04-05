@@ -334,7 +334,7 @@ public:
     std::vector<const char*> lf_timestamp_format;
     unsigned int lf_timestamp_flags{0};
     timestamp_point_of_reference_t lf_timestamp_point_of_reference{
-        timestamp_point_of_reference_t::send};
+        timestamp_point_of_reference_t::end};
     std::map<std::string, action_def> lf_action_defs;
     std::vector<highlighter> lf_highlighters;
     bool lf_is_self_describing{false};
