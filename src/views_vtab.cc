@@ -610,7 +610,9 @@ CREATE TABLE lnav_db.lnav_views (
             if (!tc.is_selectable()) {
                 selection = top_row;
             }
-        } else if (top_time != nullptr && time_source != nullptr) {
+        } else if (top_time != nullptr && time_source != nullptr
+                   && selection == tc.get_selection())
+        {
             auto sel = tc.get_selection();
             date_time_scanner dts;
             timeval tv;
@@ -623,7 +625,6 @@ CREATE TABLE lnav_db.lnav_views (
 
                 if (last_ri_opt) {
                     auto last_time = last_ri_opt->ri_time;
-                    last_time.tv_usec = rounddown(last_time.tv_usec, 1000);
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
                             [&tc, &selection](auto row) {
@@ -744,7 +745,7 @@ CREATE TABLE lnav_db.lnav_views (
             auto wrap_words = vo.vo_word_wrap.value() == word_wrap_t::normal;
             tc.set_word_wrap(wrap_words);
             if (wrap_words) {
-                left = 0; // reset horizontal scroll position
+                left = 0;  // reset horizontal scroll position
             }
         }
         if (vo.vo_hidden_fields) {

@@ -1,0 +1,10 @@
+  bytes_read: 0
+  duration: 0.000724
+2024-05-26T11:44:00.654197Z 10.10.10.132  "GET mirrors.tnonline.net:400/gentoo/gentoo-distfiles/distfiles/b6/libvirt-python-9.9.0.tar.gz HTTP/2.0" 200 246357 handled request
+  request/headers/User-Agent#: Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36
+  bytes_read: 0
+  duration: 0.024627
+2024-05-26T14:16:03.414651Z 240e:1:1::1234  "GET mirrors.tnonline.net/res/browse.css HTTP/3.0" 200 1577 handled request
+  request/headers/User-Agent#: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/117.0.5938.60 Safari/537.36
+  bytes_read: 0
+  duration: 0.000276

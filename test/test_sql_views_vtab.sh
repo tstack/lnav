@@ -4,6 +4,11 @@ export TZ=UTC
 export YES_COLOR=1
 unset XDG_CONFIG_HOME
 
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_top_view SET selection=6" \
+    -c ";UPDATE lnav_top_view SET selection=6" \
+    ${test_dir}/logfile_caddy_log.1
+
 run_test ${lnav_test} -n \
     -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
     -c ":write-csv-to -" \
