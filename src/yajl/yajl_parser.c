@@ -384,7 +384,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
             yajl_need_key(hand->lexer, 1);
             tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
                                offset, &buf, &bufLen, &str_props);
-            yajl_need_key(hand->lexer, 1);
+            yajl_need_key(hand->lexer, 0);
             switch (tok) {
                 case yajl_tok_eof:
                     return yajl_status_ok;

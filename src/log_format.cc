@@ -1138,11 +1138,12 @@ struct json_log_userdata {
                 == field_frag)
         {
             auto retval
-                = format->elf_value_def_read_order[this->jlu_read_order_index++]
+                = format->elf_value_def_read_order[this->jlu_read_order_index]
                       .second;
             if (retval != nullptr) {
                 this->jlu_precision += 1;
             }
+            this->jlu_read_order_index += 1;
             return retval;
         }
 
@@ -1407,7 +1408,9 @@ json_array_end(void* ctx)
 {
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const auto* vd = jlu->get_field_def(ypc);
+    const auto* vd = ypc->ypc_path_index_stack.size() > 1
+        ? jlu->get_field_def(ypc)
+        : nullptr;
 
     if (ypc->ypc_path_index_stack.size() == 1 || vd != nullptr) {
         intern_string_t field_name;
@@ -1438,7 +1441,9 @@ read_array_end(void* ctx)
 {
     auto* ypc = (yajlpp_parse_context*) ctx;
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const auto* vd = jlu->get_field_def(ypc);
+    const auto* vd = ypc->ypc_path_index_stack.size() > 1
+        ? jlu->get_field_def(ypc)
+        : nullptr;
 
     if (ypc->ypc_path_index_stack.size() == 1 || vd != nullptr) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);

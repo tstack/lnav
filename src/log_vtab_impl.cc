@@ -2529,11 +2529,6 @@ vt_update(sqlite3_vtab* tab,
             argc, argv, 2 + vt->footer_index(log_footer_columns::annotations));
         auto log_opid = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::opid));
-        const auto log_user_opid
-            = from_sqlite<std::optional<string_fragment>>()(
-                argc,
-                argv,
-                2 + vt->footer_index(log_footer_columns::user_opid));
         bookmark_metadata tmp_bm;
         parsed_tags tmp_tags;
 

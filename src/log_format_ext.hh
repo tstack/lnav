@@ -343,7 +343,11 @@ public:
     value_defs_state elf_specialized_value_defs_state;
 
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
-    robin_hood::unordered_map<string_fragment, value_def*, frag_hasher>
+    robin_hood::unordered_map<string_fragment,
+                              value_def*,
+                              frag_hasher,
+                              std::equal_to<string_fragment>,
+                              50>
         elf_value_def_frag_map;
     std::vector<std::pair<string_fragment, value_def*>>
         elf_value_def_read_order;
