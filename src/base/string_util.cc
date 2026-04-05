@@ -329,6 +329,24 @@ is_blank(const std::string& str)
         str.begin(), str.end(), [](const auto ch) { return isspace(ch); });
 }
 
+size_t
+compute_indent_size(const std::string& str)
+{
+    size_t retval = 0;
+    for (const auto& ch : str) {
+        if (ch == ' ') {
+            retval += 1;
+        } else if (ch == '\t') {
+            do {
+                retval += 1;
+            } while (retval % 8);
+        } else {
+            break;
+        }
+    }
+    return retval;
+}
+
 std::string
 scrub_ws(const char* in, ssize_t len)
 {

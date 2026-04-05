@@ -209,6 +209,8 @@ utf8_string_length(const std::string& str)
 
 bool is_blank(const std::string& str);
 
+size_t compute_indent_size(const std::string& str);
+
 size_t abbreviate_str(char* str, size_t len, size_t max_len);
 
 size_t last_word_str(char* str, size_t len, size_t max_len);

@@ -44,6 +44,7 @@
 #include "base/itertools.hh"
 #include "base/map_util.hh"
 #include "base/math_util.hh"
+#include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "data_scanner.hh"
@@ -186,15 +187,24 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         if (meta.m_valid_utf && meta.m_has_ansi) {
             scrub_ansi_string(value_out, &this->tss_plain_line_attrs);
         }
-        for (const auto& ch : value_out) {
-            if (ch == ' ') {
-                this->tss_line_indent_size += 1;
-            } else if (ch == '\t') {
-                do {
-                    this->tss_line_indent_size += 1;
-                } while (this->tss_line_indent_size % 8);
-            } else {
-                break;
+        this->tss_line_indent_size = compute_indent_size(value_out);
+        if (this->tss_line_indent_size == 0 && value_out.empty()) {
+            for (auto next = line + 1;
+                 next < (ssize_t) lfo->lfo_filter_state.tfs_index.size();
+                 ++next)
+            {
+                auto next_ll
+                    = lf->begin() + lfo->lfo_filter_state.tfs_index[next];
+                auto next_result = lf->read_line(next_ll, read_opts);
+                if (next_result.isOk()) {
+                    auto next_sbr = next_result.unwrap();
+                    auto next_str = to_string(next_sbr);
+                    this->tss_line_indent_size
+                        = compute_indent_size(next_str) + 1;
+                    if (!next_str.empty()) {
+                        break;
+                    }
+                }
             }
         }
         if (lf->has_line_metadata() && this->tas_display_time_offset) {

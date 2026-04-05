@@ -30,6 +30,7 @@
 #include "plain_text_source.hh"
 
 #include "base/intern_string.hh"
+#include "base/string_util.hh"
 #include "base/itertools.hh"
 #include "config.h"
 #include "document.sections.hh"
@@ -175,16 +176,18 @@ plain_text_source::text_value_for_line(textview_curses& tc,
                                        text_sub_source::line_flags_t flags)
 {
     value_out = this->tds_lines[row].tl_value.get_string();
-    this->tds_line_indent_size = 0;
-    for (const auto& ch : value_out) {
-        if (ch == ' ') {
-            this->tds_line_indent_size += 1;
-        } else if (ch == '\t') {
-            do {
-                this->tds_line_indent_size += 1;
-            } while (this->tds_line_indent_size % 8);
-        } else {
-            break;
+    this->tds_line_indent_size = compute_indent_size(value_out);
+    if (this->tds_line_indent_size == 0 && value_out.empty()) {
+        for (auto next = row + 1;
+             next < (int) this->tds_lines.size();
+             ++next)
+        {
+            const auto& next_str
+                = this->tds_lines[next].tl_value.get_string();
+            this->tds_line_indent_size = compute_indent_size(next_str) + 1;
+            if (!next_str.empty()) {
+                break;
+            }
         }
     }
 
