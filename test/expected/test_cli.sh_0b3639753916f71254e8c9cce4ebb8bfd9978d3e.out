@@ -885,6 +885,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "Maroon",
+                        "background-color": "Navy",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "Black",
                         "background-color": "Silver",
@@ -1798,6 +1806,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "#5394ec",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "#5394ec",
                         "background-color": "#353535",
@@ -2654,6 +2670,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "$blue",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "#5394ec",
                         "background-color": "#353535",
@@ -3503,6 +3527,14 @@
                     },
                     "title": {
                         "color": "#f6f6f6",
+                        "background-color": "#8a8a8a",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "alert-title": {
+                        "color": "$red",
                         "background-color": "#8a8a8a",
                         "underline": false,
                         "bold": true,
@@ -4399,6 +4431,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "#5394ec",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "#5394ec",
                         "background-color": "#e0e0e0",
@@ -5255,6 +5295,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "#5394ec",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "#5394ec",
                         "background-color": "#353535",
@@ -6104,6 +6152,14 @@
                     },
                     "title": {
                         "color": "#f8f0f0",
+                        "background-color": "#2d5a80",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "alert-title": {
+                        "color": "#ef5350",
                         "background-color": "#2d5a80",
                         "underline": false,
                         "bold": true,
@@ -6974,6 +7030,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "$blue",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "disabled-title": {
                         "color": "$base01",
                         "background-color": "$base03",
@@ -7832,6 +7896,14 @@
                     },
                     "title": {
                         "color": "$base2",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "alert-title": {
+                        "color": "$red",
                         "background-color": "$cyan",
                         "underline": false,
                         "bold": true,

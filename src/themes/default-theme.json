@@ -309,6 +309,11 @@
                         "background-color": "Navy",
                         "bold": true
                     },
+                    "alert-title": {
+                        "color": "Maroon",
+                        "background-color": "Navy",
+                        "bold": true
+                    },
                     "disabled-title": {
                         "color": "Black",
                         "background-color": "Silver",

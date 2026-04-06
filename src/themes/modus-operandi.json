@@ -297,6 +297,11 @@
             "background-color": "#5394ec",
             "bold": true
           },
+          "alert-title": {
+            "color": "$red",
+            "background-color": "#5394ec",
+            "bold": true
+          },
           "subtitle": {
             "color": "#555",
             "background-color": "#66d9ee",

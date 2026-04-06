@@ -1299,6 +1299,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_status_title_hotkey, reporter);
     this->get_role_attrs(role_t::VCR_STATUS_DISABLED_TITLE)
         = this->to_attrs(lt, lt.lt_style_status_disabled_title, reporter);
+    this->get_role_attrs(role_t::VCR_ALERT_STATUS_TITLE)
+        = this->to_attrs(lt, lt.lt_style_status_alert_title, reporter);
 
     this->get_role_attrs(role_t::VCR_H1)
         = this->to_attrs(lt, lt.lt_style_header[0], reporter);
@@ -1397,6 +1399,29 @@ view_colors::init_roles(const lnav_theme& lt,
         stitch_sc.pp_value.sc_background_color
             = lt.lt_style_status.pp_value.sc_background_color;
         this->get_role_attrs(role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE)
+            = this->to_attrs(lt, stitch_sc, reporter);
+    }
+
+    {
+        positioned_property<style_config> stitch_sc;
+
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status_alert_title.pp_value.sc_background_color;
+        this->get_role_attrs(
+            role_t::VCR_STATUS_STITCH_ALERT_TITLE_TO_NORMAL)
+            = this->to_attrs(lt, stitch_sc, reporter);
+    }
+    {
+        positioned_property<style_config> stitch_sc;
+
+        stitch_sc.pp_value.sc_color
+            = lt.lt_style_status_alert_title.pp_value.sc_background_color;
+        stitch_sc.pp_value.sc_background_color
+            = lt.lt_style_status.pp_value.sc_background_color;
+        this->get_role_attrs(
+            role_t::VCR_STATUS_STITCH_NORMAL_TO_ALERT_TITLE)
             = this->to_attrs(lt, stitch_sc, reporter);
     }
 

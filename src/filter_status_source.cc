@@ -119,16 +119,54 @@ filter_status_source::statusview_fields()
             break;
     }
 
+    size_t error_count = 0;
+
+    auto& fc = lnav_data.ld_active_files;
+    {
+        auto stub_map = fc.fc_name_to_stubs->readAccess();
+
+        for (const auto& stub : *stub_map) {
+            switch (stub.second.fsi_description.um_level) {
+                case lnav::console::user_message::level::raw:
+                case lnav::console::user_message::level::ok:
+                case lnav::console::user_message::level::info:
+                case lnav::console::user_message::level::warning:
+                    break;
+                case lnav::console::user_message::level::error:
+                    error_count += 1;
+                    break;
+            }
+        }
+    }
+
+    if (error_count == 0) {
+        this->tss_error.clear();
+    } else if (error_count == 1) {
+        this->tss_error.set_value(" error: a file cannot be opened "_frag);
+    } else if (error_count > 1) {
+        this->tss_error.set_value(" error: %zu files cannot be opened ",
+                                  error_count);
+    }
+
     if (lnav_data.ld_mode == ln_mode_t::FILES
         || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
     {
         this->tss_fields[TSF_FILES_TITLE].set_value(
             " " ANSI_ROLE("F") "iles ", role_t::VCR_STATUS_TITLE_HOTKEY);
-        this->tss_fields[TSF_FILES_TITLE].set_role(role_t::VCR_STATUS_TITLE);
-        this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
-            role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-            role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+        if (error_count > 0) {
+            this->tss_fields[TSF_FILES_TITLE].set_role(
+                role_t::VCR_ALERT_STATUS_TITLE);
+            this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
+                role_t::VCR_STATUS_STITCH_ALERT_TITLE_TO_NORMAL,
+                role_t::VCR_STATUS_STITCH_NORMAL_TO_ALERT_TITLE);
+        } else {
+            this->tss_fields[TSF_FILES_TITLE].set_role(
+                role_t::VCR_STATUS_TITLE);
+            this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
+                role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+                role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+        }
         this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
                                               role_t::VCR_STATUS_HOTKEY);
         this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_DISABLED_TITLE);
@@ -137,43 +175,12 @@ filter_status_source::statusview_fields()
     } else {
         this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
                                                     role_t::VCR_STATUS_HOTKEY);
-        if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->empty()) {
+        if (error_count > 0) {
+            this->tss_fields[TSF_FILES_TITLE].set_role(
+                role_t::VCR_ALERT_STATUS);
+        } else {
             this->tss_fields[TSF_FILES_TITLE].set_role(
                 role_t::VCR_STATUS_DISABLED_TITLE);
-        } else {
-            size_t error_count = 0;
-            size_t other_count = 0;
-
-            auto& fc = lnav_data.ld_active_files;
-            {
-                auto stub_map = fc.fc_name_to_stubs->readAccess();
-
-                for (const auto& stub : *stub_map) {
-                    switch (stub.second.fsi_description.um_level) {
-                        case lnav::console::user_message::level::raw:
-                        case lnav::console::user_message::level::ok:
-                        case lnav::console::user_message::level::info:
-                        case lnav::console::user_message::level::warning:
-                            other_count += 1;
-                            break;
-                        case lnav::console::user_message::level::error:
-                            error_count += 1;
-                            break;
-                    }
-                }
-            }
-
-            if (error_count > 0) {
-                this->tss_fields[TSF_FILES_TITLE].set_role(
-                    role_t::VCR_ALERT_STATUS);
-            }
-            if (error_count == 1) {
-                this->tss_error.set_value(
-                    " error: a file cannot be opened "_frag);
-            } else if (error_count > 1) {
-                this->tss_error.set_value(" error: %zu files cannot be opened ",
-                                          error_count);
-            }
         }
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE,

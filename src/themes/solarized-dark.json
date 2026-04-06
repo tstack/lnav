@@ -272,6 +272,11 @@
                         "background-color": "$blue",
                         "bold": true
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "$blue",
+                        "bold": true
+                    },
                     "subtitle": {
                         "color": "$base00",
                         "background-color": "$cyan",

@@ -226,17 +226,17 @@ file_collection::merge(file_collection& other)
 
     this->fc_synced_files.insert(other.fc_synced_files.begin(),
                                  other.fc_synced_files.end());
-
     std::map<std::string, file_stub_info> new_stubs;
     {
         safe::ReadAccess<safe_name_to_stubs> errs(*other.fc_name_to_stubs);
 
         new_stubs.insert(errs->cbegin(), errs->cend());
     }
-    {
+    if (!new_stubs.empty()) {
         safe::WriteAccess<safe_name_to_stubs> errs(*this->fc_name_to_stubs);
 
         errs->insert(new_stubs.begin(), new_stubs.end());
+        this->fc_files_generation += 1;
     }
     if (!other.fc_file_names.empty()) {
         this->fc_files_generation += 1;
@@ -331,7 +331,8 @@ struct same_file {
  * @param required Specifies whether or not the file must exist and be valid.
  */
 std::optional<std::future<file_collection>>
-file_collection::watch_logfile(const std::string& filename,
+file_collection::watch_logfile(const std::string& user_req,
+                               const std::string& filename,
                                logfile_open_options& loo,
                                bool required)
 {
@@ -379,11 +380,11 @@ file_collection::watch_logfile(const std::string& filename,
         {
             safe::WriteAccess<safe_name_to_stubs> errs(*this->fc_name_to_stubs);
 
-            auto err_iter = errs->find(filename_key);
+            auto err_iter = errs->find(user_req);
             if (err_iter != errs->end()) {
                 if (err_iter->second.fsi_mtime != st.st_mtime) {
                     log_debug("clearing error info for file: %s",
-                              filename_key.c_str());
+                              user_req.c_str());
                     errs->erase(err_iter);
                 }
             }
@@ -849,7 +850,8 @@ file_collection::expand_filename(
             }
 
             if (required || access(iter->second.c_str(), R_OK) == 0) {
-                auto future_opt = watch_logfile(iter->second, loo, required);
+                auto future_opt
+                    = watch_logfile(filename_key, iter->second, loo, required);
                 if (future_opt) {
                     auto fut = std::move(future_opt.value());
                     if (fq.push_back(std::move(fut))
@@ -1003,6 +1005,7 @@ file_collection::copy()
     file_collection retval;
 
     retval.merge(*this);
+    retval.fc_name_to_stubs = this->fc_name_to_stubs;
     retval.fc_progress = this->fc_progress;
     return retval;
 }

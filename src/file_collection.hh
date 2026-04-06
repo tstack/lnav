@@ -223,7 +223,10 @@ struct file_collection {
                          bool required);
 
     std::optional<std::future<file_collection>> watch_logfile(
-        const std::string& filename, logfile_open_options& loo, bool required);
+        const std::string& user_req,
+        const std::string& filename,
+        logfile_open_options& loo,
+        bool required);
 
     void merge(file_collection& other);
 

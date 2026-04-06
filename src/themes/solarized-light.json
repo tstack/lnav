@@ -239,6 +239,11 @@
                         "background-color": "$cyan",
                         "bold": true
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "$cyan",
+                        "bold": true
+                    },
                     "disabled-title": {
                         "color": "$base2",
                         "background-color": "$base02",

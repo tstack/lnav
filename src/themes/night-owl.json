@@ -262,6 +262,11 @@
                         "background-color": "#2d5a80",
                         "bold": true
                     },
+                    "alert-title": {
+                        "color": "#ef5350",
+                        "background-color": "#2d5a80",
+                        "bold": true
+                    },
                     "subtitle": {
                         "color": "#f8f8f0",
                         "background-color": "#005f5f"

@@ -962,6 +962,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/title",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "alert-title": {
+                                            "description": "Styling for title sections of status bars with alerts",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/alert-title",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "disabled-title": {
                                             "description": "Styling for title sections of status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/disabled-title",

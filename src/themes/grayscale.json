@@ -206,6 +206,11 @@
                         "background-color": "#8a8a8a",
                         "bold": true
                     },
+                    "alert-title": {
+                        "color": "$red",
+                        "background-color": "#8a8a8a",
+                        "bold": true
+                    },
                     "subtitle": {
                         "color": "#e4e4e4",
                         "background-color": "#626262",

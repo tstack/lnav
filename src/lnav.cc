@@ -1903,6 +1903,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     static auto& mlooper = injector::get<main_looper&, services::main_t>();
     mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
 
+    int last_files_generation = lnav_data.ld_active_files.fc_files_generation;
     exec_phase.completed(lnav::phase_t::init);
     while (lnav_data.ld_looping) {
         auto loop_deadline
@@ -1974,11 +1975,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                           lnav_data.ld_active_files.fc_files.size());
                 exec_phase.completed(lnav::phase_t::scan);
             }
-            auto old_gen = lnav_data.ld_active_files.fc_files_generation;
             update_active_files(new_files);
-            if (old_gen != lnav_data.ld_active_files.fc_files_generation) {
-                next_rebuild_time = ui_now;
-            }
             if (!exec_phase.scan_completed()) {
                 auto& fview = lnav_data.ld_files_view;
                 auto height = fview.get_inner_height();
@@ -2015,8 +2012,19 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         mlooper.get_port().process_for(0s);
-
         ui_now = ui_clock::now();
+
+        if (last_files_generation
+            != lnav_data.ld_active_files.fc_files_generation)
+        {
+            next_rebuild_time = ui_now;
+            lnav_data.ld_files_view.reload_data();
+            lnav_data.ld_status[LNS_FILTER].set_needs_update();
+            lnav_data.ld_status[LNS_FILTER_HELP].set_needs_update();
+            last_files_generation
+                = lnav_data.ld_active_files.fc_files_generation;
+        }
+
         if (exec_phase.scan_completed()) {
             auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
             if (tc != nullptr
@@ -2065,9 +2073,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_filter_view.set_needs_update();
         }
         if ((lnav_data.ld_files_view.is_visible()
-             && lnav_data.ld_files_view.get_needs_update())
-            || (lnav_data.ld_filter_view.is_visible()
-                && lnav_data.ld_filter_view.get_needs_update()))
+             || lnav_data.ld_filter_view.is_visible())
+            && (lnav_data.ld_files_view.get_needs_update()
+                || lnav_data.ld_filter_view.get_needs_update()))
         {
             // log_trace("config panels updated, update prompt");
             prompt.p_editor.set_needs_update();

@@ -1121,6 +1121,10 @@ static const struct json_path_container theme_status_styles_handlers = {
         .with_description("Styling for title sections of status bars")
         .for_child(&lnav_theme::lt_style_status_title)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("alert-title")
+        .with_description("Styling for title sections of status bars with alerts")
+        .for_child(&lnav_theme::lt_style_status_alert_title)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("disabled-title")
         .with_description("Styling for title sections of status bars")
         .for_child(&lnav_theme::lt_style_status_disabled_title)

@@ -141,6 +141,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_invalid_msg;
     positioned_property<style_config> lt_style_status_title;
     positioned_property<style_config> lt_style_status_title_hotkey;
+    positioned_property<style_config> lt_style_status_alert_title;
     positioned_property<style_config> lt_style_status_disabled_title;
     positioned_property<style_config> lt_style_status_subtitle;
     positioned_property<style_config> lt_style_status_info;
