@@ -67,7 +67,7 @@
 
 [1mTable[0m
 
- ID   Name         Description   
+ [1mID[0m   [1mName[0m         [1mDescription[0m   
 ═════════════════════════════════
     1     One      The first     
     2     Two      The second    
@@ -76,7 +76,7 @@
    ..      ..      ..            
   100 One Hundred  The hundredth 
 
- abc        def 
+ [1mabc[0m        [1mdef[0m 
 ════════════════
  foo | bar  ddd 
 

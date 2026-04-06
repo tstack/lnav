@@ -1308,9 +1308,9 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
 
     line_range lr(0);
 
+    sa.emplace_back(lr, VC_ROLE.value(role_t::VCR_TABLE_HEADER));
     sa.emplace_back(
         lr,
-        VC_STYLE.value(text_attrs::with_styles(text_attrs::style::bold,
-                                               text_attrs::style::underline)));
+        VC_STYLE.value(text_attrs::with_styles(text_attrs::style::underline)));
     return true;
 }

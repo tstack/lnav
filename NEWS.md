@@ -203,9 +203,9 @@ Features:
   The `:hide-in-timeline` command supports live preview,
   highlighting rows that would be hidden in red.
 * The `timestamp-point-of-reference` log format property
-  has been added to specify the related of the timestamp
+  has been added to specify the relation of the timestamp
   to the operation that the message refers to, either:
-  start or send.  This is used in conjunction with the
+  `start` or `end`.  This is used in conjunction with the
   message duration to determine the time span.
 * The OPID for log messages is now shown in the parser
   details overlay (revealed by pressing `p`) in the

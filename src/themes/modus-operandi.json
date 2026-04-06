@@ -85,7 +85,7 @@
             "bold": true
           },
           "error": {
-            "color": "$red",
+            "color": "$red_intense",
             "bold": true
           },
           "warning": {
@@ -133,6 +133,9 @@
           "scrollbar": {
             "color": "$fg_dim",
             "background-color": "$bg_active"
+          },
+          "timeline-bar": {
+            "background-color": "$cyan_subtle"
           },
           "h1": {
             "color": "$cyan",
@@ -329,7 +332,7 @@
             "background-color": "#c8c8c8"
           },
           "alert": {
-            "color": "$red",
+            "color": "$red_intense",
             "background-color": "#c8c8c8"
           },
           "active": {

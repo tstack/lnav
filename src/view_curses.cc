@@ -1338,6 +1338,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_snippet_border, reporter);
     this->get_role_attrs(role_t::VCR_INDENT_GUIDE)
         = this->to_attrs(lt, lt.lt_style_indent_guide, reporter);
+    this->get_role_attrs(role_t::VCR_TIMELINE_BAR)
+        = this->to_attrs(lt, lt.lt_style_timeline_bar, reporter);
 
     {
         positioned_property<style_config> stitch_sc;

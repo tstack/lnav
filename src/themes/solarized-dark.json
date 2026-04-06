@@ -4,6 +4,7 @@
         "theme-defs": {
             "solarized-dark": {
                 "vars": {
+                    "base04": "#001d25",
                     "base03": "#002b36",
                     "base02": "#073642",
                     "base01": "#586e75",
@@ -25,7 +26,6 @@
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$base03",
                         "color": "semantic()"
                     },
                     "text": {
@@ -41,7 +41,7 @@
                         "bold": true
                     },
                     "alt-text": {
-                        "background-color": "$base02"
+                        "background-color": "$base04"
                     },
                     "ok": {
                         "color": "$green",
@@ -102,6 +102,9 @@
                         "color": "$base03",
                         "background-color": "$base0"
                     },
+                    "timeline-bar": {
+                        "background-color": "$magenta"
+                    },
                     "focused": {
                         "color": "$base03",
                         "background-color": "$base01"
@@ -147,6 +150,7 @@
                         "color": "#444"
                     },
                     "table-header": {
+                        "color": "$base1",
                         "bold": true
                     },
                     "quote-border": {

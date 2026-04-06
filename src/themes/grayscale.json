@@ -29,7 +29,8 @@
                         "bold": true
                     },
                     "alt-text": {
-                        "bold": true
+                        "bold": true,
+                        "background-color": "#222"
                     },
                     "ok": {
                         "color": "$green",
@@ -93,9 +94,16 @@
                         "color": "$plaintext",
                         "background-color": "#424242"
                     },
+                    "popup-border": {
+                        "color": "#888",
+                        "background-color": "#424242"
+                    },
                     "scrollbar": {
                         "color": "$black",
                         "background-color": "#888"
+                    },
+                    "timeline-bar": {
+                        "background-color": "#444"
                     },
                     "h1": {
                         "bold": true,

@@ -100,6 +100,9 @@
                         "color": "$black",
                         "background-color": "$white"
                     },
+                    "timeline-bar": {
+                        "background-color": "#632053"
+                    },
                     "h1": {
                         "color": "$magenta",
                         "bold": true

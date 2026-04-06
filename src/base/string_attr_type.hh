@@ -195,6 +195,8 @@ enum class role_t : int32_t {
     VCR_SPECTRO_THRESHOLD5,
     VCR_SPECTRO_THRESHOLD6,
 
+    VCR_TIMELINE_BAR,
+
     VCR__MAX
 };
 

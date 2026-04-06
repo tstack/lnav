@@ -19,6 +19,9 @@ export top_builddir
 builddir=`pwd -P`
 export builddir
 
+top_builddir_abs=`dirname ${builddir}`
+export top_builddir_abs
+
 LNAV_VERSION=`${top_builddir}/src/lnav-test -V`
 export LNAV_VERSION
 
@@ -122,6 +125,7 @@ run_cap_test() {
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{test_dir};g" \
+        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${top_srcdir_parent};{top_srcdir_parent};g" \
@@ -157,6 +161,7 @@ run_cap_test() {
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
         -e "s;${builddir};{builddir};g" \
+        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${TMPDIR};{TMPDIR};g" \
         -e "s;/tmp/;{TMPDIR};g" \

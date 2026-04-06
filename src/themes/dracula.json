@@ -111,6 +111,9 @@
                         "color": "$background",
                         "background-color": "$foreground"
                     },
+                    "timeline-bar": {
+                        "background-color": "#8560C0"
+                    },
                     "h1": {
                         "color": "$purple",
                         "bold": true

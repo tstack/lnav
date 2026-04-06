@@ -443,8 +443,7 @@ timeline_header_overlay::list_value_for_overlay(
             lr.lr_end += 1;
         }
 
-        auto block_attrs = text_attrs::with_reverse();
-        attrs.emplace_back(lr, VC_STYLE.value(block_attrs));
+        attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_TIMELINE_BAR));
     }
     if (!value_out.empty()) {
         value_out.back().get_attrs().emplace_back(
@@ -759,9 +758,8 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                     }
                 }
 
-                auto block_attrs = text_attrs::with_reverse();
                 require(lr.lr_start >= 0);
-                value_out.emplace_back(lr, VC_STYLE.value(block_attrs));
+                value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_TIMELINE_BAR));
             }
         }
         auto alt_row_index = line % 4;

@@ -95,9 +95,16 @@
                         "color": "#ccc",
                         "background-color": "#3c3c3c"
                     },
+                    "popup-border": {
+                        "color": "$white",
+                        "background-color": "#3c3c3c"
+                    },
                     "scrollbar": {
                         "color": "$black",
                         "background-color": "$white"
+                    },
+                    "timeline-bar": {
+                        "background-color": "#347"
                     },
                     "h1": {
                         "underline": true

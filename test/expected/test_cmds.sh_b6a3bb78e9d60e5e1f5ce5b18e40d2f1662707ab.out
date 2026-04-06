@@ -194,7 +194,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mViews[0m
 
- Key(s)        Action                                            
+ [1mKey(s)[0m        [1mAction[0m                                            
 ═════════════════════════════════════════════════════════════════
  [1m?[0m or [1mF1[0m       View/leave this help message.                     
  [1mq[0m             Leave the current view or quit the program when in
@@ -214,7 +214,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mSpatial Navigation[0m
 
- Key(s)      Action                                            
+ [1mKey(s)[0m      [1mAction[0m                                            
 ═══════════════════════════════════════════════════════════════
  g/Home      Move to the top of the file.                      
  G/End       Move to the end of the file. If the view is       
@@ -268,7 +268,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mChronological Navigation[0m
 
- Key(s)         Action                                            
+ [1mKey(s)[0m         [1mAction[0m                                            
 ══════════════════════════════════════════════════════════════════
  d/D            Move forward/backward 24 hours from the current   
                 position in the log file.                         
@@ -289,7 +289,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mBookmarks[0m
 
- Key(s)  Action                                            
+ [1mKey(s)[0m  [1mAction[0m                                            
 ═══════════════════════════════════════════════════════════
  m       Mark/unmark the line at the top of the display.   
          The line will be highlighted with reverse video to
@@ -311,7 +311,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mDisplay options[0m
 
- Key(s)         Action                                            
+ [1mKey(s)[0m         [1mAction[0m                                            
 ══════════════════════════════════════════════════════════════════
  P              Switch to/from the pretty-printed view of the log 
                 or text files currently displayed. In this view,  
@@ -392,7 +392,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mQuery[0m
 
- Key(s)               Action                                            
+ [1mKey(s)[0m               [1mAction[0m                                            
 ════════════════════════════════════════════════════════════════════════
  [1m/[0m[4mregexp[0m              Start a search for the given regular expression.  
                       The search is live, so when there is a pause in   
@@ -440,7 +440,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [1mSession[0m
 
- Key(s)  Action                                            
+ [1mKey(s)[0m  [1mAction[0m                                            
 ═══════════════════════════════════════════════════════════
  CTRL-R  Reset the session state. This will save the       
          current session state (filters, highlights) and   
@@ -451,7 +451,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 The following hotkeys are only available when the focus is on the
 filter editor. You can change the focus by pressing TAB.
 
- Key(s)  Action                                            
+ [1mKey(s)[0m  [1mAction[0m                                            
 ═══════════════════════════════════════════════════════════
  q       Switch the focus back to the main view.           
  j/↓     Select the next filter.                           
@@ -495,7 +495,7 @@ view.
 
 Some commonly used format tables are:
 
- Name         Description                                       
+ [1mName[0m         [1mDescription[0m                                       
 ════════════════════════════════════════════════════════════════
  access_log   Apache common access log format                   
  syslog_log   Syslog format                                     
@@ -511,7 +511,7 @@ The columns available for the top log line in the view will
 automatically be displayed after pressing the semicolon ([37m[40m ; [0m) key. All
 log tables contain at least the following columns:
 
- Column          Description                                       
+ [1mColumn[0m          [1mDescription[0m                                       
 ═══════════════════════════════════════════════════════════════════
  log_line        The line number in the file, starting at zero.    
  log_part        The name of the partition.  You can change this   
@@ -536,7 +536,7 @@ structured.
 
  [33m•[0m [37m[40m syslog_log [0m
    
-    Column        Description                                       
+    [1mColumn[0m        [1mDescription[0m                                       
    ═════════════════════════════════════════════════════════════════
     log_hostname  The hostname the message was received from.       
     log_procname  The name of the process that sent the message.    
@@ -545,7 +545,7 @@ structured.
  [33m•[0m [37m[40m access_log [0m (The column names are the same as those
    in the Microsoft LogParser tool.)
    
-    Column         Description                               
+    [1mColumn[0m         [1mDescription[0m                               
    ══════════════════════════════════════════════════════════
     c_ip           The client IP address.                    
     cs_username    The client user name.                     
@@ -561,7 +561,7 @@ structured.
    the [37m[40m -tt -T [0moptions so there are timestamps for each
    function call.)
    
-    Column       Description                              
+    [1mColumn[0m       [1mDescription[0m                              
    ═══════════════════════════════════════════════════════
     funcname     The name of the syscall.                 
     result       The result code.                         
@@ -632,7 +632,7 @@ get the following results:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mUSER[0m[37m[40m,[0m[37m[40mCOMMAND[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlogline[0m[37m[40m;      [0m
 
- USER  COMMAND                   
+ [1mUSER[0m  [1mCOMMAND[0m                   
 ═════════════════════════════════
  root  /bin/echo Hello, World!   
  mal   /bin/echo Goodbye, World! 

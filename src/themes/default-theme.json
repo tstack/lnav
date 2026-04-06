@@ -150,6 +150,9 @@
                         "color": "Black",
                         "background-color": "Silver"
                     },
+                    "timeline-bar": {
+                        "background-color": "Teal"
+                    },
                     "focused": {
                         "color": "Black",
                         "background-color": "Silver"

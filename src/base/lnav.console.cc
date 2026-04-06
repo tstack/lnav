@@ -454,6 +454,9 @@ role_to_style(const role_t role,
         case role_t::VCR_H6:
             line_style |= fmt::emphasis::underline;
             break;
+        case role_t::VCR_TABLE_HEADER:
+            line_style |= fmt::emphasis::bold;
+            break;
         case role_t::VCR_LIST_GLYPH:
             line_style |= fmt::fg(fmt::terminal_color::yellow);
             break;
@@ -477,6 +480,9 @@ role_to_style(const role_t role,
         case role_t::VCR_SPECTRO_THRESHOLD5:
         case role_t::VCR_SPECTRO_THRESHOLD6:
             line_style |= fmt::bg(fmt::terminal_color::red);
+            break;
+        case role_t::VCR_TIMELINE_BAR:
+            line_style |= fmt::bg(fmt::terminal_color::magenta);
             break;
         default:
             // log_debug("missing role handler %d", (int) role);

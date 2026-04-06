@@ -12,6 +12,7 @@
                     "base1": "#93a1a1",
                     "base2": "#ededb0",
                     "base3": "#fdf6e3",
+                    "base4": "#fefcf7",
                     "black": "#002b36",
                     "yellow": "#b58900",
                     "orange": "#cb4b16",
@@ -43,7 +44,7 @@
                         "bold": true
                     },
                     "alt-text": {
-                        "background-color": "$base2"
+                        "background-color": "$base4"
                     },
                     "ok": {
                         "color": "$green",
@@ -63,9 +64,8 @@
                     },
                     "cursor-line": {
                         "color": "$base0",
-                        "background-color": "#fafa4a",
-                        "bold": true,
-                        "underline": true
+                        "background-color": "#eee8d5",
+                        "bold": true
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
@@ -94,6 +94,9 @@
                     "scrollbar": {
                         "color": "$base3",
                         "background-color": "$base00"
+                    },
+                    "timeline-bar": {
+                        "background-color": "$magenta"
                     },
                     "focused": {
                         "color": "$base03",
@@ -156,6 +159,9 @@
                     "footnote-text": {
                         "color": "#eee",
                         "background-color": "$base2"
+                    },
+                    "file-offset": {
+                        "color": "$base1"
                     },
                     "snippet-border": {
                         "color": "$cyan"
@@ -231,6 +237,27 @@
                     },
                     "file": {
                         "color": "$blue"
+                    },
+                    "null": {
+                        "color": "$base1"
+                    },
+                    "ascii-control": {
+                        "color": "$green"
+                    },
+                    "non-ascii": {
+                        "color": "$yellow"
+                    },
+                    "number": {
+                        "bold": true
+                    },
+                    "function": {
+                        "color": "$cyan"
+                    },
+                    "separators-references-accessors": {
+                        "color": "$red"
+                    },
+                    "type": {
+                        "color": "$violet"
                     }
                 },
                 "status-styles": {
@@ -285,6 +312,15 @@
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "$base2"
+                    },
+                    "title-hotkey": {
+                        "color": "$base03",
+                        "background-color": "$cyan",
+                        "underline": true
+                    },
+                    "hotkey": {
+                        "color": "$base03",
+                        "underline": true
                     },
                     "suggestion": {
                         "color": "$base1"
