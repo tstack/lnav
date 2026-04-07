@@ -40,7 +40,7 @@
 #include "base/humanize.time.hh"
 #include "base/relative_time.hh"
 #include "config.h"
-#include "date/tz.h"
+#include "base/lnav.tz.hh"
 #include "ptimec.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"

@@ -58,7 +58,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
-#include "date/tz.h"
+#include "base/lnav.tz.hh"
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "hasher.hh"
