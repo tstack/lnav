@@ -763,6 +763,9 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     size_t filename_width = this->fos_lss.get_filename_offset();
 
     auto file_and_line = this->fos_lss.find_line_with_file(row);
+    if (!file_and_line) {
+        return;
+    }
     auto* format = file_and_line->first->get_format_ptr();
     auto field_states = format->get_field_states();
     auto show_opid = false;

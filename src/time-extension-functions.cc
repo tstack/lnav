@@ -190,7 +190,7 @@ sql_humanize_duration(double value)
 }
 
 static std::optional<std::string>
-sql_timezone(std::string tz_str, string_fragment ts_str)
+sql_timezone(string_fragment tz_str, string_fragment ts_str)
 {
     thread_local date_time_scanner dts;
     struct timeval tv;
@@ -244,7 +244,12 @@ sql_timezone(std::string tz_str, string_fragment ts_str)
     thread_local const date::time_zone* tz;
 
     if (tz_str != last_tz) {
-        tz = date::locate_zone(tz_str);
+        auto locate_res = lnav::locate_zone(tz_str);
+        if (locate_res.isErr()) {
+            throw locate_res.unwrapErr();
+        }
+        tz = locate_res.unwrap();
+        last_tz = tz_str.to_string();
     }
 
     auto stime = std::chrono::time_point_cast<std::chrono::microseconds>(

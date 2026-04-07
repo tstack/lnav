@@ -409,10 +409,13 @@ cell_container::cursor::get_text_length() const
         return sub;
     }
 
-    size_t retval = this->c_chunk->cc_data[this->c_offset + 1]
-        | (this->c_chunk->cc_data[this->c_offset + 2] << 8)
-        | (this->c_chunk->cc_data[this->c_offset + 3] << 16)
-        | (this->c_chunk->cc_data[this->c_offset + 4] << 24);
+    size_t retval
+        = static_cast<size_t>(this->c_chunk->cc_data[this->c_offset + 1])
+        | (static_cast<size_t>(this->c_chunk->cc_data[this->c_offset + 2]) << 8)
+        | (static_cast<size_t>(this->c_chunk->cc_data[this->c_offset + 3])
+           << 16)
+        | (static_cast<size_t>(this->c_chunk->cc_data[this->c_offset + 4])
+           << 24);
 
     return retval;
 }

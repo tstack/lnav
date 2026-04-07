@@ -42,7 +42,7 @@
 #include "base/text_format_enum.hh"
 #include "cmd.parser.hh"
 #include "config.h"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
@@ -250,7 +250,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 }
 
                 const auto& [index, row]
-                    = this->find_row<level_filter_row>(top_view);
+                    = this->find_row<max_time_filter_row>(top_view);
                 lv.set_selection(index);
                 lv.reload_data();
                 this->fss_editing = true;

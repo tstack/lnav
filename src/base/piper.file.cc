@@ -39,7 +39,7 @@
 
 namespace lnav::piper {
 
-const char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
+const unsigned char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
 
 const std::filesystem::path&
 storage_path()

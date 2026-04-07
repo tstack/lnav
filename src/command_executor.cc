@@ -45,7 +45,7 @@
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"

@@ -46,7 +46,7 @@
 #include "db_sub_source.hh"
 #include "external_editor.hh"
 #include "fmt/ranges.h"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_data_table.hh"

@@ -75,7 +75,7 @@ struct header {
 const std::filesystem::path& storage_path();
 
 constexpr size_t HEADER_SIZE = 8;
-extern const char HEADER_MAGIC[4];
+extern const unsigned char HEADER_MAGIC[4];
 
 std::optional<auto_buffer> read_header(int fd, const char* first8);
 

@@ -173,8 +173,8 @@ multiplex_matcher::match(const string_fragment& line)
             lnav::snippets::regex_highlighter(
                 regex_al, -1, line_range{0, (int) regex_al.length()});
             auto in_line = line.sub_range(0, 1024).rtrim("\n").to_string();
-            auto esc_res
-                = fmt::v10::detail::find_escape(&in_line[0], &(*in_line.end()));
+            auto esc_res = fmt::v10::detail::find_escape(
+                in_line.data(), in_line.data() + in_line.size());
             if (esc_res.end != nullptr) {
                 in_line = fmt::format(FMT_STRING("{:?}"), in_line);
             }

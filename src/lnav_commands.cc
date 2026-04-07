@@ -47,6 +47,7 @@
 #include "base/injector.hh"
 #include "base/isc.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/paths.hh"
 #include "base/relative_time.hh"
 #include "base/string_util.hh"
@@ -61,7 +62,6 @@
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "hasher.hh"
-#include "itertools.similar.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
 #include "lnav_commands.hh"
@@ -126,12 +126,6 @@ constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
     "1-month"_frag,
     "1-year"_frag,
 };
-
-inline attr_line_t&
-symbol_reducer(const std::string& elem, attr_line_t& accum)
-{
-    return accum.append("\n   ").append(lnav::roles::symbol(elem));
-}
 
 std::string
 remaining_args(const std::string& cmdline,
@@ -520,54 +514,32 @@ com_set_file_timezone(exec_context& ec,
             = split_res.unwrap() | lnav::itertools::map([](const auto& elem) {
                   return elem.se_value;
               });
-        try {
-            const auto* tz = date::locate_zone(split_args[1]);
-            auto pattern = split_args.size() == 2
-                ? line_pair->first->get_filename()
-                : std::filesystem::path(split_args[2]);
+        const auto* tz = TRY(lnav::locate_zone(split_args[1]));
+        auto pattern = split_args.size() == 2
+            ? line_pair->first->get_filename()
+            : std::filesystem::path(split_args[2]);
 
-            if (!ec.ec_dry_run) {
-                static auto& safe_options_hier
-                    = injector::get<lnav::safe_file_options_hier&>();
+        if (!ec.ec_dry_run) {
+            static auto& safe_options_hier
+                = injector::get<lnav::safe_file_options_hier&>();
 
-                safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
-                    safe_options_hier);
+            safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
+                safe_options_hier);
 
-                options_hier->foh_generation += 1;
-                auto& coll = options_hier->foh_path_to_collection["/"];
+            options_hier->foh_generation += 1;
+            auto& coll = options_hier->foh_path_to_collection["/"];
 
-                log_info("setting timezone for %s to %s (%s)",
-                         pattern.c_str(),
-                         args[1].c_str(),
-                         tz->name().c_str());
-                coll.foc_pattern_to_options[pattern] = lnav::file_options{
-                    {intern_string_t{}, source_location{}, tz},
-                };
+            log_info("setting timezone for %s to %s (%s)",
+                     pattern.c_str(),
+                     args[1].c_str(),
+                     tz->name().c_str());
+            coll.foc_pattern_to_options[pattern] = lnav::file_options{
+                {intern_string_t{}, source_location{}, tz},
+            };
 
-                auto opt_path = lnav::paths::dotlnav() / "file-options.json";
-                auto coll_str = coll.to_json();
-                lnav::filesystem::write_file(opt_path, coll_str);
-            }
-        } catch (const std::runtime_error& e) {
-            attr_line_t note;
-
-            try {
-                note = (date::get_tzdb().zones
-                        | lnav::itertools::map(&date::time_zone::name)
-                        | lnav::itertools::similar_to(split_args[1])
-                        | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                           .add_header("did you mean one of the following?");
-            } catch (const std::runtime_error& e) {
-                log_error("unable to get timezones: %s", e.what());
-            }
-            auto um = lnav::console::user_message::error(
-                          attr_line_t()
-                              .append_quoted(split_args[1])
-                              .append(" is not a valid timezone"))
-                          .with_reason(e.what())
-                          .with_note(note)
-                          .move();
-            return Err(um);
+            auto opt_path = lnav::paths::dotlnav() / "file-options.json";
+            auto coll_str = coll.to_json();
+            lnav::filesystem::write_file(opt_path, coll_str);
         }
     } else {
         return ec.make_error(

@@ -45,7 +45,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "external_opener.hh"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "libbase64.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"

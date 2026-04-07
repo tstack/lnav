@@ -568,11 +568,17 @@ looper::loop()
                     auto read_res = cap.lb.read_range(header_avail);
                     if (read_res.isOk()) {
                         auto sbr = read_res.unwrap();
-                        write(outfds[DEFAULT_ID].os_fd.get(),
-                              sbr.get_data(),
-                              sbr.length());
+                        auto sbr_sf = sbr.to_string_fragment();
+                        auto write_sbr_res
+                            = outfds[DEFAULT_ID].os_fd.write_fully(sbr_sf);
+                        if (write_sbr_res.isErr()) {
+                            log_error("failed to write input data: %s -- %s",
+                                      this->l_name.c_str(),
+                                      write_sbr_res.unwrapErr().c_str());
+                            break;
+                        }
                     } else {
-                        log_error("failed to get header data: %s -- %s",
+                        log_error("failed to get input data: %s -- %s",
                                   this->l_name.c_str(),
                                   read_res.unwrapErr().c_str());
                     }
@@ -808,33 +814,31 @@ looper::loop()
 
                     os.os_woff = 0;
                     auto hdr_str = header_handlers.to_string(hdr);
-                    uint32_t meta_size = htonl(hdr_str.length());
-                    auto prc = write(
-                        os.os_fd.get(), HEADER_MAGIC, sizeof(HEADER_MAGIC));
-                    if (prc < (ssize_t) sizeof(HEADER_MAGIC)) {
+                    uint32_t hdr_size = htonl(hdr_str.length());
+                    auto magic_write_res = os.os_fd.write_fully(HEADER_MAGIC);
+                    if (magic_write_res.isErr()) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
-                                  strerror(errno));
+                                  magic_write_res.unwrapErr().c_str());
                         break;
                     }
-                    os.os_woff += prc;
-                    prc = write(os.os_fd.get(), &meta_size, sizeof(meta_size));
-                    if (prc < (ssize_t) sizeof(meta_size)) {
+                    os.os_woff += sizeof(HEADER_MAGIC);
+                    auto hdr_sz_write_res = os.os_fd.write_fully(hdr_size);
+                    if (hdr_sz_write_res.isErr()) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
-                                  strerror(errno));
+                                  hdr_sz_write_res.unwrapErr().c_str());
                         break;
                     }
-                    os.os_woff += prc;
-                    prc = write(
-                        os.os_fd.get(), hdr_str.c_str(), hdr_str.size());
-                    if (prc < (ssize_t) hdr_str.size()) {
+                    os.os_woff += sizeof(hdr_size);
+                    auto hdr_write_res = os.os_fd.write_fully(hdr_str);
+                    if (hdr_write_res.isErr()) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
-                                  strerror(errno));
+                                  hdr_write_res.unwrapErr().c_str());
                         break;
                     }
-                    os.os_woff += prc;
+                    os.os_woff += hdr_str.length();
                     log_info("  header size: %lld", os.os_woff);
 
                     auto out_path = this->l_out_dir

@@ -109,7 +109,9 @@ contains_null(void* ctx)
 {
     auto& cu = *((contains_userdata*) ctx);
 
-    cu.cu_result = true;
+    if (cu.cu_depth <= 1) {
+        cu.cu_result = true;
+    }
 
     return 1;
 }
@@ -356,7 +358,7 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
             sqlite3_result_null(context);
             return;
         case SQLITE_INTEGER:
-            sqlite3_result_int(context, jo.sjo_int);
+            sqlite3_result_int64(context, jo.sjo_int);
             return;
         case SQLITE_FLOAT:
             sqlite3_result_double(context, jo.sjo_float);

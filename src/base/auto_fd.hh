@@ -163,7 +163,27 @@ public:
      */
     void reset(int fd = -1);
 
-    Result<void, std::string> write_fully(string_fragment sf);
+    Result<void, std::string> write_fully(const unsigned char* data,
+                                          size_t len);
+
+    Result<void, std::string> write_fully(string_fragment sf)
+    {
+        return this->write_fully(sf.udata(), sf.length());
+    }
+
+    template<std::size_t N>
+    Result<void, std::string> write_fully(const unsigned char (&str)[N])
+    {
+        return this->write_fully(str, N);
+    }
+
+    template<typename T,
+             std::enable_if_t<std::is_integral_v<T>, bool> = true>
+    Result<void, std::string> write_fully(const T& value)
+    {
+        return this->write_fully(
+            reinterpret_cast<const unsigned char*>(&value), sizeof(value));
+    }
 
     void close_on_exec() const;
 

@@ -46,7 +46,7 @@
 #include "file_options.hh"
 #include "fmt/chrono.h"
 #include "fmt/format.h"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"

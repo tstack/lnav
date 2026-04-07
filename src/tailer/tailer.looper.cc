@@ -118,8 +118,7 @@ update_tailer_progress(const std::string& netloc, const std::string& msg)
 {
     lnav_data.ld_active_files.fc_progress->writeAccess()
         ->sp_tailers[netloc]
-        .tp_message
-        = msg;
+        .tp_message = msg;
 }
 
 static void
@@ -353,8 +352,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             auto cmd = fmt::format(cfg.c_transfer_cmd, tailer_bin_name);
 
             if (tailer_impl.get_name().endswith(".py")) {
-                cmd = fmt::format(FMT_STRING("command -v python3 && {}"),
-                                  cmd);
+                cmd = fmt::format(FMT_STRING("command -v python3 && {}"), cmd);
             }
             arg_strs.emplace_back(cmd);
 
@@ -398,22 +396,13 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
             auto sf = next_res.get<string_fragment>();
 
-            ssize_t total_bytes = 0;
-
-            while (total_bytes < sf.length()) {
-                log_debug("attempting to write %zd", sf.length() - total_bytes);
-                auto rc = write(
-                    in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
-
-                if (rc < 0) {
-                    log_error("  tailer(%s): write failed -- %s",
-                              netloc.c_str(),
-                              strerror(errno));
-                    write_failed = true;
-                    break;
-                }
-                log_debug("  wrote %zd", rc);
-                total_bytes += rc;
+            auto write_res = in_pipe.write_end().write_fully(sf);
+            if (write_res.isErr()) {
+                log_error("  tailer(%s): write failed -- %s",
+                          netloc.c_str(),
+                          write_res.unwrapErr().c_str());
+                write_failed = true;
+                break;
             }
         }
 
@@ -701,8 +690,8 @@ tailer::looper::host_tailer::loop_body()
                 this->ht_active_files.erase(local_path);
                 std::filesystem::remove_all(local_path);
 
-                if (conn.c_desired_paths.empty() && conn.c_child_paths.empty())
-                {
+                if (conn.c_desired_paths.empty()
+                    && conn.c_child_paths.empty()) {
                     log_info("tailer(%s): all desired paths synced",
                              this->ht_netloc.c_str());
                     return state_v{synced{}};
@@ -947,8 +936,8 @@ tailer::looper::host_tailer::loop_body()
                     }
                 }
 
-                if (conn.c_desired_paths.empty() && conn.c_child_paths.empty())
-                {
+                if (conn.c_desired_paths.empty()
+                    && conn.c_child_paths.empty()) {
                     log_info("tailer(%s): all desired paths synced",
                              this->ht_netloc.c_str());
                     return state_v{synced{}};

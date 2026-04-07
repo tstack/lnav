@@ -165,10 +165,10 @@ auto_fd::operator=(int fd)
 }
 
 Result<void, std::string>
-auto_fd::write_fully(string_fragment sf)
+auto_fd::write_fully(const unsigned char* data, size_t len)
 {
-    while (!sf.empty()) {
-        auto rc = write(this->af_fd, sf.data(), sf.length());
+    while (len > 0) {
+        auto rc = write(this->af_fd, data, len);
 
         if (rc < 0) {
             if (errno == EINTR) {
@@ -176,11 +176,12 @@ auto_fd::write_fully(string_fragment sf)
             }
             return Err(
                 fmt::format(FMT_STRING("failed to write {} bytes to FD {}"),
-                            sf.length(),
+                            len,
                             this->af_fd));
         }
 
-        sf = sf.substr(rc);
+        data += rc;
+        len -= rc;
     }
 
     return Ok();

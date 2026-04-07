@@ -541,7 +541,7 @@ db_label_source::push_column(const column_value_t& sv)
                                               FMT_STRING(
                                                   "invalid "
                                                   "background-color: {}"),
-                                              fg_res.unwrapErr()))
+                                              bg_res.unwrapErr()))
                                           .to_owned(this->dls_cell_allocator);
                                 this->dls_row_styles_have_errors = true;
                             } else {

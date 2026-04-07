@@ -43,6 +43,8 @@
 #include "config.h"
 #include "date/date.h"
 #include "date/tz.h"
+#include "lnav.console.hh"
+#include "result.h"
 
 inline std::chrono::microseconds
 to_us(const timeval& tv)
@@ -90,6 +92,9 @@ struct duration_hasher {
         return std::hash<uint64_t>()(d.count());
     }
 };
+
+Result<const date::time_zone*, lnav::console::user_message>
+locate_zone(string_fragment tz_name);
 
 }  // namespace lnav
 

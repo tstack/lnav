@@ -1001,6 +1001,9 @@ line_buffer::fill_range(file_off_t start,
                         bz_file,
                         scratch,
                         std::min((size_t) seek_to, sizeof(scratch)));
+                    if (count <= 0) {
+                        break;
+                    }
                     seek_to -= count;
                 }
                 rc = BZ2_bzread(bz_file,
@@ -1713,6 +1716,9 @@ line_buffer::enable_cache()
 
             const auto* data = this->get_range(off, avail);
             auto rc = write(write_fd, data, avail);
+            if (rc == -1 && errno == EINTR) {
+                continue;
+            }
             if (rc != avail) {
                 log_error("%d: short write!", this->lb_fd.get());
                 return;

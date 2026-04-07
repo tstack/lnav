@@ -153,14 +153,10 @@ sql_readlink(const char* path)
     auto buf = auto_buffer::alloc(st.st_size);
     auto rc = readlink(path, buf.in(), buf.capacity());
     if (rc < 0) {
-        if (errno == EINVAL) {
-            memcpy(buf.in(), path, path_len);
-        } else {
-            throw lnav::console::user_message::error(
-                attr_line_t("readlink() failed for path: ")
-                    .append(lnav::roles::file(path)))
-                .with_errno_reason();
-        }
+        throw lnav::console::user_message::error(
+            attr_line_t("readlink() failed for path: ")
+                .append(lnav::roles::file(path)))
+            .with_errno_reason();
     }
     buf.resize(rc);
 

@@ -309,7 +309,6 @@ noinst_HEADERS = \
 	hotkeys.hh \
 	init.sql \
 	input_dispatcher.hh \
-	itertools.similar.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \

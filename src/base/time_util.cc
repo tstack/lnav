@@ -37,6 +37,7 @@
 #include <date/ptz.h>
 
 #include "config.h"
+#include "itertools.similar.hh"
 #include "lnav_log.hh"
 
 namespace lnav {
@@ -87,8 +88,10 @@ strftime_rfc3339(char* buffer,
 }
 
 ssize_t
-strftime_rfc3339(
-    char* buffer, size_t buffer_size, std::chrono::microseconds micros, char sep)
+strftime_rfc3339(char* buffer,
+                 size_t buffer_size,
+                 std::chrono::microseconds micros,
+                 char sep)
 {
     struct tm gmtm;
     auto secs = std::chrono::duration_cast<std::chrono::seconds>(micros);
@@ -228,6 +231,39 @@ local_time_to_info(date::local_seconds secs)
     return TZ_POSIX_UTC.value().get_info(secs);
 }
 
+inline attr_line_t&
+symbol_reducer(const std::string& elem, attr_line_t& accum)
+{
+    return accum.append("\n   ").append(lnav::roles::symbol(elem));
+}
+
+Result<const date::time_zone*, lnav::console::user_message>
+locate_zone(string_fragment tz_name)
+{
+    try {
+        return Ok(date::locate_zone(tz_name.to_string_view()));
+    } catch (const std::runtime_error& e) {
+        attr_line_t note;
+
+        try {
+            note = (date::get_tzdb().zones
+                    | lnav::itertools::map(&date::time_zone::name)
+                    | lnav::itertools::similar_to(tz_name.to_string())
+                    | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
+                       .add_header("did you mean one of the following?");
+        } catch (const std::runtime_error& e) {
+            log_error("unable to get timezones: %s", e.what());
+        }
+        auto um = lnav::console::user_message::error(
+                      attr_line_t().append_quoted(tz_name).append(
+                          " is not a valid timezone"))
+                      .with_reason(e.what())
+                      .with_note(note)
+                      .move();
+        return Err(um);
+    }
+}
+
 }  // namespace lnav
 
 static time_t BAD_DATE = -1;
@@ -283,8 +319,7 @@ tm2sec(const struct tm* t)
     if (secs < 0) {
         return BAD_DATE;
     } /* must have overflowed */
-    else
-    {
+    else {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         if (t->tm_zone) {
             secs -= t->tm_gmtoff;

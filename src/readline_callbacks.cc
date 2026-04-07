@@ -42,7 +42,7 @@
 #include "config.h"
 #include "field_overlay_source.hh"
 #include "help_text_formatter.hh"
-#include "itertools.similar.hh"
+#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "lnav_config.hh"
