@@ -453,21 +453,21 @@ write_file(const std::filesystem::path& path,
     auto tmp_pair = TRY(open_temp_file(tmp_pattern));
     auto for_res = content.for_each(
         [&tmp_pair](string_fragment sf) -> Result<void, std::string> {
-            auto bytes_written
-                = write(tmp_pair.second.get(), sf.data(), sf.length());
-            if (bytes_written < 0) {
-                return Err(fmt::format(
-                    FMT_STRING("unable to write to temporary file {}: {}"),
-                    tmp_pair.first.string(),
-                    lnav::from_errno()));
-            }
+            while (!sf.empty()) {
+                auto bytes_written
+                    = write(tmp_pair.second.get(), sf.data(), sf.length());
+                if (bytes_written < 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
+                    return Err(fmt::format(
+                        FMT_STRING(
+                            "unable to write to temporary file {}: {}"),
+                        tmp_pair.first.string(),
+                        lnav::from_errno()));
+                }
 
-            if (bytes_written != sf.length()) {
-                return Err(
-                    fmt::format(FMT_STRING("short write to file {}: {} < {}"),
-                                tmp_pair.first.string(),
-                                bytes_written,
-                                sf.length()));
+                sf = sf.substr(bytes_written);
             }
 
             return Ok();
@@ -568,8 +568,8 @@ formatter<std::filesystem::path>::format(const std::filesystem::path& p,
                                          format_context& ctx)
     -> decltype(ctx.out()) const
 {
-    auto esc_res = fmt::v10::detail::find_escape(&(*p.native().begin()),
-                                                 &(*p.native().end()));
+    auto esc_res = fmt::v10::detail::find_escape(
+        p.native().data(), p.native().data() + p.native().size());
     if (esc_res.end == nullptr) {
         return formatter<string_view>::format(p.native(), ctx);
     }

@@ -171,6 +171,9 @@ auto_fd::write_fully(string_fragment sf)
         auto rc = write(this->af_fd, sf.data(), sf.length());
 
         if (rc < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             return Err(
                 fmt::format(FMT_STRING("failed to write {} bytes to FD {}"),
                             sf.length(),
@@ -236,6 +239,8 @@ auto_pipe::after_fork(pid_t child_pid)
                 if (new_fd != this->ap_child_fd) {
                     dup2(new_fd, this->ap_child_fd);
                     this->close();
+                } else {
+                    fcntl(new_fd, F_SETFD, 0);
                 }
             }
             break;

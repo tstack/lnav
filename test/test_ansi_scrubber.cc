@@ -77,6 +77,40 @@ main(int argc, char* argv[])
     }
 
     {
+        auto input = std::string("AB\x1b[33m\0CD", 10);
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == "AB CD");
+    }
+
+    {
+        auto input = std::string("\x1b[33m\0Hello", 11);
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == " Hello");
+    }
+
+    {
+        char input[] = "AB\x1b[33m\0CD";
+        auto sf = string_fragment{input, 0, 10};
+
+        auto new_len = erase_ansi_escapes(sf);
+        auto result = std::string(input, new_len);
+        assert(result == "AB CD");
+    }
+
+    {
+        char input[] = "\x1b[33m\0Hello";
+        auto sf = string_fragment{input, 0, 11};
+
+        auto new_len = erase_ansi_escapes(sf);
+        auto result = std::string(input, new_len);
+        assert(result == " Hello");
+    }
+
+    {
         auto input = std::string("\x1b[0;1;38:2:1:2:3mHello");
         string_attrs_t sa;
 
@@ -89,6 +123,24 @@ main(int argc, char* argv[])
         assert(rgb->rc_r == 1);
         assert(rgb->rc_g == 2);
         assert(rgb->rc_b == 3);
+    }
+
+    {
+        auto input = std::string("\x1b[0;48:2:10:20:30mHello");
+        string_attrs_t sa;
+
+        scrub_ansi_string(input, &sa);
+        assert(input == "Hello");
+        assert(sa.size() == 1);
+        assert(sa[0].sa_type == &VC_STYLE);
+        auto ta = sa[0].sa_value.get<text_attrs>();
+        auto rgb = std::get_if<rgb_color>(&ta.ta_bg_color.cu_value);
+        assert(rgb != nullptr);
+        assert(sa[0].sa_range.lr_start == 0);
+        assert(sa[0].sa_range.lr_end == -1);
+        assert(rgb->rc_r == 10);
+        assert(rgb->rc_g == 20);
+        assert(rgb->rc_b == 30);
     }
 
     {

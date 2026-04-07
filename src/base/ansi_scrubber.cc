@@ -73,7 +73,7 @@ erase_ansi_escapes(string_fragment input)
         auto sf = md[0].value();
 
         if (sf == "\x00"_frag) {
-            *input.writable_data(0) = ' ';
+            *input.writable_data(fill_index) = ' ';
             move_start = sf.sf_end;
             fill_index += 1;
             continue;
@@ -169,7 +169,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         if (sf == "\x00"_frag) {
             str[cp_dst] = ' ';
             cp_start = sf.sf_end;
-            cp_dst = sf.sf_end;
+            cp_dst += 1;
             continue;
         }
 
@@ -365,7 +365,14 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                     if ((sep1 == ';' && sep2 == ';')
                                         || (sep1 == ':' && sep2 == ':'))
                                     {
-                                        attrs.ta_fg_color = rgb_color{r, g, b};
+                                        if (ansi_code == 38) {
+                                            attrs.ta_fg_color
+                                                = rgb_color{r, g, b};
+                                        } else {
+                                            attrs.ta_bg_color
+                                                = rgb_color{r, g, b};
+                                        }
+                                        seq = color_code_pair->second;
                                     }
                                 }
                             } else if (color_type->value() == 5) {

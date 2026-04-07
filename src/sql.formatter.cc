@@ -146,7 +146,10 @@ end_close_scope(std::vector<std::string>& scope_stack)
     }
 
     scope_stack.pop_back();
-    return (scope_stack.back() == "CASE"_frag);
+    if (scope_stack.empty()) {
+        return false;
+    }
+    return scope_stack.back() == "CASE"_frag;
 }
 
 struct keyword_attrs {

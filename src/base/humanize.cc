@@ -75,6 +75,9 @@ try_from(const string_fragment& sf)
     if (md[real]) {
         auto scan_res = scn::scan_value<double>(md[real]->to_string_view());
 
+        if (!scan_res) {
+            return std::nullopt;
+        }
         return scan_res->value();
     }
 
@@ -187,7 +190,7 @@ file_size(file_ssize_t value, alignment align)
     const auto divisor = pow(1024, exp);
 
     if (align == alignment::none && divisor <= 1) {
-        return fmt::format(FMT_STRING("{}B"), value, UNITS[exp]);
+        return fmt::format(FMT_STRING("{}B"), value);
     }
     return fmt::format(FMT_STRING("{:.1f}{}B"),
                        divisor == 0 ? value : value / divisor,

@@ -64,6 +64,7 @@ compress(const void* input, size_t len)
     }
     rc = deflate(&zs, Z_FINISH);
     if (rc != Z_STREAM_END) {
+        deflateEnd(&zs);
         return Err(fmt::format(FMT_STRING("unable to compress data -- {}"),
                                zError(rc)));
     }
@@ -113,17 +114,18 @@ uncompress(const std::string& src, const void* buffer, size_t size)
         }
     }
 
-    if (inflateEnd(&strm) != Z_OK) {
-        return Err(fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
-                               src,
-                               strm.msg ? strm.msg : zError(err)));
+    err = inflateEnd(&strm);
+    if (err != Z_OK) {
+        return Err(fmt::format(
+            FMT_STRING("unable to uncompress: {} -- {}"), src, zError(err)));
     }
 
     return Ok(std::move(uncomp.resize(strm.total_out)));
 }
 
 struct gunzip_producer : string_fragment_producer {
-    explicit gunzip_producer(const string_fragment& src, size_t uncompressed_size)
+    explicit gunzip_producer(const string_fragment& src,
+                             size_t uncompressed_size)
         : gp_src(src.to_string()), gp_uncompressed_size(uncompressed_size)
     {
     }
