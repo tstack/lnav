@@ -520,6 +520,31 @@ textfile_sub_source::text_update_marks(vis_bookmarks& bm)
             }
         }
     }
+
+    if (lf->has_line_metadata()) {
+        auto& bm_errors = bm[&textview_curses::BM_ERRORS];
+        auto& bm_warnings = bm[&textview_curses::BM_WARNINGS];
+
+        bm_errors.clear();
+        bm_warnings.clear();
+
+        auto& tfs = lfo->lfo_filter_state.tfs_index;
+        for (uint32_t vl = 0; vl < tfs.size(); ++vl) {
+            auto ll = lf->begin() + tfs[vl];
+            switch (ll->get_msg_level()) {
+                case log_level_t::LEVEL_FATAL:
+                case log_level_t::LEVEL_CRITICAL:
+                case log_level_t::LEVEL_ERROR:
+                    bm_errors.insert_once(vis_line_t(vl));
+                    break;
+                case log_level_t::LEVEL_WARNING:
+                    bm_warnings.insert_once(vis_line_t(vl));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 void

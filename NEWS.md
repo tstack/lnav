@@ -327,6 +327,8 @@ Bug Fixes:
   passed on the command-line.
 * Marks in the TEXT view are now stable after filtering
   is applied.
+* Error bookmarks are now added for stderr content when
+  executing a command in the shell using `-e` or `:sh`.
 
 Internal:
 * Added operation IDs (OpIDs) to lnav's internal logging

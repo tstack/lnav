@@ -218,6 +218,11 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n ${test_dir}/textfile_ctrl.0
 
+# Test that error/warning bookmarks are set for piper text files
+run_cap_test ${lnav_test} -n \
+    -e "bash ${test_dir}/textfile_stderr_levels.sh" \
+    -c ':goto 0' \
+    -c ':next-mark error'
 
 #####
 
