@@ -654,14 +654,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     }
 
     if (this->lss_token_line->get_msg_level() == log_level_t::LEVEL_INVALID) {
-        for (auto& token_attr : this->lss_token_al.al_attrs) {
-            if (token_attr.sa_type != &SA_INVALID) {
-                continue;
-            }
-
-            this->lss_token_al.al_attrs.emplace_back(
-                token_attr.sa_range, VC_ROLE.value(role_t::VCR_INVALID_MSG));
-        }
+        this->lss_token_al.al_attrs.emplace_back(
+            line_range{0, -1}, VC_ROLE.value(role_t::VCR_INVALID_MSG));
     }
 
     for (const auto& line_value : line_values.lvv_values) {
