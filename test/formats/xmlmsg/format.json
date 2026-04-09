@@ -24,7 +24,9 @@
                 "highlights": {
                     "m": {
                         "pattern": "^m$",
-                        "color": "#f0f"
+                        "base-style": {
+                            "color": "#f0f"
+                        }
                     }
                 }
             },

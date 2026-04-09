@@ -39,6 +39,7 @@
 
 #include "log_format.hh"
 #include "log_search_table_fwd.hh"
+#include "styling.hh"
 #include "yajlpp/yajlpp.hh"
 
 class external_log_format : public log_format {
@@ -46,11 +47,8 @@ public:
     struct highlighter_def {
         factory_container<lnav::pcre2pp::code> hd_pattern;
         positioned_property<intern_string_t> hd_field;
-        positioned_property<std::string> hd_color;
-        positioned_property<std::string> hd_background_color;
-        bool hd_underline{false};
-        bool hd_blink{false};
-        bool hd_nestable{true};
+        style_config hd_base_style;
+        std::map<intern_string_t, style_config> hd_capture_styles;
     };
 
     struct value_def {

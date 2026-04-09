@@ -4613,69 +4613,46 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
         for (auto& hd_pair : vd->vd_highlighter_patterns) {
             auto& hd = hd_pair.second;
-            text_attrs attrs;
+            auto attrs = vc.to_attrs(hd.hd_base_style, errors);
 
             if (hd.hd_pattern.pp_value == nullptr) {
                 hd.hd_pattern.pp_value
                     = lnav::pcre2pp::code::from_const(".*").to_shared();
             }
-
-            if (!hd.hd_color.pp_value.empty()) {
-                attrs.ta_fg_color = vc.match_color(
-                    styling::color_unit::from_str(hd.hd_color.pp_value)
-                        .unwrapOrElse([&](const auto& msg) {
-                            errors.emplace_back(
-                                lnav::console::user_message::error(
-                                    attr_line_t()
-                                        .append_quoted(hd.hd_color.pp_value)
-                                        .append(
-                                            " is not a valid color value for "
-                                            "property ")
-                                        .append_quoted(lnav::roles::symbol(
-                                            hd.hd_color.pp_path.to_string())))
-                                    .with_reason(msg)
-                                    .with_snippet(hd.hd_color.to_snippet()));
-                            return styling::color_unit::EMPTY;
-                        }));
-            }
-
-            if (!hd.hd_background_color.pp_value.empty()) {
-                attrs.ta_bg_color = vc.match_color(
-                    styling::color_unit::from_str(
-                        hd.hd_background_color.pp_value)
-                        .unwrapOrElse([&](const auto& msg) {
-                            errors.emplace_back(
-                                lnav::console::user_message::error(
-                                    attr_line_t()
-                                        .append_quoted(
-                                            hd.hd_background_color.pp_value)
-                                        .append(
-                                            " is not a valid color value for "
-                                            "property ")
-                                        .append_quoted(lnav::roles::symbol(
-                                            hd.hd_background_color.pp_path
-                                                .to_string())))
-                                    .with_reason(msg)
-                                    .with_snippet(
-                                        hd.hd_background_color.to_snippet()));
-                            return styling::color_unit::EMPTY;
-                        }));
-            }
-
-            if (hd.hd_underline) {
-                attrs |= text_attrs::style::underline;
-            }
-            if (hd.hd_blink) {
-                attrs |= text_attrs::style::blink;
-            }
-
             if (hd.hd_pattern.pp_value != nullptr) {
                 this->lf_highlighters.emplace_back(hd.hd_pattern.pp_value);
-                this->lf_highlighters.back()
-                    .with_field(vd->vd_meta.lvm_name)
+                auto& hl = this->lf_highlighters.back();
+
+                hl.with_field(vd->vd_meta.lvm_name)
                     .with_name(hd_pair.first.to_string())
                     .with_attrs(attrs)
-                    .with_nestable(hd.hd_nestable);
+                    .with_nestable(hd.hd_base_style.sc_nestable);
+                for (const auto& [cap_key, cap_style] : hd.hd_capture_styles) {
+                    auto cap_index = hl.h_regex->name_index(cap_key.c_str());
+                    if (cap_index < 0) {
+                        auto um
+                            = lnav::console::user_message::error(
+                                  attr_line_t(
+                                      "invalid highlight capture named ")
+                                      .append_quoted(cap_key)
+                                      .append(" in highlight ")
+                                      .append_quoted(fmt::format(
+                                          FMT_STRING("/{}/value/{}/highlights/"
+                                                     "{}/captures"),
+                                          this->elf_name,
+                                          vd->vd_meta.lvm_name,
+                                          hd_pair.first)))
+                                  .with_reason(
+                                      attr_line_t("pattern does not have a "
+                                                  "capture named ")
+                                          .append_quoted(cap_key));
+                        errors.emplace_back(um);
+                        continue;
+                    }
+
+                    hl.h_capture_attrs[cap_index - 1]
+                        = vc.to_attrs(cap_style, errors);
+                }
             }
         }
     }
@@ -4972,60 +4949,13 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
     for (auto& hd_pair : this->elf_highlighter_patterns) {
         auto& hd = hd_pair.second;
-        text_attrs attrs;
-
-        if (!hd.hd_color.pp_value.empty()) {
-            attrs.ta_fg_color = vc.match_color(
-                styling::color_unit::from_str(hd.hd_color.pp_value)
-                    .unwrapOrElse([&](const auto& msg) {
-                        errors.emplace_back(
-                            lnav::console::user_message::error(
-                                attr_line_t()
-                                    .append_quoted(hd.hd_color.pp_value)
-                                    .append(" is not a valid color value for "
-                                            "property ")
-                                    .append_quoted(lnav::roles::symbol(
-                                        hd.hd_color.pp_path.to_string())))
-                                .with_reason(msg)
-                                .with_snippet(hd.hd_color.to_snippet()));
-                        return styling::color_unit::EMPTY;
-                    }));
-        }
-
-        if (!hd.hd_background_color.pp_value.empty()) {
-            attrs.ta_bg_color = vc.match_color(
-                styling::color_unit::from_str(hd.hd_background_color.pp_value)
-                    .unwrapOrElse([&](const auto& msg) {
-                        errors.emplace_back(
-                            lnav::console::user_message::error(
-                                attr_line_t()
-                                    .append_quoted(
-                                        hd.hd_background_color.pp_value)
-                                    .append(" is not a valid color value for "
-                                            "property ")
-                                    .append_quoted(lnav::roles::symbol(
-                                        hd.hd_background_color.pp_path
-                                            .to_string())))
-                                .with_reason(msg)
-                                .with_snippet(
-                                    hd.hd_background_color.to_snippet()));
-                        return styling::color_unit::EMPTY;
-                    }));
-        }
-
-        if (hd.hd_underline) {
-            attrs |= text_attrs::style::underline;
-        }
-        if (hd.hd_blink) {
-            attrs |= text_attrs::style::blink;
-        }
-
+        auto attrs = vc.to_attrs(hd.hd_base_style, errors);
         if (hd.hd_pattern.pp_value != nullptr) {
             this->lf_highlighters.emplace_back(hd.hd_pattern.pp_value);
             this->lf_highlighters.back()
                 .with_name(hd_pair.first.to_string())
                 .with_attrs(attrs)
-                .with_nestable(hd.hd_nestable);
+                .with_nestable(hd.hd_base_style.sc_nestable);
         }
     }
 }

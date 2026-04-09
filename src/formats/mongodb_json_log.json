@@ -175,7 +175,9 @@
                 "description": "The collection for a delete command",
                 "highlights": {
                     "delete": {
-                        "color": "red"
+                        "base-style": {
+                            "color": "red"
+                        }
                     }
                 }
             },
@@ -188,7 +190,9 @@
                 "description": "The collection for an insert command",
                 "highlights": {
                     "insert": {
-                        "color": "yellow"
+                        "base-style": {
+                            "color": "yellow"
+                        }
                     }
                 }
             },
@@ -197,7 +201,9 @@
                 "description": "The collection for an update command",
                 "highlights": {
                     "update": {
-                        "color": "yellow"
+                        "base-style": {
+                            "color": "yellow"
+                        }
                     }
                 }
             },

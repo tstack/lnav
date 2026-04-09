@@ -265,8 +265,8 @@ textview_curses::reload_config(error_reporter& reporter)
             bool invalid = false;
             text_attrs attrs;
 
-            auto fg1 = sc.sc_color;
-            auto bg1 = sc.sc_background_color;
+            auto fg1 = sc.sc_color.pp_value;
+            auto bg1 = sc.sc_background_color.pp_value;
             shlex(fg1).eval(fg_color, scoped_resolver{vars});
             shlex(bg1).eval(bg_color, scoped_resolver{vars});
 
@@ -276,7 +276,7 @@ textview_curses::reload_config(error_reporter& reporter)
                         reporter(&sc.sc_color,
                                  lnav::console::user_message::error(
                                      attr_line_t("invalid color -- ")
-                                         .append_quoted(sc.sc_color))
+                                         .append_quoted(sc.sc_color.pp_value))
                                      .with_reason(msg));
                         invalid = true;
                         return styling::color_unit::EMPTY;
@@ -287,7 +287,7 @@ textview_curses::reload_config(error_reporter& reporter)
                         reporter(&sc.sc_background_color,
                                  lnav::console::user_message::error(
                                      attr_line_t("invalid background color -- ")
-                                         .append_quoted(sc.sc_background_color))
+                                         .append_quoted(sc.sc_background_color.pp_value))
                                      .with_reason(msg));
                         invalid = true;
                         return styling::color_unit::EMPTY;

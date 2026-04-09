@@ -1,6 +1,23 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "syslog_log": {
+        "value": {
+            "body": {
+                "highlights": {
+                    "req": {
+                        "pattern": "DHCPREQUEST on (?<device>[^ ]+) to (?<ip>[^ ]+) port (?<port>[^ ]+)",
+                        "base-style": {
+                            "background-color": "green"
+                        },
+                        "captures": {
+                            "device": {
+                                "color": "blue"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "partitions": {
             "dhclient-binding": {
                 "description": "Set partition name to current IP",

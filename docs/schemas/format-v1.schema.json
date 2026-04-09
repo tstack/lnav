@@ -493,30 +493,23 @@
                                                     "description": "A regular expression to highlight in logs of this format.",
                                                     "type": "string"
                                                 },
-                                                "color": {
-                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/color",
-                                                    "description": "The color to use when highlighting this pattern.",
-                                                    "type": "string"
+                                                "base-style": {
+                                                    "description": "The style to use for the entire pattern",
+                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/base-style",
+                                                    "$ref": "#/definitions/style"
                                                 },
-                                                "background-color": {
-                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/background-color",
-                                                    "description": "The background color to use when highlighting this pattern.",
-                                                    "type": "string"
-                                                },
-                                                "underline": {
-                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/underline",
-                                                    "description": "Highlight this pattern with an underline.",
-                                                    "type": "boolean"
-                                                },
-                                                "blink": {
-                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/blink",
-                                                    "description": "Highlight this pattern by blinking.",
-                                                    "type": "boolean"
-                                                },
-                                                "nestable": {
-                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/nestable",
-                                                    "description": "This highlight can be nested in another highlight.",
-                                                    "type": "boolean"
+                                                "captures": {
+                                                    "description": "The style to use for the entire pattern",
+                                                    "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/captures",
+                                                    "type": "object",
+                                                    "patternProperties": {
+                                                        "^(.+)$": {
+                                                            "description": "The definition of a capture highlight",
+                                                            "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/captures/<hl_cap_name>",
+                                                            "$ref": "#/definitions/style"
+                                                        }
+                                                    },
+                                                    "additionalProperties": false
                                                 }
                                             },
                                             "additionalProperties": false
@@ -939,5 +932,69 @@
             "additionalProperties": false
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "definitions": {
+        "style": {
+            "title": "style",
+            "type": "object",
+            "$$target": "#/definitions/style",
+            "properties": {
+                "text-align": {
+                    "title": "/text-align",
+                    "description": "How to align text within a cell",
+                    "type": "string",
+                    "enum": [
+                        "start",
+                        "center",
+                        "end"
+                    ]
+                },
+                "color": {
+                    "title": "/color",
+                    "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
+                    "type": "string",
+                    "examples": [
+                        "#fff",
+                        "Green",
+                        "$black"
+                    ]
+                },
+                "background-color": {
+                    "title": "/background-color",
+                    "description": "The background color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
+                    "type": "string",
+                    "examples": [
+                        "#2d2a2e",
+                        "Green"
+                    ]
+                },
+                "underline": {
+                    "title": "/underline",
+                    "description": "Indicates that the text should be underlined.",
+                    "type": "boolean"
+                },
+                "bold": {
+                    "title": "/bold",
+                    "description": "Indicates that the text should be bolded.",
+                    "type": "boolean"
+                },
+                "italic": {
+                    "title": "/italic",
+                    "description": "Indicates that the text should be italicized.",
+                    "type": "boolean"
+                },
+                "strike": {
+                    "title": "/strike",
+                    "description": "Indicates that the text should be struck.",
+                    "type": "boolean"
+                },
+                "nestable": {
+                    "title": "/nestable",
+                    "description": "This highlight can be nested in another highlight.",
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
 }

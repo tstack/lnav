@@ -609,40 +609,73 @@ static const struct json_path_container unit_handlers = {
         .with_children(scale_handlers),
 };
 
-static const struct json_path_container highlighter_def_handlers = {
+static const json_path_container capture_highlight_handlers = {
+    yajlpp::pattern_property_handler(R"((?<hl_cap_name>[^/]+))")
+        .with_description("The definition of a capture highlight")
+        .with_obj_provider<style_config,
+                           std::map<intern_string_t, style_config>>(
+            [](const yajlpp_provider_context& ypc,
+               std::map<intern_string_t, style_config>* root) {
+                auto* retval = &(*root)[ypc.get_substr_i(0)];
+
+                return retval;
+            })
+        .with_children(style_config_handlers),
+};
+
+static const json_path_container highlighter_def_handlers = {
     yajlpp::property_handler("pattern")
         .with_synopsis("<regex>")
         .with_description(
             "A regular expression to highlight in logs of this format.")
         .for_field(&external_log_format::highlighter_def::hd_pattern),
 
+    yajlpp::property_handler("base-style")
+        .with_description("The style to use for the entire pattern")
+        .for_child(&external_log_format::highlighter_def::hd_base_style)
+        .with_children(style_config_handlers),
+
+    yajlpp::property_handler("captures")
+        .with_description("The style to use for the entire pattern")
+        .for_child(&external_log_format::highlighter_def::hd_capture_styles)
+        .with_children(capture_highlight_handlers),
+};
+
+static const json_path_container legacy_highlight_handlers = {
+    yajlpp::property_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description(
+            "A regular expression to highlight in logs of this format.")
+        .for_field(&external_log_format::highlighter_def::hd_pattern),
     yajlpp::property_handler("color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The color to use when highlighting this pattern.")
-        .for_field(&external_log_format::highlighter_def::hd_color),
-
+        .for_field(&external_log_format::highlighter_def::hd_base_style,
+                   &style_config::sc_color),
     yajlpp::property_handler("background-color")
         .with_synopsis("#<hex>|<name>")
         .with_description(
             "The background color to use when highlighting this pattern.")
-        .for_field(&external_log_format::highlighter_def::hd_background_color),
-
+        .for_field(&external_log_format::highlighter_def::hd_base_style,
+                   &style_config::sc_background_color),
     yajlpp::property_handler("underline")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern with an underline.")
-        .for_field(&external_log_format::highlighter_def::hd_underline),
-
+        .for_field(&external_log_format::highlighter_def::hd_base_style,
+                   &style_config::sc_underline),
     yajlpp::property_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
-        .for_field(&external_log_format::highlighter_def::hd_blink),
+        .for_field(&external_log_format::highlighter_def::hd_base_style,
+                   &style_config::sc_blink),
     yajlpp::property_handler("nestable")
         .with_synopsis("<enabled>")
         .with_description("This highlight can be nested in another highlight.")
-        .for_field(&external_log_format::highlighter_def::hd_nestable),
+        .for_field(&external_log_format::highlighter_def::hd_base_style,
+                   &style_config::sc_nestable),
 };
 
-static const struct json_path_container highlight_handlers = {
+static const json_path_container legacy_highlight_def_handlers = {
     yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
         .with_description("The definition of a highlight")
         .with_obj_provider<external_log_format::highlighter_def,
@@ -653,10 +686,10 @@ static const struct json_path_container highlight_handlers = {
 
                 return retval;
             })
-        .with_children(highlighter_def_handlers),
+        .with_children(legacy_highlight_handlers),
 };
 
-static const struct json_path_container value_highlight_handlers = {
+static const json_path_container value_highlight_handlers = {
     yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
         .with_description("The definition of a highlight")
         .with_obj_provider<external_log_format::highlighter_def,
@@ -1138,7 +1171,7 @@ const struct json_path_container format_handlers = {
 
     yajlpp::property_handler("highlights")
         .with_description("The set of highlight definitions")
-        .with_children(highlight_handlers),
+        .with_children(legacy_highlight_def_handlers),
 
     yajlpp::property_handler("file-type")
         .with_synopsis("text|json|csv")

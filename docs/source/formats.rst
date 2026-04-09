@@ -433,17 +433,26 @@ object with the following fields:
     following fields:
 
     :pattern: The regular expression to match within the field value.
-    :color: The foreground color for the highlight.  Colors can be specified
-      using hexadecimal notation (e.g. :code:`#aabbcc`) or using a color
-      name.
-    :background-color: The background color for the highlight.
-    :underline: If true, underline the matched text.
-    :blink: If true, blink the matched text.
-    :nestable: If true, this highlight can be applied to text contained
-      within another highlight.  Defaults to :code:`true`.
+    :base-style: The style to apply to the entire matched text.  This is an
+      object with the following fields:
+
+      :color: The foreground color.  Colors can be specified using hexadecimal
+        notation (e.g. :code:`#aabbcc`) or using a color name.
+      :background-color: The background color.
+      :underline: If true, underline the text.
+      :bold: If true, bold the text.
+      :italic: If true, italicize the text.
+      :strike: If true, strike through the text.
+      :nestable: If true, this highlight can be applied to text contained
+        within another highlight.  Defaults to :code:`true`.
+
+    :captures: This object maps named capture groups in the pattern to
+      individual styles.  Each key should be the name of a capture group
+      and the value is a style object (with the same fields as
+      :code:`base-style`).
 
     For example, the following highlights Java package names within a
-    :code:`tag` field:
+    :code:`tag` field, with the final component in a different color:
 
     .. code-block:: json
 
@@ -452,8 +461,16 @@ object with the following fields:
             "identifier": true,
             "highlights": {
                 "package": {
-                    "pattern": "((([a-z]+\\\\.){2,})[a-z]+)(?=[ '\\\"])",
-                    "color": "#97d1F6"
+                    "pattern": "(?<pkg>([a-z]+\\\\.){2,})(?<cls>[a-z]+)(?=[ '\\\"])",
+                    "base-style": {
+                        "color": "#97d1F6"
+                    },
+                    "captures": {
+                        "cls": {
+                            "color": "#c0d1F6",
+                            "bold": true
+                        }
+                    }
                 }
             }
         }

@@ -1417,6 +1417,11 @@
                     "title": "/strike",
                     "description": "Indicates that the text should be struck.",
                     "type": "boolean"
+                },
+                "nestable": {
+                    "title": "/nestable",
+                    "description": "This highlight can be nested in another highlight.",
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false

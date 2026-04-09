@@ -135,7 +135,8 @@ struct utf_to_display_adjustment {
     }
 };
 
-string_fragment to_string_fragment(mouse_button_t mb)
+string_fragment
+to_string_fragment(mouse_button_t mb)
 {
     switch (mb) {
         case mouse_button_t::BUTTON_LEFT:
@@ -909,6 +910,51 @@ view_colors::match_color(styling::color_unit cu) const
     return cu;
 }
 
+text_attrs
+view_colors::to_attrs(const style_config& sc,
+                      std::vector<lnav::console::user_message>& errors)
+{
+    text_attrs attrs;
+
+    if (!sc.sc_color.pp_value.empty()) {
+        attrs.ta_fg_color = this->match_color(
+            styling::color_unit::from_str(sc.sc_color.pp_value)
+                .unwrapOrElse([&](const auto& msg) {
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t()
+                                .append_quoted(sc.sc_color.pp_value)
+                                .append(
+                                    " is not a valid color value for property ")
+                                .append_quoted(sc.sc_color.pp_path))
+                            .with_reason(msg)
+                            .with_snippet(sc.sc_color.to_snippet()));
+                    return styling::color_unit::EMPTY;
+                }));
+    }
+
+    if (!sc.sc_background_color.pp_value.empty()) {
+        attrs.ta_bg_color = this->match_color(
+            styling::color_unit::from_str(sc.sc_background_color.pp_value)
+                .unwrapOrElse([&](const auto& msg) {
+                    errors.emplace_back(
+                        lnav::console::user_message::error(
+                            attr_line_t()
+                                .append_quoted(sc.sc_background_color.pp_value)
+                                .append(
+                                    " is not a valid color value for property ")
+                                .append_quoted(sc.sc_background_color.pp_path))
+                            .with_reason(msg)
+                            .with_snippet(sc.sc_background_color.to_snippet()));
+                    return styling::color_unit::EMPTY;
+                }));
+    }
+
+    attrs |= sc;
+
+    return attrs;
+}
+
 view_colors::role_attrs
 view_colors::to_attrs(const lnav_theme& lt,
                       const positioned_property<style_config>& pp_sc,
@@ -934,18 +980,18 @@ view_colors::to_attrs(const lnav_theme& lt,
             fmt::format(FMT_STRING("-lnav_{}_{}"), outer.second, inner.second));
     }
 
-    auto fg1 = sc.sc_color;
-    auto bg1 = sc.sc_background_color;
+    auto fg1 = sc.sc_color.pp_value;
+    auto bg1 = sc.sc_background_color.pp_value;
     shlex(fg1).eval(fg_color, scoped_resolver{&lt.lt_vars});
     shlex(bg1).eval(bg_color, scoped_resolver{&lt.lt_vars});
 
     auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
         [&](const auto& msg) {
-            reporter(
-                &sc.sc_color,
-                lnav::console::user_message::error(
-                    attr_line_t("invalid color -- ").append_quoted(sc.sc_color))
-                    .with_reason(msg));
+            reporter(&sc.sc_color,
+                     lnav::console::user_message::error(
+                         attr_line_t("invalid color -- ")
+                             .append_quoted(sc.sc_color.pp_value))
+                         .with_reason(msg));
             return styling::color_unit::EMPTY;
         });
     auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
@@ -953,7 +999,7 @@ view_colors::to_attrs(const lnav_theme& lt,
             reporter(&sc.sc_background_color,
                      lnav::console::user_message::error(
                          attr_line_t("invalid background color -- ")
-                             .append_quoted(sc.sc_background_color))
+                             .append_quoted(sc.sc_background_color.pp_value))
                          .with_reason(msg));
             return styling::color_unit::EMPTY;
         });
@@ -1213,7 +1259,9 @@ view_colors::init_roles(const lnav_theme& lt,
                         = contrasting[lpc % contrasting.size()].second;
                 }
             }
-            if (lt.lt_style_cursor_line.pp_value.sc_background_color.empty()) {
+            if (lt.lt_style_cursor_line.pp_value.sc_background_color.pp_value
+                    .empty())
+            {
                 auto adjusted_cursor = bg_as_lab;
                 if (adjusted_cursor.lc_l < 50) {
                     adjusted_cursor.lc_l += 18;
@@ -1225,7 +1273,8 @@ view_colors::init_roles(const lnav_theme& lt,
                 this->get_role_attrs(role_t::VCR_CURSOR_LINE)
                     .ra_normal.ta_bg_color = new_cursor_bg;
             }
-            if (lt.lt_style_popup.pp_value.sc_background_color.empty()) {
+            if (lt.lt_style_popup.pp_value.sc_background_color.pp_value.empty())
+            {
                 auto adjusted_cursor = bg_as_lab;
                 if (adjusted_cursor.lc_l < 50) {
                     adjusted_cursor.lc_l += 30;
@@ -1237,7 +1286,9 @@ view_colors::init_roles(const lnav_theme& lt,
                 this->get_role_attrs(role_t::VCR_POPUP).ra_normal.ta_bg_color
                     = new_cursor_bg;
             }
-            if (lt.lt_style_inline_code.pp_value.sc_background_color.empty()) {
+            if (lt.lt_style_inline_code.pp_value.sc_background_color.pp_value
+                    .empty())
+            {
                 auto adjusted_cursor = bg_as_lab;
                 if (adjusted_cursor.lc_l < 50) {
                     adjusted_cursor.lc_l = 10;
@@ -1249,7 +1300,9 @@ view_colors::init_roles(const lnav_theme& lt,
                 this->get_role_attrs(role_t::VCR_INLINE_CODE)
                     .ra_normal.ta_bg_color = new_cursor_bg;
             }
-            if (lt.lt_style_quoted_code.pp_value.sc_background_color.empty()) {
+            if (lt.lt_style_quoted_code.pp_value.sc_background_color.pp_value
+                    .empty())
+            {
                 auto adjusted_cursor = bg_as_lab;
                 if (adjusted_cursor.lc_l < 50) {
                     adjusted_cursor.lc_l = 10;
@@ -1411,8 +1464,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status.pp_value.sc_background_color;
         stitch_sc.pp_value.sc_background_color
             = lt.lt_style_status_alert_title.pp_value.sc_background_color;
-        this->get_role_attrs(
-            role_t::VCR_STATUS_STITCH_ALERT_TITLE_TO_NORMAL)
+        this->get_role_attrs(role_t::VCR_STATUS_STITCH_ALERT_TITLE_TO_NORMAL)
             = this->to_attrs(lt, stitch_sc, reporter);
     }
     {
@@ -1422,8 +1474,7 @@ view_colors::init_roles(const lnav_theme& lt,
             = lt.lt_style_status_alert_title.pp_value.sc_background_color;
         stitch_sc.pp_value.sc_background_color
             = lt.lt_style_status.pp_value.sc_background_color;
-        this->get_role_attrs(
-            role_t::VCR_STATUS_STITCH_NORMAL_TO_ALERT_TITLE)
+        this->get_role_attrs(role_t::VCR_STATUS_STITCH_NORMAL_TO_ALERT_TITLE)
             = this->to_attrs(lt, stitch_sc, reporter);
     }
 
@@ -1725,7 +1776,6 @@ terminfo_load_from_internal(const char* term_name)
     return nullptr;
 }
 }
-
 
 guard_termios::~guard_termios()
 {

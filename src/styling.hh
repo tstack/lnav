@@ -63,20 +63,44 @@ struct term_color_palette {
 
 struct style_config {
     std::optional<text_align_t> sc_text_align;
-    std::string sc_color;
-    std::string sc_background_color;
+    positioned_property<std::string> sc_color;
+    positioned_property<std::string> sc_background_color;
     bool sc_underline{false};
     bool sc_bold{false};
+    bool sc_blink{false};
     bool sc_italic{false};
     bool sc_strike{false};
+    bool sc_nestable{true};
 
     bool empty() const
     {
-        return this->sc_color.empty() && this->sc_background_color.empty()
-            && !this->sc_underline && !this->sc_bold && !this->sc_italic
-            && !this->sc_strike;
+        return this->sc_color.pp_value.empty() && this->sc_background_color.pp_value.empty()
+            && !this->sc_underline && !this->sc_bold && !this->sc_blink
+            && !this->sc_italic && !this->sc_strike && this->sc_nestable;
     }
 };
+
+inline text_attrs&
+operator|=(text_attrs& lhs, const style_config& rhs)
+{
+    if (rhs.sc_underline) {
+        lhs |= text_attrs::style::underline;
+    }
+    if (rhs.sc_blink) {
+        lhs |= text_attrs::style::blink;
+    }
+    if (rhs.sc_bold) {
+        lhs |= text_attrs::style::bold;
+    }
+    if (rhs.sc_italic) {
+        lhs |= text_attrs::style::italic;
+    }
+    if (rhs.sc_strike) {
+        lhs |= text_attrs::style::struck;
+    }
+
+    return lhs;
+}
 
 struct highlighter_config {
     factory_container<lnav::pcre2pp::code> hc_regex;

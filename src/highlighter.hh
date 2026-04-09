@@ -47,10 +47,7 @@
 struct highlighter {
     highlighter() = default;
 
-    explicit highlighter(const std::shared_ptr<lnav::pcre2pp::code>& regex)
-        : h_regex(regex)
-    {
-    }
+    explicit highlighter(const std::shared_ptr<lnav::pcre2pp::code>& regex);
 
     virtual ~highlighter() = default;
 
@@ -116,6 +113,7 @@ struct highlighter {
     role_t h_role{role_t::VCR_NONE};
     std::shared_ptr<lnav::pcre2pp::code> h_regex;
     text_attrs h_attrs;
+    std::vector<text_attrs> h_capture_attrs;
     lnav::set::small<text_format_t> h_text_formats;
     bool h_nestable{true};
     bool h_preview{false};

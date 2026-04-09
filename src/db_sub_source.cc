@@ -511,7 +511,7 @@ db_label_source::push_column(const column_value_t& sv)
                             text_attrs ta;
 
                             auto fg_res = styling::color_unit::from_str(
-                                col_style.sc_color);
+                                col_style.sc_color.pp_value);
                             if (fg_res.isErr()) {
                                 log_error("DB row %zu color is invalid: %s",
                                           row_index,
@@ -528,7 +528,7 @@ db_label_source::push_column(const column_value_t& sv)
                                     = vc.match_color(fg_res.unwrap());
                             }
                             auto bg_res = styling::color_unit::from_str(
-                                col_style.sc_background_color);
+                                col_style.sc_background_color.pp_value);
                             if (bg_res.isErr()) {
                                 log_error(
                                     "DB row %zu background-color is invalid: "

@@ -33,6 +33,12 @@
 #include "pcrepp/pcre2pp.hh"
 #include "view_curses.hh"
 
+highlighter::highlighter(const std::shared_ptr<lnav::pcre2pp::code>& regex)
+    : h_regex(regex)
+{
+    this->h_capture_attrs.resize(regex->get_capture_count());
+}
+
 void
 highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
 {
@@ -90,8 +96,19 @@ highlighter::annotate(attr_line_t& al, const line_range& lr) const
     this->h_regex->capture_from(sf).for_each<PCRE2_NO_UTF_CHECK>(
         [&](lnav::pcre2pp::match_data& md) {
             retval = true;
-            if (md.get_count() == 1) {
+            if (!this->h_field.empty() || md.get_count() == 1) {
                 this->annotate_capture(al, to_line_range(md[0].value()));
+                if (!this->h_field.empty()) {
+                    for (size_t lpc = 1; lpc < md.get_count(); lpc++) {
+                        if (!md[lpc]
+                            || this->h_capture_attrs[lpc - 1].empty()) {
+                            continue;
+                        }
+                        auto lr = to_line_range(md[lpc].value());
+                        al.al_attrs.emplace_back(
+                            lr, VC_STYLE.value(this->h_capture_attrs[lpc - 1]));
+                    }
+                }
             } else {
                 for (size_t lpc = 1; lpc < md.get_count(); lpc++) {
                     if (!md[lpc]) {

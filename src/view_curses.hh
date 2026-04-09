@@ -254,6 +254,9 @@ public:
 
     std::optional<lab_color> to_lab_color(const styling::color_unit& color);
 
+    text_attrs to_attrs(const style_config& sc,
+                        std::vector<lnav::console::user_message>& errors);
+
     static bool initialized;
     static term_color_palette* vc_active_palette;
 
@@ -377,10 +380,7 @@ public:
 
     virtual std::optional<view_curses*> contains(int x, int y);
 
-    virtual void deinit()
-    {
-        this->set_window(nullptr);
-    }
+    virtual void deinit() { this->set_window(nullptr); }
 
     void set_needs_update()
     {

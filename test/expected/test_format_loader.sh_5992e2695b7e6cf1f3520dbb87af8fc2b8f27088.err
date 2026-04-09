@@ -228,10 +228,10 @@
  [1m[31mreason[0m: timestamp was not captured
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:14
 [36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
-[1m[31m✘[0m [1m[31merror[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
+[1m[31m✘[0m [1m[31merror[0m: “not a color” is not a valid color value for property “/invalid_props_log/highlights/hl1/color”
  [1m[31mreason[0m: Unknown color: 'not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:27
-[1m[31m✘[0m [1m[31merror[0m: “also not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/background-color[0m”
+[1m[31m✘[0m [1m[31merror[0m: “also not a color” is not a valid color value for property “/invalid_props_log/highlights/hl1/background-color”
  [1m[31mreason[0m: Unknown color: 'also not a color'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:28
 [1m[31m✘[0m [1m[31merror[0m: “[1mno_regexes_log[0m” is not a valid log format

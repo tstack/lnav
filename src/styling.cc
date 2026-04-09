@@ -102,6 +102,9 @@ const json_path_container style_config_handlers =
         yajlpp::property_handler("strike")
             .with_description("Indicates that the text should be struck.")
             .for_field(&style_config::sc_strike),
+        yajlpp::property_handler("nestable")
+            .with_description("This highlight can be nested in another highlight.")
+            .for_field(&style_config::sc_nestable),
     }
 .with_definition_id("style");
 
