@@ -463,6 +463,7 @@ dist_noinst_DATA = \
 	textfile_patch.0 \
 	textfile_plain.0 \
 	textfile_quoted_json.0 \
+	textfile_stderr_levels.sh \
 	toplevel.lnav \
 	UTF-8-test.txt \
 	view_colors_output.0 \
