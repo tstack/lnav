@@ -53,6 +53,7 @@ noinst_HEADERS = \
     isc.hh \
     itertools.hh \
     itertools.enumerate.hh \
+    itertools.similar.hh \
     keycodes.hh \
     line_range.hh \
     lnav_log.hh \
