@@ -716,6 +716,7 @@ struct logline_value_vector {
     std::optional<string_fragment> lvv_thread_id_value;
     std::optional<string_fragment> lvv_src_file_value;
     std::optional<string_fragment> lvv_src_line_value;
+    std::optional<std::chrono::microseconds> lvv_duration_value;
 };
 
 struct log_format_scan_match {

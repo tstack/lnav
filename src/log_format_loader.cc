@@ -244,7 +244,9 @@ read_format_double(yajlpp_parse_context* ypc, double val)
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "timestamp-divisor") {
+    if (field_name == "timestamp-divisor"
+        || field_name == "duration-divisor")
+    {
         if (val <= 0) {
             ypc->report_error(
                 lnav::console::user_message::error(
@@ -257,7 +259,11 @@ read_format_double(yajlpp_parse_context* ypc, double val)
                     .with_snippet(ypc->get_snippet())
                     .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
         }
-        elf->elf_timestamp_divisor = val;
+        if (field_name == "timestamp-divisor") {
+            elf->elf_timestamp_divisor = val;
+        } else {
+            elf->elf_duration_divisor = val;
+        }
     }
 
     return 1;
@@ -269,7 +275,9 @@ read_format_int(yajlpp_parse_context* ypc, long long val)
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "timestamp-divisor") {
+    if (field_name == "timestamp-divisor"
+        || field_name == "duration-divisor")
+    {
         if (val <= 0) {
             ypc->report_error(
                 lnav::console::user_message::error(
@@ -282,7 +290,11 @@ read_format_int(yajlpp_parse_context* ypc, long long val)
                     .with_snippet(ypc->get_snippet())
                     .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
         }
-        elf->elf_timestamp_divisor = val;
+        if (field_name == "timestamp-divisor") {
+            elf->elf_timestamp_divisor = val;
+        } else {
+            elf->elf_duration_divisor = val;
+        }
     }
 
     return 1;
@@ -636,7 +648,7 @@ static const json_path_container highlighter_def_handlers = {
         .with_children(style_config_handlers),
 
     yajlpp::property_handler("captures")
-        .with_description("The style to use for the entire pattern")
+        .with_description("Styles for individual named capture groups in the pattern")
         .for_child(&external_log_format::highlighter_def::hd_capture_styles)
         .with_children(capture_highlight_handlers),
 };
@@ -1111,6 +1123,13 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the duration field in the log message pattern")
         .for_field(&external_log_format::elf_duration_field),
+    json_path_handler("duration-divisor", read_format_double)
+        .add_cb(read_format_int)
+        .with_synopsis("<number>")
+        .with_description(
+            "The value to divide a duration by to convert it to "
+            "seconds.  For example, if the duration field is in "
+            "milliseconds, the divisor should be 1000."),
     json_path_handler("url",
                       lnav::pcre2pp::code::from_const("^url#?").to_shared())
         .add_cb(read_format_field)

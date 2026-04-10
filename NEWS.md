@@ -188,6 +188,15 @@ Features:
   to specify the field that contains a duration in the
   log message.  If a duration is available, it will be
   used to calculate time spans in the TIMELINE view.
+  If the value of field is a number that is not in
+  seconds, the `duration-divisor` property can be used
+  to convert it.  For example, if the duration field is
+  in milliseconds, the divisor should be 1000.  The
+  duration can be accessed in the SQL vtables through
+  the `log_duration` column.  For JSON-lines logs, the
+  special `__duration__` field name can be used in the
+  `line-format` to add a humanized version of the
+  duration to the pretty-printed message.
 * The TIMELINE view now shows rows for user-defined tags
   and partitions.  Each tagged log line appears as a
   separate entry in the timeline.  Tags whose names start

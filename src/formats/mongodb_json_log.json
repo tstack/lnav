@@ -8,6 +8,8 @@
         "level-field": "s",
         "body-field": "msg",
         "timestamp-field": "t/$date",
+        "duration-field": "attr/durationMillis",
+        "duration-divisor": 1000,
         "line-format": [
             {
                 "field": "__timestamp__"
@@ -50,10 +52,27 @@
                 "default-value": ""
             },
             {
-                "prefix": " (\u2194 ",
-                "field": "attr/durationMillis",
+                "prefix": " deleted ",
+                "field": "attr/ndeleted",
                 "default-value": "",
-                "suffix": "ms"
+                "suffix": " doc(s) using"
+            },
+            {
+                "prefix": " inserted ",
+                "field": "attr/ninserted",
+                "default-value": "",
+                "suffix": " doc(s) using"
+            },
+            {
+                "prefix": " got ",
+                "field": "attr/nreturned",
+                "default-value": "",
+                "suffix": " doc(s) using"
+            },
+            {
+                "prefix": " (\u2194 ",
+                "field": "__duration__",
+                "default-value": ""
             },
             {
                 "prefix": " ",
@@ -135,6 +154,18 @@
             "debug4": "D4",
             "debug5": "D5"
         },
+        "opid": {
+            "source": "from-whole-msg",
+            "description": {
+                "find": {
+                    "format": [
+                        {
+                            "field": "attr/ns"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "s": {
                 "kind": "string",
@@ -165,6 +196,16 @@
                 "kind": "json",
                 "hidden": true,
                 "description": "Additional attributes for the log message"
+            },
+            "attr/action/outcome/errorMessage": {
+                "kind": "string",
+                "highlights": {
+                    "error": {
+                        "base-style": {
+                            "color": "Red"
+                        }
+                    }
+                }
             },
             "attr/authenticationDatabase": {
                 "kind": "string",
@@ -211,6 +252,35 @@
                 "kind": "json",
                 "description": "The document for a command"
             },
+            "attr/errMsg": {
+                "kind": "string",
+                "highlights": {
+                    "error": {
+                        "base-style": {
+                            "color": "Red"
+                        }
+                    }
+                }
+            },
+            "attr/errName": {
+                "kind": "string",
+                "highlights": {
+                    "error": {
+                        "base-style": {
+                            "color": "Red"
+                        }
+                    }
+                }
+            },
+            "attr/error": {
+                "highlights": {
+                    "error": {
+                        "base-style": {
+                            "color": "Red"
+                        }
+                    }
+                }
+            },
             "attr/durationMillis": {
                 "kind": "integer",
                 "description": "The duration of the operation in milliseconds"
@@ -224,6 +294,14 @@
                 "description": "The namespace for a query",
                 "identifier": true
             },
+            "attr/ndeleted": {
+                "kind": "integer",
+                "description": "The number of documents deleted"
+            },
+            "attr/ninserted": {
+                "kind": "integer",
+                "description": "The number of documents inserted"
+            },
             "attr/ns" : {
                 "kind": "string",
                 "description": "The namespace for a query"
@@ -231,6 +309,10 @@
             "attr/numDeleted": {
                 "kind": "integer",
                 "description": "The number of documents deleted"
+            },
+            "attr/nreturned": {
+                "kind": "integer",
+                "description": "The number of documents returned by the query"
             },
             "attr/originatingCommand/filter": {
                 "kind": "json",

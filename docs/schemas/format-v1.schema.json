@@ -189,6 +189,14 @@
                     "description": "The name of the duration field in the log message pattern",
                     "type": "string"
                 },
+                "duration-divisor": {
+                    "title": "/<format_name>/duration-divisor",
+                    "description": "The value to divide a duration by to convert it to seconds.  For example, if the duration field is in milliseconds, the divisor should be 1000.",
+                    "type": [
+                        "integer",
+                        "number"
+                    ]
+                },
                 "url": {
                     "title": "/<format_name>/url",
                     "description": "A URL with more information about this log format",
@@ -499,7 +507,7 @@
                                                     "$ref": "#/definitions/style"
                                                 },
                                                 "captures": {
-                                                    "description": "The style to use for the entire pattern",
+                                                    "description": "Styles for individual named capture groups in the pattern",
                                                     "title": "/<format_name>/value/<value_name>/highlights/<highlight_name>/captures",
                                                     "type": "object",
                                                     "patternProperties": {

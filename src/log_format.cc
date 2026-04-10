@@ -38,6 +38,7 @@
 
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
+#include "base/humanize.time.hh"
 #include "base/intern_string.hh"
 #include "base/is_utf8.hh"
 #include "base/itertools.enumerate.hh"
@@ -47,6 +48,7 @@
 #include "base/snippet_highlighters.hh"
 #include "base/string_attr_type.hh"
 #include "base/string_util.hh"
+#include "base/time_util.hh"
 #include "bookmarks.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -712,6 +714,7 @@ logline_value_vector::clear()
     this->lvv_thread_id_value = std::nullopt;
     this->lvv_src_file_value = std::nullopt;
     this->lvv_src_line_value = std::nullopt;
+    this->lvv_duration_value = std::nullopt;
 }
 
 logline_value_vector::logline_value_vector(const logline_value_vector& other)
@@ -723,7 +726,8 @@ logline_value_vector::logline_value_vector(const logline_value_vector& other)
       lvv_src_file_value(
           to_owned(other.lvv_src_file_value, this->lvv_allocator)),
       lvv_src_line_value(
-          to_owned(other.lvv_src_line_value, this->lvv_allocator))
+          to_owned(other.lvv_src_line_value, this->lvv_allocator)),
+      lvv_duration_value(other.lvv_duration_value)
 {
 }
 
@@ -740,6 +744,7 @@ logline_value_vector::operator=(const logline_value_vector& other)
         = to_owned(other.lvv_src_file_value, this->lvv_allocator);
     this->lvv_src_line_value
         = to_owned(other.lvv_src_line_value, this->lvv_allocator);
+    this->lvv_duration_value = other.lvv_duration_value;
 
     return *this;
 }
@@ -1209,7 +1214,7 @@ struct json_log_userdata {
     std::optional<std::string> jlu_subid;
     std::optional<log_format::scan_error> jlu_scan_error;
     hasher jlu_opid_hasher;
-    std::chrono::microseconds jlu_duration{0};
+    std::optional<std::chrono::microseconds> jlu_duration;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
     subline_options jlu_subline_opts;
@@ -1360,8 +1365,11 @@ read_json_number(yajlpp_parse_context* ypc,
             }
             val = scan_res.value().value();
             if (jlu->jlu_format->elf_duration_field == field_name) {
-                jlu->jlu_duration = std::chrono::microseconds(
-                    static_cast<int64_t>(val.value() * 1000000));
+                auto dur_secs
+                    = val.value() / jlu->jlu_format->elf_duration_divisor;
+                auto us = std::chrono::microseconds(
+                    static_cast<int64_t>(dur_secs * 1000000));
+                jlu->jlu_duration = std::max(us, 1us);
             }
         }
     }
@@ -1546,6 +1554,12 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
                     break;
             }
             jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
+        } else if (jlu->jlu_format->elf_duration_field == field_name) {
+            auto dur_secs = val / jlu->jlu_format->elf_duration_divisor;
+            jlu->jlu_duration
+                = std::max(1us,
+                           std::chrono::microseconds(
+                               static_cast<int64_t>(dur_secs * 1000000.0)));
         }
     }
 
@@ -1607,8 +1621,11 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
             }
             jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
         } else if (jlu->jlu_format->elf_duration_field == field_name) {
-            jlu->jlu_duration = std::chrono::microseconds(
-                static_cast<int64_t>(val * 1000000.0));
+            auto dur_secs = val / jlu->jlu_format->elf_duration_divisor;
+            jlu->jlu_duration
+                = std::max(1us,
+                           std::chrono::microseconds(
+                               static_cast<int64_t>(dur_secs * 1000000.0)));
         }
     }
 
@@ -1797,12 +1814,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
             }
 
         } else if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
-                   && jlu.jlu_duration > 0us)
+                   && jlu.jlu_duration)
         {
             jlu.jlu_opid_hasher.update(sbr.to_string_fragment());
         }
 
-        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration > 0us
+        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration
             || (found_opid_desc && this->lf_opid_description_def->size() == 1))
         {
             char buf[hasher::STRING_SIZE];
@@ -1827,7 +1844,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 jlu.jlu_opid_frag.value(),
                 ll.get_time<std::chrono::microseconds>(),
                 this->lf_timestamp_point_of_reference,
-                jlu.jlu_duration);
+                jlu.jlu_duration.value_or(1us));
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
             auto& elems = opid_iter->second.otr_description.lod_elements;
@@ -1883,12 +1900,15 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = intern_string::lookup("__timestamp__", -1);
             static const intern_string_t level_field
                 = intern_string::lookup("__level__");
+            static const intern_string_t duration_field
+                = intern_string::lookup("__duration__");
             for (const auto& [index, jfe] :
                  lnav::itertools::enumerate(this->jlf_line_format))
             {
                 if (jfe.jfe_type != json_log_field::VARIABLE
                     || jfe.jfe_value.pp_value == ts_field
                     || jfe.jfe_value.pp_value == level_field
+                    || jfe.jfe_value.pp_value == duration_field
                     || jfe.jfe_default_value != "-")
                 {
                     continue;
@@ -2105,8 +2125,10 @@ external_log_format::scan(logfile& lf,
                 auto from_res
                     = humanize::try_from<double>(duration_cap.value());
                 if (from_res) {
+                    auto dur_secs
+                        = from_res.value() / this->elf_duration_divisor;
                     duration = std::chrono::microseconds(
-                        static_cast<int64_t>(from_res.value() * 1000000));
+                        static_cast<int64_t>(dur_secs * 1000000));
                 }
             }
             auto opid_iter
@@ -2333,6 +2355,8 @@ external_log_format::annotate(logfile* lf,
                 this->jlf_line_values.lvv_src_file_value, values.lvv_allocator);
             values.lvv_src_line_value = to_owned(
                 this->jlf_line_values.lvv_src_line_value, values.lvv_allocator);
+            values.lvv_duration_value
+                = this->jlf_line_values.lvv_duration_value;
         }
         log_format::annotate(lf, line_number, sa, values);
         return;
@@ -2444,6 +2468,13 @@ external_log_format::annotate(logfile* lf,
     if (duration_cap) {
         sa.emplace_back(to_line_range(duration_cap.value()),
                         SA_DURATION.value());
+        auto from_res = humanize::try_from<double>(duration_cap.value());
+        if (from_res) {
+            auto dur_secs = from_res.value() / this->elf_duration_divisor;
+            auto duration = std::chrono::microseconds(
+                static_cast<int64_t>(dur_secs * 1000000));
+            values.lvv_duration_value = duration;
+        }
     }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
@@ -2710,8 +2741,12 @@ read_json_field(yajlpp_parse_context* ypc,
     {
         auto from_res = humanize::try_from<double>(frag);
         if (from_res) {
-            jlu->jlu_duration = std::chrono::microseconds(
-                static_cast<int64_t>(from_res.value() * 1000000));
+            auto dur_secs
+                = from_res.value() / jlu->jlu_format->elf_duration_divisor;
+            jlu->jlu_duration
+                = std::max(1us,
+                           std::chrono::microseconds(
+                               static_cast<int64_t>(dur_secs * 1000000)));
         }
     }
 
@@ -3008,13 +3043,13 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         this->jlf_line_values.lvv_allocator);
             }
 
+            auto use_opid_hasher = false;
             if (this->elf_opid_field.empty()
                 && this->lf_opid_source.value_or(
                        opid_source_t::from_description)
                     == opid_source_t::from_description
                 && this->lf_opid_description_def->size() == 1)
             {
-                auto found_opid_desc = false;
                 const auto& od = this->lf_opid_description_def->begin()->second;
                 for (const auto& desc : *od.od_descriptors) {
                     auto desc_iter
@@ -3022,36 +3057,29 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                     if (desc_iter == this->lf_desc_captures.end()) {
                         continue;
                     }
-                    found_opid_desc = true;
                     jlu.jlu_opid_hasher.update(desc_iter->second);
-                }
-                if (found_opid_desc) {
-                    this->jlf_line_values.lvv_opid_value
-                        = jlu.jlu_opid_hasher.to_string();
-                    this->jlf_line_values.lvv_opid_provenance
-                        = logline_value_vector::opid_provenance::file;
+                    use_opid_hasher = true;
                 }
             } else if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
-                       && jlu.jlu_duration > 0us)
+                       && jlu.jlu_duration)
             {
                 jlu.jlu_opid_hasher.update(line_frag);
-                this->jlf_line_values.lvv_opid_value
-                    = jlu.jlu_opid_hasher.to_string();
-                this->jlf_line_values.lvv_opid_provenance
-                    = logline_value_vector::opid_provenance::file;
-            }
-            if (jlu.jlu_opid_desc_frag) {
-                this->jlf_line_values.lvv_opid_value
-                    = jlu.jlu_opid_hasher.to_string();
-                this->jlf_line_values.lvv_opid_provenance
-                    = logline_value_vector::opid_provenance::file;
-            }
-            if (jlu.jlu_opid_frag) {
+                use_opid_hasher = true;
+            } else if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_frag->to_string();
                 this->jlf_line_values.lvv_opid_provenance
                     = logline_value_vector::opid_provenance::file;
+            } else if (jlu.jlu_opid_desc_frag) {
+                use_opid_hasher = true;
             }
+            if (use_opid_hasher) {
+                this->jlf_line_values.lvv_opid_value
+                    = jlu.jlu_opid_hasher.to_string();
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
+            }
+            this->jlf_line_values.lvv_duration_value = jlu.jlu_duration;
 
             int sub_offset = this->jlf_line_format_init_count;
             for (const auto& jfe : this->jlf_line_format) {
@@ -3059,6 +3087,8 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                     = intern_string::lookup("__timestamp__", -1);
                 static const intern_string_t level_field
                     = intern_string::lookup("__level__");
+                static const intern_string_t duration_field
+                    = intern_string::lookup("__duration__");
                 size_t begin_size = this->jlf_attr_line.al_string.size();
 
                 switch (jfe.jfe_type) {
@@ -3329,6 +3359,37 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             lr.lr_end = this->jlf_attr_line.al_string.size();
                             this->jlf_attr_line.al_attrs.emplace_back(
                                 lr, L_LEVEL.value());
+                        } else if (jfe.jfe_value.pp_value == duration_field) {
+                            if (this->jlf_line_values.lvv_duration_value) {
+                                if (!jfe.jfe_prefix.empty()) {
+                                    this->json_append_to_cache(jfe.jfe_prefix);
+                                }
+                                lr.lr_start
+                                    = this->jlf_attr_line.al_string.size();
+                                auto dur_str
+                                    = humanize::time::duration::from_tv(
+                                          to_timeval(
+                                              this->jlf_line_values
+                                                  .lvv_duration_value.value()))
+                                          .to_string();
+                                this->json_append(lffs, jfe, nullptr, dur_str);
+                                lr.lr_end
+                                    = this->jlf_attr_line.al_string.size();
+                                this->jlf_attr_line.al_attrs.emplace_back(
+                                    lr, SA_DURATION.value());
+                                if (!jfe.jfe_suffix.empty()) {
+                                    this->json_append_to_cache(jfe.jfe_suffix);
+                                }
+                            } else if (!jfe.jfe_default_value.empty()) {
+                                if (!jfe.jfe_prefix.empty()) {
+                                    this->json_append_to_cache(jfe.jfe_prefix);
+                                }
+                                this->json_append(
+                                    lffs, jfe, nullptr, jfe.jfe_default_value);
+                                if (!jfe.jfe_suffix.empty()) {
+                                    this->json_append_to_cache(jfe.jfe_suffix);
+                                }
+                            }
                         } else if (!jfe.jfe_default_value.empty()) {
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
@@ -4876,6 +4937,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             = intern_string::lookup("__timestamp__");
         static const intern_string_t level_field
             = intern_string::lookup("__level__");
+        static const intern_string_t duration_field
+            = intern_string::lookup("__duration__");
         auto& jfe = *iter;
 
         if (startswith(jfe.jfe_value.pp_value.get(), "/")) {
@@ -4905,6 +4968,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 } else if (jfe.jfe_value.pp_value == level_field) {
                     this->elf_value_defs[this->elf_level_field]
                         ->vd_meta.lvm_hidden = true;
+                } else if (jfe.jfe_value.pp_value == duration_field) {
+                    if (!this->elf_duration_field.empty()) {
+                        this->elf_value_defs[this->elf_duration_field]
+                            ->vd_meta.lvm_hidden = true;
+                    }
                 } else if (vd_iter == this->elf_value_defs.end()) {
                     errors.emplace_back(
                         lnav::console::user_message::error(

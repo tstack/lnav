@@ -291,6 +291,9 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         auto line_width = CHART_INDENT;
         auto mark_width = (double) (width - line_width);
         double span = (ub - lb).count();
+        if (span < 1.0) {
+            span = 1.0;
+        }
         auto us_per_ch
             = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
         require(us_per_ch > 0us);
@@ -759,7 +762,8 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                 }
 
                 require(lr.lr_start >= 0);
-                value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_TIMELINE_BAR));
+                value_out.emplace_back(lr,
+                                       VC_ROLE.value(role_t::VCR_TIMELINE_BAR));
             }
         }
         auto alt_row_index = line % 4;
@@ -1328,10 +1332,7 @@ timeline_source::time_for_row(vis_line_t row)
     }
 
     auto preview_selection = this->ts_preview_view.get_selection();
-    if (!preview_selection) {
-        return std::nullopt;
-    }
-    if (preview_selection < this->ts_preview_rows.size()) {
+    if (preview_selection && preview_selection < this->ts_preview_rows.size()) {
         return this->ts_preview_rows[preview_selection.value()];
     }
 

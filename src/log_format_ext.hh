@@ -363,6 +363,7 @@ public:
     intern_string_t elf_src_line_field;
     intern_string_t elf_src_loc_field;
     intern_string_t elf_duration_field;
+    double elf_duration_divisor{1.0};
     std::map<log_level_t, level_pattern> elf_level_patterns;
     std::vector<std::pair<int64_t, log_level_t>> elf_level_pairs;
     bool elf_builtin_format{false};

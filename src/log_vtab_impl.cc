@@ -91,6 +91,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_src_file"_frag,
         "log_src_line"_frag,
         "log_thread_id"_frag,
+        "log_duration"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -126,7 +127,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_line_link    TEXT HIDDEN,                       -- The permalink for the log message
   log_src_file     TEXT HIDDEN,                       -- The source file the log message came from
   log_src_line     TEXT HIDDEN,                       -- The source line the log message came from
-  log_thread_id    TEXT HIDDEN                        -- The ID of the thread that generated this message
+  log_thread_id    TEXT HIDDEN,                       -- The ID of the thread that generated this message
+  log_duration     REAL HIDDEN                        -- The duration associated with this log message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -155,6 +157,7 @@ enum class log_footer_columns : uint32_t {
     src_file,
     src_line,
     thread_id,
+    duration,
 };
 
 const std::string&
@@ -277,6 +280,7 @@ log_vtab_impl::get_foreign_keys(
     keys_inout.emplace("log_msg_line()");
     keys_inout.emplace("log_src_line");
     keys_inout.emplace("log_thread_id");
+    keys_inout.emplace("log_duration");
 }
 
 void
@@ -1240,6 +1244,27 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         to_sqlite(ctx, vc->line_values.lvv_thread_id_value);
                         break;
                     }
+                    case log_footer_columns::duration: {
+                        if (vc->line_values.lvv_values.empty()) {
+                            vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
+                            vt->vi->extract(
+                                lf, line_number, vc->attrs, vc->line_values);
+                        }
+
+                        std::optional<double> duration_opt;
+                        if (vc->line_values.lvv_duration_value) {
+                            auto duration_secs
+                                = (double) vc->line_values.lvv_duration_value
+                                      .value()
+                                      .count();
+                            duration_secs /= 1000000.0;
+                            duration_opt = duration_secs;
+                        }
+                        to_sqlite(ctx, duration_opt);
+                        break;
+                    }
                 }
             } else {
                 if (vc->line_values.lvv_values.empty()) {
@@ -1919,6 +1944,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::opid_definition:
                         case log_footer_columns::src_file:
                         case log_footer_columns::src_line:
+                        case log_footer_columns::duration:
                             break;
                         case log_footer_columns::line_link: {
                             if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
@@ -2410,6 +2436,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::opid_definition:
                         case log_footer_columns::src_file:
                         case log_footer_columns::src_line:
+                        case log_footer_columns::duration:
                             break;
                         case log_footer_columns::line_link: {
                             argvInUse += 1;

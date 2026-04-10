@@ -1,4 +1,4 @@
 2026-03-10T20:58:09.401+00:00 I NETWORK  [    listener@10.29.42.162:56982] Connection accepted
-2026-03-10T20:58:09.525+00:00 I COMMAND  [  conn162095] Slow query — mydb.users.ABC123 (↔ 120ms IXSCAN { name: 1 }
+2026-03-10T20:58:09.525+00:00 I COMMAND  [  conn162095] Slow query — mydb.users.ABC123 (↔ 120 IXSCAN { name: 1 }
 2026-03-10T20:58:09.525+00:00 W STORAGE  [initandlisten] Detected unclean shutdown
 2026-03-10T20:58:09.525+00:00 W STORAGE  [initandlisten] Detected unclean shutdown

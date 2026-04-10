@@ -208,7 +208,9 @@ object with the following fields:
     of the message field that should be inserted at this point in the
     message.  The special :code:`__timestamp__` field name can be used to
     insert a human-readable timestamp.  The :code:`__level__` field can be
-    used to insert the level name as defined by lnav.
+    used to insert the level name as defined by lnav.  The
+    :code:`__duration__` field can be used to insert a humanized duration
+    value (e.g. "1m23s") when a duration field is defined for the format.
 
     .. tip::
 
@@ -355,6 +357,10 @@ object with the following fields:
 :duration-field: The name of the field that contains the duration of an
   operation.  If a duration is available, it will be used to calculate
   time spans in the TIMELINE view.
+
+:duration-divisor: The value to divide a duration by to convert it to
+  seconds.  For example, if the duration field is in milliseconds,
+  the divisor should be 1000.
 
 :src-file-field: (v0.14.0+) The name of the field that contains the source
   file name where the log statement originated.  This field is accessible
