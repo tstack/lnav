@@ -304,6 +304,32 @@ object with the following fields:
 :level-field: The name of the regex capture group that contains the log
   message level.  Defaults to "level".
 
+  The following log level strings are recognized automatically
+  (case-insensitive) and do not require a custom :code:`level` mapping:
+
+  ============  ========================================
+  Level         Recognized strings
+  ============  ========================================
+  trace         ``trace``, ``verbose``
+  debug         ``debug``
+  debug2        ``debug2``
+  debug3        ``debug3``
+  debug4        ``debug4``
+  debug5        ``debug5``
+  info          ``info``, ``system``
+  notice        ``notice``, ``note``, ``log``
+  stats         ``stats``
+  warning       ``warn``, ``warning``, ``deprecation``
+  error         ``err``, ``error``, ``fail``
+  critical      ``critical``, ``severe``, ``alert``
+  fatal         ``fatal``, ``emergency``
+  ============  ========================================
+
+  Single-letter abbreviations are also recognized:
+  **T** (trace), **D**/**V** (debug), **I** (info), **S** (stats),
+  **N** (notice), **W** (warning), **E** (error), **C** (critical),
+  **F** (fatal).
+
 :body-field: The name of the field that contains the main body of the
   message.  Defaults to "body".
 
