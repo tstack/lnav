@@ -247,6 +247,7 @@ log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
         case value_kind_t::VALUE_W3C_QUOTED:
         case value_kind_t::VALUE_TIMESTAMP:
         case value_kind_t::VALUE_XML:
+        case value_kind_t::VALUE_ANY:
             type = SQLITE3_TEXT;
             break;
         case value_kind_t::VALUE_FLOAT:
@@ -1369,6 +1370,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 sqlite3_result_subtype(ctx, JSON_SUBTYPE);
                                 break;
                             }
+                            case value_kind_t::VALUE_ANY:
                             case value_kind_t::VALUE_STRUCT:
                             case value_kind_t::VALUE_TEXT:
                             case value_kind_t::VALUE_XML: {

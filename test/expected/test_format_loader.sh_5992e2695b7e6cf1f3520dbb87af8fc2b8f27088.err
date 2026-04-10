@@ -94,7 +94,7 @@
          [1mDescription[0m
            The type of data in the field
          [1mAllowed Values[0m
-           [1mstring[0m, [1minteger[0m, [1mfloat[0m, [1mboolean[0m, [1mjson[0m, [1mstruct[0m, [1mquoted[0m, [1mxml[0m, [1mtimestamp[0m
+           [1mstring[0m, [1minteger[0m, [1mfloat[0m, [1mboolean[0m, [1mjson[0m, [1mstruct[0m, [1mquoted[0m, [1mxml[0m, [1mtimestamp[0m, [1many[0m
 [1m[31m✘[0m [1m[31merror[0m: '[1mbad[0m' is not a supported log format $schema version
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-schema/format.json[0m:2
 [36m | [0m[37m[40m    "$schema": "bad"                    [0m

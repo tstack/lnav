@@ -197,16 +197,6 @@
                 "hidden": true,
                 "description": "Additional attributes for the log message"
             },
-            "attr/action/outcome/errorMessage": {
-                "kind": "string",
-                "highlights": {
-                    "error": {
-                        "base-style": {
-                            "color": "Red"
-                        }
-                    }
-                }
-            },
             "attr/authenticationDatabase": {
                 "kind": "string",
                 "description": "The authenticating database for a connection"
@@ -217,7 +207,7 @@
                 "highlights": {
                     "delete": {
                         "base-style": {
-                            "color": "red"
+                            "color": "Red"
                         }
                     }
                 }
@@ -273,6 +263,7 @@
                 }
             },
             "attr/error": {
+                "kind": "any",
                 "highlights": {
                     "error": {
                         "base-style": {

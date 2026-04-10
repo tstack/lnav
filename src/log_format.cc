@@ -370,6 +370,7 @@ logline_value_meta::to_chart_type() const
         case value_kind_t::VALUE_FLOAT:
             retval = chart_type_t::spectro;
             break;
+        case value_kind_t::VALUE_ANY:
         case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_JSON:
         case value_kind_t::VALUE_BOOLEAN:
@@ -435,6 +436,7 @@ logline_value::logline_value(logline_value_meta lvm,
     }
 
     switch (this->lv_meta.lvm_kind) {
+        case value_kind_t::VALUE_ANY:
         case value_kind_t::VALUE_JSON:
         case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_STRUCT:
@@ -518,6 +520,7 @@ logline_value::to_string() const
         case value_kind_t::VALUE_NULL:
             return "null";
 
+        case value_kind_t::VALUE_ANY:
         case value_kind_t::VALUE_JSON:
         case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_STRUCT:
@@ -592,6 +595,7 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
         case value_kind_t::VALUE_NULL:
             return "null"_frag;
 
+        case value_kind_t::VALUE_ANY:
         case value_kind_t::VALUE_JSON:
         case value_kind_t::VALUE_XML:
         case value_kind_t::VALUE_STRUCT:
@@ -1462,6 +1466,10 @@ read_array_end(void* ctx)
             jlu->jlu_shared_buffer.get_data(), sub_start, sub_end);
         if (field_name == jlu->jlu_format->elf_opid_field) {
             jlu->jlu_opid_desc_frag = json_frag;
+        }
+        if (ypc->ypc_path_index_stack.size() > 1 && vd != nullptr) {
+            jlu->add_sub_lines_for(
+                vd, false, std::nullopt, nullptr, -1, nullptr);
         }
     }
 

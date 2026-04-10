@@ -523,6 +523,7 @@ enum class value_kind_t : int {
     VALUE_W3C_QUOTED,
     VALUE_TIMESTAMP,
     VALUE_XML,
+    VALUE_ANY,
 
     VALUE__MAX
 };

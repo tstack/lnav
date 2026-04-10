@@ -401,7 +401,8 @@
                                         "struct",
                                         "quoted",
                                         "xml",
-                                        "timestamp"
+                                        "timestamp",
+                                        "any"
                                     ]
                                 },
                                 "collate": {

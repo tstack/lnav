@@ -583,6 +583,7 @@ static constexpr json_path_handler_base::enum_value_t KIND_ENUM[] = {
     {"quoted"_frag, value_kind_t::VALUE_QUOTED},
     {"xml"_frag, value_kind_t::VALUE_XML},
     {"timestamp"_frag, value_kind_t::VALUE_TIMESTAMP},
+    {"any"_frag, value_kind_t::VALUE_ANY},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
