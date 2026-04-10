@@ -105,6 +105,14 @@ TEST_CASE("duration to_string")
 {
     std::string val;
 
+    val = humanize::time::duration::from_tv({15 * 60, 0})
+              .with_compact(false)
+              .to_string();
+    CHECK(val == "15m00s");
+    val = humanize::time::duration::from_tv({0, 100000})
+              .with_compact(false)
+              .to_string();
+    CHECK(val == "100ms");
     val = humanize::time::duration::from_tv({25 * 60 * 60, 123000}).to_string();
     CHECK(val == "1d01h00m00s");
     val = humanize::time::duration::from_tv({25 * 60 * 60 + 25 * 60, 123000})

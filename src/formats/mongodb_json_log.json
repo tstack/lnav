@@ -67,20 +67,37 @@
                 "prefix": " got ",
                 "field": "attr/nreturned",
                 "default-value": "",
-                "suffix": " doc(s) using"
+                "suffix": " doc(s)"
             },
             {
-                "prefix": " (\u2194 ",
+                "prefix": " in ",
                 "field": "__duration__",
                 "default-value": ""
             },
             {
-                "prefix": " ",
+                "prefix": " (",
                 "field": "attr/planSummary",
                 "default-value": ""
             },
             {
-                "prefix": " \u2190 ",
+                "prefix": " examined ",
+                "field": "attr/keysExamined",
+                "default-value": ""
+            },
+            {
+                "prefix": "/",
+                "field": "attr/docsExamined",
+                "suffix": " keys/docs matching",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "attr/command/query",
+                "default-value": "",
+                "suffix": ")"
+            },
+            {
+                "prefix": " ",
                 "field": "attr/command/filter",
                 "default-value": "",
                 "suffix": ")"
@@ -115,20 +132,17 @@
             {
                 "prefix": " UPDATE.",
                 "field": "attr/command/update",
-                "default-value": "",
-                "suffix": ")"
+                "default-value": ""
             },
             {
                 "prefix": " INSERT.",
                 "field": "attr/command/insert",
-                "default-value": "",
-                "suffix": ")"
+                "default-value": ""
             },
             {
                 "prefix": " DELETE.",
                 "field": "attr/command/delete",
-                "default-value": "",
-                "suffix": ")"
+                "default-value": ""
             },
             {
                 "prefix": " deleted ",
@@ -139,8 +153,7 @@
             {
                 "prefix": " ",
                 "field": "attr/namespace",
-                "default-value": "",
-                "suffix": ")"
+                "default-value": ""
             }
         ],
         "level": {
@@ -227,6 +240,9 @@
                     }
                 }
             },
+            "attr/command/query": {
+                "kind": "json"
+            },
             "attr/command/update": {
                 "kind": "string",
                 "description": "The collection for an update command",
@@ -241,6 +257,9 @@
             "attr/doc": {
                 "kind": "json",
                 "description": "The document for a command"
+            },
+            "attr/docsExamined": {
+                "kind": "integer"
             },
             "attr/errMsg": {
                 "kind": "string",
@@ -275,6 +294,9 @@
             "attr/durationMillis": {
                 "kind": "integer",
                 "description": "The duration of the operation in milliseconds"
+            },
+            "attr/keysExamined": {
+                "kind": "integer"
             },
             "attr/message/msg": {
                 "kind": "string",
@@ -316,6 +338,12 @@
             "attr/principalName": {
                 "kind": "string",
                 "description": "The principal name for a connection"
+            },
+            "attr/storage/data/bytesRead": {
+                "kind": "integer"
+            },
+            "attr/storage/data/timeReadingMicros": {
+                "kind": "integer"
             },
             "attr/queryHash": {
                 "kind": "string",

@@ -3110,7 +3110,7 @@ For support questions, email:
 
 #2 To format a sub-second value:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m1.5[0m[37m[40m)                     [0m
-   1s500
+   1s500ms
 
 
 [1m[4mhumanize_file_size[0m[4m([0m[4mvalue[0m[4m)[0m

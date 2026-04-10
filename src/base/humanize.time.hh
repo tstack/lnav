@@ -79,6 +79,12 @@ class duration {
 public:
     static duration from_tv(const timeval& tv);
 
+    duration& with_compact(bool compact)
+    {
+        this->d_compact = compact;
+        return *this;
+    }
+
     template<class Rep, class Period>
     duration& with_resolution(const std::chrono::duration<Rep, Period>& res)
     {
@@ -95,6 +101,7 @@ private:
 
     timeval d_timeval;
     uint64_t d_msecs_resolution{1};
+    bool d_compact{true};
 };
 
 }  // namespace humanize::time

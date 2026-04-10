@@ -3379,6 +3379,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                           to_timeval(
                                               this->jlf_line_values
                                                   .lvv_duration_value.value()))
+                                          .with_compact(false)
                                           .to_string();
                                 this->json_append(lffs, jfe, nullptr, dur_str);
                                 lr.lr_end

@@ -38,9 +38,9 @@
 #include "base/attr_line.builder.hh"
 #include "base/date_time_scanner.hh"
 #include "base/humanize.time.hh"
+#include "base/lnav.tz.hh"
 #include "base/relative_time.hh"
 #include "config.h"
-#include "base/lnav.tz.hh"
 #include "ptimec.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -186,7 +186,9 @@ sql_humanize_duration(double value)
 
     tv.tv_sec = secs;
     tv.tv_usec = usecs;
-    return humanize::time::duration::from_tv(tv).to_string();
+    return humanize::time::duration::from_tv(tv)
+        .with_compact(false)
+        .to_string();
 }
 
 static std::optional<std::string>

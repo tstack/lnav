@@ -163,6 +163,9 @@ duration::to_string() const
     bool neg = false;
 
     if (usecs == 0us) {
+        if (!this->d_compact) {
+            retval = "0s";
+        }
         return retval;
     }
 
@@ -180,10 +183,12 @@ duration::to_string() const
     if (this->d_msecs_resolution > 0) {
         remaining = roundup(remaining, this->d_msecs_resolution);
     }
+    auto skipped = 0;
     if (usecs >= 10min) {
         remaining /= curr_interval->length;
         scale *= curr_interval->length;
         ++curr_interval;
+        skipped = 1;
     }
 
     for (; curr_interval != std::end(intervals); curr_interval++) {
@@ -205,6 +210,7 @@ duration::to_string() const
         }
 
         if (skip) {
+            skipped += 1;
             continue;
         }
 
@@ -217,6 +223,9 @@ duration::to_string() const
         if (remaining > 0 && amount < 10 && curr_interval->symbol[0]) {
             retval.insert(0, "0");
         }
+    }
+    if (!skipped && !this->d_compact) {
+        retval.append("ms");
     }
 
     if (neg) {
