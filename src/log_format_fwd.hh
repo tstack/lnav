@@ -712,6 +712,8 @@ struct logline_value_vector {
     ArenaAlloc::Alloc<char> lvv_allocator{8 * 1024};
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
+    std::optional<string_fragment> lvv_time_value;
+    std::optional<exttm> lvv_time_exttm;
     std::optional<std::string> lvv_opid_value;
     opid_provenance lvv_opid_provenance{opid_provenance::none};
     std::optional<string_fragment> lvv_thread_id_value;

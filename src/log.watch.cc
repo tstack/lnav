@@ -256,6 +256,17 @@ eval_with(logfile& lf, logfile::iterator ll)
                 bind_to_sqlite(stmt, lpc + 1, values.lvv_thread_id_value);
                 continue;
             }
+            if (strcmp(name, ":log_duration") == 0) {
+                if (values.lvv_duration_value) {
+                    bind_to_sqlite(
+                        stmt,
+                        lpc + 1,
+                        values.lvv_duration_value->count() / 1000000.0);
+                } else {
+                    sqlite3_bind_null(stmt, lpc + 1);
+                }
+                continue;
+            }
             if (strcmp(name, ":log_raw_text") == 0) {
                 auto res = lf.read_raw_message(ll);
 

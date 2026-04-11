@@ -193,14 +193,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     time_line.with_attr(
         string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
 
-    auto time_range = find_string_attr_range(
-        this->fos_log_helper.ldh_line_attrs, &L_TIMESTAMP);
+    auto ts_sf = this->fos_log_helper.ldh_line_values.lvv_time_value;
 
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
-    if (ll->is_time_skewed() && time_range.lr_end != -1) {
-        const char* time_src
-            = this->fos_log_helper.ldh_line_values.lvv_sbr.get_data()
-            + time_range.lr_start;
+    if (ll->is_time_skewed() && ts_sf) {
         timeval actual_tv;
         date_time_scanner dts;
         exttm tm;
@@ -208,12 +204,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         dts.set_base_time(format->lf_date_time.dts_base_time,
                           format->lf_date_time.dts_base_tm.et_tm);
         dts.dts_zoned_to_local = format->lf_date_time.dts_zoned_to_local;
-        if (format->lf_date_time.scan(time_src,
-                                      time_range.length(),
+        if (format->lf_date_time.scan(ts_sf->data(),
+                                      ts_sf->length(),
                                       format->get_timestamp_formats(),
                                       &tm,
                                       actual_tv)
-            || dts.scan(time_src, time_range.length(), nullptr, &tm, actual_tv))
+            || dts.scan(
+                ts_sf->data(), ts_sf->length(), nullptr, &tm, actual_tv))
         {
             sql_strftime(
                 orig_timestamp, sizeof(orig_timestamp), actual_tv, 'T');
@@ -843,8 +840,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 
         al.with_string(" \u2514");
         for (const auto& entry : line_meta.bm_tags) {
-            al.append(1, ' ').append(entry.te_tag,
-                                     VC_STYLE.value(vc.attrs_for_ident(entry.te_tag)));
+            al.append(1, ' ').append(
+                entry.te_tag, VC_STYLE.value(vc.attrs_for_ident(entry.te_tag)));
         }
 
         al.insert(0, filename_width, ' ');

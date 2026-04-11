@@ -713,6 +713,8 @@ logline_value_vector::clear()
 {
     this->lvv_values.clear();
     this->lvv_sbr.disown();
+    this->lvv_time_value = std::nullopt;
+    this->lvv_time_exttm = std::nullopt;
     this->lvv_opid_value = std::nullopt;
     this->lvv_opid_provenance = opid_provenance::none;
     this->lvv_thread_id_value = std::nullopt;
@@ -723,6 +725,8 @@ logline_value_vector::clear()
 
 logline_value_vector::logline_value_vector(const logline_value_vector& other)
     : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
+      lvv_time_value(other.lvv_time_value),
+      lvv_time_exttm(other.lvv_time_exttm),
       lvv_opid_value(other.lvv_opid_value),
       lvv_opid_provenance(other.lvv_opid_provenance),
       lvv_thread_id_value(
@@ -740,6 +744,8 @@ logline_value_vector::operator=(const logline_value_vector& other)
 {
     this->lvv_sbr = other.lvv_sbr.clone();
     this->lvv_values = other.lvv_values;
+    this->lvv_time_value = other.lvv_time_value;
+    this->lvv_time_exttm = other.lvv_time_exttm;
     this->lvv_opid_value = other.lvv_opid_value;
     this->lvv_opid_provenance = other.lvv_opid_provenance;
     this->lvv_thread_id_value
@@ -2407,6 +2413,7 @@ external_log_format::annotate(logfile* lf,
     auto ts_cap = md[pat.p_timestamp_field_index];
     if (ts_cap) {
         sa.emplace_back(to_line_range(ts_cap.value()), L_TIMESTAMP.value());
+        values.lvv_time_value = ts_cap;
     }
 
     auto opid_cap = md[pat.p_opid_field_index];
@@ -2859,6 +2866,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             sql_strftime(
                 time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval(), 'T');
         }
+        jlu->jlu_format->jlf_line_values.lvv_time_value = frag;
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
@@ -3025,7 +3033,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
         } else {
             std::vector<logline_value>::iterator lv_iter;
             bool used_values[this->jlf_line_values.lvv_values.size()];
-            struct line_range lr;
+            line_range lr;
 
             memset(used_values, 0, sizeof(used_values));
             for (lv_iter = this->jlf_line_values.lvv_values.begin();
@@ -3033,6 +3041,9 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                  ++lv_iter)
             {
                 lv_iter->lv_meta.lvm_format = this;
+            }
+            if (!this->jlf_line_values.lvv_time_value) {
+                this->jlf_line_values.lvv_time_exttm = jlu.jlu_exttm;
             }
 
             if (jlu.jlu_tid_number) {

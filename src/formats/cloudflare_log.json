@@ -12,6 +12,8 @@
             "info": "hit",
             "warning": "miss"
         },
+        "duration-field": "OriginResponseDurationMs",
+        "duration-divisor": 1000,
         "line-format": [
             {
                 "field": "ClientIP",
@@ -53,6 +55,7 @@
             }
         ],
         "timestamp-field": "EdgeStartTimestamp",
+        "timestamp-divisor": 1000000000,
         "opid": {
             "description": {
                 "std": {

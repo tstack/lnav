@@ -2224,6 +2224,16 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             bind_to_sqlite(stmt, lpc + 1, values.lvv_thread_id_value);
             continue;
         }
+        if (strcmp(name, ":log_duration") == 0) {
+            if (values.lvv_duration_value) {
+                bind_to_sqlite(stmt,
+                               lpc + 1,
+                               values.lvv_duration_value->count() / 1000000.0);
+            } else {
+                sqlite3_bind_null(stmt, lpc + 1);
+            }
+            continue;
+        }
         for (const auto& lv : values.lvv_values) {
             if (lv.lv_meta.lvm_name != &name[1]) {
                 continue;
@@ -3245,8 +3255,7 @@ logfile_sub_source::clear_bookmark_metadata()
             }
             auto tag_iter = meta.bm_tags.begin();
             while (tag_iter != meta.bm_tags.end()) {
-                if (tag_iter->te_source
-                    == bookmark_metadata::meta_source::user)
+                if (tag_iter->te_source == bookmark_metadata::meta_source::user)
                 {
                     tag_iter = meta.bm_tags.erase(tag_iter);
                 } else {
