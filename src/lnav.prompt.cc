@@ -391,9 +391,8 @@ prompt::refresh_sql_completions(textview_curses& tc)
                     this->insert_sql_completion(
                         name, sql_function_t{func->ht_parameters.size()});
                     if (!func->ht_prql_path.empty()) {
-                        auto prql_name
-                            = fmt::format(FMT_STRING("{}"),
-                                          fmt::join(func->ht_prql_path, "."));
+                        auto prql_name = fmt::to_string(
+                            fmt::join(func->ht_prql_path, "."));
                         this->insert_sql_completion(prql_name,
                                                     prql_function_t{});
                     }
@@ -1008,8 +1007,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     && rp_opt)
                 {
                     auto rp_path = rp_opt.value();
-                    auto remote_prefix
-                        = fmt::format(FMT_STRING("{}"), rp_path.p_locality);
+                    auto remote_prefix = fmt::to_string(rp_path.p_locality);
 
                     log_info("completing remote path: %s -- %s",
                              remote_prefix.c_str(),

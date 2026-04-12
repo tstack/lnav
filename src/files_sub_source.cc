@@ -445,8 +445,8 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
         const auto& prog = sp->sp_extractions.front();
 
         value_out.with_ansi_string(fmt::format(
-            "{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                                                    "... {:>8}/{}",
+            FMT_STRING("{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                                                              "... {:>8}/{}"),
             humanize::sparkline(prog.ep_out_size, prog.ep_total_size),
             prog.ep_path.filename().string(),
             humanize::file_size(prog.ep_out_size, humanize::alignment::none),
@@ -458,7 +458,8 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
         auto first_iter = sp->sp_tailers.begin();
 
         value_out.with_ansi_string(fmt::format(
-            "{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM ": {}",
+            FMT_STRING("{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                                                                 ": {}"),
             PROG[spinner_index() % PROG_SIZE],
             first_iter->first,
             first_iter->second.tp_message));

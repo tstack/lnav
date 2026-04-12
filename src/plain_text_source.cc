@@ -30,8 +30,8 @@
 #include "plain_text_source.hh"
 
 #include "base/intern_string.hh"
-#include "base/string_util.hh"
 #include "base/itertools.hh"
+#include "base/string_util.hh"
 #include "config.h"
 #include "document.sections.hh"
 #include "scn/scan.h"
@@ -178,12 +178,8 @@ plain_text_source::text_value_for_line(textview_curses& tc,
     value_out = this->tds_lines[row].tl_value.get_string();
     this->tds_line_indent_size = compute_indent_size(value_out);
     if (this->tds_line_indent_size == 0 && value_out.empty()) {
-        for (auto next = row + 1;
-             next < (int) this->tds_lines.size();
-             ++next)
-        {
-            const auto& next_str
-                = this->tds_lines[next].tl_value.get_string();
+        for (auto next = row + 1; next < (int) this->tds_lines.size(); ++next) {
+            const auto& next_str = this->tds_lines[next].tl_value.get_string();
             this->tds_line_indent_size = compute_indent_size(next_str) + 1;
             if (!next_str.empty()) {
                 break;
@@ -517,7 +513,7 @@ plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
         tl.tl_offset, tl.tl_offset + tl.tl_value.al_string.length());
 
     log_trace("adjacent_anchor: curr path = %s",
-              fmt::format(FMT_STRING("{}"), path_for_line).c_str());
+              fmt::to_string(path_for_line).c_str());
     const auto& md = this->tds_doc_sections;
     if (path_for_line.empty()) {
         auto neighbors_res = md.m_sections_root->line_neighbors(vl);

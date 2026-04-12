@@ -100,8 +100,7 @@ struct prql_hier {
 static void
 register_help(prql_hier& phier, const help_text& ht)
 {
-    auto prql_fqid
-        = fmt::format(FMT_STRING("{}"), fmt::join(ht.ht_prql_path, "."));
+    auto prql_fqid = fmt::to_string(fmt::join(ht.ht_prql_path, "."));
     lnav::sql::prql_functions.emplace(prql_fqid, &ht);
 
     auto* curr_hier = &phier;

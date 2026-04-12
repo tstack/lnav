@@ -2951,8 +2951,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                 {
                     jlu->jlu_format->lf_date_time.relock(ls);
                     jlu->jlu_scan_error = log_format::scan_error{
-                        fmt::format("failed to parse timestamp '{}' in string "
-                                    "property '{}'",
+                        fmt::format(FMT_STRING("failed to parse timestamp "
+                                               "'{}' in string property '{}'"),
                                     frag,
                                     field_name)};
                 }
