@@ -1301,6 +1301,16 @@ read_json_number(yajlpp_parse_context* ypc,
             jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
         }
         jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        if (tv.tv_sec < 0) {
+            jlu->jlu_scan_error = log_format::scan_error{
+                fmt::format(FMT_STRING("invalid numeric timestamp: {} / {} "
+                                       "(timestamp-divisor) = {}"),
+                            number_frag,
+                            divisor,
+                            tv.tv_sec),
+            };
+            return 1;
+        }
         jlu->jlu_base_line->set_time(tv);
     } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
                && jlu->jlu_format->lf_start_timestamp_field == field_name)
@@ -1312,6 +1322,17 @@ read_json_number(yajlpp_parse_context* ypc,
             return 0;
         }
         auto ts_val = scan_res.value().value();
+        if (ts_val < 0) {
+            jlu->jlu_scan_error = log_format::scan_error{
+                fmt::format(
+                    FMT_STRING("invalid numeric start-timestamp: {} / {} "
+                               "(timestamp-divisor) = {}"),
+                    number_frag,
+                    divisor,
+                    ts_val),
+            };
+            return 1;
+        }
         jlu->jlu_start_time = std::chrono::microseconds(
             static_cast<int64_t>(ts_val * 1000000.0 / divisor));
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
@@ -2779,7 +2800,8 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_base_line->set_time(tv_out);
         } else {
             jlu->jlu_scan_error = log_format::scan_error{fmt::format(
-                "failed to parse timestamp '{}' in string property '{}'",
+                FMT_STRING(
+                    "failed to parse timestamp '{}' in string property '{}'"),
                 frag,
                 field_name)};
         }
@@ -3163,11 +3185,10 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         this->jlf_line_values.lvv_allocator);
             }
 
-            if (jlu.jlu_start_time && jlu.jlu_end_time && !jlu.jlu_duration)
-            {
+            if (jlu.jlu_start_time && jlu.jlu_end_time && !jlu.jlu_duration) {
                 if (jlu.jlu_end_time.value() > jlu.jlu_start_time.value()) {
-                    jlu.jlu_duration = jlu.jlu_end_time.value()
-                        - jlu.jlu_start_time.value();
+                    jlu.jlu_duration
+                        = jlu.jlu_end_time.value() - jlu.jlu_start_time.value();
                 }
             }
 
