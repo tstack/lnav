@@ -197,6 +197,14 @@ Features:
   special `__duration__` field name can be used in the
   `line-format` to add a humanized version of the
   duration to the pretty-printed message.
+* Added the `start-timestamp-field` log format property.
+  When set, the duration of an operation is computed as the
+  difference between the `timestamp-field` (treated as the
+  end time) and the `start-timestamp-field`.  This is an
+  alternative to `duration-field` for logs that record
+  separate start and end timestamps.  The Cloudflare log
+  format has been updated to use this feature with
+  `EdgeEndTimestamp` and `EdgeStartTimestamp`.
 * The TIMELINE view now shows rows for user-defined tags
   and partitions.  Each tagged log line appears as a
   separate entry in the timeline.  Tags whose names start

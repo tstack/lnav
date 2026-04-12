@@ -12,8 +12,6 @@
             "info": "hit",
             "warning": "miss"
         },
-        "duration-field": "OriginResponseDurationMs",
-        "duration-divisor": 1000,
         "line-format": [
             {
                 "field": "ClientIP",
@@ -54,8 +52,9 @@
                 "field": "ClientRequestUserAgent"
             }
         ],
-        "timestamp-field": "EdgeStartTimestamp",
+        "timestamp-field": "EdgeEndTimestamp",
         "timestamp-divisor": 1000000000,
+        "start-timestamp-field": "EdgeStartTimestamp",
         "opid": {
             "description": {
                 "std": {
@@ -93,6 +92,7 @@
                 "kind": "integer"
             },
             "EdgeStartTimestamp": {
+                "hidden": true,
                 "kind": "string"
             },
             "RayID": {

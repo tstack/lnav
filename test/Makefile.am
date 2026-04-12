@@ -667,6 +667,6 @@ distclean-local:
 	$(RM_V)rm -rf ../installer-test-home
 
 expected:
-	$(top_srcdir)/update_expected_output.sh $(srcdir) $(builddir)
+	$(top_srcdir)/update_expected_output.py $(srcdir) $(builddir)
 
 .PHONY: expected

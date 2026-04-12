@@ -1225,6 +1225,8 @@ struct json_log_userdata {
     std::optional<log_format::scan_error> jlu_scan_error;
     hasher jlu_opid_hasher;
     std::optional<std::chrono::microseconds> jlu_duration;
+    std::optional<std::chrono::microseconds> jlu_start_time;
+    std::optional<std::chrono::microseconds> jlu_end_time;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
     subline_options jlu_subline_opts;
@@ -1286,6 +1288,7 @@ read_json_number(yajlpp_parse_context* ypc,
         timeval tv;
         tv.tv_sec = ts_val / divisor;
         tv.tv_usec = fmod(ts_val, divisor) * (1000000.0 / divisor);
+        jlu->jlu_end_time = to_us(tv);
         jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec, jlu->jlu_exttm);
         tv.tv_sec = tm2sec(&jlu->jlu_exttm.et_tm);
         jlu->jlu_exttm.et_gmtoff
@@ -1299,6 +1302,18 @@ read_json_number(yajlpp_parse_context* ypc,
         }
         jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
         jlu->jlu_base_line->set_time(tv);
+    } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
+               && jlu->jlu_format->lf_start_timestamp_field == field_name)
+    {
+        long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+        auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
+        if (!scan_res) {
+            log_error("invalid number %.*s", (int) numberLen, numberVal);
+            return 0;
+        }
+        auto ts_val = scan_res.value().value();
+        jlu->jlu_start_time = std::chrono::microseconds(
+            static_cast<int64_t>(ts_val * 1000000.0 / divisor));
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
         if (!scan_res) {
@@ -1539,6 +1554,7 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
 
             tv.tv_sec = val / divisor;
             tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+            jlu->jlu_end_time = to_us(tv);
             jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
                                                        jlu->jlu_exttm);
             jlu->jlu_exttm.et_gmtoff
@@ -1551,6 +1567,12 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
                 jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
             }
             jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
+                   && jlu->jlu_format->lf_start_timestamp_field == field_name)
+        {
+            long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+            jlu->jlu_start_time = std::chrono::microseconds(
+                static_cast<int64_t>(val * 1000000.0 / divisor));
         } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
             jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
             switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1605,6 +1627,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
 
             tv.tv_sec = val / divisor;
             tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+            jlu->jlu_end_time = to_us(tv);
             jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
                                                        jlu->jlu_exttm);
             jlu->jlu_exttm.et_gmtoff
@@ -1617,6 +1640,12 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
                 jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
             }
             jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
+                   && jlu->jlu_format->lf_start_timestamp_field == field_name)
+        {
+            long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+            jlu->jlu_start_time = std::chrono::microseconds(
+                static_cast<int64_t>(val * 1000000.0 / divisor));
         } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
             jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
             switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1808,6 +1837,13 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_time<std::chrono::microseconds>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
+        }
+
+        if (jlu.jlu_start_time && jlu.jlu_end_time && !jlu.jlu_duration) {
+            if (jlu.jlu_end_time.value() > jlu.jlu_start_time.value()) {
+                jlu.jlu_duration
+                    = jlu.jlu_end_time.value() - jlu.jlu_start_time.value();
+            }
         }
 
         auto found_opid_desc = false;
@@ -2126,7 +2162,8 @@ external_log_format::scan(logfile& lf,
         }
 
         auto duration_cap = md[fpat->p_duration_field_index];
-        if (duration_cap && !opid_cap) {
+        auto start_ts_cap = md[fpat->p_start_timestamp_field_index];
+        if ((duration_cap || start_ts_cap) && !opid_cap) {
             hasher h;
             h.update(line_sf);
             h.to_string(tmp_opid_buf);
@@ -2143,6 +2180,21 @@ external_log_format::scan(logfile& lf,
                         = from_res.value() / this->elf_duration_divisor;
                     duration = std::chrono::microseconds(
                         static_cast<int64_t>(dur_secs * 1000000));
+                }
+            } else if (start_ts_cap) {
+                exttm start_tm;
+                timeval start_tv;
+                auto dts = this->build_time_scanner();
+                if (dts.scan(start_ts_cap->data(),
+                             start_ts_cap->length(),
+                             this->get_timestamp_formats(),
+                             &start_tm,
+                             start_tv))
+                {
+                    auto start_us = to_us(start_tv);
+                    if (log_us > start_us) {
+                        duration = log_us - start_us;
+                    }
                 }
             }
             auto opid_iter
@@ -2491,6 +2543,27 @@ external_log_format::annotate(logfile* lf,
             values.lvv_duration_value = duration;
         }
     }
+    if (!values.lvv_duration_value) {
+        auto start_ts_cap = md[pat.p_start_timestamp_field_index];
+        if (start_ts_cap) {
+            exttm start_tm;
+            timeval start_tv;
+            auto dts = this->build_time_scanner();
+            if (dts.scan(start_ts_cap->data(),
+                         start_ts_cap->length(),
+                         this->get_timestamp_formats(),
+                         &start_tm,
+                         start_tv))
+            {
+                auto start_us = to_us(start_tv);
+                auto end_us
+                    = (*lf)[line_number].get_time<std::chrono::microseconds>();
+                if (end_us > start_us) {
+                    values.lvv_duration_value = end_us - start_us;
+                }
+            }
+        }
+    }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const auto& ivd = pat.p_value_by_index[lpc];
@@ -2710,6 +2783,20 @@ read_json_field(yajlpp_parse_context* ypc,
                 frag,
                 field_name)};
         }
+    } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
+               && jlu->jlu_format->lf_start_timestamp_field == field_name)
+    {
+        exttm start_tm;
+        timeval start_tv;
+        const auto* last = jlu->jlu_format->lf_date_time.scan(
+            (const char*) str,
+            len,
+            jlu->jlu_format->get_timestamp_formats(),
+            &start_tm,
+            start_tv);
+        if (last != nullptr) {
+            jlu->jlu_start_time = to_us(start_tv);
+        }
     } else if (jlu->jlu_format->elf_level_pointer.pp_value != nullptr) {
         if (jlu->jlu_format->elf_level_pointer.pp_value
                 ->find_in(field_name.to_string_fragment(), PCRE2_NO_UTF_CHECK)
@@ -2871,6 +2958,20 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
             std::string{time_buf});
+    } else if (!jlu->jlu_format->lf_start_timestamp_field.empty()
+               && jlu->jlu_format->lf_start_timestamp_field == field_name)
+    {
+        exttm start_tm;
+        timeval start_tv;
+        const auto* last = jlu->jlu_format->lf_date_time.scan(
+            (const char*) str,
+            len,
+            jlu->jlu_format->get_timestamp_formats(),
+            &start_tm,
+            start_tv);
+        if (last != nullptr) {
+            jlu->jlu_start_time = to_us(start_tv);
+        }
     } else if (vd != nullptr
                && vd->vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP)
     {
@@ -3060,6 +3161,14 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 this->jlf_line_values.lvv_thread_id_value
                     = jlu.jlu_tid_frag->to_owned(
                         this->jlf_line_values.lvv_allocator);
+            }
+
+            if (jlu.jlu_start_time && jlu.jlu_end_time && !jlu.jlu_duration)
+            {
+                if (jlu.jlu_end_time.value() > jlu.jlu_start_time.value()) {
+                    jlu.jlu_duration = jlu.jlu_end_time.value()
+                        - jlu.jlu_start_time.value();
+                }
             }
 
             auto use_opid_hasher = false;
@@ -4357,6 +4466,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             if (name == this->elf_duration_field) {
                 pat.p_duration_field_index = named_cap.get_index();
                 duration_found += 1;
+            }
+            if (name == this->lf_start_timestamp_field) {
+                pat.p_start_timestamp_field_index = named_cap.get_index();
             }
 
             auto value_iter = this->elf_value_defs.find(name);

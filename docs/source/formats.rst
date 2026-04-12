@@ -296,6 +296,13 @@ object with the following fields:
     operation's time span will extend from the timestamp to the
     timestamp plus the duration.
 
+:start-timestamp-field: The name of a field that contains the start time
+  of the operation.  When set, the :code:`timestamp-field` is treated as
+  the end time and the duration is computed as the difference between the
+  two.  The :code:`timestamp-divisor` is applied to both fields.  This is
+  an alternative to using :code:`duration-field` for logs that record
+  separate start and end timestamps.
+
 :ordered-by-time: (v0.8.3+) Indicates that the order of messages in the file
   is time-based.  Files that are not naturally ordered by time will be sorted
   in order to display them in the correct order.  Note that this sorting can

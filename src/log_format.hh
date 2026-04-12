@@ -328,6 +328,7 @@ public:
     date_time_scanner lf_date_time;
     date_time_scanner lf_time_scanner;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
+    intern_string_t lf_start_timestamp_field;
     intern_string_t lf_subsecond_field;
     std::optional<subsecond_unit> lf_subsecond_unit;
     intern_string_t lf_time_field;

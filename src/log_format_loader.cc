@@ -1081,6 +1081,12 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the timestamp field in the log message pattern")
         .for_field(&log_format::lf_timestamp_field),
+    json_path_handler("start-timestamp-field")
+        .with_description(
+            "The name of the field that contains the start time of the "
+            "operation.  The timestamp-field is treated as the end time "
+            "and the duration is computed as the difference.")
+        .for_field(&log_format::lf_start_timestamp_field),
     json_path_handler("subsecond-field")
         .with_description("The path to the property in a JSON-lines log "
                           "message that contains the sub-second time value")

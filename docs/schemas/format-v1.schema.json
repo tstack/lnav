@@ -130,6 +130,11 @@
                     "description": "The name of the timestamp field in the log message pattern",
                     "type": "string"
                 },
+                "start-timestamp-field": {
+                    "title": "/<format_name>/start-timestamp-field",
+                    "description": "The name of the field that contains the start time of the operation.  The timestamp-field is treated as the end time and the duration is computed as the difference.",
+                    "type": "string"
+                },
                 "subsecond-field": {
                     "title": "/<format_name>/subsecond-field",
                     "description": "The path to the property in a JSON-lines log message that contains the sub-second time value",

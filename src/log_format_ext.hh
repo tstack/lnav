@@ -121,6 +121,7 @@ public:
         int p_src_file_field_index{-1};
         int p_src_line_field_index{-1};
         int p_duration_field_index{-1};
+        int p_start_timestamp_field_index{-1};
         int p_timestamp_end{-1};
         std::vector<int> p_opid_description_field_indexes;
         std::set<size_t> p_matched_samples;

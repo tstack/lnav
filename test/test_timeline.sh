@@ -175,3 +175,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_mongodb.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_cloudflare.1
