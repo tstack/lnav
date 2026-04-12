@@ -349,6 +349,7 @@ dist_noinst_DATA = \
 	logfile_caddy_log.1 \
 	logfile_crlf.0 \
 	logfile_cloudflare.json \
+	logfile_cloudflare.1 \
 	logfile_cxx.0 \
 	logfile_docker_compose.0 \
 	logfile_docker_compose_with_noise.0 \
