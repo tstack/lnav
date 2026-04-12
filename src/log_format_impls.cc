@@ -1011,6 +1011,9 @@ public:
         auto retval = std::make_shared<bro_log_format>(*this);
 
         retval->lf_specialized = true;
+        for (auto& fd : retval->blf_field_defs) {
+            fd.fd_meta.lvm_format = retval.get();
+        }
         return retval;
     }
 
