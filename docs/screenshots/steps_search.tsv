@@ -1,0 +1,11 @@
+# Search-completion demo.  Columns are TAB-separated:
+#   wait_seconds \t bytes (escape-decoded) \t label
+# Loading test/logfile_syslog.0 gives us lots of "veridian" text to
+# drive the inline completion.
+0.8	/	open search prompt
+0.5	v	type v
+0.5	e	type ve
+0.5	r	type ver
+0.8	\x09	TAB — auto-complete to veridian
+0.6	\r	ENTER — accept the completion
+0.8	\r	ENTER — run the search

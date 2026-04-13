@@ -55,8 +55,8 @@
 <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#0f1f2b"/>
 <line x1="24.20" y1="77.60" x2="24.20" y2="94.40" stroke="#00ff87" stroke-width="1"/>
 <line x1="24.20" y1="128.00" x2="24.20" y2="178.40" stroke="#ff8700" stroke-width="1"/>
-<line x1="24.20" y1="212.00" x2="24.20" y2="346.40" stroke="#87ff5f" stroke-width="1"/>
-<line x1="24.20" y1="380.00" x2="24.20" y2="531.20" stroke="#ffffff" stroke-width="1"/>
+<line x1="24.20" y1="212.00" x2="24.20" y2="346.40" stroke="#ffffff" stroke-width="1"/>
+<line x1="24.20" y1="380.00" x2="24.20" y2="531.20" stroke="#87ff5f" stroke-width="1"/>
 <line x1="419.00" y1="598.40" x2="419.00" y2="648.80" stroke="#011627" stroke-width="1"/>
 <line x1="419.00" y1="648.80" x2="419.00" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
 <line x1="1023.80" y1="77.60" x2="1023.80" y2="94.40" stroke="#d6deeb" stroke-width="1"/>
@@ -72,23 +72,23 @@
 <line x1="104.00" y1="578.38" x2="112.40" y2="578.38" stroke="#2d5a80" stroke-width="1"/>
 <line x1="927.20" y1="578.38" x2="952.40" y2="578.38" stroke="#f8f8f0" stroke-width="1"/>
 <line x1="20.00" y1="645.58" x2="414.80" y2="645.58" stroke="#d6deeb" stroke-width="1"/>
-<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:21:01 PDT                                                        Press</text>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:51:23 PDT                                                        Press</text>
 <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
 <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
 <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
 <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
-<text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2026-04-12T21:20:59.814526</text>
+<text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2026-04-12T21:51:20.078799</text>
 <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
 <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">lnav_piper_log</text>
 <text x="465.20" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
 <text x="490.40" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">↻</text>
-<text x="507.20" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="294.00" lengthAdjust="spacing">[logfile_docker_compose.0]/web-1[9]</text>
-<text x="801.20" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
-<text x="826.40" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
-<text x="851.60" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
-<text x="860.00" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
-<text x="885.20" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
+<text x="507.20" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="386.40" lengthAdjust="spacing">[logfile_docker_compose_with_noise.0]/web-1[9]</text>
 <text x="893.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="918.80" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+<text x="944.00" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
+<text x="952.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="977.60" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
+<text x="986.00" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
 <text x="28.40" y="89.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2024-04-24T22:32:35.812839-0700  * Debugger is active!</text>
 <text x="20.00" y="106.30" fill="#00ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
 <text x="28.40" y="106.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2024-04-24T22:32:35.815512-0700  * Debugger PIN: 593-762-075</text>
@@ -104,43 +104,43 @@
 <text x="20.00" y="190.30" fill="#ff8700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
 <text x="28.40" y="190.30" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
 <text x="36.80" y="190.30" fill="#b39554" xml:space="preserve" textLength="571.20" lengthAdjust="spacing">:M 24 Apr 2024 22:54:43.948 # Redis is now ready to exit, bye bye...</text>
-<text x="20.00" y="207.10" fill="#87ff5f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
-<text x="28.40" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814063-0700  * Serving Flask app &#x27;app.py&#x27;</text>
-<text x="28.40" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:20:59.814081-0700  * Debug mode: on</text>
-<text x="28.40" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="991.20" lengthAdjust="spacing">2026-04-12T21:20:59.814095-0700 WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
-<text x="28.40" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814106-0700  * Running on all addresses (</text>
+<text x="20.00" y="207.10" fill="#ffffff" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:51:20.078477-0700  * Serving Flask app &#x27;app.py&#x27;</text>
+<text x="28.40" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:51:20.078498-0700  * Debug mode: on</text>
+<text x="28.40" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:51:20.078525-0700</text>
+<text x="297.20" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="722.40" lengthAdjust="spacing" font-weight="bold">WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
+<text x="28.40" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:51:20.078534-0700  * Running on all addresses (</text>
 <text x="540.80" y="257.50" fill="#afffaf" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">0.0.0.0</text>
 <text x="599.60" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">)</text>
-<text x="28.40" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814117-0700  * Running on http://</text>
+<text x="28.40" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:51:20.078544-0700  * Running on http://</text>
 <text x="473.60" y="274.30" fill="#5fd700" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">127.0.0.1</text>
 <text x="549.20" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
-<text x="28.40" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814127-0700  * Running on http://</text>
+<text x="28.40" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:51:20.078551-0700  * Running on http://</text>
 <text x="473.60" y="291.10" fill="#d7ff00" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">172.18.0.3</text>
 <text x="557.60" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
-<text x="28.40" y="307.90" fill="#d6deeb" xml:space="preserve" textLength="436.80" lengthAdjust="spacing">2026-04-12T21:20:59.814138-0700 Press CTRL+C to quit</text>
-<text x="28.40" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:20:59.814147-0700  * Restarting with stat</text>
-<text x="28.40" y="341.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:20:59.814160-0700  * Debugger is active!</text>
-<text x="20.00" y="358.30" fill="#87ff5f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
-<text x="28.40" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:20:59.814173-0700  * Debugger PIN: 593-762-075</text>
-<text x="20.00" y="375.10" fill="#ffffff" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
-<text x="28.40" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814402-0700  * Serving Flask app &#x27;app.py&#x27;</text>
-<text x="28.40" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:20:59.814423-0700  * Debug mode: on</text>
-<text x="28.40" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:20:59.814441-0700</text>
-<text x="297.20" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="722.40" lengthAdjust="spacing" font-weight="bold">WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
-<text x="28.40" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814455-0700  * Running on all addresses (</text>
+<text x="28.40" y="307.90" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:51:20.078562-0700</text>
+<text x="297.20" y="307.90" fill="#d7d700" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">Press CTRL+C to quit</text>
+<text x="28.40" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:51:20.078570-0700  * Restarting with stat</text>
+<text x="28.40" y="341.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:51:20.078577-0700  * Debugger is active!</text>
+<text x="20.00" y="358.30" fill="#ffffff" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:51:20.078585-0700  * Debugger PIN: 593-762-075</text>
+<text x="20.00" y="375.10" fill="#87ff5f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:51:20.078712-0700  * Serving Flask app &#x27;app.py&#x27;</text>
+<text x="28.40" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:51:20.078725-0700  * Debug mode: on</text>
+<text x="28.40" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="991.20" lengthAdjust="spacing">2026-04-12T21:51:20.078744-0700 WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
+<text x="28.40" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:51:20.078752-0700  * Running on all addresses (</text>
 <text x="540.80" y="425.50" fill="#afffaf" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">0.0.0.0</text>
 <text x="599.60" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">)</text>
-<text x="28.40" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814469-0700  * Running on http://</text>
+<text x="28.40" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:51:20.078761-0700  * Running on http://</text>
 <text x="473.60" y="442.30" fill="#5fd700" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">127.0.0.1</text>
 <text x="549.20" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
-<text x="28.40" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814479-0700  * Running on http://</text>
+<text x="28.40" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:51:20.078769-0700  * Running on http://</text>
 <text x="473.60" y="459.10" fill="#d7ff00" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">172.18.0.3</text>
 <text x="557.60" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
-<text x="28.40" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:20:59.814493-0700</text>
-<text x="297.20" y="475.90" fill="#d7d700" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">Press CTRL+C to quit</text>
-<text x="28.40" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:20:59.814503-0700  * Restarting with stat</text>
-<text x="28.40" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:20:59.814514-0700  * Debugger is active!</text>
-<text x="28.40" y="526.30" fill="#33cccc" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:20:59.814526-0700  * Debugger PIN: 593-762-075</text>
+<text x="28.40" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="436.80" lengthAdjust="spacing">2026-04-12T21:51:20.078777-0700 Press CTRL+C to quit</text>
+<text x="28.40" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:51:20.078784-0700  * Restarting with stat</text>
+<text x="28.40" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:51:20.078792-0700  * Debugger is active!</text>
+<text x="28.40" y="526.30" fill="#33cccc" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:51:20.078799-0700  * Debugger PIN: 593-762-075</text>
 <text x="28.40" y="576.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">F</text>
 <text x="36.80" y="576.70" fill="#f8f0f0" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">iles</text>
 <text x="78.80" y="576.70" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
@@ -164,13 +164,13 @@
 <text x="456.80" y="643.90" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">✔</text>
 <text x="465.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="277.20" lengthAdjust="spacing"> demuxer “container” matched line</text>
 <text x="750.80" y="643.90" fill="#f78c6c" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">0</text>
-<text x="36.80" y="660.70" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">◆</text>
-<text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docke⋯_noise.0]/web-1</text>
-<text x="322.40" y="660.70" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   4.1KB</text>
-<text x="389.60" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing"> ⏳</text>
+<text x="36.80" y="660.70" fill="#5d9899" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">◇</text>
+<text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docker⋯e.0.1]/redis-1</text>
+<text x="322.40" y="660.70" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   5.1KB</text>
+<text x="398.00" y="660.70" fill="#b39554" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⚠</text>
 <text x="36.80" y="677.50" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">◆</text>
-<text x="45.20" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docker⋯th_ts.0]/web-1</text>
-<text x="322.40" y="677.50" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   4.1KB</text>
+<text x="45.20" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docker⋯mpose.0]/web-1</text>
+<text x="322.40" y="677.50" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   4.5KB</text>
 <text x="389.60" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing"> ⏳</text>
 <text x="20.00" y="694.30" fill="#f0f0f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L41       100%                                                                                             ?:View Help</text>
 <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="571.20" lengthAdjust="spacing">                                                               Press</text>

@@ -1,0 +1,1414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="792.00" viewBox="0 0 1048.00 792.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<style>
+.lnav-frame { visibility: hidden; }
+@keyframes lnav-f0 { 0.0000% { visibility: visible; } 9.4594% { visibility: visible; } 9.4595% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f0 { animation: lnav-f0 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f1 { 0% { visibility: hidden; } 9.4594% { visibility: hidden; } 9.4595% { visibility: visible; } 18.9188% { visibility: visible; } 18.9189% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f1 { animation: lnav-f1 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f2 { 0% { visibility: hidden; } 18.9188% { visibility: hidden; } 18.9189% { visibility: visible; } 28.3783% { visibility: visible; } 28.3784% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f2 { animation: lnav-f2 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f3 { 0% { visibility: hidden; } 28.3783% { visibility: hidden; } 28.3784% { visibility: visible; } 37.8377% { visibility: visible; } 37.8378% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f3 { animation: lnav-f3 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f4 { 0% { visibility: hidden; } 37.8377% { visibility: hidden; } 37.8378% { visibility: visible; } 47.2972% { visibility: visible; } 47.2973% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f4 { animation: lnav-f4 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f5 { 0% { visibility: hidden; } 47.2972% { visibility: hidden; } 47.2973% { visibility: visible; } 56.7567% { visibility: visible; } 56.7568% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f5 { animation: lnav-f5 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f6 { 0% { visibility: hidden; } 56.7567% { visibility: hidden; } 56.7568% { visibility: visible; } 66.2161% { visibility: visible; } 66.2162% { visibility: hidden; } 100% { visibility: hidden; } }
+.lnav-f6 { animation: lnav-f6 7.400s infinite; animation-timing-function: step-end; }
+@keyframes lnav-f7 { 0% { visibility: hidden; } 66.2161% { visibility: hidden; } 66.2162% { visibility: visible; } 100% { visibility: visible; } }
+.lnav-f7 { animation: lnav-f7 7.400s infinite; animation-timing-function: step-end; }
+</style>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<text class="lnav-frame lnav-f1" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/</text>
+<text class="lnav-frame lnav-f2" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v</text>
+<text class="lnav-frame lnav-f3" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v e</text>
+<text class="lnav-frame lnav-f4" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v e r</text>
+<text class="lnav-frame lnav-f5" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v e r Tab</text>
+<text class="lnav-frame lnav-f6" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v e r Tab Enter</text>
+<text class="lnav-frame lnav-f7" x="524.00" y="778.00" fill="#c8c8d0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20.0px" font-weight="500" text-anchor="middle">/ v e r Tab Enter Enter</text>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<g class="lnav-frame lnav-f0"><!-- frame 0: initial -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#2d5a80"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#162d40"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="999.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="480.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="497.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="514.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="531.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="548.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="564.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="581.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="648.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="665.60" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="228.80" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="228.80" x2="1023.80" y2="380.00" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="531.20" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="531.20" x2="1023.80" y2="665.60" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="679.18" x2="952.40" y2="679.18" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="389.60" y1="712.78" x2="440.00" y2="712.78" stroke="#2d5a80" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:27 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L0        100%                                                                                             ?:View Help</text>
+  <text x="20.00" y="711.10" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">✔</text>
+  <text x="28.40" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing"> restored session from</text>
+  <text x="221.60" y="711.10" fill="#f78c6c" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">one hour ago</text>
+  <text x="322.40" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">; press</text>
+  <text x="389.60" y="711.10" fill="#2d5a80" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL-R</text>
+  <text x="440.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing"> to reset session</text>
+</g>
+<g class="lnav-frame lnav-f1"><!-- frame 1: open search prompt -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="999.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="178.40" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="178.40" x2="1023.80" y2="279.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="279.20" x2="1023.80" y2="380.00" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="480.80" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:28 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="36.80" y="677.50" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="78.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">ABC   matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="168.00" lengthAdjust="spacing"> Search for:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">/</text>
+</g>
+<g class="lnav-frame lnav-f2"><!-- frame 2: type v -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="999.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="178.40" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="178.40" x2="1023.80" y2="279.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="279.20" x2="1023.80" y2="380.00" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="480.80" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:28 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="36.80" y="677.50" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="78.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">ABC   matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="168.00" lengthAdjust="spacing"> Search for:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">/v</text>
+</g>
+<g class="lnav-frame lnav-f3"><!-- frame 3: type ve -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="999.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="178.40" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="178.40" x2="1023.80" y2="279.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="279.20" x2="1023.80" y2="380.00" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="480.80" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:29 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="36.80" y="677.50" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="78.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">ABC   matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="168.00" lengthAdjust="spacing"> Search for:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">/ve</text>
+</g>
+<g class="lnav-frame lnav-f4"><!-- frame 4: type ver -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="999.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="178.40" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="178.40" x2="1023.80" y2="279.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="279.20" x2="1023.80" y2="380.00" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="480.80" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:29 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="36.80" y="677.50" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="78.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">ABC   matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="168.00" lengthAdjust="spacing"> Search for:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">/ver</text>
+</g>
+<g class="lnav-frame lnav-f5"><!-- frame 5: TAB — auto-complete to veridian -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="142.80" height="17.30" fill="#28505d"/>
+  <rect x="162.80" y="94.40" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="188.00" y="94.40" width="831.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="162.80" y="111.20" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="162.80" y="128.00" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="162.80" y="144.80" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="665.60" width="92.40" height="17.30" fill="#023c4d"/>
+  <rect x="20.00" y="682.40" width="8.40" height="17.30" fill="#023c4d"/>
+  <rect x="28.40" y="682.40" width="75.60" height="17.30" fill="#28505d"/>
+  <rect x="104.00" y="682.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="112.40" y="682.40" width="915.60" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#ffffaf" stroke-width="1"/>
+  <line x1="24.20" y1="682.40" x2="24.20" y2="699.20" stroke="#5f7e97" stroke-width="1"/>
+  <line x1="108.20" y1="682.40" x2="108.20" y2="699.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="77.60" x2="1023.80" y2="178.40" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="178.40" x2="1023.80" y2="279.20" stroke="#011627" stroke-width="1"/>
+  <line x1="1023.80" y1="279.20" x2="1023.80" y2="380.00" stroke="#ef5350" stroke-width="1"/>
+  <line x1="1023.80" y1="380.00" x2="1023.80" y2="480.80" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="28.40" y1="695.98" x2="53.60" y2="695.98" stroke="#cdcd00" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:30 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="20.00" y="106.30" fill="#ffffaf" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#28505d" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">ver</text>
+  <text x="188.00" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">idian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: lookup(file): lookup for opt failed</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="20.00" y="677.50" fill="#5f7e97" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">┌┤</text>
+  <text x="36.80" y="677.50" fill="#5f7e97" xml:space="preserve" textLength="58.80" lengthAdjust="spacing" font-weight="bold">pattern</text>
+  <text x="95.60" y="677.50" fill="#5f7e97" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">├┐</text>
+  <text x="112.40" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">  matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="28.40" y="694.30" fill="#cdcd00" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">ver</text>
+  <text x="53.60" y="694.30" fill="#33cccc" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">idian</text>
+  <text x="112.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">/ver</text>
+</g>
+<g class="lnav-frame lnav-f6"><!-- frame 6: ENTER — accept the completion -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="28.40" y="94.40" width="134.40" height="17.30" fill="#28505d"/>
+  <rect x="162.80" y="94.40" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="188.00" y="94.40" width="831.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="111.20" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="111.20" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="128.00" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="128.00" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="144.80" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="144.80" width="25.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="480.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="497.60" width="126.00" height="17.30" fill="#2d5a80"/>
+  <rect x="146.00" y="497.60" width="882.00" height="17.30" fill="#162d40"/>
+  <rect x="238.40" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="314.00" y="632.00" width="25.20" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="494.38" x2="952.40" y2="494.38" stroke="#f0f0f0" stroke-width="1"/>
+  <line x1="20.00" y1="611.98" x2="87.20" y2="611.98" stroke="#d6deeb" stroke-width="1"/>
+  <line x1="288.80" y1="679.18" x2="314.00" y2="679.18" stroke="#d6deeb" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:31 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="1019.60" y="89.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="20.00" y="106.30" fill="#28505d" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#28505d" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">ver</text>
+  <text x="188.00" y="106.30" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">idian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="1019.60" y="106.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="123.10" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="1019.60" y="123.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="139.90" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="663.60" lengthAdjust="spacing">: lookup(file): lookup for opt failed                                         ┤</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">ver</text>
+  <text x="188.00" y="156.70" fill="#ffff5f" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">idian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="1019.60" y="156.70" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="173.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="190.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="207.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="223.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="240.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="257.50" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="274.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="291.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="307.90" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="324.70" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="341.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="358.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="375.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="391.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="408.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="425.50" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="442.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="459.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="475.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="20.00" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="492.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="509.50" fill="#f8f0f0" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold"> Syntax Help</text>
+  <text x="137.60" y="509.50" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="146.00" y="509.50" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+  <text x="28.40" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">.</text>
+  <text x="36.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">   Any character     a</text>
+  <text x="221.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">|</text>
+  <text x="230.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">b   a or b</text>
+  <text x="389.60" y="526.30" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="431.60" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="201.60" lengthAdjust="spacing">   Case-sensitive search</text>
+  <text x="28.40" y="543.10" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\w</text>
+  <text x="45.20" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Word character    a</text>
+  <text x="221.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">?</text>
+  <text x="230.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">    0 or 1 a&#x27;s</text>
+  <text x="389.60" y="543.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">$</text>
+  <text x="398.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">       End of string</text>
+  <text x="28.40" y="559.90" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\d</text>
+  <text x="45.20" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  Digit             a</text>
+  <text x="221.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="230.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    0 or more a&#x27;s</text>
+  <text x="389.60" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+  <text x="398.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">...</text>
+  <text x="423.20" y="559.90" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">)</text>
+  <text x="431.60" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">   Capture</text>
+  <text x="28.40" y="576.70" fill="#ff5fff" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">\s</text>
+  <text x="45.20" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">  White space       a</text>
+  <text x="221.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">+</text>
+  <text x="230.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">    1 or more a&#x27;s</text>
+  <text x="389.60" y="576.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">^</text>
+  <text x="398.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">       Start of string</text>
+  <text x="28.40" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="36.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">   Escape character</text>
+  <text x="213.20" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">[^</text>
+  <text x="230.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="246.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="263.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Not</text>
+  <text x="288.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> a or b</text>
+  <text x="389.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="398.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">ab</text>
+  <text x="414.80" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">-</text>
+  <text x="423.20" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">d</text>
+  <text x="431.60" y="593.50" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="440.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="184.80" lengthAdjust="spacing">  Any of a, b, c, or d</text>
+  <text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">Examples</text>
+  <text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">  abc</text>
+  <text x="62.00" y="627.10" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">*</text>
+  <text x="70.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">       matches</text>
+  <text x="204.80" y="627.10" fill="#22da6e" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">&#x27;ab&#x27;</text>
+  <text x="238.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="255.20" y="627.10" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="297.20" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">,</text>
+  <text x="314.00" y="627.10" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;abccc&#x27;</text>
+  <text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">  key=</text>
+  <text x="70.40" y="643.90" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(\w+)</text>
+  <text x="112.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">  matches  key=</text>
+  <text x="238.40" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">123</text>
+  <text x="263.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">, key=</text>
+  <text x="314.00" y="643.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">abc</text>
+  <text x="339.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> and captures 123 and abc</text>
+  <text x="36.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">[abc</text>
+  <text x="78.80" y="660.70" fill="#00d7d7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">\</text>
+  <text x="87.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">]    matches</text>
+  <text x="204.80" y="660.70" fill="#22da6e" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">&#x27;[abc]&#x27;</text>
+  <text x="36.80" y="677.50" fill="#00d7d7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">(?-i)</text>
+  <text x="78.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">ABC   matches</text>
+  <text x="204.80" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;ABC&#x27;</text>
+  <text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> and not</text>
+  <text x="322.40" y="677.50" fill="#22da6e" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">&#x27;abc&#x27;</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="168.00" lengthAdjust="spacing"> Search for:  (Press</text>
+  <text x="196.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">CTRL+J</text>
+  <text x="246.80" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="252.00" lengthAdjust="spacing"> to jump to a previous hit and</text>
+  <text x="507.20" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">Esc</text>
+  <text x="532.40" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing"> to abort)</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">/veridian</text>
+</g>
+<g class="lnav-frame lnav-f7"><!-- frame 7: ENTER — run the search -->
+  <rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#2d5a80"/>
+  <rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#162d40"/>
+  <rect x="20.00" y="77.60" width="999.60" height="17.30" fill="#162d40"/>
+  <rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="94.40" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="28.40" y="94.40" width="134.40" height="17.30" fill="#28505d"/>
+  <rect x="162.80" y="94.40" width="67.20" height="17.30" fill="#ffff5f"/>
+  <rect x="230.00" y="94.40" width="789.60" height="17.30" fill="#28505d"/>
+  <rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="111.20" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="111.20" width="67.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="128.00" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="128.00" width="67.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="144.80" width="8.40" height="17.30" fill="#ffffaf"/>
+  <rect x="162.80" y="144.80" width="67.20" height="17.30" fill="#ffff5f"/>
+  <rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="480.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="497.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="514.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="531.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="548.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="564.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="581.60" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="1019.60" y="648.80" width="8.40" height="17.30" fill="#d6deeb"/>
+  <rect x="20.00" y="665.60" width="1008.00" height="17.30" fill="#0f1f2b"/>
+  <rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+  <line x1="24.20" y1="111.20" x2="24.20" y2="161.60" stroke="#011627" stroke-width="1"/>
+  <line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+  <line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#f8f8f0" stroke-width="1"/>
+  <line x1="927.20" y1="679.18" x2="952.40" y2="679.18" stroke="#f0f0f0" stroke-width="1"/>
+  <text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T22:30:31 PDT                                                        Press</text>
+  <text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+  <text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+  <text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+  <text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="104.00" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2007-11-03T09:23:38.000000</text>
+  <text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="347.60" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">syslog_log</text>
+  <text x="431.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="456.80" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">logfile_syslog.0[0]</text>
+  <text x="616.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="641.60" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+  <text x="666.80" y="72.70" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7998</text>
+  <text x="700.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="725.60" y="72.70" fill="#afd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">automount[7998]</text>
+  <text x="851.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+  <text x="20.00" y="89.50" fill="#f8f8f0" xml:space="preserve" textLength="193.20" lengthAdjust="spacing" font-style="italic"> No messages above here</text>
+  <text x="1019.60" y="89.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="20.00" y="106.30" fill="#28505d" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+  <text x="28.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing" font-weight="bold">Nov  3 09:23:38</text>
+  <text x="162.80" y="106.30" fill="#28505d" xml:space="preserve" textLength="67.20" lengthAdjust="spacing" font-weight="bold">veridian</text>
+  <text x="238.40" y="106.30" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">automount</text>
+  <text x="314.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+  <text x="322.40" y="106.30" fill="#afaf00" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">7998</text>
+  <text x="356.00" y="106.30" fill="#afd75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+  <text x="364.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="336.00" lengthAdjust="spacing" font-weight="bold">: lookup(file): lookup for foobar failed</text>
+  <text x="1019.60" y="106.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="28.40" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="123.10" fill="#011627" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="123.10" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="123.10" fill="#00ffd7" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">16442</text>
+  <text x="364.40" y="123.10" fill="#00af00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="372.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="310.80" lengthAdjust="spacing">: attempting to mount entry /auto/opt</text>
+  <text x="1019.60" y="123.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="28.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:23:38</text>
+  <text x="162.80" y="139.90" fill="#011627" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="139.90" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">automount</text>
+  <text x="314.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+  <text x="322.40" y="139.90" fill="#00ffaf" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">7999</text>
+  <text x="356.00" y="139.90" fill="#5fd700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+  <text x="364.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="663.60" lengthAdjust="spacing">: lookup(file): lookup for opt failed                                         ┤</text>
+  <text x="28.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="126.00" lengthAdjust="spacing">Nov  3 09:47:02</text>
+  <text x="162.80" y="156.70" fill="#011627" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">veridian</text>
+  <text x="238.40" y="156.70" fill="#ffd700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">sudo</text>
+  <text x="272.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="100.80" lengthAdjust="spacing">: timstack :</text>
+  <text x="381.20" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">TTY</text>
+  <text x="406.40" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">=pts/6 ;</text>
+  <text x="482.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">PWD</text>
+  <text x="507.20" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="302.40" lengthAdjust="spacing">=/auto/wstimstack/rpms/lbuild/test ;</text>
+  <text x="818.00" y="156.70" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">USER</text>
+  <text x="851.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">=root ;</text>
+  <text x="918.80" y="156.70" fill="#addb67" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">COMMAND</text>
+  <text x="977.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">=/usr</text>
+  <text x="1019.60" y="156.70" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="173.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="190.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="207.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="223.90" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="240.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="257.50" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="274.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="291.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="307.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="324.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="341.50" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="358.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="375.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="391.90" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="408.70" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="425.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="442.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="459.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="475.90" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="492.70" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="509.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="526.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="543.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="559.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="576.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="593.50" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="610.30" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="627.10" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="643.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="1019.60" y="660.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┤</text>
+  <text x="20.00" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+  <text x="927.20" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+  <text x="952.40" y="677.50" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+  <text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L0        100%   Hit 1 of 4 for “veridian”                                                                 ?:View Help</text>
+  <text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">search completed in</text>
+  <text x="188.00" y="711.10" fill="#f78c6c" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">0.037</text>
+  <text x="230.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="361.20" lengthAdjust="spacing"> seconds                              Press</text>
+  <text x="599.60" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">n</text>
+  <text x="608.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">/</text>
+  <text x="616.40" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">N</text>
+  <text x="624.80" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="403.20" lengthAdjust="spacing"> to move forward/backward through search results</text>
+</g>
+</g>
+</svg>

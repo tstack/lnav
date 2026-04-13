@@ -259,12 +259,14 @@ def capture(argv: list[str], cols: int, rows: int,
     return screen
 
 
-def render_svg(screen: pyte.Screen, cols: int, rows: int,
-               font_size: float = 14.0,
-               line_height_ratio: float = 1.2,
-               char_width: float = 8.4,
-               padding: tuple[float, float, float, float] = (16, 20, 20, 20),
-               title_bar: float = 28.0) -> str:
+def layout(cols: int, rows: int,
+           font_size: float = 14.0,
+           line_height_ratio: float = 1.2,
+           char_width: float = 8.4,
+           padding: tuple[float, float, float, float] = (16, 20, 20, 20),
+           title_bar: float = 28.0) -> dict:
+    """Compute window/terminal geometry once so render_svg and the
+    animated-frame renderer agree on coordinates."""
     pt_top, pt_right, pt_bot, pt_left = padding
     lh = font_size * line_height_ratio
     cw = char_width
@@ -272,10 +274,26 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
     term_h = lh * rows
     width = pt_left + term_w + pt_right
     height = title_bar + pt_top + term_h + pt_bot
-    term_x = pt_left
-    term_y = title_bar + pt_top
+    return dict(
+        cols=cols, rows=rows,
+        font_size=font_size, cw=cw, lh=lh,
+        pt_top=pt_top, pt_right=pt_right, pt_bot=pt_bot, pt_left=pt_left,
+        title_bar=title_bar,
+        term_w=term_w, term_h=term_h, term_x=pt_left, term_y=title_bar + pt_top,
+        width=width, height=height,
+    )
 
-    # macOS traffic-light colors.
+
+def render_chrome(lay: dict) -> list[str]:
+    """Emit the macOS-style window chrome: shadow, rounded frame, title
+    bar, traffic lights, terminal background.  Returns a list of SVG
+    element strings (no outer <svg>)."""
+    width = lay["width"]
+    height = lay["height"]
+    title_bar = lay["title_bar"]
+    term_x, term_y = lay["term_x"], lay["term_y"]
+    term_w, term_h = lay["term_w"], lay["term_h"]
+
     tl_red    = "#ff5f57"
     tl_yellow = "#febc2e"
     tl_green  = "#28c840"
@@ -283,41 +301,20 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
     title_stroke = "#1a1a1a"
 
     out: list[str] = []
-    out.append('<?xml version="1.0" encoding="UTF-8"?>')
-    out.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{width:.2f}" height="{height:.2f}" '
-        f'viewBox="0 0 {width:.2f} {height:.2f}">'
-    )
-    out.append('<defs>')
-    out.append('  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">')
-    out.append('    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>')
-    out.append('  </filter>')
-    # Clip path for the title bar so only the top corners round.
-    out.append(
-        f'  <clipPath id="titleClip"><rect x="0" y="0" '
-        f'width="{width:.2f}" height="{title_bar:.2f}"/></clipPath>'
-    )
-    out.append('</defs>')
-    # Full window — rounded on all corners, with shadow.
     out.append(
         f'<rect x="0" y="0" width="{width:.2f}" height="{height:.2f}" '
         f'fill="{WINDOW_BG}" rx="10" ry="10" filter="url(#shadow)"/>'
     )
-    # Title bar — draw a full rounded rect but clipped to the title-bar
-    # region so only the top corners appear rounded.
     out.append(
         f'<g clip-path="url(#titleClip)">'
         f'<rect x="0" y="0" width="{width:.2f}" height="{title_bar + 10:.2f}" '
         f'fill="{title_bg}" rx="10" ry="10"/>'
         f'</g>'
     )
-    # Hairline divider under the title bar.
     out.append(
         f'<line x1="0" y1="{title_bar:.2f}" x2="{width:.2f}" y2="{title_bar:.2f}" '
         f'stroke="{title_stroke}" stroke-width="1"/>'
     )
-    # Traffic lights — three 12px circles, 8px apart, 14px from left, centered vertically.
     tl_cy = title_bar / 2
     tl_r = 6.0
     tl_gap = 8.0
@@ -329,23 +326,31 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
             f'<circle cx="{cx:.2f}" cy="{tl_cy:.2f}" r="{tl_r:.2f}" '
             f'fill="{fill}" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>'
         )
-    # Window title.
     out.append(
         f'<text x="{width / 2:.2f}" y="{tl_cy + 4:.2f}" '
         f'fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, '
         f'\'SF Pro Text\', \'Helvetica Neue\', Helvetica, Arial, sans-serif" '
         f'font-size="12px" font-weight="600" text-anchor="middle">lnav</text>'
     )
-    # Terminal background.
     out.append(
         f'<rect x="{term_x:.2f}" y="{term_y:.2f}" '
         f'width="{term_w:.2f}" height="{term_h:.2f}" fill="{DEFAULT_BG}"/>'
     )
-    out.append(
-        '<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, '
-        'Consolas, DejaVu Sans Mono, monospace" '
-        f'font-size="{font_size}px">'
-    )
+    return out
+
+
+def render_frame(screen: pyte.Screen, lay: dict) -> list[str]:
+    """Emit the per-frame SVG elements (backgrounds, vertical bars,
+    underlines, foregrounds) for one screen snapshot."""
+    cols = lay["cols"]
+    rows = lay["rows"]
+    cw = lay["cw"]
+    lh = lay["lh"]
+    pt_left = lay["pt_left"]
+    term_y = lay["term_y"]
+    font_size = lay["font_size"]
+
+    out: list[str] = []
 
     # Backgrounds — one rect per run of same bg.
     for y in range(rows):
@@ -367,15 +372,12 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
             rx = pt_left + start_col * cw
             ry = term_y + y * lh
             rw = (x - start_col) * cw
-            # Overlap each rect 0.5px below to avoid sub-pixel
-            # antialiasing gaps between adjacent rows.
             out.append(
                 f'<rect x="{rx:.2f}" y="{ry:.2f}" '
                 f'width="{rw:.2f}" height="{lh + 0.5:.2f}" fill="{bg}"/>'
             )
 
-    # Vertical bars (U+2502) — draw as SVG lines so adjacent-row scrollbar
-    # chars join continuously without font-metric gaps.
+    # Vertical bars (U+2502) — continuous strokes.
     for col in range(cols):
         y = 0
         while y < rows:
@@ -406,7 +408,6 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
 
     # Underlines — standalone lines so spans across color changes stay
     # continuous and trailing-space underlines aren't lost.
-    underline_y_offset = font_size * 0.95
     for y in range(rows):
         row = screen.buffer[y]
         x = 0
@@ -446,8 +447,6 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
                 if (fg2, c2.bold, c2.italics) != style_key:
                     break
                 d = c2.data
-                # U+2502 is drawn as an SVG line above; replace with a
-                # space here so it doesn't render twice.
                 buf.append(' ' if not d or d == "│" else d)
                 x += 1
             text = ''.join(buf).rstrip()
@@ -467,9 +466,52 @@ def render_svg(screen: pyte.Screen, cols: int, rows: int,
                 attrs.append('font-style="italic"')
             out.append(f'<text {" ".join(attrs)}>{html.escape(text)}</text>')
 
+    return out
+
+
+def render_svg(screen: pyte.Screen, cols: int, rows: int,
+               font_size: float = 14.0,
+               line_height_ratio: float = 1.2,
+               char_width: float = 8.4,
+               padding: tuple[float, float, float, float] = (16, 20, 20, 20),
+               title_bar: float = 28.0) -> str:
+    lay = layout(cols, rows, font_size, line_height_ratio,
+                 char_width, padding, title_bar)
+    out = svg_header(lay)
+    out += render_chrome(lay)
+    out.append(text_group_open(lay))
+    out += render_frame(screen, lay)
     out.append('</g>')
     out.append('</svg>')
     return "\n".join(out) + "\n"
+
+
+def svg_header(lay: dict) -> list[str]:
+    width = lay["width"]
+    height = lay["height"]
+    title_bar = lay["title_bar"]
+    out = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        (f'<svg xmlns="http://www.w3.org/2000/svg" '
+         f'width="{width:.2f}" height="{height:.2f}" '
+         f'viewBox="0 0 {width:.2f} {height:.2f}">'),
+        '<defs>',
+        '  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">',
+        '    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>',
+        '  </filter>',
+        (f'  <clipPath id="titleClip"><rect x="0" y="0" '
+         f'width="{width:.2f}" height="{title_bar:.2f}"/></clipPath>'),
+        '</defs>',
+    ]
+    return out
+
+
+def text_group_open(lay: dict) -> str:
+    return (
+        '<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, '
+        'Consolas, DejaVu Sans Mono, monospace" '
+        f'font-size="{lay["font_size"]}px">'
+    )
 
 
 def main() -> int:

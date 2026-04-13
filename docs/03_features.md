@@ -118,7 +118,7 @@ also applied to: SQL keywords, XML tags, file and line numbers in Java
 backtraces, and quoted strings. The search and SQL query prompt are also
 highlighted as you type, making it easier to see errors and matching brackets.
 
-![Animation of syntax highlighting](/assets/images/lnav-syntax-highlight.gif)
+![Animation of syntax highlighting](/assets/images/lnav-syntax-highlight.svg)
 
 ## Tab-completion
 
@@ -126,7 +126,7 @@ The command prompt supports tab-completion for almost all operations. For
 example, when doing a search, you can tab-complete words that are displayed on
 screen rather than having to do a copy & paste.
 
-![Animation of TAB-completion](/assets/images/lnav-tab-complete.gif)
+![Animation of TAB-completion](/assets/images/lnav-tab-complete.svg)
 
 ## Custom Keymaps
 

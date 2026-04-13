@@ -1,0 +1,17 @@
+# Syntax-highlighting demo — open the SQL prompt, type `SELECT FROM `,
+# and watch the misplaced `F` light up in red as the parser flags the
+# error in real time.
+0.8	;	open SQL prompt
+0.5	S	type S
+0.3	E	type E
+0.3	L	type L
+0.3	E	type E
+0.3	C	type C
+0.3	T	type T
+0.3	\x20	space
+0.3	F	type F — error!
+0.3	R	type R
+0.3	O	type O
+0.3	M	type M
+0.5	\x20	trailing space
+2.5		wait for the parser to flag the error

@@ -107,7 +107,34 @@ shot_query() {
         "${TEST_DIR}/logfile_shop_access_log.0"
 }
 
-ALL_SHOTS=(multi_file hist timeline before_pretty after_pretty query)
+ANIMATE="${SCRIPT_DIR}/animate.py"
+
+animate() {
+    local slug="$1"; shift
+    local steps_file="$1"; shift
+    local out="${OUT_DIR}/${slug}.svg"
+    echo "==> Animating ${slug}"
+    "${PY}" "${ANIMATE}" \
+        --cols "${COLS}" --rows "${ROWS}" \
+        --steps "${steps_file}" \
+        --out "${out}" \
+        ${DEBUG_FLAGS[@]+"${DEBUG_FLAGS[@]}"} \
+        -- "${LNAV_BIN}" "$@"
+}
+
+shot_tab_complete() {
+    animate "lnav-tab-complete" \
+        "${SCRIPT_DIR}/steps_search.tsv" \
+        "${TEST_DIR}/logfile_syslog.0"
+}
+
+shot_sql_syntax() {
+    animate "lnav-syntax-highlight" \
+        "${SCRIPT_DIR}/steps_sql_syntax.tsv" \
+        "${TEST_DIR}/logfile_syslog.0"
+}
+
+ALL_SHOTS=(multi_file hist timeline before_pretty after_pretty query tab_complete sql_syntax)
 
 if [[ $# -eq 0 ]]; then
     for s in "${ALL_SHOTS[@]}"; do
