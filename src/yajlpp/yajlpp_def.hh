@@ -311,155 +311,283 @@ struct json_path_handler : public json_path_handler_base {
         return get_field(*((T*) input), field, args...);
     }
 
-    template<typename R, typename T, typename... Args>
-    struct LastIs {
-        static constexpr bool value = LastIs<R, Args...>::value;
+    // ----------------------------------------------------------------
+    // Unified field-classification machinery.
+    //
+    // The `for_field` overload set dispatches on the last argument in
+    // its parameter pack, which is always a member-pointer `U C::*`.
+    // `FieldTraits<F>` does that classification once: it peels any
+    // outer `std::optional<>` and `std::shared_ptr<>` from `U`, then
+    // exposes both the raw pointee (`raw_type`) and the unwrapped leaf
+    // (`inner_type`/`inner_kind`/`value_type`/`key_type`), along with
+    // `is_optional`/`is_shared_ptr` flags.
+    //
+    // `FieldKind<Args...>` is the alias used by SFINAE predicates: it
+    // applies `FieldTraits` to the last entry in `Args...`.
+    // ----------------------------------------------------------------
+
+    enum class field_kind {
+        none,
+        boolean,
+        integer,
+        floating,
+        string,
+        enumeration,
+        vector,
+        integer_vector,
+        string_vector,
+        map,
     };
 
-    template<typename R, typename T>
-    struct LastIs<R, T> {
+    template<typename... Args>
+    struct LastArg;
+
+    template<typename T>
+    struct LastArg<T> {
+        using type = T;
+    };
+
+    template<typename T, typename... Rest>
+    struct LastArg<T, Rest...> {
+        using type = typename LastArg<Rest...>::type;
+    };
+
+    template<typename T>
+    struct StripOptional {
+        using type = T;
         static constexpr bool value = false;
     };
-
-    template<typename R, typename T>
-    struct LastIs<R, R T::*> {
+    template<typename T>
+    struct StripOptional<std::optional<T>> {
+        using type = T;
         static constexpr bool value = true;
     };
 
-    template<typename T, typename... Args>
-    struct LastIsEnum {
-        using value_type = typename LastIsEnum<Args...>::value_type;
-        static constexpr bool value = LastIsEnum<Args...>::value;
-    };
-
-    template<typename T, typename U>
-    struct LastIsEnum<U T::*> {
-        using value_type = U;
-
-        static constexpr bool value = std::is_enum_v<U>;
-    };
-
-    template<typename T, typename U>
-    struct LastIsEnum<std::optional<U> T::*> {
-        using value_type = U;
-
-        static constexpr bool value = std::is_enum_v<U>;
-    };
-
-    template<typename T, typename... Args>
-    struct LastIsInteger {
-        static constexpr bool value = LastIsInteger<Args...>::value;
-    };
-
-    template<typename T, typename U>
-    struct LastIsInteger<U T::*> {
-        static constexpr bool value
-            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
-    };
-
-    template<typename T, typename U>
-    struct LastIsInteger<std::optional<U> T::*> {
-        static constexpr bool value
-            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
-    };
-
-    template<typename T, typename... Args>
-    struct LastIsFloat {
-        static constexpr bool value = LastIsFloat<Args...>::value;
-    };
-
-    template<typename T, typename U>
-    struct LastIsFloat<U T::*> {
-        static constexpr bool value = std::is_same_v<U, double>;
-    };
-
-    template<typename T, typename U>
-    struct LastIsFloat<std::optional<U> T::*> {
-        static constexpr bool value = std::is_same_v<U, double>;
-    };
-
-    template<typename T, typename... Args>
-    struct LastIsVector {
-        using value_type = typename LastIsVector<Args...>::value_type;
-        static constexpr bool value = LastIsVector<Args...>::value;
-    };
-
-    template<typename T, typename U>
-    struct LastIsVector<std::vector<U> T::*> {
-        using value_type = U;
-        static constexpr bool value = true;
-    };
-
-    template<typename T, typename U>
-    struct LastIsVector<std::shared_ptr<std::vector<U>> T::*> {
-        using value_type = U;
-        static constexpr bool value = true;
-    };
-
-    template<typename T, typename U>
-    struct LastIsVector<U T::*> {
-        using value_type = void;
+    template<typename T>
+    struct StripSharedPtr {
+        using type = T;
         static constexpr bool value = false;
     };
-
-    template<typename T, typename... Args>
-    struct LastIsIntegerVector {
-        using value_type = typename LastIsIntegerVector<Args...>::value_type;
-        static constexpr bool value = LastIsIntegerVector<Args...>::value;
+    template<typename T>
+    struct StripSharedPtr<std::shared_ptr<T>> {
+        using type = T;
+        static constexpr bool value = true;
     };
 
-    template<typename T, typename U>
-    struct LastIsIntegerVector<std::vector<U> T::*> {
-        using value_type = U;
-        static constexpr bool value
-            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
-    };
-
-    template<typename T, typename U>
-    struct LastIsIntegerVector<U T::*> {
-        using value_type = void;
+    template<typename T>
+    struct VectorInner {
+        using type = void;
         static constexpr bool value = false;
     };
-
-    template<typename T, typename... Args>
-    struct LastIsMap {
-        static constexpr bool is_ptr = LastIsMap<Args...>::is_ptr;
-        using key_type = typename LastIsMap<Args...>::key_type;
-        using value_type = typename LastIsMap<Args...>::value_type;
-        static constexpr bool value = LastIsMap<Args...>::value;
-    };
-
-    template<typename T, typename K, typename U>
-    struct LastIsMap<std::shared_ptr<std::map<K, U>> T::*> {
-        static constexpr bool is_ptr = true;
-        using key_type = K;
-        using value_type = U;
+    template<typename T>
+    struct VectorInner<std::vector<T>> {
+        using type = T;
         static constexpr bool value = true;
     };
 
-    template<typename T, typename K, typename U>
-    struct LastIsMap<std::map<K, U> T::*> {
-        static constexpr bool is_ptr = false;
-        using key_type = K;
-        using value_type = U;
-        static constexpr bool value = true;
-    };
-
-    template<typename T, typename K, typename U>
-    struct LastIsMap<lnav::map::small<K, U> T::*> {
-        static constexpr bool is_ptr = false;
-        using key_type = K;
-        using value_type = U;
-        static constexpr bool value = true;
-    };
-
-    template<typename T, typename U>
-    struct LastIsMap<U T::*> {
-        static constexpr bool is_ptr = false;
+    template<typename T>
+    struct MapInner {
         using key_type = void;
         using value_type = void;
         static constexpr bool value = false;
     };
+    template<typename K, typename V>
+    struct MapInner<std::map<K, V>> {
+        using key_type = K;
+        using value_type = V;
+        static constexpr bool value = true;
+    };
+    template<typename K, typename V>
+    struct MapInner<lnav::map::small<K, V>> {
+        using key_type = K;
+        using value_type = V;
+        static constexpr bool value = true;
+    };
+
+    template<typename F>
+    struct FieldTraits {
+        using raw_type = void;
+        using inner_type = void;
+        using value_type = void;
+        using key_type = void;
+        static constexpr field_kind inner_kind = field_kind::none;
+        static constexpr bool is_optional = false;
+        static constexpr bool is_shared_ptr = false;
+        static constexpr bool is_member_ptr = false;
+    };
+
+    template<typename C, typename U>
+    struct FieldTraits<U C::*> {
+    private:
+        using opt = StripOptional<U>;
+        using inner_opt = typename opt::type;
+        using sptr = StripSharedPtr<inner_opt>;
+
+        static constexpr field_kind compute_kind()
+        {
+            using inner = typename sptr::type;
+            if constexpr (std::is_same_v<inner, bool>) {
+                return field_kind::boolean;
+            } else if constexpr (VectorInner<inner>::value) {
+                using vt = typename VectorInner<inner>::type;
+                if constexpr (std::is_same_v<vt, std::string>) {
+                    return field_kind::string_vector;
+                } else if constexpr (std::is_integral_v<
+                                         vt> && !std::is_same_v<vt, bool>) {
+                    return field_kind::integer_vector;
+                } else {
+                    return field_kind::vector;
+                }
+            } else if constexpr (MapInner<inner>::value) {
+                return field_kind::map;
+            } else if constexpr (std::is_enum_v<inner>) {
+                return field_kind::enumeration;
+            } else if constexpr (std::is_same_v<inner, double>) {
+                return field_kind::floating;
+            } else if constexpr (std::is_integral_v<
+                                     inner> && !std::is_same_v<inner, bool>) {
+                return field_kind::integer;
+            } else if constexpr (std::is_same_v<inner, std::string>) {
+                return field_kind::string;
+            } else {
+                return field_kind::none;
+            }
+        }
+
+    public:
+        // Raw pointee (with any optional<>/shared_ptr<> wrappers intact),
+        // matching what `LastIs<R, ...>` historically tested.
+        using raw_type = U;
+        // Inner type after peeling std::optional<> and std::shared_ptr<>;
+        // this is what the kind classification operates on, mirroring
+        // `LastIsInteger`/`LastIsFloat`/`LastIsEnum`/`LastIsVector`/`LastIsMap`.
+        using inner_type = typename sptr::type;
+
+        static constexpr field_kind inner_kind = compute_kind();
+        static constexpr bool is_optional = opt::value;
+        static constexpr bool is_shared_ptr = sptr::value;
+        static constexpr bool is_member_ptr = true;
+
+        using value_type = std::conditional_t<
+            VectorInner<inner_type>::value,
+            typename VectorInner<inner_type>::type,
+            std::conditional_t<MapInner<inner_type>::value,
+                               typename MapInner<inner_type>::value_type,
+                               inner_type>>;
+        using key_type = typename MapInner<inner_type>::key_type;
+    };
+
+    // Convenience alias: `FieldKind<Args...>` is the FieldTraits for
+    // the last (leaf) argument in the pack.
+    template<typename... Args>
+    using FieldKind = FieldTraits<typename LastArg<Args...>::type>;
+
+    // Named predicates used by the `for_field` overloads' SFINAE
+    // gates.  They keep the overload signatures one-liners so the
+    // dispatch table is easy to scan.
+    template<typename R, typename... Args>
+    inline static constexpr bool raw_field_is_v
+        = std::is_same_v<R, typename FieldKind<Args...>::raw_type>;
+
+    template<field_kind Kind, typename... Args>
+    inline static constexpr bool inner_kind_is_v
+        = (FieldKind<Args...>::inner_kind == Kind);
+
+    // Convenience composite predicates for the cases that need extra
+    // qualifiers.
+    template<typename... Args>
+    inline static constexpr bool is_string_or_path_field_v
+        = raw_field_is_v<std::string, Args...>
+        || raw_field_is_v<std::filesystem::path, Args...>;
+
+    template<typename... Args>
+    inline static constexpr bool is_plain_vector_field_v
+        = (FieldKind<Args...>::inner_kind == field_kind::vector)
+        && !FieldKind<Args...>::is_optional;
+
+    template<typename... Args>
+    inline static constexpr bool is_integer_vector_field_v
+        = (FieldKind<Args...>::inner_kind == field_kind::integer_vector)
+        && !FieldKind<Args...>::is_optional;
+
+    template<typename... Args>
+    inline static constexpr bool is_intern_string_keyed_map_field_v
+        = (FieldKind<Args...>::inner_kind == field_kind::map)
+        && !FieldKind<Args...>::is_optional
+        && std::is_same_v<intern_string_t,
+                          typename FieldKind<Args...>::key_type>;
+
+    template<typename... Args>
+    inline static constexpr bool is_generic_string_keyed_map_field_v
+        = (FieldKind<Args...>::inner_kind == field_kind::map)
+        && !FieldKind<Args...>::is_optional
+        && std::is_same_v<std::string,
+                          typename FieldKind<Args...>::key_type>
+        && !std::is_same_v<scoped_value_t,
+                           typename FieldKind<Args...>::value_type>
+        && !std::is_same_v<std::string,
+                           typename FieldKind<Args...>::value_type>
+        && !std::is_same_v<std::optional<std::string>,
+                           typename FieldKind<Args...>::value_type>;
+
+    // Build a `jph_gen_callback` lambda that handles the boilerplate
+    // shared by virtually every overload below: fetch the live field,
+    // skip emission if it equals the default, and (when `EmitKey` is
+    // true) write the property name before delegating to `emit` for
+    // the value.  Container or conditional-emit overloads that need to
+    // control the key themselves pass `EmitKey = false` and use the
+    // `ygc`/`jph` arguments to decide.
+    template<bool EmitKey = true, typename Emit, typename... Args>
+    static auto make_gen_callback(Emit emit, Args... args)
+    {
+        return [args..., emit = std::move(emit)](
+                   yajlpp_gen_context& ygc,
+                   const json_path_handler_base& jph,
+                   yajl_gen handle) -> yajl_gen_status {
+            const auto& field
+                = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+            if (!ygc.ygc_default_stack.empty()) {
+                const auto& field_def = json_path_handler::get_field(
+                    ygc.ygc_default_stack.top(), args...);
+                if (field == field_def) {
+                    return yajl_gen_status_ok;
+                }
+            }
+            if constexpr (EmitKey) {
+                if (ygc.ygc_depth) {
+                    yajl_gen_string(handle, jph.jph_property);
+                }
+            }
+            return emit(field, ygc, jph, handle);
+        };
+    }
+
+    // Same shape as `make_gen_callback`, but populates `jph_field_getter`
+    // for the common case where the getter just hands back a pointer to
+    // the field that `args...` walks to.
+    template<typename... Args>
+    void install_field_getter(Args... args)
+    {
+        this->jph_field_getter
+            = [args...](void* root, std::optional<std::string>) {
+                  return (void*) &json_path_handler::get_field(root, args...);
+              };
+    }
+
+    // Wire up `jph_null_cb` so that an explicit JSON `null` clears an
+    // `std::optional<>` field to `std::nullopt`.  Scalar overloads
+    // (integer, float, enum) call this when the leaf field's traits
+    // report `is_optional == true`.
+    template<typename... Args>
+    void install_optional_null_cb(Args... args)
+    {
+        this->add_cb(null_field_cb);
+        this->jph_null_cb = [args...](yajlpp_parse_context* ypc) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            json_path_handler::get_field(obj, args...) = std::nullopt;
+            return 1;
+        };
+    }
 
     template<typename T>
     static bool is_field_set(const std::optional<T>& field)
@@ -474,7 +602,10 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIs<bool, Args...>::value, bool> = true>
+             std::enable_if_t<
+                 raw_field_is_v<bool, Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(bool_field_cb);
@@ -485,38 +616,20 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            return yajl_gen_bool(handle, field);
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                return yajl_gen_bool(handle, field);
+            },
+            args...);
+        install_field_getter(args...);
 
         return *this;
     }
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<std::vector<std::string>, Args...>::value, bool>
+        std::enable_if_t<raw_field_is_v<std::vector<std::string>, Args...>,
+                         bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -537,7 +650,10 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsIntegerVector<Args...>::value, bool> = true>
+             std::enable_if_t<
+                 is_integer_vector_field_v<Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(int_field_cb);
@@ -559,11 +675,8 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsVector<Args...>::value, bool> = true,
              std::enable_if_t<
-                 !std::is_same_v<typename LastIsVector<Args...>::value_type,
-                                 std::string>
-                     && !LastIsIntegerVector<Args...>::value,
+                 is_plain_vector_field_v<Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -599,10 +712,7 @@ struct json_path_handler : public json_path_handler_base {
             }
             return &child.pp_value;
         };
-        this->jph_field_getter
-            = [field](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, field);
-              };
+        install_field_getter(field);
 
         return *this;
     }
@@ -622,7 +732,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<std::map<std::string, std::string>, Args...>::value,
+                 raw_field_is_v<std::map<std::string, std::string>, Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -661,41 +771,24 @@ struct json_path_handler : public json_path_handler_base {
             }
             return (void*) &iter->second;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            {
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
                 yajlpp_generator gen(handle);
-
                 for (const auto& pair : field) {
                     gen(pair.first);
                     gen(pair.second);
                 }
-            }
-
-            return yajl_gen_status_ok;
-        };
+                return yajl_gen_status_ok;
+            },
+            args...);
         return *this;
     }
 
     template<
         typename... Args,
-        std::enable_if_t<LastIsMap<Args...>::value, bool> = true,
-        std::enable_if_t<std::is_same_v<intern_string_t,
-                                        typename LastIsMap<Args...>::key_type>,
-                         bool>
+        std::enable_if_t<
+            is_intern_string_keyed_map_field_v<Args...>,
+            bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -715,7 +808,7 @@ struct json_path_handler : public json_path_handler_base {
                 return &field;
             }
 
-            if constexpr (std::is_same_v<typename LastIsMap<Args...>::key_type,
+            if constexpr (std::is_same_v<typename FieldKind<Args...>::key_type,
                                          intern_string_t>)
             {
                 auto iter = field.find(intern_string::lookup(name.value()));
@@ -742,18 +835,8 @@ struct json_path_handler : public json_path_handler_base {
 
     template<
         typename... Args,
-        std::enable_if_t<LastIsMap<Args...>::value, bool> = true,
         std::enable_if_t<
-            std::is_same_v<std::string, typename LastIsMap<Args...>::key_type>,
-            bool>
-        = true,
-        std::enable_if_t<
-            !std::is_same_v<scoped_value_t,
-                            typename LastIsMap<Args...>::value_type>
-                && !std::is_same_v<std::string,
-                                   typename LastIsMap<Args...>::value_type>
-                && !std::is_same_v<std::optional<std::string>,
-                                   typename LastIsMap<Args...>::value_type>,
+            is_generic_string_keyed_map_field_v<Args...>,
             bool>
         = true>
     json_path_handler& for_field(Args... args)
@@ -778,8 +861,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<std::map<std::string, std::optional<std::string>>,
-                        Args...>::value,
+                 raw_field_is_v<std::map<std::string, std::optional<std::string>>, Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -805,38 +887,22 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            {
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
                 yajlpp_generator gen(handle);
-
                 for (const auto& pair : field) {
                     gen(pair.first);
                     gen(pair.second);
                 }
-            }
-
-            return yajl_gen_status_ok;
-        };
+                return yajl_gen_status_ok;
+            },
+            args...);
         return *this;
     }
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<std::map<std::string, scoped_value_t>, Args...>::value,
+                 raw_field_is_v<std::map<std::string, scoped_value_t>, Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -874,24 +940,9 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            {
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
                 yajlpp_generator gen(handle);
-
                 for (const auto& pair : field) {
                     gen(pair.first);
                     pair.second.match(
@@ -902,18 +953,17 @@ struct json_path_handler : public json_path_handler_base {
                         [&gen](const std::string& v) { gen(v); },
                         [&](const string_fragment& v) { gen(v); });
                 }
-            }
-
-            return yajl_gen_status_ok;
-        };
+                return yajl_gen_status_ok;
+            },
+            args...);
         return *this;
     }
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<std::string, Args...>::value
-                             || LastIs<std::filesystem::path, Args...>::value,
-                         bool>
+        std::enable_if_t<
+            is_string_or_path_field_v<Args...>,
+            bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -937,36 +987,19 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            return yajl_gen_string(handle, field);
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                return yajl_gen_string(handle, field);
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIs<string_fragment, Args...>::value, bool>
+             std::enable_if_t<
+                 raw_field_is_v<string_fragment, Args...>,
+                 bool>
              = true>
     json_path_handler& for_field(Args... args)
     {
@@ -979,36 +1012,20 @@ struct json_path_handler : public json_path_handler_base {
             jph->validate_string(*ypc, value_str);
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            return yajl_gen_string(handle, field);
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                return yajl_gen_string(handle, field);
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIs<timeval, Args...>::value, bool> = true>
+             std::enable_if_t<
+                 raw_field_is_v<timeval, Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1036,44 +1053,24 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            yajlpp_generator gen(handle);
-            char buf[64];
-
-            auto buf_len
-                = lnav::strftime_rfc3339(buf, sizeof(buf), to_us(field), 'T');
-
-            return gen(string_fragment::from_bytes(buf, buf_len));
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                yajlpp_generator gen(handle);
+                char buf[64];
+                auto buf_len = lnav::strftime_rfc3339(
+                    buf, sizeof(buf), to_us(field), 'T');
+                return gen(string_fragment::from_bytes(buf, buf_len));
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<std::optional<std::string>, Args...>::value,
-                         bool>
+        std::enable_if_t<
+            raw_field_is_v<std::optional<std::string>, Args...>,
+            bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1097,41 +1094,28 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
+        // Skip emission entirely (no key, no value) when the
+        // optional is empty — hence the `<false>` so we control key
+        // emission ourselves.
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto& ygc, const auto& jph,
+               yajl_gen handle) -> yajl_gen_status {
+                if (!field) {
                     return yajl_gen_status_ok;
                 }
-            }
-
-            if (!field) {
-                return yajl_gen_status_ok;
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            return yajl_gen_string(handle, field.value());
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+                if (ygc.ygc_depth) {
+                    yajl_gen_string(handle, jph.jph_property);
+                }
+                return yajl_gen_string(handle, field.value());
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<positioned_property<std::string>, Args...>::value,
+                 raw_field_is_v<positioned_property<std::string>, Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -1153,36 +1137,34 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        // positioned_property compares its `pp_value` only (not the
+        // whole struct) when deciding whether to skip emission, so we
+        // open-code the default check.
         this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
                                            const json_path_handler_base& jph,
                                            yajl_gen handle) {
             const auto& field = json_path_handler::get_field(
                 ygc.ygc_obj_stack.top(), args...);
-
             if (!ygc.ygc_default_stack.empty()) {
                 const auto& field_def = json_path_handler::get_field(
                     ygc.ygc_default_stack.top(), args...);
-
                 if (field.pp_value == field_def.pp_value) {
                     return yajl_gen_status_ok;
                 }
             }
-
             if (ygc.ygc_depth) {
                 yajl_gen_string(handle, jph.jph_property);
             }
-
             return yajl_gen_string(handle, field.pp_value);
         };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIs<intern_string_t, Args...>::value, bool>
+             std::enable_if_t<
+                 raw_field_is_v<intern_string_t, Args...>,
+                 bool>
              = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1199,36 +1181,19 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            yajlpp_generator gen(handle);
-
-            return gen(field);
-        };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                yajlpp_generator gen(handle);
+                return gen(field);
+            },
+            args...);
         return *this;
     }
 
     template<
         typename... Args,
         std::enable_if_t<
-            LastIs<positioned_property<const date::time_zone*>, Args...>::value,
+            raw_field_is_v<positioned_property<const date::time_zone*>, Args...>,
             bool>
         = true>
     json_path_handler& for_field(Args... args)
@@ -1282,7 +1247,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<positioned_property<intern_string_t>, Args...>::value,
+                 raw_field_is_v<positioned_property<intern_string_t>, Args...>,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -1393,7 +1358,10 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsInteger<Args...>::value, bool> = true>
+             std::enable_if_t<
+                 inner_kind_is_v<field_kind::integer, Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(int_field_cb);
@@ -1411,43 +1379,31 @@ struct json_path_handler : public json_path_handler_base {
 
                   return 1;
               };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
+        if constexpr (FieldKind<Args...>::is_optional) {
+            install_optional_null_cb(args...);
+        }
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto& ygc, const auto& jph,
+               yajl_gen handle) {
+                if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
                 }
-            }
-
-            if (!is_field_set(field)) {
-                return yajl_gen_status_ok;
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            yajlpp_generator gen(handle);
-
-            return gen(field);
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
-
+                if (ygc.ygc_depth) {
+                    yajl_gen_string(handle, jph.jph_property);
+                }
+                yajlpp_generator gen(handle);
+                return gen(field);
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsFloat<Args...>::value, bool> = true>
+             std::enable_if_t<
+                 inner_kind_is_v<field_kind::floating, Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(dbl_field_cb);
@@ -1464,44 +1420,30 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
+        if constexpr (FieldKind<Args...>::is_optional) {
+            install_optional_null_cb(args...);
+        }
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto& ygc, const auto& jph,
+               yajl_gen handle) {
+                if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
                 }
-            }
-
-            if (!is_field_set(field)) {
-                return yajl_gen_status_ok;
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            yajlpp_generator gen(handle);
-
-            return gen(field);
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
-
+                if (ygc.ygc_depth) {
+                    yajl_gen_string(handle, jph.jph_property);
+                }
+                yajlpp_generator gen(handle);
+                return gen(field);
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<std::chrono::seconds, Args...>::value, bool>
+        std::enable_if_t<raw_field_is_v<std::chrono::seconds, Args...>,
+                         bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1526,40 +1468,23 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
-                    return yajl_gen_status_ok;
-                }
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            yajlpp_generator gen(handle);
-
-            return gen(relative_time::from_timeval(
-                           {static_cast<time_t>(field.count()), 0})
-                           .to_string());
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                yajlpp_generator gen(handle);
+                return gen(relative_time::from_timeval(
+                               {static_cast<time_t>(field.count()), 0})
+                               .to_string());
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<LastIsEnum<Args...>::value, bool> = true>
+             std::enable_if_t<
+                 inner_kind_is_v<field_kind::enumeration, Args...>,
+                 bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1572,43 +1497,29 @@ struct json_path_handler : public json_path_handler_base {
 
             if (res) {
                 json_path_handler::get_field(obj, args...)
-                    = (typename LastIsEnum<Args...>::value_type) res.value();
+                    = (typename FieldKind<Args...>::value_type) res.value();
             } else {
                 handler->report_enum_error(ypc, value_str.to_string());
             }
 
             return 1;
         };
-        this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
-                                           const json_path_handler_base& jph,
-                                           yajl_gen handle) {
-            const auto& field = json_path_handler::get_field(
-                ygc.ygc_obj_stack.top(), args...);
-
-            if (!ygc.ygc_default_stack.empty()) {
-                const auto& field_def = json_path_handler::get_field(
-                    ygc.ygc_default_stack.top(), args...);
-
-                if (field == field_def) {
+        if constexpr (FieldKind<Args...>::is_optional) {
+            install_optional_null_cb(args...);
+        }
+        this->jph_gen_callback = make_gen_callback<false>(
+            [](const auto& field, const auto& ygc, const auto& jph,
+               yajl_gen handle) {
+                if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
                 }
-            }
-
-            if (!is_field_set(field)) {
-                return yajl_gen_status_ok;
-            }
-
-            if (ygc.ygc_depth) {
-                yajl_gen_string(handle, jph.jph_property);
-            }
-
-            return yajl_gen_string(handle, jph.to_enum_string(field));
-        };
-        this->jph_field_getter
-            = [args...](void* root, std::optional<std::string> name) {
-                  return (void*) &json_path_handler::get_field(root, args...);
-              };
-
+                if (ygc.ygc_depth) {
+                    yajl_gen_string(handle, jph.jph_property);
+                }
+                return yajl_gen_string(handle, jph.to_enum_string(field));
+            },
+            args...);
+        install_field_getter(args...);
         return *this;
     }
 

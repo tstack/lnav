@@ -1491,6 +1491,20 @@ json_path_handler_base::validate_string(yajlpp_parse_context& ypc,
                                  .append(" characters long"))
                 .with_snippet(ypc.get_snippet())
                 .with_help(this->get_help_text(&ypc)));
+    } else if (sf.length() > (ssize_t) this->jph_max_length) {
+        ypc.report_error(
+            lnav::console::user_message::error(
+                attr_line_t()
+                    .append_quoted(sf)
+                    .append(" is not a valid value for option ")
+                    .append_quoted(
+                        lnav::roles::symbol(ypc.get_full_path().to_string())))
+                .with_reason(attr_line_t("value must be at most ")
+                                 .append(lnav::roles::number(
+                                     fmt::to_string(this->jph_max_length)))
+                                 .append(" characters long"))
+                .with_snippet(ypc.get_snippet())
+                .with_help(this->get_help_text(&ypc)));
     }
 }
 

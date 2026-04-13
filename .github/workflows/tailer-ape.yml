@@ -2,7 +2,7 @@ name: tailer-ape
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     paths-ignore:
       - docs
       - README.md
