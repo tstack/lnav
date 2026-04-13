@@ -12,6 +12,7 @@ test/*.err
 *.tmp
 *.trs
 *~
+.claude
 .idea/
 Makefile
 Makefile.in
@@ -25,6 +26,7 @@ config.guess
 config.log
 config.status
 config.sub
+configure
 depcomp
 install-sh
 missing
@@ -57,6 +59,7 @@ src/ptimec
 src/spookyhash/.dirstamp
 src/stamp-h1
 src/static-libs/
+src/third-party/lnav-rs-ext/target
 src/time_fmts.cc
 src/yajl/.dirstamp
 test/drive_data_scanner
