@@ -14,25 +14,26 @@ You no longer need to manually correlate timestamps across multiple windows or
 figure out the order in which to view rotated log files. The color bars on the
 left-hand side help to show which file a message belongs to.
 
-![Screenshot of lnav showing messages from multiple files](/assets/images/lnav-multi-file2.png)
+![Screenshot of lnav showing messages from multiple files](/assets/images/lnav-multi-file2.svg)
 
 ## Automatic Log Format Detection
 
 The log message format is automatically determined by lnav while scanning your
-files.  The following are some of the [formats that are built in by default](https://docs.lnav.org/en/latest/formats.html):
+files.  Over 70 [formats are built in by default](https://docs.lnav.org/en/latest/formats.html),
+including:
 
 * Common Web Access Log format
 * W3C Extended Log File Format
 * logfmt
-* CUPS page_log
-* Syslog
-* Glog
+* Syslog, Glog, dpkg.log, journald (JSON)
+* CUPS page_log, uwsgi, Caddy
+* Cloudflare Enterprise access logs
+* OpenTelemetry Collector, OTLP Python
+* Rust tracing, Bunyan, Pino
 * VMware ESXi/vCenter Logs
-* dpkg.log
-* uwsgi
+* MongoDB, MySQL (error/general/slow), PostgreSQL
 * "Generic" - Any message that starts with a timestamp
-* Strace
-* sudo
+* Strace, sudo (via syslog)
 
 If your log file format is JSON-lines or can be matched by a PCRE regular
 expression, you can define your own format in a
@@ -45,15 +46,30 @@ GZIP'ed and BZIP2'ed files are also detected automatically and decompressed on-t
 Display only lines that match or do not match a set of regular expressions.
 Useful for removing extraneous log lines that you are not interested in.
 
-## Timeline View
+## Histogram View
 
-The timeline view shows a histogram of messages over time. The number of
+The histogram view shows a bucketed count of messages over time.  The number of
 warnings and errors are highlighted in the display so that you can easily see
-where problems have occurred. Once you have found a period of time that is of
+where problems have occurred.  Once you have found a period of time that is of
 interest, a key-press will take you back to the log message view at the
 corresponding time.
 
-![Screenshot of timeline view](/assets/images/lnav-hist.png)
+![Screenshot of the histogram view showing message counts over time](/assets/images/lnav-hist.svg)
+
+## Timeline View
+
+The timeline view visualizes operations across time.  Each row corresponds to
+an operation identifier (an opid from the log messages), a thread, a tag, or a
+log file, and a colored bar shows the time span the operation covers.
+Sub-operations and per-operation error/warning sparklines make it easy to see
+where problems have clustered and how operations overlap.
+
+The timeline works with any log format that defines an `opid-field` (for
+example, `cloudflare_json_log`, `rust_tracing_log`, `otel_collector_log`) or
+that supplies an opid-description so that related messages can be grouped
+automatically.
+
+![Screenshot of the timeline view showing operations over time](/assets/images/lnav-timeline.svg)
 
 ## Pretty-Print View
 
@@ -63,11 +79,11 @@ currently displayed lines pretty-printed.
 
 The following screenshot shows an XML blob with no indentation:
 
-![A flat blob of XML](/assets/images/lnav-before-pretty.png)
+![A flat blob of XML](/assets/images/lnav-before-pretty.svg)
 
 After pressing SHIFT+P, the XML is pretty-printed for easier viewing:
 
-![A pretty-printed blob of XML](/assets/images/lnav-after-pretty.png)
+![A pretty-printed blob of XML](/assets/images/lnav-after-pretty.svg)
 
 ## Query Logs Using SQL
 
@@ -81,7 +97,7 @@ SELECT c_ip, count(*), sum(sc_bytes) AS total FROM access_log
     GROUP BY c_ip ORDER BY total DESC;
 ```
 
-![The results of a SQL query](/assets/images/lnav-query.png)
+![The results of a SQL query](/assets/images/lnav-query.svg)
 
 ## "Live" Operation
 

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="736.00" viewBox="0 0 1048.00 736.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="60.80" width="67.20" height="17.30" fill="#2d5a80"/>
+<rect x="87.20" y="60.80" width="940.80" height="17.30" fill="#162d40"/>
+<rect x="20.00" y="77.60" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="77.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="314.00" y="77.60" width="705.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="94.40" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="94.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="111.20" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="111.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="128.00" width="277.20" height="17.30" fill="#d6deeb"/>
+<rect x="297.20" y="128.00" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="322.40" y="128.00" width="697.20" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="144.80" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="144.80" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="305.60" y="144.80" width="714.00" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="161.60" width="285.60" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="161.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="178.40" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="178.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="195.20" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="195.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="305.60" y="195.20" width="714.00" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="212.00" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="212.00" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="314.00" y="212.00" width="705.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="228.80" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="228.80" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="245.60" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="245.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="262.40" width="285.60" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="262.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="330.80" y="262.40" width="688.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="279.20" width="126.00" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="279.20" width="8.40" height="17.30" fill="#b39554"/>
+<rect x="154.40" y="279.20" width="865.20" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="312.80" width="58.80" height="17.30" fill="#d6deeb"/>
+<rect x="78.80" y="312.80" width="16.80" height="17.30" fill="#b39554"/>
+<rect x="95.60" y="312.80" width="352.80" height="17.30" fill="#ef5350"/>
+<rect x="20.00" y="329.60" width="999.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="346.40" width="243.60" height="17.30" fill="#d6deeb"/>
+<rect x="263.60" y="346.40" width="42.00" height="17.30" fill="#b39554"/>
+<rect x="305.60" y="346.40" width="168.00" height="17.30" fill="#ef5350"/>
+<rect x="473.60" y="346.40" width="546.00" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="363.20" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="363.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="380.00" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="380.00" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="396.80" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="396.80" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="314.00" y="396.80" width="705.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="413.60" width="285.60" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="413.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="330.80" y="413.60" width="688.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="430.40" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="430.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="447.20" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="447.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="464.00" width="277.20" height="17.30" fill="#d6deeb"/>
+<rect x="297.20" y="464.00" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="322.40" y="464.00" width="697.20" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="480.80" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="480.80" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="305.60" y="480.80" width="714.00" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="497.60" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="497.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="514.40" width="285.60" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="514.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="531.20" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="531.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="305.60" y="531.20" width="714.00" height="17.30" fill="#28505d"/>
+<rect x="20.00" y="548.00" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="548.00" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="314.00" y="548.00" width="705.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="564.80" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="564.80" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="581.60" width="260.40" height="17.30" fill="#d6deeb"/>
+<rect x="280.40" y="581.60" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="598.40" width="268.80" height="17.30" fill="#d6deeb"/>
+<rect x="288.80" y="598.40" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="314.00" y="598.40" width="705.60" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="615.20" width="285.60" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="615.20" width="25.20" height="17.30" fill="#b39554"/>
+<rect x="330.80" y="615.20" width="688.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="632.00" width="117.60" height="17.30" fill="#d6deeb"/>
+<rect x="137.60" y="632.00" width="8.40" height="17.30" fill="#b39554"/>
+<rect x="20.00" y="665.60" width="58.80" height="17.30" fill="#d6deeb"/>
+<rect x="78.80" y="665.60" width="8.40" height="17.30" fill="#b39554"/>
+<rect x="87.20" y="665.60" width="92.40" height="17.30" fill="#ef5350"/>
+<rect x="179.60" y="665.60" width="840.00" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+<line x1="1023.80" y1="77.60" x2="1023.80" y2="94.40" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="94.40" x2="1023.80" y2="128.00" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="128.00" x2="1023.80" y2="144.80" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="144.80" x2="1023.80" y2="161.60" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="161.60" x2="1023.80" y2="178.40" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="178.40" x2="1023.80" y2="195.20" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="195.20" x2="1023.80" y2="245.60" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="245.60" x2="1023.80" y2="262.40" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="262.40" x2="1023.80" y2="296.00" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="296.00" x2="1023.80" y2="312.80" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="312.80" x2="1023.80" y2="447.20" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="447.20" x2="1023.80" y2="480.80" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="480.80" x2="1023.80" y2="497.60" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="497.60" x2="1023.80" y2="564.80" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="564.80" x2="1023.80" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:21:05 PDT                                                        Press</text>
+<text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+<text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+<text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="58.80" lengthAdjust="spacing" font-weight="bold"> HIST ▼</text>
+<text x="87.20" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="20.00" y="89.50" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 18:45:00 2026</text>
+<text x="288.80" y="89.50" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="89.50" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">8 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="106.30" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 18:50:00 2026</text>
+<text x="280.40" y="106.30" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="106.30" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="123.10" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 18:55:00 2026</text>
+<text x="288.80" y="123.10" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="139.90" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:00:00 2026</text>
+<text x="297.20" y="139.90" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">144</text>
+<text x="322.40" y="139.90" fill="#d6deeb" xml:space="preserve" textLength="495.60" lengthAdjust="spacing"> normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="156.70" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:05:00 2026</text>
+<text x="280.40" y="156.70" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="173.50" fill="#011627" xml:space="preserve" textLength="285.60" lengthAdjust="spacing"> Wed Apr 08 19:10:00 2026        1</text>
+<text x="305.60" y="173.50" fill="#011627" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">47</text>
+<text x="330.80" y="173.50" fill="#d6deeb" xml:space="preserve" textLength="487.20" lengthAdjust="spacing">normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="190.30" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:15:00 2026</text>
+<text x="288.80" y="190.30" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="190.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">8 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="207.10" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:20:00 2026</text>
+<text x="280.40" y="207.10" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="223.90" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:25:00 2026</text>
+<text x="288.80" y="223.90" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="240.70" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:30:00 2026</text>
+<text x="288.80" y="240.70" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">8 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="257.50" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 19:35:00 2026</text>
+<text x="280.40" y="257.50" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="274.30" fill="#011627" xml:space="preserve" textLength="285.60" lengthAdjust="spacing"> Wed Apr 08 19:40:00 2026        1</text>
+<text x="305.60" y="274.30" fill="#15293a" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">45</text>
+<text x="330.80" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="487.20" lengthAdjust="spacing">normal         0 errors        14 warnings         0 marks</text>
+<text x="20.00" y="291.10" fill="#011627" xml:space="preserve" textLength="126.00" lengthAdjust="spacing"> Wed Apr 08 19:</text>
+<text x="146.00" y="291.10" fill="#15293a" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">4</text>
+<text x="154.40" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="663.60" lengthAdjust="spacing">5:00 2026         66 normal         0 errors         6 warnings         0 marks</text>
+<text x="20.00" y="307.90" fill="#5d9899" xml:space="preserve" textLength="50.40" lengthAdjust="spacing"> • • •</text>
+<text x="20.00" y="324.70" fill="#011627" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> Wed Ap</text>
+<text x="78.80" y="324.70" fill="#011627" xml:space="preserve" textLength="369.60" lengthAdjust="spacing" font-weight="bold">r 08 20:55:00 2026         32 normal       1</text>
+<text x="448.40" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="369.60" lengthAdjust="spacing">79 errors        10 warnings         0 marks</text>
+<text x="20.00" y="341.50" fill="#5d9899" xml:space="preserve" textLength="33.60" lengthAdjust="spacing"> • •</text>
+<text x="20.00" y="358.30" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:25:00 2026</text>
+<text x="263.60" y="358.30" fill="#15293a" xml:space="preserve" textLength="201.60" lengthAdjust="spacing" font-weight="bold">    127 normal        87</text>
+<text x="473.60" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="344.40" lengthAdjust="spacing">errors        20 warnings         0 marks</text>
+<text x="20.00" y="375.10" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:30:00 2026</text>
+<text x="288.80" y="375.10" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">8 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="391.90" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:35:00 2026</text>
+<text x="280.40" y="391.90" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="408.70" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:40:00 2026</text>
+<text x="288.80" y="408.70" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="425.50" fill="#011627" xml:space="preserve" textLength="285.60" lengthAdjust="spacing"> Wed Apr 08 21:45:00 2026        1</text>
+<text x="305.60" y="425.50" fill="#15293a" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">48</text>
+<text x="330.80" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="487.20" lengthAdjust="spacing">normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="442.30" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:50:00 2026</text>
+<text x="280.40" y="442.30" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="459.10" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 21:55:00 2026</text>
+<text x="288.80" y="459.10" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="475.90" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:00:00 2026</text>
+<text x="297.20" y="475.90" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">144</text>
+<text x="322.40" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="495.60" lengthAdjust="spacing"> normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="492.70" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:05:00 2026</text>
+<text x="280.40" y="492.70" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="509.50" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:10:00 2026</text>
+<text x="288.80" y="509.50" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="526.30" fill="#011627" xml:space="preserve" textLength="285.60" lengthAdjust="spacing"> Wed Apr 08 22:15:00 2026        1</text>
+<text x="305.60" y="526.30" fill="#011627" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">48</text>
+<text x="330.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="487.20" lengthAdjust="spacing">normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="543.10" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing" font-weight="bold"> Wed Apr 08 22:20:00 2026</text>
+<text x="280.40" y="543.10" fill="#28505d" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="543.10" fill="#33cccc" xml:space="preserve" textLength="512.40" lengthAdjust="spacing" font-weight="bold">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="559.90" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:25:00 2026</text>
+<text x="288.80" y="559.90" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="576.70" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:30:00 2026</text>
+<text x="288.80" y="576.70" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">8 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="593.50" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:35:00 2026</text>
+<text x="280.40" y="593.50" fill="#011627" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">  1</text>
+<text x="305.60" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">35 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="610.30" fill="#011627" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Wed Apr 08 22:40:00 2026</text>
+<text x="288.80" y="610.30" fill="#15293a" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold"> 13</text>
+<text x="314.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">7 normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="627.10" fill="#011627" xml:space="preserve" textLength="285.60" lengthAdjust="spacing"> Wed Apr 08 22:45:00 2026        1</text>
+<text x="305.60" y="627.10" fill="#15293a" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold">48</text>
+<text x="330.80" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="487.20" lengthAdjust="spacing">normal         0 errors        15 warnings         0 marks</text>
+<text x="20.00" y="643.90" fill="#011627" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> Wed Apr 08 22</text>
+<text x="137.60" y="643.90" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">:</text>
+<text x="146.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="672.00" lengthAdjust="spacing">50:00 2026         59 normal         0 errors         5 warnings         0 marks</text>
+<text x="20.00" y="660.70" fill="#5d9899" xml:space="preserve" textLength="16.80" lengthAdjust="spacing"> •</text>
+<text x="20.00" y="677.50" fill="#011627" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> Wed Ap</text>
+<text x="78.80" y="677.50" fill="#15293a" xml:space="preserve" textLength="100.80" lengthAdjust="spacing" font-weight="bold">r 08 23:05:0</text>
+<text x="179.60" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="638.40" lengthAdjust="spacing">0 2026         32 normal        49 errors         3 warnings         0 marks</text>
+<text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L70        16%                                                                                             ?:View Help</text>
+</g>
+</svg>

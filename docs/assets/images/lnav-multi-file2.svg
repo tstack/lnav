@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="736.00" viewBox="0 0 1048.00 736.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="60.80" width="58.80" height="17.30" fill="#353535"/>
+<rect x="78.80" y="60.80" width="949.20" height="17.30" fill="#0f1f2b"/>
+<rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="480.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="497.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="514.40" width="999.60" height="17.30" fill="#18202d"/>
+<rect x="1019.60" y="514.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="531.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="548.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="564.80" width="67.20" height="17.30" fill="#2d5a80"/>
+<rect x="87.20" y="564.80" width="8.40" height="17.30" fill="#162d40"/>
+<rect x="95.60" y="564.80" width="117.60" height="17.30" fill="#353535"/>
+<rect x="213.20" y="564.80" width="814.80" height="17.30" fill="#162d40"/>
+<rect x="20.00" y="581.60" width="1008.00" height="17.30" fill="#162d40"/>
+<rect x="20.00" y="598.40" width="394.80" height="17.30" fill="#28505d"/>
+<rect x="414.80" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="423.20" y="598.40" width="596.40" height="17.30" fill="#18202d"/>
+<rect x="1019.60" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="414.80" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="414.80" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="648.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="665.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<line x1="24.20" y1="77.60" x2="24.20" y2="94.40" stroke="#00ff87" stroke-width="1"/>
+<line x1="24.20" y1="128.00" x2="24.20" y2="178.40" stroke="#ff8700" stroke-width="1"/>
+<line x1="24.20" y1="212.00" x2="24.20" y2="346.40" stroke="#87ff5f" stroke-width="1"/>
+<line x1="24.20" y1="380.00" x2="24.20" y2="531.20" stroke="#ffffff" stroke-width="1"/>
+<line x1="419.00" y1="598.40" x2="419.00" y2="648.80" stroke="#011627" stroke-width="1"/>
+<line x1="419.00" y1="648.80" x2="419.00" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="77.60" x2="1023.80" y2="94.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="94.40" x2="1023.80" y2="128.00" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="128.00" x2="1023.80" y2="262.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="262.40" x2="1023.80" y2="312.80" stroke="#011627" stroke-width="1"/>
+<line x1="1023.80" y1="312.80" x2="1023.80" y2="346.40" stroke="#b39554" stroke-width="1"/>
+<line x1="1023.80" y1="346.40" x2="1023.80" y2="564.80" stroke="#011627" stroke-width="1"/>
+<line x1="1023.80" y1="598.40" x2="1023.80" y2="682.40" stroke="#011627" stroke-width="1"/>
+<line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+<line x1="28.40" y1="191.98" x2="1019.60" y2="191.98" stroke="#87d75f" stroke-width="1"/>
+<line x1="28.40" y1="578.38" x2="36.80" y2="578.38" stroke="#011627" stroke-width="1"/>
+<line x1="104.00" y1="578.38" x2="112.40" y2="578.38" stroke="#2d5a80" stroke-width="1"/>
+<line x1="927.20" y1="578.38" x2="952.40" y2="578.38" stroke="#f8f8f0" stroke-width="1"/>
+<line x1="20.00" y1="645.58" x2="414.80" y2="645.58" stroke="#d6deeb" stroke-width="1"/>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:21:01 PDT                                                        Press</text>
+<text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+<text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+<text x="20.00" y="72.70" fill="#5394ec" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold"> LOG ▼</text>
+<text x="78.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="104.00" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2026-04-12T21:20:59.814526</text>
+<text x="322.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="347.60" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">lnav_piper_log</text>
+<text x="465.20" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="490.40" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">↻</text>
+<text x="507.20" y="72.70" fill="#f0f0f0" xml:space="preserve" textLength="294.00" lengthAdjust="spacing">[logfile_docker_compose.0]/web-1[9]</text>
+<text x="801.20" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="826.40" y="72.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+<text x="851.60" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
+<text x="860.00" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="885.20" y="72.70" fill="#cdcd00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">⋯</text>
+<text x="893.60" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="28.40" y="89.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2024-04-24T22:32:35.812839-0700  * Debugger is active!</text>
+<text x="20.00" y="106.30" fill="#00ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="106.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2024-04-24T22:32:35.815512-0700  * Debugger PIN: 593-762-075</text>
+<text x="20.00" y="123.10" fill="#ff8700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="123.10" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
+<text x="36.80" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="688.80" lengthAdjust="spacing">:signal-handler (24 Apr 2024 22:54:43.000) Received SIGTERM scheduling shutdown...</text>
+<text x="28.40" y="139.90" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
+<text x="36.80" y="139.90" fill="#d6deeb" xml:space="preserve" textLength="470.40" lengthAdjust="spacing">:M 24 Apr 2024 22:54:43.946 * User requested shutdown...</text>
+<text x="28.40" y="156.70" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
+<text x="36.80" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="630.00" lengthAdjust="spacing">:M 24 Apr 2024 22:54:43.946 * Saving the final RDB snapshot before exiting.</text>
+<text x="28.40" y="173.50" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
+<text x="36.80" y="173.50" fill="#d6deeb" xml:space="preserve" textLength="386.40" lengthAdjust="spacing">:M 24 Apr 2024 22:54:43.948 * DB saved on disk</text>
+<text x="20.00" y="190.30" fill="#ff8700" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="190.30" fill="#87d75f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">1</text>
+<text x="36.80" y="190.30" fill="#b39554" xml:space="preserve" textLength="571.20" lengthAdjust="spacing">:M 24 Apr 2024 22:54:43.948 # Redis is now ready to exit, bye bye...</text>
+<text x="20.00" y="207.10" fill="#87ff5f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814063-0700  * Serving Flask app &#x27;app.py&#x27;</text>
+<text x="28.40" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:20:59.814081-0700  * Debug mode: on</text>
+<text x="28.40" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="991.20" lengthAdjust="spacing">2026-04-12T21:20:59.814095-0700 WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
+<text x="28.40" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814106-0700  * Running on all addresses (</text>
+<text x="540.80" y="257.50" fill="#afffaf" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">0.0.0.0</text>
+<text x="599.60" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">)</text>
+<text x="28.40" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814117-0700  * Running on http://</text>
+<text x="473.60" y="274.30" fill="#5fd700" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">127.0.0.1</text>
+<text x="549.20" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
+<text x="28.40" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814127-0700  * Running on http://</text>
+<text x="473.60" y="291.10" fill="#d7ff00" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">172.18.0.3</text>
+<text x="557.60" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
+<text x="28.40" y="307.90" fill="#d6deeb" xml:space="preserve" textLength="436.80" lengthAdjust="spacing">2026-04-12T21:20:59.814138-0700 Press CTRL+C to quit</text>
+<text x="28.40" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:20:59.814147-0700  * Restarting with stat</text>
+<text x="28.40" y="341.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:20:59.814160-0700  * Debugger is active!</text>
+<text x="20.00" y="358.30" fill="#87ff5f" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:20:59.814173-0700  * Debugger PIN: 593-762-075</text>
+<text x="20.00" y="375.10" fill="#ffffff" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814402-0700  * Serving Flask app &#x27;app.py&#x27;</text>
+<text x="28.40" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="411.60" lengthAdjust="spacing">2026-04-12T21:20:59.814423-0700  * Debug mode: on</text>
+<text x="28.40" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:20:59.814441-0700</text>
+<text x="297.20" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="722.40" lengthAdjust="spacing" font-weight="bold">WARNING: This is a development server. Do not use it in a production deployment. Use a</text>
+<text x="28.40" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="512.40" lengthAdjust="spacing">2026-04-12T21:20:59.814455-0700  * Running on all addresses (</text>
+<text x="540.80" y="425.50" fill="#afffaf" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">0.0.0.0</text>
+<text x="599.60" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">)</text>
+<text x="28.40" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814469-0700  * Running on http://</text>
+<text x="473.60" y="442.30" fill="#5fd700" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">127.0.0.1</text>
+<text x="549.20" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
+<text x="28.40" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="445.20" lengthAdjust="spacing">2026-04-12T21:20:59.814479-0700  * Running on http://</text>
+<text x="473.60" y="459.10" fill="#d7ff00" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">172.18.0.3</text>
+<text x="557.60" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">:5000</text>
+<text x="28.40" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing">2026-04-12T21:20:59.814493-0700</text>
+<text x="297.20" y="475.90" fill="#d7d700" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">Press CTRL+C to quit</text>
+<text x="28.40" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="462.00" lengthAdjust="spacing">2026-04-12T21:20:59.814503-0700  * Restarting with stat</text>
+<text x="28.40" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="453.60" lengthAdjust="spacing">2026-04-12T21:20:59.814514-0700  * Debugger is active!</text>
+<text x="28.40" y="526.30" fill="#33cccc" xml:space="preserve" textLength="504.00" lengthAdjust="spacing">2026-04-12T21:20:59.814526-0700  * Debugger PIN: 593-762-075</text>
+<text x="28.40" y="576.70" fill="#011627" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">F</text>
+<text x="36.80" y="576.70" fill="#f8f0f0" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">iles</text>
+<text x="78.80" y="576.70" fill="#162d40" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="87.20" y="576.70" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="104.00" y="576.70" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">T</text>
+<text x="112.40" y="576.70" fill="#5394ec" xml:space="preserve" textLength="92.40" lengthAdjust="spacing" font-weight="bold">ext Filters</text>
+<text x="213.20" y="576.70" fill="#f8f8f0" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">::</text>
+<text x="364.40" y="576.70" fill="#f8f8f0" xml:space="preserve" textLength="210.00" lengthAdjust="spacing" font-weight="bold">       24 Lines not shown</text>
+<text x="582.80" y="576.70" fill="#f8f8f0" xml:space="preserve" textLength="336.00" lengthAdjust="spacing">                                   Press</text>
+<text x="927.20" y="576.70" fill="#f8f8f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">ESC</text>
+<text x="952.40" y="576.70" fill="#f8f8f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to exit</text>
+<text x="20.00" y="610.30" fill="#33cccc" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">→</text>
+<text x="53.60" y="610.30" fill="#82aaff" xml:space="preserve" textLength="252.00" lengthAdjust="spacing" font-weight="bold">/Users/tstack/⋯ocker_compose.0</text>
+<text x="305.60" y="610.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing" font-weight="bold">   ⋺  Multipl</text>
+<text x="423.20" y="610.30" fill="#33cccc" xml:space="preserve" textLength="554.40" lengthAdjust="spacing">Full path: /Users/tstack/github/lnav/test/logfile_docker_compose.0</text>
+<text x="53.60" y="627.10" fill="#82aaff" xml:space="preserve" textLength="252.00" lengthAdjust="spacing">/Users/tstack/g⋯e_with_noise.0</text>
+<text x="305.60" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">   ⋺  Multipl</text>
+<text x="440.00" y="627.10" fill="#ff70ff" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">Match Details</text>
+<text x="53.60" y="643.90" fill="#82aaff" xml:space="preserve" textLength="252.00" lengthAdjust="spacing">/Users/tstack/⋯mpose_with_ts.0</text>
+<text x="305.60" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">   ⋺  Multipl</text>
+<text x="456.80" y="643.90" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">✔</text>
+<text x="465.20" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="277.20" lengthAdjust="spacing"> demuxer “container” matched line</text>
+<text x="750.80" y="643.90" fill="#f78c6c" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">0</text>
+<text x="36.80" y="660.70" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">◆</text>
+<text x="45.20" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docke⋯_noise.0]/web-1</text>
+<text x="322.40" y="660.70" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   4.1KB</text>
+<text x="389.60" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing"> ⏳</text>
+<text x="36.80" y="677.50" fill="#007f00" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">◆</text>
+<text x="45.20" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> [logfile_docker⋯th_ts.0]/web-1</text>
+<text x="322.40" y="677.50" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">   4.1KB</text>
+<text x="389.60" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="16.80" lengthAdjust="spacing"> ⏳</text>
+<text x="20.00" y="694.30" fill="#f0f0f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L41       100%                                                                                             ?:View Help</text>
+<text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="571.20" lengthAdjust="spacing">                                                               Press</text>
+<text x="599.60" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">e</text>
+<text x="608.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">/</text>
+<text x="616.40" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">E</text>
+<text x="624.80" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="277.20" lengthAdjust="spacing"> to move forward/backward through</text>
+<text x="910.40" y="711.10" fill="#ef5350" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">error</text>
+<text x="952.40" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing"> messages</text>
+</g>
+</svg>

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="736.00" viewBox="0 0 1048.00 736.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="60.80" width="50.40" height="17.30" fill="#2d5a80"/>
+<rect x="70.40" y="60.80" width="957.60" height="17.30" fill="#162d40"/>
+<rect x="146.00" y="77.60" width="84.00" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="77.60" width="84.00" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="94.40" width="126.00" height="17.30" fill="#28505d"/>
+<rect x="146.00" y="94.40" width="75.60" height="17.30" fill="#87ff87"/>
+<rect x="221.60" y="94.40" width="16.80" height="17.30" fill="#28505d"/>
+<rect x="238.40" y="94.40" width="84.00" height="17.30" fill="#d7ffaf"/>
+<rect x="322.40" y="94.40" width="697.20" height="17.30" fill="#28505d"/>
+<rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="111.20" width="75.60" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="111.20" width="75.60" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="128.00" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="128.00" width="84.00" height="17.30" fill="#87ff87"/>
+<rect x="230.00" y="128.00" width="8.40" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="128.00" width="58.80" height="17.30" fill="#d7ffaf"/>
+<rect x="297.20" y="128.00" width="722.40" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="144.80" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="144.80" width="42.00" height="17.30" fill="#87ff87"/>
+<rect x="188.00" y="144.80" width="50.40" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="144.80" width="50.40" height="17.30" fill="#d7ffaf"/>
+<rect x="288.80" y="144.80" width="730.80" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="161.60" width="33.60" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="161.60" width="42.00" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="178.40" width="50.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="178.40" width="33.60" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="195.20" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="195.20" width="67.20" height="17.30" fill="#87ff87"/>
+<rect x="213.20" y="195.20" width="25.20" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="195.20" width="25.20" height="17.30" fill="#d7ffaf"/>
+<rect x="263.60" y="195.20" width="756.00" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="212.00" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="212.00" width="16.80" height="17.30" fill="#87ff87"/>
+<rect x="162.80" y="212.00" width="75.60" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="212.00" width="16.80" height="17.30" fill="#d7ffaf"/>
+<rect x="255.20" y="212.00" width="764.40" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="228.80" width="58.80" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="228.80" width="16.80" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="245.60" width="67.20" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="245.60" width="16.80" height="17.30" fill="#d7ffaf"/>
+<rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="262.40" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="262.40" width="42.00" height="17.30" fill="#87ff87"/>
+<rect x="188.00" y="262.40" width="50.40" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="262.40" width="16.80" height="17.30" fill="#d7ffaf"/>
+<rect x="255.20" y="262.40" width="764.40" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="279.20" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="279.20" width="33.60" height="17.30" fill="#87ff87"/>
+<rect x="179.60" y="279.20" width="58.80" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="279.20" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="279.20" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="146.00" y="296.00" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="296.00" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="312.80" width="33.60" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="312.80" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="329.60" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="329.60" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="329.60" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="329.60" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="329.60" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="346.40" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="346.40" width="25.20" height="17.30" fill="#87ff87"/>
+<rect x="171.20" y="346.40" width="67.20" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="346.40" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="346.40" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="363.20" width="25.20" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="363.20" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="380.00" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="380.00" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="396.80" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="396.80" width="16.80" height="17.30" fill="#87ff87"/>
+<rect x="162.80" y="396.80" width="75.60" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="396.80" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="396.80" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="413.60" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="413.60" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="413.60" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="413.60" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="413.60" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="430.40" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="430.40" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="447.20" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="447.20" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="464.00" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="464.00" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="464.00" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="464.00" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="464.00" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="480.80" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="480.80" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="480.80" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="480.80" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="480.80" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="497.60" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="497.60" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="514.40" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="514.40" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="531.20" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="531.20" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="531.20" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="531.20" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="531.20" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="548.00" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="548.00" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="548.00" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="548.00" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="548.00" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="564.80" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="564.80" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="581.60" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="581.60" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="598.40" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="598.40" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="598.40" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="598.40" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="598.40" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="615.20" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="615.20" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="615.20" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="615.20" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="615.20" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="632.00" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="632.00" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="146.00" y="648.80" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="238.40" y="648.80" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="20.00" y="665.60" width="126.00" height="17.30" fill="#15293a"/>
+<rect x="146.00" y="665.60" width="8.40" height="17.30" fill="#87ff87"/>
+<rect x="154.40" y="665.60" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="238.40" y="665.60" width="8.40" height="17.30" fill="#d7ffaf"/>
+<rect x="246.80" y="665.60" width="772.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+<line x1="141.80" y1="94.40" x2="141.80" y2="111.20" stroke="#33cccc" stroke-width="1"/>
+<line x1="141.80" y1="111.20" x2="141.80" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="234.20" y1="94.40" x2="234.20" y2="111.20" stroke="#33cccc" stroke-width="1"/>
+<line x1="234.20" y1="111.20" x2="234.20" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="77.60" x2="1023.80" y2="296.00" stroke="#011627" stroke-width="1"/>
+<line x1="1023.80" y1="296.00" x2="1023.80" y2="682.40" stroke="#d6deeb" stroke-width="1"/>
+<line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+<line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#d6deeb" stroke-width="1"/>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:38:30 PDT                                                        Press</text>
+<text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+<text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+<text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold"> DB ▼</text>
+<text x="70.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="20.00" y="89.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">     c_ip</text>
+<text x="146.00" y="89.50" fill="#011627" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold"> count(*)</text>
+<text x="238.40" y="89.50" fill="#011627" xml:space="preserve" textLength="58.80" lengthAdjust="spacing" font-weight="bold">  total</text>
+<text x="20.00" y="106.30" fill="#33cccc" xml:space="preserve" textLength="117.60" lengthAdjust="spacing" font-weight="bold">  66.249.66.91</text>
+<text x="146.00" y="106.30" fill="#28505d" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">        8</text>
+<text x="221.60" y="106.30" fill="#f78c6c" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">3</text>
+<text x="238.40" y="106.30" fill="#28505d" xml:space="preserve" textLength="84.00" lengthAdjust="spacing" font-weight="bold">   2895874</text>
+<text x="20.00" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">130.185.74.243</text>
+<text x="146.00" y="123.10" fill="#011627" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        7</text>
+<text x="221.60" y="123.10" fill="#f78c6c" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">8</text>
+<text x="238.40" y="123.10" fill="#011627" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   253555</text>
+<text x="314.00" y="123.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">5</text>
+<text x="20.00" y="139.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 66.249.66.194</text>
+<text x="146.00" y="139.90" fill="#15293a" xml:space="preserve" textLength="84.00" lengthAdjust="spacing">        88</text>
+<text x="238.40" y="139.90" fill="#15293a" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">   2101</text>
+<text x="297.20" y="139.90" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">513</text>
+<text x="20.00" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   91.99.72.15</text>
+<text x="188.00" y="156.70" fill="#f78c6c" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">   41</text>
+<text x="238.40" y="156.70" fill="#15293a" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">   170</text>
+<text x="288.80" y="156.70" fill="#d6deeb" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">9985</text>
+<text x="20.00" y="173.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 207.46.13.136</text>
+<text x="179.60" y="173.50" fill="#f78c6c" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">    39</text>
+<text x="238.40" y="173.50" fill="#011627" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">   15</text>
+<text x="280.40" y="173.50" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">73914</text>
+<text x="20.00" y="190.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   89.47.79.75</text>
+<text x="196.40" y="190.30" fill="#f78c6c" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">  49</text>
+<text x="238.40" y="190.30" fill="#011627" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">   1</text>
+<text x="272.00" y="190.30" fill="#d6deeb" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">116794</text>
+<text x="20.00" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   31.56.96.51</text>
+<text x="213.20" y="207.10" fill="#f78c6c" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">72</text>
+<text x="263.60" y="207.10" fill="#d6deeb" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> 806949</text>
+<text x="20.00" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 207.46.13.104</text>
+<text x="162.80" y="223.90" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">      20</text>
+<text x="255.20" y="223.90" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">  549071</text>
+<text x="20.00" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 66.111.54.249</text>
+<text x="204.80" y="240.70" fill="#f78c6c" xml:space="preserve" textLength="25.20" lengthAdjust="spacing"> 66</text>
+<text x="255.20" y="240.70" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">  545537</text>
+<text x="20.00" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   5.211.97.39</text>
+<text x="213.20" y="257.50" fill="#f78c6c" xml:space="preserve" textLength="16.80" lengthAdjust="spacing">72</text>
+<text x="255.20" y="257.50" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">  527250</text>
+<text x="20.00" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">204.18.198.248</text>
+<text x="188.00" y="274.30" fill="#f78c6c" xml:space="preserve" textLength="42.00" lengthAdjust="spacing">   44</text>
+<text x="255.20" y="274.30" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">  482146</text>
+<text x="20.00" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 5.209.200.218</text>
+<text x="179.60" y="291.10" fill="#f78c6c" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">    35</text>
+<text x="246.80" y="291.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   329439</text>
+<text x="20.00" y="307.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  17.58.102.43</text>
+<text x="154.40" y="307.90" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       11</text>
+<text x="246.80" y="307.90" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   267863</text>
+<text x="20.00" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">91.251.165.118</text>
+<text x="179.60" y="324.70" fill="#f78c6c" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">    32</text>
+<text x="246.80" y="324.70" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   253868</text>
+<text x="20.00" y="341.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 157.55.39.245</text>
+<text x="154.40" y="341.50" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        8</text>
+<text x="246.80" y="341.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   246343</text>
+<text x="20.00" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  5.115.54.117</text>
+<text x="171.20" y="358.30" fill="#f78c6c" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">     30</text>
+<text x="246.80" y="358.30" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   190477</text>
+<text x="20.00" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   5.78.198.52</text>
+<text x="171.20" y="375.10" fill="#f78c6c" xml:space="preserve" textLength="58.80" lengthAdjust="spacing">     26</text>
+<text x="246.80" y="375.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   179713</text>
+<text x="20.00" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 178.253.33.51</text>
+<text x="154.40" y="391.90" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        7</text>
+<text x="246.80" y="391.90" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   175945</text>
+<text x="20.00" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  2.177.12.140</text>
+<text x="162.80" y="408.70" fill="#f78c6c" xml:space="preserve" textLength="67.20" lengthAdjust="spacing">      18</text>
+<text x="246.80" y="408.70" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   170270</text>
+<text x="20.00" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">   51.15.15.54</text>
+<text x="154.40" y="425.50" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        5</text>
+<text x="246.80" y="425.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">   104009</text>
+<text x="20.00" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  5.123.89.112</text>
+<text x="154.40" y="442.30" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        1</text>
+<text x="246.80" y="442.30" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    94646</text>
+<text x="20.00" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 34.247.132.53</text>
+<text x="154.40" y="459.10" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        3</text>
+<text x="246.80" y="459.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    91047</text>
+<text x="20.00" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  95.81.118.56</text>
+<text x="154.40" y="475.90" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        3</text>
+<text x="246.80" y="475.90" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    89906</text>
+<text x="20.00" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  66.249.83.93</text>
+<text x="154.40" y="492.70" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        3</text>
+<text x="246.80" y="492.70" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    77396</text>
+<text x="20.00" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.148.57</text>
+<text x="154.40" y="509.50" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        2</text>
+<text x="246.80" y="509.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    67707</text>
+<text x="20.00" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.148.14</text>
+<text x="154.40" y="526.30" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        2</text>
+<text x="246.80" y="526.30" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    65527</text>
+<text x="20.00" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  46.224.77.32</text>
+<text x="154.40" y="543.10" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       12</text>
+<text x="246.80" y="543.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    63325</text>
+<text x="20.00" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 157.55.39.175</text>
+<text x="154.40" y="559.90" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       12</text>
+<text x="246.80" y="559.90" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    52675</text>
+<text x="20.00" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 40.77.167.129</text>
+<text x="154.40" y="576.70" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       13</text>
+<text x="246.80" y="576.70" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    52141</text>
+<text x="20.00" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 5.209.127.187</text>
+<text x="154.40" y="593.50" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       12</text>
+<text x="246.80" y="593.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    50988</text>
+<text x="20.00" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.148.32</text>
+<text x="154.40" y="610.30" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        1</text>
+<text x="246.80" y="610.30" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    44428</text>
+<text x="20.00" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.148.70</text>
+<text x="154.40" y="627.10" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        1</text>
+<text x="246.80" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    44253</text>
+<text x="20.00" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.149.17</text>
+<text x="154.40" y="643.90" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        1</text>
+<text x="246.80" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    41524</text>
+<text x="20.00" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing">  54.36.149.16</text>
+<text x="154.40" y="660.70" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">        1</text>
+<text x="246.80" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    38239</text>
+<text x="20.00" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="117.60" lengthAdjust="spacing"> 207.46.13.115</text>
+<text x="154.40" y="677.50" fill="#f78c6c" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">       12</text>
+<text x="246.80" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">    38207</text>
+<text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L0         28%                                                                                             ?:View Help</text>
+<text x="20.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">101</text>
+<text x="45.20" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="134.40" lengthAdjust="spacing"> rows matched in</text>
+<text x="188.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="42.00" lengthAdjust="spacing" font-weight="bold">0.011</text>
+<text x="230.00" y="711.10" fill="#d6deeb" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> seconds</text>
+</g>
+</svg>

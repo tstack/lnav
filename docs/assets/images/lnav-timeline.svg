@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="736.00" viewBox="0 0 1048.00 736.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="60.80" width="100.80" height="17.30" fill="#2d5a80"/>
+<rect x="120.80" y="60.80" width="907.20" height="17.30" fill="#162d40"/>
+<rect x="20.00" y="77.60" width="285.60" height="17.30" fill="#0f1f2b"/>
+<rect x="305.60" y="77.60" width="134.40" height="17.30" fill="#28505d"/>
+<rect x="440.00" y="77.60" width="579.60" height="17.30" fill="#0f1f2b"/>
+<rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="305.60" y="94.40" width="714.00" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="111.20" width="285.60" height="17.30" fill="#28505d"/>
+<rect x="305.60" y="111.20" width="134.40" height="17.30" fill="#632053"/>
+<rect x="440.00" y="111.20" width="579.60" height="17.30" fill="#28505d"/>
+<rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="128.00" width="285.60" height="17.30" fill="#15293a"/>
+<rect x="305.60" y="128.00" width="714.00" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="144.80" width="504.00" height="17.30" fill="#15293a"/>
+<rect x="524.00" y="144.80" width="75.60" height="17.30" fill="#632053"/>
+<rect x="599.60" y="144.80" width="420.00" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="650.00" y="161.60" width="201.60" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="893.60" y="178.40" width="42.00" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="195.20" width="915.60" height="17.30" fill="#15293a"/>
+<rect x="935.60" y="195.20" width="42.00" height="17.30" fill="#632053"/>
+<rect x="977.60" y="195.20" width="42.00" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="212.00" width="974.40" height="17.30" fill="#15293a"/>
+<rect x="994.40" y="212.00" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1002.80" y="212.00" width="16.80" height="17.30" fill="#15293a"/>
+<rect x="994.40" y="228.80" width="8.40" height="17.30" fill="#632053"/>
+<rect x="994.40" y="245.60" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="262.40" width="974.40" height="17.30" fill="#15293a"/>
+<rect x="994.40" y="262.40" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1002.80" y="262.40" width="16.80" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="279.20" width="974.40" height="17.30" fill="#15293a"/>
+<rect x="994.40" y="279.20" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1002.80" y="279.20" width="16.80" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="296.00" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1002.80" y="312.80" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="329.60" width="982.80" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="329.60" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="329.60" width="8.40" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="346.40" width="982.80" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="346.40" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="346.40" width="8.40" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="363.20" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1002.80" y="380.00" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="396.80" width="982.80" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="396.80" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="396.80" width="8.40" height="17.30" fill="#15293a"/>
+<rect x="20.00" y="413.60" width="982.80" height="17.30" fill="#15293a"/>
+<rect x="1002.80" y="413.60" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="413.60" width="8.40" height="17.30" fill="#15293a"/>
+<rect x="1011.20" y="430.40" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="447.20" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="464.00" width="991.20" height="17.30" fill="#15293a"/>
+<rect x="1011.20" y="464.00" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="480.80" width="991.20" height="17.30" fill="#15293a"/>
+<rect x="1011.20" y="480.80" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="497.60" width="8.40" height="17.30" fill="#632053"/>
+<rect x="1011.20" y="514.40" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="531.20" width="991.20" height="17.30" fill="#15293a"/>
+<rect x="1011.20" y="531.20" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="548.00" width="991.20" height="17.30" fill="#15293a"/>
+<rect x="1011.20" y="548.00" width="8.40" height="17.30" fill="#632053"/>
+<rect x="20.00" y="564.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="581.60" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="598.40" width="999.60" height="17.30" fill="#28505d"/>
+<rect x="1019.60" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="648.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="665.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+<line x1="141.80" y1="77.60" x2="141.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="183.80" y1="77.60" x2="183.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="309.80" y1="77.60" x2="309.80" y2="94.40" stroke="#33cccc" stroke-width="1"/>
+<line x1="393.80" y1="77.60" x2="393.80" y2="94.40" stroke="#33cccc" stroke-width="1"/>
+<line x1="477.80" y1="77.60" x2="477.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="561.80" y1="77.60" x2="561.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="645.80" y1="77.60" x2="645.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="729.80" y1="77.60" x2="729.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="813.80" y1="77.60" x2="813.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="897.80" y1="77.60" x2="897.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="981.80" y1="77.60" x2="981.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="1023.80" y1="77.60" x2="1023.80" y2="111.20" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="111.20" x2="1023.80" y2="212.00" stroke="#011627" stroke-width="1"/>
+<line x1="1023.80" y1="212.00" x2="1023.80" y2="296.00" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="296.00" x2="1023.80" y2="363.20" stroke="#ef5350" stroke-width="1"/>
+<line x1="1023.80" y1="363.20" x2="1023.80" y2="564.80" stroke="#d6deeb" stroke-width="1"/>
+<line x1="1023.80" y1="598.40" x2="1023.80" y2="682.40" stroke="#011627" stroke-width="1"/>
+<line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+<line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#ff70ff" stroke-width="1"/>
+<line x1="927.20" y1="578.38" x2="952.40" y2="578.38" stroke="#f0f0f0" stroke-width="1"/>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-12T21:25:42 PDT                                                        Press</text>
+<text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+<text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+<text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="92.40" lengthAdjust="spacing" font-weight="bold"> TIMELINE ▼</text>
+<text x="120.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="146.00" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2026-03-14T12:21:46.284771</text>
+<text x="364.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="20.00" y="89.50" fill="#ff70ff" xml:space="preserve" textLength="92.40" lengthAdjust="spacing" font-weight="bold">   Duration</text>
+<text x="154.40" y="89.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">✘</text>
+<text x="162.80" y="89.50" fill="#b39554" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">▲</text>
+<text x="196.40" y="89.50" fill="#ff70ff" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">Item</text>
+<text x="305.60" y="89.50" fill="#33cccc" xml:space="preserve" textLength="117.60" lengthAdjust="spacing" font-weight="bold"> 009       018</text>
+<text x="440.00" y="89.50" fill="#aaaaaa" xml:space="preserve" textLength="571.20" lengthAdjust="spacing">     027       036       045       054       063       072       082</text>
+<text x="28.40" y="106.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          102</text>
+<text x="154.40" y="106.30" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">▁</text>
+<text x="188.00" y="106.30" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">🧵</text>
+<text x="213.20" y="106.30" fill="#ffd75f" xml:space="preserve" textLength="50.40" lengthAdjust="spacing">478760</text>
+<text x="28.40" y="123.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing" font-weight="bold">          014</text>
+<text x="213.20" y="123.10" fill="#afffaf" xml:space="preserve" textLength="268.80" lengthAdjust="spacing" font-weight="bold">5e6164d9bd15d20d00b6c3a64f59364c</text>
+<text x="482.00" y="123.10" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing" font-weight="bold"> execve</text>
+<text x="28.40" y="139.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          102</text>
+<text x="154.40" y="139.90" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">▁</text>
+<text x="188.00" y="139.90" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">📄</text>
+<text x="213.20" y="139.90" fill="#afd700" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">logfile_strace_log.2</text>
+<text x="28.40" y="156.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          007</text>
+<text x="213.20" y="156.70" fill="#00d700" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">04d4426dbd97fb49339baefc5545b38b</text>
+<text x="482.00" y="156.70" fill="#5d9899" xml:space="preserve" textLength="33.60" lengthAdjust="spacing"> brk</text>
+<text x="28.40" y="173.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          022</text>
+<text x="154.40" y="173.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">█</text>
+<text x="213.20" y="173.50" fill="#ffd787" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">c7d74483a5330632a80a7609834bf91c</text>
+<text x="482.00" y="173.50" fill="#5d9899" xml:space="preserve" textLength="92.40" lengthAdjust="spacing"> arch_prctl</text>
+<text x="28.40" y="190.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          004</text>
+<text x="213.20" y="190.30" fill="#00ff00" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">b174ba073b42b085431cea82c0696a9a</text>
+<text x="482.00" y="190.30" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="207.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          004</text>
+<text x="154.40" y="207.10" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">█</text>
+<text x="213.20" y="207.10" fill="#ffffff" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">07ae4229a372d3285d109e28b89a978b</text>
+<text x="482.00" y="207.10" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> access</text>
+<text x="28.40" y="223.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         15us</text>
+<text x="213.20" y="223.90" fill="#afd75f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">fd0393343f2d401af4dc00f526d8bc3e</text>
+<text x="482.00" y="223.90" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> openat</text>
+<text x="28.40" y="240.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          9us</text>
+<text x="213.20" y="240.70" fill="#ff5f00" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">f8b499b181587c402dd555408ece1fa2</text>
+<text x="482.00" y="240.70" fill="#5d9899" xml:space="preserve" textLength="50.40" lengthAdjust="spacing"> fstat</text>
+<text x="28.40" y="257.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         17us</text>
+<text x="213.20" y="257.50" fill="#ff00ff" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">a3672c6595610357c6a58c3d31e0a55a</text>
+<text x="482.00" y="257.50" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="274.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         11us</text>
+<text x="213.20" y="274.30" fill="#d7ff87" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">daa205a8f6ebe67ad9bbfdebc556b6ec</text>
+<text x="482.00" y="274.30" fill="#5d9899" xml:space="preserve" textLength="50.40" lengthAdjust="spacing"> close</text>
+<text x="28.40" y="291.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         19us</text>
+<text x="213.20" y="291.10" fill="#ffffaf" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">ac0034ae934a5de212ab57af28ca5cb6</text>
+<text x="482.00" y="291.10" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> openat</text>
+<text x="28.40" y="307.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">          9us</text>
+<text x="213.20" y="307.90" fill="#afd75f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">86ad6f9eb2f2a4d6a0a82a77f0c0d1db</text>
+<text x="482.00" y="307.90" fill="#5d9899" xml:space="preserve" textLength="50.40" lengthAdjust="spacing"> fstat</text>
+<text x="28.40" y="324.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         81us</text>
+<text x="213.20" y="324.70" fill="#afaf00" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">771c725eff00b19307b569332d8ba8d0</text>
+<text x="482.00" y="324.70" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="341.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         32us</text>
+<text x="213.20" y="341.50" fill="#5fffaf" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">658f12a371c24e305e9081fd80d68e56</text>
+<text x="482.00" y="341.50" fill="#5d9899" xml:space="preserve" textLength="75.60" lengthAdjust="spacing"> mprotect</text>
+<text x="28.40" y="358.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         22us</text>
+<text x="213.20" y="358.30" fill="#ffffaf" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">5f993c06047a1c5f1b4af3e0b58da3d8</text>
+<text x="482.00" y="358.30" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="375.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         13us</text>
+<text x="213.20" y="375.10" fill="#d7ff87" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">f5c6d2596f557a1bef7e90bfdeaac5b8</text>
+<text x="482.00" y="375.10" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="391.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         18us</text>
+<text x="213.20" y="391.90" fill="#ffff5f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">e4eb4b0dcbe40bd0eba6543d567d9f94</text>
+<text x="482.00" y="391.90" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="408.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         13us</text>
+<text x="213.20" y="408.70" fill="#87ffd7" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">efd69dfe0d2ffcca5754ec1f9c4d6755</text>
+<text x="482.00" y="408.70" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="425.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         10us</text>
+<text x="213.20" y="425.50" fill="#87ffaf" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">e96876e3f8501ced15f907de0d1bfc73</text>
+<text x="482.00" y="425.50" fill="#5d9899" xml:space="preserve" textLength="50.40" lengthAdjust="spacing"> close</text>
+<text x="28.40" y="442.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         11us</text>
+<text x="213.20" y="442.30" fill="#d7d700" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">5509460d7afa544aea88ae60a0700635</text>
+<text x="482.00" y="442.30" fill="#5d9899" xml:space="preserve" textLength="42.00" lengthAdjust="spacing"> mmap</text>
+<text x="28.40" y="459.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         11us</text>
+<text x="213.20" y="459.10" fill="#ffff00" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">b966c63a1fa4552b64459632e86918db</text>
+<text x="482.00" y="459.10" fill="#5d9899" xml:space="preserve" textLength="92.40" lengthAdjust="spacing"> arch_prctl</text>
+<text x="28.40" y="475.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         17us</text>
+<text x="213.20" y="475.90" fill="#ffd75f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">778a37316cbe29fb4da7cf946589785c</text>
+<text x="482.00" y="475.90" fill="#5d9899" xml:space="preserve" textLength="75.60" lengthAdjust="spacing"> mprotect</text>
+<text x="28.40" y="492.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         14us</text>
+<text x="213.20" y="492.70" fill="#ff0000" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">8f74bba9fae28a698c10dcdb5ec63b3e</text>
+<text x="482.00" y="492.70" fill="#5d9899" xml:space="preserve" textLength="75.60" lengthAdjust="spacing"> mprotect</text>
+<text x="28.40" y="509.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         24us</text>
+<text x="213.20" y="509.50" fill="#5fd75f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">6bb2100ece75d41a30a9b0d39bb85cb6</text>
+<text x="482.00" y="509.50" fill="#5d9899" xml:space="preserve" textLength="75.60" lengthAdjust="spacing"> mprotect</text>
+<text x="28.40" y="526.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         29us</text>
+<text x="213.20" y="526.30" fill="#00d75f" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">0d28e8963aeb6822b5e52beceac9ba2d</text>
+<text x="482.00" y="526.30" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> munmap</text>
+<text x="28.40" y="543.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         11us</text>
+<text x="213.20" y="543.10" fill="#ffd700" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">ea0594bcd35a3c8c919a69d697613a41</text>
+<text x="482.00" y="543.10" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> getuid</text>
+<text x="28.40" y="559.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">         10us</text>
+<text x="213.20" y="559.90" fill="#00d700" xml:space="preserve" textLength="268.80" lengthAdjust="spacing">f85cccad6a2fa40f7b90c5372689b2c2</text>
+<text x="482.00" y="559.90" fill="#5d9899" xml:space="preserve" textLength="58.80" lengthAdjust="spacing"> getgid</text>
+<text x="20.00" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="898.80" lengthAdjust="spacing"> Files :: Text Filters ::                                                                             Press</text>
+<text x="927.20" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+<text x="952.40" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+<text x="20.00" y="593.50" fill="#f0f0f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> Operation Logs :: ID 5e6164d9bd15d20d00b6c3a64f59364c                                                  1 of 2 messages</text>
+<text x="20.00" y="610.30" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">┌</text>
+<text x="28.40" y="610.30" fill="#ffd75f" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">478760</text>
+<text x="78.80" y="610.30" fill="#33cccc" xml:space="preserve" textLength="226.80" lengthAdjust="spacing" font-weight="bold"> 2026-03-14 12:21:46.284771</text>
+<text x="314.00" y="610.30" fill="#d7ff87" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">execve</text>
+<text x="364.40" y="610.30" fill="#33cccc" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">(</text>
+<text x="372.80" y="610.30" fill="#ecc48d" xml:space="preserve" textLength="151.20" lengthAdjust="spacing" font-weight="bold">&quot;/usr/bin/firefox&quot;</text>
+<text x="524.00" y="610.30" fill="#33cccc" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">, [</text>
+<text x="549.20" y="610.30" fill="#ecc48d" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">&quot;firefox&quot;</text>
+<text x="624.80" y="610.30" fill="#33cccc" xml:space="preserve" textLength="394.80" lengthAdjust="spacing" font-weight="bold">], 0x7ffff36a51f0 /* 84 vars */) = 0 &lt;0.014202&gt;</text>
+<text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L1         25%                                                                                             ?:View Help</text>
+</g>
+</svg>

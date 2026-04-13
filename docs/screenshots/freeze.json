@@ -1,0 +1,25 @@
+{
+  "window": true,
+  "background": "#171717",
+  "theme": "base16",
+  "border": {
+    "radius": 8,
+    "width": 0,
+    "color": "#515151"
+  },
+  "shadow": {
+    "blur": 24,
+    "x": 0,
+    "y": 12
+  },
+  "padding": [20, 40, 20, 20],
+  "margin": [0, 0, 0, 0],
+  "font": {
+    "family": "JetBrainsMono Nerd Font, JetBrains Mono, Menlo, Monaco, DejaVu Sans Mono, Courier New, monospace",
+    "size": 14,
+    "ligatures": true
+  },
+  "line_height": 1.2,
+  "width": 1200,
+  "height": 0
+}
