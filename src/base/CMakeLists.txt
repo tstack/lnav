@@ -83,6 +83,7 @@ add_library(
         result.h
         short_alloc.h
         small_string_map.hh
+        sparse_cursor_container.hh
         snippet_highlighters.hh
         string_attr_type.hh
         strnatcmp.h
@@ -112,6 +113,7 @@ add_executable(
         test_base
         attr_line.tests.cc
         cell_container.tests.cc
+        sparse_cursor_container.tests.cc
         fs_util.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc

@@ -77,6 +77,7 @@ noinst_HEADERS = \
     short_alloc.h \
     small_string_map.hh \
     snippet_highlighters.hh \
+    sparse_cursor_container.hh \
     string_attr_type.hh \
     string_util.hh \
     strnatcmp.h \
@@ -134,6 +135,7 @@ test_base_SOURCES = \
     lnav.gzip.tests.cc \
     math_util.tests.cc \
     small_string_map.tests.cc \
+    sparse_cursor_container.tests.cc \
     string_util.tests.cc \
     test_base.cc
 

@@ -498,8 +498,8 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    this->dsvs_begin_time = to_us(dls.dls_time_column.front());
-    this->dsvs_end_time = to_us(dls.dls_time_column.back());
+    this->dsvs_begin_time = dls.dls_time_column.front();
+    this->dsvs_end_time = dls.dls_time_column.back();
 
     auto find_res
         = dls.dls_headers | lnav::itertools::find_if([this](const auto& elem) {

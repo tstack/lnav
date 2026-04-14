@@ -507,7 +507,7 @@ com_save_to(exec_context& ec,
                 break;
             }
 
-            auto& row_cursor = dls.dls_row_cursors[row];
+            auto row_cursor = dls.dls_row_cursors[row];
             first = true;
             auto cursor = row_cursor.sync();
             for (size_t lpc = 0; lpc < dls.dls_headers.size();
@@ -981,7 +981,7 @@ com_save_to(exec_context& ec,
                     break;
                 }
 
-                const auto& row_cursor = dls.dls_row_cursors[row];
+                const auto row_cursor = dls.dls_row_cursors[row];
                 auto cursor = row_cursor.sync();
                 for (size_t lpc = 0; lpc < dls.dls_headers.size();
                      lpc++, cursor = cursor->next())

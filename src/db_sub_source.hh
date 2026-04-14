@@ -42,6 +42,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/cell_container.hh"
 #include "base/lnav.resolver.hh"
+#include "base/sparse_cursor_container.hh"
 #include "digestible/digestible.h"
 #include "hist_source.hh"
 #include "robin_hood/robin_hood.h"
@@ -122,7 +123,7 @@ public:
     using numeric_cell_t = mapbox::util::variant<int64_t, double>;
     numeric_cell_t get_cell_as_numeric(vis_line_t row, size_t col) const;
 
-    void update_time_column(const timeval& tv);
+    void update_time_column(std::chrono::microseconds us);
     void update_time_column(const string_fragment& sf);
 
     void reset_user_state();
@@ -177,9 +178,9 @@ public:
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
     lnav::cell_container dls_cell_container;
-    std::vector<lnav::cell_container::cursor> dls_row_cursors;
+    lnav::sparse_cursor_container<> dls_row_cursors;
     size_t dls_push_column{0};
-    std::vector<timeval> dls_time_column;
+    std::vector<std::chrono::microseconds> dls_time_column;
     std::vector<size_t> dls_cell_width;
     size_t dls_time_column_index{SIZE_MAX};
     std::optional<size_t> dls_time_column_invalidated_at;

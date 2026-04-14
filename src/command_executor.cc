@@ -1063,7 +1063,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         }
     }
 
-    dls.dls_row_cursors.emplace_back(dls.dls_cell_container.end_cursor());
+    dls.dls_row_cursors.push_row(dls.dls_cell_container.end_cursor());
     dls.dls_push_column = 0;
     for (int lpc = 0; lpc < ncols; lpc++) {
         const auto value_type = sqlite3_column_type(stmt, lpc);

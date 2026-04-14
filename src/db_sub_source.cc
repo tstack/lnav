@@ -343,6 +343,11 @@ db_label_source::push_header(const std::string& colstr, int type)
 {
     this->dls_headers.emplace_back(colstr);
     this->dls_cell_width.push_back(0);
+    // The sparse cursor index needs to know how many cells make up a
+    // row so random access can walk forward from the nearest block
+    // start.  Headers are pushed once per query, before any rows, so
+    // keeping this in sync per header is safe.
+    this->dls_row_cursors.set_columns(this->dls_headers.size());
 
     auto& hm = this->dls_headers.back();
 
@@ -363,14 +368,14 @@ db_label_source::push_header(const std::string& colstr, int type)
 }
 
 void
-db_label_source::update_time_column(const timeval& tv)
+db_label_source::update_time_column(std::chrono::microseconds us)
 {
-    if (!this->dls_time_column.empty() && tv < this->dls_time_column.back()) {
+    if (!this->dls_time_column.empty() && us < this->dls_time_column.back()) {
         this->dls_time_column_invalidated_at = this->dls_time_column.size();
         this->dls_time_column_index = SIZE_MAX;
         this->dls_time_column.clear();
     } else {
-        this->dls_time_column.push_back(tv);
+        this->dls_time_column.push_back(us);
     }
 }
 
@@ -384,7 +389,7 @@ db_label_source::update_time_column(const string_fragment& sf)
         tv.tv_sec = -1;
         tv.tv_usec = -1;
     }
-    this->update_time_column(tv);
+    this->update_time_column(to_us(tv));
 }
 
 void
@@ -451,7 +456,7 @@ db_label_source::push_column(const column_value_t& sv)
                 auto us
                     = std::chrono::duration_cast<std::chrono::microseconds>(ms);
 
-                this->update_time_column(to_timeval(us));
+                this->update_time_column(us);
             }
         },
         [this, &width](double d) {
@@ -679,9 +684,10 @@ db_label_source::column_name_to_index(const std::string& name) const
 std::optional<vis_line_t>
 db_label_source::row_for_time(timeval time_bucket)
 {
+    const auto target = to_us(time_bucket);
     const auto iter = std::lower_bound(this->dls_time_column.begin(),
                                        this->dls_time_column.end(),
-                                       time_bucket);
+                                       target);
     if (iter != this->dls_time_column.end()) {
         return vis_line_t(std::distance(this->dls_time_column.begin(), iter));
     }
@@ -695,7 +701,7 @@ db_label_source::time_for_row(vis_line_t row)
         return std::nullopt;
     }
 
-    return row_info{this->dls_time_column[row], row};
+    return row_info{to_timeval(this->dls_time_column[row]), row};
 }
 
 bool
