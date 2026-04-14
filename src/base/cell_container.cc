@@ -165,19 +165,27 @@ cell_container::push_null_cell()
 void
 cell_container::push_int_cell(int64_t i)
 {
-    auto* cell_data = this->alloc(1 + 8);
+    // Pick the narrowest little-endian two's-complement width that
+    // can hold `i`, and stash that width in the tag's sub-value.
+    // Common log columns (status codes, counts, log_line) fit in 1–4
+    // bytes, saving 4–7 bytes per cell versus a fixed 8-byte payload.
+    uint8_t width;
+    if (i >= INT8_MIN && i <= INT8_MAX) {
+        width = 1;
+    } else if (i >= INT16_MIN && i <= INT16_MAX) {
+        width = 2;
+    } else if (i >= INT32_MIN && i <= INT32_MAX) {
+        width = 4;
+    } else {
+        width = 8;
+    }
 
-    // log_debug("push int %d", i);
-    cell_data[0] = combine_type_value(cell_type::CT_INTEGER, 0);
+    auto* cell_data = this->alloc(1 + width);
+    cell_data[0] = combine_type_value(cell_type::CT_INTEGER, width);
     const auto* i_bits = reinterpret_cast<const uint8_t*>(&i);
-    cell_data[1] = i_bits[0];
-    cell_data[2] = i_bits[1];
-    cell_data[3] = i_bits[2];
-    cell_data[4] = i_bits[3];
-    cell_data[5] = i_bits[4];
-    cell_data[6] = i_bits[5];
-    cell_data[7] = i_bits[6];
-    cell_data[8] = i_bits[7];
+    for (uint8_t b = 0; b < width; ++b) {
+        cell_data[1 + b] = i_bits[b];
+    }
 }
 
 void
@@ -282,7 +290,12 @@ cell_container::cursor::next() const
             break;
         }
         case cell_type::CT_INTEGER:
+            // sub_value carries the payload width (1, 2, 4, or 8).
+            advance = 1 + this->get_sub_value();
+            break;
         case cell_type::CT_FLOAT:
+            // sub_value carries the optional units-string length; the
+            // 8-byte IEEE 754 payload is always present.
             advance = 1 + 8 + this->get_sub_value();
             break;
     }
@@ -357,18 +370,20 @@ cell_container::cursor::get_text() const
 int64_t
 cell_container::cursor::get_int() const
 {
+    const auto width = this->get_sub_value();
+    const auto* bytes = &this->udata()[1];
+
     int64_t retval = 0;
-
     auto* retval_bits = reinterpret_cast<uint8_t*>(&retval);
-    retval_bits[0] = this->udata()[1];
-    retval_bits[1] = this->udata()[2];
-    retval_bits[2] = this->udata()[3];
-    retval_bits[3] = this->udata()[4];
-    retval_bits[4] = this->udata()[5];
-    retval_bits[5] = this->udata()[6];
-    retval_bits[6] = this->udata()[7];
-    retval_bits[7] = this->udata()[8];
-
+    for (uint8_t b = 0; b < width; ++b) {
+        retval_bits[b] = bytes[b];
+    }
+    // Sign-extend when the stored value is narrower than int64_t.
+    if (width < 8 && (retval_bits[width - 1] & 0x80)) {
+        for (uint8_t b = width; b < 8; ++b) {
+            retval_bits[b] = 0xff;
+        }
+    }
     return retval;
 }
 

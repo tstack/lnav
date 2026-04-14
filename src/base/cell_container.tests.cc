@@ -168,3 +168,65 @@ TEST_CASE("cell_container-basic")
         CHECK(cont.cc_last->cc_data[1] == 'a');
     }
 }
+
+TEST_CASE("cell_container-int-widths")
+{
+    // Each test case seeds one int at a boundary for each payload
+    // width (1/2/4/8 bytes) and verifies (a) the round-trip value is
+    // correct and (b) the stored sub-value records the chosen width
+    // so sparse-cursor walks advance the right amount.
+    struct {
+        const char* label;
+        int64_t value;
+        uint8_t expected_width;
+    } cases[] = {
+        {"int8 min", INT8_MIN, 1},
+        {"int8 max", INT8_MAX, 1},
+        {"zero", 0, 1},
+        {"int8->int16 lower", static_cast<int64_t>(INT8_MIN) - 1, 2},
+        {"int8->int16 upper", static_cast<int64_t>(INT8_MAX) + 1, 2},
+        {"int16 min", INT16_MIN, 2},
+        {"int16 max", INT16_MAX, 2},
+        {"int16->int32 lower", static_cast<int64_t>(INT16_MIN) - 1, 4},
+        {"int16->int32 upper", static_cast<int64_t>(INT16_MAX) + 1, 4},
+        {"int32 min", INT32_MIN, 4},
+        {"int32 max", INT32_MAX, 4},
+        {"int32->int64 lower", static_cast<int64_t>(INT32_MIN) - 1, 8},
+        {"int32->int64 upper", static_cast<int64_t>(INT32_MAX) + 1, 8},
+        {"int64 min", INT64_MIN, 8},
+        {"int64 max", INT64_MAX, 8},
+    };
+
+    for (const auto& tc : cases) {
+        auto cont = lnav::cell_container();
+        auto start = cont.end_cursor();
+        cont.push_int_cell(tc.value);
+
+        auto cell = start.sync().value();
+        CHECK_MESSAGE(cell.get_type() == lnav::cell_type::CT_INTEGER, tc.label);
+        CHECK_MESSAGE(cell.get_int() == tc.value, tc.label);
+        CHECK_MESSAGE(cell.get_sub_value() == tc.expected_width, tc.label);
+    }
+
+    // Pack a sequence of mixed-width ints and walk them forward to
+    // make sure `next()` agrees with each cell's stored width.
+    auto cont = lnav::cell_container();
+    auto start = cont.end_cursor();
+    const int64_t values[]
+        = {1, -1, 128, -129, 32768, -32769, 2147483648LL, -2147483649LL, 0};
+    for (auto v : values) {
+        cont.push_int_cell(v);
+    }
+
+    const auto value_count = sizeof(values) / sizeof(values[0]);
+    auto cell = start.sync().value();
+    for (size_t i = 0; i < value_count; ++i) {
+        CHECK(cell.get_type() == lnav::cell_type::CT_INTEGER);
+        CHECK(cell.get_int() == values[i]);
+        if (i + 1 < value_count) {
+            auto nxt = cell.next();
+            REQUIRE(nxt.has_value());
+            cell = nxt.value();
+        }
+    }
+}
