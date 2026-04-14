@@ -56,7 +56,7 @@ try_from(const string_fragment& sf)
     };
 
     static const auto code = lnav::pcre2pp::code::from_const(
-        R"(^\s*(?:([\-\+]?\d+)|([\-\+]?\d+\.\d+(?:[eE][\-\+]\d+)?)|([\-\+]?\d+(?:\.\d+)?\s*[KMGTPE]?[Bb](?:ps)?)|([\-\+]?\d+(?:\.\d+)?\s*[munpf]?)s|(\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?)|(\d{1,2}:\d{2}(?:\.\d{1,6})?))\s*$)");
+        R"(^\s*(?:([\-\+]?\d+)|([\-\+]?\d+\.\d+(?:[eE][\-\+]\d+)?)|([\-\+]?\d+(?:\.\d+)?\s*(?:[KMGTPE]i?)?[Bb](?:ps)?)|([\-\+]?\d+(?:\.\d+)?\s*[munpf]?)s|(\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?)|(\d{1,2}:\d{2}(?:\.\d{1,6})?))\s*$)");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (!code.capture_from(sf).into(md).found_p()) {
@@ -92,19 +92,25 @@ try_from(const string_fragment& sf)
             while (isspace(unit_range[start])) {
                 start += 1;
             }
+            // IEC `KiB`/`MiB`/... use 1024-multipliers; the bare
+            // `KB`/`MB`/... forms use the strict SI 1000-multipliers.
+            const double mult
+                = (start + 1 < unit_range.size() && unit_range[start + 1] == 'i')
+                ? 1024.0
+                : 1000.0;
             switch (unit_range[start]) {
                 case 'E':
-                    retval *= 1024.0;
+                    retval *= mult;
                 case 'P':
-                    retval *= 1024.0;
+                    retval *= mult;
                 case 'T':
-                    retval *= 1024.0;
+                    retval *= mult;
                 case 'G':
-                    retval *= 1024.0;
+                    retval *= mult;
                 case 'M':
-                    retval *= 1024.0;
+                    retval *= mult;
                 case 'K':
-                    retval *= 1024.0;
+                    retval *= mult;
                     break;
             }
         }
@@ -161,7 +167,7 @@ try_from(const string_fragment& sf)
 std::string
 file_size(file_ssize_t value, alignment align)
 {
-    static const double LN1024 = std::log(1024.0);
+    static const double LN1000 = std::log(1000.0);
     static constexpr std::array<const char*, 7> UNITS = {
         " ",
         "K",
@@ -186,8 +192,8 @@ file_size(file_ssize_t value, alignment align)
     }
 
     const auto exp
-        = floor(std::min(log(value) / LN1024, (double) (UNITS.size() - 1)));
-    const auto divisor = pow(1024, exp);
+        = floor(std::min(log(value) / LN1000, (double) (UNITS.size() - 1)));
+    const auto divisor = pow(1000, exp);
 
     if (align == alignment::none && divisor <= 1) {
         return fmt::format(FMT_STRING("{}B"), value);

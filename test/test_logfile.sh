@@ -145,7 +145,7 @@ EOF
         check_error_output "decompression worked?" <<EOF
  error: unable to open file: /logfile_syslog.1.xz
  reason: failed to extract archive “/logfile_syslog.1.xz”
- |        reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
+ |        reason: available space on disk (NNN) is below the minimum-free threshold (1.1PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
         run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
