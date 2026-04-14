@@ -3160,7 +3160,7 @@ For support questions, email:
 [4mExample[0m
 #1 To format an amount:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m)       [0m
-   10.0MB
+   10.5MB
 
 
 [1m[4mhumanize_id[0m[4m([0m[4mid[0m[4m)[0m

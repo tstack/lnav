@@ -38,16 +38,15 @@ TEST_CASE("humanize::file_size")
 {
     CHECK(humanize::file_size(0, humanize::alignment::columnar) == "0.0 B");
     CHECK(humanize::file_size(1, humanize::alignment::columnar) == "1.0 B");
-    CHECK(humanize::file_size(1024, humanize::alignment::columnar) == "1.0KB");
+    CHECK(humanize::file_size(1000, humanize::alignment::columnar) == "1.0KB");
     CHECK(humanize::file_size(1500, humanize::alignment::columnar) == "1.5KB");
-    CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL,
-                              humanize::alignment::columnar)
+    CHECK(humanize::file_size(42100000000LL, humanize::alignment::columnar)
           == "42.1GB");
     CHECK(humanize::file_size(-1LL, humanize::alignment::columnar)
           == "Unknown");
     CHECK(humanize::file_size(std::numeric_limits<int64_t>::max(),
                               humanize::alignment::columnar)
-          == "8.0EB");
+          == "9.2EB");
 }
 
 TEST_CASE("humanize::try_from")
@@ -67,18 +66,50 @@ TEST_CASE("humanize::try_from")
         CHECK(try_res.value() == 123.456);
     }
     {
+        // SI prefix forms now use strict 1000-multipliers.
         auto file_size = string_fragment::from_const(" 123.4GB");
         auto try_res = humanize::try_from<double>(file_size);
 
         CHECK(try_res.has_value());
-        CHECK(try_res.value() == 123.4 * 1024 * 1024 * 1024);
+        CHECK(try_res.value() == 123.4 * 1000 * 1000 * 1000);
     }
     {
         auto file_size = string_fragment::from_const(" 123.4 GB");
         auto try_res = humanize::try_from<double>(file_size);
 
         CHECK(try_res.has_value());
-        CHECK(try_res.value() == 123.4 * 1024 * 1024 * 1024);
+        CHECK(try_res.value() == 123.4 * 1000 * 1000 * 1000);
+    }
+    {
+        // IEC "bibyte" prefixes should parse to the same numeric value
+        // as the informal K/M/G/T/P/E spellings already supported.
+        auto file_size = string_fragment::from_const("4KiB");
+        auto try_res = humanize::try_from<double>(file_size);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 4.0 * 1024);
+    }
+    {
+        auto file_size = string_fragment::from_const(" 2.5 MiB");
+        auto try_res = humanize::try_from<double>(file_size);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 2.5 * 1024 * 1024);
+    }
+    {
+        auto file_size = string_fragment::from_const("1 GiB");
+        auto try_res = humanize::try_from<double>(file_size);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 1.0 * 1024 * 1024 * 1024);
+    }
+    {
+        // "iB" alone (with no prefix letter) should not parse as a
+        // size — the `i` marker is only meaningful after K/M/G/T/P/E.
+        auto bad = string_fragment::from_const("5iB");
+        auto try_res = humanize::try_from<double>(bad);
+
+        CHECK(!try_res.has_value());
     }
     {
         auto secs = string_fragment::from_const("1.2s");

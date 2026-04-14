@@ -1,2 +1,2 @@
 Row 0:
-  Column humanize_file_size(10 * 1000 * 1000): 9.5MB
+  Column humanize_file_size(10 * 1000 * 1000): 10.0MB

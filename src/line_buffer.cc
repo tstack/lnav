@@ -820,7 +820,6 @@ line_buffer::fill_range(file_off_t start,
                         scan_direction dir)
 {
     auto retval = false;
-    auto got_preload = false;
 
     require(start >= 0);
 
@@ -871,11 +870,9 @@ line_buffer::fill_range(file_off_t start,
         this->lb_stats.s_used_preloads += 1;
         this->lb_next_line_start_index = 0;
         this->lb_next_buffer_offset = 0;
-        got_preload = true;
     }
     if (this->in_range(start)
-        && (got_preload || max_length == 0
-            || this->in_range(start + max_length - 1)))
+        && (max_length == 0 || this->in_range(start + max_length - 1)))
     {
         // log_debug("fd(%d) cached!", this->lb_fd.get());
         /* Cache already has the data, nothing to do. */
