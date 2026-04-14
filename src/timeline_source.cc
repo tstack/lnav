@@ -766,6 +766,10 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                                        VC_ROLE.value(role_t::VCR_TIMELINE_BAR));
             }
         }
+        if (row.or_is_context) {
+            value_out.emplace_back(line_range{0, -1},
+                                   VC_ROLE.value(role_t::VCR_CONTEXT_LINE));
+        }
         auto alt_row_index = line % 4;
         if (alt_row_index == 2 || alt_row_index == 3) {
             value_out.emplace_back(line_range{0, -1},
@@ -1092,8 +1096,17 @@ timeline_source::rebuild_indexes()
     }
     this->ts_filter_hits = {};
 
-    this->ts_time_order.clear();
-    this->ts_time_order.reserve(this->ts_active_opids.size());
+    // Collect all candidates with their filter status, then sort,
+    // then apply context expansion.
+    struct row_candidate {
+        opid_row* rc_row;
+        std::string rc_full_desc;
+        bool rc_matched;
+        bool rc_is_context{false};
+    };
+    std::vector<row_candidate> candidates;
+    candidates.reserve(this->ts_active_opids.size());
+
     for (auto& pair : this->ts_active_opids) {
         opid_row& row = pair.second;
         opid_time_range& otr = pair.second.or_value;
@@ -1128,6 +1141,7 @@ timeline_source::rebuild_indexes()
             continue;
         }
 
+        auto matched = true;
         shared_buffer sb_opid;
         shared_buffer_ref sbr_opid;
         sbr_opid.share(
@@ -1171,35 +1185,80 @@ timeline_source::rebuild_indexes()
             }
 
             if ((filtered_in_count > 0 && !filtered_in) || filtered_out) {
-                this->ts_filtered_count += 1;
-                continue;
+                matched = false;
             }
         }
 
-        if (pair.second.or_name.column_width() > this->ts_opid_width) {
-            this->ts_opid_width = pair.second.or_name.column_width();
+        candidates.push_back({&pair.second, std::move(full_desc), matched});
+    }
+
+    // Sort candidates by time before applying context expansion
+    std::stable_sort(
+        candidates.begin(),
+        candidates.end(),
+        [](const auto& lhs, const auto& rhs) {
+            return *lhs.rc_row < *rhs.rc_row;
+        });
+
+    // Apply context expansion on sorted candidates
+    auto context_before = this->tss_context_before;
+    auto context_after = this->tss_context_after;
+    if (context_before > 0 || context_after > 0) {
+        // Forward pass: mark after-context rows
+        size_t after_remaining = 0;
+        for (auto& cand : candidates) {
+            if (cand.rc_matched) {
+                after_remaining = context_after;
+            } else if (after_remaining > 0) {
+                cand.rc_matched = true;
+                cand.rc_is_context = true;
+                after_remaining -= 1;
+            }
         }
-        if (full_desc.size() > max_desc_width) {
-            max_desc_width = full_desc.size();
+        // Reverse pass: mark before-context rows
+        size_t before_remaining = 0;
+        for (auto it = candidates.rbegin(); it != candidates.rend(); ++it) {
+            if (it->rc_matched) {
+                before_remaining = context_before;
+            } else if (before_remaining > 0) {
+                it->rc_matched = true;
+                it->rc_is_context = true;
+                before_remaining -= 1;
+            }
+        }
+    }
+
+    // Emit matched rows
+    this->ts_time_order.clear();
+    this->ts_time_order.reserve(candidates.size());
+    for (auto& cand : candidates) {
+        if (!cand.rc_matched) {
+            this->ts_filtered_count += 1;
+            continue;
+        }
+
+        auto* row_ptr = cand.rc_row;
+        row_ptr->or_is_context = cand.rc_is_context;
+        if (row_ptr->or_name.column_width() > this->ts_opid_width) {
+            this->ts_opid_width = row_ptr->or_name.column_width();
+        }
+        if (cand.rc_full_desc.size() > max_desc_width) {
+            max_desc_width = cand.rc_full_desc.size();
         }
 
         if (this->ts_lower_bound == 0us
-            || pair.second.or_value.otr_range.tr_begin < this->ts_lower_bound)
+            || row_ptr->or_value.otr_range.tr_begin < this->ts_lower_bound)
         {
-            this->ts_lower_bound = pair.second.or_value.otr_range.tr_begin;
+            this->ts_lower_bound = row_ptr->or_value.otr_range.tr_begin;
         }
         if (this->ts_upper_bound == 0us
-            || this->ts_upper_bound < pair.second.or_value.otr_range.tr_end)
+            || this->ts_upper_bound < row_ptr->or_value.otr_range.tr_end)
         {
-            this->ts_upper_bound = pair.second.or_value.otr_range.tr_end;
+            this->ts_upper_bound = row_ptr->or_value.otr_range.tr_end;
         }
 
-        this->ts_time_order.emplace_back(&pair.second);
+        this->ts_time_order.emplace_back(row_ptr);
     }
-    std::stable_sort(
-        this->ts_time_order.begin(),
-        this->ts_time_order.end(),
-        [](const auto* lhs, const auto* rhs) { return *lhs < *rhs; });
     for (size_t lpc = 0; lpc < this->ts_time_order.size(); lpc++) {
         const auto& row = *this->ts_time_order[lpc];
         if (row.or_type == row_type::logfile) {

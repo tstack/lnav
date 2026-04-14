@@ -814,3 +814,14 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ';select session_start from ts_value_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_ts_value.0
+
+# filter-context: filter to "sudo" messages, then add 1 message of context
+run_cap_test ${lnav_test} -n \
+    -c ':filter-in sudo' \
+    -c ':filter-context 1' \
+    ${test_dir}/logfile_syslog.0 ${test_dir}/logfile_syslog.1
+
+run_cap_test ${lnav_test} -n \
+    -c ':set-min-log-level error' \
+    -c ':filter-context 1' \
+    ${test_dir}/logfile_postgres.1

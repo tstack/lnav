@@ -92,6 +92,7 @@ enum class role_t : int32_t {
     VCR_ERROR, /*< An error message. */
     VCR_WARNING, /*< A warning message. */
     VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
+    VCR_CONTEXT_LINE,
     VCR_HIDDEN,
     VCR_CURSOR_LINE,
     VCR_DISABLED_CURSOR_LINE,
@@ -182,6 +183,7 @@ enum class role_t : int32_t {
     VCR_TYPE,
     VCR_SEP_REF_ACC,
     VCR_SUGGESTION,
+
     VCR_SELECTED_TEXT,
     VCR_FUZZY_MATCH,
 

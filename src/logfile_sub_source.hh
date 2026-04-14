@@ -741,6 +741,18 @@ private:
     unsigned int lss_all_timestamp_flags{0};
 
     std::vector<uint32_t> lss_filtered_index;
+
+    // Persistent state for incremental context expansion in rebuild_index()
+    struct ctx_msg_range {
+        size_t cmr_start{0};
+        size_t cmr_count{0};
+    };
+    std::deque<ctx_msg_range> lss_ctx_before_msgs;
+    size_t lss_ctx_after_msgs_remaining{0};
+    bool lss_ctx_in_after{false};
+
+    void flush_context_before_msgs();
+
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
     std::map<std::string, breakpoint_info> lss_breakpoints;

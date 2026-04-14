@@ -278,9 +278,13 @@ Display
      - Switch to/from the histogram view while keeping the time of the focused
        line in sync
    * - :kbd:`z`
-     - Zoom in to finer-grained times in the HIST or SPECTRO views.
+     - In the HIST or SPECTRO views, zoom in to finer-grained times.  In the
+       LOG, TEXT, or TIMELINE views, increase the filter context by one
+       message.
    * - :kbd:`Shift` + :kbd:`Z`
-     - Zoom out to larger-grained times in the HIST or SPECTRO views.
+     - In the HIST or SPECTRO views, zoom out to larger-grained times.  In
+       the LOG, TEXT, or TIMELINE views, decrease the filter context by one
+       message.
    * - :kbd:`v`
      - Switch to/from the SQL result view
    * - :kbd:`Shift` + :kbd:`v`

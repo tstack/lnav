@@ -327,6 +327,28 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
         }
     }
 
+    if ((this->tss_context_before > 0 || this->tss_context_after > 0)
+        && this->tss_apply_filters
+        && lf->get_text_format() != text_format_t::TF_BINARY)
+    {
+        auto* ctx_lfo
+            = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+        if (ctx_lfo != nullptr && row >= 0
+            && row < (ssize_t) ctx_lfo->lfo_filter_state.tfs_index.size())
+        {
+            uint32_t ctx_filter_in_mask, ctx_filter_out_mask;
+            this->get_filters().get_enabled_mask(ctx_filter_in_mask,
+                                                 ctx_filter_out_mask);
+            auto content_line = ctx_lfo->lfo_filter_state.tfs_index[row];
+            if (ctx_lfo->excluded(
+                    ctx_filter_in_mask, ctx_filter_out_mask, content_line))
+            {
+                value_out.emplace_back(line_range{0, -1},
+                                       VC_ROLE.value(role_t::VCR_CONTEXT_LINE));
+            }
+        }
+    }
+
     value_out.emplace_back(lr, L_FILE.value(this->current_file()));
 }
 
@@ -563,22 +585,48 @@ textfile_sub_source::text_filters_changed()
 
     this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
     lfo->lfo_filter_state.tfs_index.clear();
+
+    auto context_before = this->tss_context_before;
+    auto context_after = this->tss_context_after;
+    std::vector<uint32_t> before_buf;
+    before_buf.reserve(context_before);
+    size_t after_remaining = 0;
+
+    auto flush_before_buf = [&]() {
+        for (auto ctx_lpc : before_buf) {
+            lfo->lfo_filter_state.tfs_index.push_back(ctx_lpc);
+        }
+        before_buf.clear();
+    };
+
     for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
         if (this->tss_apply_filters) {
-            if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
-                continue;
-            }
-            if (lf->has_line_metadata()) {
+            auto dominated = lfo->excluded(filter_in_mask, filter_out_mask, lpc);
+            if (!dominated && lf->has_line_metadata()) {
                 auto ll = lf->begin() + lpc;
                 if (ll->get_timeval() < this->ttt_min_row_time) {
-                    continue;
+                    dominated = true;
                 }
                 if (this->ttt_max_row_time < ll->get_timeval()) {
-                    continue;
+                    dominated = true;
                 }
             }
+            if (dominated) {
+                if (after_remaining > 0) {
+                    lfo->lfo_filter_state.tfs_index.push_back(lpc);
+                    after_remaining -= 1;
+                } else if (context_before > 0) {
+                    if (before_buf.size() >= context_before) {
+                        before_buf.erase(before_buf.begin());
+                    }
+                    before_buf.push_back(lpc);
+                }
+                continue;
+            }
         }
+        flush_before_buf();
         lfo->lfo_filter_state.tfs_index.push_back(lpc);
+        after_remaining = context_after;
     }
 
     this->tss_view->reload_data();

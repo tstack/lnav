@@ -449,7 +449,9 @@ classified by their log level and whether they've been bookmarked.
 Press :kbd:`i` to switch back and forth to the histogram view.  You
 can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
 while synchronizing the top time.  While in the histogram view,
-pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
+pressing :kbd:`z` / :kbd:`Shift` + :kbd:`Z` will zoom in/out.  (In the
+LOG, TEXT, and TIMELINE views, these keys adjust the filter context
+instead; see the :ref:`filter-context<filter_context>` command.)
 
 .. _timeline:
 

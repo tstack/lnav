@@ -34,6 +34,7 @@
 #include "base/relative_time.hh"
 #include "lnav.hh"
 #include "lnav_commands.hh"
+#include "scn/scan.h"
 #include "sql_util.hh"
 
 static Result<std::string, lnav::console::user_message>
@@ -406,6 +407,56 @@ com_delete_filter(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_filter_context(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
+{
+    std::string retval;
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* tss = tc->get_sub_source();
+    if (tss == nullptr) {
+        return ec.make_error("no sub-source available");
+    }
+
+    if (!tss->tss_supports_filtering) {
+        return ec.make_error("{} view does not support filtering",
+                             lnav_view_strings[tc - lnav_data.ld_views]);
+    }
+    if (args.size() < 2) {
+        return ec.make_error("expecting the number of context lines");
+    }
+
+    auto before_res = scn::scan_value<size_t>(args[1]);
+    if (!before_res || !before_res->range().empty()) {
+        return ec.make_error("expecting a non-negative integer, got: {}",
+                             args[1]);
+    }
+    auto before = before_res->value();
+    auto after = before;
+
+    if (args.size() >= 3) {
+        auto after_res = scn::scan_value<size_t>(args[2]);
+        if (!after_res || !after_res->range().empty()) {
+            return ec.make_error("expecting a non-negative integer, got: {}",
+                                 args[2]);
+        }
+        after = after_res->value();
+    }
+
+    tss->tss_context_before = before;
+    tss->tss_context_after = after;
+    tss->text_filters_changed();
+    tc->reload_data();
+
+    retval = fmt::format(FMT_STRING("info: filter context set to {} before, "
+                                    "{} after"),
+                         before,
+                         after);
+    return Ok(retval);
+}
+
 static readline_context::command_t FILTERING_COMMANDS[] = {
     {
         "hide-lines-before",
@@ -533,6 +584,31 @@ static readline_context::command_t FILTERING_COMMANDS[] = {
             .with_example({"To delete the filter with the pattern 'last "
                            "message repeated'",
                            "last message repeated"}),
+    },
+    {
+        "filter-context",
+        com_filter_context,
+
+        help_text(":filter-context")
+            .with_summary(
+                "Show extra lines around filtered-in lines, similar to "
+                "grep's -C option")
+            .with_parameter(
+                help_text("count",
+                          "The number of lines of context to show before "
+                          "and after matched lines"))
+            .with_parameter(
+                help_text("after",
+                          "The number of lines of context to show after "
+                          "matched lines (overrides count)")
+                    .optional())
+            .with_tags({"filtering"})
+            .with_example(
+                {"To show 2 lines of context around filtered-in lines",
+                 "2"})
+            .with_example(
+                {"To show 3 lines before and 1 line after each match",
+                 "3 1"}),
     },
 };
 

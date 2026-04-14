@@ -301,6 +301,33 @@ To hide messages below a certain log level, you can use the
 :ref:`:set-min-log-level<set_min_log_level>` command.
 
 
+.. _filter_context:
+
+Context Lines
+^^^^^^^^^^^^^
+
+When filtering, it can be useful to see the log messages surrounding a
+match to understand the context.  Similar to :command:`grep`'s
+:option:`-C` option, **lnav** can show extra messages before and after
+each filter match.
+
+The :ref:`:filter-context<filter_context>` command sets the number of
+context messages to show.  For example, ``:filter-context 2`` shows two
+messages before and after each match.  You can also specify different
+values for before and after: ``:filter-context 3 1`` shows three messages
+before and one after.
+
+In the **LOG** view, context is counted in whole messages, including any
+continuation lines.  In the **TEXT** view, context is counted in lines.
+
+The :kbd:`z` and :kbd:`Shift` + :kbd:`Z` keys provide a quick way to
+increase or decrease the context by one in the LOG, TEXT, and TIMELINE
+views.
+
+Context lines are visually distinguished from matched lines using the
+``context-line`` theme style.
+
+
 Log-oriented Debugging
 ----------------------
 

@@ -574,7 +574,6 @@ view_curses::mvwattrline(ncplane* window,
             } else if (iter->sa_type == &VC_ROLE) {
                 auto role = iter->sa_value.get<role_t>();
                 attrs = vc.attrs_for_role(role);
-
                 if (role == role_t::VCR_SELECTED_TEXT) {
                     retval.mr_selected_text
                         = string_fragment::from_str(line).sub_range(
@@ -1393,6 +1392,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_indent_guide, reporter);
     this->get_role_attrs(role_t::VCR_TIMELINE_BAR)
         = this->to_attrs(lt, lt.lt_style_timeline_bar, reporter);
+    this->get_role_attrs(role_t::VCR_CONTEXT_LINE)
+        = this->to_attrs(lt, lt.lt_style_context_line, reporter);
 
     {
         positioned_property<style_config> stitch_sc;

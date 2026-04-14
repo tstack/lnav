@@ -775,6 +775,11 @@
                                             "description": "Styling for timeline duration bars",
                                             "title": "/ui/theme-defs/<theme_name>/styles/timeline-bar",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "context-line": {
+                                            "description": "Styling for lines included as context around filtered matches",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/context-line",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false

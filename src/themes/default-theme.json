@@ -153,6 +153,9 @@
                     "timeline-bar": {
                         "background-color": "Teal"
                     },
+                    "context-line": {
+                        "bold": true
+                    },
                     "focused": {
                         "color": "Black",
                         "background-color": "Silver"

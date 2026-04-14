@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: help view does not support filtering
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mfilter-context[0m[37m[40m 4                       [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Show extra lines around filtered-in lines, similar to grep's -C
+           option

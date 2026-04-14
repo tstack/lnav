@@ -1336,6 +1336,12 @@ text_sub_source::add_commands_for_session(
         }
     }
 
+    if (this->tss_context_before > 0 || this->tss_context_after > 0) {
+        receiver(fmt::format(FMT_STRING("filter-context {} {}"),
+                             this->tss_context_before,
+                             this->tss_context_after));
+    }
+
     auto* ttt = dynamic_cast<text_time_translator*>(this);
     if (ttt != nullptr) {
         ttt->add_time_commands_for_session(receiver);

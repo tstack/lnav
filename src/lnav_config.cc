@@ -970,6 +970,11 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for timeline duration bars")
         .for_child(&lnav_theme::lt_style_timeline_bar)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("context-line")
+        .with_description(
+            "Styling for lines included as context around filtered matches")
+        .for_child(&lnav_theme::lt_style_context_line)
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {

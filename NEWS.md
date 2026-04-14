@@ -1,4 +1,16 @@
 
+## lnav v0.14.1
+
+Features:
+* Added the `:filter-context` command to show lines surrounding
+  filter matches, similar to grep's `-C` option.  The command
+  accepts one or two arguments for the number of messages to
+  show before and after each match.  In the LOG view, context
+  is counted in whole messages (including continuation lines).
+  The `z`/`Z` keys can also be used to increase/decrease the
+  context by one in the LOG, TEXT, and TIMELINE views.  Context
+  lines are styled using the new `context-line` theme style.
+
 ## lnav v0.14.0
 
 Features:

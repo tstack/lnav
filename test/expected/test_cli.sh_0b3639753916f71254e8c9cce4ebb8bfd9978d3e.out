@@ -650,6 +650,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -1680,6 +1689,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "$bgdarker",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -2649,6 +2667,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -3614,6 +3641,15 @@
                         "background-color": "#444",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "#222",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -4620,6 +4656,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "$fg_main",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -5589,6 +5634,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "Grey11",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -6552,6 +6606,15 @@
                     "timeline-bar": {
                         "color": "",
                         "background-color": "#632053",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "#15293a",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7535,6 +7598,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "$base04",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "syntax-styles": {
@@ -8508,6 +8580,15 @@
                     "timeline-bar": {
                         "color": "",
                         "background-color": "$magenta",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "context-line": {
+                        "color": "",
+                        "background-color": "$base4",
                         "underline": false,
                         "bold": false,
                         "italic": false,

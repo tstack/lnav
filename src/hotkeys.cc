@@ -355,7 +355,19 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 'z':
-            if ((lnav_data.ld_zoom_level - 1) < 0) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]
+                || tc == &lnav_data.ld_views[LNV_TEXT]
+                || tc == &lnav_data.ld_views[LNV_TIMELINE])
+            {
+                tc_tss->tss_context_before += 1;
+                tc_tss->tss_context_after += 1;
+                tc_tss->text_filters_changed();
+                tc->reload_data();
+                prompt.p_editor.set_inactive_value(
+                    fmt::format(FMT_STRING("filter context: {} before, {} after"),
+                                tc_tss->tss_context_before,
+                                tc_tss->tss_context_after));
+            } else if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
                 auto res = ec.execute(
@@ -370,7 +382,29 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 'Z':
-            if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]
+                || tc == &lnav_data.ld_views[LNV_TEXT]
+                || tc == &lnav_data.ld_views[LNV_TIMELINE])
+            {
+                if (tc_tss->tss_context_before > 0
+                    || tc_tss->tss_context_after > 0)
+                {
+                    if (tc_tss->tss_context_before > 0) {
+                        tc_tss->tss_context_before -= 1;
+                    }
+                    if (tc_tss->tss_context_after > 0) {
+                        tc_tss->tss_context_after -= 1;
+                    }
+                    tc_tss->text_filters_changed();
+                    tc->reload_data();
+                    prompt.p_editor.set_inactive_value(fmt::format(
+                        FMT_STRING("filter context: {} before, {} after"),
+                        tc_tss->tss_context_before,
+                        tc_tss->tss_context_after));
+                } else {
+                    alerter::singleton().chime("context is already zero");
+                }
+            } else if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
                 auto res = ec.execute(

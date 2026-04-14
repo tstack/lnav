@@ -176,6 +176,7 @@ public:
         lnav::map::small<size_t, std::string> or_description_value;
         size_t or_max_subid_width{0};
         logfile* or_logfile{nullptr};
+        bool or_is_context{false};
 
         bool operator<(const opid_row& rhs) const
         {

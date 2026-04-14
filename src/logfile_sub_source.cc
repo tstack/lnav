@@ -968,6 +968,25 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
+    if ((this->tss_context_before > 0 || this->tss_context_after > 0)
+        && this->tss_apply_filters)
+    {
+        uint32_t ctx_filter_in_mask, ctx_filter_out_mask;
+        this->get_filters().get_enabled_mask(ctx_filter_in_mask,
+                                             ctx_filter_out_mask);
+        uint64_t line_number;
+        auto cl = this->at(vis_line_t(row));
+        auto ld = this->find_data(cl, line_number);
+        if ((*ld)->ld_filter_state.excluded(
+                ctx_filter_in_mask, ctx_filter_out_mask, line_number)
+            || !this->check_extra_filters(
+                ld, (*ld)->get_file_ptr()->begin() + line_number))
+        {
+            this->lss_token_al.al_attrs.emplace_back(
+                line_range{0, -1}, VC_ROLE.value(role_t::VCR_CONTEXT_LINE));
+        }
+    }
+
     value_out = std::move(this->lss_token_al.al_attrs);
 }
 
@@ -1247,6 +1266,19 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             std::distance(this->lss_filtered_index.begin(), filt_row_iter));
         search_start = vis_line_t(this->lss_filtered_index.size());
 
+        // Drop any before-context entries that reference trimmed indices
+        auto trimmed_index_size = this->lss_index.size();
+        while (!this->lss_ctx_before_msgs.empty()
+               && this->lss_ctx_before_msgs.back().cmr_start
+                   >= trimmed_index_size)
+        {
+            this->lss_ctx_before_msgs.pop_back();
+        }
+        // Reset after-context state since the trimmed tail may have
+        // been in an after-context sequence
+        this->lss_ctx_after_msgs_remaining = 0;
+        this->lss_ctx_in_after = false;
+
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_start(*this);
             for (const auto row_in_full_index : this->lss_filtered_index) {
@@ -1451,6 +1483,16 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         log_trace("filtered index");
+
+        auto ri_context_before = this->tss_context_before;
+        auto ri_context_after = this->tss_context_after;
+
+        if (start_size == 0) {
+            this->lss_ctx_before_msgs.clear();
+            this->lss_ctx_after_msgs_remaining = 0;
+            this->lss_ctx_in_after = false;
+        }
+
         for (size_t index_index = start_size;
              index_index < this->lss_index.size();
              index_index++)
@@ -1475,6 +1517,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         filter_in_mask, filter_out_mask, line_number)
                     && this->check_extra_filters(ld, line_iter)))
             {
+                this->flush_context_before_msgs();
                 auto eval_res = this->eval_sql_filter(
                     this->lss_marker_stmt.in(), ld, line_iter);
                 if (eval_res.isErr()) {
@@ -1493,6 +1536,35 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
                     this->lss_index_delegate->index_line(*this, lf, line_iter);
+                }
+                if (!line_iter->is_continued()) {
+                    this->lss_ctx_after_msgs_remaining = ri_context_after;
+                }
+                this->lss_ctx_in_after = false;
+            } else if (this->lss_ctx_in_after && line_iter->is_continued()) {
+                this->lss_filtered_index.push_back(index_index);
+            } else if (this->lss_ctx_after_msgs_remaining > 0
+                       && !line_iter->is_continued())
+            {
+                this->lss_ctx_after_msgs_remaining -= 1;
+                this->lss_ctx_in_after = true;
+                this->lss_filtered_index.push_back(index_index);
+            } else {
+                this->lss_ctx_in_after = false;
+                if (ri_context_before > 0) {
+                    if (!line_iter->is_continued()
+                        || this->lss_ctx_before_msgs.empty())
+                    {
+                        if (this->lss_ctx_before_msgs.size()
+                            >= ri_context_before)
+                        {
+                            this->lss_ctx_before_msgs.pop_front();
+                        }
+                        this->lss_ctx_before_msgs.push_back(
+                            {index_index, 1});
+                    } else {
+                        this->lss_ctx_before_msgs.back().cmr_count += 1;
+                    }
                 }
             }
         }
@@ -1592,6 +1664,17 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 }
 
 void
+logfile_sub_source::flush_context_before_msgs()
+{
+    for (const auto& msg : this->lss_ctx_before_msgs) {
+        for (size_t lpc = 0; lpc < msg.cmr_count; lpc++) {
+            this->lss_filtered_index.push_back(msg.cmr_start + lpc);
+        }
+    }
+    this->lss_ctx_before_msgs.clear();
+}
+
+void
 logfile_sub_source::text_filters_changed()
 {
     static auto op = lnav_operation{"text_filters_changed"};
@@ -1632,6 +1715,13 @@ logfile_sub_source::text_filters_changed()
     vis_bm[&textview_curses::BM_USER_EXPR].clear();
 
     this->lss_filtered_index.clear();
+    this->lss_ctx_before_msgs.clear();
+    this->lss_ctx_after_msgs_remaining = 0;
+    this->lss_ctx_in_after = false;
+
+    auto context_before = this->tss_context_before;
+    auto context_after = this->tss_context_after;
+
     for (size_t index_index = 0; index_index < this->lss_index.size();
          index_index++)
     {
@@ -1651,6 +1741,7 @@ logfile_sub_source::text_filters_changed()
                     filtered_in_mask, filtered_out_mask, line_number)
                 && this->check_extra_filters(ld, line_iter)))
         {
+            this->flush_context_before_msgs();
             auto eval_res = this->eval_sql_filter(
                 this->lss_marker_stmt.in(), ld, line_iter);
             if (eval_res.isErr()) {
@@ -1669,6 +1760,33 @@ logfile_sub_source::text_filters_changed()
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
                 this->lss_index_delegate->index_line(*this, lf, line_iter);
+            }
+            if (!line_iter->is_continued()) {
+                this->lss_ctx_after_msgs_remaining = context_after;
+            }
+            this->lss_ctx_in_after = false;
+        } else if (this->lss_ctx_in_after && line_iter->is_continued()) {
+            this->lss_filtered_index.push_back(index_index);
+        } else if (this->lss_ctx_after_msgs_remaining > 0
+                   && !line_iter->is_continued())
+        {
+            this->lss_ctx_after_msgs_remaining -= 1;
+            this->lss_ctx_in_after = true;
+            this->lss_filtered_index.push_back(index_index);
+        } else {
+            this->lss_ctx_in_after = false;
+            if (context_before > 0) {
+                if (!line_iter->is_continued()
+                    || this->lss_ctx_before_msgs.empty())
+                {
+                    if (this->lss_ctx_before_msgs.size() >= context_before) {
+                        this->lss_ctx_before_msgs.pop_front();
+                    }
+                    this->lss_ctx_before_msgs.push_back(
+                        {index_index, 1});
+                } else {
+                    this->lss_ctx_before_msgs.back().cmr_count += 1;
+                }
             }
         }
     }

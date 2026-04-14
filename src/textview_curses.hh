@@ -609,6 +609,8 @@ public:
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
+    size_t tss_context_before{0};
+    size_t tss_context_after{0};
     uint64_t tss_level_filtered_count{0};
     std::optional<log_level_t> tss_preview_min_log_level;
 

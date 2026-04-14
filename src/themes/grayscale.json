@@ -105,6 +105,7 @@
                     "timeline-bar": {
                         "background-color": "#444"
                     },
+                    "context-line": {"bold": true, "background-color": "#222"},
                     "h1": {
                         "bold": true,
                         "underline": true

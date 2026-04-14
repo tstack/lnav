@@ -229,6 +229,19 @@ run_cap_test ${lnav_test} -n \
     -c ':goto 0' \
     -c ':next-mark error'
 
+# filter-context: filter to one line, then add 1 line of context
+run_cap_test ${lnav_test} -n \
+    -c ':filter-in Duis' \
+    -c ':filter-context 1' \
+    ${test_dir}/textfile_plain.0
+
+# filter-context: asymmetric context (2 before, 0 after)
+run_cap_test ${lnav_test} -n \
+    -c ':filter-in Duis' \
+    -c ':filter-context 2 0' \
+    ${test_dir}/textfile_plain.0
+
+
 #####
 
 export HOME="./cfg/rotate-test-config"

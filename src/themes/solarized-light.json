@@ -98,6 +98,9 @@
                     "timeline-bar": {
                         "background-color": "$magenta"
                     },
+                    "context-line": {
+                        "background-color": "$base4"
+                    },
                     "focused": {
                         "color": "$base03",
                         "background-color": "$base01"

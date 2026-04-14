@@ -848,8 +848,9 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Clear the filter expression
 [4mSee Also[0m
-  [1m:filter-expr[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-expr[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:toggle-filtering[0m
 
 [4m:[0m[1m[4mclear-highlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
@@ -995,8 +996,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To delete the filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40mdelete-filter[0m[37m[40m last message repeated              [0m
@@ -1063,8 +1064,9 @@ For support questions, email:
   [4mpattern[0m   The regular expression used in the filter
             command
 [4mSee Also[0m
-  [1m:enable-filter[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:enable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To disable the filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40mdisable-filter[0m[37m[40m last message repeated             [0m
@@ -1118,8 +1120,8 @@ For support questions, email:
   [4mpattern[0m   The regular expression used in the filter
             command
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To enable the disabled filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40menable-filter[0m[37m[40m last message repeated              [0m
@@ -1193,6 +1195,28 @@ For support questions, email:
   [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 
+[4m:[0m[1m[4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Show extra lines around filtered-in lines, similar to grep's -C
+  option
+[4mParameters[0m
+  [4mcount[0m   The number of lines of context to show before and
+          after matched lines
+  [4mafter[0m   The number of lines of context to show after
+          matched lines (overrides count)
+[4mSee Also[0m
+  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+[4mExamples[0m
+#1 To show 2 lines of context around filtered-in lines:
+   [37m[40m:[0m[1m[36m[40mfilter-context[0m[37m[40m 2                                 [0m
+   
+
+#2 To show 3 lines before and 1 line after each match:
+   [37m[40m:[0m[1m[36m[40mfilter-context[0m[37m[40m 3 1                               [0m
+   
+
+
 [4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
   Set the filter expression
@@ -1201,8 +1225,9 @@ For support questions, email:
          The message values can be accessed using column names
          prefixed with a colon
 [4mSee Also[0m
-  [1m:clear-filter-expr[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:clear-filter-expr[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To set a filter expression that matched syslog messages from 'syslogd':
    [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[37m[40m:log_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[35m[40m'syslogd'[0m[37m[40m            [0m
@@ -1221,8 +1246,9 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
-  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that do not have the string 'dhclient':
    [37m[40m:[0m[1m[36m[40mfilter-in[0m[37m[40m dhclient                               [0m
@@ -1236,8 +1262,9 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
-  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-in[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that contain the string 'last message repeated':
    [37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m last message repeated                 [0m
@@ -1328,8 +1355,8 @@ For support questions, email:
 [4mParameter[0m
   [4mdate[0m   An absolute or relative date
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-before[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines after the focused line in the view:
    [37m[40m:[0m[1m[36m[40mhide-lines-after[0m[37m[40m here                            [0m
@@ -1346,8 +1373,8 @@ For support questions, email:
 [4mParameter[0m
   [4mdate[0m   An absolute or relative date
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines before the focused line in the view:
    [37m[40m:[0m[1m[36m[40mhide-lines-before[0m[37m[40m here                           [0m
@@ -1362,9 +1389,9 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Hide lines that have not been bookmarked
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
+  [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1774,8 +1801,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Show lines that were hidden by the 'hide-lines' commands
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 
 [4m:[0m[1m[4mshow-only-this-file[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1786,9 +1813,10 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Show lines that have not been bookmarked
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, 
+  [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1852,8 +1880,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Toggle the filtering flag for the current view
 [4mSee Also[0m
-  [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m
 
 [4m:[0m[1m[4mtoggle-sticky-header[0m
 ══════════════════════════════════════════════════════════════════════
