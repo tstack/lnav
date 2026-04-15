@@ -1,0 +1,52 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "fsck_log": {
+        "title": "Fsck Log",
+        "description": "Log format for the fsck_apfs and fsck_hfs tools on Mac OS X.",
+        "regex": {
+            "std": {
+                "pattern": "^(?<device>[^:]+): (?<tool>fsck_apfs|fsck_hfs) (?<action>run|started|completed) at (?<timestamp>\\S{3,8} \\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})(?<body>.*)"
+            }
+        },
+        "opid-field": "device",
+        "value": {
+            "device": {
+                "kind": "string",
+                "identifier": true
+            },
+            "tool": {
+                "kind": "string",
+                "identifier": true
+            },
+            "action": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "highlights": {
+            "error": {
+                "pattern": "\\berror:.*",
+                "color": "#ef5350",
+                "underline": false
+            },
+            "clean": {
+                "pattern": "\\bFILESYSTEM CLEAN\\b",
+                "color": "#22da6e"
+            }
+        },
+        "sample": [
+            {
+                "line": "/dev/rdisk0s2: fsck_hfs run at Wed Jul 25 23:01:18 2012"
+            },
+            {
+                "line": "/dev/rdisk2s1: fsck_apfs started at Tue Mar  3 17:38:59 2026"
+            },
+            {
+                "line": "/dev/rdisk2s1: fsck_apfs completed at Tue Mar  3 17:38:59 2026"
+            },
+            {
+                "line": "/dev/rdisk4s1: fsck_hfs completed at Wed Mar  4 08:03:33 2026"
+            }
+        ]
+    }
+}

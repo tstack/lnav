@@ -17,7 +17,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/env_logger_log.json \
     $(srcdir)/%reldir%/error_log.json \
     $(srcdir)/%reldir%/esx_syslog_log.json \
-    $(srcdir)/%reldir%/fsck_hfs_log.json \
+    $(srcdir)/%reldir%/fsck_log.json \
     $(srcdir)/%reldir%/github_events_log.json \
     $(srcdir)/%reldir%/glog_log.json \
     $(srcdir)/%reldir%/haproxy_log.json \

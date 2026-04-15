@@ -10,6 +10,22 @@ Features:
   The `z`/`Z` keys can also be used to increase/decrease the
   context by one in the LOG, TEXT, and TIMELINE views.  Context
   lines are styled using the new `context-line` theme style.
+* Added a log format for the `fsck_apfs` and `fsck_hfs` tools on
+  macOS, covering both the `started`/`completed` lifecycle lines
+  and legacy `run` entries.  This replaces the previous
+  `fsck_hfs_log` format, which only matched the start lines.
+  The new format exposes `device`, `tool`, and `action` fields,
+  groups messages by device in the TIMELINE view, and highlights
+  `error:` lines and `FILESYSTEM CLEAN` status messages.
+
+Breaking changes:
+* File-size values can now be written with the IEC binary
+  prefixes (`KiB`, `MiB`, `GiB`, ...) for 1024-based units.
+  The existing `KB`/`MB`/... forms now follow the strict SI
+  convention (1000-based), so scripts that depended on the
+  informal 1024 meaning for SI prefixes should be updated to
+  use the `i` suffix.  The `humanize::file_size()` formatter
+  likewise emits SI-based `KB`/`MB`/... output.
 
 ## lnav v0.14.0
 

@@ -200,7 +200,7 @@ set(FORMAT_FILES
         formats/engine_log.json
         formats/error_log.json
         formats/esx_syslog_log.json
-        formats/fsck_hfs_log.json
+        formats/fsck_log.json
         formats/github_events_log.json
         formats/glog_log.json
         formats/haproxy_log.json
