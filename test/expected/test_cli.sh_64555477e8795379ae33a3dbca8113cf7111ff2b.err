@@ -52,7 +52,7 @@ make it easier to navigate through files quickly.
 
 [1mPaths[0m
  [33m•[0m This binary:
-    🧭 [1m{buildir}/src/lnav-test[0m
+    🧭 [1m{lnav-test}[0m
  [33m•[0m Format files are read from:
     📂 [1m/etc/lnav[0m
     📂 [1m{prefix}/etc/lnav[0m

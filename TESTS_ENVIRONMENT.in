@@ -158,6 +158,7 @@ run_cap_test() {
     sed -ibak -E \
         -e "s;${prefix}/etc;{prefix}/etc;g" \
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
+        -e "s;${top_builddir_abs}/src/lnav-test;{lnav-test};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
         -e "s;${builddir};{builddir};g" \
