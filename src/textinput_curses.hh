@@ -246,27 +246,7 @@ public:
             return lr_opt->lr_start <= ip.x && ip.x < lr_opt->lr_end;
         }
 
-        std::optional<line_range> range_for_line(int y) const
-        {
-            if (!this->contains_line(y)) {
-                return std::nullopt;
-            }
-
-            line_range retval;
-
-            if (y > this->sr_start.y) {
-                retval.lr_start = 0;
-            } else {
-                retval.lr_start = this->sr_start.x;
-            }
-            if (y < this->sr_end.y) {
-                retval.lr_end = -1;
-            } else {
-                retval.lr_end = this->sr_end.x;
-            }
-
-            return retval;
-        }
+        std::optional<line_range> range_for_line(int y) const;
 
     private:
         explicit selected_range(input_point ip) : sr_start{ip}, sr_end{ip} {}
@@ -435,6 +415,14 @@ public:
     void command_indent(indent_mode_t mode);
 
     void add_mark(input_point pos, const lnav::console::user_message& msg);
+
+    std::string selection_to_string() const;
+
+    void undo_last_change();
+
+    void copy_selection();
+
+    void cut_selection();
 
     void sync_to_sysclip() const;
 

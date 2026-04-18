@@ -47,11 +47,14 @@ using namespace ww898;
 
 template<typename A>
 static void
-to_key_seq(A& dst, uint32_t* src)
+to_key_seq(A& dst, ncinput& ch)
 {
     dst[0] = '\0';
-    for (size_t lpc = 0; src[lpc]; lpc++) {
-        ww898::utf::utf8::write(src[lpc], [&dst](uint8_t ch) {
+    if (ncinput_super_p(&ch)) {
+        strcpy(&dst[0], "cmd-");
+    }
+    for (size_t lpc = 0; ch.eff_text[lpc]; lpc++) {
+        ww898::utf::utf8::write(ch.eff_text[lpc], [&dst](uint8_t ch) {
             snprintf(dst.data() + strlen(dst.data()),
                      dst.size() - strlen(dst.data()),
                      "x%02x",
@@ -61,7 +64,7 @@ to_key_seq(A& dst, uint32_t* src)
 }
 
 void
-input_dispatcher::new_input(const struct timeval& current_time,
+input_dispatcher::new_input(const timeval& current_time,
                             notcurses* nc,
                             ncinput& ch)
 {
@@ -113,7 +116,7 @@ input_dispatcher::new_input(const struct timeval& current_time,
         log_debug("nckey %s", keyseq.data());
         handled = this->id_key_handler(nc, ch, keyseq.data());
     } else {
-        to_key_seq(keyseq, ch.eff_text);
+        to_key_seq(keyseq, ch);
         handled = this->id_key_handler(nc, ch, keyseq.data());
     }
 

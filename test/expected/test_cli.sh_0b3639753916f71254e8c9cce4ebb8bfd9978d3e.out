@@ -9182,6 +9182,11 @@
                 }
             },
             "default": {
+                "cmd-x63": {
+                    "id": "",
+                    "command": "|lnav-copy-text",
+                    "alt-msg": "${keymap_def_clear}"
+                },
                 "f1": {
                     "id": "",
                     "command": ":help",

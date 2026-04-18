@@ -133,6 +133,10 @@
                     "command": ":next-mark warning",
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
                 },
+                "cmd-x63": {
+                    "command": "|lnav-copy-text",
+                    "alt-msg": "${keymap_def_clear}"
+                },
                 "x63": {
                     "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"

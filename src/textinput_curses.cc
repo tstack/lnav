@@ -231,6 +231,30 @@ public:
     textinput_curses* tmd_input;
 };
 
+std::optional<line_range>
+textinput_curses::selected_range::range_for_line(int y) const
+{
+    if (!this->contains_line(y)) {
+        return std::nullopt;
+    }
+
+    line_range retval;
+
+    if (y > this->sr_start.y) {
+        retval.lr_start = 0;
+    } else {
+        retval.lr_start = this->sr_start.x;
+    }
+    if (y < this->sr_end.y) {
+        retval.lr_end = -1;
+    } else {
+        retval.lr_end = this->sr_end.x;
+    }
+    retval.lr_unit = line_range::unit::codepoint;
+
+    return retval;
+}
+
 textinput_curses::textinput_curses()
 {
     this->vc_enabled = false;
@@ -386,36 +410,7 @@ textinput_curses::handle_mouse(mouse_event& me)
             this->set_needs_update();
         }
     } else if (me.me_button == mouse_button_t::BUTTON_RIGHT) {
-        if (this->tc_selection) {
-            std::string content;
-            auto range = this->tc_selection;
-            auto add_nl = false;
-            for (auto y = range->sr_start.y;
-                 y <= range->sr_end.y && y < this->tc_lines.size();
-                 ++y)
-            {
-                if (add_nl) {
-                    content.push_back('\n');
-                }
-                auto sel_range = range->range_for_line(y);
-                if (!sel_range) {
-                    continue;
-                }
-
-                const auto& al = this->tc_lines[y];
-                auto byte_start = al.column_to_byte_index(sel_range->lr_start);
-                auto byte_end = al.column_to_byte_index(sel_range->lr_end);
-                auto al_sf = string_fragment::from_str_range(
-                    al.al_string, byte_start, byte_end);
-                content += al_sf;
-                add_nl = true;
-            }
-
-            this->tc_clipboard.clear();
-            this->tc_cut_location = this->tc_cursor;
-            this->tc_clipboard.emplace_back(content);
-            this->sync_to_sysclip();
-        }
+        this->copy_selection();
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
         this->tc_mode = mode_t::editing;
         auto adj_press_x = me.me_press_x;
@@ -907,6 +902,31 @@ textinput_curses::handle_key(const ncinput& ch)
         return true;
     }
 
+    if (ncinput_super_p(&ch)) {
+        switch (chid) {
+            case 'a': {
+                this->tc_selection
+                    = this->clamp_selection(selected_range::from_mouse(
+                        input_point::home(), input_point::end()));
+                this->set_needs_update();
+                break;
+            }
+            case 'c': {
+                this->copy_selection();
+                break;
+            }
+            case 'x': {
+                this->cut_selection();
+                break;
+            }
+            case 'z': {
+                this->undo_last_change();
+                break;
+            }
+        }
+        return true;
+    }
+
     if (ncinput_alt_p(&ch)) {
         switch (chid) {
             case NCKEY_LEFT: {
@@ -959,37 +979,7 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'k':
             case 'K': {
                 if (this->tc_selection) {
-                    auto range = this->tc_selection;
-                    log_debug("cutting selection [%d:%d) - [%d:%d)",
-                              range->sr_start.x,
-                              range->sr_start.y,
-                              range->sr_end.x,
-                              range->sr_end.y);
-                    auto new_clip = std::string();
-                    for (auto curr_line = range->sr_start.y;
-                         curr_line <= range->sr_end.y;
-                         ++curr_line)
-                    {
-                        auto sel_range = range->range_for_line(curr_line);
-                        if (!sel_range) {
-                            continue;
-                        }
-
-                        auto& al = this->tc_lines[curr_line];
-                        auto start_byte
-                            = al.column_to_byte_index(sel_range->lr_start);
-                        auto end_byte
-                            = al.column_to_byte_index(sel_range->lr_end);
-                        auto sub
-                            = al.subline(start_byte, end_byte - start_byte);
-                        if (curr_line > range->sr_start.y) {
-                            new_clip.push_back('\n');
-                        }
-                        new_clip.append(sub.al_string);
-                    }
-                    this->tc_clipboard.clear();
-                    this->tc_clipboard.emplace_back(new_clip);
-                    this->replace_selection(string_fragment{});
+                    this->cut_selection();
                 } else {
                     log_debug("cutting from %d to end of line %d",
                               this->tc_cursor.x,
@@ -1167,23 +1157,7 @@ textinput_curses::handle_key(const ncinput& ch)
                 return true;
             }
             case '_': {
-                if (this->tc_change_log.empty()) {
-                    this->tc_notice = no_changes();
-                    this->set_needs_update();
-                } else {
-                    log_debug("undo!");
-                    const auto& ce = this->tc_change_log.back();
-                    auto content_sf = string_fragment::from_str(ce.ce_content);
-                    this->tc_selection = ce.ce_range;
-                    log_debug(" range [%d:%d) - [%d:%d) - %s",
-                              this->tc_selection->sr_start.x,
-                              this->tc_selection->sr_start.y,
-                              this->tc_selection->sr_end.x,
-                              this->tc_selection->sr_end.y,
-                              ce.ce_content.c_str());
-                    this->replace_selection_no_change(content_sf);
-                    this->tc_change_log.pop_back();
-                }
+                this->undo_last_change();
                 return true;
             }
             default: {
@@ -2402,4 +2376,94 @@ textinput_curses::add_mark(input_point pos,
     line.al_attrs.emplace_back(lr, VC_STYLE.value(text_attrs::with_reverse()));
 
     this->tc_marks.emplace(pos, msg);
+}
+
+void
+textinput_curses::undo_last_change()
+{
+    if (this->tc_change_log.empty()) {
+        this->tc_notice = no_changes();
+        this->set_needs_update();
+    } else {
+        log_debug("undo!");
+        const auto& ce = this->tc_change_log.back();
+        auto content_sf = string_fragment::from_str(ce.ce_content);
+        this->tc_selection = ce.ce_range;
+        log_debug(" range [%d:%d) - [%d:%d) - %s",
+                  this->tc_selection->sr_start.x,
+                  this->tc_selection->sr_start.y,
+                  this->tc_selection->sr_end.x,
+                  this->tc_selection->sr_end.y,
+                  ce.ce_content.c_str());
+        this->replace_selection_no_change(content_sf);
+        this->tc_change_log.pop_back();
+    }
+}
+
+std::string
+textinput_curses::selection_to_string() const
+{
+    std::string retval;
+
+    if (!this->tc_selection) {
+        return retval;
+    }
+    auto range = this->tc_selection;
+    auto add_nl = false;
+    for (auto y = range->sr_start.y;
+         y <= range->sr_end.y && y < this->tc_lines.size();
+         ++y)
+    {
+        if (add_nl) {
+            retval.push_back('\n');
+        }
+        auto sel_range = range->range_for_line(y);
+        if (!sel_range) {
+            continue;
+        }
+
+        const auto& al = this->tc_lines[y];
+        auto byte_start = al.column_to_byte_index(sel_range->lr_start);
+        auto byte_end = al.column_to_byte_index(sel_range->lr_end);
+        auto al_sf = string_fragment::from_str_range(
+            al.al_string, byte_start, byte_end);
+        retval += al_sf;
+        add_nl = true;
+    }
+
+    return retval;
+}
+
+void
+textinput_curses::copy_selection()
+{
+    if (!this->tc_selection) {
+        return;
+    }
+
+    auto content = this->selection_to_string();
+    this->tc_clipboard.clear();
+    this->tc_cut_location = this->tc_cursor;
+    this->tc_clipboard.emplace_back(content);
+    this->sync_to_sysclip();
+}
+
+void
+textinput_curses::cut_selection()
+{
+    if (!this->tc_selection) {
+        return;
+    }
+
+    auto range = this->tc_selection;
+    log_debug("cutting selection [%d:%d) - [%d:%d)",
+              range->sr_start.x,
+              range->sr_start.y,
+              range->sr_end.x,
+              range->sr_end.y);
+    auto new_clip = this->selection_to_string();
+    this->tc_clipboard.clear();
+    this->tc_clipboard.emplace_back(new_clip);
+    this->replace_selection(string_fragment{});
+    this->sync_to_sysclip();
 }

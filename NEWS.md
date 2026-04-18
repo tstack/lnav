@@ -1,5 +1,5 @@
 
-## lnav v0.14.1
+## lnav v0.15.0
 
 Features:
 * Added the `:filter-context` command to show lines surrounding
@@ -18,14 +18,30 @@ Features:
   groups messages by device in the TIMELINE view, and highlights
   `error:` lines and `FILESYSTEM CLEAN` status messages.
 
+
+## lnav v0.14.1
+
+Features:
+* For terminals that support the Kitty Keyboard
+  protocol, the following hotkeys are now supported
+  in the prompt:
+    - ⌘-C to copy the current selection to the
+      clipboard.
+    - ⌘-A to select all text.
+    - ⌘-X to cut the current selection to the
+      clipboard.
+    - ⌘-Z to undo the last change.
+* The `measure_with_units` collator now recognizes
+  (KiB, MiB, ...).
+
 Breaking changes:
-* File-size values can now be written with the IEC binary
-  prefixes (`KiB`, `MiB`, `GiB`, ...) for 1024-based units.
-  The existing `KB`/`MB`/... forms now follow the strict SI
-  convention (1000-based), so scripts that depended on the
-  informal 1024 meaning for SI prefixes should be updated to
-  use the `i` suffix.  The `humanize::file_size()` formatter
-  likewise emits SI-based `KB`/`MB`/... output.
+* The `humanize_file_size()` SQLite function now
+  uses 1,000 for the base instead of 1,024.
+
+Bug Fixes:
+* Fix a bug in file loading that could cause a short
+  read and crash in some situations.
+
 
 ## lnav v0.14.0
 
