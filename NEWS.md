@@ -3,9 +3,14 @@
 
 Features:
 * For terminals that support the Kitty Keyboard
-  protocol, add support for:
-  - ⌘-C to copy the current line to the clipboard
-  - ⌘-A to select all text in the prompt.
+  protocol, the following hotkeys are now supported
+  in the prompt:
+  - ⌘-C to copy the current selection to the
+    clipboard.
+  - ⌘-A to select all text.
+  - ⌘-X to cut the current selection to the
+    clipboard.
+  - ⌘-Z to undo the last change.
 * The `measure_with_units` collator now recognizes
   (KiB, MiB, ...).
 
