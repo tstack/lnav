@@ -1,4 +1,23 @@
 
+## lnav v0.14.1
+
+Features:
+* For terminals that support the Kitty Keyboard
+  protocol, add support for:
+  - ⌘-C to copy the current line to the clipboard
+  - ⌘-A to select all text in the prompt.
+* The `measure_with_units` collator now recognizes
+  (KiB, MiB, ...).
+
+Breaking changes:
+* The `humanize_file_size()` SQLite function now
+  uses 1,000 for the base instead of 1,024.
+
+Bug Fixes:
+* Fix a bug in file loading that could cause a short
+  read and crash in some situations.
+
+
 ## lnav v0.14.0
 
 Features:

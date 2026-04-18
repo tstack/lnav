@@ -386,36 +386,7 @@ textinput_curses::handle_mouse(mouse_event& me)
             this->set_needs_update();
         }
     } else if (me.me_button == mouse_button_t::BUTTON_RIGHT) {
-        if (this->tc_selection) {
-            std::string content;
-            auto range = this->tc_selection;
-            auto add_nl = false;
-            for (auto y = range->sr_start.y;
-                 y <= range->sr_end.y && y < this->tc_lines.size();
-                 ++y)
-            {
-                if (add_nl) {
-                    content.push_back('\n');
-                }
-                auto sel_range = range->range_for_line(y);
-                if (!sel_range) {
-                    continue;
-                }
-
-                const auto& al = this->tc_lines[y];
-                auto byte_start = al.column_to_byte_index(sel_range->lr_start);
-                auto byte_end = al.column_to_byte_index(sel_range->lr_end);
-                auto al_sf = string_fragment::from_str_range(
-                    al.al_string, byte_start, byte_end);
-                content += al_sf;
-                add_nl = true;
-            }
-
-            this->tc_clipboard.clear();
-            this->tc_cut_location = this->tc_cursor;
-            this->tc_clipboard.emplace_back(content);
-            this->sync_to_sysclip();
-        }
+        this->copy_selection();
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
         this->tc_mode = mode_t::editing;
         auto adj_press_x = me.me_press_x;
@@ -904,6 +875,23 @@ textinput_curses::handle_key(const ncinput& ch)
         auto text = lf_re.replace(paste_sf, "\n");
         log_debug("applying bracketed paste of size %zu", text.length());
         this->replace_selection(text);
+        return true;
+    }
+
+    if (ncinput_super_p(&ch)) {
+        switch (chid) {
+            case 'a': {
+                this->tc_selection
+                    = this->clamp_selection(selected_range::from_mouse(
+                        input_point::home(), input_point::end()));
+                this->set_needs_update();
+                break;
+            }
+            case 'c': {
+                this->copy_selection();
+                break;
+            }
+        }
         return true;
     }
 
@@ -2402,4 +2390,39 @@ textinput_curses::add_mark(input_point pos,
     line.al_attrs.emplace_back(lr, VC_STYLE.value(text_attrs::with_reverse()));
 
     this->tc_marks.emplace(pos, msg);
+}
+
+void
+textinput_curses::copy_selection()
+{
+    if (this->tc_selection) {
+        std::string content;
+        auto range = this->tc_selection;
+        auto add_nl = false;
+        for (auto y = range->sr_start.y;
+             y <= range->sr_end.y && y < this->tc_lines.size();
+             ++y)
+        {
+            if (add_nl) {
+                content.push_back('\n');
+            }
+            auto sel_range = range->range_for_line(y);
+            if (!sel_range) {
+                continue;
+            }
+
+            const auto& al = this->tc_lines[y];
+            auto byte_start = al.column_to_byte_index(sel_range->lr_start);
+            auto byte_end = al.column_to_byte_index(sel_range->lr_end);
+            auto al_sf = string_fragment::from_str_range(
+                al.al_string, byte_start, byte_end);
+            content += al_sf;
+            add_nl = true;
+        }
+
+        this->tc_clipboard.clear();
+        this->tc_cut_location = this->tc_cursor;
+        this->tc_clipboard.emplace_back(content);
+        this->sync_to_sysclip();
+    }
 }

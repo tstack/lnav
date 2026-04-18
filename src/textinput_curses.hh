@@ -436,6 +436,8 @@ public:
 
     void add_mark(input_point pos, const lnav::console::user_message& msg);
 
+    void copy_selection();
+
     void sync_to_sysclip() const;
 
     enum class mode_t {

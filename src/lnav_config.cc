@@ -543,7 +543,7 @@ static const struct json_path_container key_command_handlers = {
 
 static const struct json_path_container keymap_def_handlers = {
     yajlpp::pattern_property_handler(
-        "(?<key_seq>(?:x[0-9a-f]{2}|f[0-9]{1,2})+)")
+        "(?<key_seq>(?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2})+)")
         .with_synopsis("<utf8-key-code-in-hex>")
         .with_description(
             "Map of key codes to commands to execute.  The field names are "
