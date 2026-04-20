@@ -1260,6 +1260,8 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
             this->fos_static_lines.resize(1);
             this->fos_static_lines[0].clear();
         }
+    } else {
+        lines = &this->fos_static_lines;
     }
 
     if (lines != nullptr && y < (ssize_t) lines->size()) {

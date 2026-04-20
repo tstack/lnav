@@ -46,6 +46,12 @@ Install using [Homebrew](https://formulae.brew.sh/formula/lnav):
 $ brew install lnav
 ```
 
+## FreeBSD
+
+```console
+$ pkg install lnav
+```
+
 ## Source
 
 <!-- markdown-link-check-disable-next-line -->

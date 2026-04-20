@@ -74,6 +74,12 @@ you the basics of operation:
 $ brew install lnav
 ```
 
+### FreeBSD
+
+```console
+$ pkg install lnav
+```
+
 ## Usage
 
 Simply point **lnav** at the files or directories you want to
