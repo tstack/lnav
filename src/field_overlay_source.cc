@@ -1153,10 +1153,17 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         this->fos_static_lines.emplace_back(al);
                         apply_status_attrs(this->fos_static_lines);
                     } else {
+                        auto do_apply
+                            = (top - header_top) > 1 && line->is_continued();
+                        if (has_sticky && !do_apply
+                            && !this->fos_static_lines.empty())
+                        {
+                            apply_status_attrs(this->fos_static_lines);
+                        }
                         auto al = attr_line_t();
                         tc.textview_value_for_row(header_top, al);
                         this->fos_static_lines.emplace_back(al);
-                        if ((top - header_top) > 1 && line->is_continued()) {
+                        if (do_apply) {
                             apply_status_attrs(this->fos_static_lines);
                         }
                     }
@@ -1175,6 +1182,8 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
             this->fos_static_lines.resize(1);
             this->fos_static_lines[0].clear();
         }
+    } else {
+        lines = &this->fos_static_lines;
     }
 
     if (lines != nullptr && y < (ssize_t) lines->size()) {

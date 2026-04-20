@@ -2372,6 +2372,7 @@ reset_session()
         tss->get_filters().clear_filters();
         tss->tss_apply_filters = true;
         tss->text_clear_marks(&textview_curses::BM_USER);
+        tss->text_clear_marks(&textview_curses::BM_STICKY);
         tc.get_bookmarks()[&textview_curses::BM_USER].clear();
         tc.get_bookmarks()[&textview_curses::BM_STICKY].clear();
         tss->text_filters_changed();
