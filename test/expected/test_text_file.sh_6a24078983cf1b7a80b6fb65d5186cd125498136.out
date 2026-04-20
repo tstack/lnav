@@ -48,6 +48,10 @@ the basics of operation:
 
  ▌[33m[40m$ [0m[37m[40mbrew install lnav                     [0m
 
+[4mFreeBSD[0m
+
+ ▌[33m[40m$ [0m[37m[40mpkg install lnav                      [0m
+
 [1mUsage[0m
 
 Simply point [1mlnav[0m at the files or directories you want to monitor, it

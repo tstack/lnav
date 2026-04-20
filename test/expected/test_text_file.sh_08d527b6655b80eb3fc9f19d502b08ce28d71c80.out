@@ -74,6 +74,12 @@ you the basics of operation:
 [35m$ brew install lnav[0m
 [35m```[0m
 
+[4m### FreeBSD[0m
+
+[35m```console[0m
+[35m$ pkg install lnav[0m
+[35m```[0m
+
 [1m## Usage[0m
 
 Simply point [1m**lnav**[0m at the files or directories you want to
