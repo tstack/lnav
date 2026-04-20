@@ -1,0 +1,3 @@
+log_line,source,metric
+5,logfile_metrics2,error_rate
+5,logfile_metrics2,queue_depth

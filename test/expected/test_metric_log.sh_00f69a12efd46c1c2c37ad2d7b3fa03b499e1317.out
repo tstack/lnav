@@ -1,0 +1,4 @@
+2026-04-14T10:00:00Z  cpu_pct=[7m [0m     12.5  mem_mb=[7m [0m     2048  cpu_pct=[7m  [0m    13.2  cpu_pct=[7m      18.7[0m  mem_mb=[7m      2065[0m
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
+ [1mSources:[0m              logfile_m[33m⋯[0mtch_late  logfile_[33m⋯[0mtch_late  logfile_m[33m⋯[0mtch_late  logfile_m[33m⋯[0mtch_late  logfile_[33m⋯[0mtch_late
+2026-04-14T10:00:15Z  cpu_pct=[7m [0m     11.9  mem_mb=[7m  [0m    2051

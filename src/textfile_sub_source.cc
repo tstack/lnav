@@ -487,11 +487,7 @@ textfile_sub_source::text_mark(const bookmark_type_t* bm,
     }
 
     auto cl = lfo->lfo_filter_state.tfs_index[static_cast<int>(line)];
-    if (added) {
-        front->fvs_content_marks[bm].insert_once(cl);
-    } else {
-        front->fvs_content_marks[bm].erase(cl);
-    }
+    front->fvs_content_marks[bm].apply(cl, added);
 }
 
 void

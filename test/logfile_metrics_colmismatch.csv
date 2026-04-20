@@ -1,0 +1,2 @@
+timestamp,cpu_pct,mem_mb
+2026-04-14T10:00:00Z,12.5,2048,unexpected_extra_cell

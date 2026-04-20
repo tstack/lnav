@@ -113,6 +113,34 @@ public:
     std::vector<vis_line_t> fss_lines;
 };
 
+// Invoke the callback for each metric row in the fan-out behind `vl`
+// (the lead row plus any suppressed metric siblings at the same
+// timestamp) that carries `colname` in its parsed values.  Siblings
+// get suppressed from the filtered index by rebuild_index, so they're
+// invisible to logline_window but still contribute samples to a
+// spectrogram for a column that lives in a sibling file.
+template<typename F>
+static void
+for_each_metric_row_value(logfile_sub_source& lss,
+                          vis_line_t vl,
+                          const intern_string_t& colname,
+                          F&& on_value)
+{
+    logline_window::logmsg_info lead_msg{lss, vl};
+    for (const auto& sib : lead_msg.metric_siblings()) {
+        if (sib.get_file_ptr()->stats_for_value(colname) == nullptr) {
+            continue;
+        }
+        const auto& sib_values = sib.get_values();
+        auto lv_iter = std::find_if(sib_values.lvv_values.begin(),
+                                    sib_values.lvv_values.end(),
+                                    logline_value_name_cmp(&colname));
+        if (lv_iter != sib_values.lvv_values.end()) {
+            on_value(*lv_iter);
+        }
+    }
+}
+
 log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
     : lsvs_colname(colname)
 {
@@ -140,18 +168,27 @@ log_spectro_value_source::update_stats()
             continue;
         }
 
+        // Skip ignored lines (e.g., the metric-format header row
+        // carries a zeroed timestamp) when probing the time range.
         auto ll = lf->begin();
-
-        if (this->lsvs_begin_time == std::chrono::microseconds::zero()
-            || ll->get_time<std::chrono::microseconds>()
-                < this->lsvs_begin_time)
-        {
-            this->lsvs_begin_time = ll->get_time<std::chrono::microseconds>();
+        while (ll != lf->end() && ll->is_ignored()) {
+            ++ll;
         }
-        ll = lf->end();
-        --ll;
-        if (ll->get_time<std::chrono::microseconds>() > this->lsvs_end_time) {
-            this->lsvs_end_time = ll->get_time<std::chrono::microseconds>();
+        if (ll == lf->end()) {
+            continue;
+        }
+        if (this->lsvs_begin_time == std::chrono::microseconds::zero()
+            || ll->get_time<>() < this->lsvs_begin_time)
+        {
+            this->lsvs_begin_time = ll->get_time<>();
+        }
+        auto last = lf->end();
+        --last;
+        while (last != ll && last->is_ignored()) {
+            --last;
+        }
+        if (last->get_time<>() > this->lsvs_end_time) {
+            this->lsvs_end_time = last->get_time<>();
         }
 
         this->lsvs_found = true;
@@ -160,11 +197,10 @@ log_spectro_value_source::update_stats()
     }
 
     if (this->lsvs_begin_time > std::chrono::microseconds::zero()) {
-        auto filtered_begin_time = lss.find_line(lss.at(0_vl))
-                                       ->get_time<std::chrono::microseconds>();
+        auto filtered_begin_time = lss.find_line(lss.at(0_vl))->get_time<>();
         auto filtered_end_time
             = lss.find_line(lss.at(vis_line_t(lss.text_line_count() - 1)))
-                  ->get_time<std::chrono::microseconds>();
+                  ->get_time<>();
 
         if (filtered_begin_time > this->lsvs_begin_time) {
             this->lsvs_begin_time = filtered_begin_time;
@@ -208,37 +244,53 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
     auto end_line = lss.find_from_time(timeval{to_time_t(sr.sr_end_time), 0})
                         .value_or(vis_line_t(lss.text_line_count()));
 
+    auto add_value_from = [&](const logline_value& lv, bool marked) {
+        switch (lv.lv_meta.lvm_kind) {
+            case value_kind_t::VALUE_FLOAT:
+                row_out.add_value(sr,
+                                  spectrogram_row::value_type::real,
+                                  lv.lv_value.d,
+                                  marked);
+                row_out.sr_tdigest.insert(lv.lv_value.d);
+                break;
+            case value_kind_t::VALUE_INTEGER:
+                row_out.add_value(sr,
+                                  spectrogram_row::value_type::integer,
+                                  lv.lv_value.i,
+                                  marked);
+                row_out.sr_tdigest.insert(lv.lv_value.i);
+                break;
+            default:
+                break;
+        }
+    };
+
     auto win = lss.window_at(begin_line, end_line);
     for (const auto& msg_info : *win) {
         const auto& ll = msg_info.get_logline();
-        if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
+        if (ll.get_time<>() >= sr.sr_end_time) {
             break;
         }
 
-        const auto& values = msg_info.get_values();
-        auto lv_iter = find_if(values.lvv_values.begin(),
-                               values.lvv_values.end(),
-                               logline_value_name_cmp(&this->lsvs_colname));
-
-        if (lv_iter != values.lvv_values.end()) {
-            switch (lv_iter->lv_meta.lvm_kind) {
-                case value_kind_t::VALUE_FLOAT:
-                    row_out.add_value(sr,
-                                      spectrogram_row::value_type::real,
-                                      lv_iter->lv_value.d,
-                                      ll.is_marked());
-                    row_out.sr_tdigest.insert(lv_iter->lv_value.d);
-                    break;
-                case value_kind_t::VALUE_INTEGER: {
-                    row_out.add_value(sr,
-                                      spectrogram_row::value_type::integer,
-                                      lv_iter->lv_value.i,
-                                      ll.is_marked());
-                    row_out.sr_tdigest.insert(lv_iter->lv_value.i);
-                    break;
-                }
-                default:
-                    break;
+        if (msg_info.is_metric_line()) {
+            // Metric rows fan out across sibling files at the same
+            // timestamp; helper iterates the lead + suppressed
+            // siblings together.
+            for_each_metric_row_value(
+                lss,
+                msg_info.get_vis_line(),
+                this->lsvs_colname,
+                [&](const logline_value& lv) {
+                    add_value_from(lv, ll.is_marked());
+                });
+        } else {
+            const auto& values = msg_info.get_values();
+            auto lv_iter
+                = find_if(values.lvv_values.begin(),
+                          values.lvv_values.end(),
+                          logline_value_name_cmp(&this->lsvs_colname));
+            if (lv_iter != values.lvv_values.end()) {
+                add_value_from(*lv_iter, ll.is_marked());
             }
         }
     }
@@ -258,39 +310,51 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
         retval->fss_overlay_delegate = nullptr;
+
+        auto in_range = [&](const logline_value& lv) {
+            switch (lv.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_FLOAT:
+                    return range_min <= lv.lv_value.d
+                        && lv.lv_value.d < range_max;
+                case value_kind_t::VALUE_INTEGER:
+                    return range_min <= lv.lv_value.i
+                        && lv.lv_value.i < range_max;
+                default:
+                    return false;
+            }
+        };
+
         auto win = lss.window_at(begin_line, end_line);
         for (const auto& msg_info : *win) {
             const auto& ll = msg_info.get_logline();
-            if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
+            if (ll.get_time<>() >= sr.sr_end_time) {
                 break;
             }
 
-            const auto& values = msg_info.get_values();
-            auto lv_iter = find_if(values.lvv_values.begin(),
-                                   values.lvv_values.end(),
-                                   logline_value_name_cmp(&this->lsvs_colname));
-
-            if (lv_iter != values.lvv_values.end()) {
-                switch (lv_iter->lv_meta.lvm_kind) {
-                    case value_kind_t::VALUE_FLOAT:
-                        if (range_min <= lv_iter->lv_value.d
-                            && lv_iter->lv_value.d < range_max)
-                        {
-                            retval->fss_lines.emplace_back(
-                                msg_info.get_vis_line());
+            bool matched = false;
+            if (msg_info.is_metric_line()) {
+                for_each_metric_row_value(
+                    lss,
+                    msg_info.get_vis_line(),
+                    this->lsvs_colname,
+                    [&](const logline_value& lv) {
+                        if (in_range(lv)) {
+                            matched = true;
                         }
-                        break;
-                    case value_kind_t::VALUE_INTEGER:
-                        if (range_min <= lv_iter->lv_value.i
-                            && lv_iter->lv_value.i < range_max)
-                        {
-                            retval->fss_lines.emplace_back(
-                                msg_info.get_vis_line());
-                        }
-                        break;
-                    default:
-                        break;
+                    });
+            } else {
+                const auto& values = msg_info.get_values();
+                auto lv_iter = find_if(
+                    values.lvv_values.begin(),
+                    values.lvv_values.end(),
+                    logline_value_name_cmp(&this->lsvs_colname));
+                if (lv_iter != values.lvv_values.end() && in_range(*lv_iter))
+                {
+                    matched = true;
                 }
+            }
+            if (matched) {
+                retval->fss_lines.emplace_back(msg_info.get_vis_line());
             }
         }
 
@@ -310,7 +374,7 @@ log_spectro_value_source::spectro_is_marked(spectrogram_request& sr)
     auto win = lss.window_at(begin_line, end_line);
     for (const auto& msg_info : *win) {
         const auto& ll = msg_info.get_logline();
-        if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
+        if (ll.get_time<>() >= sr.sr_end_time) {
             break;
         }
 
@@ -339,6 +403,19 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     logline_value_vector values;
     string_attrs_t sa;
 
+    auto in_range = [&](const logline_value& lv) {
+        switch (lv.lv_meta.lvm_kind) {
+            case value_kind_t::VALUE_FLOAT:
+                return range_min <= lv.lv_value.d
+                    && lv.lv_value.d <= range_max;
+            case value_kind_t::VALUE_INTEGER:
+                return range_min <= lv.lv_value.i
+                    && lv.lv_value.i <= range_max;
+            default:
+                return false;
+        }
+    };
+
     for (auto curr_line = begin_line; curr_line < end_line; ++curr_line) {
         auto cl = lss.at(curr_line);
         const auto lf = lss.find(cl);
@@ -349,39 +426,39 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
             continue;
         }
 
-        values.clear();
-        lf->read_full_message(ll, values.lvv_sbr);
-        values.lvv_sbr.erase_ansi();
-        sa.clear();
-        format->annotate(lf.get(), cl, sa, values);
-
-        auto lv_iter = find_if(values.lvv_values.begin(),
-                               values.lvv_values.end(),
-                               logline_value_name_cmp(&this->lsvs_colname));
-
-        if (lv_iter != values.lvv_values.end()) {
-            switch (lv_iter->lv_meta.lvm_kind) {
-                case value_kind_t::VALUE_FLOAT:
-                    if (range_min <= lv_iter->lv_value.d
-                        && lv_iter->lv_value.d <= range_max)
-                    {
-                        log_tc.set_user_mark(&textview_curses::BM_USER,
-                                             curr_line,
-                                             op == mark_op_t::add);
+        bool matched = false;
+        if (format->lf_is_metric) {
+            // Metric rows fan out across sibling files at the same
+            // timestamp; helper iterates lead + suppressed siblings.
+            for_each_metric_row_value(
+                lss,
+                curr_line,
+                this->lsvs_colname,
+                [&](const logline_value& lv) {
+                    if (in_range(lv)) {
+                        matched = true;
                     }
-                    break;
-                case value_kind_t::VALUE_INTEGER:
-                    if (range_min <= lv_iter->lv_value.i
-                        && lv_iter->lv_value.i <= range_max)
-                    {
-                        log_tc.set_user_mark(&textview_curses::BM_USER,
-                                             curr_line,
-                                             op == mark_op_t::add);
-                    }
-                    break;
-                default:
-                    break;
+                });
+        } else {
+            values.clear();
+            lf->read_full_message(ll, values.lvv_sbr);
+            values.lvv_sbr.erase_ansi();
+            sa.clear();
+            format->annotate(lf.get(), cl, sa, values);
+
+            auto lv_iter
+                = find_if(values.lvv_values.begin(),
+                          values.lvv_values.end(),
+                          logline_value_name_cmp(&this->lsvs_colname));
+            if (lv_iter != values.lvv_values.end() && in_range(*lv_iter)) {
+                matched = true;
             }
+        }
+        if (matched) {
+            // Mark the lead; text_mark fan-out covers the siblings.
+            log_tc.set_user_mark(&textview_curses::BM_USER,
+                                 curr_line,
+                                 op == mark_op_t::add);
         }
     }
 }

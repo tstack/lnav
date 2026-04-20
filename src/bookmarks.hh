@@ -107,8 +107,7 @@ struct bookmark_metadata {
 
     std::vector<tag_entry> bm_tags;
 
-    void add_tag(const std::string& tag,
-                 meta_source src = meta_source::user);
+    void add_tag(const std::string& tag, meta_source src = meta_source::user);
 
     bool remove_tag(const std::string& tag);
 
@@ -185,6 +184,15 @@ public:
             this->bv_generation += 1;
         }
         return retval;
+    }
+
+    void apply(LineType vl, bool added)
+    {
+        if (added) {
+            this->insert_once(vl);
+        } else {
+            this->erase(vl);
+        }
     }
 
     /**

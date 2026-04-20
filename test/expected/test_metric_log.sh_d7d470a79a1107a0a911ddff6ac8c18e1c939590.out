@@ -1,0 +1,8 @@
+2026-04-14T10:00:00Z  error_rate=         0  cpu_pct=[7m [0m     12.5  mem_mb=[7m [0m     2048  disk_iops=[7m     [0m  150
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
+ [1mSources:[0m              logfile_metrics2       logfile_metrics     logfile_metrics    logfile_metrics
+2026-04-14T10:00:05Z  error_rate=         0  cpu_pct=[7m [0m     13.2  mem_mb=[7m [0m     2050  disk_iops=[7m    [0m   143
+2026-04-14T10:00:10Z  error_rate=[7m         3[0m  cpu_pct=[7m [0m     18.7  mem_mb=[7m [0m     2065  disk_iops=[7m       312[0m
+2026-04-14T10:00:15Z  error_rate=[7m   [0m      1  cpu_pct=[7m [0m     11.9  mem_mb=[7m [0m     2051  disk_iops=[7m    [0m   128
+2026-04-14T10:00:20Z  error_rate=         0  cpu_pct=[7m [0m     14.4  mem_mb=[7m [0m     2053  disk_iops=[7m     [0m  167
+2026-04-14T10:00:25Z  error_rate=[7m       [0m  2  cpu_pct=[7m     99.99[0m  mem_mb=[7m     12345[0m  disk_iops=[7m [0m        7

@@ -38,8 +38,10 @@
 
 #include <stdio.h>
 
+#include "base/humanize.hh"
 #include "base/injector.bind.hh"
 #include "base/opt_util.hh"
+#include "base/separated_string.hh"
 #include "base/string_attr_type.hh"
 #include "config.h"
 #include "formats/logfmt/logfmt.parser.hh"
@@ -141,7 +143,7 @@ private:
     std::vector<char> plf_cached_line;
 };
 
-class generic_log_format : public log_format {
+class o1_generic_log_format : public log_format {
 public:
     static const pcre_format* get_pcre_log_formats()
     {
@@ -335,7 +337,7 @@ public:
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
     {
-        auto retval = std::make_shared<generic_log_format>(*this);
+        auto retval = std::make_shared<o1_generic_log_format>(*this);
 
         retval->lf_specialized = true;
         return retval;
@@ -373,19 +375,19 @@ private:
     static logline_value_meta OPID_META;
 };
 
-logline_value_meta generic_log_format::TS_META{
+logline_value_meta o1_generic_log_format::TS_META{
     intern_string::lookup("log_time"),
     value_kind_t::VALUE_TEXT,
     logline_value_meta::table_column{2},
 };
 
-logline_value_meta generic_log_format::LEVEL_META{
+logline_value_meta o1_generic_log_format::LEVEL_META{
     intern_string::lookup("log_level"),
     value_kind_t::VALUE_TEXT,
     logline_value_meta::table_column{3},
 };
 
-logline_value_meta generic_log_format::OPID_META{
+logline_value_meta o1_generic_log_format::OPID_META{
     intern_string::lookup("log_opid"),
     value_kind_t::VALUE_TEXT,
     logline_value_meta::internal_column{},
@@ -417,117 +419,465 @@ from_escaped_string(const char* str, size_t len)
     return retval;
 }
 
-std::optional<const char*>
-lnav_strnstr(const char* s, const char* find, size_t slen)
-{
-    char c, sc;
-    size_t len;
+// -----------------------------------------------------------------
+// Recognizes CSV files whose first line is a header with a
+// timestamp-like first column (`timestamp`, `time`, `ts`, or a name
+// starting with `date`), and whose subsequent rows begin with a
+// parseable timestamp.  Tolerates a leading UTF-8 BOM, the
+// Excel-style `sep=<ch>` delimiter hint, CRLF line endings, and
+// CSV-style `""`-escaped double quotes inside quoted fields.
+// The header line is emitted as an ignored logline so lnav stays
+// locked to this format for the rest of the file.
+//
+// Each non-timestamp column is exposed as a `VALUE_FLOAT` field so
+// queries such as `SELECT cpu_pct FROM metrics_log` work per-file.
+// The cross-file long-format `all_metrics` SQL virtual table
+// (source/metric/value across all loaded metric files) lives in
+// `metrics_vtab.cc`.
+// -----------------------------------------------------------------
+class metrics_log_format : public log_format {
+public:
+    metrics_log_format()
+    {
+        this->lf_multiline = false;
+        this->lf_is_metric = true;
+    }
 
-    if ((c = *find++) != '\0') {
-        len = strlen(find);
-        do {
-            do {
-                if (slen < 1 || (sc = *s) == '\0') {
-                    return std::nullopt;
+    const intern_string_t get_name() const override
+    {
+        static const intern_string_t RETVAL
+            = intern_string::lookup("metrics_log");
+
+        return RETVAL;
+    }
+
+    scan_result_t parse_line(const string_fragment& line_sf,
+                             std::vector<logline>& dst,
+                             scan_batch_context& sbc)
+    {
+        separated_string ss{line_sf};
+        ss.with_separator(this->mlf_separator);
+        auto iter = ss.begin();
+        if (iter == ss.end()) {
+            return scan_error{"empty metric row"};
+        }
+        const auto ts_sf = *iter;
+
+        auto& dts = this->lf_date_time;
+        exttm tm;
+        timeval tv;
+        if (dts.scan(ts_sf.data(), ts_sf.length(), nullptr, &tm, tv) == nullptr)
+        {
+            return scan_error{fmt::format(
+                FMT_STRING("metric row timestamp did not parse: {}"),
+                ts_sf.to_string())};
+        }
+        dst.back().set_time(to_us(tv));
+        // Propagate what the scanner learned (zone offset, subsecond
+        // precision) so downstream consumers can reproduce the
+        // timestamp in the right form.
+        this->lf_timestamp_flags |= tm.et_flags;
+
+        // Update per-column min/max stats.  Every non-timestamp
+        // column is VALUE_FLOAT, so the field-def index maps 1:1
+        // onto `sbc_value_stats`.  Dispatch on the iterator's
+        // `kind()` so integers skip the float parser and so unit-
+        // suffixed values (e.g. `1.5k`) fall back to `humanize`.
+        sbc.sbc_value_stats.resize(this->mlf_field_defs.size());
+        ++iter;
+        auto field_index = 0;
+        for (; iter != ss.end(); ++iter, ++field_index) {
+            if (field_index >= this->mlf_field_defs.size()) {
+                return scan_error{
+                    fmt::format(FMT_STRING("metric row has too many fields, "
+                                           "expecting only {} fields"),
+                                this->mlf_field_defs.size())};
+            }
+            auto& stats = sbc.sbc_value_stats[field_index];
+            // Track the widest raw cell so the LOG-view renderer can
+            // column-align values across rows.
+            const auto cell_len = static_cast<int64_t>((*iter).length());
+            if (cell_len > stats.lvs_width) {
+                stats.lvs_width = cell_len;
+            }
+            parse_cell(iter).match([](empty_cell) {},
+                                   [&stats](int64_t i) {
+                                       stats.add_value(static_cast<double>(i));
+                                   },
+                                   [&stats](double d) { stats.add_value(d); });
+        }
+        if (field_index < this->mlf_field_defs.size()) {
+            return scan_error{fmt::format(
+                FMT_STRING("metric row has too few fields: found {}, "
+                           "expected {} fields"),
+                field_index,
+                this->mlf_field_defs.size())};
+        }
+
+        return scan_match{500};
+    }
+
+    scan_result_t scan_int(std::vector<logline>& dst,
+                           const line_info& li,
+                           shared_buffer_ref& sbr,
+                           scan_batch_context& sbc)
+    {
+        auto line_sf = sbr.to_string_fragment();
+
+        // Reindex (triggered by e.g. `:set-file-timezone`) clears
+        // `lf_index` but leaves `lf_specialized` set, so the first
+        // post-clear scan arrives here with an empty `dst`.  Seed
+        // from epoch rather than reading `dst.back()` on an empty
+        // vector.
+        const auto prev_time = dst.empty()
+            ? std::chrono::microseconds::zero()
+            : dst.back().get_time<>();
+        dst.emplace_back(
+            li.li_file_range.fr_offset, prev_time, LEVEL_STATS);
+        auto retval = this->parse_line(line_sf, dst, sbc);
+        if (!retval.is<scan_match>()) {
+            dst.pop_back();
+        }
+        return retval;
+    }
+
+    scan_result_t scan(logfile& lf,
+                       std::vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
+    {
+        if (li.li_partial) {
+            return scan_incomplete{};
+        }
+
+        // Keep the scanner's default zone in sync with the file's
+        // current options on every scan.  `:set-file-timezone`
+        // mutates the options after the format has already specialized,
+        // so a once-at-detection sync leaves stale state and every
+        // subsequent timestamp parses against the wrong zone.
+        {
+            auto file_options = lf.get_file_options();
+            this->lf_date_time.dts_default_zone
+                = file_options
+                ? file_options->second.fo_default_zone.pp_value
+                : nullptr;
+        }
+
+        if (this->lf_specialized) {
+            if (dst.empty()) {
+                // Reindex (e.g. after `:set-file-timezone`) clears
+                // `lf_index` and starts scanning from byte zero again.
+                // The format is still locked in from the prior pass,
+                // so just reproduce the header's ignored-logline so
+                // the data rows that follow land in `scan_int` with
+                // a valid `dst.back()`.
+                dst.emplace_back(li.li_file_range.fr_offset,
+                                 std::chrono::microseconds::zero(),
+                                 LEVEL_UNKNOWN);
+                dst.back().set_ignore(true);
+                return scan_match{500};
+            }
+            // we've locked on, don't need to figure out the header
+            return scan_int(dst, li, sbr, sbc);
+        }
+
+        if (dst.size() < 1) {
+            return scan_no_match{"waiting for header and data row"};
+        }
+
+        if (dst.size() > 2) {
+            return scan_no_match{
+                "line is after CSV headers and first data row"};
+        }
+
+        // First part of the file — reset any per-file state left
+        // over from a prior file on this shared base instance.
+        this->mlf_headers.clear();
+        this->mlf_field_defs.clear();
+        this->mlf_separator = ',';
+        for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
+            auto read_res = lf.read_line(ll_iter);
+            if (read_res.isErr()) {
+                return scan_no_match{"cannot read header"};
+            }
+
+            auto hdr_sbr = read_res.unwrap();
+            auto hdr_sf = hdr_sbr.to_string_fragment();
+            // Excel-flavor CSVs sometimes start with `sep=<ch>` to
+            // hint the delimiter.  Consume that as metadata and wait
+            // for the real header on the next line.
+            if (ll_iter == dst.begin() && hdr_sf.startswith("sep=")) {
+                if (dst.size() == 1) {
+                    return scan_no_match{"waiting for more data"};
                 }
-                --slen;
-                ++s;
-            } while (sc != c);
-            if (len > slen) {
-                return std::nullopt;
-            }
-        } while (strncmp(s, find, len) != 0);
-        s--;
-    }
-    return s;
-}
 
-struct separated_string {
-    const char* ss_str;
-    size_t ss_len;
-    const char* ss_separator;
-    size_t ss_separator_len;
+                const auto sep_sf = hdr_sf.substr(4);
+                if (sep_sf.empty()) {
+                    return scan_error{"sep= hint missing separator character"};
+                }
+                this->mlf_separator = sep_sf.data()[0];
+                ll_iter->set_time(std::chrono::microseconds::zero());
+                ll_iter->set_level(LEVEL_UNKNOWN);
+                ll_iter->set_ignore(true);
+                log_info("metrics_log found 'sep=' header: %x",
+                         this->mlf_separator);
+            } else if (this->mlf_headers.empty()) {
+                // Header row: require a shape like
+                // `timestamp,<name>,<name>...`.  This is a conservative
+                // detector — files without a leading timestamp-named
+                // column are left to other formats.
+                separated_string ss{hdr_sf};
+                ss.with_separator(this->mlf_separator);
+                std::vector<intern_string_t> fields;
+                for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+                    // Header cells may be CSV-quoted (e.g. Grafana
+                    // exports wrap PromQL expressions that contain
+                    // commas or doubled quotes).  Collapse `""` back
+                    // to `"` so the interned column name matches what
+                    // the user wrote.
+                    fields.emplace_back(intern_string::lookup(
+                        separated_string::unescape_quoted(*iter)));
+                    log_info("  metrics header: %s", fields.back().c_str());
+                }
+                if (fields.size() < 2) {
+                    return scan_no_match{"too few columns for a metric CSV"};
+                }
+                const auto first = fields[0].to_string_fragment();
+                const bool is_time_header = first.iequal("timestamp"_frag)
+                    || first.iequal("time"_frag) || first.iequal("ts"_frag)
+                    || (first.length() >= 4
+                        && strncasecmp(first.data(), "date", 4) == 0);
+                if (!is_time_header) {
+                    return scan_error{fmt::format(
+                        FMT_STRING(
+                            "first column '{}' is not a timestamp header "
+                            "(expected 'timestamp', 'time', 'ts', or a "
+                            "'date'-prefixed name)"),
+                        first.to_string())};
+                }
 
-    separated_string(const char* str, size_t len)
-        : ss_str(str), ss_len(len), ss_separator(","),
-          ss_separator_len(strlen(this->ss_separator))
-    {
-    }
-
-    separated_string& with_separator(const char* sep)
-    {
-        this->ss_separator = sep;
-        this->ss_separator_len = strlen(sep);
-        return *this;
-    }
-
-    struct iterator {
-        const separated_string& i_parent;
-        const char* i_pos;
-        const char* i_next_pos;
-        size_t i_index;
-
-        iterator(const separated_string& ss, const char* pos)
-            : i_parent(ss), i_pos(pos), i_next_pos(pos), i_index(0)
-        {
-            this->update();
-        }
-
-        void update()
-        {
-            const separated_string& ss = this->i_parent;
-            auto next_field
-                = lnav_strnstr(this->i_pos,
-                               ss.ss_separator,
-                               ss.ss_len - (this->i_pos - ss.ss_str));
-            if (next_field) {
-                this->i_next_pos = next_field.value() + ss.ss_separator_len;
+                this->mlf_headers = std::move(fields);
+                log_info("metrics_log found %zu header columns",
+                         this->mlf_headers.size());
+                this->build_field_defs();
+                ll_iter->set_time(std::chrono::microseconds::zero());
+                ll_iter->set_level(LEVEL_UNKNOWN);
+                ll_iter->set_ignore(true);
             } else {
-                this->i_next_pos = ss.ss_str + ss.ss_len;
+                auto scan_res = this->parse_line(hdr_sf, dst, sbc);
+                if (!scan_res.is<scan_match>()) {
+                    log_warning("first data row did not match");
+                    return scan_res;
+                }
+                ll_iter->set_level(LEVEL_STATS);
             }
         }
+        return this->scan_int(dst, li, sbr, sbc);
+    }
 
-        iterator& operator++()
-        {
-            this->i_pos = this->i_next_pos;
-            this->update();
-            this->i_index += 1;
-
-            return *this;
-        }
-
-        string_fragment operator*()
-        {
-            const auto& ss = this->i_parent;
-            int end;
-
-            if (this->i_next_pos < (ss.ss_str + ss.ss_len)) {
-                end = this->i_next_pos - ss.ss_str - ss.ss_separator_len;
-            } else {
-                end = this->i_next_pos - ss.ss_str;
+    std::optional<size_t> stats_index_for_value(
+        const intern_string_t& name) const override
+    {
+        for (size_t i = 0; i < this->mlf_field_defs.size(); ++i) {
+            if (this->mlf_field_defs[i].lvm_name == name) {
+                return i;
             }
-            return string_fragment::from_byte_range(
-                ss.ss_str, this->i_pos - ss.ss_str, end);
+        }
+        return std::nullopt;
+    }
+
+    std::vector<logline_value_meta> get_value_metadata() const override
+    {
+        return this->mlf_field_defs;
+    }
+
+    size_t get_value_metadata_count() const override
+    {
+        return this->mlf_field_defs.size();
+    }
+
+    void annotate(logfile* lf,
+                  uint64_t line_number,
+                  string_attrs_t& sa,
+                  logline_value_vector& values) const override
+    {
+        auto& sbr = values.lvv_sbr;
+        const auto line_sf = sbr.to_string_fragment().trim("\r\n");
+
+        separated_string ss{line_sf};
+        ss.with_separator(this->mlf_separator);
+        for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+            const auto field = *iter;
+            const auto lr = line_range{field.sf_begin, field.sf_end};
+
+            if (iter.index() == 0) {
+                sa.emplace_back(lr, L_TIMESTAMP.value());
+                continue;
+            }
+            // The header row is emitted as an ignored logline, so
+            // `mlf_field_defs` (which excludes col 0) has one entry
+            // per data column.  Extra trailing columns are dropped.
+            const auto field_index = iter.index() - 1;
+            if (field_index >= this->mlf_field_defs.size()) {
+                break;
+            }
+            // Parse once rather than paying the re-parse cost each
+            // time SQL reads the cell.  The variant preserves int vs
+            // float so the renderer can format integers without a
+            // trailing decimal point.  The static `mlf_hidden_columns`
+            // registry is overlaid so hide state propagates across
+            // specialized instances that share column names.
+            auto meta = this->mlf_field_defs[field_index];
+            if (mlf_hidden_columns.count(meta.lvm_name) != 0) {
+                meta.lvm_user_hidden = true;
+            }
+            parse_cell(iter).match(
+                [&](empty_cell) { values.lvv_values.emplace_back(meta); },
+                [&](int64_t i) { values.lvv_values.emplace_back(meta, i); },
+                [&](double d) { values.lvv_values.emplace_back(meta, d); });
+            values.lvv_values.back().lv_origin = lr;
         }
 
-        bool operator==(const iterator& other) const
-        {
-            return (&this->i_parent == &other.i_parent)
-                && (this->i_pos == other.i_pos);
+        log_format::annotate(lf, line_number, sa, values);
+    }
+
+    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    {
+        auto retval = std::make_shared<metrics_log_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
+    }
+
+private:
+    // A parsed metric cell: either an int64, a double, or nothing
+    // (empty or unparseable).  Keeping the original integer type
+    // lets the renderer format int cells without a decimal point,
+    // while callers that want a single numeric type can coerce via
+    // the `match` below.
+    struct empty_cell {};
+    using parsed_cell_t = mapbox::util::variant<empty_cell, int64_t, double>;
+
+    static parsed_cell_t parse_cell(const separated_string::iterator& iter)
+    {
+        const auto field = *iter;
+        switch (iter.kind()) {
+            case separated_string::cell_kind::empty: {
+                return parsed_cell_t{empty_cell{}};
+            }
+            case separated_string::cell_kind::integer: {
+                if (auto res = scn::scan_value<int64_t>(field.to_string_view()))
+                {
+                    return parsed_cell_t{res->value()};
+                }
+                return parsed_cell_t{empty_cell{}};
+            }
+            case separated_string::cell_kind::floating: {
+                if (auto res = scn::scan_value<double>(field.to_string_view()))
+                {
+                    return parsed_cell_t{res->value()};
+                }
+                return parsed_cell_t{empty_cell{}};
+            }
+            case separated_string::cell_kind::number_with_suffix: {
+                // Classifier already confirmed the shape is `<num><unit>`.
+                if (auto res = humanize::try_from<double>(field)) {
+                    return parsed_cell_t{res.value()};
+                }
+                return parsed_cell_t{empty_cell{}};
+            }
+            case separated_string::cell_kind::other: {
+                // Plain text; humanize wouldn't have parsed it.
+                return parsed_cell_t{empty_cell{}};
+            }
         }
+        return parsed_cell_t{empty_cell{}};
+    }
 
-        bool operator!=(const iterator& other) const
-        {
-            return !(*this == other);
+    void build_field_defs()
+    {
+        this->mlf_field_defs.clear();
+        // Columns 1..N (timestamp is column 0) become VALUE_FLOAT
+        // fields.  Column names are kept verbatim from the header;
+        // the CREATE TABLE generator applies SQL quoting for names
+        // that need it.  Pass `this` as the owning format so the
+        // field_overlay_source treats these as real table fields
+        // (show/hide, chart, etc.) rather than skipping them.
+        for (size_t h = 1; h < this->mlf_headers.size(); ++h) {
+            this->mlf_field_defs.emplace_back(
+                this->mlf_headers[h],
+                value_kind_t::VALUE_FLOAT,
+                logline_value_meta::table_column{h - 1},
+                this);
+            if (mlf_hidden_columns.count(this->mlf_headers[h]) != 0) {
+                this->mlf_field_defs.back().lvm_user_hidden = true;
+            }
         }
+    }
 
-        size_t index() const { return this->i_index; }
-    };
+public:
+    // Hide state lives in a static set instead of on the meta so it
+    // survives file re-detection (which rebuilds `mlf_field_defs` from
+    // scratch) and propagates across every specialized instance that
+    // shares the column name.  Only the currently-hidden columns are
+    // tracked — showing a column erases its entry rather than storing
+    // `false`, so the set stays bounded across hide/show cycles.
+    bool hide_field(const intern_string_t field_name, bool val) override
+    {
+        if (val) {
+            mlf_hidden_columns.insert(field_name);
+        } else {
+            mlf_hidden_columns.erase(field_name);
+        }
+        for (auto& meta : this->mlf_field_defs) {
+            if (meta.lvm_name == field_name) {
+                if (val) {
+                    meta.lvm_user_hidden = true;
+                } else {
+                    meta.lvm_user_hidden.reset();
+                }
+            }
+        }
+        return true;
+    }
 
-    iterator begin() { return {*this, this->ss_str}; }
+    std::map<intern_string_t, logline_value_meta> get_field_states() override
+    {
+        std::map<intern_string_t, logline_value_meta> retval;
+        for (const auto& meta : this->mlf_field_defs) {
+            retval.emplace(meta.lvm_name, meta);
+        }
+        // Include columns that were hidden before this instance saw
+        // its header, so session save still captures them.
+        for (const auto& name : mlf_hidden_columns) {
+            if (retval.count(name) != 0) {
+                continue;
+            }
+            logline_value_meta meta{name, value_kind_t::VALUE_FLOAT};
+            meta.lvm_user_hidden = true;
+            retval.emplace(name, std::move(meta));
+        }
+        return retval;
+    }
 
-    iterator end() { return {*this, this->ss_str + this->ss_len}; }
+    std::vector<intern_string_t> mlf_headers;
+    std::vector<logline_value_meta> mlf_field_defs;
+    // Column separator; overridden by an Excel-style `sep=<ch>` hint
+    // on the first line of the file.
+    char mlf_separator{','};
+
+    // User-hidden metric column names.  Shared across every
+    // `metrics_log_format` instance so hides set via
+    // `:hide-fields metrics_log.<col>` affect every open metric file
+    // that has the column, and survive file re-detection (which
+    // rebuilds `mlf_field_defs`).  Only currently-hidden columns are
+    // stored; `hide_field(name, false)` erases so the set stays
+    // bounded across hide/show cycles.
+    static std::set<intern_string_t> mlf_hidden_columns;
 };
+
+std::set<intern_string_t> metrics_log_format::mlf_hidden_columns;
 
 class bro_log_format : public log_format {
 public:
@@ -630,7 +980,7 @@ public:
         static const intern_string_t ID_ORIG_H
             = intern_string::lookup("bro_id_orig_h");
 
-        separated_string ss(sbr.get_data(), sbr.length());
+        separated_string ss(sbr.to_string_fragment());
         timeval tv;
         exttm tm;
         size_t found_ts = 0;
@@ -641,7 +991,7 @@ public:
         auto duration = std::chrono::microseconds{0};
 
         sbc.sbc_value_stats.resize(this->blf_field_defs.size());
-        ss.with_separator(this->blf_separator.get());
+        ss.with_separator(this->blf_separator.get()[0]);
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
             if (iter.index() == 0 && *iter == "#close") {
@@ -797,9 +1147,9 @@ public:
             }
 
             line = next_read_result.unwrap();
-            separated_string ss(line.get_data(), line.length());
+            separated_string ss(line.to_string_fragment());
 
-            ss.with_separator(this->blf_separator.get());
+            ss.with_separator(this->blf_separator.get()[0]);
             auto iter = ss.begin();
 
             string_fragment directive = *iter;
@@ -923,9 +1273,9 @@ public:
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
         auto& sbr = values.lvv_sbr;
-        separated_string ss(sbr.get_data(), sbr.length());
+        separated_string ss(sbr.to_string_fragment());
 
-        ss.with_separator(this->blf_separator.get());
+        ss.with_separator(this->blf_separator.get()[0]);
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
             if (iter.index() >= this->blf_field_defs.size()) {
@@ -2270,5 +2620,6 @@ static auto format_binder = injector::bind_multiple<log_format>()
                                 .add<logfmt_format>()
                                 .add<bro_log_format>()
                                 .add<w3c_log_format>()
-                                .add<generic_log_format>()
+                                .add<metrics_log_format>()
+                                .add<o1_generic_log_format>()
                                 .add<piper_log_format>();

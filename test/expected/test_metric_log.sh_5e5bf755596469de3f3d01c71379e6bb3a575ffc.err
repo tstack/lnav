@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: unknown numeric message field -- nonexistent_column
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m nonexistent_column         [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
+         ══════════════════════════════════════════════════════════════════════
+           Visualize the given message field or database column using a
+           spectrogram

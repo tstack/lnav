@@ -579,6 +579,8 @@ load_time_bookmarks()
         date_time_scanner dts;
         bool done = false;
         int64_t last_mark_time = -1;
+        size_t marked_count = 0;
+        size_t sticky_count = 0;
 
         while (!done) {
             int rc = sqlite3_step(stmt.in());
@@ -796,10 +798,12 @@ load_time_bookmarks()
                                 line_hash);
                             lss.set_user_mark(&textview_curses::BM_USER,
                                               line_cl);
+                            marked_count += 1;
                         }
                         if (sticky) {
                             lss.set_user_mark(&textview_curses::BM_STICKY,
                                               line_cl);
+                            sticky_count += 1;
                         }
                         reload_needed = true;
                         break;
@@ -818,6 +822,12 @@ load_time_bookmarks()
             }
         }
 
+        if (marked_count > 0 || sticky_count > 0) {
+            log_info("  loaded %zu marked and %zu sticky lines from %s",
+                     marked_count,
+                     sticky_count,
+                     lf->get_filename_as_string().c_str());
+        }
         sqlite3_reset(stmt.in());
     }
     log_info("END select bookmarks");
@@ -1511,7 +1521,8 @@ load_text_bookmarks(sqlite3* db)
         sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time);
         bind_to_sqlite(stmt.in(), 2, file_path);
 
-        size_t mark_count = 0;
+        size_t marked_count = 0;
+        size_t sticky_count = 0;
         int64_t last_session_time = -1;
         bool done = false;
         while (!done) {
@@ -1575,7 +1586,11 @@ load_text_bookmarks(sqlite3* db)
                     fvs->fvs_bookmarks[bm_type_opt.value()].insert_once(vl);
                     fvs->fvs_content_marks[bm_type_opt.value()].insert_once(
                         static_cast<uint32_t>(line_number));
-                    mark_count += 1;
+                    if (bm_type_opt.value() == &textview_curses::BM_STICKY) {
+                        sticky_count += 1;
+                    } else {
+                        marked_count += 1;
+                    }
                     break;
                 }
 
@@ -1587,8 +1602,12 @@ load_text_bookmarks(sqlite3* db)
                     break;
             }
         }
-        log_debug(
-            "loaded %zu text bookmarks from %s", mark_count, file_path.c_str());
+        if (marked_count > 0 || sticky_count > 0) {
+            log_info("  loaded %zu marked and %zu sticky lines from %s",
+                     marked_count,
+                     sticky_count,
+                     file_path.c_str());
+        }
     }
 
     // Copy the front file's bookmarks into the textview
@@ -2343,6 +2362,11 @@ reset_session()
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         lf->reset_state();
     }
+    // Drop format-level user state (e.g. `:hide-fields` choices) so a
+    // fresh session starts without inherited hide state.
+    for (const auto& format : log_format::get_root_formats()) {
+        format->reset_user_field_state();
+    }
 
     lnav_data.ld_log_source.get_breakpoints().clear();
     lnav_data.ld_log_source.lss_highlighters.clear();
@@ -2372,6 +2396,7 @@ reset_session()
         tss->get_filters().clear_filters();
         tss->tss_apply_filters = true;
         tss->text_clear_marks(&textview_curses::BM_USER);
+        tss->text_clear_marks(&textview_curses::BM_STICKY);
         tc.get_bookmarks()[&textview_curses::BM_USER].clear();
         tc.get_bookmarks()[&textview_curses::BM_STICKY].clear();
         tss->text_filters_changed();

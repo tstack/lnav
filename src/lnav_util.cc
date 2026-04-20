@@ -166,6 +166,7 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     [&](const std::shared_ptr<logfile>& lf) {
                         elem_map.gen("");
                     },
+                    [&](logfile* lf) { elem_map.gen(""); },
                     [&](const bookmark_metadata* bm) { elem_map.gen(""); },
                     [&](const timespec& ts) { elem_map.gen(""); },
                     [&](const string_fragment& sf) { elem_map.gen(sf); },

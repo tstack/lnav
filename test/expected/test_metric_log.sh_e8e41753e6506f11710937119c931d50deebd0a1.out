@@ -1,0 +1,7 @@
+log_format,log_level,log_time
+metrics_log,stats,2026-04-14 10:00:00.000000
+metrics_log,stats,2026-04-14 10:00:05.000000
+metrics_log,stats,2026-04-14 10:00:10.000000
+metrics_log,stats,2026-04-14 10:00:15.000000
+metrics_log,stats,2026-04-14 10:00:20.000000
+metrics_log,stats,2026-04-14 10:00:25.000000

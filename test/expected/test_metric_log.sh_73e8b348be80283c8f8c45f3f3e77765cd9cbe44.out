@@ -1,0 +1,8 @@
+2026-04-14T10:00:00Z  mem_mb=[7m [0m     2048  disk_iops=[7m     [0m  150
+[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
+ [1mSources:[0m              logfile_metrics    logfile_metrics
+2026-04-14T10:00:05Z  mem_mb=[7m [0m     2050  disk_iops=[7m    [0m   143
+2026-04-14T10:00:10Z  mem_mb=[7m [0m     2065  disk_iops=[7m       312[0m
+2026-04-14T10:00:15Z  mem_mb=[7m [0m     2051  disk_iops=[7m    [0m   128
+2026-04-14T10:00:20Z  mem_mb=[7m [0m     2053  disk_iops=[7m     [0m  167
+2026-04-14T10:00:25Z  mem_mb=[7m     12345[0m  disk_iops=[7m [0m        7

@@ -77,8 +77,7 @@ enum class ui_icon_t : int32_t {
     busy,
 };
 
-constexpr auto ui_icon_count
-    = lnav::enums::to_underlying(ui_icon_t::busy) + 1;
+constexpr auto ui_icon_count = lnav::enums::to_underlying(ui_icon_t::busy) + 1;
 
 /** Roles that can be mapped to curses attributes using attrs_for_role() */
 enum class role_t : int32_t {
@@ -362,6 +361,7 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 intern_string_t,
                                                 std::string,
                                                 std::shared_ptr<logfile>,
+                                                logfile*,
                                                 bookmark_metadata*,
                                                 string_fragment,
                                                 block_elem_t,

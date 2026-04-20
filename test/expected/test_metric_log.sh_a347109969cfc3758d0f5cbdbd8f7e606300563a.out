@@ -1,0 +1,10 @@
+metric,value,raw_value
+bytes_in,20000,20.0KB
+bytes_out,1500000,1.5MB
+latency,0.012,12ms
+bytes_in,22300,22.3KB
+bytes_out,1600000,1.6MB
+latency,0.015,15ms
+bytes_in,150000,150KB
+bytes_out,2000000,2.0MB
+latency,0.008,8ms

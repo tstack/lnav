@@ -375,6 +375,7 @@ private:
     bool lb_bz_file{false}; /*< Flag set for bzip2 compressed files. */
     bool lb_line_metadata{false};
     file_ssize_t lb_piper_header_size{0};
+    file_ssize_t lb_bom_size{0};
 
     auto_buffer lb_buffer{auto_buffer::alloc(DEFAULT_LINE_BUFFER_SIZE)};
     std::optional<auto_buffer> lb_alt_buffer;

@@ -1,0 +1,13 @@
+source,metric,value
+logfile_metrics,cpu_pct,12.5
+logfile_metrics2,queue_depth,5
+logfile_metrics,cpu_pct,13.2
+logfile_metrics2,queue_depth,7
+logfile_metrics,cpu_pct,18.7
+logfile_metrics2,queue_depth,12
+logfile_metrics,cpu_pct,11.9
+logfile_metrics2,queue_depth,8
+logfile_metrics,cpu_pct,14.4
+logfile_metrics2,queue_depth,6
+logfile_metrics,cpu_pct,99.99
+logfile_metrics2,queue_depth,9

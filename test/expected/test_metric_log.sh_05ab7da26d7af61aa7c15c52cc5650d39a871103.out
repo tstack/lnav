@@ -1,0 +1,6 @@
+metric,n,lo,hi
+cpu_pct,6,11.9,99.99
+disk_iops,6,7,312
+error_rate,6,0,3
+mem_mb,6,2048,12345
+queue_depth,6,5,12

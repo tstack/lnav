@@ -266,6 +266,21 @@ public:
         return {};
     }
 
+    // Drop user-controlled field visibility state (set via
+    // `:hide-fields`/`:show-fields`) so a fresh session starts
+    // without inherited hide state.  Called from `reset_session()`.
+    // The default implementation walks every known field and marks it
+    // visible; formats with additional hide state (e.g. the static
+    // registry `metric_log_format` uses for cross-instance columns)
+    // are already covered because `get_field_states` includes those
+    // and `hide_field` routes the update through the same channel.
+    virtual void reset_user_field_state()
+    {
+        for (const auto& [name, _] : this->get_field_states()) {
+            this->hide_field(name, false);
+        }
+    }
+
     const char* const* get_timestamp_formats() const
     {
         if (this->lf_timestamp_format.empty()) {
@@ -291,6 +306,16 @@ public:
                                           uint64_t line_number) const
     {
         return "";
+    }
+
+    // The number of parsed-value columns a row of this format
+    // produces.  Default defers to `get_value_metadata()` (and eats
+    // the vector copy); formats that know the count cheaply — e.g.
+    // `metric_log_format` — should override so hot callers can skip
+    // loading the row just to size its columns.
+    virtual size_t get_value_metadata_count() const
+    {
+        return this->get_value_metadata().size();
     }
 
     virtual std::vector<logline_value_meta> get_value_metadata() const
@@ -342,6 +367,12 @@ public:
     bool lf_time_ordered{true};
     bool lf_specialized{false};
     bool lf_level_hideable{true};
+    // Flags a format whose loglines are metric samples (one numeric
+    // value per column, timestamped).  The logfile_sub_source uses
+    // this to compose a cross-file `col=value` rendering in the LOG
+    // view, fold sibling rows that share a timestamp, and drive the
+    // stem-labeled overlay above the focused row.
+    bool lf_is_metric{false};
     std::optional<uint64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;

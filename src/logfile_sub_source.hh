@@ -292,6 +292,35 @@ public:
         return this->lss_index.size() - this->lss_filtered_index.size();
     }
 
+    // Full index size (includes sibling metric rows that are suppressed
+    // from lss_filtered_index).
+    size_t index_size() const { return this->lss_index.size(); }
+
+    content_line_t content_line_at(size_t idx) const
+    {
+        return this->lss_index[idx].value();
+    }
+
+    // True when the row at the given `lss_index` position is excluded
+    // by the active filters.  Lets callers walking `lss_index` directly
+    // (e.g. sibling fan-out) distinguish "in lss_index but suppressed
+    // by dedup" from "in lss_index but hidden by filter".  Callers
+    // that check many rows should cache the filter masks via
+    // `get_enabled_filter_mask()` and pass them in rather than letting
+    // this function re-walk the filter stack per call.
+    bool row_is_filtered_out(size_t idx,
+                             uint32_t filter_in_mask,
+                             uint32_t filter_out_mask);
+
+    // Snapshot the enabled filter masks.  Cheap but not free — walks
+    // the filter stack.  Safe to cache for the duration of a tight
+    // loop over rows.
+    void get_enabled_filter_mask(uint32_t& filter_in_mask,
+                                 uint32_t& filter_out_mask)
+    {
+        this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
+    }
+
     int get_filtered_count_for(size_t filter_index) const;
 
     Result<void, lnav::console::user_message> set_sql_filter(
@@ -419,6 +448,14 @@ public:
     content_line_t at(vis_line_t vl) const
     {
         return this->lss_index[this->lss_filtered_index[vl]].value();
+    }
+
+    // Position of a visible row within the raw `lss_index` — lets
+    // callers walk forward past the row to reach metric siblings
+    // that were suppressed from the filtered index.
+    size_t index_at(vis_line_t vl) const
+    {
+        return this->lss_filtered_index[vl];
     }
 
     size_t get_filtered_before() const

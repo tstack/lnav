@@ -53,10 +53,46 @@ try_from(const string_fragment& sf)
         secs,
         hms,
         ms,
+        percent,
+        frequency,
+        electrical,
+        throughput,
+        per_second,
+        short_count,
     };
 
-    static const auto code = lnav::pcre2pp::code::from_const(
-        R"(^\s*(?:([\-\+]?\d+)|([\-\+]?\d+\.\d+(?:[eE][\-\+]\d+)?)|([\-\+]?\d+(?:\.\d+)?\s*(?:[KMGTPE]i?)?[Bb](?:ps)?)|([\-\+]?\d+(?:\.\d+)?\s*[munpf]?)s|(\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?)|(\d{1,2}:\d{2}(?:\.\d{1,6})?))\s*$)");
+    // PCRE2 extended mode (`(?x)`): whitespace and `#` comments in
+    // the pattern are ignored, so the alternation below can be
+    // broken out one unit family per line.
+    static const auto code = lnav::pcre2pp::code::from_const(R"((?x)
+        ^ \s* (?:
+              # integer
+              ( [\-\+]? \d+ )
+              # real with optional exponent
+            | ( [\-\+]? \d+ \. \d+ (?: [eE] [\-\+] \d+ )? )
+              # file size: 4KiB, 2 MB, 100B, 500KBps
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* (?:[KMGTPE] i?)? [Bb] (?:ps)? )
+              # seconds with SI prefix: 1.2s, 1ms, 5us, 10ns
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* [munpf]? ) s
+              # duration h:m:s
+            | ( \d{1,2} : \d{2} : \d{2} (?: \. \d{1,6} )? )
+              # duration m:s
+            | ( \d{1,2} : \d{2} (?: \. \d{1,6} )? )
+              # percent: 42%, -3.14 %
+            | ( [\-\+]? \d+ (?:\.\d+)? ) \s* %
+              # frequency: 100Hz, 2.5GHz, 440 kHz
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* [kKMG]? Hz )
+              # power/voltage/current: 5W, 5kW, 3mW, 3.3V, 250 mA
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* [kKmM]? [WVA] )
+              # named throughput: 10req/s, 1000iops, 500qps, 5pps
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* (?:[KMGTPE] i?)?
+                (?: req/s | ops/s | iops | qps | rps | pps ) )
+              # generic per-second rate: 42/s, 1.5/s
+            | ( [\-\+]? \d+ (?:\.\d+)? ) /s
+              # short SI-prefixed count: 1.5k, 2M, 3Gi, 4T
+            | ( [\-\+]? \d+ (?:\.\d+)? \s* [kKMGTPE] i? )
+        ) \s* $
+    )");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (!code.capture_from(sf).into(md).found_p()) {
@@ -159,6 +195,130 @@ try_from(const string_fragment& sf)
         auto [mins, secs] = scan_res->values();
 
         return mins * 60.0 + secs;
+    }
+
+    if (md[percent]) {
+        // Return the ratio (e.g. `42%` → 0.42), matching how
+        // humanize handles the other unit families.
+        auto scan_res
+            = scn::scan_value<double>(md[percent]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        return scan_res->value() / 100.0;
+    }
+
+    // Apply a single-letter SI prefix multiplier to `retval` based on
+    // the first non-space char in `unit`.  Uppercase `K`/`M`/.../`E`
+    // mean kilo..exa (×1000ⁿ).  Lowercase `m` means milli (÷1000).
+    auto apply_si_prefix = [](double& retval, const auto& unit) {
+        size_t start = 0;
+        while (start < unit.size() && isspace(unit[start])) {
+            start += 1;
+        }
+        if (start >= unit.size()) {
+            return;
+        }
+        switch (unit[start]) {
+            case 'E':
+                retval *= 1000.0;
+            case 'P':
+                retval *= 1000.0;
+            case 'T':
+                retval *= 1000.0;
+            case 'G':
+                retval *= 1000.0;
+            case 'M':
+                retval *= 1000.0;
+            case 'K':
+            case 'k':
+                retval *= 1000.0;
+                break;
+            case 'm':
+                retval /= 1000.0;
+                break;
+        }
+    };
+
+    if (md[frequency]) {
+        auto scan_res
+            = scn::scan_value<double>(md[frequency]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        auto retval = scan_res->value();
+        apply_si_prefix(retval, scan_res->range());
+        return retval;
+    }
+
+    if (md[electrical]) {
+        auto scan_res
+            = scn::scan_value<double>(md[electrical]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        auto retval = scan_res->value();
+        apply_si_prefix(retval, scan_res->range());
+        return retval;
+    }
+
+    if (md[throughput]) {
+        auto scan_res
+            = scn::scan_value<double>(md[throughput]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        auto retval = scan_res->value();
+        apply_si_prefix(retval, scan_res->range());
+        return retval;
+    }
+
+    if (md[per_second]) {
+        auto scan_res
+            = scn::scan_value<double>(md[per_second]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        return scan_res->value();
+    }
+
+    if (md[short_count]) {
+        auto scan_res
+            = scn::scan_value<double>(md[short_count]->to_string_view());
+        if (!scan_res) {
+            return std::nullopt;
+        }
+        auto retval = scan_res->value();
+        const auto range = scan_res->range();
+        // IEC `Ki`/`Mi`/... use 1024-multipliers; bare `K`/`M`/...
+        // use SI 1000-multipliers.
+        size_t start = 0;
+        while (start < range.size() && isspace(range[start])) {
+            start += 1;
+        }
+        const double mult
+            = (start + 1 < range.size() && range[start + 1] == 'i')
+            ? 1024.0
+            : 1000.0;
+        if (start < range.size()) {
+            switch (range[start]) {
+                case 'E':
+                    retval *= mult;
+                case 'P':
+                    retval *= mult;
+                case 'T':
+                    retval *= mult;
+                case 'G':
+                    retval *= mult;
+                case 'M':
+                    retval *= mult;
+                case 'K':
+                case 'k':
+                    retval *= mult;
+                    break;
+            }
+        }
+        return retval;
     }
 
     return std::nullopt;

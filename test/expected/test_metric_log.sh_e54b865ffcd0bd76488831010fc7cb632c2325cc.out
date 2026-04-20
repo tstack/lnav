@@ -1,0 +1,16 @@
+log_line,metric,value
+0,cpu_pct,12.5
+0,disk_iops,150
+0,mem_mb,2048
+1,cpu_pct,13.2
+1,disk_iops,143
+1,mem_mb,2050
+2,cpu_pct,18.7
+2,disk_iops,312
+2,mem_mb,2065
+3,cpu_pct,11.9
+3,disk_iops,128
+3,mem_mb,2051
+4,cpu_pct,14.4
+4,disk_iops,167
+4,mem_mb,2053

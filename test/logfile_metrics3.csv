@@ -1,0 +1,4 @@
+timestamp,bytes_in,bytes_out,latency
+2026-04-14T10:00:00Z,20.0KB,1.5MB,12ms
+2026-04-14T10:00:05Z,22.3KB,1.6MB,15ms
+2026-04-14T10:00:10Z,150KB,2.0MB,8ms

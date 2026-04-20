@@ -1876,13 +1876,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 if (fn_constraint.matches(lf->get_filename())) {
                                     found = true;
                                     log_time_range->add(
-                                        lf->front()
-                                            .get_time<
-                                                std::chrono::microseconds>());
+                                        lf->front().get_time<>());
                                     log_time_range->add(
-                                        lf->back()
-                                            .get_time<
-                                                std::chrono::microseconds>());
+                                        lf->back().get_time<>());
                                 }
                             }
                             if (found) {
@@ -1915,13 +1911,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 {
                                     found = true;
                                     log_time_range->add(
-                                        lf->front()
-                                            .get_time<
-                                                std::chrono::microseconds>());
+                                        lf->front().get_time<>());
                                     log_time_range->add(
-                                        lf->back()
-                                            .get_time<
-                                                std::chrono::microseconds>());
+                                        lf->back().get_time<>());
                                 }
                             }
                             if (found) {
@@ -2228,8 +2220,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                     vl_max_opt.value(), vis_line_t(vt->lss->text_line_count()));
                 for (const auto& msg_info : *win) {
                     if (log_time_range->vtr_end.value()
-                        < msg_info.get_logline()
-                              .get_time<std::chrono::microseconds>())
+                        < msg_info.get_logline().get_time<>())
                     {
                         break;
                     }

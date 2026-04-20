@@ -1,0 +1,17 @@
+2026-04-14T10:00:00Z  queue_depth=[7m [0m        5  error_rate=         0  cpu_pct=[7m [0m     12.5  mem_mb=[7m [0m     2048  disk_iops=[7m     [0m  150
+[4m▌ Line 0 parser details.[0m
+ Received Time: [1m2026-04-14T10:00:00.000000+0000[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S%z[0m  Default Zone: [32mnone[0m
+ [1mSources:[0m              logfile_metrics2        logfile_metrics2       logfile_metrics     logfile_metrics    logfile_metrics
+ [1mPermalink:[0m    #msg00064f68a98c4800-v1:0d146159752bb5d07c3ed7420ff46246
+ Known message fields for table [1mmetrics_log[0m:
+ | [1m[32m◆[0m 📊 queue_depth = 5
+ | [1m[32m◆[0m 📊 error_rate  = 0
+ | [1m[32m◆[0m 📊 cpu_pct     = 12.500000
+ | [1m[32m◆[0m 📊 mem_mb      = 2048
+ | [1m[32m◆[0m 📊 disk_iops   = 150
+ [32mNo discovered message fields[0m
+2026-04-14T10:00:05Z  queue_depth=[7m   [0m      7  error_rate=         0  cpu_pct=[7m [0m     13.2  mem_mb=[7m [0m     2050  disk_iops=[7m    [0m   143
+2026-04-14T10:00:10Z  queue_depth=[7m        12[0m  error_rate=[7m         3[0m  cpu_pct=[7m [0m     18.7  mem_mb=[7m [0m     2065  disk_iops=[7m       312[0m
+2026-04-14T10:00:15Z  queue_depth=[7m    [0m     8  error_rate=[7m   [0m      1  cpu_pct=[7m [0m     11.9  mem_mb=[7m [0m     2051  disk_iops=[7m    [0m   128
+2026-04-14T10:00:20Z  queue_depth=[7m [0m        6  error_rate=         0  cpu_pct=[7m [0m     14.4  mem_mb=[7m [0m     2053  disk_iops=[7m     [0m  167
+2026-04-14T10:00:25Z  queue_depth=[7m      [0m   9  error_rate=[7m       [0m  2  cpu_pct=[7m     99.99[0m  mem_mb=[7m     12345[0m  disk_iops=[7m [0m        7

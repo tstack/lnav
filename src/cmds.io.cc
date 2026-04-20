@@ -266,10 +266,8 @@ json_write_logmsg(yajl_gen handle,
         auto hash_res = li.get_line_hash();
         if (hash_res.isOk()) {
             auto hash = hash_res.unwrap();
-            auto link
-                = fmt::format(FMT_STRING("#msg{:016x}-{}"),
-                              ll.get_time<std::chrono::microseconds>().count(),
-                              hash);
+            auto link = fmt::format(
+                FMT_STRING("#msg{:016x}-{}"), ll.get_time<>().count(), hash);
             obj_map.gen("log_line_link");
             obj_map.gen(link);
         }

@@ -17,6 +17,22 @@ Features:
   The new format exposes `device`, `tool`, and `action` fields,
   groups messages by device in the TIMELINE view, and highlights
   `error:` lines and `FILESYSTEM CLEAN` status messages.
+* Added a built-in `metrics_log` format that recognizes CSV
+  files whose first column header is `Time`/`Timestamp`/`ts`/
+  `Date...` and whose subsequent rows begin with a parseable
+  timestamp.  Each row is rendered with a timestamp and
+  a `<column>=<value>` pair for each numeric column.  Rows
+  from multiple files that have the same timestamp are
+  merged into a single line.  Values are right-aligned and
+  decorated with reverse-video bars proportional to each
+  column's observed min/max range.  When the row is
+  focused, an overlay below it labels each column with the
+  source file stem.  Exports from Excel, PowerShell, and
+  Grafana should be handled as-is.
+* Added the `all_metrics` SQL virtual table, a long-format
+  view across every open metrics file.  The `metric` column
+  contains the name of the metric and `value` contains its
+  value.
 
 
 ## lnav v0.14.1

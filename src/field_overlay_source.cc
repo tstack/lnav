@@ -42,6 +42,7 @@
 #include "log.annotate.hh"
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
+#include "logline_window.hh"
 #include "md2attr_line.hh"
 #include "msg.text.hh"
 #include "pretty_printer.hh"
@@ -86,6 +87,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
     if (!this->fos_contexts.empty()) {
         display = display || this->fos_contexts.top().c_show;
+    }
+    // Metric rows always get an overlay showing the file stem for
+    // each column, independent of the details toggle.
+    if (format->lf_is_metric) {
+        display = true;
     }
 
     if (!ll->is_valid_utf()) {
@@ -149,10 +155,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     line_range time_lr;
-    off_t ts_len = sql_strftime(curr_timestamp,
-                                sizeof(curr_timestamp),
-                                ll->get_time<std::chrono::microseconds>(),
-                                'T');
+    off_t ts_len = sql_strftime(
+        curr_timestamp, sizeof(curr_timestamp), ll->get_time<>(), 'T');
     {
         exttm tmptm;
 
@@ -275,11 +279,85 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(time_line);
     }
 
+    // For a focused metric row, render an overlay line above the
+    // column area showing each column's source file stem.  Consecutive
+    // columns from the same file are collapsed into one span so a
+    // single stem sits above its run of metrics.
+    if (format->lf_is_metric) {
+        // listview_value_for_rows fetches every visible row in a
+        // batch before overlays render, so lss_token_al holds the
+        // last-rendered row's state by the time we get here.  Force a
+        // fresh render for the focused row so the L_METRIC_SOURCE
+        // spans we rely on actually describe it.
+        std::vector<attr_line_t> rows(1);
+        lv.get_data_source()->listview_value_for_rows(lv, row, rows);
+        auto& al = rows[0];
+        attr_line_t stem_line;
+        stem_line.append(" ").append("Sources:"_h2).append(" ");
+        logfile* last_lf = nullptr;
+        int run_start = -1;
+        int run_end = -1;
+        auto flush_run = [&]() {
+            if (!last_lf || run_start < 0) {
+                return;
+            }
+            const auto stem = last_lf->get_unique_path().stem().string();
+            const auto width = static_cast<size_t>(run_end - run_start);
+            stem_line.pad_to(run_start);
+            auto cell = attr_line_t::from_table_cell_content(
+                string_fragment::from_str(stem), width);
+            cell.with_attr_for_all(
+                VC_STYLE.value(view_colors::singleton().attrs_for_ident(
+                    last_lf->get_filename())));
+            stem_line.append(cell);
+        };
+        for (const auto& attr : al.al_attrs) {
+            if (attr.sa_type != &L_METRIC_SOURCE) {
+                continue;
+            }
+            const auto& cell_lf = attr.sa_value.get<logfile*>();
+            const auto col_start = attr.sa_range.lr_start;
+            const auto col_end = attr.sa_range.lr_end;
+            if (cell_lf == last_lf && run_end == col_start) {
+                run_end = col_end;
+                continue;
+            }
+            flush_run();
+            last_lf = cell_lf;
+            run_start = col_start;
+            run_end = col_end;
+        }
+        flush_run();
+        if (!stem_line.empty()) {
+            this->fos_lines.emplace_back(std::move(stem_line));
+        }
+    }
+
     if (this->fos_contexts.empty() || !this->fos_contexts.top().c_show) {
         return;
     }
 
     this->fos_log_helper.parse_body();
+    // For metric rows, append values from every suppressed sibling so
+    // the overlay's "Known message fields" list includes columns that
+    // live in other files sharing this timestamp.  `parse_body` only
+    // annotates the lead, so without this the overlay shows a subset
+    // of what the composed line renders.
+    if (format->lf_is_metric) {
+        logline_window::logmsg_info lead_msg{this->fos_lss, vis_line_t(row)};
+        bool first = true;
+        for (const auto& sib : lead_msg.metric_siblings()) {
+            if (first) {
+                // The lead's values are already in `ldh_line_values`
+                // from `parse_body` above.
+                first = false;
+                continue;
+            }
+            auto& target = this->fos_log_helper.ldh_line_values.lvv_values;
+            const auto& sib_values = sib.get_values().lvv_values;
+            target.insert(target.end(), sib_values.begin(), sib_values.end());
+        }
+    }
     auto anchor_opt = this->fos_lss.anchor_for_row(row);
     if (anchor_opt) {
         auto permalink
@@ -1153,10 +1231,17 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                         this->fos_static_lines.emplace_back(al);
                         apply_status_attrs(this->fos_static_lines);
                     } else {
+                        auto do_apply
+                            = (top - header_top) > 1 && line->is_continued();
+                        if (has_sticky && !do_apply
+                            && !this->fos_static_lines.empty())
+                        {
+                            apply_status_attrs(this->fos_static_lines);
+                        }
                         auto al = attr_line_t();
                         tc.textview_value_for_row(header_top, al);
                         this->fos_static_lines.emplace_back(al);
-                        if ((top - header_top) > 1 && line->is_continued()) {
+                        if (do_apply) {
                             apply_status_attrs(this->fos_static_lines);
                         }
                     }

@@ -316,7 +316,7 @@ logfile::reset_internal_state_for_reindex()
     this->lf_index.clear();
     this->lf_index_size = 0;
     this->lf_level_stats = {};
-    this->lf_partial_line = false;
+    this->lf_last_line_info = {};
     this->lf_longest_line = 0;
     this->lf_sort_needed = true;
     this->lf_out_of_time_order_count = 0;
@@ -427,8 +427,7 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             auto scan_res = this->lf_format->scan(
                 *this, tmp_index, end_li, tmp_sbr, sbc_tmp);
             if (scan_res.is<log_format::scan_match>() && !tmp_index.empty()) {
-                auto line_time
-                    = tmp_index.back().get_time<std::chrono::microseconds>();
+                auto line_time = tmp_index.back().get_time<>();
 
                 if (req.is<map_read_lower_bound>()) {
                     auto lb = req.get<map_read_lower_bound>();
@@ -621,8 +620,7 @@ logfile::build_content_map()
                 auto scan_res = this->lf_format->scan(
                     *this, tmp_index, map_li, tmp_sbr, sbc_tmp);
                 if (scan_res.is<log_format::scan_match>()) {
-                    auto line_time = tmp_index.front()
-                                         .get_time<std::chrono::microseconds>();
+                    auto line_time = tmp_index.front().get_time<>();
                     this->lf_content_map.emplace_back(content_map_entry{
                         map_line_fr,
                         line_time,
@@ -649,9 +647,9 @@ logfile::build_content_map()
     log_info("  finding content layout (full_size=%lld)", full_size);
     if (this->lf_options.loo_time_range.has_lower_bound()
         && this->lf_options.loo_time_range.tr_begin
-            > this->lf_index.front().get_time<std::chrono::microseconds>()
+            > this->lf_index.front().get_time<>()
         && this->lf_options.loo_time_range.tr_begin
-            <= this->lf_index.back().get_time<std::chrono::microseconds>())
+            <= this->lf_index.back().get_time<>())
     {
         auto ll_opt = this->find_from_time(
             to_timeval(this->lf_options.loo_time_range.tr_begin));
@@ -659,7 +657,7 @@ logfile::build_content_map()
         auto first_line_offset = ll->get_offset();
         this->lf_lower_bound_entry = content_map_entry{
             file_range{first_line_offset, full_size - first_line_offset},
-            ll->get_time<std::chrono::microseconds>(),
+            ll->get_time<>(),
         };
         log_info("  lower bound is within current index, erasing %ld lines",
                  std::distance(this->lf_index.cbegin(), ll));
@@ -674,11 +672,11 @@ logfile::build_content_map()
         auto last_line_offset = last_line.get_offset();
         this->lf_upper_bound_entry = content_map_entry{
             file_range{last_line_offset, full_size - last_line_offset},
-            last_line.get_time<std::chrono::microseconds>(),
+            last_line.get_time<>(),
         };
         if (this->lf_options.loo_time_range.has_lower_bound()
             && this->lf_options.loo_time_range.tr_begin
-                > this->lf_index.back().get_time<std::chrono::microseconds>())
+                > this->lf_index.back().get_time<>())
         {
             log_info("  lower bound is past content");
             this->lf_index.clear();
@@ -709,8 +707,7 @@ logfile::build_content_map()
             retval = rebuild_result_t::NEW_ORDER;
         } else if (this->lf_index.empty()
                    || this->lf_options.loo_time_range.tr_begin
-                       > this->lf_index.back()
-                             .get_time<std::chrono::microseconds>())
+                       > this->lf_index.back().get_time<>())
         {
             auto offset = full_size / 2;
             log_debug("  searching for lower bound %lld",
@@ -829,8 +826,8 @@ logfile::get_content_time_range() const
     }
 
     return {
-        this->lf_index.front().get_time<std::chrono::microseconds>(),
-        this->lf_index.back().get_time<std::chrono::microseconds>(),
+        this->lf_index.front().get_time<>(),
+        this->lf_index.back().get_time<>(),
     };
 }
 
@@ -858,8 +855,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         size_t scan_count = 0;
 
         if (!this->lf_index.empty()) {
-            prescan_time = this->lf_index[prescan_size - 1]
-                               .get_time<std::chrono::microseconds>();
+            prescan_time = this->lf_index[prescan_size - 1].get_time<>();
         }
         if (this->lf_format != nullptr) {
             best_match
@@ -1063,6 +1059,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                     {
                         return;
                     }
+                    log_error("  scan with format (%s) failed: %s",
+                              curr->get_name().c_str(),
+                              se.se_message.c_str());
                     this->lf_invalid_lines.ili_lines.emplace_back(
                         this->lf_index.size());
                     this->lf_format_match_messages.emplace_back(
@@ -1188,14 +1187,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 require_lt(starting_index_size, this->lf_index.size());
                 for (size_t lpc = 0; lpc < starting_index_size; lpc++) {
                     if (this->lf_format->lf_multiline) {
-                        this->lf_index[lpc].set_time(
-                            last_line.get_time<std::chrono::microseconds>());
+                        this->lf_index[lpc].set_time(last_line.get_time<>());
                         if (this->lf_format->lf_structured) {
                             this->lf_index[lpc].set_ignore(true);
                         }
                     } else {
-                        this->lf_index[lpc].set_time(
-                            last_line.get_time<std::chrono::microseconds>());
+                        this->lf_index[lpc].set_time(last_line.get_time<>());
                         this->lf_index[lpc].set_level(LEVEL_INVALID);
                     }
                     retval = true;
@@ -1206,8 +1203,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
     } else if (this->lf_format.get() != nullptr) {
         if (!this->lf_index.empty()) {
-            prescan_time = this->lf_index[prescan_size - 1]
-                               .get_time<std::chrono::microseconds>();
+            prescan_time = this->lf_index[prescan_size - 1].get_time<>();
         }
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
@@ -1239,9 +1235,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             }
         }
         if (prescan_size > 0 && this->lf_index.size() >= prescan_size
-            && prescan_time
-                != this->lf_index[prescan_size - 1]
-                       .get_time<std::chrono::microseconds>())
+            && prescan_time != this->lf_index[prescan_size - 1].get_time<>())
         {
             retval = true;
         }
@@ -1258,9 +1252,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         auto& line_to_update = this->lf_index[lpc];
 
                         line_to_update.set_time_skew(true);
-                        line_to_update.set_time(
-                            second_to_last
-                                .get_time<std::chrono::microseconds>());
+                        line_to_update.set_time(second_to_last.get_time<>());
                     }
                 } else {
                     retval = true;
@@ -1284,7 +1276,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
              * Assume this line is part of the previous one(s) and copy the
              * metadata over.
              */
-            last_time = ll.get_time<std::chrono::microseconds>();
+            last_time = ll.get_time<>();
             if (this->lf_format.get() != nullptr) {
                 last_level = ll.get_msg_level();
                 continued = true;
@@ -1299,7 +1291,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     }
 
     if (this->lf_format != nullptr && !this->lf_index.empty()
-        && this->lf_index.back().get_time<std::chrono::microseconds>()
+        && this->lf_index.back().get_time<>()
             > this->lf_options.loo_time_range.tr_end)
     {
         if (!this->lf_upper_bound_size) {
@@ -1351,8 +1343,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
 
             auto& ll = this->lf_index[bm_pair.first];
-            opid_iter->second.otr_range.extend_to(
-                ll.get_time<std::chrono::microseconds>());
+            opid_iter->second.otr_range.extend_to(ll.get_time<>());
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
         }
@@ -1732,7 +1723,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_longest_line
                 = std::max(this->lf_longest_line,
                            li.li_utf8_scan_result.usr_column_width_guess);
-            this->lf_partial_line = li.li_partial;
+            this->lf_last_line_info = li;
             sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
             if (sort_needed && this->lf_index.empty()) {
                 if (limit < 1000) {
@@ -1742,12 +1733,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
+            // Update this early so that line_length() works
+            this->lf_index_size = li.li_file_range.next_offset();
             if (old_size > this->lf_index.size()) {
                 old_size = 0;
             }
-
-            // Update this early so that line_length() works
-            this->lf_index_size = li.li_file_range.next_offset();
 
             if (this->lf_logline_observer != nullptr) {
                 auto nl_rc = this->lf_logline_observer->logline_new_lines(
@@ -2254,7 +2244,7 @@ logfile::stats_for_value(intern_string_t name) const
 }
 
 logfile::message_length_result
-logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
+logfile::message_byte_length(const_iterator ll, bool include_continues)
 {
     auto next_line = ll;
     file_range::metadata meta;
@@ -2283,13 +2273,19 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
     if (next_line == this->end()) {
         if (this->lf_upper_bound_size) {
             retval = this->lf_upper_bound_size.value() - ll->get_offset();
-        } else {
+        } else if (this->lf_index_size > ll->get_offset()) {
             retval = this->lf_index_size - ll->get_offset();
+        } else if (ll->get_offset()
+                   == this->lf_last_line_info.li_file_range.fr_offset)
+        {
+            retval = this->lf_last_line_info.li_file_range.fr_size;
+        } else {
+            retval = 0;
         }
         if (retval > line_buffer::MAX_LINE_BUFFER_SIZE) {
             retval = line_buffer::MAX_LINE_BUFFER_SIZE;
         }
-        if (retval > 0 && !this->lf_partial_line) {
+        if (retval > 0 && !this->lf_last_line_info.li_partial) {
             retval -= 1;
         }
         require_ge(retval, 0);
@@ -2525,7 +2521,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     }
 
     auto& ll = this->lf_index[line_number];
-    auto log_us = ll.get_time<std::chrono::microseconds>();
+    auto log_us = ll.get_time<>();
     auto opid_iter = write_opids->insert_op(
         this->lf_allocator, opid, log_us, timestamp_point_of_reference_t::end);
     auto& otr = opid_iter->second;
@@ -2580,10 +2576,8 @@ logfile::clear_logline_opid(uint32_t line_number)
             return;
         }
 
-        if (otr_iter->second.otr_range.tr_begin
-                != ll.get_time<std::chrono::microseconds>()
-            && otr_iter->second.otr_range.tr_end
-                != ll.get_time<std::chrono::microseconds>())
+        if (otr_iter->second.otr_range.tr_begin != ll.get_time<>()
+            && otr_iter->second.otr_range.tr_end != ll.get_time<>())
         {
             otr_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level(), -1);

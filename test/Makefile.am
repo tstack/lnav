@@ -222,6 +222,7 @@ dist_noinst_SCRIPTS = \
 	test_listview.sh \
 	test_logfile.sh \
 	test_meta.sh \
+	test_metric_log.sh \
 	test_mvwattrline.sh \
 	test_prql.sh \
 	test_regex101.sh \
@@ -389,6 +390,17 @@ dist_noinst_DATA = \
 	logfile_laravel.1 \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
+	logfile_metrics.csv \
+	logfile_metrics2.csv \
+	logfile_metrics3.csv \
+	logfile_metrics_grafana.csv \
+	logfile_metrics_sep.csv \
+	logfile_metrics_bad.csv \
+	logfile_metrics_badquote.csv \
+	logfile_metrics_colmismatch.csv \
+	logfile_metrics_colmismatch_late.csv \
+	logfile_metrics_quoted.csv \
+	logfile_not_metrics.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
 	logfile_mysql_error.0 \
@@ -553,6 +565,7 @@ TESTS = \
 	test_json_format.sh \
 	test_log_accel \
 	test_logfile.sh \
+	test_metric_log.sh \
     test_regex101.sh \
 	test_reltime \
 	test_scripts.sh \

@@ -234,6 +234,11 @@ extern const string_attr_type<std::shared_ptr<logfile>> L_FILE;
 extern const string_attr_type<bookmark_metadata*> L_PARTITION;
 extern const string_attr_type<void> L_OPID;
 extern const string_attr_type<bookmark_metadata*> L_META;
+// Source file of a metric column.  Spans the rendered `name=value`
+// region of one metric column in a composed metric line; the overlay
+// resolves the file stem on demand rather than allocating a string
+// per cell.
+extern const string_attr_type<logfile*> L_METRIC_SOURCE;
 
 /**
  * Metadata for a single line in a log file.
@@ -256,6 +261,11 @@ public:
     {
     }
 
+    logline(const logline&) = delete;
+    logline& operator=(const logline&) = delete;
+    logline(logline&&) = default;
+    logline& operator=(logline&&) = default;
+
     /** @return The offset of the line in the file. */
     file_off_t get_offset() const { return this->ll_offset; }
 
@@ -267,7 +277,7 @@ public:
         return *this;
     }
 
-    template<typename S>
+    template<typename S=std::chrono::microseconds>
     S get_time() const
     {
         return std::chrono::duration_cast<S>(this->ll_time);
@@ -436,6 +446,7 @@ public:
     static constexpr size_t BLOOM_BITS_SIZE = 56;
 
 private:
+
     std::chrono::microseconds ll_time;
     file_off_t ll_offset : 44;
     unsigned int ll_sub_offset : 15;

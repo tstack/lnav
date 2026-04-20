@@ -273,6 +273,8 @@ public:
 
     logline& operator[](int index) { return this->lf_index[index]; }
 
+    logline& at(int index) { return this->lf_index.at(index); }
+
     logline& front() { return this->lf_index.front(); }
 
     logline& back() { return this->lf_index.back(); }
@@ -571,7 +573,7 @@ private:
     timeval lf_time_offset{0, 0};
     bool lf_is_closed{false};
     bool lf_indexing{true};
-    bool lf_partial_line{false};
+    line_info lf_last_line_info;
     bool lf_zoned_to_local_state{true};
     robin_hood::unordered_set<string_fragment,
                               frag_hasher,

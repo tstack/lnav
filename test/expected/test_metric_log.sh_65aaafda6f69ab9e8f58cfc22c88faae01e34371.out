@@ -1,0 +1,9 @@
+metric,value
+avg(cpu.usage),12.5
+max(memory.bytes),362760003584
+avg(cpu.usage),13.2
+max(memory.bytes),362567516160
+avg(cpu.usage),18.7
+max(memory.bytes),362625445888
+avg(cpu.usage),11.9
+max(memory.bytes),362753724416

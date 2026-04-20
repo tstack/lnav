@@ -22,6 +22,7 @@ the following tables/views:
 * `lnav_view_filters_and_stats`_
 * `lnav_top_view`_
 * `all_logs`_
+* `all_metrics`_
 * `all_opids`_
 * `all_thread_ids`_
 * `lnav_focused_msg`_
@@ -324,6 +325,47 @@ all_logs
 The :code:`all_logs` table lets you query the format derived from the **lnav**
 log message parser that is used to automatically extract data, see
 :ref:`data-ext` for more details.
+
+.. _table_all_metrics:
+
+all_metrics
+-----------
+
+The :code:`all_metrics` table is a long-format view over every
+:ref:`metrics_log<metrics_log>` file that **lnav** currently has open.
+Each (file, row, column) combination produces one virtual row, so a
+single query can scan metric values across multiple files without
+having to know which file each metric came from.
+
+The columns are as follows:
+
+:log_line: The line number in the LOG view of the sample row.  The
+  value is shared across all metrics at that timestamp, including
+  sibling files whose rows were folded into the visible line.
+:log_time: The timestamp for the metric sample.
+:log_path: The path of the file the sample came from.
+:source: The file stem shown above the sample's column in the
+  focused-row overlay.
+:metric: The column name from the source file.
+:value: The parsed numeric value.  Integers pass through as INTEGER;
+  floats and unit-suffixed cells (e.g. :code:`20.0KB`) are REAL.
+:raw_value: (hidden) The original cell text from the file.  Collated
+  with :code:`measure_with_units`, so :code:`ORDER BY raw_value`
+  sorts by magnitude rather than lexicographically.
+:log_mark: (hidden) True when the sample's visible row is
+  user-marked.  Marking a metric row fans the mark out to every
+  sibling sample at that timestamp.
+
+.. code-block:: custsqlite
+
+    ;SELECT metric, count(*) AS n, min(value) AS lo, max(value) AS hi
+         FROM all_metrics
+         GROUP BY metric
+
+    ;SELECT log_time, source, metric, value
+         FROM all_metrics
+         WHERE metric = 'cpu_pct'
+         ORDER BY log_time
 
 all_opids
 ---------

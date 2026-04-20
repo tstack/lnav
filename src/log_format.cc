@@ -81,6 +81,7 @@ constexpr string_attr_type<std::shared_ptr<logfile>> L_FILE("file");
 constexpr string_attr_type<bookmark_metadata*> L_PARTITION("partition");
 constexpr string_attr_type<void> L_OPID("opid");
 constexpr string_attr_type<bookmark_metadata*> L_META("meta");
+constexpr string_attr_type<logfile*> L_METRIC_SOURCE("metric_source");
 
 std::vector<std::shared_ptr<external_log_format>>
     external_log_format::GRAPH_ORDERED_FORMATS;
@@ -1767,10 +1768,10 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (!dst.empty()) {
-            ll.set_time(dst.back().get_time<std::chrono::microseconds>());
+            ll.set_time(dst.back().get_time<>());
         }
         ll.set_level(LEVEL_INVALID);
-        dst.emplace_back(ll);
+        dst.emplace_back(std::move(ll));
         return scan_match{0};
     }
 
@@ -1783,10 +1784,10 @@ external_log_format::scan_json(std::vector<logline>& dst,
                   li.li_file_range.fr_offset);
         if (this->lf_specialized) {
             if (!dst.empty()) {
-                ll.set_time(dst.back().get_time<std::chrono::microseconds>());
+                ll.set_time(dst.back().get_time<>());
             }
             ll.set_level(LEVEL_INVALID);
-            dst.emplace_back(ll);
+            dst.emplace_back(std::move(ll));
         }
         return scan_incomplete{};
     }
@@ -1816,23 +1817,21 @@ external_log_format::scan_json(std::vector<logline>& dst,
         if (jlu.jlu_scan_error) {
             if (this->lf_specialized) {
                 if (!dst.empty()) {
-                    ll.set_time(
-                        dst.back().get_time<std::chrono::microseconds>());
+                    ll.set_time(dst.back().get_time<>());
                 }
                 ll.set_level(LEVEL_INVALID);
-                dst.emplace_back(ll);
+                dst.emplace_back(std::move(ll));
                 return scan_match{0};
             }
             return jlu.jlu_scan_error.value();
         }
-        if (ll.get_time<std::chrono::microseconds>().count() == 0) {
+        if (ll.get_time<>().count() == 0) {
             if (this->lf_specialized) {
                 if (!dst.empty()) {
-                    ll.set_time(
-                        dst.back().get_time<std::chrono::microseconds>());
+                    ll.set_time(dst.back().get_time<>());
                 }
                 ll.set_ignore(true);
-                dst.emplace_back(ll);
+                dst.emplace_back(std::move(ll));
                 return scan_match{0};
             }
 
@@ -1845,17 +1844,13 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = jlu.jlu_tid_frag->to_owned(
                     this->jlf_line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator,
-                jlu.jlu_tid_frag.value(),
-                ll.get_time<std::chrono::microseconds>());
+                sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
             ll.merge_bloom_bits(jlu.jlu_tid_frag->bloom_bits());
         } else {
             auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator,
-                string_fragment{},
-                ll.get_time<std::chrono::microseconds>());
+                sbc.sbc_allocator, string_fragment{}, ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
         }
@@ -1910,12 +1905,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = jlu.jlu_opid_frag->to_string();
             this->jlf_line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
-            auto opid_iter = sbc.sbc_opids.insert_op(
-                sbc.sbc_allocator,
-                jlu.jlu_opid_frag.value(),
-                ll.get_time<std::chrono::microseconds>(),
-                this->lf_timestamp_point_of_reference,
-                jlu.jlu_duration.value_or(1us));
+            auto opid_iter
+                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                          jlu.jlu_opid_frag.value(),
+                                          ll.get_time<>(),
+                                          this->lf_timestamp_point_of_reference,
+                                          jlu.jlu_duration.value_or(1us));
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
             auto& elems = opid_iter->second.otr_description.lod_elements;
@@ -1929,12 +1924,11 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 auto subid_frag
                     = string_fragment::from_str(jlu.jlu_subid.value());
 
-                auto* ostr = sbc.sbc_opids.sub_op_in_use(
-                    sbc.sbc_allocator,
-                    opid_iter,
-                    subid_frag,
-                    ll.get_time<std::chrono::microseconds>(),
-                    ll.get_msg_level());
+                auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
+                                                         opid_iter,
+                                                         subid_frag,
+                                                         ll.get_time<>(),
+                                                         ll.get_msg_level());
                 if (ostr != nullptr && ostr->ostr_description.empty()) {
                     log_op_description sub_desc;
                     this->update_op_description(
@@ -1962,7 +1956,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
             ll.set_sub_offset(lpc);
             ll.set_continued(lpc > 0);
-            dst.emplace_back(ll);
+            dst.emplace_back(std::move(ll));
         }
         this->lf_timestamp_flags = jlu.jlu_exttm.et_flags;
 
@@ -2014,7 +2008,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             ll.set_continued(lpc > 0);
             ll.set_level(level);
             ll.set_sub_offset(lpc);
-            dst.emplace_back(ll);
+            dst.emplace_back(std::move(ll));
         }
     }
 
@@ -2389,7 +2383,7 @@ external_log_format::scan(logfile& lf,
                   dst.size(),
                   li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,
-                         last_line.get_time<std::chrono::microseconds>(),
+                         last_line.get_time<>(),
                          log_level_t::LEVEL_INVALID);
 
         return scan_match{0};
@@ -2577,8 +2571,7 @@ external_log_format::annotate(logfile* lf,
                          start_tv))
             {
                 auto start_us = to_us(start_tv);
-                auto end_us
-                    = (*lf)[line_number].get_time<std::chrono::microseconds>();
+                auto end_us = (*lf)[line_number].get_time<>();
                 if (end_us > start_us) {
                     values.lvv_duration_value = end_us - start_us;
                 }

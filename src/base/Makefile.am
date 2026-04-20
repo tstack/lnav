@@ -74,6 +74,7 @@ noinst_HEADERS = \
     progress.hh \
     relative_time.hh \
     result.h \
+    separated_string.hh \
     short_alloc.h \
     small_string_map.hh \
     snippet_highlighters.hh \
@@ -112,6 +113,7 @@ libbase_a_SOURCES = \
     piper.file.cc \
     progress.cc \
     relative_time.cc \
+    separated_string.cc \
     small_string_map.cc \
     snippet_highlighters.cc \
     string_attr_type.cc \
@@ -134,6 +136,7 @@ test_base_SOURCES = \
     intern_string.tests.cc \
     lnav.gzip.tests.cc \
     math_util.tests.cc \
+    separated_string.tests.cc \
     small_string_map.tests.cc \
     sparse_cursor_container.tests.cc \
     string_util.tests.cc \

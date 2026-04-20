@@ -268,24 +268,25 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (flags & RF_RAW) {
         auto lf = this->find(line);
-        auto ll = lf->begin() + line;
-        retval.li_file_range = lf->get_file_range(ll, false);
-        retval.li_level = ll->get_msg_level();
-        // retval.li_timestamp = ll->get_timeval();
-        retval.li_partial = false;
-        retval.li_utf8_scan_result.usr_has_ansi = ll->has_ansi();
-        retval.li_utf8_scan_result.usr_message = ll->is_valid_utf() ? nullptr
-                                                                    : "bad";
-        // timeval start_time, end_time;
-        // gettimeofday(&start_time, NULL);
-        value_out = lf->read_line(lf->begin() + line)
-                        .map([](auto sbr) { return to_string(sbr); })
-                        .unwrapOr({});
-        // gettimeofday(&end_time, NULL);
-        // timeval diff = end_time - start_time;
-        // log_debug("read time %d.%06d %s:%d", diff.tv_sec, diff.tv_usec,
-        // lf->get_filename().c_str(), line);
-        return retval;
+        // Metric rows render as a composed `<ts> <col>=<val> ...`
+        // line, not the raw CSV bytes, so returning the raw row
+        // here would make search (which goes through `RF_RAW`) miss
+        // every match that lives in the rendered text — e.g. the
+        // column names aren't in the raw bytes at all.  Fall through
+        // to the compose path so search sees what the user sees.
+        if (!lf->get_format_ptr()->lf_is_metric) {
+            auto ll = lf->begin() + line;
+            retval.li_file_range = lf->get_file_range(ll, false);
+            retval.li_level = ll->get_msg_level();
+            retval.li_partial = false;
+            retval.li_utf8_scan_result.usr_has_ansi = ll->has_ansi();
+            retval.li_utf8_scan_result.usr_message
+                = ll->is_valid_utf() ? nullptr : "bad";
+            value_out = lf->read_line(lf->begin() + line)
+                            .map([](auto sbr) { return to_string(sbr); })
+                            .unwrapOr({});
+            return retval;
+        }
     }
 
     require_false(this->lss_in_value_for_line);
@@ -334,6 +335,144 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                      line,
                      this->lss_token_al.al_attrs,
                      this->lss_token_values);
+
+    if (format->lf_is_metric) {
+        // Compose the LOG-view line from the annotated field values
+        // rather than the raw CSV text.  Rows from different metric
+        // files that share a timestamp are merged into one visible
+        // line so `col=value` pairs from every file at this moment
+        // appear together.  The source file for each column is
+        // tagged via the L_METRIC_SOURCE string attr so the
+        // field_overlay_source can label the columns by file stem
+        // when the row is focused.
+        this->lss_token_al.al_attrs.clear();
+
+        std::string composed;
+        composed.reserve(64 + 24 * this->lss_token_values.lvv_values.size());
+        char ts_buf[64];
+        auto ts_len = sql_strftime(
+            ts_buf, sizeof(ts_buf), this->lss_token_line->get_timeval(), 'T');
+        composed.append(ts_buf, ts_len);
+        this->lss_token_al.al_attrs.emplace_back(
+            line_range{0, static_cast<int>(ts_len)}, L_TIMESTAMP.value());
+
+        auto emit_value = [&](logfile* src_lf,
+                              const logline_value& lv,
+                              const char* src_data) {
+            if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_NULL) {
+                return;
+            }
+            // Respect `:hide-fields metrics_log.<col>` — a user-hidden
+            // column drops out of the composed line entirely.
+            if (lv.lv_meta.is_hidden()) {
+                return;
+            }
+            // Two-space gap between adjacent cells so column names
+            // don't crowd the previous cell's value / colored bar.
+            composed.append("  ");
+            const auto col_start = static_cast<int>(composed.size());
+            composed.append(lv.lv_meta.lvm_name.to_string_fragment().data(),
+                            lv.lv_meta.lvm_name.size());
+            composed.push_back('=');
+            double numeric_value = 0.0;
+            bool have_numeric = false;
+            switch (lv.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_FLOAT:
+                    numeric_value = lv.lv_value.d;
+                    have_numeric = true;
+                    break;
+                case value_kind_t::VALUE_INTEGER:
+                    numeric_value = static_cast<double>(lv.lv_value.i);
+                    have_numeric = true;
+                    break;
+                default:
+                    break;
+            }
+            // Render the cell using the original file text so
+            // humanized values ("328.78 GB", "20.0KB") stay as the
+            // user wrote them rather than collapsing to the parsed
+            // integer.  Fall back to the numeric formatting if we
+            // don't have a valid origin range.
+            std::string rendered;
+            if (src_data != nullptr && lv.lv_origin.is_valid()
+                && lv.lv_origin.length() > 0)
+            {
+                rendered.assign(src_data + lv.lv_origin.lr_start,
+                                lv.lv_origin.length());
+            } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_FLOAT) {
+                rendered = fmt::format(FMT_STRING("{}"), lv.lv_value.d);
+            } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_INTEGER) {
+                rendered = fmt::format(FMT_STRING("{}"), lv.lv_value.i);
+            } else {
+                rendered = lv.to_string();
+            }
+            constexpr size_t MIN_COLUMN_WIDTH = 10;
+            const auto* stats = src_lf->stats_for_value(lv.lv_meta.lvm_name);
+            const auto col_width = std::max(
+                MIN_COLUMN_WIDTH,
+                stats != nullptr ? static_cast<size_t>(stats->lvs_width)
+                                 : rendered.size());
+            const auto value_start = static_cast<int>(composed.size());
+            if (col_width > rendered.size()) {
+                composed.append(col_width - rendered.size(), ' ');
+            }
+            composed.append(rendered);
+
+            if (have_numeric && stats != nullptr && stats->lvs_count > 0
+                && col_width > 0)
+            {
+                const auto range = stats->lvs_max_value - stats->lvs_min_value;
+                int bar_amount;
+                if (numeric_value == 0.0) {
+                    bar_amount = 0;
+                } else if (range <= 0.0) {
+                    bar_amount = static_cast<int>(col_width);
+                } else {
+                    const auto pct
+                        = (numeric_value - stats->lvs_min_value) / range;
+                    bar_amount = static_cast<int>(
+                        std::lround(pct * static_cast<double>(col_width)));
+                    bar_amount = std::clamp(
+                        bar_amount, 1, static_cast<int>(col_width));
+                }
+                if (bar_amount > 0) {
+                    const auto bar_range = line_range{
+                        value_start,
+                        value_start + bar_amount,
+                    };
+                    this->lss_token_al.al_attrs.emplace_back(
+                        bar_range, VC_STYLE.value(text_attrs::with_reverse()));
+                }
+            }
+            // Tag the column span with its source file so the overlay
+            // can render the file stem above it.  Using the logfile*
+            // avoids a per-cell string copy of the stem.
+            this->lss_token_al.al_attrs.emplace_back(
+                line_range{col_start, static_cast<int>(composed.size())},
+                L_METRIC_SOURCE.value(src_lf));
+        };
+
+        // Fold each row in the fan-out (lead first, then every
+        // suppressed metric sibling at this timestamp) into the
+        // composed line.
+        logline_window::logmsg_info lead_msg{*this, vis_line_t(row)};
+        for (const auto& sib : lead_msg.metric_siblings()) {
+            const auto& sib_values = sib.get_values();
+            const auto* sib_data = sib_values.lvv_sbr.get_data();
+            for (const auto& lv : sib_values.lvv_values) {
+                emit_value(sib.get_file_ptr(), lv, sib_data);
+            }
+        }
+
+        this->lss_token_al.al_string = std::move(composed);
+        // The sbr and every lv_origin were slices of the previous
+        // al_string buffer we just replaced, so re-point the sbr at
+        // the composed line and drop the now-stale per-cell values.
+        this->lss_token_values.lvv_values.clear();
+        sbr.share(this->lss_share_manager,
+                  this->lss_token_al.al_string.c_str(),
+                  this->lss_token_al.al_string.size());
+    }
 
     auto src_file_attr
         = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_FILE);
@@ -1048,22 +1187,36 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         file_order[lpc] = lpc;
     }
     if (!this->lss_index.empty()) {
-        std::stable_sort(file_order.begin(),
-                         file_order.end(),
-                         [this](const auto& left, const auto& right) {
-                             const auto& left_ld = this->lss_files[left];
-                             const auto& right_ld = this->lss_files[right];
+        std::stable_sort(
+            file_order.begin(),
+            file_order.end(),
+            [this](const auto& left, const auto& right) {
+                const auto& left_ld = this->lss_files[left];
+                const auto& right_ld = this->lss_files[right];
 
-                             if (left_ld->get_file_ptr() == nullptr) {
-                                 return true;
-                             }
-                             if (right_ld->get_file_ptr() == nullptr) {
-                                 return false;
-                             }
+                if (left_ld->get_file_ptr() == nullptr) {
+                    return true;
+                }
+                if (right_ld->get_file_ptr() == nullptr) {
+                    return false;
+                }
 
-                             return left_ld->get_file_ptr()->back()
-                                 < right_ld->get_file_ptr()->back();
-                         });
+                // Group metrics_log files together so the
+                // index-build dedup and render-side sibling
+                // walk don't get interrupted by a regular
+                // log message that happens to share a
+                // timestamp with a metric row.
+                const auto left_metric
+                    = left_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
+                const auto right_metric
+                    = right_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
+                if (left_metric != right_metric) {
+                    return left_metric;
+                }
+
+                return left_ld->get_file_ptr()->back()
+                    < right_ld->get_file_ptr()->back();
+            });
     }
 
     bool time_left = true;
@@ -1134,14 +1287,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                     lf->get_filename().c_str(),
                                     ld.ld_lines_indexed,
                                     last_indexed_line,
-                                    new_file_line
-                                        .get_time<std::chrono::microseconds>()
-                                        .count(),
+                                    new_file_line.get_time<>().count(),
                                     last_indexed_line == nullptr
                                         ? (uint64_t) -1
-                                        : last_indexed_line
-                                              ->get_time<
-                                                  std::chrono::microseconds>()
+                                        : last_indexed_line->get_time<>()
                                               .count());
                                 if (retval <= rebuild_result::rr_partial_rebuild
                                     && all_time_ordered_formats)
@@ -1305,6 +1454,14 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         size_t index_size = 0, start_size = this->lss_index.size();
         logline_cmp line_cmper(*this);
 
+        // Metric files compose their LOG-view line at render time from
+        // timestamp + ` name=value` pairs across every sibling metric
+        // file that shares a timestamp.  Sum the worst-case per-file
+        // widths so hscroll reserves enough room for a fully merged
+        // metric row.
+        constexpr size_t METRIC_TS_WIDTH = 26;  // 2026-04-14T10:00:00.000000
+        constexpr size_t METRIC_MIN_COL_WIDTH = 10;
+        size_t metric_total_width = 0;
         for (auto& ld : this->lss_files) {
             auto* lf = ld->get_file_ptr();
 
@@ -1318,7 +1475,26 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                            lf->get_unique_path().native().size());
             this->lss_filename_width = std::max(
                 this->lss_filename_width, lf->get_filename().native().size());
+
+            if (lf->get_format_ptr()->lf_is_metric) {
+                if (metric_total_width == 0) {
+                    metric_total_width = METRIC_TS_WIDTH;
+                }
+                for (const auto& meta :
+                     lf->get_format_ptr()->get_value_metadata())
+                {
+                    const auto* stats = lf->stats_for_value(meta.lvm_name);
+                    const auto width = std::max(
+                        METRIC_MIN_COL_WIDTH,
+                        stats != nullptr ? static_cast<size_t>(stats->lvs_width)
+                                         : METRIC_MIN_COL_WIDTH);
+                    // Layout: "  " + name + '=' + padded value.
+                    metric_total_width += 3 + meta.lvm_name.size() + width;
+                }
+            }
         }
+        this->lss_longest_line
+            = std::max(this->lss_longest_line, metric_total_width + 1);
 
         if (full_sort) {
             log_trace("rebuild_index full sort");
@@ -1533,7 +1709,36 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             .insert_once(cl);
                     }
                 }
-                this->lss_filtered_index.push_back(index_index);
+                // Metric CSV rows from different files that share a
+                // timestamp get collapsed into a single visible line
+                // so the LOG view (and, eventually, the `metrics`
+                // virtual table) sees one row per timestamp.  The
+                // suppressed siblings stay in `lss_index` so the
+                // renderer can walk forward to gather their values.
+                bool suppress_metric_sibling = false;
+                if (lf->get_format_ptr()->lf_is_metric
+                    && !this->lss_filtered_index.empty())
+                {
+                    const auto prev_cl
+                        = this->lss_index[this->lss_filtered_index.back()]
+                              .value();
+                    uint64_t prev_line_number;
+                    const auto prev_ld
+                        = this->find_data(prev_cl, prev_line_number);
+                    const auto* prev_lf = (*prev_ld)->get_file_ptr();
+                    if (prev_lf->get_format_ptr()->lf_is_metric) {
+                        const auto prev_time
+                            = (prev_lf->begin() + prev_line_number)
+                                  ->get_time<>();
+                        const auto curr_time = line_iter->get_time<>();
+                        if (prev_time == curr_time) {
+                            suppress_metric_sibling = true;
+                        }
+                    }
+                }
+                if (!suppress_metric_sibling) {
+                    this->lss_filtered_index.push_back(index_index);
+                }
                 if (this->lss_index_delegate != nullptr) {
                     this->lss_index_delegate->index_line(*this, lf, line_iter);
                 }
@@ -1560,8 +1765,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         {
                             this->lss_ctx_before_msgs.pop_front();
                         }
-                        this->lss_ctx_before_msgs.push_back(
-                            {index_index, 1});
+                        this->lss_ctx_before_msgs.push_back({index_index, 1});
                     } else {
                         this->lss_ctx_before_msgs.back().cmr_count += 1;
                     }
@@ -1757,7 +1961,32 @@ logfile_sub_source::text_filters_changed()
                         .insert_once(cl);
                 }
             }
-            this->lss_filtered_index.push_back(index_index);
+            // Metric CSV rows from different files that share a
+            // timestamp get collapsed into a single visible line —
+            // same dedup rule as `rebuild_index`, mirrored here so
+            // toggling filters doesn't re-expose the suppressed
+            // siblings as separate visible rows.
+            bool suppress_metric_sibling = false;
+            if (lf->get_format_ptr()->lf_is_metric
+                && !this->lss_filtered_index.empty())
+            {
+                const auto prev_cl
+                    = this->lss_index[this->lss_filtered_index.back()].value();
+                uint64_t prev_line_number;
+                const auto prev_ld = this->find_data(prev_cl, prev_line_number);
+                const auto* prev_lf = (*prev_ld)->get_file_ptr();
+                if (prev_lf->get_format_ptr()->lf_is_metric) {
+                    const auto prev_time
+                        = (prev_lf->begin() + prev_line_number)->get_time<>();
+                    const auto curr_time = line_iter->get_time<>();
+                    if (prev_time == curr_time) {
+                        suppress_metric_sibling = true;
+                    }
+                }
+            }
+            if (!suppress_metric_sibling) {
+                this->lss_filtered_index.push_back(index_index);
+            }
             if (this->lss_index_delegate != nullptr) {
                 this->lss_index_delegate->index_line(*this, lf, line_iter);
             }
@@ -1782,8 +2011,7 @@ logfile_sub_source::text_filters_changed()
                     if (this->lss_ctx_before_msgs.size() >= context_before) {
                         this->lss_ctx_before_msgs.pop_front();
                     }
-                    this->lss_ctx_before_msgs.push_back(
-                        {index_index, 1});
+                    this->lss_ctx_before_msgs.push_back({index_index, 1});
                 } else {
                     this->lss_ctx_before_msgs.back().cmr_count += 1;
                 }
@@ -1850,18 +2078,27 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                 if (iter != fos->fos_row_to_field_meta.end()
                     && iter->second.ri_meta)
                 {
-                    auto find_res = this->find_line_with_file(lv.get_top());
-                    if (find_res) {
-                        auto file_and_line = find_res.value();
-                        auto* format = file_and_line.first->get_format_ptr();
-                        auto fstates = format->get_field_states();
-                        auto state_iter
-                            = fstates.find(iter->second.ri_meta->lvm_name);
-                        if (state_iter != fstates.end()) {
-                            format->hide_field(iter->second.ri_meta->lvm_name,
-                                               !state_iter->second.is_hidden());
-                            lv.set_needs_update();
+                    // Route the toggle through the meta's owning
+                    // format rather than the lead file's format so
+                    // metric-sibling columns (which live in a
+                    // different file's format instance) get handled.
+                    const auto& meta = iter->second.ri_meta.value();
+                    auto* format = meta.lvm_format.value_or(nullptr);
+                    if (format == nullptr) {
+                        auto find_res = this->find_line_with_file(lv.get_top());
+                        if (find_res) {
+                            format = find_res.value().first->get_format_ptr();
                         }
+                    }
+                    if (format != nullptr) {
+                        auto fstates = format->get_field_states();
+                        auto state_iter = fstates.find(meta.lvm_name);
+                        const bool currently_hidden
+                            = state_iter != fstates.end()
+                            ? state_iter->second.is_hidden()
+                            : meta.is_hidden();
+                        format->hide_field(meta.lvm_name, !currently_hidden);
+                        lv.set_needs_update();
                     }
                 }
                 return true;
@@ -2460,16 +2697,32 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
 
     auto cl = this->at(line);
 
-    if (bm == &textview_curses::BM_USER) {
-        auto* ll = this->find_line(cl);
+    this->lss_user_marks[bm].apply(cl, added);
+    const auto is_user = (bm == &textview_curses::BM_USER);
+    const auto is_sticky = (bm == &textview_curses::BM_STICKY);
+    if (is_user || is_sticky) {
+        // For metric rows the mark has to fan out to every row in the
+        // fan-out group (lead + suppressed siblings) so the state
+        // reflects the whole composed line.  `metric_siblings()`
+        // yields the lead first; the outer `apply()` above and the
+        // loop's apply for the lead are idempotent.
+        logline_window::logmsg_info lead_msg{*this, line};
+        if (lead_msg.is_metric_line()) {
+            for (const auto& sib : lead_msg.metric_siblings()) {
+                if (is_user) {
+                    sib.get_logline().set_mark(added);
+                }
+                this->lss_user_marks[bm].apply(sib.get_content_line(), added);
+            }
+        } else if (is_user) {
+            auto find_res = this->find_line_with_file(line);
+            if (find_res) {
+                auto& [lf, ll] = find_res.value();
+                ll->set_mark(added);
+            }
+        }
+    }
 
-        ll->set_mark(added);
-    }
-    if (added) {
-        this->lss_user_marks[bm].insert_once(cl);
-    } else {
-        this->lss_user_marks[bm].erase(cl);
-    }
     if (bm == &textview_curses::BM_META
         && this->lss_meta_grepper.gps_proc != nullptr)
     {
@@ -3521,6 +3774,32 @@ logfile_sub_source::get_filtered_count_for(size_t filter_index) const
     return retval;
 }
 
+bool
+logfile_sub_source::row_is_filtered_out(size_t idx,
+                                        uint32_t filter_in_mask,
+                                        uint32_t filter_out_mask)
+{
+    if (!this->tss_apply_filters || idx >= this->lss_index.size()) {
+        return false;
+    }
+    const auto cl = this->lss_index[idx].value();
+    uint64_t line_number;
+    auto ld = this->find_data(cl, line_number);
+    if (ld == this->end()) {
+        return false;
+    }
+    if (!(*ld)->is_visible()) {
+        return true;
+    }
+    if ((*ld)->ld_filter_state.excluded(
+            filter_in_mask, filter_out_mask, line_number))
+    {
+        return true;
+    }
+    auto line_iter = (*ld)->get_file_ptr()->begin() + line_number;
+    return !this->check_extra_filters(ld, line_iter);
+}
+
 std::optional<vis_line_t>
 logfile_sub_source::row_for(const row_info& ri)
 {
@@ -3706,10 +3985,9 @@ logfile_sub_source::anchor_for_row(vis_line_t vl)
                 break;
             }
             auto hash = hash_res.unwrap();
-            auto retval = fmt::format(
-                FMT_STRING("#msg{:016x}-{}"),
-                li.get_logline().get_time<std::chrono::microseconds>().count(),
-                hash);
+            auto retval = fmt::format(FMT_STRING("#msg{:016x}-{}"),
+                                      li.get_logline().get_time<>().count(),
+                                      hash);
 
             return retval;
         }

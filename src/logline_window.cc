@@ -137,6 +137,7 @@ logline_window::logmsg_info::prev_msg()
     this->li_logline = logfile::iterator{};
     this->li_string_attrs.clear();
     this->li_line_values.clear();
+    this->li_line_number = 0;
     while (this->li_line > 0) {
         --this->li_line;
         auto cl = this->li_source.at(this->li_line);
@@ -155,6 +156,9 @@ logline_window::logmsg_info::prev_msg()
 std::optional<bookmark_metadata*>
 logline_window::logmsg_info::get_metadata() const
 {
+    if (this->li_file == nullptr) {
+        return std::nullopt;
+    }
     auto line_number = std::distance(this->li_file->begin(), this->li_logline);
     auto& bm = this->li_file->get_bookmark_metadata();
     auto bm_iter = bm.find(line_number);
@@ -269,5 +273,150 @@ logline_window::iterator::operator--()
 {
     this->i_info.prev_msg();
 
+    return *this;
+}
+
+bool
+logline_window::logmsg_info::is_metric_line() const
+{
+    return this->li_file != nullptr
+        && this->li_file->get_format_ptr() != nullptr
+        && this->li_file->get_format_ptr()->lf_is_metric;
+}
+
+logline&
+logline_window::logmsg_info::sibling_info::get_logline() const
+{
+    return *(this->si_lf->begin() + this->si_line_number);
+}
+
+void
+logline_window::logmsg_info::sibling_info::load() const
+{
+    if (this->si_loaded) {
+        return;
+    }
+    auto line_iter = this->si_lf->begin() + this->si_line_number;
+    auto read_res = this->si_lf->read_line(line_iter);
+    if (read_res.isErr()) {
+        this->si_loaded = true;
+        return;
+    }
+    this->si_values.lvv_sbr = read_res.unwrap();
+    this->si_lf->get_format_ptr()->annotate(
+        this->si_lf, this->si_line_number, this->si_attrs, this->si_values);
+    this->si_loaded = true;
+}
+
+logline_window::logmsg_info::sibling_range
+logline_window::logmsg_info::metric_siblings(sibling_policy policy) const
+{
+    if (!this->is_metric_line() || this->li_line < 0_vl
+        || this->li_line >= vis_line_t(this->li_source.text_line_count()))
+    {
+        // Empty range: walk position past the end of `lss_index`
+        // terminates the range at the first `at()` call.
+        return sibling_range{
+            this->li_source,
+            this->li_source.index_size(),
+            std::chrono::microseconds{},
+            policy,
+        };
+    }
+    auto lead_idx = this->li_source.index_at(this->li_line);
+    auto lead_time
+        = (this->li_file->begin() + this->li_line_number)->get_time<>();
+    return sibling_range{this->li_source, lead_idx, lead_time, policy};
+}
+
+logline_window::logmsg_info::sibling_range::sibling_range(
+    logfile_sub_source& lss,
+    size_t lead_idx,
+    std::chrono::microseconds lead_time,
+    sibling_policy policy)
+    : sr_lss(lss), sr_lead_idx(lead_idx), sr_lead_time(lead_time),
+      sr_policy(policy)
+{
+    // Snapshot the filter masks once so `at()` (called per sibling
+    // via `iterator::settle`) doesn't re-walk the filter stack on
+    // every step.
+    if (this->sr_policy.skip_filtered_out) {
+        this->sr_lss.get_enabled_filter_mask(this->sr_filter_in_mask,
+                                             this->sr_filter_out_mask);
+    }
+}
+
+logline_window::logmsg_info::sibling_range::result
+logline_window::logmsg_info::sibling_range::at(size_t offset) const
+{
+    // `offset == 0` is the lead itself; `offset > 0` is the (offset-
+    // 1)-th suppressed sibling.
+    const auto sib_idx = this->sr_lead_idx + offset;
+    if (sib_idx >= this->sr_lss.index_size()) {
+        return {outcome::end, {}};
+    }
+    const auto cl = this->sr_lss.content_line_at(sib_idx);
+    uint64_t line_number = 0;
+    auto ld_iter = this->sr_lss.find_data(cl, line_number);
+    if (ld_iter == this->sr_lss.end()) {
+        return {outcome::end, {}};
+    }
+    auto* lf = (*ld_iter)->get_file_ptr();
+    if (lf == nullptr || !lf->get_format_ptr()->lf_is_metric) {
+        return {outcome::end, {}};
+    }
+    // The skip and timestamp checks only apply past the lead: the
+    // lead itself is always visible and matches its own timestamp.
+    if (offset > 0) {
+        if (this->sr_policy.skip_filtered_out
+            && this->sr_lss.row_is_filtered_out(sib_idx,
+                                                this->sr_filter_in_mask,
+                                                this->sr_filter_out_mask))
+        {
+            return {outcome::skip, {}};
+        }
+        auto line_iter = lf->begin() + line_number;
+        if (line_iter->get_time<>() != this->sr_lead_time) {
+            return {outcome::end, {}};
+        }
+    }
+    sibling_info info;
+    info.si_lf = lf;
+    info.si_line_number = line_number;
+    info.si_cl = cl;
+    return {outcome::ok, std::move(info)};
+}
+
+logline_window::logmsg_info::sibling_range::iterator::iterator(
+    const sibling_range* range, size_t offset)
+    : i_range(range), i_offset(offset)
+{
+    this->settle();
+}
+
+void
+logline_window::logmsg_info::sibling_range::iterator::settle()
+{
+    while (!this->i_done) {
+        auto res = this->i_range->at(this->i_offset);
+        switch (res.oc) {
+            case outcome::end:
+                this->i_done = true;
+                return;
+            case outcome::skip:
+                this->i_offset += 1;
+                continue;
+            case outcome::ok:
+                this->i_info = std::move(res.info);
+                return;
+        }
+    }
+}
+
+logline_window::logmsg_info::sibling_range::iterator&
+logline_window::logmsg_info::sibling_range::iterator::operator++()
+{
+    this->i_offset += 1;
+    this->settle();
     return *this;
 }

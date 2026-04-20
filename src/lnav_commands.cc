@@ -48,6 +48,7 @@
 #include "base/isc.hh"
 #include "base/itertools.hh"
 #include "base/itertools.similar.hh"
+#include "base/lnav.tz.hh"
 #include "base/paths.hh"
 #include "base/relative_time.hh"
 #include "base/string_util.hh"
@@ -58,7 +59,6 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
-#include "base/lnav.tz.hh"
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "hasher.hh"
@@ -659,9 +659,7 @@ com_clear_file_timezone(exec_context& ec,
 {
     std::string retval;
 
-    if (args.size() != 2) {
-        return ec.make_error("expecting a single file path or pattern");
-    }
+    auto path = trim(remaining_args(cmdline, args));
 
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
@@ -676,14 +674,14 @@ com_clear_file_timezone(exec_context& ec,
 
             options_hier->foh_generation += 1;
             auto& coll = options_hier->foh_path_to_collection["/"];
-            const auto iter = coll.foc_pattern_to_options.find(args[1]);
+            const auto iter = coll.foc_pattern_to_options.find(path);
 
             if (iter == coll.foc_pattern_to_options.end()) {
                 return ec.make_error(FMT_STRING("no timezone set for: {}"),
-                                     args[1]);
+                                     path);
             }
 
-            log_info("clearing timezone for %s", args[1].c_str());
+            log_info("clearing timezone for %s", path.c_str());
             iter->second.fo_default_zone.pp_value = nullptr;
             if (iter->second.empty()) {
                 coll.foc_pattern_to_options.erase(iter);

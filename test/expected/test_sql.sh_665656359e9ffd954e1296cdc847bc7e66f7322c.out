@@ -3,6 +3,7 @@ ATTACH DATABASE '' AS 'lnav_db';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE VIRTUAL TABLE lnav_app_files USING lnav_app_file_vtab_impl();
 CREATE VIRTUAL TABLE lnav_apps USING lnav_apps_impl();
+CREATE VIRTUAL TABLE all_metrics USING all_metrics_impl();
 CREATE VIRTUAL TABLE all_thread_ids USING all_thread_ids_impl();
 CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
 CREATE VIRTUAL TABLE lnav_log_breakpoints USING lnav_log_breakpoints_impl();
@@ -18,4 +19,3 @@ CREATE VIEW lnav_view_filters_and_stats AS
     FROM lnav_db.lnav_view_filters
     LEFT NATURAL JOIN lnav_db.lnav_view_filter_stats;
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
-CREATE VIRTUAL TABLE regexp_capture_into_json USING regexp_capture_into_json_impl();

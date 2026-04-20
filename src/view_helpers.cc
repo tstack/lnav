@@ -1495,8 +1495,7 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
                                 logfile::iterator ll)
 {
     if (ll->is_continued()
-        || ll->get_time<std::chrono::microseconds>()
-            == std::chrono::microseconds::zero())
+        || ll->get_time<>() == std::chrono::microseconds::zero())
     {
         return;
     }
@@ -1517,9 +1516,9 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
             break;
     }
 
-    this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(), ht);
+    this->hid_source.add_value(ll->get_time<>(), ht);
     if (ll->is_marked() || ll->is_expr_marked()) {
-        this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(),
+        this->hid_source.add_value(ll->get_time<>(),
                                    hist_source2::hist_type_t::mark);
     }
 }

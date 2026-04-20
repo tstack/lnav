@@ -1,0 +1,6 @@
+source,metric,log_mark
+logfile_metrics,cpu_pct,1
+logfile_metrics,disk_iops,1
+logfile_metrics,mem_mb,1
+logfile_metrics2,error_rate,1
+logfile_metrics2,queue_depth,1

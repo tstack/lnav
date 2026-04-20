@@ -160,4 +160,122 @@ TEST_CASE("humanize::try_from")
         CHECK(try_res.has_value());
         CHECK(try_res.value() == 3600 + 30 * 60 + 25.33);
     }
+    {
+        // Percentages parse to the ratio (e.g. `42%` → 0.42).
+        auto pct = string_fragment::from_const("42%");
+        auto try_res = humanize::try_from<double>(pct);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.42);
+    }
+    {
+        auto pct = string_fragment::from_const("-3.14 %");
+        auto try_res = humanize::try_from<double>(pct);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == -3.14 / 100.0);
+    }
+    {
+        auto pct = string_fragment::from_const("1.5%");
+        auto try_res = humanize::try_from<double>(pct);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.015);
+    }
+    {
+        // Short SI-prefixed counts: bare `k`, `M`, `G`, `T` (no B).
+        auto n = string_fragment::from_const("1.5k");
+        auto try_res = humanize::try_from<double>(n);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 1500.0);
+    }
+    {
+        auto n = string_fragment::from_const("2M");
+        auto try_res = humanize::try_from<double>(n);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 2000000.0);
+    }
+    {
+        auto n = string_fragment::from_const("3Gi");
+        auto try_res = humanize::try_from<double>(n);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 3.0 * 1024 * 1024 * 1024);
+    }
+    {
+        // Frequency.
+        auto f = string_fragment::from_const("100Hz");
+        auto try_res = humanize::try_from<double>(f);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 100.0);
+    }
+    {
+        auto f = string_fragment::from_const("2.5GHz");
+        auto try_res = humanize::try_from<double>(f);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 2.5e9);
+    }
+    {
+        auto f = string_fragment::from_const("440 kHz");
+        auto try_res = humanize::try_from<double>(f);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 440000.0);
+    }
+    {
+        // Throughput: named per-second rates; value carries SI prefix.
+        auto r = string_fragment::from_const("500iops");
+        auto try_res = humanize::try_from<double>(r);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 500.0);
+    }
+    {
+        auto r = string_fragment::from_const("10Mreq/s");
+        auto try_res = humanize::try_from<double>(r);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 10.0e6);
+    }
+    {
+        // Generic per-second rate.
+        auto r = string_fragment::from_const("42/s");
+        auto try_res = humanize::try_from<double>(r);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 42.0);
+    }
+    {
+        // Power / voltage / current.
+        auto p = string_fragment::from_const("5kW");
+        auto try_res = humanize::try_from<double>(p);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 5000.0);
+    }
+    {
+        auto p = string_fragment::from_const("3mW");
+        auto try_res = humanize::try_from<double>(p);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.003);
+    }
+    {
+        auto p = string_fragment::from_const("3.3V");
+        auto try_res = humanize::try_from<double>(p);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 3.3);
+    }
+    {
+        auto p = string_fragment::from_const("250 mA");
+        auto try_res = humanize::try_from<double>(p);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.25);
+    }
 }

@@ -31,6 +31,7 @@
 #define vtab_module_hh
 
 #include <exception>
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <string>
@@ -256,6 +257,12 @@ inline void
 to_sqlite(sqlite3_context* ctx, const std::string& str)
 {
     sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
+}
+
+inline void
+to_sqlite(sqlite3_context* ctx, const std::filesystem::path& p)
+{
+    sqlite3_result_text(ctx, p.c_str(), -1, SQLITE_TRANSIENT);
 }
 
 inline void

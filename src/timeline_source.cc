@@ -868,11 +868,10 @@ timeline_source::rebuild_indexes()
             for (const auto& [line_num, line_meta] : mark_meta) {
                 const auto ll = std::next(lf->begin(), line_num);
                 if (!line_meta.bm_name.empty()) {
-                    part_map.insert2(ll->get_time<std::chrono::microseconds>(),
-                                     line_meta.bm_name);
+                    part_map.insert2(ll->get_time<>(), line_meta.bm_name);
                 }
                 for (const auto& entry : line_meta.bm_tags) {
-                    auto line_time = ll->get_time<std::chrono::microseconds>();
+                    auto line_time = ll->get_time<>();
                     auto tag_key = fmt::format(FMT_STRING("{}@{}:{}"),
                                                entry.te_tag,
                                                lf->get_unique_path(),
@@ -1193,12 +1192,11 @@ timeline_source::rebuild_indexes()
     }
 
     // Sort candidates by time before applying context expansion
-    std::stable_sort(
-        candidates.begin(),
-        candidates.end(),
-        [](const auto& lhs, const auto& rhs) {
-            return *lhs.rc_row < *rhs.rc_row;
-        });
+    std::stable_sort(candidates.begin(),
+                     candidates.end(),
+                     [](const auto& lhs, const auto& rhs) {
+                         return *lhs.rc_row < *rhs.rc_row;
+                     });
 
     // Apply context expansion on sorted candidates
     auto context_before = this->tss_context_before;

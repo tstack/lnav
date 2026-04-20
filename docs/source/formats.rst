@@ -74,6 +74,37 @@ The following keys are recognized by lnav:
 Any other keys are available in the :code:`fields` column of the
 :code:`logfmt_log` table as a JSON object.
 
+.. _metrics_log:
+
+Metric CSVs
+-----------
+
+Comma-separated files whose first column is a timestamp header
+(:code:`Time`, :code:`Timestamp`, :code:`ts`, or a name starting
+with :code:`date`) are detected as the built-in :code:`metrics_log`
+format.  The detector tries to automatically handle exports
+from tools like Excel, PowerShell, and Grafana.
+
+Each data row is rendered in the LOG view as the timestamp
+followed by a :code:`<column>=<value>` pair for each numeric
+column.  When multiple metric files are loaded and the rows
+share a timestamp, their rows are merged into a single line.
+
+.. note::
+
+   :code:`:filter-in` and :code:`:filter-out` match against the raw
+   CSV bytes, not the rendered :code:`<column>=<value>` text, so a
+   pattern like :code:`:filter-out cpu_pct` will only match the CSV
+   header (which is already hidden from the LOG view) and will not
+   filter data rows.  Patterns that match literal cell values still
+   work — for example, :code:`:filter-out "99.99"` will hide any data
+   row that contains that value.  To project or restrict by column,
+   query the :ref:`all_metrics<table_all_metrics>` SQL table instead.
+
+The :ref:`all_metrics<table_all_metrics>` SQL virtual table
+provides a long-format view over every open metric file, suitable
+for aggregate queries and for feeding :code:`:spectrogram`.
+
 Defining a New Format
 =====================
 

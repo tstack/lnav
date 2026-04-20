@@ -1155,6 +1155,9 @@ line_buffer::load_next_line(file_range prev_line)
     if (this->lb_line_metadata && prev_line.fr_offset == 0) {
         prev_line.fr_offset = this->lb_piper_header_size;
     }
+    if (this->lb_bom_size > 0 && prev_line.fr_offset == 0) {
+        prev_line.fr_offset = this->lb_bom_size;
+    }
 
     auto offset = prev_line.next_offset();
     ssize_t request_size = INITIAL_REQUEST_SIZE;
@@ -1176,6 +1179,21 @@ line_buffer::load_next_line(file_range prev_line)
         }
     }
     if (prev_line.next_offset() == 0) {
+        // Skip a leading UTF-8 BOM so files produced by Excel,
+        // PowerShell, and other Windows-oriented tools don't leak the
+        // three-byte marker into the first line.  The bytes stay in
+        // lb_buffer but are rendered invisible by fast-forwarding the
+        // first line's start offset (mirrors lb_piper_header_size).
+        if (this->lb_buffer.size() >= 3
+            && (uint8_t) this->lb_buffer[0] == 0xEF
+            && (uint8_t) this->lb_buffer[1] == 0xBB
+            && (uint8_t) this->lb_buffer[2] == 0xBF)
+        {
+            this->lb_bom_size = 3;
+            prev_line.fr_offset = this->lb_bom_size;
+            offset = prev_line.next_offset();
+            retval.li_file_range.fr_offset = offset;
+        }
         auto is_utf_res = is_utf8(string_fragment::from_bytes(
             this->lb_buffer.begin(), this->lb_buffer.size()));
         this->lb_is_utf8 = is_utf_res.is_valid();

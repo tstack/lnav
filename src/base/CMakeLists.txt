@@ -27,6 +27,7 @@ add_library(
         piper.file.cc
         progress.cc
         relative_time.cc
+        separated_string.cc
         small_string_map.cc
         snippet_highlighters.cc
         string_attr_type.cc
@@ -81,6 +82,7 @@ add_library(
         progress.hh
         relative_time.hh
         result.h
+        separated_string.hh
         short_alloc.h
         small_string_map.hh
         sparse_cursor_container.hh
@@ -121,6 +123,7 @@ add_executable(
         intern_string.tests.cc
         lnav.gzip.tests.cc
         math_util.tests.cc
+        separated_string.tests.cc
         small_string_map.tests.cc
         string_util.tests.cc
         network.tcp.tests.cc
