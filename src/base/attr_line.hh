@@ -710,6 +710,8 @@ public:
     attr_line_t move() & { return std::move(*this); }
     attr_line_t move() && { return std::move(*this); }
 
+    void invariant();
+
     std::string al_string;
     string_attrs_t al_attrs;
 };

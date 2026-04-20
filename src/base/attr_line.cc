@@ -923,6 +923,9 @@ line_range::shift(int32_t start, int32_t amount)
         if (start < this->lr_end) {
             if (amount < 0 && amount < (start - this->lr_end)) {
                 this->lr_end = start + amount;
+                if (this->lr_end < this->lr_start) {
+                    this->lr_end = this->lr_start;
+                }
             } else {
                 this->lr_end = std::max(this->lr_start, this->lr_end + amount);
             }
@@ -1047,4 +1050,15 @@ get_string_attr(const string_attrs_t& sa,
     }
 
     return std::make_optional(&(*iter));
+}
+
+void
+attr_line_t::invariant()
+{
+    for (auto& sa : this->al_attrs) {
+        require_ge(sa.sa_range.lr_start, 0);
+        if (sa.sa_range.lr_end != -1) {
+            require_ge(sa.sa_range.lr_end, sa.sa_range.lr_start);
+        }
+    }
 }
