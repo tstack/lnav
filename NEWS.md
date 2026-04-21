@@ -33,6 +33,12 @@ Features:
   view across every open metrics file.  The `metric` column
   contains the name of the metric and `value` contains its
   value.
+* Log format value definitions now accept a `unit` object
+  with `suffix` and `divisor` properties.  `suffix` specifies
+  how numeric fields are humanized. `divisor` normalizes
+  the raw value to the base unit implied by `suffix` —
+  e.g. a field storing milliseconds with `"suffix": "s"`
+  declares `"divisor": 1000`.
 
 
 ## lnav v0.14.1

@@ -60,10 +60,8 @@
                 "timestamp-divisor": {
                     "title": "/<format_name>/timestamp-divisor",
                     "description": "The value to divide a numeric timestamp by in a JSON log.",
-                    "type": [
-                        "integer",
-                        "number"
-                    ]
+                    "type": "number",
+                    "exclusiveMinimum": 0.0
                 },
                 "file-pattern": {
                     "title": "/<format_name>/file-pattern",
@@ -197,10 +195,8 @@
                 "duration-divisor": {
                     "title": "/<format_name>/duration-divisor",
                     "description": "The value to divide a duration by to convert it to seconds.  For example, if the duration field is in milliseconds, the divisor should be 1000.",
-                    "type": [
-                        "integer",
-                        "number"
-                    ]
+                    "type": "number",
+                    "exclusiveMinimum": 0.0
                 },
                 "url": {
                     "title": "/<format_name>/url",
@@ -452,6 +448,20 @@
                                                 }
                                             },
                                             "additionalProperties": false
+                                        },
+                                        "suffix": {
+                                            "title": "/<format_name>/value/<value_name>/unit/suffix",
+                                            "description": "The display suffix for this field; lnav uses the suffix to pick a humanization family (e.g. \"B\" for bytes, \"s\" for seconds, \"Hz\" for frequency).  Unknown suffixes are appended verbatim without scaling.",
+                                            "type": "string",
+                                            "examples": [
+                                                "B"
+                                            ]
+                                        },
+                                        "divisor": {
+                                            "title": "/<format_name>/value/<value_name>/unit/divisor",
+                                            "description": "A divisor applied to the raw numeric value to normalize it to the base unit implied by the suffix.  For example, a field storing milliseconds paired with \"suffix\": \"s\" would declare \"divisor\": 1000.",
+                                            "type": "number",
+                                            "exclusiveMinimum": 0.0
                                         }
                                     },
                                     "additionalProperties": false
@@ -776,7 +786,7 @@
                                 "title": "/<format_name>/line-format/min-width",
                                 "description": "The minimum width of the field",
                                 "type": "integer",
-                                "minimum": 0
+                                "minimum": 0.0
                             },
                             "auto-width": {
                                 "title": "/<format_name>/line-format/auto-width",
@@ -787,7 +797,7 @@
                                 "title": "/<format_name>/line-format/max-width",
                                 "description": "The maximum width of the field",
                                 "type": "integer",
-                                "minimum": 0
+                                "minimum": 0.0
                             },
                             "align": {
                                 "title": "/<format_name>/line-format/align",
@@ -940,7 +950,7 @@
                     "title": "/<format_name>/max-unrecognized-lines",
                     "description": "The maximum number of lines in a file to use when detecting the format",
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 1.0
                 }
             },
             "additionalProperties": false

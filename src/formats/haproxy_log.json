@@ -75,26 +75,49 @@
                 "identifier": true
             },
             "tq": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "tw": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "tc": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "tr": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "tt": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "status_code": {
                 "kind": "integer",
                 "identifier": true
             },
             "bytes_read": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "captured_request_cookie": {
                 "kind": "string"

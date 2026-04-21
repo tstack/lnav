@@ -121,7 +121,7 @@ TEST_CASE("duration to_string")
     val = humanize::time::duration::from_tv({10, 123000}).to_string();
     CHECK(val == "10s123");
     val = humanize::time::duration::from_tv({10, 0}).to_string();
-    CHECK(val == "10s000");
+    CHECK(val == "10s");
     val = humanize::time::duration::from_tv({0, 100000}).to_string();
     CHECK(val == "100");
     val = humanize::time::duration::from_tv({0, 0}).to_string();
@@ -129,5 +129,5 @@ TEST_CASE("duration to_string")
     val = humanize::time::duration::from_tv({0, -10000}).to_string();
     CHECK(val == "-010");
     val = humanize::time::duration::from_tv({-10, 0}).to_string();
-    CHECK(val == "-10s000");
+    CHECK(val == "-10s");
 }

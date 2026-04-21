@@ -53,7 +53,16 @@ public:
                       double range_max,
                       mark_op_t op) override;
 
+    std::string spectro_value_suffix() const override;
+
+    double spectro_value_divisor() const override;
+
     intern_string_t lsvs_colname;
+    // Cached copy of the column's metadata for fast access to
+    // humanization hints (`lvm_unit_suffix` / `lvm_unit_divisor`).
+    // Resolved once at construction from the first log file whose
+    // format declares this column.
+    std::optional<logline_value_meta> lsvs_meta;
     logline_value_stats lsvs_stats;
     std::chrono::microseconds lsvs_begin_time{0};
     std::chrono::microseconds lsvs_end_time{0};

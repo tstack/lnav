@@ -239,64 +239,6 @@ read_format_bool(yajlpp_parse_context* ypc, int val)
 }
 
 static int
-read_format_double(yajlpp_parse_context* ypc, double val)
-{
-    auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    auto field_name = ypc->get_path_fragment(1);
-
-    if (field_name == "timestamp-divisor" || field_name == "duration-divisor") {
-        if (val <= 0) {
-            ypc->report_error(
-                lnav::console::user_message::error(
-                    attr_line_t()
-                        .append_quoted(fmt::to_string(val))
-                        .append(" is not a valid value for ")
-                        .append_quoted(lnav::roles::symbol(
-                            ypc->get_full_path().to_string())))
-                    .with_reason("value cannot be less than or equal to zero")
-                    .with_snippet(ypc->get_snippet())
-                    .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
-        }
-        if (field_name == "timestamp-divisor") {
-            elf->elf_timestamp_divisor = val;
-        } else {
-            elf->elf_duration_divisor = val;
-        }
-    }
-
-    return 1;
-}
-
-static int
-read_format_int(yajlpp_parse_context* ypc, long long val)
-{
-    auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
-    auto field_name = ypc->get_path_fragment(1);
-
-    if (field_name == "timestamp-divisor" || field_name == "duration-divisor") {
-        if (val <= 0) {
-            ypc->report_error(
-                lnav::console::user_message::error(
-                    attr_line_t()
-                        .append_quoted(fmt::to_string(val))
-                        .append(" is not a valid value for ")
-                        .append_quoted(lnav::roles::symbol(
-                            ypc->get_full_path().to_string())))
-                    .with_reason("value cannot be less than or equal to zero")
-                    .with_snippet(ypc->get_snippet())
-                    .with_help(ypc->ypc_current_handler->get_help_text(ypc)));
-        }
-        if (field_name == "timestamp-divisor") {
-            elf->elf_timestamp_divisor = val;
-        } else {
-            elf->elf_duration_divisor = val;
-        }
-    }
-
-    return 1;
-}
-
-static int
 read_format_field(yajlpp_parse_context* ypc,
                   const unsigned char* str,
                   size_t len,
@@ -616,6 +558,28 @@ static const struct json_path_container unit_handlers = {
     yajlpp::property_handler("scaling-factor")
         .with_description("Transforms the numeric value by the given factor")
         .with_children(scale_handlers),
+
+    yajlpp::property_handler("suffix")
+        .with_synopsis("<suffix>")
+        .with_description(
+            "The display suffix for this field; lnav uses the suffix to "
+            "pick a humanization family (e.g. \"B\" for bytes, \"s\" for "
+            "seconds, \"Hz\" for frequency).  Unknown suffixes are "
+            "appended verbatim without scaling.")
+        .with_example("B"_frag)
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_unit_suffix),
+
+    yajlpp::property_handler("divisor")
+        .with_synopsis("<number>")
+        .with_exclusive_min_value(0)
+        .with_description(
+            "A divisor applied to the raw numeric value to normalize it "
+            "to the base unit implied by the suffix.  For example, a "
+            "field storing milliseconds paired with \"suffix\": \"s\" "
+            "would declare \"divisor\": 1000.")
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_unit_divisor),
 };
 
 static const json_path_container capture_highlight_handlers = {
@@ -1052,11 +1016,12 @@ const struct json_path_container format_handlers = {
     json_path_handler("multiline")
         .with_description("Indicates that log messages can span multiple lines")
         .for_field(&log_format::lf_multiline),
-    json_path_handler("timestamp-divisor", read_format_double)
-        .add_cb(read_format_int)
+    json_path_handler("timestamp-divisor")
         .with_synopsis("<number>")
+        .with_exclusive_min_value(0)
         .with_description(
-            "The value to divide a numeric timestamp by in a JSON log."),
+            "The value to divide a numeric timestamp by in a JSON log.")
+        .for_field(&external_log_format::elf_timestamp_divisor),
     json_path_handler("file-pattern")
         .with_description("A regular expression that restricts this format to "
                           "log files with a matching name")
@@ -1127,12 +1092,13 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the duration field in the log message pattern")
         .for_field(&external_log_format::elf_duration_field),
-    json_path_handler("duration-divisor", read_format_double)
-        .add_cb(read_format_int)
+    json_path_handler("duration-divisor")
         .with_synopsis("<number>")
+        .with_exclusive_min_value(0)
         .with_description("The value to divide a duration by to convert it to "
                           "seconds.  For example, if the duration field is in "
-                          "milliseconds, the divisor should be 1000."),
+                          "milliseconds, the divisor should be 1000.")
+        .for_field(&external_log_format::elf_duration_divisor),
     json_path_handler("url",
                       lnav::pcre2pp::code::from_const("^url#?").to_shared())
         .add_cb(read_format_field)

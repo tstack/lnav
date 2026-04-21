@@ -279,3 +279,87 @@ TEST_CASE("humanize::try_from")
         CHECK(try_res.value() == 0.25);
     }
 }
+
+TEST_CASE("humanize::format empty suffix")
+{
+    // No suffix → raw number, 6 sig figs.
+    CHECK(humanize::format(0.0, string_fragment::from_const("")) == "0");
+    CHECK(humanize::format(123.0, string_fragment::from_const("")) == "123");
+    CHECK(humanize::format(1.5e6, string_fragment::from_const("")) == "1.5e+06");
+}
+
+TEST_CASE("humanize::format bytes")
+{
+    // `B` suffix delegates to `humanize::file_size`.
+    CHECK(humanize::format(0.0, string_fragment::from_const("B")) == "0B");
+    CHECK(humanize::format(500.0, string_fragment::from_const("B")) == "500B");
+    CHECK(humanize::format(1500.0, string_fragment::from_const("B"))
+          == "1.5KB");
+    CHECK(humanize::format(1258291.0, string_fragment::from_const("B"))
+          == "1.3MB");
+    // Case-insensitive match.
+    CHECK(humanize::format(2048.0, string_fragment::from_const("b"))
+          == "2.0KB");
+}
+
+TEST_CASE("humanize::format seconds")
+{
+    // Sub-second → SI prefix scaling.
+    CHECK(humanize::format(0.0, string_fragment::from_const("s")) == "0s");
+    CHECK(humanize::format(0.0005, string_fragment::from_const("s"))
+          == "500us");
+    CHECK(humanize::format(0.012, string_fragment::from_const("s"))
+          == "12ms");
+    CHECK(humanize::format(2.5e-9, string_fragment::from_const("s"))
+          == "2.5ns");
+    // ≥ 1s → humanize::time::duration breakdown.
+    CHECK(humanize::format(1.5, string_fragment::from_const("s")) == "1s500");
+    CHECK(humanize::format(90.0, string_fragment::from_const("s"))
+          == "1m30s");
+    CHECK(humanize::format(3660.0, string_fragment::from_const("s"))
+          == "1h01m00s");
+}
+
+TEST_CASE("humanize::format arbitrary suffix — up-only SI scaling")
+{
+    // Sub-base values pass through (no `m`/`u`/`n` prefix) so count-
+    // like suffixes don't acquire confusing sub-unit prefixes.
+    CHECK(humanize::format(500.0, string_fragment::from_const("queries"))
+          == "500queries");
+    CHECK(humanize::format(3.14, string_fragment::from_const("foo"))
+          == "3.14foo");
+    CHECK(humanize::format(0.5, string_fragment::from_const("connections"))
+          == "0.5connections");
+    // Large values pick an SI prefix.
+    CHECK(humanize::format(1200.0, string_fragment::from_const("Hz"))
+          == "1.2kHz");
+    CHECK(humanize::format(15000.0, string_fragment::from_const("queries"))
+          == "15kqueries");
+    CHECK(humanize::format(2.4e9, string_fragment::from_const("Hz"))
+          == "2.4GHz");
+}
+
+TEST_CASE("humanize::format / try_from roundtrip")
+{
+    // Bytes roundtrip only when the value lands on a clean SI-1000
+    // boundary that survives the formatter's 1-decimal rounding.
+    auto roundtrip_bytes = [](double v) {
+        return humanize::try_from<double>(string_fragment::from_str(
+            humanize::format(v, string_fragment::from_const("B"))));
+    };
+    CHECK(roundtrip_bytes(500.0).value() == 500.0);
+    CHECK(roundtrip_bytes(1500.0).value() == 1500.0);
+    CHECK(roundtrip_bytes(2000000.0).value() == 2000000.0);
+
+    // Sub-second time values survive through the SI-prefix formatter
+    // (ms/us/ns).  Values ≥ 1s go through humanize::time::duration,
+    // which produces a breakdown `try_from` doesn't parse — no
+    // roundtrip guarantee there.
+    auto roundtrip_secs = [](double v) {
+        return humanize::try_from<double>(string_fragment::from_str(
+            humanize::format(v, string_fragment::from_const("s"))));
+    };
+    CHECK(roundtrip_secs(0.5).value() == 0.5);
+    CHECK(roundtrip_secs(0.00025).value() == 0.00025);
+    CHECK(roundtrip_secs(2.5e-9).value() == 2.5e-9);
+}

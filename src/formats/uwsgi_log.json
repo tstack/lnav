@@ -44,7 +44,10 @@
                 "kind": "integer"
             },
             "cs_bytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "cs_method": {
                 "kind": "string",
@@ -58,7 +61,10 @@
                 "kind": "string"
             },
             "sc_bytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "s_runtime": {
                 "kind": "float",
@@ -89,7 +95,10 @@
                 "kind": "integer"
             },
             "sc_header_bytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "s_switches": {
                 "kind": "integer"

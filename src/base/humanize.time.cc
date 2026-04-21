@@ -209,6 +209,16 @@ duration::to_string() const
             break;
         }
 
+        // In compact mode, suppress the zero "000" ms decoration when
+        // larger segments follow — produces "1m30s" rather than
+        // "1m30s000" for round values.
+        if (this->d_compact && curr_interval == intervals && amount == 0
+            && remaining > 0)
+        {
+            skipped += 1;
+            continue;
+        }
+
         if (skip) {
             skipped += 1;
             continue;

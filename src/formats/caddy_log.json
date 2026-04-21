@@ -71,10 +71,16 @@
         ],
         "value": {
             "bytes_read": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "duration": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s"
+                }
             },
             "level": {
                 "kind": "string",
@@ -121,7 +127,10 @@
                 "kind": "string"
             },
             "size": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "status": {
                 "kind": "integer",

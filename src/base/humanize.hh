@@ -55,6 +55,18 @@ enum class alignment {
  */
 std::string file_size(file_ssize_t value, alignment align);
 
+// Render `value` as a human-friendly string using `suffix` as a hint
+// for which unit family the value belongs to.  `suffix` mirrors the
+// tokens `try_from<double>` recognizes — "B" (bytes), "s" (seconds),
+// "Hz" (frequency), "W"/"V"/"A" (electrical), "%" (percent),
+// "iops"/"req/s"/"qps"/"pps"/"rps" (throughput), "/s" (per-second),
+// plus the bare SI count suffix for short_count.  Empty or
+// unrecognized suffixes degrade gracefully to `{value}{suffix}` with
+// no scaling so callers can call this unconditionally.
+std::string format(double value,
+                   string_fragment suffix,
+                   alignment align = alignment::none);
+
 const std::string& sparkline(double value, std::optional<double> upper);
 
 }  // namespace humanize

@@ -626,6 +626,17 @@ struct logline_value_meta {
     std::optional<bool> lvm_user_hidden;
     intern_string_t lvm_struct_name;
     std::optional<log_format*> lvm_format;
+    // Display suffix for humanized rendering (e.g. "B" for bytes,
+    // "s" for seconds, "Hz" for frequency).  Empty ⇒ no
+    // humanization, rendering passes the raw numeric value through.
+    // Render sites that want humanization call
+    // `humanize::format(value / lvm_unit_divisor, lvm_unit_suffix, ...)`.
+    intern_string_t lvm_unit_suffix;
+    // Divisor applied to the raw numeric value to normalize it to the
+    // base unit implied by the suffix.  For example, a field that
+    // stores milliseconds with `suffix: "s"` carries `divisor: 1000`
+    // so rendering divides by 1000 before humanizing.
+    double lvm_unit_divisor{1.0};
 };
 
 class logline_value {

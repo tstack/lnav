@@ -55,13 +55,22 @@
                 "foreign-key": true
             },
             "request_processing_time": {
-                "kind": "float"
+                "kind": "float",
+                "unit": {
+                    "suffix": "s"
+                }
             },
             "target_processing_time": {
-                "kind": "float"
+                "kind": "float",
+                "unit": {
+                    "suffix": "s"
+                }
             },
             "response_processing_time": {
-                "kind": "float"
+                "kind": "float",
+                "unit": {
+                    "suffix": "s"
+                }
             },
             "elb_status_code": {
                 "kind": "integer",
@@ -72,10 +81,16 @@
                 "foreign-key": true
             },
             "received_bytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "sent_bytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "cs_method": {
                 "kind": "string",

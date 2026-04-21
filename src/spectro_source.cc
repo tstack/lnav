@@ -35,6 +35,7 @@
 #include "spectro_source.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/humanize.hh"
 #include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "config.h"
@@ -221,14 +222,23 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
             + this->ss_cursor_column.value() * sr.sr_column_size;
         auto range_max = range_min + sr.sr_column_size;
 
-        auto range_min_str
-            = s_row.sr_value_type == spectrogram_row::value_type::real
-            ? fmt::format(FMT_STRING("{:.2Lf}"), range_min)
-            : fmt::format(FMT_STRING("{:L}"), ceil(range_min));
-        auto range_max_str
-            = s_row.sr_value_type == spectrogram_row::value_type::real
-            ? fmt::format(FMT_STRING("{:.2Lf}"), range_max)
-            : fmt::format(FMT_STRING("{:L}"), floor(range_max));
+        auto value_suffix = this->ss_value_source->spectro_value_suffix();
+        auto value_divisor = this->ss_value_source->spectro_value_divisor();
+        auto format_bucket = [&](double v, bool is_max) {
+            if (!value_suffix.empty()) {
+                if (value_divisor != 0.0 && value_divisor != 1.0) {
+                    v /= value_divisor;
+                }
+                return humanize::format(
+                    v, string_fragment::from_str(value_suffix));
+            }
+            if (s_row.sr_value_type == spectrogram_row::value_type::real) {
+                return fmt::format(FMT_STRING("{:.2Lf}"), v);
+            }
+            return fmt::format(FMT_STRING("{:L}"), is_max ? floor(v) : ceil(v));
+        };
+        auto range_min_str = format_bucket(range_min, false);
+        auto range_max_str = format_bucket(range_max, true);
 
         auto desc
             = attr_line_t()
@@ -712,8 +722,26 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     const auto& sb = this->ss_cached_bounds;
     const auto& st = s_row.sr_thresholds;
 
+    auto value_suffix = this->ss_value_source->spectro_value_suffix();
+    auto value_divisor = this->ss_value_source->spectro_value_divisor();
+    auto format_bound = [&value_suffix, value_divisor](double v) {
+        if (!value_suffix.empty()) {
+            if (value_divisor != 0.0 && value_divisor != 1.0) {
+                v /= value_divisor;
+            }
+            return humanize::format(
+                v, string_fragment::from_str(value_suffix));
+        }
+        char tmp[64];
+        snprintf(tmp, sizeof(tmp), "%'.10lg", v);
+        return std::string(tmp);
+    };
+
     line.append(TIME_COLUMN_WIDTH, ' ');
-    snprintf(buf, sizeof(buf), "Min: %'.10lg", sb.sb_min_value_out);
+    snprintf(buf,
+             sizeof(buf),
+             "Min: %s",
+             format_bound(sb.sb_min_value_out).c_str());
     line.append(buf);
 
     snprintf(buf,
@@ -736,7 +764,10 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     line.append(buf);
     scrub_ansi_string(line, &value_out.get_attrs());
 
-    snprintf(buf, sizeof(buf), "Max: %'.10lg", sb.sb_max_value_out);
+    snprintf(buf,
+             sizeof(buf),
+             "Max: %s",
+             format_bound(sb.sb_max_value_out).c_str());
     buflen = strlen(buf);
     if (line.length() + buflen + 4 < width) {
         line.append(width - buflen - line.length() - 2, ' ');

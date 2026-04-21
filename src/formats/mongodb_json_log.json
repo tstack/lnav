@@ -293,7 +293,11 @@
             },
             "attr/durationMillis": {
                 "kind": "integer",
-                "description": "The duration of the operation in milliseconds"
+                "description": "The duration of the operation in milliseconds",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "attr/keysExamined": {
                 "kind": "integer"
@@ -340,10 +344,17 @@
                 "description": "The principal name for a connection"
             },
             "attr/storage/data/bytesRead": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "attr/storage/data/timeReadingMicros": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000000
+                }
             },
             "attr/queryHash": {
                 "kind": "string",

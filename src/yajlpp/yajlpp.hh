@@ -34,6 +34,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -302,7 +303,8 @@ struct json_path_handler_base {
     size_t jph_max_length{INT_MAX};
     const enum_value_t* jph_enum_values{nullptr};
     string_fragment jph_const_str;
-    long long jph_min_value{LLONG_MIN};
+    double jph_min_value{-std::numeric_limits<double>::infinity()};
+    double jph_exclusive_min_value{-std::numeric_limits<double>::infinity()};
     bool jph_optional_wrapper{false};
     bool jph_is_array;
     bool jph_is_pattern_property{false};
@@ -321,7 +323,7 @@ struct json_path_handler_base {
     void report_pattern_error(yajlpp_parse_context* ypc,
                               const std::string& value_str) const;
     void report_min_value_error(yajlpp_parse_context* ypc,
-                                long long value) const;
+                                double value) const;
     void report_duration_error(yajlpp_parse_context* ypc,
                                const std::string& value_str,
                                const relative_time_parse_error& pe) const;

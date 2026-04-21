@@ -86,7 +86,10 @@
                 "hidden": true
             },
             "EdgeResponseBytes": {
-                "kind": "integer"
+                "kind": "integer",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "EdgeResponseStatus": {
                 "kind": "integer"
@@ -111,7 +114,10 @@
             },
             "CacheResponseBytes": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "CacheResponseStatus": {
                 "kind": "integer",
@@ -131,11 +137,18 @@
             },
             "OriginResponseBytes": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "OriginResponseDurationMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginResponseHTTPExpires": {
                 "kind": "string",
@@ -147,7 +160,11 @@
             },
             "OriginResponseHeaderReceiveDurationMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginResponseStatus": {
                 "kind": "integer",
@@ -155,11 +172,19 @@
             },
             "OriginResponseTime": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginDNSResponseTimeMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginIP": {
                 "kind": "string",
@@ -167,7 +192,11 @@
             },
             "OriginRequestHeaderSendDurationMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginSSLProtocol": {
                 "kind": "string",
@@ -175,11 +204,19 @@
             },
             "OriginTCPHandshakeDurationMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "OriginTLSHandshakeDurationMs": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "WAFAction": {
                 "kind": "string",
@@ -223,7 +260,10 @@
             },
             "ClientRequestBytes": {
                 "kind": "integer",
-                "hidden": true
+                "hidden": true,
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "ClientRequestPath": {
                 "kind": "integer",

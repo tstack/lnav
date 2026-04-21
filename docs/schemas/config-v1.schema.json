@@ -60,7 +60,7 @@
                             "title": "/tuning/archive-manager/min-free-space",
                             "description": "The minimum free space, in bytes, to maintain when unpacking archives",
                             "type": "integer",
-                            "minimum": 0
+                            "minimum": 0.0
                         },
                         "cache-ttl": {
                             "title": "/tuning/archive-manager/cache-ttl",
@@ -83,13 +83,13 @@
                             "title": "/tuning/piper/max-size",
                             "description": "The maximum size of a capture file",
                             "type": "integer",
-                            "minimum": 128
+                            "minimum": 128.0
                         },
                         "rotations": {
                             "title": "/tuning/piper/rotations",
                             "description": "The number of rotated files to keep",
                             "type": "integer",
-                            "minimum": 2
+                            "minimum": 2.0
                         },
                         "ttl": {
                             "title": "/tuning/piper/ttl",
@@ -112,7 +112,7 @@
                             "title": "/tuning/file-vtab/max-content-size",
                             "description": "The maximum allowed file size for the content column",
                             "type": "integer",
-                            "minimum": 0
+                            "minimum": 0.0
                         }
                     },
                     "additionalProperties": false
@@ -126,7 +126,7 @@
                             "title": "/tuning/logfile/max-unrecognized-lines",
                             "description": "The maximum number of lines in a file to use when detecting the format",
                             "type": "integer",
-                            "minimum": 1
+                            "minimum": 1.0
                         }
                     },
                     "additionalProperties": false
@@ -348,7 +348,7 @@
                             "title": "/tuning/textfile/max-unformatted-line-length",
                             "description": "The maximum allowed length for a line in a text file before formatting is automatically applied",
                             "type": "integer",
-                            "minimum": 0
+                            "minimum": 0.0
                         }
                     },
                     "additionalProperties": false

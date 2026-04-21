@@ -36,6 +36,7 @@
 
 #include "config.h"
 #include "fmt/format.h"
+#include "humanize.time.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "scn/scan.h"
 
@@ -361,6 +362,78 @@ file_size(file_ssize_t value, alignment align)
     return fmt::format(FMT_STRING("{:.1f}{}B"),
                        divisor == 0 ? value : value / divisor,
                        UNITS[exp]);
+}
+
+namespace {
+
+// Pick an SI prefix letter based on the absolute magnitude of
+// `value` relative to 1.  Covers the `E..p` range that
+// `humanize::try_from` recognizes (peta down to pico).
+struct scale_result {
+    double value;
+    const char* prefix;
+};
+
+// Indexed by exponent + 4; exponents run from -4 (pico) to +6 (exa).
+static constexpr std::array<const char*, 11> SI_PREFIXES = {
+    "p", "n", "u", "m", "", "k", "M", "G", "T", "P", "E",
+};
+
+static const double LN1000 = std::log(1000.0);
+
+// `min_exp` clamps the lower bound of the exponent so up-only
+// scaling (counts, rates, frequencies — any non-physical unit where
+// sub-unit prefixes like `m` would look odd) leaves values < 1
+// unchanged.  Bidirectional scaling passes -4 to emit down to `p`
+// (pico).
+scale_result
+si_scale(double value, int min_exp)
+{
+    const auto abs_value = std::abs(value);
+    if (abs_value == 0.0) {
+        return {0.0, ""};
+    }
+    const auto exp = std::clamp(
+        (int) std::floor(std::log(abs_value) / LN1000), min_exp, 6);
+    return {value / std::pow(1000.0, exp), SI_PREFIXES[exp + 4]};
+}
+
+}  // namespace
+
+std::string
+format(double value, string_fragment suffix, alignment align)
+{
+    if (suffix.empty()) {
+        return fmt::format(FMT_STRING("{:.6g}"), value);
+    }
+    // File size — delegate to the existing int64-based formatter.
+    if (suffix.iequal("B"_frag)) {
+        return file_size(static_cast<file_ssize_t>(value), align);
+    }
+    // Seconds — sub-second values render with SI prefixes (ps/ns/us/ms)
+    // since humanize::time::duration underflows below 1us; values ≥ 1s
+    // delegate to time::duration for the familiar 1h22m33s breakdown.
+    if (suffix.iequal("s"_frag)) {
+        if (value == 0.0) {
+            return "0s";
+        }
+        if (std::abs(value) < 1.0) {
+            const auto sr = si_scale(value, -4);
+            return fmt::format(FMT_STRING("{:.3g}{}s"), sr.value, sr.prefix);
+        }
+        timeval tv;
+        const auto secs = std::trunc(value);
+        tv.tv_sec = static_cast<time_t>(secs);
+        tv.tv_usec = static_cast<suseconds_t>((value - secs) * 1e6);
+        return humanize::time::duration::from_tv(tv).to_string();
+    }
+    // Any other suffix gets up-only SI scaling so large counts /
+    // rates / frequencies render compactly (e.g. `1.2kHz`,
+    // `15kqueries`) while values below the base unit pass through
+    // unchanged.
+    const auto sr = si_scale(value, 0);
+    return fmt::format(
+        FMT_STRING("{:.3g}{}{}"), sr.value, sr.prefix, suffix.to_string());
 }
 
 const std::string&

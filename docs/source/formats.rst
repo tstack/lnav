@@ -482,6 +482,48 @@ object with the following fields:
     will be added with the key/value pair.  For text logs, this property
     controls whether the value should be displayed by default or replaced
     with an ellipsis.
+  :unit: An object describing the unit of measure for this value.  The unit
+    is used to humanize numeric values in contexts like the spectrogram
+    header and the field overlay (e.g. rendering :code:`1258291` as
+    :code:`1.2 MB`).
+
+    :field: The name of another captured value whose contents give the unit
+      for this one at runtime.
+    :scaling-factor: An object mapping unit strings to scaling factors
+      applied before rendering.  Each key is a unit string; each value is
+      an object with :code:`op` (:code:`identity`, :code:`multiply`, or
+      :code:`divide`) and :code:`value` (a number).
+    :suffix: (v0.14.0+) A display suffix that selects a humanization family
+      for numeric rendering.  :code:`B` (bytes) picks a binary prefix
+      (e.g. :code:`KB`, :code:`MB`).  :code:`s` (seconds) renders sub-second
+      values with SI prefixes (:code:`ms`, :code:`us`, :code:`ns`) and
+      values ≥ 1s with a compact duration breakdown (e.g. :code:`1h22m33s`).
+      Any other suffix gets up-only SI scaling — large values pick a
+      prefix (e.g. :code:`1.2kHz`, :code:`15kqueries`) while values below
+      the base unit are rendered as-is so count-like suffixes don't
+      acquire misleading sub-unit prefixes.
+      Example:
+
+      .. code-block:: json
+
+          "bytes_sent": {
+              "kind": "integer",
+              "unit": { "suffix": "B" }
+          }
+
+    :divisor: (v0.14.0+) A divisor applied to the raw numeric value before
+      humanization to normalize it to the base unit implied by
+      :code:`suffix`.  For example, a field that stores milliseconds should
+      pair :code:`"suffix": "s"` with :code:`"divisor": 1000`; a field in
+      microseconds uses :code:`1000000`.  Example:
+
+      .. code-block:: json
+
+          "response_time_ms": {
+              "kind": "integer",
+              "unit": { "suffix": "s", "divisor": 1000 }
+          }
+
   :rewriter: A command to rewrite this field when pretty-printing log
     messages containing this value.  The command must start with ':', ';',
     or '|' to signify whether it is a regular command, SQL query, or a script

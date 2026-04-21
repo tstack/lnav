@@ -144,6 +144,21 @@ for_each_metric_row_value(logfile_sub_source& lss,
 log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
     : lsvs_colname(colname)
 {
+    for (auto& ls : lnav_data.ld_log_source) {
+        auto* lf = ls->get_file_ptr();
+        if (lf == nullptr) {
+            continue;
+        }
+        for (auto& lvm : lf->get_format_ptr()->get_value_metadata()) {
+            if (lvm.lvm_name == this->lsvs_colname) {
+                this->lsvs_meta = lvm;
+                break;
+            }
+        }
+        if (this->lsvs_meta) {
+            break;
+        }
+    }
     this->update_stats();
 }
 
@@ -461,6 +476,24 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
                                  op == mark_op_t::add);
         }
     }
+}
+
+std::string
+log_spectro_value_source::spectro_value_suffix() const
+{
+    if (this->lsvs_meta && !this->lsvs_meta->lvm_unit_suffix.empty()) {
+        return this->lsvs_meta->lvm_unit_suffix.to_string();
+    }
+    return {};
+}
+
+double
+log_spectro_value_source::spectro_value_divisor() const
+{
+    if (this->lsvs_meta && this->lsvs_meta->lvm_unit_divisor > 0.0) {
+        return this->lsvs_meta->lvm_unit_divisor;
+    }
+    return 1.0;
 }
 
 db_spectro_value_source::db_spectro_value_source(std::string colname)

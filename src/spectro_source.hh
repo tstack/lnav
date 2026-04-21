@@ -138,6 +138,18 @@ public:
                               double range_max,
                               mark_op_t op)
         = 0;
+
+    // Optional unit suffix for the spectrogram's value axis.  Used by
+    // the header renderer to humanize Min/Max (e.g. "1.2 MB" instead
+    // of "1258291") when the source column declares a unit.  Empty
+    // string means "no humanization — render raw number".
+    virtual std::string spectro_value_suffix() const { return {}; }
+
+    // Divisor applied to raw values before humanization.  For
+    // example, a column stored in milliseconds with a display suffix
+    // of "s" would return 1000.0 here.  Default 1.0 means "no
+    // scaling".
+    virtual double spectro_value_divisor() const { return 1.0; }
 };
 
 class spectrogram_source

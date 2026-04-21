@@ -12,7 +12,7 @@
  | [1m[32m◆[0m    cs_uri_query  = null
  | [1m[32m◆[0m 📊 cs_version    = HTTP/1.0
  | [1m[32m◆[0m 📊 sc_status     = 200
- | [1m[32m◆[0m 📊 sc_bytes      = 134
+ | [1m[32m◆[0m 📊 sc_bytes      = 134B
  | [1m[32m◆[0m    cs_referer    = null
  | [1m[32m◆[0m 📊 cs_user_agent = gPXE/0.9.7
  [32mNo discovered message fields[0m

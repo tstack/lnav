@@ -81,7 +81,10 @@
             },
             "sc_bytes": {
                 "kind": "integer",
-                "description": "The number of bytes returned by the server"
+                "description": "The number of bytes returned by the server",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "cs_referer": {
                 "kind": "string",

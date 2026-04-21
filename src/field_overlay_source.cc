@@ -33,6 +33,7 @@
 
 #include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
+#include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
 #include "base/snippet_highlighters.hh"
@@ -540,6 +541,29 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
         readline_sql_highlighter_int(
             al, lnav::sql::dialect::sqlite, std::nullopt, hl_range);
+
+        if (!meta.lvm_unit_suffix.empty()) {
+            std::optional<double> numeric;
+            switch (meta.lvm_kind) {
+                case value_kind_t::VALUE_INTEGER:
+                    numeric = (double) lv.lv_value.i;
+                    break;
+                case value_kind_t::VALUE_FLOAT:
+                    numeric = lv.lv_value.d;
+                    break;
+                default:
+                    break;
+            }
+            if (numeric) {
+                if (meta.lvm_unit_divisor != 0.0
+                    && meta.lvm_unit_divisor != 1.0)
+                {
+                    *numeric /= meta.lvm_unit_divisor;
+                }
+                value_str = humanize::format(
+                    *numeric, meta.lvm_unit_suffix.to_string_fragment());
+            }
+        }
 
         if (meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
             auto dts = curr_format->build_time_scanner();

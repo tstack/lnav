@@ -99,19 +99,33 @@
             },
             "sc_bytes": {
                 "kind": "integer",
-                "description": "The number of bytes returned by the server"
+                "description": "The number of bytes returned by the server",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "obj_size": {
                 "kind": "integer",
-                "description": "The size of the object"
+                "description": "The size of the object",
+                "unit": {
+                    "suffix": "B"
+                }
             },
             "total_time": {
                 "kind": "integer",
-                "description": "The total time taken to satisfy the request"
+                "description": "The total time taken to satisfy the request",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "turn_around_time": {
                 "kind": "integer",
-                "description": "The turn around time"
+                "description": "The turn around time",
+                "unit": {
+                    "suffix": "s",
+                    "divisor": 1000
+                }
             },
             "cs_referer": {
                 "kind": "string",

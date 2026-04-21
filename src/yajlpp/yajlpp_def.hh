@@ -198,9 +198,18 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    json_path_handler& with_min_value(long long val)
+    json_path_handler& with_min_value(double val)
     {
         this->jph_min_value = val;
+        return *this;
+    }
+
+    // Strict-greater-than lower bound — used e.g. for divisor fields
+    // where zero is invalid.  JSON Schema emits this as
+    // `exclusiveMinimum`.
+    json_path_handler& with_exclusive_min_value(double val)
+    {
+        this->jph_exclusive_min_value = val;
         return *this;
     }
 
@@ -662,7 +671,9 @@ struct json_path_handler : public json_path_handler_base {
                   const auto* jph = ypc->ypc_current_handler;
                   auto* obj = ypc->ypc_obj_stack.top();
 
-                  if (val < jph->jph_min_value) {
+                  if (val < jph->jph_min_value
+                      || val <= jph->jph_exclusive_min_value)
+                  {
                       jph->report_min_value_error(ypc, val);
                       return 1;
                   }
@@ -1370,7 +1381,9 @@ struct json_path_handler : public json_path_handler_base {
                   const auto* jph = ypc->ypc_current_handler;
                   auto* obj = ypc->ypc_obj_stack.top();
 
-                  if (val < jph->jph_min_value) {
+                  if (val < jph->jph_min_value
+                      || val <= jph->jph_exclusive_min_value)
+                  {
                       jph->report_min_value_error(ypc, val);
                       return 1;
                   }
@@ -1407,11 +1420,18 @@ struct json_path_handler : public json_path_handler_base {
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(dbl_field_cb);
+        // JSON integers like `1000` hit yajl_integer, not yajl_double,
+        // so also bind an integer callback that promotes to double so
+        // double-valued config properties (e.g. a "divisor") accept
+        // unquoted integer literals.
+        this->add_cb(int_field_cb);
         this->jph_double_cb = [args...](yajlpp_parse_context* ypc, double val) {
             const auto* jph = ypc->ypc_current_handler;
             auto* obj = ypc->ypc_obj_stack.top();
 
-            if (val < jph->jph_min_value) {
+            if (val < jph->jph_min_value
+                || val <= jph->jph_exclusive_min_value)
+            {
                 jph->report_min_value_error(ypc, val);
                 return 1;
             }
@@ -1419,6 +1439,10 @@ struct json_path_handler : public json_path_handler_base {
             json_path_handler::get_field(obj, args...) = val;
 
             return 1;
+        };
+        this->jph_integer_cb = [](yajlpp_parse_context* ypc, long long val) {
+            return ypc->ypc_current_handler->jph_double_cb(
+                ypc, static_cast<double>(val));
         };
         if constexpr (FieldKind<Args...>::is_optional) {
             install_optional_null_cb(args...);

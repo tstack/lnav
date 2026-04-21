@@ -35,8 +35,8 @@
 
 #include "yajlpp.hh"
 
-#include "base/relative_time.hh"
 #include "base/math_util.hh"
+#include "base/relative_time.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "yajl/api/yajl_parse.h"
@@ -440,9 +440,17 @@ json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
                 break;
             case schema_type_t::INTEGER:
             case schema_type_t::NUMBER:
-                if (this->jph_min_value > LLONG_MIN) {
+                if (this->jph_min_value
+                    > -std::numeric_limits<double>::infinity())
+                {
                     schema("minimum");
                     schema(this->jph_min_value);
+                }
+                if (this->jph_exclusive_min_value
+                    > -std::numeric_limits<double>::infinity())
+                {
+                    schema("exclusiveMinimum");
+                    schema(this->jph_exclusive_min_value);
                 }
                 break;
             default:
@@ -600,11 +608,10 @@ json_path_handler_base::get_types() const
     if (this->jph_callbacks.yajl_boolean) {
         retval.push_back(schema_type_t::BOOLEAN);
     }
-    if (this->jph_callbacks.yajl_integer) {
-        retval.push_back(schema_type_t::INTEGER);
-    }
     if (this->jph_callbacks.yajl_double || this->jph_callbacks.yajl_number) {
         retval.push_back(schema_type_t::NUMBER);
+    } else if (this->jph_callbacks.yajl_integer) {
+        retval.push_back(schema_type_t::INTEGER);
     }
     if (this->jph_callbacks.yajl_string || !this->jph_const_str.empty()) {
         retval.push_back(schema_type_t::STRING);
@@ -1602,8 +1609,17 @@ json_path_handler_base::get_help_text(yajlpp_parse_context* ypc) const
 
 void
 json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
-                                               long long value) const
+                                               double value) const
 {
+    attr_line_t reason;
+    if (value <= this->jph_exclusive_min_value) {
+        reason.append("value must be greater than ")
+            .append(lnav::roles::number(
+                fmt::to_string(this->jph_exclusive_min_value)));
+    } else {
+        reason.append("value must be greater than or equal to ")
+            .append(lnav::roles::number(fmt::to_string(this->jph_min_value)));
+    }
     ypc->report_error(
         lnav::console::user_message::error(
             attr_line_t()
@@ -1611,9 +1627,7 @@ json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
                 .append(" is not a valid value for option ")
                 .append_quoted(
                     lnav::roles::symbol(ypc->get_full_path().to_string())))
-            .with_reason(attr_line_t("value must be greater than or equal to ")
-                             .append(lnav::roles::number(
-                                 fmt::to_string(this->jph_min_value))))
+            .with_reason(reason)
             .with_snippet(ypc->get_snippet())
             .with_help(this->get_help_text(ypc)));
 }
