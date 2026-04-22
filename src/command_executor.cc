@@ -1311,7 +1311,8 @@ exec_context::execute(source_location loc, const std::string& cmdline)
         && !cmdline.empty())
     {
         auto& hist = prompt.get_history_for(cmdline[0]);
-        hist_guard = hist.start_operation(cmdline.substr(1));
+        auto cmdline_sf = string_fragment::from_str(cmdline);
+        hist_guard = hist.start_operation(cmdline_sf.substr(1));
     }
 
     auto exec_res = execute_any(*this, cmdline);
