@@ -157,6 +157,12 @@ public:
         text_attrs hm_title_attrs{text_attrs::with_underline()};
         stacked_bar_chart<std::string> hm_chart;
         digestible::tdigest<double> hm_tdigest{200};
+        // Unit suffix detected from the first humanized cell in this
+        // column ("B", "s", "Hz", "%", "iops", …).  Empty for columns
+        // whose cells are plain numbers with no recognized unit.
+        // Follows first-sample-wins semantics to match how metric
+        // columns elsewhere propagate unit info.
+        std::string hm_unit_suffix;
 
         struct json_column_meta {
             json_column_meta(size_t index) : jcm_column_index(index) {}

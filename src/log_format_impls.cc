@@ -500,11 +500,13 @@ public:
             if (cell_len > stats.lvs_width) {
                 stats.lvs_width = cell_len;
             }
-            parse_cell(iter).match([](empty_cell) {},
-                                   [&stats](int64_t i) {
-                                       stats.add_value(static_cast<double>(i));
-                                   },
-                                   [&stats](double d) { stats.add_value(d); });
+            parse_cell(iter).match(
+                [](empty_cell) {},
+                [&stats](int64_t i) {
+                    stats.add_value(static_cast<double>(i));
+                },
+                [&stats](double d) { stats.add_value(d); },
+                [&stats](humanized_cell hc) { stats.add_value(hc.value); });
         }
         if (field_index < this->mlf_field_defs.size()) {
             return scan_error{fmt::format(
@@ -735,7 +737,15 @@ public:
             parse_cell(iter).match(
                 [&](empty_cell) { values.lvv_values.emplace_back(meta); },
                 [&](int64_t i) { values.lvv_values.emplace_back(meta, i); },
-                [&](double d) { values.lvv_values.emplace_back(meta, d); });
+                [&](double d) { values.lvv_values.emplace_back(meta, d); },
+                [&](humanized_cell hc) {
+                    // Carry the detected unit on the per-value meta so
+                    // downstream renderers can call humanize::format
+                    // against the base-unit value.
+                    auto cell_meta = meta;
+                    cell_meta.lvm_unit_suffix = hc.unit_suffix;
+                    values.lvv_values.emplace_back(cell_meta, hc.value);
+                });
             values.lvv_values.back().lv_origin = lr;
         }
 
@@ -757,7 +767,17 @@ private:
     // while callers that want a single numeric type can coerce via
     // the `match` below.
     struct empty_cell {};
-    using parsed_cell_t = mapbox::util::variant<empty_cell, int64_t, double>;
+    // Humanized cell: the raw text had a recognized unit suffix
+    // ("1.5KB", "20ms", "2.5GHz").  The value is already normalized
+    // to the base unit (bytes, seconds, Hz) and `unit_suffix` carries
+    // the canonical suffix so downstream renderers can format it back
+    // to human-friendly form.
+    struct humanized_cell {
+        double value;
+        intern_string_t unit_suffix;
+    };
+    using parsed_cell_t
+        = mapbox::util::variant<empty_cell, int64_t, double, humanized_cell>;
 
     static parsed_cell_t parse_cell(const separated_string::iterator& iter)
     {
@@ -783,7 +803,10 @@ private:
             case separated_string::cell_kind::number_with_suffix: {
                 // Classifier already confirmed the shape is `<num><unit>`.
                 if (auto res = humanize::try_from<double>(field)) {
-                    return parsed_cell_t{res.value()};
+                    return parsed_cell_t{humanized_cell{
+                        res->value,
+                        intern_string::lookup(res->unit_suffix),
+                    }};
                 }
                 return parsed_cell_t{empty_cell{}};
             }

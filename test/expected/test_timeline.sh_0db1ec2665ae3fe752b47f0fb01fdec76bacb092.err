@@ -1,0 +1,9 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid timeline metric query: [37m[40mlabel[0m[37m[40m" [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mlog_time[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mall_logs[0m
+ [1m[31mreason[0m: near "label": syntax error
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m "bad	label" SELECT log_time, 1 AS value FROM all_logs[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mtimeline-metric-sql[0m[4m [0m[4mlabel[0m[4m [0m[4mquery[0m
+         ══════════════════════════════════════════════════════════════════════
+           Add a sparkline driven by a SQL query. The query must return two
+           columns named log_time and value; it is wrapped as SELECT * FROM
+           (<sql>) WHERE log_time BETWEEN ...

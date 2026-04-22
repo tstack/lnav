@@ -1279,7 +1279,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             last_time = ll.get_time<>();
             if (this->lf_format.get() != nullptr) {
                 last_level = ll.get_msg_level();
-                continued = true;
+                if (this->lf_format->lf_multiline) {
+                    continued = true;
+                }
             }
         }
         this->lf_index.emplace_back(

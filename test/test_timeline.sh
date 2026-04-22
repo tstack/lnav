@@ -179,3 +179,122 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_cloudflare.1
+
+# timeline-metric: shorthand adds a sparkline row from all_metrics
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric cpu_pct' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# timeline-metric: two simultaneous metrics
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric cpu_pct' \
+    -c ':timeline-metric mem_mb' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# clear-timeline-metric removes one of the sparklines
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric cpu_pct' \
+    -c ':timeline-metric mem_mb' \
+    -c ':clear-timeline-metric cpu_pct' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# timeline-metric: bare metric name aggregates samples across every
+# loaded metrics file that ships a matching column (day-split CSV
+# case); qualified "stem.metric" picks just one file's column.
+# cpu_pct lives in both fixtures (with interleaved timestamps);
+# disk_iops only lives in metrics2.
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric cpu_pct' \
+    -c ':timeline-metric disk_iops' \
+    ${test_dir}/logfile_glog.0 \
+    ${test_dir}/logfile_glog_metrics.csv \
+    ${test_dir}/logfile_glog_metrics2.csv
+
+# timeline-metric: qualified form scopes to one source
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric logfile_glog_metrics.cpu_pct' \
+    -c ':timeline-metric logfile_glog_metrics2.cpu_pct' \
+    ${test_dir}/logfile_glog.0 \
+    ${test_dir}/logfile_glog_metrics.csv \
+    ${test_dir}/logfile_glog_metrics2.csv
+
+# timeline-metric-sql: user SQL is wrapped as a subquery
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql cpu_label SELECT log_time, value FROM all_metrics WHERE metric = "cpu_pct"' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# timeline-metric-sql: humanized text values ("500MB", "20ms") get
+# parsed via humanize::try_from so the sparkline scales against the
+# real base-unit range and the status-bar value picks up the unit.
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql mem_label SELECT log_time, raw_value AS value FROM all_metrics WHERE metric = "mem"' \
+    -c ':timeline-metric-sql lat_label SELECT log_time, raw_value AS value FROM all_metrics WHERE metric = "latency"' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics_units.csv
+
+# error: clear-timeline-metric on an unknown label
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':clear-timeline-metric nope' \
+    ${test_dir}/logfile_glog.0
+
+# error: timeline-metric-sql with a syntactically-invalid query
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql oops SELECT bogus FROM nowhere' \
+    ${test_dir}/logfile_glog.0
+
+# error: timeline-metric-sql missing the log_time column
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql oops SELECT 1 AS value FROM all_logs' \
+    ${test_dir}/logfile_glog.0
+
+# error: timeline-metric-sql missing the value column
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql oops SELECT log_time FROM all_logs' \
+    ${test_dir}/logfile_glog.0
+
+# error: timeline-metric-sql missing both required columns
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql oops SELECT 1, 2 FROM all_logs' \
+    ${test_dir}/logfile_glog.0
+
+# error: timeline-metric-sql with a whitespace-containing label
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c $':timeline-metric-sql "bad\tlabel" SELECT log_time, 1 AS value FROM all_logs' \
+    ${test_dir}/logfile_glog.0
+
+# timeline-metric: an unknown metric name renders an inline error on
+# the sparkline row instead of failing the command — the data may
+# just not have been loaded yet.
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric nonexistent_metric' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# timeline-metric-sql: a query that validates at command time but
+# fails at collection time (here via raise_error) shows the sqlite
+# error inline on the sparkline row.
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view timeline' \
+    -c ':timeline-metric-sql oops SELECT log_time, raise_error("metric source unavailable") AS value FROM all_metrics' \
+    ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv

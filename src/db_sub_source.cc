@@ -438,8 +438,15 @@ db_label_source::push_column(const column_value_t& sv)
             {
                 auto from_res = humanize::try_from<double>(sf);
                 if (from_res.has_value()) {
+                    // First humanized cell fixes the column's unit so
+                    // downstream renderers (chart, stats) can format
+                    // values against the same base unit.
+                    if (hm.hm_unit_suffix.empty()) {
+                        hm.hm_unit_suffix
+                            = from_res->unit_suffix.to_string();
+                    }
                     this->dls_cell_container.push_float_with_units_cell(
-                        from_res.value(), sf);
+                        from_res.value().value, sf);
                 } else {
                     this->dls_cell_container.push_text_cell(sf);
                 }
@@ -612,8 +619,8 @@ db_label_source::push_column(const column_value_t& sv)
             auto sf = sv.get<string_fragment>();
             auto num_from_res = humanize::try_from<double>(sf);
             if (num_from_res) {
-                hm.hm_chart.add_value(hm.hm_name, num_from_res.value());
-                hm.hm_tdigest.insert(num_from_res.value());
+                hm.hm_chart.add_value(hm.hm_name, num_from_res->value);
+                hm.hm_tdigest.insert(num_from_res->value);
             }
         }
     } else if (cv_sf.is_valid() && cv_sf.length() > 2

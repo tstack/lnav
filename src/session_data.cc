@@ -2385,6 +2385,7 @@ reset_session()
     if (tss != nullptr) {
         tss->ts_hidden_row_types.clear();
         tss->ts_pending_bookmarks.clear();
+        tss->clear_metrics();
     }
 
     for (auto& tc : lnav_data.ld_views) {

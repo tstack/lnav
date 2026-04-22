@@ -1,0 +1,6 @@
+[1m[31m✘[0m [1m[31merror[0m: no such metric -- nope
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mclear-timeline-metric[0m[37m[40m nope             [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mclear-timeline-metric[0m[4m [0m[4mlabel[0m
+         ══════════════════════════════════════════════════════════════════════
+           Remove a sparkline from the timeline view header

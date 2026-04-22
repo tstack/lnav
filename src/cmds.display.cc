@@ -27,9 +27,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "lnav.hh"
+#include "lnav_commands.hh"
 #include "readline_context.hh"
+#include "readline_highlighters.hh"
 #include "timeline_source.hh"
 
 static Result<std::string, lnav::console::user_message>
@@ -219,6 +222,194 @@ com_timeline_row_type_visibility(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_timeline_metric(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
+{
+    if (args.size() < 2) {
+        return ec.make_error("Expecting a metric name (source.metric)");
+    }
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+
+    // Validation runs in both live and dry-run modes so the prompt's
+    // live preview surfaces the same errors the user would see on
+    // commit.  Only the actual mutation (add_metric) is skipped under
+    // dry-run.
+    if (args[1].find_first_of(" \t\n\r") != std::string::npos) {
+        return ec.make_error(
+            "Metric name must not contain whitespace (got '{}')", args[1]);
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    timeline_source::metric_def md;
+    md.md_kind = timeline_source::metric_kind::shorthand;
+    md.md_label = args[1];
+    md.md_query.clear();
+
+    auto add_res = tss->add_metric(md);
+    if (add_res.isErr()) {
+        return Err(add_res.unwrapErr());
+    }
+    return Ok(fmt::format(FMT_STRING("info: tracking metric -- {}"), args[1]));
+}
+
+static Result<std::string, lnav::console::user_message>
+com_timeline_metric_sql(exec_context& ec,
+                        std::string cmdline,
+                        std::vector<std::string>& args)
+{
+    if (args.size() < 3) {
+        return ec.make_error(
+            "Expecting a label and a SQL query returning log_time, value");
+    }
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+    auto label = args[1];
+    if (label.find_first_of(" \t\n\r") != std::string::npos) {
+        return ec.make_error(
+            "Metric label must not contain whitespace (got '{}')", label);
+    }
+    auto sql = trim(remaining_args(cmdline, args, 2));
+    if (sql.empty()) {
+        return ec.make_error("Expecting a SQL query");
+    }
+    // Collapse whitespace runs (including embedded newlines and tabs)
+    // into single spaces so the command survives a session save/replay
+    // cycle — session files are line-oriented and an embedded newline
+    // would split the command across lines on reload.
+    std::string normalized_sql;
+    normalized_sql.reserve(sql.size());
+    bool in_space = false;
+    for (const auto ch : sql) {
+        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            if (!in_space) {
+                normalized_sql.push_back(' ');
+                in_space = true;
+            }
+        } else {
+            normalized_sql.push_back(ch);
+            in_space = false;
+        }
+    }
+
+    // Prepare the user's query as-is so syntax/table/column errors
+    // point at the text the user typed.  Then verify the output
+    // columns separately — the timeline needs `log_time` and `value`,
+    // and complaining about those ourselves gives a clearer message
+    // than letting the collection-time wrapper fail later.
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    auto prep_rc = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                      normalized_sql.c_str(),
+                                      normalized_sql.size(),
+                                      stmt.out(),
+                                      nullptr);
+    auto sql_al = attr_line_t(normalized_sql)
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                      .move();
+    readline_sql_highlighter(sql_al, lnav::sql::dialect::sqlite, std::nullopt);
+    if (prep_rc != SQLITE_OK) {
+        const auto* errmsg = sqlite3_errmsg(lnav_data.ld_db.in());
+        return Err(
+            lnav::console::user_message::error(
+                attr_line_t("invalid timeline metric query: ").append(sql_al))
+                .with_reason(errmsg)
+                .with_snippets(ec.ec_source));
+    }
+    bool has_log_time = false;
+    bool has_value = false;
+    const auto col_count = sqlite3_column_count(stmt.in());
+    for (int i = 0; i < col_count; i++) {
+        const auto* name = sqlite3_column_name(stmt.in(), i);
+        if (name == nullptr) {
+            continue;
+        }
+        if (strcmp(name, "log_time") == 0) {
+            has_log_time = true;
+        } else if (strcmp(name, "value") == 0) {
+            has_value = true;
+        }
+    }
+    if (!has_log_time || !has_value) {
+        static const auto EXAMPLE_SQL
+            = attr_line_t("SELECT log_time, rss AS value FROM procstate_procs")
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+
+        std::vector<std::string> missing;
+        if (!has_log_time) {
+            missing.emplace_back("log_time");
+        }
+        if (!has_value) {
+            missing.emplace_back("value");
+        }
+        return Err(
+            lnav::console::user_message::error(
+                attr_line_t("timeline metric query is missing required "
+                            "column(s): ")
+                    .append(lnav::roles::identifier(fmt::format(
+                        FMT_STRING("{}"), fmt::join(missing, ", ")))))
+                .with_reason(attr_line_t("the query: ").append(sql_al))
+                .with_help(
+                    attr_line_t("the query must return columns named "
+                                "'log_time' and 'value' — use AS to alias if "
+                                "needed, e.g. ")
+                        .append(EXAMPLE_SQL))
+                .with_snippets(ec.ec_source));
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    timeline_source::metric_def md;
+    md.md_kind = timeline_source::metric_kind::sql;
+    md.md_label = label;
+    md.md_query = std::move(normalized_sql);
+
+    auto add_res = tss->add_metric(md);
+    if (add_res.isErr()) {
+        return Err(add_res.unwrapErr());
+    }
+    return Ok(fmt::format(FMT_STRING("info: tracking metric -- {}"), label));
+}
+
+static Result<std::string, lnav::console::user_message>
+com_clear_timeline_metric(exec_context& ec,
+                          std::string cmdline,
+                          std::vector<std::string>& args)
+{
+    if (args.size() < 2) {
+        return ec.make_error("Expecting a metric label");
+    }
+
+    auto* tss = static_cast<timeline_source*>(
+        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+
+    // Validation (label lookup) runs in both modes so a typo surfaces
+    // live in the prompt; the actual removal is skipped under dry-run.
+    const auto found = std::any_of(
+        tss->ts_metrics.begin(), tss->ts_metrics.end(), [&](const auto& ms) {
+            return ms.ms_def.md_label == args[1];
+        });
+    if (!found) {
+        return ec.make_error("no such metric -- {}", args[1]);
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    tss->remove_metric(args[1]);
+    return Ok(fmt::format(FMT_STRING("info: stopped tracking metric -- {}"),
+                          args[1]));
+}
+
 static readline_context::command_t DISPLAY_COMMANDS[] = {
     {
         "set-text-view-mode",
@@ -308,6 +499,57 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
                                 }))
             .with_example({"To show logfile and thread rows", "logfile thread"})
             .with_opposites({"hide-in-timeline"})
+            .with_tags({"display"}),
+    },
+    {
+        "timeline-metric",
+        com_timeline_metric,
+
+        help_text(":timeline-metric")
+            .with_summary("Add a sparkline to the timeline view header "
+                          "for the given metric")
+            .with_parameter(
+                help_text("name",
+                          "The metric name in 'source.metric' form, as it "
+                          "appears in the all_metrics table. Existing "
+                          "labels are replaced.")
+                    .with_format(help_parameter_format_t::HPF_TIMELINE_METRIC))
+            .with_example(
+                {"To show the cpu_pct column from cpu.csv", "cpu.cpu_pct"})
+            .with_opposites({"clear-timeline-metric"})
+            .with_tags({"display"}),
+    },
+    {
+        "timeline-metric-sql",
+        com_timeline_metric_sql,
+
+        help_text(":timeline-metric-sql")
+            .with_summary("Add a sparkline driven by a SQL query. The "
+                          "query must return two columns named log_time "
+                          "and value; it is wrapped as "
+                          "SELECT * FROM (<sql>) WHERE log_time BETWEEN ...")
+            .with_parameter(
+                help_text("label", "The label to display for this metric"))
+            .with_parameter(
+                help_text("query", "A SQL SELECT returning log_time, value")
+                    .with_format(help_parameter_format_t::HPF_SQL))
+            .with_example({"Plot rss from procstate rows",
+                           "rss SELECT log_time, rss FROM procstate_procs "
+                           "WHERE proc='lnav'"})
+            .with_opposites({"clear-timeline-metric"})
+            .with_tags({"display"}),
+    },
+    {
+        "clear-timeline-metric",
+        com_clear_timeline_metric,
+
+        help_text(":clear-timeline-metric")
+            .with_summary("Remove a sparkline from the timeline view header")
+            .with_parameter(
+                help_text("label", "The label of the metric to remove")
+                    .with_format(
+                        help_parameter_format_t::HPF_ACTIVE_TIMELINE_METRIC))
+            .with_opposites({"timeline-metric", "timeline-metric-sql"})
             .with_tags({"display"}),
     },
 };

@@ -378,6 +378,7 @@ sql_spooky_hash_final(sqlite3_context* context)
 struct sparkline_context {
     bool sc_initialized{true};
     double sc_max_value{0.0};
+    std::optional<double> sc_lower;
     std::vector<double> sc_values;
 };
 
@@ -402,6 +403,9 @@ sparkline_step(sqlite3_context* context, int argc, sqlite3_value** argv)
         sc->sc_max_value
             = std::max(sc->sc_max_value, sqlite3_value_double(argv[1]));
     }
+    if (argc >= 3) {
+        sc->sc_lower = sqlite3_value_double(argv[2]);
+    }
 }
 
 void
@@ -419,7 +423,7 @@ sparkline_final(sqlite3_context* context)
     auto* start = retval.in();
 
     for (const auto& value : sc->sc_values) {
-        auto bar = humanize::sparkline(value, sc->sc_max_value);
+        auto bar = humanize::sparkline(value, sc->sc_max_value, sc->sc_lower);
 
         strcpy(start, bar.c_str());
         start += bar.length();
@@ -1158,12 +1162,19 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     .sql_function()
                     .with_prql_path({"text", "sparkline"})
                     .with_parameter({"value", "The numeric value to convert"})
-                    .with_parameter(help_text("upper",
-                                              "The upper bound of the numeric "
-                                              "range.  The non-aggregate "
-                                              "version defaults to 100.  The "
-                                              "aggregate version uses the "
-                                              "largest value in the inputs.")
+                    .with_parameter(help_text("bound_a",
+                                              "One bound of the numeric "
+                                              "range.  Order does not matter: "
+                                              "the smaller of bound_a and "
+                                              "bound_b is the floor, the "
+                                              "larger is the ceiling.  "
+                                              "Defaults to 100; the aggregate "
+                                              "version uses the largest input "
+                                              "as the ceiling.")
+                                        .optional())
+                    .with_parameter(help_text("bound_b",
+                                              "The other bound of the "
+                                              "numeric range.  Defaults to 0.")
                                         .optional())
                     .with_tags({"string"})
                     .with_example({

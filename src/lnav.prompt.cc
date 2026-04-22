@@ -58,6 +58,7 @@
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
+#include "timeline_source.hh"
 #include "shlex.hh"
 #include "sql.formatter.hh"
 #include "sql_help.hh"
@@ -1397,6 +1398,52 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
             }
             case help_parameter_format_t::HPF_KNOWN_APP: {
                 auto poss_strs = lnav::apps::get_app_names();
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
+            }
+            case help_parameter_format_t::HPF_TIMELINE_METRIC: {
+                std::set<std::string> poss_strs;
+                for (const auto& ld : lnav_data.ld_log_source) {
+                    auto* lf = ld->get_file_ptr();
+                    if (lf == nullptr) {
+                        continue;
+                    }
+                    auto format = lf->get_format();
+                    if (!format || !format->lf_is_metric) {
+                        continue;
+                    }
+                    auto stem = lf->get_unique_path().stem().string();
+                    for (const auto& lvm : format->get_value_metadata()) {
+                        auto name = lvm.lvm_name.to_string();
+                        // Bare metric name spans every file that ships
+                        // it (one day's CSV + another's, for example).
+                        poss_strs.emplace(name);
+                        // Qualified form picks a single source when
+                        // multiple files contain the same column.
+                        poss_strs.emplace(
+                            fmt::format(FMT_STRING("{}.{}"), stem, name));
+                    }
+                }
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
+            }
+            case help_parameter_format_t::HPF_ACTIVE_TIMELINE_METRIC: {
+                auto* tss = static_cast<timeline_source*>(
+                    lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+                std::vector<std::string> poss_strs;
+                if (tss != nullptr) {
+                    for (const auto& ms : tss->ts_metrics) {
+                        poss_strs.emplace_back(ms.ms_def.md_label);
+                    }
+                }
                 retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
                              return attr_line_t().append(x).with_attr_for_all(

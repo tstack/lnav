@@ -29,6 +29,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstring>
 #include <utility>
 #include <vector>
 
@@ -36,6 +38,8 @@
 
 #include <time.h>
 
+#include "base/auto_mem.hh"
+#include "base/date_time_scanner.hh"
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/itertools.enumerate.hh"
@@ -43,12 +47,14 @@
 #include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
+#include "lnav.hh"
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "md4cpp.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
+#include "vtab_module.hh"
 #include "sysclip.hh"
 #include "tlx/container/btree_map.hpp"
 
@@ -260,6 +266,11 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
+    auto [height, width] = lv.get_dimensions();
+    if (width <= CHART_INDENT) {
+        return false;
+    }
+
     if (y == 0) {
         auto sel = lv.get_selection().value_or(0_vl);
         if (sel < this->gho_src->tss_view->get_top()) {
@@ -273,11 +284,6 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
 
         require(sel_begin_us >= 0us);
         require(sel_end_us >= 0us);
-
-        auto [height, width] = lv.get_dimensions();
-        if (width <= CHART_INDENT) {
-            return true;
-        }
 
         value_out.append("   Duration   "_h1)
             .append("|", VC_GRAPHIC.value(NCACS_VLINE))
@@ -347,11 +353,149 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         return true;
     }
 
+    const auto metric_count
+        = static_cast<int>(this->gho_src->ts_metrics.size());
+    if (y >= 1 && y <= metric_count) {
+        const auto& ms = this->gho_src->ts_metrics[y - 1];
+        auto sel = lv.get_selection().value_or(0_vl);
+        auto [lb, ub] = this->gho_src->get_time_bounds_for(sel);
+        auto mark_width = static_cast<int>(width) - CHART_INDENT;
+        double span = (ub - lb).count();
+        if (span < 1.0) {
+            span = 1.0;
+        }
+        auto us_per_ch
+            = std::chrono::microseconds{(int64_t) ceil(span / mark_width)};
+        if (us_per_ch <= 0us) {
+            us_per_ch = 1us;
+        }
+
+        attr_line_t row_line;
+        row_line.append(" ").append(attr_line_t::from_table_cell_content(
+            string_fragment::from_str(ms.ms_def.md_label), CHART_INDENT - 1));
+        row_line.pad_to(CHART_INDENT);
+
+        if (!ms.ms_matched) {
+            // The requested shorthand name doesn't match any column
+            // in any currently-loaded metric file.  Render an inline
+            // error on the row rather than complaining at command
+            // time — the expected file may not have been opened or
+            // indexed yet.
+            row_line.append(" no metric named ")
+                .append(lnav::roles::identifier(ms.ms_def.md_label))
+                .append(" in any loaded file")
+                .with_attr_for_all(VC_ROLE.value(role_t::VCR_ERROR));
+            value_out = std::move(row_line);
+            return true;
+        }
+        if (!ms.ms_error.empty()) {
+            // SQL metric failed at collect time — query prepared at
+            // command time but something in the tables it touches has
+            // since changed.  Put the sqlite error on the row so it's
+            // visible without the user having to go look for it.
+            row_line.append(" SQL error: ")
+                .append(ms.ms_error)
+                .with_attr_for_all(VC_ROLE.value(role_t::VCR_ERROR));
+            value_out = std::move(row_line);
+            return true;
+        }
+
+        // Bucket samples in [lb, ub] by us_per_ch, using max
+        // aggregation.  Scale against the metric's global min/max
+        // (populated from logfile_value_stats at collect time) so the
+        // bar heights stay stable as the user scrolls — a sample
+        // doesn't shift height just because other samples are in view.
+        std::vector<double> buckets(mark_width,
+                                    std::numeric_limits<double>::quiet_NaN());
+        // Track the most recent sample before the window and whether
+        // any sample exists after it, to bridge a zoom that falls
+        // entirely between two sample points.  Samples arrive in
+        // ORDER BY log_time, so the last pre-window value seen is the
+        // most recent one.
+        double pre_val = std::numeric_limits<double>::quiet_NaN();
+        bool has_post = false;
+        bool any_in_window = false;
+        for (const auto& [ts, v] : ms.ms_samples) {
+            if (ts < lb) {
+                pre_val = v;
+                continue;
+            }
+            if (ts >= ub) {
+                has_post = true;
+                break;
+            }
+            any_in_window = true;
+            auto idx = static_cast<int>((ts - lb).count() / us_per_ch.count());
+            if (idx < 0 || idx >= mark_width) {
+                continue;
+            }
+            if (std::isnan(buckets[idx]) || v > buckets[idx]) {
+                buckets[idx] = v;
+            }
+        }
+        // If we have a pre-window sample and there's evidence the
+        // signal continues through the window (in-window or post-window
+        // sample), seed bucket 0 with the pre-window value so LOCF
+        // fills from the start.
+        if (!std::isnan(pre_val) && (any_in_window || has_post)
+            && std::isnan(buckets[0]))
+        {
+            buckets[0] = pre_val;
+        }
+        // Last-value-carried-forward between adjacent samples, so
+        // gauge-style metrics appear continuous.
+        int last_idx = -1;
+        double last_val = std::numeric_limits<double>::quiet_NaN();
+        for (int i = 0; i < mark_width; i++) {
+            if (!std::isnan(buckets[i])) {
+                if (last_idx >= 0) {
+                    for (int j = last_idx + 1; j < i; j++) {
+                        buckets[j] = last_val;
+                    }
+                }
+                last_idx = i;
+                last_val = buckets[i];
+            }
+        }
+        // If data continues past the window, fill trailing NaNs with
+        // the last in-window value.
+        if (has_post && last_idx >= 0) {
+            for (int j = last_idx + 1; j < mark_width; j++) {
+                buckets[j] = last_val;
+            }
+        }
+
+        // Derive a stable color from the metric label so the sparkline
+        // and the matching status-bar value share the same hue without
+        // depending on insertion order.
+        const auto metric_attrs
+            = view_colors::singleton().attrs_for_ident(ms.ms_def.md_label);
+
+        const bool have_range
+            = !std::isnan(ms.ms_min) && !std::isnan(ms.ms_max);
+
+        for (int x = 0; x < mark_width; x++) {
+            const double v = buckets[x];
+            if (std::isnan(v) || !have_range) {
+                row_line.append(" ");
+                continue;
+            }
+            // humanize::sparkline scales between the metric's global
+            // min/max and preserves the 0=absent / at-min=▁ / at-max=█
+            // convention.
+            row_line.append(humanize::sparkline(v, ms.ms_max, ms.ms_min));
+        }
+
+        row_line.with_attr_for_all(VC_STYLE.value(metric_attrs));
+        value_out = std::move(row_line);
+        return true;
+    }
+
     auto& tc = dynamic_cast<textview_curses&>(const_cast<listview_curses&>(lv));
     const auto& sticky_bv = tc.get_bookmarks()[&textview_curses::BM_STICKY];
     auto top = lv.get_top();
     auto sticky_range = sticky_bv.equal_range(0_vl, top);
-    auto sticky_index = y - 1;
+    auto sticky_index = y - 1 - metric_count;
     if (sticky_index < static_cast<int>(
             std::distance(sticky_range.first, sticky_range.second)))
     {
@@ -1279,6 +1423,8 @@ timeline_source::rebuild_indexes()
         = std::max<size_t>(22 + this->ts_opid_width + max_desc_width,
                            1 + 16 + 5 + 8 + 5 + 16 + 1 /* header */);
 
+    this->collect_metric_samples();
+
     this->apply_pending_bookmarks();
 
     this->tss_view->set_needs_update();
@@ -1553,6 +1699,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
             .set_value("%'d messages ", level_stats.lls_total_count);
     }
     this->ts_preview_status_view.set_needs_update();
+    this->update_metric_status();
 }
 
 void
@@ -1580,6 +1727,464 @@ timeline_source::add_commands_for_session(
         receiver(fmt::format(FMT_STRING("hide-in-timeline {}"),
                              row_type_to_string(rt)));
     }
+    for (const auto& m : this->ts_metrics) {
+        if (m.ms_def.md_kind == metric_kind::sql) {
+            receiver(fmt::format(FMT_STRING("timeline-metric-sql {} {}"),
+                                 m.ms_def.md_label,
+                                 m.ms_def.md_query));
+        } else {
+            receiver(fmt::format(FMT_STRING("timeline-metric {}"),
+                                 m.ms_def.md_label));
+        }
+    }
+}
+
+Result<void, lnav::console::user_message>
+timeline_source::add_metric(const metric_def& md)
+{
+    // Replace on duplicate label.
+    for (auto& m : this->ts_metrics) {
+        if (m.ms_def.md_label == md.md_label) {
+            m.ms_def = md;
+            this->collect_metric_samples_for(m);
+            this->update_metric_status();
+            this->tss_view->set_needs_update();
+            return Ok();
+        }
+    }
+    if (this->ts_metrics.size() >= MAX_METRICS) {
+        attr_line_t active;
+        for (const auto& ms : this->ts_metrics) {
+            if (!active.empty()) {
+                active.append(", ");
+            }
+            active.append(lnav::roles::identifier(ms.ms_def.md_label));
+        }
+        return Err(
+            lnav::console::user_message::error(
+                attr_line_t("too many metrics are being tracked"))
+                .with_reason(fmt::format(
+                    FMT_STRING("at most {} metrics can be shown at once"),
+                    MAX_METRICS))
+                .with_note(attr_line_t("currently tracking: ").append(active))
+                .with_help(attr_line_t("use ")
+                               .append(":clear-timeline-metric"_keyword)
+                               .append(" <label> to remove a metric before "
+                                       "adding a new one")));
+    }
+    metric_state ms;
+    ms.ms_def = md;
+    this->ts_metrics.emplace_back(std::move(ms));
+    this->collect_metric_samples_for(this->ts_metrics.back());
+    this->update_metric_status();
+    this->tss_view->set_needs_update();
+    return Ok();
+}
+
+bool
+timeline_source::remove_metric(const std::string& label)
+{
+    auto iter = std::find_if(
+        this->ts_metrics.begin(),
+        this->ts_metrics.end(),
+        [&](const metric_state& m) { return m.ms_def.md_label == label; });
+    if (iter == this->ts_metrics.end()) {
+        return false;
+    }
+    this->ts_metrics.erase(iter);
+    this->update_metric_status();
+    this->tss_view->set_needs_update();
+    return true;
+}
+
+void
+timeline_source::clear_metrics()
+{
+    this->ts_metrics.clear();
+    this->update_metric_status();
+    this->tss_view->set_needs_update();
+}
+
+void
+timeline_source::collect_metric_samples()
+{
+    // Full rebuild path: called from rebuild_indexes when the set of
+    // loaded files or the time window may have changed.  Individual
+    // add/replace paths use collect_metric_samples_for to avoid
+    // re-walking files for metrics that haven't changed.
+    for (auto& ms : this->ts_metrics) {
+        this->collect_metric_samples_for(ms);
+    }
+}
+
+void
+timeline_source::collect_metric_samples_for(metric_state& ms)
+{
+    // Reset the per-metric state up front so replace-on-duplicate and
+    // full-rebuild share the same clean-slate behavior.  In particular
+    // ms_unit_suffix/ms_unit_divisor must be cleared — a replacing
+    // definition could target a different column whose unit differs
+    // from the previous one.
+    ms.ms_samples.clear();
+    ms.ms_min = std::numeric_limits<double>::quiet_NaN();
+    ms.ms_max = std::numeric_limits<double>::quiet_NaN();
+    ms.ms_unit_suffix.clear();
+    ms.ms_unit_divisor = 1.0;
+    ms.ms_matched = false;
+    ms.ms_error.clear();
+
+    if (this->ts_time_order.empty()) {
+        return;
+    }
+
+    if (ms.ms_def.md_kind == metric_kind::sql) {
+        // User query validated at command time, so the columns exist.
+        // "matched" here means: we won't render an "unknown metric"
+        // error banner for SQL metrics — an empty sample set for SQL
+        // is a legitimate "query returned 0 rows" situation, not a
+        // typo.
+        ms.ms_matched = true;
+        this->collect_metric_samples_via_sql(ms);
+    } else {
+        this->collect_metric_samples_from_files(ms);
+    }
+}
+
+void
+timeline_source::collect_metric_samples_from_files(metric_state& ms)
+{
+    // Shorthand "source.metric" — walk the loaded log files directly,
+    // picking out matching metric files and reading just the one
+    // column per line.  Skips the SQL cursor overhead that the
+    // `all_metrics` vtable would incur, and avoids re-parsing every
+    // non-matching cell.
+    const auto dot = ms.ms_def.md_label.find('.');
+    std::string source;
+    std::string metric_name;
+    if (dot == std::string::npos) {
+        metric_name = ms.ms_def.md_label;
+    } else {
+        source = ms.ms_def.md_label.substr(0, dot);
+        metric_name = ms.ms_def.md_label.substr(dot + 1);
+    }
+
+    for (const auto& ld : lnav_data.ld_log_source) {
+        auto* lf = ld->get_file_ptr();
+        if (lf == nullptr) {
+            continue;
+        }
+        auto format = lf->get_format();
+        if (!format || !format->lf_is_metric) {
+            continue;
+        }
+        if (!source.empty() && lf->get_unique_path().stem().string() != source)
+        {
+            continue;
+        }
+
+        // Find the column index for this metric in this file's schema.
+        // Different files can ship different column orders, so the
+        // lookup is per-file.
+        const auto& meta_vec = format->get_value_metadata();
+        size_t col_idx = meta_vec.size();
+        for (size_t i = 0; i < meta_vec.size(); i++) {
+            if (meta_vec[i].lvm_name.to_string() == metric_name) {
+                col_idx = i;
+                break;
+            }
+        }
+        if (col_idx >= meta_vec.size()) {
+            continue;
+        }
+        ms.ms_matched = true;
+        // Seed the unit hint from the format-level column meta if it
+        // has one.  metrics_log_format doesn't populate this at
+        // format time — the suffix is only known after annotating a
+        // row that uses a humanized cell — so the per-sample loop
+        // below also looks at each parsed value's meta and fills in
+        // ms_unit_suffix the first time it sees one.
+        if (ms.ms_unit_suffix.empty() && ms.ms_unit_divisor == 1.0) {
+            ms.ms_unit_suffix = meta_vec[col_idx].lvm_unit_suffix.to_string();
+            if (meta_vec[col_idx].lvm_unit_divisor != 0.0) {
+                ms.ms_unit_divisor = meta_vec[col_idx].lvm_unit_divisor;
+            }
+        }
+        // Pull the column's global min/max from the file's value
+        // stats (already computed during indexing) so the sparkline
+        // scale stays stable as the user scrolls — a sample doesn't
+        // change bar height based on what else is in view.  Stats
+        // are in base units, same as the samples we store.
+        if (const auto* file_stats
+            = lf->stats_for_value(meta_vec[col_idx].lvm_name);
+            file_stats != nullptr && file_stats->lvs_count > 0)
+        {
+            double lo = file_stats->lvs_min_value;
+            double hi = file_stats->lvs_max_value;
+            if (ms.ms_unit_divisor != 0.0 && ms.ms_unit_divisor != 1.0) {
+                lo /= ms.ms_unit_divisor;
+                hi /= ms.ms_unit_divisor;
+            }
+            if (std::isnan(ms.ms_min) || lo < ms.ms_min) {
+                ms.ms_min = lo;
+            }
+            if (std::isnan(ms.ms_max) || hi > ms.ms_max) {
+                ms.ms_max = hi;
+            }
+        }
+
+        string_attrs_t sa;
+        logline_value_vector values;
+        for (auto line_iter = lf->begin(); line_iter != lf->end(); ++line_iter)
+        {
+            if (line_iter->is_continued() || line_iter->is_ignored()) {
+                continue;
+            }
+            sa.clear();
+            values.lvv_values.clear();
+            auto read_res = lf->read_line(line_iter);
+            if (read_res.isErr()) {
+                continue;
+            }
+            values.lvv_sbr = read_res.unwrap();
+            auto line_number = std::distance(lf->begin(), line_iter);
+            format->annotate(lf, line_number, sa, values);
+            if (col_idx >= values.lvv_values.size()) {
+                continue;
+            }
+            const auto& lv = values.lvv_values[col_idx];
+            double v;
+            if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_FLOAT) {
+                v = lv.lv_value.d;
+            } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_INTEGER) {
+                v = static_cast<double>(lv.lv_value.i);
+            } else {
+                continue;
+            }
+            // First value that carries a unit wins.  Humanized cells
+            // ("1.5KB", "20ms") populate lvm_unit_suffix during
+            // annotate(); plain numeric cells leave it empty.
+            if (ms.ms_unit_suffix.empty()
+                && !lv.lv_meta.lvm_unit_suffix.empty())
+            {
+                ms.ms_unit_suffix = lv.lv_meta.lvm_unit_suffix.to_string();
+                if (lv.lv_meta.lvm_unit_divisor != 0.0) {
+                    ms.ms_unit_divisor = lv.lv_meta.lvm_unit_divisor;
+                }
+            }
+            if (ms.ms_unit_divisor != 0.0 && ms.ms_unit_divisor != 1.0) {
+                v /= ms.ms_unit_divisor;
+            }
+            ms.ms_samples.emplace_back(line_iter->get_time<>(), v);
+            // ms_min/ms_max are seeded from the file's value stats
+            // above, which already cover every sample we're about to
+            // emit — no need to re-track here.
+        }
+    }
+    // Samples may arrive out of order when the same metric name lives
+    // in multiple files with overlapping timestamps.  Downstream
+    // rendering assumes ascending time.
+    std::sort(ms.ms_samples.begin(),
+              ms.ms_samples.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+}
+
+void
+timeline_source::collect_metric_samples_via_sql(metric_state& ms)
+{
+    // The query returns (log_time TEXT, value REAL).  Timestamps
+    // get parsed via date_time_scanner below — this avoids the
+    // SQL-text/UTC-offset mismatch between how all_metrics stores
+    // log_time and what SQLite's datetime() produces.  Windowing
+    // happens at render time against ts_lower_bound/ts_upper_bound.
+    const auto full_sql
+        = fmt::format(FMT_STRING("SELECT log_time, value FROM ({}) "
+                                 "ORDER BY log_time"),
+                      ms.ms_def.md_query);
+
+    // Route through sqlite3_error_to_user_message so raise_error()
+    // JSON payloads get unwrapped to the human-readable message
+    // instead of showing up as `lnav-error:{…}` in the banner.  The
+    // query validated at command time, so any error here means
+    // something about the underlying tables has since changed.
+    auto capture_err = [&ms] {
+        ms.ms_error = sqlite3_error_to_user_message(lnav_data.ld_db.in())
+                          .um_message.get_string();
+    };
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    auto rc = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                 full_sql.c_str(),
+                                 full_sql.size(),
+                                 stmt.out(),
+                                 nullptr);
+    if (rc != SQLITE_OK) {
+        capture_err();
+        return;
+    }
+
+    while (true) {
+        auto step_rc = sqlite3_step(stmt.in());
+        if (step_rc == SQLITE_DONE) {
+            break;
+        }
+        if (step_rc != SQLITE_ROW) {
+            capture_err();
+            return;
+        }
+        double unix_s = sqlite3_column_double(stmt.in(), 0);
+        std::chrono::microseconds ts_us{};
+        if (sqlite3_column_type(stmt.in(), 0) == SQLITE_TEXT) {
+            const auto* txt = reinterpret_cast<const char*>(
+                sqlite3_column_text(stmt.in(), 0));
+            exttm tm;
+            timeval tv;
+            if (txt != nullptr
+                && date_time_scanner().scan(txt, strlen(txt), nullptr, &tm, tv)
+                    != nullptr)
+            {
+                ts_us = to_us(tv);
+            }
+        } else {
+            ts_us = std::chrono::microseconds{
+                static_cast<int64_t>(unix_s * 1000000.0)};
+        }
+        const auto val_type = sqlite3_column_type(stmt.in(), 1);
+        if (val_type == SQLITE_NULL) {
+            continue;
+        }
+        double v;
+        if (val_type == SQLITE_TEXT) {
+            // The SQL expression may return humanized strings like
+            // "20ms" or "1.5KB"; hand them through try_from so the
+            // sparkline draws against the real (base-unit) value and
+            // ms_unit_suffix gets populated from the first recognized
+            // unit.  If the text isn't parseable, skip the row.
+            const auto txt_sf = string_fragment::from_bytes(
+                sqlite3_column_text(stmt.in(), 1),
+                sqlite3_column_bytes(stmt.in(), 1));
+            auto try_res = humanize::try_from<double>(txt_sf);
+            if (!try_res) {
+                continue;
+            }
+            v = try_res->value;
+            if (ms.ms_unit_suffix.empty() && !try_res->unit_suffix.empty()) {
+                ms.ms_unit_suffix = try_res->unit_suffix.to_string();
+            }
+        } else {
+            v = sqlite3_column_double(stmt.in(), 1);
+        }
+        ms.ms_samples.emplace_back(ts_us, v);
+        if (std::isnan(ms.ms_min) || v < ms.ms_min) {
+            ms.ms_min = v;
+        }
+        if (std::isnan(ms.ms_max) || v > ms.ms_max) {
+            ms.ms_max = v;
+        }
+    }
+}
+
+void
+timeline_source::update_metric_status()
+{
+    auto& field = this->ts_preview_status_source.statusview_value_for_field(
+        timeline_status_source::TSF_METRICS);
+    if (this->ts_metrics.empty()) {
+        field.clear();
+        this->ts_preview_status_view.set_needs_update();
+        return;
+    }
+
+    auto sel = this->tss_view ? this->tss_view->get_selection() : std::nullopt;
+    auto ov_sel = this->tss_view ? this->tss_view->get_overlay_selection()
+                                 : std::nullopt;
+    // The focused op (or hovered sub-op) spans a range, not a single
+    // moment, so report both the min and max the metric hit during
+    // that window instead of just the as-of-end value.  When nothing
+    // is selected we fall back to the first sample so at least one
+    // value shows up.
+    std::optional<std::pair<std::chrono::microseconds, std::chrono::microseconds>>
+        focus_range;
+    if (sel && sel.value() < static_cast<ssize_t>(this->ts_time_order.size())) {
+        const auto& row = *this->ts_time_order[sel.value()];
+        focus_range
+            = {row.or_value.otr_range.tr_begin, row.or_value.otr_range.tr_end};
+        if (ov_sel && ov_sel.value() < row.or_value.otr_sub_ops.size()) {
+            const auto& sub = row.or_value.otr_sub_ops[ov_sel.value()];
+            focus_range = {sub.ostr_range.tr_begin, sub.ostr_range.tr_end};
+        }
+    }
+
+    attr_line_t al;
+    auto& vc = view_colors::singleton();
+    for (const auto& m : this->ts_metrics) {
+        if (m.ms_samples.empty()) {
+            continue;
+        }
+        std::optional<double> range_min;
+        std::optional<double> range_max;
+        if (!focus_range) {
+            // No selection — fall back to the first sample so the
+            // status bar has something to show when the view first
+            // opens.
+            range_min = range_max = m.ms_samples.front().second;
+        } else {
+            const auto [lb, ub] = *focus_range;
+            // Samples are sorted ascending by timestamp; binary-search
+            // for the first sample at-or-after lb and the first one
+            // strictly after ub, then min/max across the slice.
+            auto lo = std::lower_bound(
+                m.ms_samples.begin(),
+                m.ms_samples.end(),
+                lb,
+                [](const auto& sample, const auto& ts) {
+                    return sample.first < ts;
+                });
+            auto hi = std::upper_bound(
+                lo,
+                m.ms_samples.end(),
+                ub,
+                [](const auto& ts, const auto& sample) {
+                    return ts < sample.first;
+                });
+            for (auto it = lo; it != hi; ++it) {
+                if (!range_min || it->second < *range_min) {
+                    range_min = it->second;
+                }
+                if (!range_max || it->second > *range_max) {
+                    range_max = it->second;
+                }
+            }
+            if (!range_min && lo != m.ms_samples.begin()) {
+                // No samples fall inside the op window.  Show the
+                // last value observed before the window so the
+                // reader still gets a snapshot of the metric's
+                // state at op start (LOCF).
+                const auto held = std::prev(lo)->second;
+                range_min = range_max = held;
+            }
+        }
+        if (!range_min) {
+            continue;
+        }
+        if (!al.empty()) {
+            al.append(" ");
+        }
+        const auto suffix = string_fragment::from_str(m.ms_unit_suffix);
+        std::string chunk;
+        if (*range_min == *range_max) {
+            chunk = fmt::format(FMT_STRING(" {}={} "),
+                                m.ms_def.md_label,
+                                humanize::format(*range_min, suffix));
+        } else {
+            chunk = fmt::format(FMT_STRING(" {}={}..{} "),
+                                m.ms_def.md_label,
+                                humanize::format(*range_min, suffix),
+                                humanize::format(*range_max, suffix));
+        }
+        al.append(chunk, VC_STYLE.value(vc.attrs_for_ident(m.ms_def.md_label)));
+    }
+    field.set_value(al);
+    this->ts_preview_status_view.set_needs_update();
 }
 
 void

@@ -2192,7 +2192,7 @@ external_log_format::scan(logfile& lf,
                     = humanize::try_from<double>(duration_cap.value());
                 if (from_res) {
                     auto dur_secs
-                        = from_res.value() / this->elf_duration_divisor;
+                        = from_res->value / this->elf_duration_divisor;
                     duration = std::chrono::microseconds(
                         static_cast<int64_t>(dur_secs * 1000000));
                 }
@@ -2552,7 +2552,7 @@ external_log_format::annotate(logfile* lf,
                         SA_DURATION.value());
         auto from_res = humanize::try_from<double>(duration_cap.value());
         if (from_res) {
-            auto dur_secs = from_res.value() / this->elf_duration_divisor;
+            auto dur_secs = from_res->value / this->elf_duration_divisor;
             auto duration = std::chrono::microseconds(
                 static_cast<int64_t>(dur_secs * 1000000));
             values.lvv_duration_value = duration;
@@ -2859,7 +2859,7 @@ read_json_field(yajlpp_parse_context* ypc,
         auto from_res = humanize::try_from<double>(frag);
         if (from_res) {
             auto dur_secs
-                = from_res.value() / jlu->jlu_format->elf_duration_divisor;
+                = from_res->value / jlu->jlu_format->elf_duration_divisor;
             jlu->jlu_duration
                 = std::max(1us,
                            std::chrono::microseconds(

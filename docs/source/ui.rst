@@ -532,6 +532,55 @@ The following hotkeys can be useful in this view:
   these keys will return to the timeline view while keeping the focused
   time in sync.
 
+Metric sparklines (v0.15.0+)
+""""""""""""""""""""""""""""
+
+.. figure:: ../assets/images/lnav-timeline-metrics.svg
+   :align: center
+
+   Screenshot of the timeline view with :code:`cpu_pct` and
+   :code:`rss` sparklines overlaid at the top.
+
+To help visualize the relationship between log messages and
+metrics, the timeline view supports adding metric sparklines
+to the header.  For example, if you suspected that a particular
+operation was causing an increase in CPU usage, you could add
+the CPU metric to the timeline.  Then, while scrolling through
+the timeline, you could keep an eye on the CPU sparkline to
+see if there is any correlation.  Multiple metrics can be
+added at once to compare different metrics against each other.
+
+Metric values come from loaded metrics files or an arbitrary
+SQL query.  The bar heights scale against the metric's overall
+min/max so a given value renders at the same height regardless
+of which part of the timeline is in view.  Gaps between samples
+are filled using last-value-carried-forward so gauge-style
+metrics appear continuous.  The value of the metrics for the
+focused line are shown in the preview status bar.
+
+The following commands manage the sparklines:
+
+* :code:`:timeline-metric <name>` -- Track a metric from a loaded
+  metrics file.  :code:`<name>` can be either a bare column name
+  (e.g. :code:`cpu_pct`) -- which aggregates samples across every
+  loaded file that ships that column, useful when a metric has
+  been split across per-day CSVs -- or a qualified
+  :code:`<source>.<column>` name to scope to one file's column.
+  If the name doesn't match any loaded file's columns, the row
+  renders an inline error in place of the sparkline; the next
+  rebuild will start drawing the sparkline once a matching file
+  is loaded.
+* :code:`:timeline-metric-sql <label> <query>` -- Track a metric
+  driven by a SQL query.  The query must return columns named
+  :code:`log_time` and :code:`value`; use :code:`AS` to alias.
+  Text values like :code:`"20ms"` or :code:`"1.5KB"` are
+  recognized and normalized to their base unit so the sparkline
+  scales correctly and the status-bar readout picks up the unit.
+  Any runtime errors from the query are rendered inline on the
+  sparkline row.
+* :code:`:clear-timeline-metric <label>` -- Stop tracking a
+  metric.
+
 .. [#] Formerly called the "Gantt Chart" view.
 
 PRETTY

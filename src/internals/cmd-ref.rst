@@ -295,6 +295,22 @@
 ----
 
 
+.. _clear_timeline_metric:
+
+:clear-timeline-metric *label*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Remove a sparkline from the timeline view header
+
+  **Parameters**
+    * **label\*** --- The label of the metric to remove
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`timeline_metric_sql`, :ref:`timeline_metric`, :ref:`toggle_sticky_header`
+
+----
+
+
 .. _close:
 
 :close *path*
@@ -1749,6 +1765,53 @@
 
   **See Also**
     :ref:`annotate`, :ref:`comment`, :ref:`delete_tags`, :ref:`partition_name`, :ref:`untag`
+
+----
+
+
+.. _timeline_metric:
+
+:timeline-metric *name*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Add a sparkline to the timeline view header for the given metric
+
+  **Parameters**
+    * **name\*** --- The metric name in 'source.metric' form, as it appears in the all_metrics table. Existing labels are replaced.
+
+  **Examples**
+    To show the cpu_pct column from cpu.csv:
+
+    .. code-block::  lnav
+
+      :timeline-metric cpu.cpu_pct
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+
+----
+
+
+.. _timeline_metric_sql:
+
+:timeline-metric-sql *label* *query*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Add a sparkline driven by a SQL query. The query must return two columns named log_time and value; it is wrapped as SELECT * FROM (<sql>) WHERE log_time BETWEEN ...
+
+  **Parameters**
+    * **label\*** --- The label to display for this metric
+    * **query\*** --- A SQL SELECT returning log_time, value
+
+  **Examples**
+    Plot rss from procstate rows:
+
+    .. code-block::  lnav
+
+      :timeline-metric-sql rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 

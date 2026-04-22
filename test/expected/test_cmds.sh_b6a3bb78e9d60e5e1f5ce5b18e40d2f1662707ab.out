@@ -894,6 +894,16 @@ For support questions, email:
 [4mSee Also[0m
   [1m:annotate[0m, [1m:comment[0m, [1m:partition-name[0m, [1m:tag[0m
 
+[4m:[0m[1m[4mclear-timeline-metric[0m[4m [0m[4mlabel[0m
+══════════════════════════════════════════════════════════════════════
+  Remove a sparkline from the timeline view header
+[4mParameter[0m
+  [4mlabel[0m   The label of the metric to remove
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:timeline-metric[0m, [1m:timeline-metric-sql[0m, 
+  [1m:toggle-sticky-header[0m
+
 [4m:[0m[1m[4mclose[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Close the given file(s) or the focused file in the view
@@ -1868,6 +1878,39 @@ For support questions, email:
 [4mExample[0m
 #1 To add the tags '#BUG123' and '#needs-review' to the focused line:
    [37m[40m:[0m[1m[36m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
+   
+
+
+[4m:[0m[1m[4mtimeline-metric[0m[4m [0m[4mname[0m
+══════════════════════════════════════════════════════════════════════
+  Add a sparkline to the timeline view header for the given metric
+[4mParameter[0m
+  [4mname[0m   The metric name in 'source.metric' form, as it
+         appears in the all_metrics table. Existing labels are
+         replaced.
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
+  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+[4mExample[0m
+#1 To show the cpu_pct column from cpu.csv:
+   [37m[40m:[0m[1m[36m[40mtimeline-metric[0m[37m[40m cpu.cpu_pct                      [0m
+   
+
+
+[4m:[0m[1m[4mtimeline-metric-sql[0m[4m [0m[4mlabel[0m[4m [0m[4mquery[0m
+══════════════════════════════════════════════════════════════════════
+  Add a sparkline driven by a SQL query. The query must return two
+  columns named log_time and value; it is wrapped as SELECT * FROM
+  (<sql>) WHERE log_time BETWEEN ...
+[4mParameters[0m
+  [4mlabel[0m   The label to display for this metric
+  [4mquery[0m   A SQL SELECT returning log_time, value
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
+  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+[4mExample[0m
+#1 Plot rss from procstate rows:
+   [37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'[0m
    
 
 
@@ -4858,17 +4901,20 @@ For support questions, email:
   [4mpath[0m            The path to the source file
 
 
-[1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mupper[0m[4m])[0m
+[1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Function used to generate a sparkline bar chart.  The
   non-aggregate version converts a single numeric value on a range to
   a bar chart character.  The aggregate version returns a string with
   a bar character for every numeric input
 [4mParameters[0m
-  [4mvalue[0m   The numeric value to convert
-  [4mupper[0m   The upper bound of the numeric range.  The
-          non-aggregate version defaults to 100.  The aggregate
-          version uses the largest value in the inputs.
+  [4mvalue[0m     The numeric value to convert
+  [4mbound_a[0m   One bound of the numeric range.  Order does
+            not matter: the smaller of bound_a and bound_b is the
+            floor, the larger is the ceiling.  Defaults to 100; the
+            aggregate version uses the largest input as the ceiling.
+  [4mbound_b[0m   The other bound of the numeric range.
+            Defaults to 0.
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdecode()[0m, 
   [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, [1mgroup_concat()[0m, 

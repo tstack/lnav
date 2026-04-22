@@ -43,9 +43,19 @@
 namespace humanize {
 
 template<>
-std::optional<double>
+std::optional<try_from_result<double>>
 try_from(const string_fragment& sf)
 {
+    static constexpr auto EMPTY_SUFFIX = string_fragment::from_const("");
+    static constexpr auto BYTES_SUFFIX = string_fragment::from_const("B");
+    static constexpr auto SECONDS_SUFFIX = string_fragment::from_const("s");
+    static constexpr auto PERCENT_SUFFIX = string_fragment::from_const("%");
+    static constexpr auto HZ_SUFFIX = string_fragment::from_const("Hz");
+    static constexpr auto WATT_SUFFIX = string_fragment::from_const("W");
+    static constexpr auto VOLT_SUFFIX = string_fragment::from_const("V");
+    static constexpr auto AMP_SUFFIX = string_fragment::from_const("A");
+    static constexpr auto PER_S_SUFFIX = string_fragment::from_const("/s");
+
     enum capture_item {
         all,
         integer,
@@ -106,7 +116,7 @@ try_from(const string_fragment& sf)
         if (!scan_res) {
             return std::nullopt;
         }
-        return scan_res->value();
+        return try_from_result<double>{(double) scan_res->value(), EMPTY_SUFFIX};
     }
 
     if (md[real]) {
@@ -115,7 +125,7 @@ try_from(const string_fragment& sf)
         if (!scan_res) {
             return std::nullopt;
         }
-        return scan_res->value();
+        return try_from_result<double>{scan_res->value(), EMPTY_SUFFIX};
     }
 
     if (md[file_size]) {
@@ -151,7 +161,7 @@ try_from(const string_fragment& sf)
                     break;
             }
         }
-        return retval;
+        return try_from_result<double>{retval, BYTES_SUFFIX};
     }
 
     if (md[secs]) {
@@ -179,7 +189,7 @@ try_from(const string_fragment& sf)
             }
         }
 
-        return retval;
+        return try_from_result<double>{retval, SECONDS_SUFFIX};
     }
 
     if (md[hms]) {
@@ -187,7 +197,8 @@ try_from(const string_fragment& sf)
                                                     "{}:{}:{}");
         auto [hours, mins, secs] = scan_res->values();
 
-        return hours * 3600.0 + mins * 60.0 + secs;
+        return try_from_result<double>{hours * 3600.0 + mins * 60.0 + secs,
+                                       SECONDS_SUFFIX};
     }
 
     if (md[ms]) {
@@ -195,7 +206,7 @@ try_from(const string_fragment& sf)
             = scn::scan<int, double>(md[ms]->to_string_view(), "{}:{}");
         auto [mins, secs] = scan_res->values();
 
-        return mins * 60.0 + secs;
+        return try_from_result<double>{mins * 60.0 + secs, SECONDS_SUFFIX};
     }
 
     if (md[percent]) {
@@ -206,7 +217,8 @@ try_from(const string_fragment& sf)
         if (!scan_res) {
             return std::nullopt;
         }
-        return scan_res->value() / 100.0;
+        return try_from_result<double>{scan_res->value() / 100.0,
+                                       PERCENT_SUFFIX};
     }
 
     // Apply a single-letter SI prefix multiplier to `retval` based on
@@ -249,7 +261,7 @@ try_from(const string_fragment& sf)
         }
         auto retval = scan_res->value();
         apply_si_prefix(retval, scan_res->range());
-        return retval;
+        return try_from_result<double>{retval, HZ_SUFFIX};
     }
 
     if (md[electrical]) {
@@ -260,18 +272,55 @@ try_from(const string_fragment& sf)
         }
         auto retval = scan_res->value();
         apply_si_prefix(retval, scan_res->range());
-        return retval;
+        // Final character of the matched range picks W/V/A.
+        const auto range = scan_res->range();
+        auto suffix = WATT_SUFFIX;
+        if (!range.empty()) {
+            const auto ch = range[range.size() - 1];
+            if (ch == 'V') {
+                suffix = VOLT_SUFFIX;
+            } else if (ch == 'A') {
+                suffix = AMP_SUFFIX;
+            }
+        }
+        return try_from_result<double>{retval, suffix};
     }
 
     if (md[throughput]) {
-        auto scan_res
-            = scn::scan_value<double>(md[throughput]->to_string_view());
+        const auto matched = md[throughput].value();
+        auto scan_res = scn::scan_value<double>(matched.to_string_view());
         if (!scan_res) {
             return std::nullopt;
         }
         auto retval = scan_res->value();
         apply_si_prefix(retval, scan_res->range());
-        return retval;
+        // The matched fragment is already a view into the source text;
+        // walk past the digits, any whitespace, and one SI-prefix
+        // letter to land on the unit (iops, qps, req/s, …) and return
+        // that tail as a sub-fragment.
+        const int num_len
+            = matched.length() - static_cast<int>(scan_res->range().size());
+        int pos = num_len;
+        while (pos < matched.length() && isspace(matched[pos])) {
+            pos++;
+        }
+        if (pos < matched.length()) {
+            switch (matched[pos]) {
+                case 'K':
+                case 'M':
+                case 'G':
+                case 'T':
+                case 'P':
+                case 'E':
+                    pos++;
+                    if (pos < matched.length() && matched[pos] == 'i') {
+                        pos++;
+                    }
+                    break;
+            }
+        }
+        return try_from_result<double>{retval,
+                                       matched.sub_range(pos, matched.length())};
     }
 
     if (md[per_second]) {
@@ -280,7 +329,7 @@ try_from(const string_fragment& sf)
         if (!scan_res) {
             return std::nullopt;
         }
-        return scan_res->value();
+        return try_from_result<double>{scan_res->value(), PER_S_SUFFIX};
     }
 
     if (md[short_count]) {
@@ -319,7 +368,7 @@ try_from(const string_fragment& sf)
                     break;
             }
         }
-        return retval;
+        return try_from_result<double>{retval, EMPTY_SUFFIX};
     }
 
     return std::nullopt;
@@ -437,7 +486,9 @@ format(double value, string_fragment suffix, alignment align)
 }
 
 const std::string&
-sparkline(double value, std::optional<double> upper_opt)
+sparkline(double value,
+          std::optional<double> bound_a_opt,
+          std::optional<double> bound_b_opt)
 {
     static const std::string ZERO = " ";
     static const std::string BARS[] = {
@@ -452,16 +503,28 @@ sparkline(double value, std::optional<double> upper_opt)
     };
     static constexpr double BARS_COUNT = std::distance(begin(BARS), end(BARS));
 
-    if (value <= 0.0) {
+    // The two bounds can be given in either order; whichever is
+    // smaller becomes the floor and the other becomes the ceiling.
+    const auto bound_a = bound_a_opt.value_or(100.0);
+    const auto bound_b = bound_b_opt.value_or(0.0);
+    const auto lower = std::min(bound_a, bound_b);
+    const auto upper = std::max(bound_a, bound_b);
+
+    // Absence marker: only meaningful when the scale starts at zero;
+    // zoomed-in ranges (lower != 0) treat at-or-below-min as a 1-cell
+    // bar so "present at min" is distinguishable from a gap.
+    if (lower == 0.0 && value <= 0.0) {
         return ZERO;
     }
-
-    const auto upper = upper_opt.value_or(100.0);
+    if (value <= lower) {
+        return BARS[0];
+    }
     if (value >= upper) {
         return BARS[(size_t) BARS_COUNT - 1];
     }
 
-    const size_t index = ceil((value / upper) * BARS_COUNT) - 1;
+    const size_t index
+        = ceil(((value - lower) / (upper - lower)) * BARS_COUNT) - 1;
 
     return BARS[index];
 }

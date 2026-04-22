@@ -1,0 +1,5 @@
+[1m[31m✘[0m [1m[31merror[0m: timeline metric query is missing required column(s): log_time
+ [1m[31mreason[0m: the query: [1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mall_logs[0m
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m oops SELECT 1 AS value FROM all_logs[0m
+[36m =[0m [36mhelp[0m: the query must return columns named 'log_time' and 'value' — use AS to alias if needed, e.g. [37m[40mSELECT log_time, rss AS value FROM procstate_procs[0m

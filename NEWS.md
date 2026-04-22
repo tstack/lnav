@@ -33,6 +33,16 @@ Features:
   view across every open metrics file.  The `metric` column
   contains the name of the metric and `value` contains its
   value.
+* The TIMELINE view now supports overlaying metric
+  sparklines at the top of the view.  The following commands
+  can be used to manage this:
+  - `:timeline-metric [<source>.]<metric>` picks a column
+    from any loaded metrics file
+  - `:timeline-metric-sql <label> <query>` takes an
+    arbitrary `SELECT log_time, value FROM ...` that can
+    target any table, including search-table columns.
+  - `:clear-timeline-metric <label>` removes metrics.
+  Up to four metrics can be added.
 * Log format value definitions now accept a `unit` object
   with `suffix` and `divisor` properties.  `suffix` specifies
   how numeric fields are humanized. `divisor` normalizes

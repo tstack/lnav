@@ -32,10 +32,12 @@
 
 #include <array>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -212,6 +214,57 @@ public:
 
     std::set<row_type> ts_hidden_row_types;
     std::set<row_type> ts_preview_hidden_row_types;
+
+    static constexpr size_t MAX_METRICS = 4;
+
+    enum class metric_kind {
+        shorthand,
+        sql,
+    };
+
+    struct metric_def {
+        std::string md_label;
+        std::string md_query;
+        metric_kind md_kind{metric_kind::shorthand};
+    };
+
+    struct metric_state {
+        metric_def ms_def;
+        std::vector<std::pair<std::chrono::microseconds, double>> ms_samples;
+        double ms_min{std::numeric_limits<double>::quiet_NaN()};
+        double ms_max{std::numeric_limits<double>::quiet_NaN()};
+        // Unit hint pulled from the source column's logline_value_meta
+        // when the samples come from a metric log file.  Empty for
+        // SQL-backed metrics, which don't carry format metadata.
+        // Samples are pre-divided by ms_unit_divisor at collection
+        // time so the sparkline scale and the rendered status value
+        // share the same unit.
+        std::string ms_unit_suffix;
+        double ms_unit_divisor{1.0};
+        // Shorthand lookups: set true when at least one loaded file's
+        // format declares the requested column.  Empty ms_samples with
+        // ms_matched == false is a probable typo; empty ms_samples with
+        // ms_matched == true is the "file still indexing" case.  SQL
+        // metrics always set this true once prepared.
+        bool ms_matched{false};
+        // Populated when SQL collection fails at runtime (query that
+        // validated at command time can fail later if the underlying
+        // tables change — e.g. a search-table column disappears after
+        // a format reload).  Rendered as an inline error banner in
+        // place of the sparkline.
+        std::string ms_error;
+    };
+
+    std::vector<metric_state> ts_metrics;
+
+    Result<void, lnav::console::user_message> add_metric(const metric_def& md);
+    bool remove_metric(const std::string& label);
+    void clear_metrics();
+    void collect_metric_samples();
+    void collect_metric_samples_for(metric_state& ms);
+    void collect_metric_samples_from_files(metric_state& ms);
+    void collect_metric_samples_via_sql(metric_state& ms);
+    void update_metric_status();
 
     timeline_preview_overlay ts_preview_overlay;
     attr_line_t ts_rendered_line;

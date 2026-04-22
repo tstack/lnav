@@ -40,6 +40,7 @@ public:
         TSF_TITLE,
         TSF_STITCH_TITLE,
         TSF_DESCRIPTION,
+        TSF_METRICS,
         TSF_TOTAL,
         TSF_WARNINGS,
         TSF_ERRORS,
@@ -57,6 +58,7 @@ public:
             role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
             role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_DESCRIPTION].set_share(2);
+        this->tss_fields[TSF_METRICS].set_share(3);
         this->tss_fields[TSF_WARNINGS].right_justify(true);
         this->tss_fields[TSF_WARNINGS].set_role(role_t::VCR_WARN_STATUS);
         this->tss_fields[TSF_WARNINGS].set_share(1);

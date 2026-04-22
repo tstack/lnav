@@ -370,6 +370,9 @@ dist_noinst_DATA = \
 	logfile_generic_nanos.0 \
 	logfile_generic_with_header.0 \
 	logfile_glog.0 \
+	logfile_glog_metrics.csv \
+	logfile_glog_metrics2.csv \
+	logfile_glog_metrics_units.csv \
 	logfile_grafana.0 \
 	logfile_haproxy.0 \
 	logfile_invalid_json.json \

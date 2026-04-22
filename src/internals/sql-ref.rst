@@ -4038,8 +4038,8 @@ source_log_stmt(*path*)
 
 .. _sparkline:
 
-sparkline(*value*, *\[upper\]*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sparkline(*value*, *\[bound_a\]*, *\[bound_b\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Function used to generate a sparkline bar chart.  The non-aggregate version converts a single numeric value on a range to a bar chart character.  The aggregate version returns a string with a bar character for every numeric input
 
@@ -4047,7 +4047,8 @@ sparkline(*value*, *\[upper\]*)
 
   **Parameters**
     * **value\*** --- The numeric value to convert
-    * **upper** --- The upper bound of the numeric range.  The non-aggregate version defaults to 100.  The aggregate version uses the largest value in the inputs.
+    * **bound_a** --- One bound of the numeric range.  Order does not matter: the smaller of bound_a and bound_b is the floor, the larger is the ceiling.  Defaults to 100; the aggregate version uses the largest input as the ceiling.
+    * **bound_b** --- The other bound of the numeric range.  Defaults to 0.
 
   **Examples**
     To get the unicode block element for the value 32 in the range of 0-128:

@@ -24,6 +24,7 @@ OUT_DIR="${REPO_ROOT}/docs/assets/images"
 TEST_DIR="${REPO_ROOT}/test"
 VENV="${SCRIPT_DIR}/.venv"
 RENDER="${SCRIPT_DIR}/render.py"
+export TZ="UTC"
 
 LNAV_BIN="${LNAV_BIN:-${REPO_ROOT}/build/dev/src/lnav}"
 if [[ ! -x "${LNAV_BIN}" ]]; then
@@ -90,6 +91,28 @@ shot_timeline() {
         "${TEST_DIR}/logfile_strace_log.2"
 }
 
+shot_timeline_metrics() {
+    # A synthetic syslog stream with five requests from distinct
+    # worker PIDs — syslog_log uses `<procname>[<pid>]` as the
+    # thread identifier, so each worker shows up as its own timeline
+    # row without any extra plumbing.  The paired CSV holds
+    # gauge-style cpu_pct / rss samples whose values track the
+    # expensive operations (the "report" and "export" workers),
+    # making the correlation between logs and metrics visible at a
+    # glance.  Longer settle/quiet overrides are needed because
+    # metric-sample collection runs on each rebuild and pushes the
+    # final-frame deadline out.
+    SETTLE=10 QUIET=2.0 \
+    render "lnav-timeline-metrics" \
+        -c ":switch-to-view timeline" \
+        -c ":hide-in-timeline thread logfile" \
+        -c ":timeline-metric cpu_pct" \
+        -c ":timeline-metric rss" \
+        -c ":goto 1" \
+        "${SCRIPT_DIR}/demo.log" \
+        "${SCRIPT_DIR}/demo_metrics.csv"
+}
+
 shot_before_pretty() {
     render "lnav-before-pretty" \
         "${TEST_DIR}/logfile_vami.0"
@@ -134,7 +157,7 @@ shot_sql_syntax() {
         "${TEST_DIR}/logfile_syslog.0"
 }
 
-ALL_SHOTS=(multi_file hist timeline before_pretty after_pretty query tab_complete sql_syntax)
+ALL_SHOTS=(multi_file hist timeline timeline_metrics before_pretty after_pretty query tab_complete sql_syntax)
 
 if [[ $# -eq 0 ]]; then
     for s in "${ALL_SHOTS[@]}"; do

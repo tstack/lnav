@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1048.00" height="736.00" viewBox="0 0 1048.00 736.00">
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-opacity="0.5"/>
+  </filter>
+  <clipPath id="titleClip"><rect x="0" y="0" width="1048.00" height="28.00"/></clipPath>
+</defs>
+<rect x="0" y="0" width="1048.00" height="736.00" fill="#171717" rx="10" ry="10" filter="url(#shadow)"/>
+<g clip-path="url(#titleClip)"><rect x="0" y="0" width="1048.00" height="38.00" fill="#2a2a2a" rx="10" ry="10"/></g>
+<line x1="0" y1="28.00" x2="1048.00" y2="28.00" stroke="#1a1a1a" stroke-width="1"/>
+<circle cx="20.00" cy="14.00" r="6.00" fill="#ff5f57" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="40.00" cy="14.00" r="6.00" fill="#febc2e" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<circle cx="60.00" cy="14.00" r="6.00" fill="#28c840" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+<text x="524.00" y="18.00" fill="#c0c0c0" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12px" font-weight="600" text-anchor="middle">lnav</text>
+<rect x="20.00" y="44.00" width="1008.00" height="672.00" fill="#011627"/>
+<g font-family="JetBrains Mono, JetBrainsMono Nerd Font, Menlo, Monaco, Consolas, DejaVu Sans Mono, monospace" font-size="14.0px">
+<rect x="20.00" y="44.00" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="60.80" width="100.80" height="17.30" fill="#2d5a80"/>
+<rect x="120.80" y="60.80" width="907.20" height="17.30" fill="#162d40"/>
+<rect x="20.00" y="77.60" width="378.00" height="17.30" fill="#0f1f2b"/>
+<rect x="398.00" y="77.60" width="176.40" height="17.30" fill="#28505d"/>
+<rect x="574.40" y="77.60" width="445.20" height="17.30" fill="#0f1f2b"/>
+<rect x="1019.60" y="77.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="94.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="111.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="221.60" y="128.00" width="67.20" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="128.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="144.80" width="378.00" height="17.30" fill="#28505d"/>
+<rect x="398.00" y="144.80" width="176.40" height="17.30" fill="#632053"/>
+<rect x="574.40" y="144.80" width="445.20" height="17.30" fill="#28505d"/>
+<rect x="1019.60" y="144.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="161.60" width="697.20" height="17.30" fill="#15293a"/>
+<rect x="717.20" y="161.60" width="42.00" height="17.30" fill="#632053"/>
+<rect x="759.20" y="161.60" width="260.40" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="161.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="178.40" width="840.00" height="17.30" fill="#15293a"/>
+<rect x="860.00" y="178.40" width="75.60" height="17.30" fill="#632053"/>
+<rect x="935.60" y="178.40" width="84.00" height="17.30" fill="#15293a"/>
+<rect x="1019.60" y="178.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1002.80" y="195.20" width="16.80" height="17.30" fill="#632053"/>
+<rect x="1019.60" y="195.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="212.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="228.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="245.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="262.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="279.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="296.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="312.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="329.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="346.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="363.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="380.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="396.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="413.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="430.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="447.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="464.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="480.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="497.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="514.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="531.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="548.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="564.80" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="581.60" width="1008.00" height="17.30" fill="#0f1f2b"/>
+<rect x="20.00" y="598.40" width="999.60" height="17.30" fill="#28505d"/>
+<rect x="1019.60" y="598.40" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="615.20" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="632.00" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="648.80" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="1019.60" y="665.60" width="8.40" height="17.30" fill="#d6deeb"/>
+<rect x="20.00" y="682.40" width="1008.00" height="17.30" fill="#162d40"/>
+<line x1="141.80" y1="77.60" x2="141.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="183.80" y1="77.60" x2="183.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="309.80" y1="77.60" x2="309.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="393.80" y1="77.60" x2="393.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="477.80" y1="77.60" x2="477.80" y2="94.40" stroke="#33cccc" stroke-width="1"/>
+<line x1="561.80" y1="77.60" x2="561.80" y2="94.40" stroke="#33cccc" stroke-width="1"/>
+<line x1="645.80" y1="77.60" x2="645.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="729.80" y1="77.60" x2="729.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="813.80" y1="77.60" x2="813.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="897.80" y1="77.60" x2="897.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="981.80" y1="77.60" x2="981.80" y2="94.40" stroke="#aaaaaa" stroke-width="1"/>
+<line x1="1023.80" y1="77.60" x2="1023.80" y2="564.80" stroke="#011627" stroke-width="1"/>
+<line x1="1023.80" y1="598.40" x2="1023.80" y2="682.40" stroke="#011627" stroke-width="1"/>
+<line x1="742.40" y1="57.58" x2="750.80" y2="57.58" stroke="#2d5a80" stroke-width="1"/>
+<line x1="20.00" y1="91.18" x2="1019.60" y2="91.18" stroke="#ff70ff" stroke-width="1"/>
+<line x1="927.20" y1="578.38" x2="952.40" y2="578.38" stroke="#f0f0f0" stroke-width="1"/>
+<text x="20.00" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="714.00" lengthAdjust="spacing"> 2026-04-22T15:36:10 UTC                                                        Press</text>
+<text x="742.40" y="55.90" fill="#2d5a80" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">`</text>
+<text x="750.80" y="55.90" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> to focus on the breadcrumb bar</text>
+<text x="20.00" y="72.70" fill="#f8f0f0" xml:space="preserve" textLength="92.40" lengthAdjust="spacing" font-weight="bold"> TIMELINE ▼</text>
+<text x="120.80" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="146.00" y="72.70" fill="#f8f8f0" xml:space="preserve" textLength="218.40" lengthAdjust="spacing">2026-04-22T10:00:05.000000</text>
+<text x="364.40" y="72.70" fill="#2d5a80" xml:space="preserve" textLength="16.80" lengthAdjust="spacing" font-weight="bold"> ：</text>
+<text x="20.00" y="89.50" fill="#ff70ff" xml:space="preserve" textLength="92.40" lengthAdjust="spacing" font-weight="bold">   Duration</text>
+<text x="154.40" y="89.50" fill="#ef5350" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">✘</text>
+<text x="162.80" y="89.50" fill="#b39554" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">▲</text>
+<text x="196.40" y="89.50" fill="#ff70ff" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">Item</text>
+<text x="230.00" y="89.50" fill="#aaaaaa" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">           3s</text>
+<text x="398.00" y="89.50" fill="#33cccc" xml:space="preserve" textLength="176.40" lengthAdjust="spacing" font-weight="bold"> 5s        8s       1</text>
+<text x="574.40" y="89.50" fill="#aaaaaa" xml:space="preserve" textLength="436.80" lengthAdjust="spacing">0s       12s       15s       17s       19s       22s</text>
+<text x="20.00" y="106.30" fill="#ffd75f" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> cpu_pct                ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▆▆▆▆▆▆▆▆▆████████▇▇▇▇▇▇▇▇▇▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▅</text>
+<text x="20.00" y="123.10" fill="#afd700" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> rss                    ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▂▂▂▂▂▂▂▂▅▅▅▅▅▅▅▅▆▆▆▆▆▆▆▆▆▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▃</text>
+<text x="28.40" y="139.90" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">           2s</text>
+<text x="213.20" y="139.90" fill="#d7ff5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">app[2001]</text>
+<text x="28.40" y="156.70" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing" font-weight="bold">           5s</text>
+<text x="213.20" y="156.70" fill="#ffffd7" xml:space="preserve" textLength="75.60" lengthAdjust="spacing" font-weight="bold">app[2002]</text>
+<text x="28.40" y="173.50" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">           1s</text>
+<text x="213.20" y="173.50" fill="#ffaf5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">app[2003]</text>
+<text x="28.40" y="190.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">           2s</text>
+<text x="213.20" y="190.30" fill="#ffd700" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">app[2004]</text>
+<text x="28.40" y="207.10" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing">           7s</text>
+<text x="213.20" y="207.10" fill="#00ff5f" xml:space="preserve" textLength="75.60" lengthAdjust="spacing">app[2005]</text>
+<text x="20.00" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="210.00" lengthAdjust="spacing"> Files :: Text Filters ::</text>
+<text x="364.40" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="210.00" lengthAdjust="spacing" font-weight="bold">        7 Lines not shown</text>
+<text x="582.80" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="336.00" lengthAdjust="spacing">                                   Press</text>
+<text x="927.20" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">TAB</text>
+<text x="952.40" y="576.70" fill="#f0f0f0" xml:space="preserve" textLength="67.20" lengthAdjust="spacing"> to edit</text>
+<text x="20.00" y="593.50" fill="#f0f0f0" xml:space="preserve" textLength="260.40" lengthAdjust="spacing"> Operation Logs :: ID app[2002]</text>
+<text x="280.40" y="593.50" fill="#ffd75f" xml:space="preserve" textLength="126.00" lengthAdjust="spacing"> cpu_pct=62..88</text>
+<text x="423.20" y="593.50" fill="#afd700" xml:space="preserve" textLength="159.60" lengthAdjust="spacing"> rss=610.0MB..1.2GB</text>
+<text x="591.20" y="593.50" fill="#f0f0f0" xml:space="preserve" textLength="428.40" lengthAdjust="spacing">                                         6 messages</text>
+<text x="20.00" y="610.30" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">─</text>
+<text x="28.40" y="610.30" fill="#33cccc" xml:space="preserve" textLength="168.00" lengthAdjust="spacing" font-weight="bold">2026-04-22T10:00:05Z</text>
+<text x="204.80" y="610.30" fill="#87ff87" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">host</text>
+<text x="246.80" y="610.30" fill="#87ff5f" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">app</text>
+<text x="272.00" y="610.30" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">[</text>
+<text x="280.40" y="610.30" fill="#00d700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">2002</text>
+<text x="314.00" y="610.30" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">]</text>
+<text x="322.40" y="610.30" fill="#33cccc" xml:space="preserve" textLength="8.40" lengthAdjust="spacing" font-weight="bold">:</text>
+<text x="339.20" y="610.30" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing" font-weight="bold">req</text>
+<text x="364.40" y="610.30" fill="#33cccc" xml:space="preserve" textLength="109.20" lengthAdjust="spacing" font-weight="bold">=report start</text>
+<text x="482.00" y="610.30" fill="#addb67" xml:space="preserve" textLength="33.60" lengthAdjust="spacing" font-weight="bold">user</text>
+<text x="515.60" y="610.30" fill="#33cccc" xml:space="preserve" textLength="50.40" lengthAdjust="spacing" font-weight="bold">=alice</text>
+<text x="20.00" y="627.10" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">2026-04-22T10:00:06Z</text>
+<text x="204.80" y="627.10" fill="#87ff87" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">host</text>
+<text x="246.80" y="627.10" fill="#87ff5f" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">app</text>
+<text x="272.00" y="627.10" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+<text x="280.40" y="627.10" fill="#00d700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">2002</text>
+<text x="314.00" y="627.10" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+<text x="322.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="339.20" y="627.10" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">req</text>
+<text x="364.40" y="627.10" fill="#d6deeb" xml:space="preserve" textLength="176.40" lengthAdjust="spacing">=report scanning rows</text>
+<text x="20.00" y="643.90" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">2026-04-22T10:00:07Z</text>
+<text x="204.80" y="643.90" fill="#87ff87" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">host</text>
+<text x="246.80" y="643.90" fill="#87ff5f" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">app</text>
+<text x="272.00" y="643.90" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+<text x="280.40" y="643.90" fill="#00d700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">2002</text>
+<text x="314.00" y="643.90" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+<text x="322.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="339.20" y="643.90" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">req</text>
+<text x="364.40" y="643.90" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">=report aggregating</text>
+<text x="20.00" y="660.70" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">┌</text>
+<text x="28.40" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">2026-04-22T10:00:08Z</text>
+<text x="204.80" y="660.70" fill="#87ff87" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">host</text>
+<text x="246.80" y="660.70" fill="#87ff5f" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">app</text>
+<text x="272.00" y="660.70" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+<text x="280.40" y="660.70" fill="#00d700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">2002</text>
+<text x="314.00" y="660.70" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+<text x="322.40" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="339.20" y="660.70" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">req</text>
+<text x="364.40" y="660.70" fill="#d6deeb" xml:space="preserve" textLength="159.60" lengthAdjust="spacing">=report aggregating</text>
+<text x="20.00" y="677.50" fill="#d7ff87" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">└</text>
+<text x="28.40" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="168.00" lengthAdjust="spacing">2026-04-22T10:00:09Z</text>
+<text x="204.80" y="677.50" fill="#87ff87" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">host</text>
+<text x="246.80" y="677.50" fill="#87ff5f" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">app</text>
+<text x="272.00" y="677.50" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">[</text>
+<text x="280.40" y="677.50" fill="#00d700" xml:space="preserve" textLength="33.60" lengthAdjust="spacing">2002</text>
+<text x="314.00" y="677.50" fill="#ffffd7" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">]</text>
+<text x="322.40" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="8.40" lengthAdjust="spacing">:</text>
+<text x="339.20" y="677.50" fill="#addb67" xml:space="preserve" textLength="25.20" lengthAdjust="spacing">req</text>
+<text x="364.40" y="677.50" fill="#d6deeb" xml:space="preserve" textLength="142.80" lengthAdjust="spacing">=report rendering</text>
+<text x="20.00" y="694.30" fill="#f8f8f0" xml:space="preserve" textLength="999.60" lengthAdjust="spacing"> L1        100%                                                                                             ?:View Help</text>
+</g>
+</svg>

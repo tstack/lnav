@@ -101,9 +101,7 @@ stacked_bar_chart<T>::chart_attrs_for_value(
 
     if (value == 0.0 || avail_width < 0) {
         amount = 0;
-    } else if ((overall_stats.bs_max_value - 0.01) <= value
-               && value <= (overall_stats.bs_max_value + 0.01))
-    {
+    } else if (overall_stats.bs_min_value == overall_stats.bs_max_value) {
         amount = avail_width;
     } else {
         double percent

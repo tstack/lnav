@@ -153,8 +153,8 @@ sql_measure_with_units(
     auto b_opt = humanize::try_from<double>(b_sf);
 
     if (a_opt && b_opt) {
-        auto a_val = a_opt.value();
-        auto b_val = b_opt.value();
+        auto a_val = a_opt->value;
+        auto b_val = b_opt->value;
 
         if (a_val < b_val) {
             return -1;

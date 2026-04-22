@@ -1,0 +1,9 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid timeline metric query: [1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mbogus[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mnowhere[0m
+ [1m[31mreason[0m: no such table: nowhere
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m oops SELECT bogus FROM nowhere[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mtimeline-metric-sql[0m[4m [0m[4mlabel[0m[4m [0m[4mquery[0m
+         ══════════════════════════════════════════════════════════════════════
+           Add a sparkline driven by a SQL query. The query must return two
+           columns named log_time and value; it is wrapped as SELECT * FROM
+           (<sql>) WHERE log_time BETWEEN ...
