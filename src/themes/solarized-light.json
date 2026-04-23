@@ -80,6 +80,9 @@
                     "offset-time": {
                         "color": "$cyan"
                     },
+                    "time-ago": {
+                        "bold": true
+                    },
                     "invalid-msg": {
                         "color": "$yellow"
                     },

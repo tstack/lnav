@@ -1065,6 +1065,7 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_tag,
              lt.lt_icon_partition,
              lt.lt_icon_busy,
+             lt.lt_icon_reload,
          })
     {
         size_t index = 0;
@@ -1104,6 +1105,9 @@ view_colors::init_roles(const lnav_theme& lt,
                         break;
                     case ui_icon_t::play:
                         icon_role = role_t::VCR_OK;
+                        break;
+                    case ui_icon_t::reload:
+                        icon_role = role_t::VCR_WARNING;
                         break;
                     default:
                         icon_role = role_t::VCR_TEXT;
@@ -1191,6 +1195,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_skewed_time, reporter);
     this->get_role_attrs(role_t::VCR_OFFSET_TIME)
         = this->to_attrs(lt, lt.lt_style_offset_time, reporter);
+    this->get_role_attrs(role_t::VCR_TIME_AGO)
+        = this->to_attrs(lt, lt.lt_style_time_ago, reporter);
     this->get_role_attrs(role_t::VCR_TIME_COLUMN)
         = this->to_attrs(lt, lt.lt_style_time_column, reporter);
     this->get_role_attrs(role_t::VCR_POPUP)

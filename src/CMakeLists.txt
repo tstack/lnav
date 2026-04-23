@@ -536,6 +536,7 @@ add_library(
         command_executor.cc
         crashd.client.cc
         curl_looper.cc
+        db_status_source.cc
         db_sub_source.cc
         dump_internals.cc
         elem_to_json.cc
@@ -674,6 +675,7 @@ add_library(
         column_namer.hh
         crashd.client.hh
         curl_looper.hh
+        db_status_source.hh
         doc_status_source.hh
         dump_internals.hh
         elem_to_json.hh

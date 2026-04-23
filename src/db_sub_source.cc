@@ -662,8 +662,12 @@ void
 db_label_source::clear()
 {
     this->dls_generation += 1;
+    this->dls_user_query.clear();
     this->dls_query_start = std::nullopt;
     this->dls_query_end = std::nullopt;
+    this->dls_query_touches_log_data = false;
+    this->dls_log_gen_at_query = 0;
+    this->dls_log_line_count_at_query = 0;
     this->dls_headers.clear();
     this->dls_row_cursors.clear();
     this->dls_cell_container.reset();
@@ -844,6 +848,43 @@ db_label_source::text_row_details(const textview_curses& tc)
     }
 
     return std::nullopt;
+}
+
+std::optional<std::string>
+db_label_source::text_view_details() const
+{
+    if (this->dls_user_query.empty()) {
+        return std::nullopt;
+    }
+
+    yajlpp_gen gen;
+    {
+        yajlpp_map root(gen);
+
+        root.gen("query");
+        root.gen(this->dls_user_query);
+
+        if (this->dls_query_start.has_value()) {
+            auto us = std::chrono::duration_cast<std::chrono::microseconds>(
+                this->dls_query_start.value().time_since_epoch());
+            root.gen("run_at");
+            root.gen(lnav::to_rfc3339_string(us, 'T'));
+        }
+
+        if (this->dls_query_start.has_value()
+            && this->dls_query_end.has_value())
+        {
+            int64_t us = std::chrono::duration_cast<std::chrono::microseconds>(
+                             this->dls_query_end.value()
+                             - this->dls_query_start.value())
+                             .count();
+            root.gen("duration_us");
+            root.gen(us);
+        }
+    }
+
+    auto buf = gen.to_string_fragment();
+    return std::string(buf.data(), buf.length());
 }
 
 std::string

@@ -541,6 +541,8 @@ wchar_for_icon(ui_icon_t ic)
             return {U'\u2291', role_t::VCR_TEXT};
         case ui_icon_t::busy:
             return {U'\u23f3', role_t::VCR_TEXT};
+        case ui_icon_t::reload:
+            return {U'\u21bb', role_t::VCR_WARNING};
     }
 
     ensure(false);

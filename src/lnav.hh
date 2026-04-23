@@ -67,6 +67,7 @@
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
+#include "db_status_source.hh"
 #include "timeline_status_source.hh"
 #include "view_helpers.hh"
 
@@ -84,6 +85,7 @@ typedef enum {
     LNS_PREVIEW1,
     LNS_SPECTRO,
     LNS_TIMELINE,
+    LNS_DB,
 
     LNS__MAX
 } lnav_status_t;
@@ -151,6 +153,7 @@ struct lnav_data_t {
     preview_status_source ld_preview_status_source[2];
     std::unique_ptr<spectro_status_source> ld_spectro_status_source;
     timeline_status_source ld_timeline_status_source;
+    db_status_source ld_db_status_source;
     bool ld_preview_hidden;
     int64_t ld_preview_generation{0};
     action_broadcaster<listview_curses> ld_scroll_broadcaster;

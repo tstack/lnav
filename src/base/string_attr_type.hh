@@ -75,9 +75,11 @@ enum class ui_icon_t : int32_t {
     tag,
     partition,
     busy,
+    reload,
 };
 
-constexpr auto ui_icon_count = lnav::enums::to_underlying(ui_icon_t::busy) + 1;
+constexpr auto ui_icon_count
+    = lnav::enums::to_underlying(ui_icon_t::reload) + 1;
 
 /** Roles that can be mapped to curses attributes using attrs_for_role() */
 enum class role_t : int32_t {
@@ -98,6 +100,7 @@ enum class role_t : int32_t {
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,
+    VCR_TIME_AGO,
     VCR_TIME_COLUMN,
     VCR_TIME_COLUMN_TO_TEXT,
     VCR_FILE_OFFSET,
@@ -535,6 +538,13 @@ std::pair<S, string_attr_pair>
 ok(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_OK));
+}
+
+template<typename S>
+std::pair<S, string_attr_pair>
+time_ago(S str)
+{
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_TIME_AGO));
 }
 
 template<typename S>

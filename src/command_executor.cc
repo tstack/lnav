@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <set>
 #include <vector>
 
 #include "command_executor.hh"
@@ -52,6 +53,7 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
+#include "log_vtab_impl.hh"
 #include "prql-modules.h"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
@@ -423,8 +425,12 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         while (isspace(*curr_stmt)) {
             curr_stmt += 1;
         }
-        retcode = sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), curr_stmt, -1, stmt.out(), &tail);
+        std::set<std::string> touched_tables;
+        {
+            sql_table_capture_guard capture_guard(touched_tables);
+            retcode = sqlite3_prepare_v2(
+                lnav_data.ld_db.in(), curr_stmt, -1, stmt.out(), &tail);
+        }
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -470,6 +476,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         auto bound_values = TRY(bind_sql_parameters(ec, stmt.in()));
         if (last_is_readonly) {
             ec.ec_sql_callback(ec, stmt.in());
+            if (!ec.ec_label_source_stack.empty()) {
+                auto& dls = *ec.ec_label_source_stack.back();
+                dls.dls_user_query = sql;
+                dls.dls_query_start = std::chrono::system_clock::now();
+                auto* vtab_mgr = injector::get<log_vtab_manager*>();
+                dls.dls_query_touches_log_data
+                    = vtab_mgr->has_log_backed_table(touched_tables);
+            }
         }
         while (!done) {
             retcode = sqlite3_step(stmt.in());
@@ -538,6 +552,22 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                             .remove_internal_snippets();
                     }
 
+                    if (last_is_readonly && !ec.ec_label_source_stack.empty())
+                    {
+                        auto& dls = *ec.ec_label_source_stack.back();
+                        dls.dls_query_end = std::chrono::system_clock::now();
+                        dls.dls_log_gen_at_query
+                            = lnav_data.ld_log_source.lss_index_generation;
+                        dls.dls_log_line_count_at_query
+                            = lnav_data.ld_log_source.text_line_count();
+                        if (&dls == &lnav_data.ld_db_row_source
+                            && lnav_data.ld_db_status_source
+                                   .update_from_db_source())
+                        {
+                            lnav_data.ld_status[LNS_DB].set_needs_update();
+                        }
+                    }
+
                     return Err(um);
                 }
             }
@@ -548,7 +578,16 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
         auto& dls = *ec.ec_label_source_stack.back();
-        dls.dls_query_end = std::chrono::steady_clock::now();
+        dls.dls_query_end = std::chrono::system_clock::now();
+        dls.dls_log_gen_at_query
+            = lnav_data.ld_log_source.lss_index_generation;
+        dls.dls_log_line_count_at_query
+            = lnav_data.ld_log_source.text_line_count();
+        if (&dls == &lnav_data.ld_db_row_source
+            && lnav_data.ld_db_status_source.update_from_db_source())
+        {
+            lnav_data.ld_status[LNS_DB].set_needs_update();
+        }
 
         size_t memory_usage = 0, total_size = 0, cached_chunks = 0;
         for (auto cc = dls.dls_cell_container.cc_first.get(); cc != nullptr;
@@ -1047,7 +1086,6 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     auto set_vars = dls.dls_row_cursors.empty();
 
     if (dls.dls_row_cursors.empty()) {
-        dls.dls_query_start = std::chrono::steady_clock::now();
         for (int lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
@@ -1311,7 +1349,8 @@ exec_context::execute(source_location loc, const std::string& cmdline)
         && !cmdline.empty())
     {
         auto& hist = prompt.get_history_for(cmdline[0]);
-        hist_guard = hist.start_operation(cmdline.substr(1));
+        auto cmdline_sf = string_fragment::from_str(cmdline);
+        hist_guard = hist.start_operation(cmdline_sf.substr(1));
     }
 
     auto exec_res = execute_any(*this, cmdline);

@@ -122,6 +122,7 @@ run_cap_test() {
 
     sed -ibak \
         -e "s;${prefix}/etc;{prefix}/etc;g" \
+        -e 's;run_at\\":\\".*\\";;' \
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{test_dir};g" \

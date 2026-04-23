@@ -105,6 +105,9 @@
                     "offset-time": {
                         "color": "$cyan"
                     },
+                    "time-ago": {
+                        "bold": true
+                    },
                     "time-column": {
                         "background-color": "$bg_dim"
                     },

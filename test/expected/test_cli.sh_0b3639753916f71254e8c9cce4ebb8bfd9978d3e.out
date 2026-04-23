@@ -270,6 +270,9 @@
                     },
                     "busy": {
                         "value": "⏳"
+                    },
+                    "reload": {
+                        "value": "↻"
                     }
                 },
                 "styles": {
@@ -413,6 +416,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -1309,6 +1321,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -1452,6 +1467,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -2287,6 +2311,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -2430,6 +2457,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -3264,6 +3300,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -3407,6 +3446,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -4276,6 +4324,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -4419,6 +4470,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -5254,6 +5314,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -5397,6 +5460,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -6231,6 +6303,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -6374,6 +6449,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -7218,6 +7302,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -7361,6 +7448,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true
@@ -8205,6 +8301,9 @@
                     },
                     "busy": {
 
+                    },
+                    "reload": {
+
                     }
                 },
                 "styles": {
@@ -8348,6 +8447,15 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "time-ago": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false,
                         "nestable": true

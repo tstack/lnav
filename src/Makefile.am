@@ -274,6 +274,7 @@ noinst_HEADERS = \
 	data_scanner.hh \
 	data_scanner_re.re \
 	data_parser.hh \
+	db_status_source.hh \
 	db_sub_source.hh \
 	doc_status_source.hh \
 	document.sections.hh \
@@ -501,6 +502,7 @@ libdiag_a_SOURCES = \
 	command_executor.cc \
 	crashd.client.cc \
 	curl_looper.cc \
+	db_status_source.cc \
 	db_sub_source.cc \
 	document.sections.cc \
 	dump_internals.cc \

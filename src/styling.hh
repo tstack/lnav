@@ -141,6 +141,7 @@ struct lnav_theme {
     positioned_property<icon_config> lt_icon_tag;
     positioned_property<icon_config> lt_icon_partition;
     positioned_property<icon_config> lt_icon_busy;
+    positioned_property<icon_config> lt_icon_reload;
 
     positioned_property<style_config> lt_style_identifier;
     positioned_property<style_config> lt_style_text;
@@ -160,6 +161,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_adjusted_time;
     positioned_property<style_config> lt_style_skewed_time;
     positioned_property<style_config> lt_style_offset_time;
+    positioned_property<style_config> lt_style_time_ago;
     positioned_property<style_config> lt_style_time_column;
     positioned_property<style_config> lt_style_file_offset;
     positioned_property<style_config> lt_style_invalid_msg;

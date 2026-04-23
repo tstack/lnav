@@ -69,8 +69,13 @@ point::as_time_ago() const
     if (delta < 0s) {
         return "in the future";
     }
-    if (delta < 1min) {
+    if (delta < 5s) {
         return "just now";
+    }
+    if (delta < 1min) {
+        return fmt::format(
+            FMT_STRING("{}s ago"),
+            std::chrono::duration_cast<std::chrono::seconds>(delta).count());
     }
     if (delta < 2min) {
         return "one minute ago";

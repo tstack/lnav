@@ -84,6 +84,9 @@
                     "offset-time": {
                         "color": "$cyan"
                     },
+                    "time-ago": {
+                        "bold": true
+                    },
                     "file-offset": {
                         "color": "#888"
                     },

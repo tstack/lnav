@@ -2844,6 +2844,28 @@ log_vtab_manager::lookup_impl(string_fragment name) const
     return nullptr;
 }
 
+bool
+log_vtab_manager::has_log_backed_table(
+    const std::set<std::string>& table_names) const
+{
+    static const std::set<std::string> FIXED_LOG_TABLES = {
+        "all_logs",
+        "all_logs_vtab",
+        "all_opids",
+        "all_thread_ids",
+    };
+
+    for (const auto& name : table_names) {
+        if (FIXED_LOG_TABLES.count(name) > 0) {
+            return true;
+        }
+        if (this->lookup_impl(string_fragment::from_str(name)) != nullptr) {
+            return true;
+        }
+    }
+    return false;
+}
+
 log_format_vtab_impl::log_format_vtab_impl(
     std::shared_ptr<const log_format> format)
     : log_vtab_impl(format->get_name()), lfvi_format(format)

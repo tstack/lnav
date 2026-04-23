@@ -557,6 +557,11 @@
                                             "description": "Icon for a 'busy' status",
                                             "title": "/ui/theme-defs/<theme_name>/icons/busy",
                                             "$ref": "#/definitions/icon"
+                                        },
+                                        "reload": {
+                                            "description": "Icon for a 'reload' button",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/reload",
+                                            "$ref": "#/definitions/icon"
                                         }
                                     },
                                     "additionalProperties": false
@@ -644,6 +649,11 @@
                                         "offset-time": {
                                             "description": "Styling for the elapsed time column",
                                             "title": "/ui/theme-defs/<theme_name>/styles/offset-time",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "time-ago": {
+                                            "description": "Styling for a relative 'N ago' timestamp",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/time-ago",
                                             "$ref": "#/definitions/style"
                                         },
                                         "time-column": {

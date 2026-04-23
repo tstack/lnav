@@ -719,6 +719,9 @@ update_view_position(listview_curses* lv)
         lnav_data.ld_bottom_source.update_percent(lv);
         lnav_data.ld_bottom_source.update_marks(lv);
         lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+        if (lnav_data.ld_db_status_source.update_from_db_source()) {
+            lnav_data.ld_status[LNS_DB].set_needs_update();
+        }
     };
 }
 
@@ -1074,6 +1077,9 @@ struct refresh_status_bars {
         }
         if (this->rsb_top_source->update_time(current_time)) {
             lnav_data.ld_status[LNS_TOP].set_needs_update();
+        }
+        if (lnav_data.ld_db_status_source.update_from_db_source()) {
+            lnav_data.ld_status[LNS_DB].set_needs_update();
         }
         for (auto& sc : lnav_data.ld_status) {
             sc.do_update();
@@ -1806,6 +1812,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
     lnav_data.ld_status[LNS_TIMELINE].set_data_source(
         &lnav_data.ld_timeline_status_source);
+    lnav_data.ld_status[LNS_DB].set_data_source(&lnav_data.ld_db_status_source);
 
     lnav_data.ld_user_message_view.set_show_bottom_border(true);
 
@@ -2140,6 +2147,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (ui_now >= next_status_update_time
             || lnav_data.ld_status[LNS_FILTER].get_needs_update())
         {
+            if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
+                if (lnav_data.ld_db_status_source.update_from_db_source()) {
+                    lnav_data.ld_status[LNS_DB].set_needs_update();
+                }
+            }
             if (exec_phase.scanning()) {
                 lnav_data.ld_files_view.set_needs_update();
             }
@@ -3543,14 +3555,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         return EXIT_SUCCESS;
     }
 
-    if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
-        if (sqlite3_set_authorizer(
-                lnav_data.ld_db.in(), sqlite_authorizer, nullptr)
-            != SQLITE_OK)
-        {
-            fprintf(stderr, "error: unable to attach sqlite authorizer\n");
-            exit(EXIT_FAILURE);
-        }
+    if (sqlite3_set_authorizer(lnav_data.ld_db.in(), sqlite_authorizer, nullptr)
+        != SQLITE_OK)
+    {
+        fprintf(stderr, "error: unable to attach sqlite authorizer\n");
+        exit(EXIT_FAILURE);
     }
 
     /* If we statically linked against an ncurses library that had a
