@@ -64,11 +64,12 @@ handle_keyseq(const char* keyseq)
         return false;
     }
 
+    db_label_source key_row_source;
     logline_value_vector values;
     exec_context ec(&values, internal_sql_callback, pipe_callback);
     auto& var_stack = ec.ec_local_vars;
 
-    ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
+    ec.ec_label_source_stack.push_back(&key_row_source);
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
     ec.ec_msg_callback_stack = lnav_data.ld_exec_context.ec_msg_callback_stack;
     ec.ec_ui_callbacks = lnav_data.ld_exec_context.ec_ui_callbacks;

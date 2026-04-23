@@ -429,6 +429,21 @@ PRQL [#]_ statement.
 
 Press :kbd:`v` to switch to the database result view.
 
+A status bar above the bottom status bar shows the query that populated
+the view, how long ago it ran, and how long it took.  Clicking
+the reload icon (↻) at the left of the bar re-runs the query.
+
+If the query reads from log-backed tables (:code:`all_logs`,
+per-format tables like :code:`syslog_log`, :code:`all_opids`, etc.),
+the timing status also notes whether the results are based on
+the current log data or old log data.  For queries that don't
+read from log data (e.g. :code:`;SELECT 1`), the timing status
+does not mention the log data freshness.
+
+The same query metadata is exposed via the :code:`view_details`
+column on the :code:`lnav_views` vtable as a JSON object containing
+:code:`query`, :code:`run_at`, and :code:`duration_us`.
+
 .. [#] lnav must be compiled in an environment with Rust/Cargo available
    for PRQL support.
 

@@ -34,6 +34,7 @@
 
 #include <array>
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -129,6 +130,24 @@ int sqlite_authorizer(void* pUserData,
                       const char* detail2,
                       const char* detail3,
                       const char* detail4);
+
+// RAII helper that, while in scope, collects the names of every table
+// accessed by subsequent sqlite3_prepare_v2 calls on this thread into
+// the supplied set.  Used by execute_sql to tell whether the user's
+// query reads from log-backed vtables.  Nested guards restore the
+// previous capture target on destruction.
+class sql_table_capture_guard {
+public:
+    explicit sql_table_capture_guard(std::set<std::string>& into);
+    ~sql_table_capture_guard();
+
+    sql_table_capture_guard(const sql_table_capture_guard&) = delete;
+    sql_table_capture_guard& operator=(const sql_table_capture_guard&)
+        = delete;
+
+private:
+    std::set<std::string>* stcg_prev;
+};
 
 namespace lnav::sql {
 

@@ -2,6 +2,15 @@
 ## lnav v0.14.1
 
 Features:
+* The DB view now shows a status bar above the bottom
+  status bar with the SQL query that populated the view,
+  the relative time when it was run, and how long it took.
+  A reload icon at the left side of the bar can be clicked
+  to re-run the query.  For queries that read from log-backed
+  tables, the status bar also calls out whether the results
+  are "on current log data" or "on old log data" relative to
+  what lnav is currently indexing.  The same information is
+  exposed via the new `lnav_views.view_details` column.
 * For terminals that support the Kitty Keyboard
   protocol, the following hotkeys are now supported
   in the prompt:

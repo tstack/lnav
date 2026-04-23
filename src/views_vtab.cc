@@ -309,7 +309,8 @@ CREATE TABLE lnav_db.lnav_views (
     selection INTEGER,      -- The number of the line that is focused for selection.
     options TEXT,           -- A JSON object that contains optional settings for this view.
     selected_text TEXT,     -- A JSON object that contains information about the text selected by the mouse in the view.
-    row_details TEXT        -- A JSON object that contains information about the focused row.
+    row_details TEXT,       -- A JSON object that contains information about the focused row.
+    view_details TEXT       -- A JSON object that contains view-specific metadata, such as the last SQL query run for the db view.
 );
 )";
 
@@ -541,6 +542,20 @@ CREATE TABLE lnav_db.lnav_views (
                 }
                 break;
             }
+            case 16: {
+                auto* tss = tc.get_sub_source();
+                if (tss == nullptr) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    auto dets = tss->text_view_details();
+                    if (!dets) {
+                        sqlite3_result_null(ctx);
+                    } else {
+                        to_sqlite(ctx, dets.value());
+                    }
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -577,7 +592,8 @@ CREATE TABLE lnav_db.lnav_views (
                    int64_t selection,
                    std::optional<string_fragment> options,
                    std::optional<string_fragment> selected_text,
-                   std::optional<string_fragment> row_details)
+                   std::optional<string_fragment> row_details,
+                   std::optional<string_fragment> view_details)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source

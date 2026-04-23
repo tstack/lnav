@@ -72,6 +72,9 @@
                     },
                     "busy": {
                         "value": "\u23f3"
+                    },
+                    "reload": {
+                        "value": "\u21bb"
                     }
                 },
                 "vars": {
@@ -130,6 +133,9 @@
                     },
                     "offset-time": {
                         "color": "Teal"
+                    },
+                    "time-ago": {
+                        "bold": true
                     },
                     "time-column": {
                         "background-color": "#aaa"

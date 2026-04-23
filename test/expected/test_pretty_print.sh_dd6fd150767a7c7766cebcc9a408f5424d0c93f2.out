@@ -20,7 +20,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "text",
@@ -56,7 +57,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "help",
@@ -77,7 +79,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "histogram",
@@ -98,7 +101,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "db",
@@ -124,7 +128,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": "{\"query\":\"SELECT * FROM lnav_views\",\"}"
     },
     {
         "name": "schema",
@@ -145,7 +150,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "pretty",
@@ -193,7 +199,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "spectro",
@@ -215,7 +222,8 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     },
     {
         "name": "timeline",
@@ -237,6 +245,7 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     }
 ]

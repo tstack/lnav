@@ -1529,6 +1529,9 @@ sqlite_close_wrapper(void* mem)
     sqlite3_close_v2((sqlite3*) mem);
 }
 
+static thread_local std::set<std::string>* tl_authorizer_table_capture
+    = nullptr;
+
 int
 sqlite_authorizer(void* pUserData,
                   int action_code,
@@ -1537,10 +1540,30 @@ sqlite_authorizer(void* pUserData,
                   const char* detail3,
                   const char* detail4)
 {
-    if (action_code == SQLITE_ATTACH) {
+    static auto& lnflags = injector::get<lnav_flags_storage&>();
+
+    if (lnflags.is_set<lnav_flags::secure_mode>()
+        && action_code == SQLITE_ATTACH)
+    {
         return SQLITE_DENY;
     }
+    if (action_code == SQLITE_READ && tl_authorizer_table_capture != nullptr
+        && detail1 != nullptr)
+    {
+        tl_authorizer_table_capture->emplace(detail1);
+    }
     return SQLITE_OK;
+}
+
+sql_table_capture_guard::sql_table_capture_guard(std::set<std::string>& into)
+    : stcg_prev(tl_authorizer_table_capture)
+{
+    tl_authorizer_table_capture = &into;
+}
+
+sql_table_capture_guard::~sql_table_capture_guard()
+{
+    tl_authorizer_table_capture = this->stcg_prev;
 }
 
 attr_line_t

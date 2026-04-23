@@ -57,6 +57,7 @@
             "word-wrap": "none"
         },
         "selected_text": null,
-        "row_details": null
+        "row_details": null,
+        "view_details": null
     }
 ]

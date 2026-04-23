@@ -34,6 +34,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -337,10 +338,7 @@ public:
                          string_attrs_t& sa,
                          logline_value_vector& values);
 
-    virtual bool matches(logline_value_vector& values)
-    {
-        return false;
-    }
+    virtual bool matches(logline_value_vector& values) { return false; }
 
     struct column_index {
         robin_hood::
@@ -435,8 +433,7 @@ public:
     log_vtab_manager(auto_sqlite3& db, logfile_sub_source& lss);
     ~log_vtab_manager();
 
-    using injectable
-        = log_vtab_manager(auto_sqlite3&, logfile_sub_source&);
+    using injectable = log_vtab_manager(auto_sqlite3&, logfile_sub_source&);
 
     logfile_sub_source* get_source() { return &this->vm_source; }
 
@@ -453,6 +450,12 @@ public:
     iterator begin() const { return this->vm_impls.begin(); }
 
     iterator end() const { return this->vm_impls.end(); }
+
+    // Returns true if any name in the given set refers to a table
+    // backed by log data: a per-format vtab registered here, or one
+    // of the fixed cross-log tables (all_logs, all_logs_vtab,
+    // all_opids, all_thread_ids).
+    bool has_log_backed_table(const std::set<std::string>& table_names) const;
 
 private:
     auto_sqlite3& vm_db;

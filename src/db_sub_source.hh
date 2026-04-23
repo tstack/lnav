@@ -115,6 +115,8 @@ public:
     std::optional<json_string> text_row_details(
         const textview_curses& tc) override;
 
+    std::optional<std::string> text_view_details() const override;
+
     std::string get_cell_as_string(vis_line_t row, size_t col);
     std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col) const;
     std::optional<double> get_cell_as_double(vis_line_t row, size_t col) const;
@@ -172,8 +174,12 @@ public:
     };
 
     uint32_t dls_generation{0};
-    std::optional<std::chrono::steady_clock::time_point> dls_query_start;
-    std::optional<std::chrono::steady_clock::time_point> dls_query_end;
+    std::string dls_user_query;
+    std::optional<std::chrono::system_clock::time_point> dls_query_start;
+    std::optional<std::chrono::system_clock::time_point> dls_query_end;
+    bool dls_query_touches_log_data{false};
+    uint32_t dls_log_gen_at_query{0};
+    size_t dls_log_line_count_at_query{0};
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
     lnav::cell_container dls_cell_container;

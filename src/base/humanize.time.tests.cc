@@ -42,10 +42,10 @@ TEST_CASE("time ago")
     auto t1_chrono = std::chrono::seconds(t1);
 
     auto p1 = humanize::time::point::from_tv({t1, 0}).with_recent_point(
-        {(time_t) t1 + 5, 0});
+        {(time_t) t1 + 4, 0});
 
     CHECK(p1.as_time_ago() == "just now");
-    CHECK(p1.as_precise_time_ago() == " 5 seconds ago");
+    CHECK(p1.as_precise_time_ago() == " 4 seconds ago");
 
     auto p2 = humanize::time::point::from_tv({t1, 0}).with_recent_point(
         {(time_t) t1 + 65, 0});

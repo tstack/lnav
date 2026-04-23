@@ -746,10 +746,12 @@ layout_views()
     bool filters_supported = false;
     auto is_spectro = false;
     auto is_timeline = false;
+    auto is_db = false;
 
     lnav_data.ld_view_stack.top() | [&](auto tc) {
         is_spectro = (tc == &lnav_data.ld_views[LNV_SPECTRO]);
         is_timeline = (tc == &lnav_data.ld_views[LNV_TIMELINE]);
+        is_db = (tc == &lnav_data.ld_views[LNV_DB]);
 
         auto* tss = tc->get_sub_source();
 
@@ -925,6 +927,11 @@ layout_views()
     lnav_data.ld_status[LNS_TIMELINE].set_y(bottom);
     lnav_data.ld_status[LNS_TIMELINE].set_width(width);
     lnav_data.ld_status[LNS_TIMELINE].set_visible(vis);
+
+    vis = is_db && bottom.try_consume(1);
+    lnav_data.ld_status[LNS_DB].set_y(bottom);
+    lnav_data.ld_status[LNS_DB].set_width(width);
+    lnav_data.ld_status[LNS_DB].set_visible(vis);
 
     vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                              + (filters_supported ? 1 : 0));

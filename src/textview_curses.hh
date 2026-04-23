@@ -594,6 +594,11 @@ public:
     virtual void add_commands_for_session(
         const std::function<void(const std::string&)>& receiver);
 
+    virtual std::optional<std::string> text_view_details() const
+    {
+        return std::nullopt;
+    }
+
     [[nodiscard]] log_level_t get_min_log_level() const
     {
         return this->tss_min_log_level;

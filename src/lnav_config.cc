@@ -744,6 +744,10 @@ static const json_path_container theme_icons_handlers = {
         .with_description("Icon for a 'busy' status")
         .for_child(&lnav_theme::lt_icon_busy)
         .with_children(icon_config_handlers),
+    yajlpp::property_handler("reload")
+        .with_description("Icon for a 'reload' button")
+        .for_child(&lnav_theme::lt_icon_reload)
+        .with_children(icon_config_handlers),
 };
 
 static const struct json_path_container theme_styles_handlers = {
@@ -811,6 +815,10 @@ static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("offset-time")
         .with_description("Styling for the elapsed time column")
         .for_child(&lnav_theme::lt_style_offset_time)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("time-ago")
+        .with_description("Styling for a relative 'N ago' timestamp")
+        .for_child(&lnav_theme::lt_style_time_ago)
         .with_children(style_config_handlers),
     yajlpp::property_handler("time-column")
         .with_description("Styling for the time column")
