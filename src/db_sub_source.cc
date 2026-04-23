@@ -34,6 +34,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/date_time_scanner.hh"
+#include "base/func_util.hh"
 #include "base/humanize.hh"
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
@@ -41,8 +42,10 @@
 #include "base/math_util.hh"
 #include "base/time_util.hh"
 #include "base/types.hh"
+#include "command_executor.hh"
 #include "config.h"
 #include "hist_source_T.hh"
+#include "lnav_util.hh"
 #include "log_level.hh"
 #include "scn/scan.h"
 #include "yajlpp/json_ptr.hh"
@@ -651,6 +654,8 @@ db_label_source::clear()
 {
     this->dls_generation += 1;
     this->dls_user_query.clear();
+    this->dls_user_query_src_loc = std::nullopt;
+    this->dls_user_query_vars.clear();
     this->dls_query_start = std::nullopt;
     this->dls_query_end = std::nullopt;
     this->dls_query_touches_log_data = false;
@@ -835,6 +840,30 @@ db_label_source::text_row_details(const textview_curses& tc)
     }
 
     return std::nullopt;
+}
+
+Result<std::string, lnav::console::user_message>
+db_label_source::text_reload_data(exec_context& ec)
+{
+    if (this->dls_user_query.empty()) {
+        return ec.make_error("no previous query to re-run");
+    }
+
+    auto prev_query = this->dls_user_query;
+    auto prev_loc = this->dls_user_query_src_loc.value_or(INTERNAL_SRC_LOC);
+    auto prev_vars = this->dls_user_query_vars;
+    std::string alt_msg;
+
+    auto src_guard = ec.enter_source(
+        prev_loc, fmt::format(FMT_STRING(";{}"), prev_query));
+    auto db_guard = ec.enter_db_source(this);
+    auto cb_guard = ec.push_callback(sql_callback);
+
+    ec.ec_local_vars.emplace(std::move(prev_vars));
+    auto vars_guard
+        = finally([&ec]() { ec.ec_local_vars.pop(); });
+
+    return execute_sql(ec, prev_query, alt_msg);
 }
 
 std::optional<std::string>

@@ -38,6 +38,7 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/time_util.hh"
+#include "command_executor.hh"
 #include "config.h"
 #include "data_scanner.hh"
 #include "fmt/format.h"
@@ -1321,6 +1322,12 @@ text_sub_source::clear_preview()
         ttt->clear_preview_times();
     }
     this->tss_preview_min_log_level = std::nullopt;
+}
+
+Result<std::string, lnav::console::user_message>
+text_sub_source::text_reload_data(exec_context& ec)
+{
+    return ec.make_error("this view cannot be reloaded");
 }
 
 void

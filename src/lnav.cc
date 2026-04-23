@@ -239,6 +239,9 @@ static auto bound_lnav_flags
 static auto bound_lnav_exec_context
     = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
 
+static auto bound_db_row_source
+    = injector::bind<db_label_source>::to_instance(&lnav_data.ld_db_row_source);
+
 static auto bound_log_source
     = injector::bind<logfile_sub_source>::to_instance(&lnav_data.ld_log_source);
 
@@ -1765,6 +1768,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto cmd = fmt::format(FMT_STRING("prompt search / '{}'"), term);
 
         execute_command(lnav_data.ld_exec_context, cmd);
+    };
+    lnav_data.ld_db_status_source
+        .statusview_value_for_field(db_status_source::DSF_RELOAD)
+        .on_click = [](status_field&) {
+        auto& ec = lnav_data.ld_exec_context;
+        auto prov_guard = ec.with_provenance(exec_context::mouse_input{});
+        auto res = ec.execute(INTERNAL_SRC_LOC, ":reload-view");
+        if (res.isErr()) {
+            auto um = res.unwrapErr();
+            ec.ec_msg_callback_stack.back()(um);
+        }
     };
 
     lnav_data.ld_status[LNS_TOP].set_title("top");

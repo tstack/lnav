@@ -39,7 +39,9 @@
 
 #include "base/enum_util.hh"
 #include "base/func_util.hh"
+#include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
+#include "base/result.h"
 #include "base/text_format_enum.hh"
 #include "bookmarks.hh"
 #include "breadcrumb.hh"
@@ -55,6 +57,7 @@
 #include "vis_line.hh"
 
 class textview_curses;
+struct exec_context;
 
 using vis_bookmarks_t = bookmarks<vis_line_t>;
 using vis_bookmarks = bookmarks<vis_line_t>::type;
@@ -598,6 +601,13 @@ public:
     {
         return std::nullopt;
     }
+
+    // Re-run whatever operation populated this view.  Default behavior
+    // is to report that the view cannot be reloaded; views like the DB
+    // view and the TIMELINE view override this to re-execute the last
+    // SQL query or rebuild the timeline index, respectively.
+    virtual Result<std::string, lnav::console::user_message>
+    text_reload_data(exec_context& ec);
 
     [[nodiscard]] log_level_t get_min_log_level() const
     {

@@ -1647,6 +1647,12 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mreload-view[0m
+══════════════════════════════════════════════════════════════════════
+  Re-run the operation that populated the current view
+[4mSee Also[0m
+  
+
 [4m:[0m[1m[4mreset-config[0m[4m [0m[4moption[0m
 ══════════════════════════════════════════════════════════════════════
   Reset the configuration option to its default value
