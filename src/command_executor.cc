@@ -211,7 +211,6 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
     std::map<std::string, scoped_value_t> retval;
     auto param_count = sqlite3_bind_parameter_count(stmt);
     for (int lpc = 0; lpc < param_count; lpc++) {
-        std::map<std::string, std::string>::iterator ov_iter;
         const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
         if (name == nullptr) {
             auto um
@@ -479,6 +478,17 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             if (!ec.ec_label_source_stack.empty()) {
                 auto& dls = *ec.ec_label_source_stack.back();
                 dls.dls_user_query = sql;
+                if (!ec.ec_source.empty()) {
+                    dls.dls_user_query_src_loc
+                        = ec.ec_source.back().s_location;
+                } else {
+                    dls.dls_user_query_src_loc = std::nullopt;
+                }
+                if (!ec.ec_local_vars.empty()) {
+                    dls.dls_user_query_vars = ec.ec_local_vars.top();
+                } else {
+                    dls.dls_user_query_vars.clear();
+                }
                 dls.dls_query_start = std::chrono::system_clock::now();
                 auto* vtab_mgr = injector::get<log_vtab_manager*>();
                 dls.dls_query_touches_log_data

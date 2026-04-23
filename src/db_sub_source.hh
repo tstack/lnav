@@ -41,6 +41,7 @@
 
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/cell_container.hh"
+#include "base/file_range.hh"
 #include "base/lnav.resolver.hh"
 #include "base/sparse_cursor_container.hh"
 #include "digestible/digestible.h"
@@ -118,6 +119,9 @@ public:
 
     std::optional<std::string> text_view_details() const override;
 
+    Result<std::string, lnav::console::user_message> text_reload_data(
+        exec_context& ec) override;
+
     std::string get_cell_as_string(vis_line_t row, size_t col);
     std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col) const;
     std::optional<double> get_cell_as_double(vis_line_t row, size_t col) const;
@@ -182,6 +186,8 @@ public:
 
     uint32_t dls_generation{0};
     std::string dls_user_query;
+    std::optional<source_location> dls_user_query_src_loc;
+    std::map<std::string, scoped_value_t> dls_user_query_vars;
     std::optional<std::chrono::system_clock::time_point> dls_query_start;
     std::optional<std::chrono::system_clock::time_point> dls_query_end;
     bool dls_query_touches_log_data{false};

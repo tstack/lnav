@@ -1449,6 +1449,19 @@
 ----
 
 
+.. _reload_view:
+
+:reload-view
+^^^^^^^^^^^^
+
+  Re-run the operation that populated the current view
+
+  **See Also**
+    
+
+----
+
+
 .. _reset_config:
 
 :reset-config *option*

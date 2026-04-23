@@ -117,6 +117,9 @@ public:
 
     bool rebuild_indexes();
 
+    Result<std::string, lnav::console::user_message> text_reload_data(
+        exec_context& ec) override;
+
     std::pair<std::chrono::microseconds, std::chrono::microseconds>
     get_time_bounds_for(int line);
 

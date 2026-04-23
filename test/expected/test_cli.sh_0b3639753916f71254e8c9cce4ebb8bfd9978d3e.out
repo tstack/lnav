@@ -9300,6 +9300,11 @@
                     "command": ":help",
                     "alt-msg": ""
                 },
+                "f5": {
+                    "id": "",
+                    "command": ":reload-view",
+                    "alt-msg": ""
+                },
                 "f7": {
                     "id": "",
                     "command": "|lnav-moveto-breakpoint prev",

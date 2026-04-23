@@ -930,6 +930,20 @@ timeline_source::text_size_for_line(textview_curses& tc,
     return this->ts_total_width;
 }
 
+Result<std::string, lnav::console::user_message>
+timeline_source::text_reload_data(exec_context& ec)
+{
+    if (!this->rebuild_indexes()) {
+        return ec.make_error("timeline rebuild was interrupted");
+    }
+    this->apply_pending_bookmarks();
+    if (this->tss_view != nullptr) {
+        this->tss_view->reload_data();
+        this->tss_view->redo_search();
+    }
+    return Ok(std::string());
+}
+
 bool
 timeline_source::rebuild_indexes()
 {

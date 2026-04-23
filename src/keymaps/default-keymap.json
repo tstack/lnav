@@ -23,6 +23,9 @@
                 "f1": {
                     "command": ":help"
                 },
+                "f5": {
+                    "command": ":reload-view"
+                },
                 "f7": {
                     "command": "|lnav-moveto-breakpoint prev"
                 },

@@ -31,15 +31,15 @@
 
 #include "base/attr_line.hh"
 #include "base/humanize.time.hh"
+#include "base/injector.hh"
 #include "base/intern_string.hh"
 #include "base/string_attr_type.hh"
 #include "base/time_util.hh"
 #include "command_executor.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
-#include "lnav.hh"
+#include "logfile_sub_source.hh"
 #include "readline_highlighters.hh"
-#include "sql.formatter.hh"
 
 using namespace lnav::roles::literals;
 
@@ -53,22 +53,6 @@ db_status_source::db_status_source()
         role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
         role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
     this->dss_fields[DSF_RELOAD].set_width(3);
-    this->dss_fields[DSF_RELOAD].on_click = [](status_field&) {
-        auto query = lnav_data.ld_db_row_source.dls_user_query;
-        if (query.empty()) {
-            return;
-        }
-        std::string alt_msg;
-        auto& ec = lnav_data.ld_exec_context;
-        auto src_guard = ec.enter_source(intern_string::lookup("db-reload"),
-                                         1,
-                                         fmt::format(FMT_STRING(";{}"), query));
-        auto result = execute_sql(ec, query, alt_msg);
-        if (result.isErr()) {
-            auto um = result.unwrapErr();
-            ec.ec_msg_callback_stack.back()(um);
-        }
-    };
     this->dss_fields[DSF_QUERY].set_share(3);
     this->dss_fields[DSF_TIMING].right_justify(true);
     this->dss_fields[DSF_TIMING].set_width(80);
@@ -77,7 +61,8 @@ db_status_source::db_status_source()
 bool
 db_status_source::update_from_db_source()
 {
-    const auto& dls = lnav_data.ld_db_row_source;
+    static const auto& dls = injector::get<db_label_source&>();
+    static auto& lss = injector::get<logfile_sub_source&>();
     auto changed = false;
 
     if (dls.dls_user_query.empty()) {
@@ -111,11 +96,9 @@ db_status_source::update_from_db_source()
                            .to_string();
             timing_al.append("ran ").append(lnav::roles::time_ago(ago));
             if (dls.dls_query_touches_log_data) {
-                auto& lss = lnav_data.ld_log_source;
                 bool is_stale
                     = lss.lss_index_generation != dls.dls_log_gen_at_query
-                    || lss.text_line_count()
-                        != dls.dls_log_line_count_at_query;
+                    || lss.text_line_count() != dls.dls_log_line_count_at_query;
                 timing_al.append(" on ").append(
                     is_stale ? lnav::roles::warning("old log data")
                              : lnav::roles::ok("current log data"));

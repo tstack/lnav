@@ -317,6 +317,9 @@ Display
      - Close the current text file or log file.
    * - :kbd:`F2`
      - Toggle mouse support.
+   * - :kbd:`F5`
+     - Reload the current view.  Re-runs the SQL query for the DB view
+       or rebuilds the index for the TIMELINE view.
 
 Session
 -------

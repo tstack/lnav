@@ -430,8 +430,9 @@ PRQL [#]_ statement.
 Press :kbd:`v` to switch to the database result view.
 
 A status bar above the bottom status bar shows the query that populated
-the view, how long ago it ran, and how long it took.  Clicking
-the reload icon (↻) at the left of the bar re-runs the query.
+the view, how long ago it ran, and how long it took.  Clicking the reload
+icon (↻) at the left of the bar — or pressing :kbd:`F5` — re-runs the
+query via the :code:`:reload-view` command.
 
 If the query reads from log-backed tables (:code:`all_logs`,
 per-format tables like :code:`syslog_log`, :code:`all_opids`, etc.),
@@ -485,6 +486,10 @@ TIMELINE
 The timeline view [#]_ visualizes operations, log files, threads, tags, and
 partitions over time. The items are ordered top-to-bottom by their start time.
 So, scrolling down will move forward in time.
+
+The timeline index is not refreshed automatically as new log data arrives.
+Press :kbd:`F5` (or run :code:`:reload-view`) to rebuild the index with the
+latest data.
 
 An operation is identified by an ID that can come from multiple sources:
 

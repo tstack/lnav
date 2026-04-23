@@ -54,6 +54,11 @@ Features:
 ## lnav v0.14.1
 
 Features:
+* Added the `:reload-view` command, bound to `F5`, that
+  re-runs the operation that populated the current view.
+  In the DB view, this re-executes the last SQL query; in
+  the TIMELINE view, it rebuilds the index.  Views that
+  don't have a meaningful reload report an error.
 * The DB view now shows a status bar above the bottom
   status bar with the SQL query that populated the view,
   the relative time when it was run, and how long it took.

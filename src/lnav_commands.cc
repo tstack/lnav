@@ -1065,6 +1065,31 @@ com_relative_goto(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_reload_view(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        return Ok(std::string());
+    }
+
+    auto top_tc = lnav_data.ld_view_stack.top();
+    if (!top_tc) {
+        return ec.make_error("no view to reload");
+    }
+    auto* tss = top_tc.value()->get_sub_source();
+    if (tss == nullptr) {
+        return ec.make_error("no view to reload");
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    return tss->text_reload_data(ec);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_mark_expr(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -3320,6 +3345,14 @@ readline_context::command_t STD_COMMANDS[] = {
                   "2017-01-01"},
                  {"To go to the Screenshots section", "#screenshots"}})
             .with_tags({"navigation"}),
+    },
+    {
+        "reload-view",
+        com_reload_view,
+        help_text(":reload-view")
+            .with_summary(
+                "Re-run the operation that populated the current view")
+            .with_tags({"views"}),
     },
     {
         "relative-goto",
