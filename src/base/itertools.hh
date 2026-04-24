@@ -40,6 +40,7 @@
 #include <vector>
 
 #include "func_util.hh"
+#include "result.h"
 
 namespace lnav::itertools {
 
@@ -89,9 +90,10 @@ struct sort_by {
 
 struct sorted {};
 
-template<typename F>
+template<typename F, typename... Args>
 struct mapper {
     F m_func;
+    std::tuple<Args...> m_args;
 };
 
 template<typename F>
@@ -141,6 +143,20 @@ struct sum {};
 
 struct to_vector {};
 
+template<typename F>
+struct to_result {
+    F tr_func;
+};
+
+template<typename F, typename V, int CONTEXT = 200>
+struct middle_out {
+    int context() const { return CONTEXT; }
+
+    int mo_initial;
+    F mo_func;
+    const V& mo_value;
+};
+
 template<typename T, typename = void>
 struct HasEmplaceBack : std::false_type {};
 
@@ -174,10 +190,24 @@ extend(T& accum, E& arg, Args&... args)
 
 }  // namespace details
 
+template<typename F, typename V>
+details::middle_out<F, V>
+middle_out(int initial, F func, const V& value)
+{
+    return details::middle_out<F, V>{initial, func, value};
+}
+
 inline details::to_vector
 to_vector()
 {
     return details::to_vector{};
+}
+
+template<typename F>
+details::to_result<F>
+to_result(F f)
+{
+    return details::to_result<F>{f};
 }
 
 template<typename T>
@@ -286,11 +316,11 @@ sort_by(T C::* m)
         [m](const C& lhs, const C& rhs) { return lhs.*m < rhs.*m; });
 }
 
-template<typename F>
-inline details::mapper<F>
-map(F func)
+template<typename F, typename... Args>
+details::mapper<F, Args...>
+map(F func, Args... args)
 {
-    return details::mapper<F>{func};
+    return details::mapper<F, Args...>{func, std::make_tuple(args...)};
 }
 
 template<typename F>
@@ -661,19 +691,62 @@ operator|(T (&in)[N], const lnav::itertools::details::for_eacher<F>& eacher)
 
 template<typename T,
          typename F,
-         std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
+         typename... Args,
+         std::enable_if_t<std::is_invocable_v<F, Args..., T>, int> = 0>
 auto
 operator|(std::optional<T> in,
-          const lnav::itertools::details::mapper<F>& mapper)
-    -> std::optional<
-        typename std::remove_const_t<typename std::remove_reference_t<
-            decltype(lnav::func::invoke(mapper.m_func, in.value()))>>>
+          const lnav::itertools::details::mapper<F, Args...>& mapper)
+    -> std::optional<std::remove_const_t<
+        std::remove_reference_t<std::invoke_result_t<F, Args..., T>>>>
 {
     if (!in) {
         return std::nullopt;
     }
+    return std::make_optional(
+        std::apply(mapper.m_func,
+                   std::tuple_cat(mapper.m_args, std::forward_as_tuple(*in))));
+}
 
-    return std::make_optional(lnav::func::invoke(mapper.m_func, in.value()));
+template<typename T,
+         typename E,
+         typename F,
+         typename... Args,
+         std::enable_if_t<std::is_invocable_v<F, Args..., T>
+                              && details::IsResult<
+                                  std::invoke_result_t<F, Args..., T>>::value,
+                          int> = 0>
+auto
+operator|(Result<T, E> in,
+          const lnav::itertools::details::mapper<F, Args...>& mapper)
+    -> Result<typename std::invoke_result_t<F, Args..., T>::value_type, E>
+{
+    if (in.isErr()) {
+        return Err(in.unwrapErr());
+    }
+    return std::apply(
+        mapper.m_func,
+        std::tuple_cat(mapper.m_args, std::forward_as_tuple(in.unwrap())));
+}
+
+template<typename T,
+         typename E,
+         typename F,
+         typename... Args,
+         std::enable_if_t<std::is_invocable_v<F, Args..., T>
+                              && !details::IsResult<
+                                  std::invoke_result_t<F, Args..., T>>::value,
+                          int> = 0>
+auto
+operator|(Result<T, E> in,
+          const lnav::itertools::details::mapper<F, Args...>& mapper)
+    -> Result<std::invoke_result_t<F, Args..., T>, E>
+{
+    if (in.isErr()) {
+        return Err(in.unwrapErr());
+    }
+    return Ok(std::apply(
+        mapper.m_func,
+        std::tuple_cat(mapper.m_args, std::forward_as_tuple(in.unwrap()))));
 }
 
 template<typename T, typename F>
@@ -858,39 +931,6 @@ operator|(const std::vector<T>& in,
     return retval;
 }
 
-template<typename T,
-         typename F,
-         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
-auto
-operator|(std::optional<T> in,
-          const lnav::itertools::details::mapper<F>& mapper)
-    -> std::optional<typename std::remove_reference_t<
-        typename std::remove_const_t<decltype(((in.value()).*mapper.m_func))>>>
-{
-    if (!in) {
-        return std::nullopt;
-    }
-
-    return std::make_optional((in.value()).*mapper.m_func);
-}
-
-template<typename T,
-         typename F,
-         std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
-auto
-operator|(std::optional<T> in,
-          const lnav::itertools::details::mapper<F>& mapper)
-    -> std::optional<
-        typename std::remove_const_t<typename std::remove_reference_t<
-            decltype(((*in.value()).*mapper.m_func))>>>
-{
-    if (!in) {
-        return std::nullopt;
-    }
-
-    return std::make_optional((*in.value()).*mapper.m_func);
-}
-
 template<typename T>
 T
 operator|(std::optional<T> in,
@@ -909,6 +949,57 @@ operator|(std::set<T>&& in, lnav::itertools::details::to_vector tv)
     std::copy(in.begin(), in.end(), std::back_inserter(retval));
 
     return retval;
+}
+
+template<typename T, typename F, typename E = std::invoke_result_t<F>>
+Result<T, E>
+operator|(std::optional<T>&& in,
+          const lnav::itertools::details::to_result<F>& tr)
+{
+    if (in) {
+        return Ok(std::move(in).value());
+    }
+    return Err(tr.tr_func());
+}
+
+template<typename T, typename F, typename V>
+std::optional<int>
+operator|(T&& in, const lnav::itertools::details::middle_out<F, V>& mo)
+{
+    size_t size = 0;
+    if constexpr (std::is_pointer_v<T>) {
+        size = in->size();
+    } else {
+        size = in.size();
+    }
+    if (size == 0) {
+        return std::nullopt;
+    }
+
+    auto adjusted_initial = mo.mo_initial;
+    if (adjusted_initial >= size) {
+        adjusted_initial = size - 1;
+    }
+    for (int offset = 0; offset < mo.context(); offset++) {
+        auto left_index = adjusted_initial - offset;
+        auto right_index = adjusted_initial + offset;
+
+        if (left_index >= 0) {
+            auto curr_value = mo.mo_func(in, left_index);
+            if (curr_value == mo.mo_value) {
+                return left_index;
+            }
+        }
+
+        if (left_index != right_index && right_index < size) {
+            auto curr_value = mo.mo_func(in, right_index);
+            if (curr_value == mo.mo_value) {
+                return right_index;
+            }
+        }
+    }
+
+    return std::nullopt;
 }
 
 #endif

@@ -218,6 +218,20 @@ struct from_sqlite<vtab_types::nullable<T>> {
     }
 };
 
+template<typename T>
+T from_stmt(sqlite3_stmt* stmt, int index)
+{
+    auto argc = sqlite3_column_count(stmt);
+    if (index < 0 || index >= argc) {
+        throw std::out_of_range("column index out of range");
+    }
+
+    sqlite3_value* argv[1];
+    argv[0] = sqlite3_column_value(stmt, index);
+
+    return from_sqlite<T>()(1, argv, 0);
+}
+
 void to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um);
 
 void set_vtable_errmsg(sqlite3_vtab* vtab,

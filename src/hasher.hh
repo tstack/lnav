@@ -124,4 +124,13 @@ private:
     SpookyHash h_context;
 };
 
+template<typename S>
+std::string
+hash_string_for(const S& s)
+{
+    hasher h;
+    h.update(to_string_fragment(s));
+    return h.to_string();
+}
+
 #endif

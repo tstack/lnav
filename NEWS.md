@@ -50,6 +50,12 @@ Features:
   e.g. a field storing milliseconds with `"suffix": "s"`
   declares `"divisor": 1000`.
 
+Bug Fixes:
+* Bookmarks in the TEXT view should be more stable.
+  The marks now include a reference to the nearest
+  anchor (e.g. header in Markdown) and use it as a
+  starting point of a search for the matching line.
+
 
 ## lnav v0.14.1
 

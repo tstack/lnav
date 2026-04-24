@@ -1673,29 +1673,25 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
 }
 
 std::optional<std::string>
-textfile_sub_source::anchor_for_row(vis_line_t vl)
+textfile_sub_source::file_view_state::anchor_for_row(view_mode mode,
+                                                    vis_line_t vl)
 {
-    const auto curr_iter = this->current_file_state();
-    if (curr_iter == this->tss_files.end()) {
+    if (mode == view_mode::rendered && this->fvs_text_source) {
+        return this->fvs_text_source->anchor_for_row(vl);
+    }
+
+    if (!this->fvs_metadata.m_sections_root) {
         return std::nullopt;
     }
 
-    if (this->tss_view_mode == view_mode::rendered
-        && (*curr_iter)->fvs_text_source)
-    {
-        return (*curr_iter)->fvs_text_source->anchor_for_row(vl);
-    }
-
-    if (!(*curr_iter)->fvs_metadata.m_sections_root) {
-        return std::nullopt;
-    }
-
-    const auto& lf = (*curr_iter)->fvs_file;
+    const auto& lf = this->fvs_file;
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()) {
+    if (lfo == nullptr
+        || vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+    {
         return std::nullopt;
     }
-    auto& md = (*curr_iter)->fvs_metadata;
+    auto& md = this->fvs_metadata;
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto line_offsets = lf->get_file_range(ll_iter, false);
     auto path_for_line
@@ -1725,6 +1721,16 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
 
     return fmt::format(FMT_STRING("#/{}"),
                        fmt::join(comps.begin(), comps.end(), "/"));
+}
+
+std::optional<std::string>
+textfile_sub_source::anchor_for_row(vis_line_t vl)
+{
+    const auto curr_iter = this->current_file_state();
+    if (curr_iter == this->tss_files.end()) {
+        return std::nullopt;
+    }
+    return (*curr_iter)->anchor_for_row(this->tss_view_mode, vl);
 }
 
 bool

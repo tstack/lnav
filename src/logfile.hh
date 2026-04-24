@@ -273,6 +273,14 @@ public:
 
     logline& operator[](int index) { return this->lf_index[index]; }
 
+    std::optional<const_iterator> find_line(int line_number) const
+    {
+        if (line_number < 0 || line_number >= this->lf_index.size()) {
+            return std::nullopt;
+        }
+        return this->lf_index.begin() + line_number;
+    }
+
     logline& at(int index) { return this->lf_index.at(index); }
 
     logline& front() { return this->lf_index.front(); }
@@ -349,6 +357,11 @@ public:
             mlr.mlr_length,
             mlr.mlr_metadata,
         };
+    }
+
+    file_range get_msg_range(const_iterator ll)
+    {
+        return this->get_file_range(ll, true);
     }
 
     file_off_t get_line_content_offset(const_iterator ll)

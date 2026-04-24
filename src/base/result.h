@@ -767,6 +767,8 @@ struct Result {
     static_assert(!std::is_same<E, void>::value,
                   "void error type is not allowed");
 
+    using value_type = T;
+    using error_type = E;
     typedef details::Storage<T, E> storage_type;
 
     Result(types::Ok<T> ok) : ok_(true) { storage_.construct(std::move(ok)); }

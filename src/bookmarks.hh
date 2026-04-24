@@ -225,7 +225,7 @@ public:
     static const type_container& get_all_types();
 
     static std::optional<const bookmark_type_t*> find_type(
-        const std::string& name);
+        const string_fragment& name);
 
     static std::vector<string_fragment> get_type_names();
 

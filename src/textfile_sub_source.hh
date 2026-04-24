@@ -183,6 +183,8 @@ public:
 
     view_mode get_effective_view_mode() const;
 
+    view_mode get_view_mode() const { return this->tss_view_mode; }
+
     bool tss_apply_default_init_location{false};
 
     struct file_view_state {
@@ -218,6 +220,9 @@ public:
 
         std::optional<vis_line_t> row_for_anchor(view_mode mode,
                                                  const std::string& id);
+
+        std::optional<std::string> anchor_for_row(view_mode mode,
+                                                  vis_line_t vl);
 
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};

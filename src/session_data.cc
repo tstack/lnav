@@ -41,6 +41,7 @@
 
 #include "base/fs_util.hh"
 #include "base/isc.hh"
+#include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "base/paths.hh"
 #include "bookmarks.json.hh"
@@ -119,11 +120,13 @@ CREATE TABLE IF NOT EXISTS regex101_entries (
 );
 
 CREATE TABLE IF NOT EXISTS text_bookmarks2 (
-    file_path    text NOT NULL,
-    line_number  integer NOT NULL,
-    line_hash    text NOT NULL,
-    mark_type    text NOT NULL DEFAULT 'user',
-    session_time integer NOT NULL,
+    file_path     text NOT NULL,
+    line_number   integer NOT NULL,
+    line_hash     text NOT NULL,
+    mark_type     text NOT NULL DEFAULT 'user',
+    session_time  integer NOT NULL,
+    anchor        text DEFAULT NULL,
+    anchor_offset integer DEFAULT NULL CHECK (anchor_offset >= 0),
 
     PRIMARY KEY (file_path, line_number, mark_type, session_time),
 
@@ -170,6 +173,10 @@ static const char* const UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN log_opid text DEFAULT NULL;)",
     R"(ALTER TABLE bookmarks ADD COLUMN sticky integer DEFAULT 0;)",
     R"(DROP TABLE IF EXISTS text_bookmarks;)",
+    R"(ALTER TABLE text_bookmarks2 ADD COLUMN anchor text DEFAULT NULL;)",
+    R"(ALTER TABLE text_bookmarks2
+         ADD COLUMN anchor_offset integer
+             DEFAULT NULL CHECK (anchor_offset >= 0);)",
 };
 
 static constexpr size_t MAX_SESSIONS = 8;
@@ -191,6 +198,30 @@ struct session_line {
 
 static std::vector<session_line> marked_session_lines;
 static std::vector<session_line> offset_session_lines;
+
+static std::optional<std::string>
+get_text_line_hash(logfile* lf, int line_number)
+{
+    auto res = lf->find_line(line_number) | lnav::itertools::to_result([&] {
+                   return fmt::format(
+                       FMT_STRING("could not find line {} in file {}"),
+                       line_number,
+                       lf->get_filename_as_string());
+               })
+        | lnav::itertools::map(&logfile::get_msg_range, lf)
+        | lnav::itertools::map(&logfile::read_range, lf)
+        | lnav::itertools::map(hash_string_for<shared_buffer_ref>);
+
+    if (res.isErr()) {
+        log_error("could not read line %d from file %s -- %s",
+                  line_number,
+                  lf->get_filename_as_string().c_str(),
+                  res.unwrapErr().c_str());
+        return std::nullopt;
+    }
+
+    return res.unwrap();
+}
 
 static bool
 bind_line(sqlite3* db,
@@ -259,7 +290,7 @@ static void
 cleanup_session_data()
 {
     static_root_mem<glob_t, globfree> session_file_list;
-    std::list<struct session_file_info> session_info_list;
+    std::list<session_file_info> session_info_list;
     std::map<std::string, int> session_count;
     auto session_file_pattern = lnav::paths::dotlnav() / "*-*.ts*.json";
 
@@ -1000,6 +1031,7 @@ static const json_path_container view_def_handlers = {
     json_path_handler("top_line").for_field(&view_state::vs_top),
     json_path_handler("focused_line").for_field(&view_state::vs_selection),
     json_path_handler("anchor").for_field(&view_state::vs_anchor),
+    json_path_handler("anchor_offset").for_field(&view_state::vs_anchor_offset),
     json_path_handler("search").for_field(&view_state::vs_search),
     json_path_handler("word_wrap").for_field(&view_state::vs_word_wrap),
     json_path_handler("filtering").for_field(&view_state::vs_filtering),
@@ -1405,14 +1437,14 @@ save_text_bookmarks(sqlite3* db)
         return;
     }
 
-    if (sqlite3_prepare_v2(
-            db,
-            "REPLACE INTO text_bookmarks2"
-            " (file_path, line_number, line_hash, mark_type, session_time)"
-            " VALUES (?, ?, ?, ?, ?)",
-            -1,
-            stmt.out(),
-            nullptr)
+    if (sqlite3_prepare_v2(db,
+                           "REPLACE INTO text_bookmarks2"
+                           " (file_path, line_number, line_hash, mark_type,"
+                           "  session_time, anchor, anchor_offset)"
+                           " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           -1,
+                           stmt.out(),
+                           nullptr)
         != SQLITE_OK)
     {
         log_error("could not prepare text_bookmarks replace statement -- %s",
@@ -1445,22 +1477,24 @@ save_text_bookmarks(sqlite3* db)
                     continue;
                 }
 
-                auto line_iter = lf->begin() + static_cast<int>(vl);
-                auto fr = lf->get_file_range(line_iter, false);
-                auto read_result = lf->read_range(fr);
-
-                if (read_result.isErr()) {
+                auto line_hash_opt
+                    = get_text_line_hash(lf.get(), static_cast<int>(vl));
+                if (!line_hash_opt) {
                     continue;
                 }
+                auto line_hash = line_hash_opt.value();
 
-                auto line_hash
-                    = read_result
-                          .map([](auto sbr) {
-                              return hasher()
-                                  .update(sbr.get_data(), sbr.length())
-                                  .to_string();
-                          })
-                          .unwrap();
+                auto anchor_opt = fvs->anchor_for_row(
+                    tss.get_view_mode(), vis_line_t(static_cast<int>(vl)));
+                std::optional<int64_t> anchor_offset_opt;
+                if (anchor_opt.has_value()) {
+                    auto anchor_row_opt = fvs->row_for_anchor(
+                        tss.get_view_mode(), anchor_opt.value());
+                    if (anchor_row_opt.has_value()) {
+                        anchor_offset_opt = static_cast<int64_t>(vl)
+                            - static_cast<int64_t>(anchor_row_opt.value());
+                    }
+                }
 
                 sqlite3_clear_bindings(stmt.in());
                 bind_to_sqlite(stmt.in(), 1, file_path);
@@ -1468,6 +1502,8 @@ save_text_bookmarks(sqlite3* db)
                 bind_to_sqlite(stmt.in(), 3, line_hash);
                 bind_to_sqlite(stmt.in(), 4, bm_type->get_name());
                 sqlite3_bind_int64(stmt.in(), 5, lnav_data.ld_session_time);
+                bind_to_sqlite(stmt.in(), 6, anchor_opt);
+                bind_to_sqlite(stmt.in(), 7, anchor_offset_opt);
 
                 if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
                     log_error("could not execute text_bookmarks insert -- %s",
@@ -1486,7 +1522,7 @@ load_text_bookmarks(sqlite3* db)
 {
     static const char* const TEXT_BOOKMARK_STMT = R"(
         SELECT line_number, line_hash, mark_type, session_time,
-               session_time=? AS same_session
+               session_time=? AS same_session, anchor, anchor_offset
         FROM text_bookmarks2
         WHERE file_path = ?
         ORDER BY same_session DESC, session_time DESC
@@ -1536,11 +1572,15 @@ load_text_bookmarks(sqlite3* db)
 
                 case SQLITE_ROW: {
                     auto line_number = sqlite3_column_int(stmt.in(), 0);
-                    const auto* stored_hash
-                        = (const char*) sqlite3_column_text(stmt.in(), 1);
-                    const auto* mark_type
-                        = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    const auto stored_hash
+                        = from_stmt<string_fragment>(stmt.in(), 1);
+                    const auto mark_type
+                        = from_stmt<string_fragment>(stmt.in(), 2);
                     auto session_time = sqlite3_column_int64(stmt.in(), 3);
+                    const auto stored_anchor
+                        = from_stmt<string_fragment>(stmt.in(), 5);
+                    auto stored_anchor_offset
+                        = from_stmt<std::optional<int64_t>>(stmt.in(), 6);
 
                     if (last_session_time == -1) {
                         last_session_time = session_time;
@@ -1549,43 +1589,57 @@ load_text_bookmarks(sqlite3* db)
                         continue;
                     }
 
-                    if (line_number >= line_count) {
-                        continue;
-                    }
-
                     auto bm_type_opt = bookmark_type_t::find_type(mark_type);
                     if (!bm_type_opt) {
+                        log_warning(
+                            "unknown bookmark type '%.*s' in file %s -- "
+                            "skipping",
+                            mark_type.length(),
+                            mark_type.data(),
+                            file_path.c_str());
                         continue;
                     }
 
-                    auto line_iter = lf->begin() + line_number;
-                    auto fr = lf->get_file_range(line_iter, false);
-                    auto read_result = lf->read_range(fr);
+                    // Pick a pivot line: prefer the anchor's current
+                    // position plus the saved offset if the anchor
+                    // resolves; otherwise the stored line number.
+                    int pivot = line_number;
+                    if (!stored_anchor.empty()) {
+                        auto anchor_row_opt = fvs->row_for_anchor(
+                            tss.get_view_mode(), stored_anchor.to_string());
+                        if (anchor_row_opt.has_value()) {
+                            pivot = anchor_row_opt.value()
+                                + stored_anchor_offset.value_or(0);
+                        }
+                    }
 
-                    if (read_result.isErr()) {
+                    // Scan outward from the pivot for a line whose hash
+                    // matches the stored hash.
+                    auto matched_line
+                        = lf.get()
+                        | lnav::itertools::middle_out(
+                              pivot, get_text_line_hash, stored_hash);
+
+                    int final_line;
+                    if (matched_line) {
+                        final_line = matched_line.value();
+                    } else if (pivot >= 0 && pivot < line_count) {
+                        // Best effort: land on the pivot even though
+                        // the content has changed.
+                        log_warning(
+                            "text bookmark hash mismatch at %s:%d -- "
+                            "falling back to pivot line",
+                            file_path.c_str(),
+                            pivot);
+                        final_line = pivot;
+                    } else {
                         continue;
                     }
 
-                    auto line_hash
-                        = read_result
-                              .map([](auto sbr) {
-                                  return hasher()
-                                      .update(sbr.get_data(), sbr.length())
-                                      .to_string();
-                              })
-                              .unwrap();
-
-                    if (line_hash != stored_hash) {
-                        log_warning("text bookmark hash mismatch at %s:%d",
-                                    file_path.c_str(),
-                                    line_number);
-                        continue;
-                    }
-
-                    auto vl = vis_line_t(line_number);
+                    auto vl = vis_line_t(final_line);
                     fvs->fvs_bookmarks[bm_type_opt.value()].insert_once(vl);
                     fvs->fvs_content_marks[bm_type_opt.value()].insert_once(
-                        static_cast<uint32_t>(line_number));
+                        static_cast<uint32_t>(final_line));
                     if (bm_type_opt.value() == &textview_curses::BM_STICKY) {
                         sticky_count += 1;
                     } else {
@@ -1749,8 +1803,7 @@ load_timeline_bookmarks(sqlite3* db)
                     = (const char*) sqlite3_column_text(stmt.in(), 0);
                 auto* row_name
                     = (const char*) sqlite3_column_text(stmt.in(), 1);
-                auto* mark_type
-                    = (const char*) sqlite3_column_text(stmt.in(), 2);
+                auto mark_type = from_stmt<string_fragment>(stmt.in(), 2);
                 auto session_time = sqlite3_column_int64(stmt.in(), 3);
 
                 if (last_session_time == -1) {
@@ -1760,9 +1813,7 @@ load_timeline_bookmarks(sqlite3* db)
                     continue;
                 }
 
-                if (row_type_str == nullptr || row_name == nullptr
-                    || mark_type == nullptr)
-                {
+                if (row_type_str == nullptr || row_name == nullptr) {
                     continue;
                 }
 
@@ -2261,6 +2312,15 @@ save_session_with_id(const std::string& session_id)
                                 if (anchor_opt) {
                                     view_map.gen("anchor");
                                     view_map.gen(anchor_opt.value());
+                                    auto anchor_row_opt = ta->row_for_anchor(
+                                        anchor_opt.value());
+                                    if (anchor_row_opt) {
+                                        view_map.gen("anchor_offset");
+                                        view_map.gen(
+                                            (long long) (sel.value()
+                                                         - anchor_row_opt
+                                                               .value()));
+                                    }
                                 }
                             }
                         }
@@ -2531,30 +2591,26 @@ lnav::session::restore_view_states()
             tview.set_top(vis_line_t(vs.vs_top), true);
         }
         if (!has_loc && vs.vs_selection) {
-            log_info("restoring %s view selection: %d",
-                     lnav_view_strings[view_index].data(),
-                     (int) vs.vs_selection.value_or(-1_vl));
-            tview.set_selection(vis_line_t(vs.vs_selection.value()));
-        }
-        auto sel = tview.get_selection();
-        if (!has_loc && sel && ta != nullptr && vs.vs_anchor
-            && !vs.vs_anchor->empty())
-        {
-            auto curr_anchor = ta->anchor_for_row(sel.value());
-
-            if (!curr_anchor || curr_anchor.value() != vs.vs_anchor.value()) {
-                log_info("%s view anchor mismatch %s != %s",
-                         lnav_view_strings[view_index].data(),
-                         curr_anchor.value_or("").c_str(),
-                         vs.vs_anchor.value().c_str());
-
+            // Prefer the anchor + offset if one was saved and still
+            // resolves in the current document; otherwise fall back
+            // to the saved absolute line number.
+            auto target = vis_line_t(vs.vs_selection.value());
+            if (ta != nullptr && vs.vs_anchor && !vs.vs_anchor->empty()) {
                 auto row_opt = ta->row_for_anchor(vs.vs_anchor.value());
                 if (row_opt) {
-                    tview.set_selection(row_opt.value());
+                    auto offset = vs.vs_anchor_offset.value_or(0);
+                    target = row_opt.value()
+                        + vis_line_t(static_cast<int>(offset));
                 }
             }
+            auto max_line = std::max(tview.get_inner_height() - 1_vl, 0_vl);
+            target = std::clamp(target, 0_vl, max_line);
+            log_info("restoring %s view selection: %d",
+                     lnav_view_strings[view_index].data(),
+                     (int) target);
+            tview.set_selection(target);
         }
-        sel = tview.get_selection();
+        auto sel = tview.get_selection();
         if (!sel) {
             auto height = tview.get_inner_height();
             if (height == 0) {
@@ -2631,9 +2687,9 @@ lnav::session::regex101::insert_entry(const lnav::session::regex101::entry& ei)
 
 template<>
 struct from_sqlite<lnav::session::regex101::entry> {
-    inline lnav::session::regex101::entry operator()(int argc,
-                                                     sqlite3_value** argv,
-                                                     int argi)
+    lnav::session::regex101::entry operator()(int argc,
+                                              sqlite3_value** argv,
+                                              int argi)
     {
         return {
             from_sqlite<std::string>()(argc, argv, argi + 0),

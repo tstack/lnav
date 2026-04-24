@@ -216,4 +216,10 @@ to_string(const shared_buffer_ref& sbr)
     return {sbr.get_data(), sbr.length()};
 }
 
+inline string_fragment
+to_string_fragment(const shared_buffer_ref& sbr)
+{
+    return sbr.to_string_fragment();
+}
+
 #endif

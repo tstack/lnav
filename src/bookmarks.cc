@@ -117,7 +117,7 @@ bookmark_type_t::get_all_types()
 }
 
 std::optional<const bookmark_type_t*>
-bookmark_type_t::find_type(const std::string& name)
+bookmark_type_t::find_type(const string_fragment& name)
 {
     for (const auto& bmt : get_all_types()) {
         if (bmt.get_name() == name) {

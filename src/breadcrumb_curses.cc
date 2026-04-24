@@ -31,8 +31,8 @@
 
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
-#include "base/keycodes.hh"
 #include "base/itertools.similar.hh"
+#include "base/keycodes.hh"
 
 using namespace lnav::roles::literals;
 

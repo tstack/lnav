@@ -329,3 +329,249 @@ run_cap_test ${lnav_test} -n \
     -c ':load-session' \
     -c ':goto 4' \
     ${test_dir}/textfile_plain.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+mkdir -p support-bookmarks
+
+# Markdown bookmark survives lines inserted above the section -- the
+# stored anchor pivots the hash scan to the section's new position.
+cat > support-bookmarks/anchored.md <<'EOF'
+# Document
+
+## Alpha
+
+Line A1.
+Line A2.
+
+## Beta
+
+Line B1.
+Line B2.
+
+## Gamma
+
+Line G1.
+EOF
+
+# Save: mark "Line B1." (line 9) inside section "## Beta".
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 9' \
+    -c ':mark' \
+    -c ':save-session' \
+    support-bookmarks/anchored.md
+
+# Insert five lines at the top of the file.
+{ printf '%s\n' '## Intro' '' 'Prologue A.' 'Prologue B.' ''; \
+    cat support-bookmarks/anchored.md; } \
+    > support-bookmarks/anchored.md.new
+mv support-bookmarks/anchored.md.new support-bookmarks/anchored.md
+
+# Reload: bookmark should follow "Line B1." to its new line 14
+# (9 + 5 inserted lines).
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-csv-to -' \
+    support-bookmarks/anchored.md
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# Plain-text bookmark whose content was rewritten falls back to the
+# saved line number rather than being dropped silently.
+cat > support-bookmarks/plain.txt <<'EOF'
+apple
+banana
+cherry
+date
+elderberry
+fig
+EOF
+
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 2' \
+    -c ':mark' \
+    -c ':save-session' \
+    support-bookmarks/plain.txt
+
+# Rewrite every line so hashes never match anywhere.
+cat > support-bookmarks/plain.txt <<'EOF'
+one
+two
+three
+four
+five
+six
+EOF
+
+# Reload: bookmark falls back to saved line number 2.
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-csv-to -' \
+    support-bookmarks/plain.txt
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# Markdown bookmark survives content shift INSIDE its anchored
+# section -- anchor resolves but the saved offset is now stale, so
+# the hash scan has to walk outward from the pivot to find a match.
+cat > support-bookmarks/shifted.md <<'EOF'
+# Document
+
+## Alpha
+
+Line A1.
+Line A2.
+
+## Beta
+
+Line B1.
+Line B2.
+
+## Gamma
+
+Line G1.
+EOF
+
+# Save: mark "Line B1." (line 9) inside section "## Beta".
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 9' \
+    -c ':mark' \
+    -c ':save-session' \
+    support-bookmarks/shifted.md
+
+# Insert two lines inside "## Beta" before "Line B1." -- the
+# section's anchor row is unchanged but the bookmarked line moves
+# from saved-offset 2 to saved-offset 4 within the section.
+cat > support-bookmarks/shifted.md <<'EOF'
+# Document
+
+## Alpha
+
+Line A1.
+Line A2.
+
+## Beta
+
+Extra line.
+Another line.
+Line B1.
+Line B2.
+
+## Gamma
+
+Line G1.
+EOF
+
+# Reload: pivot = anchor_row (7) + saved_offset (2) = 9, which now
+# holds "Extra line." The hash scan should find "Line B1." at the
+# new line 11.
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-csv-to -' \
+    support-bookmarks/shifted.md
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# Markdown bookmark whose anchor heading was deleted: anchor no
+# longer resolves, but the stored line_number serves as the pivot
+# and the hash scan locates the line at its new position.
+cat > support-bookmarks/no_anchor.md <<'EOF'
+# Document
+
+## Alpha
+
+Line A1.
+Line A2.
+
+## Beta
+
+Line B1.
+Line B2.
+
+## Gamma
+
+Line G1.
+EOF
+
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 9' \
+    -c ':mark' \
+    -c ':save-session' \
+    support-bookmarks/no_anchor.md
+
+# Remove the "## Beta" heading entirely.  "Line B1." shifts up by
+# one to line 8.  The "#beta" anchor won't resolve on reload.
+cat > support-bookmarks/no_anchor.md <<'EOF'
+# Document
+
+## Alpha
+
+Line A1.
+Line A2.
+
+
+Line B1.
+Line B2.
+
+## Gamma
+
+Line G1.
+EOF
+
+# Reload: anchor lookup fails -> pivot falls back to saved line 9.
+# Hash scan finds "Line B1." at the new line 8.
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-csv-to -' \
+    support-bookmarks/no_anchor.md
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# Plain-text bookmark with a small edit above: no anchor, but the
+# hash scan must shift the bookmark to follow the inserted line.
+cat > support-bookmarks/small_edit.txt <<'EOF'
+apple
+banana
+cherry
+date
+elderberry
+fig
+EOF
+
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 2' \
+    -c ':mark' \
+    -c ':save-session' \
+    support-bookmarks/small_edit.txt
+
+# Insert one line at the top so "cherry" shifts from line 2 to 3.
+{ printf '%s\n' 'avocado'; cat support-bookmarks/small_edit.txt; } \
+    > support-bookmarks/small_edit.txt.new
+mv support-bookmarks/small_edit.txt.new support-bookmarks/small_edit.txt
+
+# Reload: no anchor info, so pivot = saved line 2; hash scan finds
+# "cherry" at the new line 3.
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    -c ':next-mark user' \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-csv-to -' \
+    support-bookmarks/small_edit.txt
+
