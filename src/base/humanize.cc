@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -116,7 +117,8 @@ try_from(const string_fragment& sf)
         if (!scan_res) {
             return std::nullopt;
         }
-        return try_from_result<double>{(double) scan_res->value(), EMPTY_SUFFIX};
+        return try_from_result<double>{(double) scan_res->value(),
+                                       EMPTY_SUFFIX};
     }
 
     if (md[real]) {
@@ -141,8 +143,8 @@ try_from(const string_fragment& sf)
             }
             // IEC `KiB`/`MiB`/... use 1024-multipliers; the bare
             // `KB`/`MB`/... forms use the strict SI 1000-multipliers.
-            const double mult
-                = (start + 1 < unit_range.size() && unit_range[start + 1] == 'i')
+            const double mult = (start + 1 < unit_range.size()
+                                 && unit_range[start + 1] == 'i')
                 ? 1024.0
                 : 1000.0;
             switch (unit_range[start]) {
@@ -212,8 +214,7 @@ try_from(const string_fragment& sf)
     if (md[percent]) {
         // Return the ratio (e.g. `42%` → 0.42), matching how
         // humanize handles the other unit families.
-        auto scan_res
-            = scn::scan_value<double>(md[percent]->to_string_view());
+        auto scan_res = scn::scan_value<double>(md[percent]->to_string_view());
         if (!scan_res) {
             return std::nullopt;
         }
@@ -319,8 +320,8 @@ try_from(const string_fragment& sf)
                     break;
             }
         }
-        return try_from_result<double>{retval,
-                                       matched.sub_range(pos, matched.length())};
+        return try_from_result<double>{
+            retval, matched.sub_range(pos, matched.length())};
     }
 
     if (md[per_second]) {
@@ -347,9 +348,8 @@ try_from(const string_fragment& sf)
             start += 1;
         }
         const double mult
-            = (start + 1 < range.size() && range[start + 1] == 'i')
-            ? 1024.0
-            : 1000.0;
+            = (start + 1 < range.size() && range[start + 1] == 'i') ? 1024.0
+                                                                    : 1000.0;
         if (start < range.size()) {
             switch (range[start]) {
                 case 'E':
@@ -425,7 +425,17 @@ struct scale_result {
 
 // Indexed by exponent + 4; exponents run from -4 (pico) to +6 (exa).
 static constexpr std::array<const char*, 11> SI_PREFIXES = {
-    "p", "n", "u", "m", "", "k", "M", "G", "T", "P", "E",
+    "p",
+    "n",
+    "u",
+    "m",
+    "",
+    "k",
+    "M",
+    "G",
+    "T",
+    "P",
+    "E",
 };
 
 static const double LN1000 = std::log(1000.0);
