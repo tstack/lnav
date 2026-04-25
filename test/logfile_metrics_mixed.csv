@@ -1,0 +1,4 @@
+timestamp,cpu_pct,host,region
+2026-04-14T10:00:00Z,12.5,server-a,us-west
+2026-04-14T10:00:05Z,13.2,server-b,us-east
+2026-04-14T10:00:10Z,18.7,server-a,us-west

@@ -253,10 +253,12 @@ CREATE TABLE lnav_db.all_metrics (
                 } else if (col == 5) {
                     if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_INTEGER) {
                         sqlite3_result_int64(ctx, lv.lv_value.i);
-                    } else if (lv.lv_meta.lvm_kind
-                               == value_kind_t::VALUE_FLOAT)
+                    } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_FLOAT)
                     {
                         sqlite3_result_double(ctx, lv.lv_value.d);
+                    } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_TEXT)
+                    {
+                        to_sqlite(ctx, lv.text_value_fragment());
                     } else {
                         sqlite3_result_null(ctx);
                     }

@@ -441,6 +441,7 @@ public:
     {
         this->lf_multiline = false;
         this->lf_is_metric = true;
+        this->lf_time_ordered = false;
     }
 
     const intern_string_t get_name() const override
@@ -500,13 +501,15 @@ public:
             if (cell_len > stats.lvs_width) {
                 stats.lvs_width = cell_len;
             }
-            parse_cell(iter).match(
-                [](empty_cell) {},
-                [&stats](int64_t i) {
-                    stats.add_value(static_cast<double>(i));
-                },
-                [&stats](double d) { stats.add_value(d); },
-                [&stats](humanized_cell hc) { stats.add_value(hc.value); });
+            parse_cell(iter, parse_context::scan)
+                .match(
+                    [](empty_cell) {},
+                    [&stats](int64_t i) {
+                        stats.add_value(static_cast<double>(i));
+                    },
+                    [&stats](double d) { stats.add_value(d); },
+                    [&stats](humanized_cell hc) { stats.add_value(hc.value); },
+                    [](const text_cell& tc) {});
         }
         if (field_index < this->mlf_field_defs.size()) {
             return scan_error{fmt::format(
@@ -514,6 +517,15 @@ public:
                            "expected {} fields"),
                 field_index,
                 this->mlf_field_defs.size())};
+        }
+        if (!this->lf_specialized) {
+            auto number_cells = 0;
+            for (const auto& stats : sbc.sbc_value_stats) {
+                number_cells += stats.lvs_count;
+            }
+            if (number_cells == 0) {
+                return scan_error{"metric row has no numeric fields"};
+            }
         }
 
         return scan_match{500};
@@ -531,11 +543,9 @@ public:
         // post-clear scan arrives here with an empty `dst`.  Seed
         // from epoch rather than reading `dst.back()` on an empty
         // vector.
-        const auto prev_time = dst.empty()
-            ? std::chrono::microseconds::zero()
-            : dst.back().get_time<>();
-        dst.emplace_back(
-            li.li_file_range.fr_offset, prev_time, LEVEL_STATS);
+        const auto prev_time = dst.empty() ? std::chrono::microseconds::zero()
+                                           : dst.back().get_time<>();
+        dst.emplace_back(li.li_file_range.fr_offset, prev_time, LEVEL_STATS);
         auto retval = this->parse_line(line_sf, dst, sbc);
         if (!retval.is<scan_match>()) {
             dst.pop_back();
@@ -560,8 +570,7 @@ public:
         // subsequent timestamp parses against the wrong zone.
         {
             auto file_options = lf.get_file_options();
-            this->lf_date_time.dts_default_zone
-                = file_options
+            this->lf_date_time.dts_default_zone = file_options
                 ? file_options->second.fo_default_zone.pp_value
                 : nullptr;
         }
@@ -734,18 +743,24 @@ public:
             if (mlf_hidden_columns.count(meta.lvm_name) != 0) {
                 meta.lvm_user_hidden = true;
             }
-            parse_cell(iter).match(
-                [&](empty_cell) { values.lvv_values.emplace_back(meta); },
-                [&](int64_t i) { values.lvv_values.emplace_back(meta, i); },
-                [&](double d) { values.lvv_values.emplace_back(meta, d); },
-                [&](humanized_cell hc) {
-                    // Carry the detected unit on the per-value meta so
-                    // downstream renderers can call humanize::format
-                    // against the base-unit value.
-                    auto cell_meta = meta;
-                    cell_meta.lvm_unit_suffix = hc.unit_suffix;
-                    values.lvv_values.emplace_back(cell_meta, hc.value);
-                });
+            parse_cell(iter, parse_context::annotate)
+                .match(
+                    [&](empty_cell) { values.lvv_values.emplace_back(meta); },
+                    [&](int64_t i) { values.lvv_values.emplace_back(meta, i); },
+                    [&](double d) { values.lvv_values.emplace_back(meta, d); },
+                    [&](humanized_cell hc) {
+                        // Carry the detected unit on the per-value meta so
+                        // downstream renderers can call humanize::format
+                        // against the base-unit value.
+                        auto cell_meta = meta;
+                        cell_meta.lvm_unit_suffix = hc.unit_suffix;
+                        values.lvv_values.emplace_back(cell_meta, hc.value);
+                    },
+                    [&](const text_cell& tc) {
+                        values.lvv_values.emplace_back(meta, tc.value);
+                        values.lvv_values.back().lv_meta.lvm_kind
+                            = value_kind_t::VALUE_TEXT;
+                    });
             values.lvv_values.back().lv_origin = lr;
         }
 
@@ -776,10 +791,19 @@ private:
         double value;
         intern_string_t unit_suffix;
     };
-    using parsed_cell_t
-        = mapbox::util::variant<empty_cell, int64_t, double, humanized_cell>;
+    struct text_cell {
+        std::string value;
+    };
+    using parsed_cell_t = mapbox::util::
+        variant<empty_cell, int64_t, double, humanized_cell, text_cell>;
 
-    static parsed_cell_t parse_cell(const separated_string::iterator& iter)
+    enum class parse_context {
+        scan,
+        annotate,
+    };
+
+    static parsed_cell_t parse_cell(const separated_string::iterator& iter,
+                                    parse_context pc)
     {
         const auto field = *iter;
         switch (iter.kind()) {
@@ -812,7 +836,19 @@ private:
             }
             case separated_string::cell_kind::other: {
                 // Plain text; humanize wouldn't have parsed it.
-                return parsed_cell_t{empty_cell{}};
+                switch (pc) {
+                    case parse_context::scan:
+                        // During scanning, treat unparseable text as
+                        // empty so it doesn't mess with stats or
+                        // trigger a type change on the column.
+                        return parsed_cell_t{empty_cell{}};
+                    case parse_context::annotate:
+                        // During annotation, preserve the text so the
+                        // renderer can show it and the user can query
+                        // against it.
+                        return parsed_cell_t{text_cell{
+                            separated_string::unescape_quoted(field)}};
+                }
             }
         }
         return parsed_cell_t{empty_cell{}};

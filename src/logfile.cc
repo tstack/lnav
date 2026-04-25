@@ -1053,6 +1053,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         curr->get_name().c_str());
                 },
                 [this, curr](const log_format::scan_error& se) {
+                    if (this->lf_format == nullptr) {
+                        return;
+                    }
                     this->lf_invalid_lines.ili_total += 1;
                     if (this->lf_invalid_lines.ili_lines.size()
                         >= invalid_line_info::MAX_INVALID_LINES)

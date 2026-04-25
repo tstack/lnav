@@ -1,0 +1,10 @@
+log_line,metric,value
+0,cpu_pct,12.5
+0,host,server-a
+0,region,us-west
+1,cpu_pct,13.2
+1,host,server-b
+1,region,us-east
+2,cpu_pct,18.7
+2,host,server-a
+2,region,us-west

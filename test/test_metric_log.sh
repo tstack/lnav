@@ -292,6 +292,44 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_metrics_bad.csv
 
+# Negative: a CSV whose first data row has no numeric fields (only
+# text) must not be detected as a metrics_log — the "metric row has
+# no numeric fields" check rejects it before specialization so the
+# file falls through to plain text and all_metrics stays empty.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT count(*) AS n FROM all_metrics" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics_textonly.csv
+
+# Mixed text + numeric columns: detection succeeds because at least
+# one column (cpu_pct) is numeric.  During annotation, the text
+# columns (host, region) are exposed as VALUE_TEXT fields so they
+# render in the LOG view next to the numeric value.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_metrics_mixed.csv
+
+# Mixed file via all_metrics: only numeric samples are emitted; the
+# text columns appear with NULL value because the long-format vtab
+# is for numeric series.  Confirms the text-cell annotate path does
+# not pollute numeric stats.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, metric, value FROM all_metrics ORDER BY log_line, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics_mixed.csv
+
+# Out-of-order timestamps: with lf_time_ordered=false the metrics
+# format no longer triggers lnav's time-skew fixup that rewrites
+# later out-of-order rows to the previous row's time.  Each row
+# should keep its own parsed timestamp, and the LOG view should
+# render them sorted by time regardless of file order.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_metrics_unordered.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, metric, value FROM all_metrics ORDER BY log_line, metric, value" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics_unordered.csv
+
 # Negative: spectrogram on an unknown field name produces a clear
 # error rather than hanging or crashing.
 run_cap_test ${lnav_test} -n \

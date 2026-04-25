@@ -359,9 +359,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         auto emit_value = [&](logfile* src_lf,
                               const logline_value& lv,
                               const char* src_data) {
-            if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_NULL) {
-                return;
-            }
             // Respect `:hide-fields metrics_log.<col>` — a user-hidden
             // column drops out of the composed line entirely.
             if (lv.lv_meta.is_hidden()) {
@@ -413,10 +410,13 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 stats != nullptr ? static_cast<size_t>(stats->lvs_width)
                                  : rendered.size());
             const auto value_start = static_cast<int>(composed.size());
-            if (col_width > rendered.size()) {
+            if (have_numeric && col_width > rendered.size()) {
                 composed.append(col_width - rendered.size(), ' ');
             }
             composed.append(rendered);
+            if (!have_numeric && col_width > rendered.size()) {
+                composed.append(col_width - rendered.size(), ' ');
+            }
 
             if (have_numeric && stats != nullptr && stats->lvs_count > 0
                 && col_width > 0)
