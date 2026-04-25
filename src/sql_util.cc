@@ -2144,6 +2144,12 @@ annotate_prql_statement(attr_line_t& al)
     const string_attr_type_base* last_attr_type = nullptr;
     bool saw_id_dot = false;
     for (const auto& attr : sa) {
+        if (attr.sa_type == &PRQL_PIPE_ATTR &&
+            groups.size() == 1 && groups.front().first == 'l') {
+            groups.pop_back();
+            last_attr_type = nullptr;
+            continue;
+        }
         if (groups.empty() && attr.sa_type == &PRQL_PIPE_ATTR
             && last_attr_type != &PRQL_PIPE_ATTR)
         {
@@ -2177,6 +2183,10 @@ annotate_prql_statement(attr_line_t& al)
                 id_start = std::nullopt;
             }
             saw_id_dot = false;
+        }
+        if (attr.sa_type == &PRQL_KEYWORD_ATTR &&
+            al.to_string_fragment(attr) == "let"_frag) {
+            groups.emplace_back('l', attr.sa_range.lr_start);
         }
         if (attr.sa_type != &PRQL_PAREN_ATTR) {
             continue;
