@@ -126,6 +126,7 @@ check_PROGRAMS = \
 test_base_SOURCES = \
     attr_line.tests.cc \
     cell_container.tests.cc \
+    color_spaces.tests.cc \
     fs_util.tests.cc \
     humanize.file_size.tests.cc \
     humanize.network.tests.cc \

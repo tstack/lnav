@@ -171,13 +171,7 @@ statusview_curses::do_update()
             auto val = sf.get_value();
             if (!this->sc_enabled) {
                 for (auto& sa : val.get_attrs()) {
-                    if (sa.sa_type == &VC_STYLE) {
-                        auto sa_attrs = sa.sa_value.get<text_attrs>();
-                        sa_attrs.clear_style(text_attrs::style::reverse);
-                        sa_attrs.ta_fg_color = styling::color_unit::EMPTY;
-                        sa_attrs.ta_bg_color = styling::color_unit::EMPTY;
-                        sa.sa_value = sa_attrs;
-                    } else if (sa.sa_type == &VC_ROLE) {
+                    if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()
                             == role_t::VCR_ALERT_STATUS)
                         {
@@ -188,7 +182,7 @@ statusview_curses::do_update()
                         {
                             sa.sa_value.get<role_t>()
                                 = role_t::VCR_INACTIVE_WARN_STATUS;
-                        } else {
+                        } else if (this->sc_disable_styles) {
                             sa.sa_value = role_t::VCR_NONE;
                         }
                     }
@@ -224,7 +218,11 @@ statusview_curses::do_update()
 
             auto default_role = sf.get_role();
             if (!this->sc_enabled) {
-                if (default_role == role_t::VCR_ALERT_STATUS) {
+                if (!this->sc_disable_styles
+                    && (default_role == role_t::VCR_STATUS_SUBTITLE
+                        || default_role == role_t::VCR_STATUS_TITLE))
+                {
+                } else if (default_role == role_t::VCR_ALERT_STATUS) {
                     default_role = role_t::VCR_INACTIVE_ALERT_STATUS;
                 } else if (default_role == role_t::VCR_WARN_STATUS) {
                     default_role = role_t::VCR_INACTIVE_WARN_STATUS;
