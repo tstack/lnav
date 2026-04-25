@@ -303,6 +303,7 @@ view_curses::mvwattrline(ncplane* window,
         }
     }
 
+    auto has_icon = std::make_unique<bool[]>(line_width_chars + 1);
     auto last_ch_col_count = 0;
     std::optional<int> join_start_index;
     for (size_t lpc = 0; lpc < line.size();) {
@@ -420,6 +421,7 @@ view_curses::mvwattrline(ncplane* window,
                             lpc_start, wcw_res - (lpc - lpc_start));
                     }
                     curr_ch_col_count = wcw_res;
+                    has_icon[char_index] = true;
                     char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
                         lr_bytes.lr_end = exp_start_index;
@@ -627,9 +629,14 @@ view_curses::mvwattrline(ncplane* window,
         auto desired_fg = vc.ansi_to_theme_color(cell_attrs.ta_fg_color);
         auto desired_bg = vc.ansi_to_theme_color(cell_attrs.ta_bg_color);
 
-        if (desired_fg == last_replaced_fg) {
+        if (has_icon[lpc]) {
+            last_replaced_fg.reset();
+            fg_replacement.reset();
+        } else if (desired_fg == last_replaced_fg) {
             desired_fg = fg_replacement.value();
         } else {
+            last_replaced_fg.reset();
+            fg_replacement.reset();
             auto fg_lab = view_colors::vc_active_palette->to_lab_color(
                 cell_attrs.ta_fg_color);
             auto bg_lab = view_colors::vc_active_palette->to_lab_color(
