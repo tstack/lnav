@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -34,6 +35,7 @@
 
 #include "config.h"
 #include "from_trait.hh"
+#include "lnav_log.hh"
 
 bool
 rgb_color::operator<(const rgb_color& rhs) const
@@ -173,11 +175,14 @@ lab_color::to_rgb() const
     else
         var_B = 12.92 * var_B;
 
-    return rgb_color{
-        (short) (var_R * 255.),
-        (short) (var_G * 255.),
-        (short) (var_B * 255.),
+    // Round and clamp on the way out — truncation loses 1 unit every
+    // roundtrip (e.g. pure red drifts 255 → 254 → 253 → …) and out-of-
+    // gamut LAB can push components past 1.0 or below 0.
+    auto to_byte = [](float v) {
+        return static_cast<short>(
+            std::clamp(std::round(v * 255.0f), 0.0f, 255.0f));
     };
+    return rgb_color{to_byte(var_R), to_byte(var_G), to_byte(var_B)};
 }
 
 double
@@ -274,10 +279,12 @@ lab_color::operator!=(const lab_color& rhs) const
     return !(rhs == *this);
 }
 
+constexpr double BRIGHTNESS_THRESHOLD = 30.0;
+
 bool
 lab_color::sufficient_contrast(const lab_color& other) const
 {
-    if (std::abs(this->lc_l - other.lc_l) < 45) {
+    if (std::abs(this->lc_l - other.lc_l) < BRIGHTNESS_THRESHOLD) {
         return false;
     }
 
@@ -292,5 +299,71 @@ lab_color::avg(const lab_color& other) const
         (this->lc_l + other.lc_l) / 2.0,
         (this->lc_a + other.lc_a) / 2.0,
         (this->lc_b + other.lc_b) / 2.0,
+    };
+}
+
+std::optional<lab_color>
+lab_color::readable(const lab_color& bg) const
+{
+    // Preserve the foreground lightness when it is already far
+    // enough from the background; only push otherwise.  When pushing,
+    // go in the foreground's original direction if there's room,
+    // else flip.  Cap the foreground chroma so highly-saturated
+    // colors don't glare against a low-chroma background (e.g.,
+    // bright yellow on dark gray has plenty of L* delta but still
+    // reads poorly).  The chroma headroom shrinks with `factor` so
+    // more aggressive calls desaturate more; hue is preserved.
+    // Returns nullopt when neither adjustment fires so the caller
+    // can skip the palette-match roundtrip.
+    //
+    // CONTRAST_BOOST is larger than BRIGHTNESS_THRESHOLD because
+    // intrinsically-dark hues (blue's full-saturation luminance is
+    // only ~7%) need more than the "sufficient contrast" floor to
+    // actually read — dark blue on black fails at 20 L* separation
+    // but succeeds at ~40.
+    constexpr double CONTRAST_BOOST = 20.0;
+    constexpr double CHROMA_HEADROOM = 30.0;
+
+    bool changed = false;
+    double new_l = this->lc_l;
+    if (std::abs(this->lc_l - bg.lc_l) < CONTRAST_BOOST) {
+        const double delta = CONTRAST_BOOST * 2.0;
+        const bool go_up = (this->lc_l > bg.lc_l) ? (bg.lc_l + delta <= 90.0)
+                                                  : (bg.lc_l - delta < 25.0);
+        new_l = go_up ? std::min(bg.lc_l + delta, 90.0)
+                      : std::max(bg.lc_l - delta, 25.0);
+        changed = true;
+    }
+
+    // Blend the chroma cap by how close bg is to an L* extreme.
+    // Near pure black or pure white (extreme_dist <= 10) the cap is
+    // off so saturated foregrounds stay saturated; it phases in over
+    // the next 10 L* units and is fully active by L*=20 (or L*=80),
+    // where chroma glare against mid-luminance backgrounds matters.
+    const double extreme_dist = std::min(bg.lc_l, 100.0 - bg.lc_l);
+    const double cap_blend = std::clamp((extreme_dist - 10.0) / 10.0, 0.0, 1.0);
+
+    const double bg_chroma = std::hypot(bg.lc_a, bg.lc_b);
+    const double fg_chroma = std::hypot(this->lc_a, this->lc_b);
+    const double cap_at_mid = bg_chroma + CHROMA_HEADROOM;
+
+    double new_a = this->lc_a;
+    double new_b = this->lc_b;
+    if (fg_chroma > cap_at_mid && cap_blend > 0.0) {
+        const double max_chroma
+            = fg_chroma - cap_blend * (fg_chroma - cap_at_mid);
+        const double scale = max_chroma / fg_chroma;
+        new_a *= scale;
+        new_b *= scale;
+        changed = true;
+    }
+
+    if (!changed) {
+        return std::nullopt;
+    }
+    return lab_color{
+        new_l,
+        std::clamp(new_a, -128.0, 127.0),
+        std::clamp(new_b, -128.0, 127.0),
     };
 }

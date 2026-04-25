@@ -182,7 +182,7 @@ statusview_curses::do_update()
                         {
                             sa.sa_value.get<role_t>()
                                 = role_t::VCR_INACTIVE_WARN_STATUS;
-                        } else {
+                        } else if (this->sc_disable_styles) {
                             sa.sa_value = role_t::VCR_NONE;
                         }
                     }
@@ -218,7 +218,11 @@ statusview_curses::do_update()
 
             auto default_role = sf.get_role();
             if (!this->sc_enabled) {
-                if (default_role == role_t::VCR_ALERT_STATUS) {
+                if (!this->sc_disable_styles
+                    && (default_role == role_t::VCR_STATUS_SUBTITLE
+                        || default_role == role_t::VCR_STATUS_TITLE))
+                {
+                } else if (default_role == role_t::VCR_ALERT_STATUS) {
                     default_role = role_t::VCR_INACTIVE_ALERT_STATUS;
                 } else if (default_role == role_t::VCR_WARN_STATUS) {
                     default_role = role_t::VCR_INACTIVE_WARN_STATUS;

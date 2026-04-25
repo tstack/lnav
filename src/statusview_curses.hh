@@ -187,6 +187,7 @@ public:
 
     bool handle_mouse(mouse_event& me) override;
 
+    bool sc_disable_styles{true};
 private:
     status_data_source* sc_source{nullptr};
     bool sc_enabled{true};

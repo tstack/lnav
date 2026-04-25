@@ -115,7 +115,7 @@ add_executable(
         test_base
         attr_line.tests.cc
         cell_container.tests.cc
-        sparse_cursor_container.tests.cc
+        color_spaces.tests.cc
         fs_util.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc
@@ -125,6 +125,7 @@ add_executable(
         math_util.tests.cc
         separated_string.tests.cc
         small_string_map.tests.cc
+        sparse_cursor_container.tests.cc
         string_util.tests.cc
         network.tcp.tests.cc
         test_base.cc)

@@ -35,7 +35,6 @@
 #include "base/intern_string.hh"
 #include "base/string_attr_type.hh"
 #include "base/time_util.hh"
-#include "command_executor.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
 #include "logfile_sub_source.hh"
@@ -45,13 +44,12 @@ using namespace lnav::roles::literals;
 
 db_status_source::db_status_source()
 {
-    this->dss_fields[DSF_TITLE].set_width(9);
-    this->dss_fields[DSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
-    this->dss_fields[DSF_TITLE].set_value(" DB View");
+    this->dss_fields[DSF_TITLE].set_width(7);
+    this->dss_fields[DSF_TITLE].set_role(role_t::VCR_STATUS_SUBTITLE);
+    this->dss_fields[DSF_TITLE].set_value(" Query");
     this->dss_fields[DSF_STITCH_TITLE].set_width(2);
     this->dss_fields[DSF_STITCH_TITLE].set_stitch_value(
-        role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
-        role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+        role_t::VCR_STATUS_STITCH_SUB_TO_NORMAL, role_t::VCR_INACTIVE_STATUS);
     this->dss_fields[DSF_RELOAD].set_width(3);
     this->dss_fields[DSF_QUERY].set_share(3);
     this->dss_fields[DSF_TIMING].right_justify(true);

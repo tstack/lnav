@@ -1827,6 +1827,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_status[LNS_TIMELINE].set_data_source(
         &lnav_data.ld_timeline_status_source);
     lnav_data.ld_status[LNS_DB].set_data_source(&lnav_data.ld_db_status_source);
+    lnav_data.ld_status[LNS_DB].set_enabled(false);
+    lnav_data.ld_status[LNS_DB].sc_disable_styles = false;
 
     lnav_data.ld_user_message_view.set_show_bottom_border(true);
 

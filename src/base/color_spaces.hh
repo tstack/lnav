@@ -35,7 +35,6 @@
 #include <variant>
 
 #include "intern_string.hh"
-#include "mapbox/variant.hpp"
 #include "result.h"
 
 using palette_color = uint8_t;
@@ -105,6 +104,8 @@ struct lab_color {
     bool sufficient_contrast(const lab_color& other) const;
 
     lab_color avg(const lab_color& other) const;
+
+    std::optional<lab_color> readable(const lab_color& bg) const;
 
     lab_color& operator=(const lab_color& other)
     {

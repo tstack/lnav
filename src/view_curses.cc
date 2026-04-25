@@ -616,66 +616,42 @@ view_curses::mvwattrline(ncplane* window,
     }
 
     for (int lpc = 0; lpc < line_width_chars; lpc++) {
-        auto cell_attrs = resolved_line_attrs[lpc] | base_attrs;
+        resolved_line_attrs[lpc] = resolved_line_attrs[lpc] | base_attrs;
+    }
+    std::optional<styling::color_unit> last_replaced_fg;
+    std::optional<styling::color_unit> fg_replacement;
+    for (int lpc = 0; lpc < line_width_chars; lpc++) {
+        auto& cell_attrs = resolved_line_attrs[lpc];
 
-        cell_attrs.ta_fg_color = vc.ansi_to_theme_color(cell_attrs.ta_fg_color);
-        cell_attrs.ta_bg_color = vc.ansi_to_theme_color(cell_attrs.ta_bg_color);
+        auto desired_fg = vc.ansi_to_theme_color(cell_attrs.ta_fg_color);
+        auto desired_bg = vc.ansi_to_theme_color(cell_attrs.ta_bg_color);
+
+        if (desired_fg == last_replaced_fg) {
+            desired_fg = fg_replacement.value();
+        } else {
+            auto fg_lab = view_colors::vc_active_palette->to_lab_color(
+                cell_attrs.ta_fg_color);
+            auto bg_lab = view_colors::vc_active_palette->to_lab_color(
+                cell_attrs.ta_bg_color);
+            if (fg_lab && bg_lab) {
+                auto new_fg = fg_lab->readable(bg_lab.value());
+
+                if (new_fg) {
+                    last_replaced_fg = desired_fg;
+                    desired_fg = vc.match_color(
+                        styling::color_unit::from_rgb(new_fg->to_rgb()));
+                    fg_replacement = desired_fg;
+                }
+            }
+        }
+
+        cell_attrs.ta_fg_color = desired_fg;
+        cell_attrs.ta_bg_color = desired_bg;
+    }
+    for (int lpc = 0; lpc < line_width_chars; lpc++) {
+        auto& cell_attrs = resolved_line_attrs[lpc];
         auto chan = view_colors::to_channels(cell_attrs);
         ncplane_set_cell_yx(window, y, x + lpc, cell_attrs.ta_attrs, chan);
-#if 0
-        if (desired_fg == desired_bg) {
-            if (desired_bg >= 0
-                && desired_bg
-                    < view_colors::vc_active_palette->tc_palette.size())
-            {
-                auto adjusted_color
-                    = view_colors::vc_active_palette->tc_palette[desired_bg]
-                          .xc_lab_color;
-                if (adjusted_color.lc_l < 50.0) {
-                    adjusted_color.lc_l += 50.0;
-                } else {
-                    adjusted_color.lc_l -= 50.0;
-                }
-                bg_color[lpc] = view_colors::vc_active_palette->match_color(
-                    adjusted_color);
-            }
-        } else if (fg_color[lpc] >= 0
-                   && fg_color[lpc]
-                       < view_colors::vc_active_palette->tc_palette.size()
-                   && bg_color[lpc] == -1
-                   && base_attrs.ta_bg_color.value_or(0) >= 0
-                   && base_attrs.ta_bg_color.value_or(0)
-                       < view_colors::vc_active_palette->tc_palette.size())
-        {
-            const auto& fg_color_info
-                = view_colors::vc_active_palette->tc_palette.at(fg_color[lpc]);
-            const auto& bg_color_info
-                = view_colors::vc_active_palette->tc_palette.at(
-                    base_attrs.ta_bg_color.value_or(0));
-
-            if (!fg_color_info.xc_lab_color.sufficient_contrast(
-                    bg_color_info.xc_lab_color))
-            {
-                auto adjusted_color = bg_color_info.xc_lab_color;
-                adjusted_color.lc_l = std::max(0.0, adjusted_color.lc_l - 40.0);
-                auto new_bg = view_colors::vc_active_palette->match_color(
-                    adjusted_color);
-                for (int lpc2 = lpc; lpc2 < line_width_chars; lpc2++) {
-                    if (fg_color[lpc2] == fg_color[lpc] && bg_color[lpc2] == -1)
-                    {
-                        bg_color[lpc2] = new_bg;
-                    }
-                }
-            }
-        }
-
-        if (fg_color[lpc] == -1) {
-            fg_color[lpc] = cur_fg;
-        }
-        if (bg_color[lpc] == -1) {
-            bg_color[lpc] = cur_bg;
-        }
-#endif
     }
 
     return retval;
