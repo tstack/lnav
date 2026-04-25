@@ -2,8 +2,9 @@
 ## lnav v0.14.1
 
 Features:
-* Added the `:reload-view` command, bound to `F5`, that
-  re-runs the operation that populated the current view.
+* Added the `:reload-view` command, bound to `F5`/`⌘-R`,
+  that re-runs the operation that populated the current
+  view.
   In the DB view, this re-executes the last SQL query; in
   the TIMELINE view, it rebuilds the index.  Views that
   don't have a meaningful reload report an error.
@@ -19,12 +20,12 @@ Features:
 * For terminals that support the Kitty Keyboard
   protocol, the following hotkeys are now supported
   in the prompt:
-  - ⌘-C to copy the current selection to the
+  - `⌘-C` to copy the current selection to the
     clipboard.
-  - ⌘-A to select all text.
-  - ⌘-X to cut the current selection to the
+  - `⌘-A` to select all text.
+  - `⌘-X` to cut the current selection to the
     clipboard.
-  - ⌘-Z to undo the last change.
+  - `⌘-Z` to undo the last change.
 * The `measure_with_units` collator now recognizes
   (KiB, MiB, ...).
 

@@ -9214,6 +9214,11 @@
                     "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
+                "cmd-x72": {
+                    "id": "",
+                    "command": ":reload-view",
+                    "alt-msg": ""
+                },
                 "f1": {
                     "id": "",
                     "command": ":help",

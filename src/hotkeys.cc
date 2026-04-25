@@ -205,6 +205,10 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         return true;
     }
 
+    if (ncinput_alt_p(&ch) || ncinput_super_p(&ch)) {
+        return false;
+    }
+
     auto* lss = dynamic_cast<logfile_sub_source*>(tc_tss);
     auto* text_accel_p = dynamic_cast<text_accel_source*>(tc_tss);
 
