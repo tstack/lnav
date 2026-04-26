@@ -126,11 +126,11 @@ run_cap_test() {
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{test_dir};g" \
-        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${top_srcdir_parent};{top_srcdir_parent};g" \
         -e "s;${TMPDIR};{TMPDIR};g" \
+        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;/tmp/;{TMPDIR};g" \
         -e "s;lnav-user-${UID}-work;lnav-user-{uid}-work;g" \
         ${test_file_base}_${test_hash}.out
@@ -159,13 +159,14 @@ run_cap_test() {
     sed -ibak -E \
         -e "s;${prefix}/etc;{prefix}/etc;g" \
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
+        -e "s;${top_builddir_abs}/src/lnav-test;{lnav-test};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
         -e "s;${builddir};{builddir};g" \
-        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${TMPDIR};{TMPDIR};g" \
         -e "s;/tmp/;{TMPDIR};g" \
+        -e "s;${top_builddir_abs};{buildir};g" \
         -e "s;lnav-user-${UID}-work;lnav-user-{uid}-work;g" \
         -e 's;"errorId":".+";;g' \
         ${test_file_base}_${test_hash}.err
