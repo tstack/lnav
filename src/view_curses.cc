@@ -421,7 +421,9 @@ view_curses::mvwattrline(ncplane* window,
                             lpc_start, wcw_res - (lpc - lpc_start));
                     }
                     curr_ch_col_count = wcw_res;
-                    has_icon[char_index] = true;
+                    if (char_index < line_width_chars + 1) {
+                        has_icon[char_index] = true;
+                    }
                     char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
                         lr_bytes.lr_end = exp_start_index;
