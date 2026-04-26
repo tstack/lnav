@@ -925,6 +925,15 @@ field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
 }
 
 void
+field_overlay_source::reset()
+{
+    this->fos_anno_cache.clear();
+    this->fos_static_lines.clear();
+    this->fos_lines.clear();
+    this->fos_meta_lines.clear();
+}
+
+void
 field_overlay_source::list_value_for_overlay(
     const listview_curses& lv,
     vis_line_t row,

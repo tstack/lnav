@@ -231,6 +231,17 @@ textview_curses::~textview_curses()
 }
 
 void
+textview_curses::deinit()
+{
+    listview_curses::deinit();
+    this->set_sub_source(nullptr);
+    this->set_overlay_source(nullptr);
+    this->tc_delegate.reset();
+    this->tc_search_child.reset();
+    this->tc_source_search_child.reset();
+}
+
+void
 textview_curses::reload_config(error_reporter& reporter)
 {
     const static auto DEFAULT_THEME_NAME = std::string("default");

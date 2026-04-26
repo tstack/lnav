@@ -3032,6 +3032,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         for (auto& tc : lnav_data.ld_views) {
             tc.deinit();
         }
+        log_fos.reset();
 
         log_info("marking files as closed");
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
