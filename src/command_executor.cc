@@ -637,8 +637,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             auto& dls = *(ec.ec_label_source_stack.back());
             if (!dls.dls_row_cursors.empty()) {
                 lnav_data.ld_views[LNV_DB].reload_data();
-                lnav_data.ld_views[LNV_DB].set_selection(0_vl);
-                lnav_data.ld_views[LNV_DB].set_left(0);
                 if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
                     retval = "";
                     alt_msg = "";

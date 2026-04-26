@@ -15,6 +15,29 @@ run_cap_test ${lnav_test} -nN \
 run_cap_test ${lnav_test} -nN \
     -c ":config /global/foo"
 
+# Reading a single entry of a pattern_property_handler map must
+# return that entry's value, not the first key in the map.  Earlier
+# the gen path flat-emitted every (key, value) pair to yajl_gen at
+# top level, which captured only the first key as a JSON string.
+run_cap_test ${lnav_test} -nN \
+    -c ":config /ui/theme-defs/night-owl/vars/red"
+
+run_cap_test ${lnav_test} -nN \
+    -c ":config /ui/theme-defs/night-owl/vars/black"
+
+# Distinct global vars must each return their own value (regression
+# for the bug where every key returned the first map entry).
+run_cap_test ${lnav_test} -nN \
+    -c ":config /global/aaa AAA" \
+    -c ":config /global/bbb BBB" \
+    -c ":config /global/aaa" \
+    -c ":config /global/bbb"
+
+# Reading the parent map still returns the full object — the per-key
+# fix must not regress the iterate-all path used here.
+run_cap_test ${lnav_test} -nN \
+    -c ":config /ui/theme-defs/night-owl/vars"
+
 # config bad color
 run_cap_test ${lnav_test} -n \
     -c ":config /ui/theme-defs/default/styles/text/color #f" \

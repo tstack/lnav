@@ -76,7 +76,7 @@ db_status_source::update_from_db_source()
     changed |= this->dss_fields[DSF_RELOAD].set_value(reload_al);
 
     attr_line_t query_al;
-    query_al.append(" ;").append(dls.dls_user_query);
+    query_al.append(";").append(dls.dls_user_query);
     readline_sql_highlighter(
         query_al, lnav::sql::dialect::sqlite, std::nullopt);
     changed |= this->dss_fields[DSF_QUERY].set_value(query_al);

@@ -712,14 +712,7 @@ public:
 
     ~textview_curses();
 
-    void deinit()
-    {
-        listview_curses::deinit();
-        this->set_sub_source(nullptr);
-        this->tc_delegate.reset();
-        this->tc_search_child.reset();
-        this->tc_source_search_child.reset();
-    }
+    void deinit();
 
     void reload_config(error_reporter& reporter);
 

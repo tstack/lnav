@@ -707,6 +707,12 @@ public:
     int ygc_depth;
     std::stack<void*> ygc_default_stack;
     std::stack<void*> ygc_obj_stack;
+    // During schema-gen this stacks the handler segments (with
+    // `<capture_name>` placeholders for pattern handlers) used to
+    // build "/foo/<bar>" titles.  During value-gen it is unused by
+    // the framework, so callers like `:config` may push a concrete
+    // map key onto it before invoking gen() to ask map-typed
+    // gen_callbacks to emit only that entry's value.
     std::vector<std::string> ygc_path;
     const json_path_container* ygc_handlers;
     std::map<std::string, const json_path_container*> ygc_schema_definitions;

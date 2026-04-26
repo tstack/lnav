@@ -51,11 +51,7 @@ public:
 
     void add_key_line_attrs(int key_size, bool last_line = false);
 
-    void reset() override
-    {
-        this->fos_lines.clear();
-        this->fos_meta_lines.clear();
-    }
+    void reset() override;
 
     bool list_static_overlay(const listview_curses& lv,
                              media_t media,

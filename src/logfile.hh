@@ -115,6 +115,9 @@ public:
         const logfile_open_options& loo,
         auto_fd fd = auto_fd{});
 
+    logfile(const logfile&) = delete;
+    logfile& operator=(const logfile&) = delete;
+
     ~logfile() override;
 
     const logfile_activity& get_activity() const { return this->lf_activity; }

@@ -115,6 +115,12 @@ run_cap_test ./drive_sql_anno "from access_log | stats.count_by cs_uri_stem | ta
 
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by \`foo/bar\` | take 10"
 
+run_cap_test ./drive_sql_anno "let x = 1
+from access_log
+stats.count_by \`foo/bar\`
+take 10
+"
+
 run_cap_test ./drive_sql_anno "SELECT * FROM customers LIMIT 1"
 
 run_cap_test ./drive_sql_anno "SELECT * FROM customers FULL JOIN all_logs pg_stmt_log ON (pg_stmt_log.log_text LIKE '%STATEMENT:%') LIMIT 1"

@@ -1,0 +1,25 @@
+                 let x = 1
+      prql_stage ---------
+    prql_keyword ---
+       prql_fqid     -
+       prql_oper       -
+     prql_number         -
+                 from access_log
+      prql_stage ---------------
+  prql_transform ----
+       prql_fqid      ----------
+                 stats.count_by `foo/bar`
+      prql_stage ------------------------
+       prql_fqid --------------
+       prql_fqid                ---------
+                 take 10
+      prql_stage -------
+  prql_transform ----
+     prql_number      --
+Formatted:
+let x = 1
+from access_log
+stats.count_by `foo/bar`
+take 10
+
+Cursor offset: 59

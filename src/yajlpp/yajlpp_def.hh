@@ -441,8 +441,9 @@ struct json_path_handler : public json_path_handler_base {
                 using vt = typename VectorInner<inner>::type;
                 if constexpr (std::is_same_v<vt, std::string>) {
                     return field_kind::string_vector;
-                } else if constexpr (std::is_integral_v<
-                                         vt> && !std::is_same_v<vt, bool>) {
+                } else if constexpr (std::is_integral_v<vt>
+                                     && !std::is_same_v<vt, bool>)
+                {
                     return field_kind::integer_vector;
                 } else {
                     return field_kind::vector;
@@ -453,8 +454,9 @@ struct json_path_handler : public json_path_handler_base {
                 return field_kind::enumeration;
             } else if constexpr (std::is_same_v<inner, double>) {
                 return field_kind::floating;
-            } else if constexpr (std::is_integral_v<
-                                     inner> && !std::is_same_v<inner, bool>) {
+            } else if constexpr (std::is_integral_v<inner>
+                                 && !std::is_same_v<inner, bool>)
+            {
                 return field_kind::integer;
             } else if constexpr (std::is_same_v<inner, std::string>) {
                 return field_kind::string;
@@ -530,12 +532,10 @@ struct json_path_handler : public json_path_handler_base {
     inline static constexpr bool is_generic_string_keyed_map_field_v
         = (FieldKind<Args...>::inner_kind == field_kind::map)
         && !FieldKind<Args...>::is_optional
-        && std::is_same_v<std::string,
-                          typename FieldKind<Args...>::key_type>
+        && std::is_same_v<std::string, typename FieldKind<Args...>::key_type>
         && !std::is_same_v<scoped_value_t,
                            typename FieldKind<Args...>::value_type>
-        && !std::is_same_v<std::string,
-                           typename FieldKind<Args...>::value_type>
+        && !std::is_same_v<std::string, typename FieldKind<Args...>::value_type>
         && !std::is_same_v<std::optional<std::string>,
                            typename FieldKind<Args...>::value_type>;
 
@@ -553,8 +553,8 @@ struct json_path_handler : public json_path_handler_base {
                    yajlpp_gen_context& ygc,
                    const json_path_handler_base& jph,
                    yajl_gen handle) -> yajl_gen_status {
-            const auto& field
-                = json_path_handler::get_field(ygc.ygc_obj_stack.top(), args...);
+            const auto& field = json_path_handler::get_field(
+                ygc.ygc_obj_stack.top(), args...);
             if (!ygc.ygc_default_stack.empty()) {
                 const auto& field_def = json_path_handler::get_field(
                     ygc.ygc_default_stack.top(), args...);
@@ -611,10 +611,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<bool, Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<raw_field_is_v<bool, Args...>, bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(bool_field_cb);
@@ -635,11 +632,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<raw_field_is_v<std::vector<std::string>, Args...>,
-                         bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<raw_field_is_v<std::vector<std::string>, Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -659,37 +654,30 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 is_integer_vector_field_v<Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<is_integer_vector_field_v<Args...>, bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(int_field_cb);
-        this->jph_integer_cb
-            = [args...](yajlpp_parse_context* ypc, long long val) {
-                  const auto* jph = ypc->ypc_current_handler;
-                  auto* obj = ypc->ypc_obj_stack.top();
+        this->jph_integer_cb = [args...](yajlpp_parse_context* ypc,
+                                         long long val) {
+            const auto* jph = ypc->ypc_current_handler;
+            auto* obj = ypc->ypc_obj_stack.top();
 
-                  if (val < jph->jph_min_value
-                      || val <= jph->jph_exclusive_min_value)
-                  {
-                      jph->report_min_value_error(ypc, val);
-                      return 1;
-                  }
+            if (val < jph->jph_min_value || val <= jph->jph_exclusive_min_value)
+            {
+                jph->report_min_value_error(ypc, val);
+                return 1;
+            }
 
-                  json_path_handler::get_field(obj, args...).emplace_back(val);
+            json_path_handler::get_field(obj, args...).emplace_back(val);
 
-                  return 1;
-              };
+            return 1;
+        };
         return *this;
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 is_plain_vector_field_v<Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<is_plain_vector_field_v<Args...>, bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->jph_obj_provider
@@ -744,8 +732,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  raw_field_is_v<std::map<std::string, std::string>, Args...>,
-                 bool>
-             = true>
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -783,11 +770,22 @@ struct json_path_handler : public json_path_handler_base {
             return (void*) &iter->second;
         };
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+            [](const auto& field,
+               const auto& ygc,
+               const auto&,
+               yajl_gen handle) {
                 yajlpp_generator gen(handle);
-                for (const auto& pair : field) {
-                    gen(pair.first);
-                    gen(pair.second);
+
+                if (!ygc.ygc_path.empty()) {
+                    auto iter = field.find(ygc.ygc_path.back());
+                    if (iter != field.end()) {
+                        gen(iter->second);
+                    }
+                } else {
+                    for (const auto& pair : field) {
+                        gen(pair.first);
+                        gen(pair.second);
+                    }
                 }
                 return yajl_gen_status_ok;
             },
@@ -795,12 +793,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<
-            is_intern_string_keyed_map_field_v<Args...>,
-            bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<is_intern_string_keyed_map_field_v<Args...>, bool>
+             = true>
     json_path_handler& for_field(Args... args)
     {
         this->jph_path_provider =
@@ -844,12 +839,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<
-            is_generic_string_keyed_map_field_v<Args...>,
-            bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<is_generic_string_keyed_map_field_v<Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->jph_path_provider =
@@ -870,11 +862,12 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<std::map<std::string, std::optional<std::string>>, Args...>,
-                 bool>
-             = true>
+    template<
+        typename... Args,
+        std::enable_if_t<
+            raw_field_is_v<std::map<std::string, std::optional<std::string>>,
+                           Args...>,
+            bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -914,8 +907,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  raw_field_is_v<std::map<std::string, scoped_value_t>, Args...>,
-                 bool>
-             = true>
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(bool_field_cb);
@@ -952,17 +944,30 @@ struct json_path_handler : public json_path_handler_base {
             return 1;
         };
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+            [](const auto& field,
+               const auto& ygc,
+               const auto&,
+               yajl_gen handle) {
                 yajlpp_generator gen(handle);
-                for (const auto& pair : field) {
-                    gen(pair.first);
-                    pair.second.match(
-                        [&gen](null_value_t v) { gen(); },
-                        [&gen](bool v) { gen(v); },
-                        [&gen](int64_t v) { gen(v); },
-                        [&gen](double v) { gen(v); },
-                        [&gen](const std::string& v) { gen(v); },
-                        [&](const string_fragment& v) { gen(v); });
+
+                auto emit_value = [&gen](const scoped_value_t& v) {
+                    v.match([&gen](null_value_t) { gen(); },
+                            [&gen](bool b) { gen(b); },
+                            [&gen](int64_t i) { gen(i); },
+                            [&gen](double d) { gen(d); },
+                            [&gen](const std::string& s) { gen(s); },
+                            [&gen](const string_fragment& sf) { gen(sf); });
+                };
+                if (!ygc.ygc_path.empty()) {
+                    auto iter = field.find(ygc.ygc_path.back());
+                    if (iter != field.end()) {
+                        emit_value(iter->second);
+                    }
+                } else {
+                    for (const auto& pair : field) {
+                        gen(pair.first);
+                        emit_value(pair.second);
+                    }
                 }
                 return yajl_gen_status_ok;
             },
@@ -970,12 +975,8 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<
-            is_string_or_path_field_v<Args...>,
-            bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<is_string_or_path_field_v<Args...>, bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(null_field_cb);
@@ -1008,9 +1009,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<string_fragment, Args...>,
-                 bool>
+             std::enable_if_t<raw_field_is_v<string_fragment, Args...>, bool>
              = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1033,10 +1032,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<timeval, Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<raw_field_is_v<timeval, Args...>, bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1079,10 +1075,8 @@ struct json_path_handler : public json_path_handler_base {
 
     template<
         typename... Args,
-        std::enable_if_t<
-            raw_field_is_v<std::optional<std::string>, Args...>,
-            bool>
-        = true>
+        std::enable_if_t<raw_field_is_v<std::optional<std::string>, Args...>,
+                         bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1109,7 +1103,9 @@ struct json_path_handler : public json_path_handler_base {
         // optional is empty — hence the `<false>` so we control key
         // emission ourselves.
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto& ygc, const auto& jph,
+            [](const auto& field,
+               const auto& ygc,
+               const auto& jph,
                yajl_gen handle) -> yajl_gen_status {
                 if (!field) {
                     return yajl_gen_status_ok;
@@ -1127,8 +1123,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  raw_field_is_v<positioned_property<std::string>, Args...>,
-                 bool>
-             = true>
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1173,9 +1168,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<intern_string_t, Args...>,
-                 bool>
+             std::enable_if_t<raw_field_is_v<intern_string_t, Args...>, bool>
              = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1201,12 +1194,11 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<
-            raw_field_is_v<positioned_property<const date::time_zone*>, Args...>,
-            bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<
+                 raw_field_is_v<positioned_property<const date::time_zone*>,
+                                Args...>,
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1259,8 +1251,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<
                  raw_field_is_v<positioned_property<intern_string_t>, Args...>,
-                 bool>
-             = true>
+                 bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1309,13 +1300,12 @@ struct json_path_handler : public json_path_handler_base {
     struct int_ {
         using type = int;
     };
-    template<
-        typename C,
-        typename T,
-        typename int_<decltype(T::from(
-            intern_string_t{}, source_location{}, string_fragment{}))>::type
-        = 0,
-        typename... Args>
+    template<typename C,
+             typename T,
+             typename int_<decltype(T::from(intern_string_t{},
+                                            source_location{},
+                                            string_fragment{}))>::type = 0,
+             typename... Args>
     json_path_handler& for_field(Args... args, T C::* ptr_arg)
     {
         this->add_cb(str_field_cb2);
@@ -1369,34 +1359,33 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 inner_kind_is_v<field_kind::integer, Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<inner_kind_is_v<field_kind::integer, Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(int_field_cb);
-        this->jph_integer_cb
-            = [args...](yajlpp_parse_context* ypc, long long val) {
-                  const auto* jph = ypc->ypc_current_handler;
-                  auto* obj = ypc->ypc_obj_stack.top();
+        this->jph_integer_cb = [args...](yajlpp_parse_context* ypc,
+                                         long long val) {
+            const auto* jph = ypc->ypc_current_handler;
+            auto* obj = ypc->ypc_obj_stack.top();
 
-                  if (val < jph->jph_min_value
-                      || val <= jph->jph_exclusive_min_value)
-                  {
-                      jph->report_min_value_error(ypc, val);
-                      return 1;
-                  }
+            if (val < jph->jph_min_value || val <= jph->jph_exclusive_min_value)
+            {
+                jph->report_min_value_error(ypc, val);
+                return 1;
+            }
 
-                  json_path_handler::get_field(obj, args...) = val;
+            json_path_handler::get_field(obj, args...) = val;
 
-                  return 1;
-              };
+            return 1;
+        };
         if constexpr (FieldKind<Args...>::is_optional) {
             install_optional_null_cb(args...);
         }
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto& ygc, const auto& jph,
+            [](const auto& field,
+               const auto& ygc,
+               const auto& jph,
                yajl_gen handle) {
                 if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
@@ -1413,10 +1402,8 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 inner_kind_is_v<field_kind::floating, Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<inner_kind_is_v<field_kind::floating, Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(dbl_field_cb);
@@ -1429,8 +1416,7 @@ struct json_path_handler : public json_path_handler_base {
             const auto* jph = ypc->ypc_current_handler;
             auto* obj = ypc->ypc_obj_stack.top();
 
-            if (val < jph->jph_min_value
-                || val <= jph->jph_exclusive_min_value)
+            if (val < jph->jph_min_value || val <= jph->jph_exclusive_min_value)
             {
                 jph->report_min_value_error(ypc, val);
                 return 1;
@@ -1448,7 +1434,9 @@ struct json_path_handler : public json_path_handler_base {
             install_optional_null_cb(args...);
         }
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto& ygc, const auto& jph,
+            [](const auto& field,
+               const auto& ygc,
+               const auto& jph,
                yajl_gen handle) {
                 if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
@@ -1464,11 +1452,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<
-        typename... Args,
-        std::enable_if_t<raw_field_is_v<std::chrono::seconds, Args...>,
-                         bool>
-        = true>
+    template<typename... Args,
+             std::enable_if_t<raw_field_is_v<std::chrono::seconds, Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1505,10 +1491,8 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
-             std::enable_if_t<
-                 inner_kind_is_v<field_kind::enumeration, Args...>,
-                 bool>
-             = true>
+             std::enable_if_t<inner_kind_is_v<field_kind::enumeration, Args...>,
+                              bool> = true>
     json_path_handler& for_field(Args... args)
     {
         this->add_cb(str_field_cb2);
@@ -1532,7 +1516,9 @@ struct json_path_handler : public json_path_handler_base {
             install_optional_null_cb(args...);
         }
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field, const auto& ygc, const auto& jph,
+            [](const auto& field,
+               const auto& ygc,
+               const auto& jph,
                yajl_gen handle) {
                 if (!is_field_set(field)) {
                     return yajl_gen_status_ok;
