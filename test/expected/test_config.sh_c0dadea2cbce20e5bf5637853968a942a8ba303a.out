@@ -1,0 +1,11 @@
+/ui/theme-defs/night-owl/vars = {
+    "black": "#011627",
+    "blue": "#5394ec",
+    "cyan": "#33cccc",
+    "green": "#007f00",
+    "magenta": "#ff70ff",
+    "red": "#ff6868",
+    "semantic_highlight_color": "semantic()",
+    "white": "#d6deeb",
+    "yellow": "#cdcd00"
+}

@@ -1391,6 +1391,16 @@ yajlpp_gen_context::with_context(yajlpp_parse_context& ypc)
         this->ygc_handlers = ypc.ypc_handler_stack.back()->jph_children;
         this->ygc_depth += 1;
     }
+    // For pattern_property_handler leaves (e.g. /vars/<name>),
+    // forward the requested key so map-typed gen_callbacks emit
+    // only that entry's value rather than flat-iterating the whole
+    // map (which yajl_gen would truncate to the first key as a
+    // top-level JSON string).
+    if (ypc.ypc_current_handler != nullptr
+        && ypc.ypc_current_handler->jph_is_pattern_property)
+    {
+        this->ygc_path.emplace_back(ypc.get_path_fragment(-1));
+    }
     return *this;
 }
 

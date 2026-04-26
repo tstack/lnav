@@ -679,9 +679,16 @@ struct json_path_handler : public json_path_handler_base {
             {
                 yajlpp_generator gen(handle);
 
-                for (const auto& pair : field) {
-                    gen(pair.first);
-                    gen(pair.second);
+                if (!ygc.ygc_path.empty()) {
+                    auto iter = field.find(ygc.ygc_path.back());
+                    if (iter != field.end()) {
+                        gen(iter->second);
+                    }
+                } else {
+                    for (const auto& pair : field) {
+                        gen(pair.first);
+                        gen(pair.second);
+                    }
                 }
             }
 
@@ -892,15 +899,24 @@ struct json_path_handler : public json_path_handler_base {
             {
                 yajlpp_generator gen(handle);
 
-                for (const auto& pair : field) {
-                    gen(pair.first);
-                    pair.second.match(
-                        [&gen](null_value_t v) { gen(); },
-                        [&gen](bool v) { gen(v); },
-                        [&gen](int64_t v) { gen(v); },
-                        [&gen](double v) { gen(v); },
-                        [&gen](const std::string& v) { gen(v); },
-                        [&](const string_fragment& v) { gen(v); });
+                auto emit_value = [&gen](const scoped_value_t& v) {
+                    v.match([&gen](null_value_t) { gen(); },
+                            [&gen](bool b) { gen(b); },
+                            [&gen](int64_t i) { gen(i); },
+                            [&gen](double d) { gen(d); },
+                            [&gen](const std::string& s) { gen(s); },
+                            [&gen](const string_fragment& sf) { gen(sf); });
+                };
+                if (!ygc.ygc_path.empty()) {
+                    auto iter = field.find(ygc.ygc_path.back());
+                    if (iter != field.end()) {
+                        emit_value(iter->second);
+                    }
+                } else {
+                    for (const auto& pair : field) {
+                        gen(pair.first);
+                        emit_value(pair.second);
+                    }
                 }
             }
 
