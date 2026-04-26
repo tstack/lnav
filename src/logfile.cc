@@ -142,8 +142,9 @@ logfile::open(std::filesystem::path filename,
 
     lf_fd.close_on_exec();
 
-    log_info("Creating logfile: fd=%d; size=%" PRId64 "; mtime=%" PRId64
+    log_info("Creating logfile(%p): fd=%d; size=%" PRId64 "; mtime=%" PRId64
              "; filename=%s",
+             lf.get(),
              (int) lf_fd,
              (long long) lf->lf_stat.st_size,
              (long long) lf->lf_stat.st_mtime,
@@ -254,7 +255,9 @@ logfile::logfile(std::filesystem::path filename,
 
 logfile::~logfile()
 {
-    log_info("destructing logfile: %s", this->lf_filename_as_string.c_str());
+    log_info("destructing logfile(%p): %s",
+             this,
+             this->lf_filename_as_string.c_str());
 }
 
 bool
