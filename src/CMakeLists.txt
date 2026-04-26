@@ -366,7 +366,6 @@ add_custom_command(
 list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.cc)
 
 set(BUILTIN_SH_SCRIPTS
-        scripts/com.vmware.btresolver.py
         scripts/dump-pid.sh
         scripts/pcap_log-converter.sh
         scripts/zookeeper.sql

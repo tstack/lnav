@@ -30,11 +30,6 @@
             "convert-zoned-to-local": true
         },
         "annotations": {
-            "com.vmware.vmacore.backtrace": {
-                "description": "Convert a vmacore backtrace into human-readable text",
-                "condition": ":log_body LIKE '%[context]%[/context]%'",
-                "handler": "com.vmware.btresolver.py"
-            },
             "org.postgresql.statement-error": {
                 "description": "statement error",
                 "condition": ":log_level COLLATE loglevel >= 'error' AND :log_body LIKE '% at character %' AND :log_format IN ('postgres_log', 'vpostgres_log')",
