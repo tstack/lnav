@@ -31,6 +31,8 @@
 
 #include "pcre2pp.hh"
 
+#include <algorithm>
+
 #include "config.h"
 #include "ww898/cp_utf8.hpp"
 
@@ -136,28 +138,55 @@ code::find_in(string_fragment in, uint32_t options) const
 size_t
 code::match_partial(string_fragment in) const
 {
-    auto md = this->create_match_data();
-    auto length = in.length();
+    // This function is used for error reporting to show where a line
+    // diverges from the expected pattern.  Cap the input length to
+    // avoid excessive work on very large (e.g. multi-MB binary) lines.
+    static constexpr size_t MAX_PARTIAL_LEN = 8192;
 
-    do {
-        auto rc = pcre2_match(this->p_code.in(),
-                              in.udata(),
-                              length,
-                              0,
-                              PCRE2_PARTIAL_HARD,
-                              md.md_data.in(),
-                              nullptr);
+    auto md = this->create_match_data();
+    auto length = std::min((size_t) in.length(), MAX_PARTIAL_LEN);
+
+    // Try the full (capped) length first -- if it partially matches,
+    // we're done.
+    auto rc = pcre2_match(this->p_code.in(),
+                          in.udata(),
+                          length,
+                          0,
+                          PCRE2_PARTIAL_HARD,
+                          md.md_data.in(),
+                          nullptr);
+
+    if (rc == PCRE2_ERROR_PARTIAL) {
+        return md.md_ovector[1];
+    }
+
+    // Binary search for the largest length that yields a partial match.
+    // For anchored patterns (the primary use case), partial-match is
+    // monotonic over length.
+    size_t lo = 1;
+    size_t hi = length;
+    size_t best = 0;
+
+    while (lo <= hi) {
+        auto mid = lo + (hi - lo) / 2;
+
+        rc = pcre2_match(this->p_code.in(),
+                         in.udata(),
+                         mid,
+                         0,
+                         PCRE2_PARTIAL_HARD,
+                         md.md_data.in(),
+                         nullptr);
 
         if (rc == PCRE2_ERROR_PARTIAL) {
-            return md.md_ovector[1];
+            best = md.md_ovector[1];
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
         }
+    }
 
-        if (length > 0) {
-            length -= 1;
-        }
-    } while (length > 0);
-
-    return 0;
+    return best;
 }
 
 const char*
