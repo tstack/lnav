@@ -324,14 +324,28 @@ lab_color::readable(const lab_color& bg) const
     constexpr double CONTRAST_BOOST = 20.0;
     constexpr double CHROMA_HEADROOM = 30.0;
 
+    constexpr double L_FLOOR = 25.0;
+    constexpr double L_CEIL = 90.0;
+
     bool changed = false;
     double new_l = this->lc_l;
     if (std::abs(this->lc_l - bg.lc_l) < CONTRAST_BOOST) {
+        // Push fg away from bg by 2x the boost in fg's current direction;
+        // if that side is out of headroom against [L_FLOOR, L_CEIL], flip
+        // to the other side instead.  Targets are pre-clamped so that when
+        // both sides are blocked we still land on a valid L*.
         const double delta = CONTRAST_BOOST * 2.0;
-        const bool go_up = (this->lc_l > bg.lc_l) ? (bg.lc_l + delta <= 90.0)
-                                                  : (bg.lc_l - delta < 25.0);
-        new_l = go_up ? std::min(bg.lc_l + delta, 90.0)
-                      : std::max(bg.lc_l - delta, 25.0);
+        const double up_target = std::min(bg.lc_l + delta, L_CEIL);
+        const double down_target = std::max(bg.lc_l - delta, L_FLOOR);
+        const bool up_has_room = bg.lc_l + delta <= L_CEIL;
+        const bool down_has_room = bg.lc_l - delta >= L_FLOOR;
+        const bool prefer_up = this->lc_l > bg.lc_l;
+
+        if (prefer_up) {
+            new_l = up_has_room ? up_target : down_target;
+        } else {
+            new_l = down_has_room ? down_target : up_target;
+        }
         changed = true;
     }
 
