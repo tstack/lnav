@@ -302,6 +302,7 @@ extract(const std::string& filename, const extract_cb& cb)
                                filename,
                                archive_error_string(arc)));
     }
+    auto tmp_base = tmp_path.lexically_normal();
 
     log_info("extracting %s to %s", filename.c_str(), tmp_path.c_str());
     while (true) {
@@ -332,7 +333,12 @@ extract(const std::string& filename, const extract_cb& cb)
         if (strcmp(format_name, "raw") == 0 && filter_count >= 2) {
             desired_pathname = fs::path(filename).filename();
         }
-        auto entry_path = tmp_path / desired_pathname;
+        auto entry_path = (tmp_path / desired_pathname).lexically_normal();
+        auto rel = entry_path.lexically_relative(tmp_base);
+        if (rel.empty() || lnav::filesystem::contains_dotdot(rel)) {
+            log_warning("ignoring naughty path: %s", entry_path_str);
+            continue;
+        }
         auto* prog = cb(
             entry_path,
             archive_entry_size_is_set(entry) ? archive_entry_size(entry) : -1);
@@ -341,6 +347,44 @@ extract(const std::string& filename, const extract_cb& cb)
 
         archive_entry_set_perm(
             wentry, S_IRUSR | (S_ISDIR(entry_mode) ? S_IXUSR | S_IWUSR : 0));
+        if (S_ISLNK(entry_mode)) {
+            auto* target_path_str = archive_entry_symlink(wentry);
+            if (target_path_str == nullptr) {
+                log_warning("symlink is null: %s", entry_path_str);
+                continue;
+            }
+            auto link_target = fs::path(target_path_str);
+            if (link_target.is_absolute()) {
+                // Confine to tmp_path: strip root, rejoin under tmp_path,
+                // then express as relative from the symlink's own directory.
+                auto confined = (tmp_path / link_target.relative_path())
+                                    .lexically_normal();
+                auto rewritten
+                    = confined.lexically_relative(entry_path.parent_path());
+                if (rewritten.empty()) {
+                    log_warning(
+                        "ignoring symlink with unrepresentable target: %s",
+                        entry_path_str);
+                    continue;
+                }
+                archive_entry_set_symlink(wentry, rewritten.c_str());
+            } else {
+                // Relative target: verify it lands inside tmp_base, but leave
+                // the literal target alone so kernel resolution matches.
+                auto resolved = (entry_path.parent_path() / link_target)
+                                    .lexically_normal();
+                auto target_rel = resolved.lexically_relative(tmp_base);
+                if (target_rel.empty()
+                    || lnav::filesystem::contains_dotdot(target_rel))
+                {
+                    log_warning(
+                        "ignoring naughty symlink '%s' with target '%s'",
+                        entry_path_str,
+                        target_path_str);
+                    continue;
+                }
+            }
+        }
         r = archive_write_header(ext, wentry);
         if (r < ARCHIVE_OK) {
             return Err(

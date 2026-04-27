@@ -197,6 +197,18 @@ escape_path(const std::filesystem::path& p, path_type pt)
 }
 
 bool
+contains_dotdot(const std::filesystem::path& p)
+{
+    for (const auto& part : p) {
+        if (part == "..") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool
 is_url(const std::string& fn)
 {
     static const auto url_re

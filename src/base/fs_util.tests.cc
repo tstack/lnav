@@ -100,3 +100,13 @@ TEST_CASE("fs_util::escape_path")
 
     CHECK("\\$abc" == lnav::filesystem::escape_path(p2));
 }
+
+TEST_CASE("fs_util::contains_dotdot")
+{
+    CHECK_FALSE(
+        lnav::filesystem::contains_dotdot(std::filesystem::path{"/abc/def"}));
+    CHECK(lnav::filesystem::contains_dotdot(
+        std::filesystem::path{"/abc/../def"}));
+    CHECK_FALSE(lnav::filesystem::contains_dotdot(
+        std::filesystem::path{"/abc..def"}));
+}
