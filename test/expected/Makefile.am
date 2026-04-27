@@ -664,8 +664,6 @@ dist_noinst_DATA = \
     test_meta.sh_fd09cb565f44a114d8c9a519e571918e30262eaf.out \
     test_meta.sh_fdf4a91aa55262255816dff7d605f1f0a5d6fe92.err \
     test_meta.sh_fdf4a91aa55262255816dff7d605f1f0a5d6fe92.out \
-    test_metric_log.sh_0078eca78de8a7194843fee89b2188e545ffc326.err \
-    test_metric_log.sh_0078eca78de8a7194843fee89b2188e545ffc326.out \
     test_metric_log.sh_00f69a12efd46c1c2c37ad2d7b3fa03b499e1317.err \
     test_metric_log.sh_00f69a12efd46c1c2c37ad2d7b3fa03b499e1317.out \
     test_metric_log.sh_05ab7da26d7af61aa7c15c52cc5650d39a871103.err \
@@ -712,10 +710,6 @@ dist_noinst_DATA = \
     test_metric_log.sh_7b55586a139edf5a3b90babae69eb83b552a96de.out \
     test_metric_log.sh_80bd862a24a4f64b12c79431744e0cc6dd1de735.err \
     test_metric_log.sh_80bd862a24a4f64b12c79431744e0cc6dd1de735.out \
-    test_metric_log.sh_94f898e39ea3aaa3a6ff0c530e21a6a035884caa.err \
-    test_metric_log.sh_94f898e39ea3aaa3a6ff0c530e21a6a035884caa.out \
-    test_metric_log.sh_9f2a0d6d23d50ab1b01af7ae4cb41094aa587543.err \
-    test_metric_log.sh_9f2a0d6d23d50ab1b01af7ae4cb41094aa587543.out \
     test_metric_log.sh_a0ae79998442a6573505765a978af435ee101319.err \
     test_metric_log.sh_a0ae79998442a6573505765a978af435ee101319.out \
     test_metric_log.sh_a347109969cfc3758d0f5cbdbd8f7e606300563a.err \
@@ -892,8 +886,6 @@ dist_noinst_DATA = \
     test_sessions.sh_7f4805745c6551e9f3ecbb809ffb4cfe8bce9c6f.out \
     test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.err \
     test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.out \
-    test_sessions.sh_882d7edbe0b797245bbbbd5c7bb7e76a9b5f864d.err \
-    test_sessions.sh_882d7edbe0b797245bbbbd5c7bb7e76a9b5f864d.out \
     test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.err \
     test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.out \
     test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.err \
@@ -930,8 +922,6 @@ dist_noinst_DATA = \
     test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.out \
     test_sessions.sh_de50586d15f64bc767b1d9f64dce5d4ff649f0bd.err \
     test_sessions.sh_de50586d15f64bc767b1d9f64dce5d4ff649f0bd.out \
-    test_sessions.sh_de8750378504977ee44faa266996a26efd7f3a88.err \
-    test_sessions.sh_de8750378504977ee44faa266996a26efd7f3a88.out \
     test_sessions.sh_e47760d896ef5e5eab2a4a15f8e6b8a69cdd5280.err \
     test_sessions.sh_e47760d896ef5e5eab2a4a15f8e6b8a69cdd5280.out \
     test_sessions.sh_e492b83e19ae525a97ef0140f055e2954b69225a.err \

@@ -1,5 +1,4 @@
 2026-04-14T10:00:00Z  cpu_pct=[7m [0m     12.5  mem_mb=[7m [0m     2048  disk_iops=[7m     [0m  150
-[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
  [1mSources:[0m              logfile_metrics     logfile_metrics    logfile_metrics
 2026-04-14T10:00:05Z  cpu_pct=[7m [0m     13.2  mem_mb=[7m [0m     2050  disk_iops=[7m    [0m   143
 2026-04-14T10:00:10Z  cpu_pct=[7m [0m     18.7  mem_mb=[7m [0m     2065  disk_iops=[7m       312[0m

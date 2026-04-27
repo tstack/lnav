@@ -79,6 +79,8 @@ enum class path_type {
 std::string escape_path(const std::filesystem::path& p,
                         path_type pt = path_type::normal);
 
+bool contains_dotdot(const std::filesystem::path& p);
+
 path_type determine_path_type(const std::string& arg);
 
 struct path_transcoder {

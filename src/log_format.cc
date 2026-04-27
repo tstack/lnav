@@ -1025,6 +1025,7 @@ log_format::log_scanf(scan_batch_context& sbc,
             }
 
             if (retval) {
+                ts->sf_end = ts->sf_begin + this->lf_date_time.dts_fmt_len;
                 *ts_out = ts.value();
                 if (md[2]) {
                     *level_out = md[2];
@@ -5171,6 +5172,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 .with_attrs(attrs)
                 .with_nestable(hd.hd_base_style.sc_nestable);
         }
+    }
+
+    switch (this->elf_type) {
+        case elf_type_t::ELF_TYPE_JSON:
+            this->lf_max_unrecognized_lines = 50;
+            break;
+        default:
+            break;
     }
 }
 

@@ -133,6 +133,14 @@ TEST_CASE("partial")
         auto matched = co.match_partial(string_fragment::from_const(INPUT));
         CHECK(matched == 3);
     }
+
+    {
+        // Large input that doesn't match -- should return promptly
+        // due to the input cap, not loop for millions of iterations.
+        std::string big_input(32768, 'Z');
+        auto matched = co.match_partial(string_fragment::from_str(big_input));
+        CHECK(matched == 0);
+    }
 }
 
 TEST_CASE("capture_name")

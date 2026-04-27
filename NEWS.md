@@ -92,8 +92,17 @@ Breaking changes:
   uses 1,000 for the base instead of 1,024.
 
 Bug Fixes:
+* A PRQL query can now start with `let` in interactive
+  mode.
 * Fix a bug in file loading that could cause a short
   read and crash in some situations.
+* Fix a lockup when viewing a file that contained log
+  messages and lots of binary data.
+* More hardening for some diabolical inputs:
+  - Unsupported escape-sequences were ignored before,
+    but they are displayed now.
+  - Checks for archives with file paths that could
+    escape containment.
 
 
 ## lnav v0.14.0

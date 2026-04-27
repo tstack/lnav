@@ -322,6 +322,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                               &this->lss_token_al.al_attrs);
         }
     }
+    for (auto& sa : this->lss_token_al.al_attrs) {
+        if (sa.sa_type == &VC_HYPERLINK) {
+            sa.sa_type = &SA_UNSUPPORTED;
+        }
+    }
     this->lss_token_shifts.clear();
 
     auto format = this->lss_token_file->get_format_ptr();

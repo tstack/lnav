@@ -51,6 +51,8 @@
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
+using std::string_literals::operator""s;
+
 class piper_log_format : public log_format {
 public:
     const intern_string_t get_name() const override
@@ -150,7 +152,25 @@ public:
         static const pcre_format log_fmt[] = {
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24}))"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,9})?)?|Z|[+\-]\d{2}:?\d{2}|(?!DBG|DEBUG|ERR|INFO|WARN|NONE)[A-Z]{3,4})+)[:|\s]?(trc|trace|dbg|debug|info|warn(?:ing)?|err(?:or)?)[:|\s]\s*)"),
+                R"((?x)^
+  (?:\*\*\*\s+)?                              # optional "*** " prefix
+  (?<timestamp>
+      (?:
+          \s
+        | \d{4}[\-\/]\d{2}[\-\/]\d{2}         # YYYY-MM-DD or YYYY/MM/DD
+        | T                                   # ISO date/time separator
+        | \d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,9})?)?   # HH:MM[:SS[.frac]]
+        | Z                                   # UTC zulu marker
+        | [+\-]\d{2}:?\d{2}                   # timezone offset, +0500 or +05:00
+        | (?!DBG|DEBUG|ERR|INFO|WARN|NONE)    # ...not one of these levels
+          [A-Z]{3,4}                          # 3-4 uppercase letters (e.g. month/tz abbrev)
+      )+
+  )
+  [:|\s]?                                     # optional separator
+  (trc|trace|dbg|debug|info|warn(?:ing)?|err(?:or)?)   # log level
+  [:|\s]                                      # separator
+  \s*
+)"),
             pcre_format(
                 R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) \[(trace|debug|info|warn(?:ing)?|error|critical)\]\s+)"),
             pcre_format(
@@ -289,7 +309,6 @@ public:
         int pat_index
             = lffs.lffs_pattern_locks.pattern_index_for_line(line_number);
         const auto& fmt = get_pcre_log_formats()[pat_index];
-        int prefix_len = 0;
         const auto line_sf = line.to_string_fragment();
         auto match_res = fmt.pcre->capture_from(line_sf)
                              .into(md)
@@ -299,15 +318,19 @@ public:
             return;
         }
 
+        int prefix_len = md.remaining().sf_begin;
         auto ts_cap = md[fmt.pf_timestamp_index].value();
         auto lr = to_line_range(ts_cap.trim());
+        auto level_cap = md[2];
+
+        if (!level_cap) {
+            lr.lr_end = prefix_len = lr.lr_start + this->lf_date_time.dts_fmt_len;
+        }
         sa.emplace_back(lr, L_TIMESTAMP.value());
 
         values.lvv_values.emplace_back(TS_META, line, lr);
         values.lvv_values.back().lv_meta.lvm_format = (log_format*) this;
 
-        prefix_len = md[0]->sf_end;
-        auto level_cap = md[2];
         if (level_cap) {
             if (string2level(level_cap->data(), level_cap->length(), true)
                 != LEVEL_UNKNOWN)
@@ -2155,7 +2178,7 @@ public:
 
             if (iter.index() >= this->wlf_field_defs.size()) {
                 sa.emplace_back(line_range{sf.sf_begin, -1},
-                                SA_INVALID.value("extra fields detected"));
+                                SA_INVALID.value("extra fields detected"s));
                 return;
             }
 

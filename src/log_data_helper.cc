@@ -33,6 +33,8 @@
 
 #include "log_data_helper.hh"
 
+#include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "config.h"
 #include "lnav_util.hh"
 #include "logfile.hh"
@@ -56,7 +58,8 @@ log_data_helper::clear()
     this->ldh_extra_json.clear();
     this->ldh_json_pairs.clear();
     this->ldh_xml_pairs.clear();
-    this->ldh_line_attrs.clear();
+    this->ldh_share_manager.invalidate_refs();
+    this->ldh_attr_line.clear();
 }
 
 bool
@@ -75,36 +78,56 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
     }
     this->ldh_line = ll;
     if (!ll->is_message()) {
+        this->ldh_share_manager.invalidate_refs();
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
         this->ldh_namer.reset();
         this->ldh_extra_json.clear();
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
-        this->ldh_line_attrs.clear();
+        this->ldh_attr_line.clear();
         this->ldh_msg_format.clear();
 #ifdef HAVE_RUST_DEPS
         this->ldh_src_ref = std::nullopt;
         this->ldh_src_vars.clear();
 #endif
+
+        if (ll->is_continued() && ll->has_ansi() && ll->is_valid_utf()) {
+            auto read_res = this->ldh_file->read_line(ll);
+            if (read_res.isOk()) {
+                this->ldh_attr_line.al_string = to_string(read_res.unwrap());
+                scrub_ansi_string(this->ldh_attr_line.al_string,
+                                  &this->ldh_attr_line.al_attrs);
+                retval = true;
+            }
+        }
     } else {
         auto format = this->ldh_file->get_format();
-        auto& sa = this->ldh_line_attrs;
 
 #ifdef HAVE_RUST_DEPS
         this->ldh_src_ref = std::nullopt;
         this->ldh_src_vars.clear();
 #endif
+        this->ldh_share_manager.invalidate_refs();
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
         this->ldh_namer.reset();
-        this->ldh_line_attrs.clear();
+        this->ldh_attr_line.clear();
         this->ldh_line_values.clear();
-        this->ldh_file->read_full_message(ll, this->ldh_line_values.lvv_sbr);
-        this->ldh_line_values.lvv_sbr.erase_ansi();
+        auto& sbr = this->ldh_line_values.lvv_sbr;
+        this->ldh_file->read_full_message(ll, sbr);
+        auto& sbr_meta = sbr.get_metadata();
+        this->ldh_attr_line.al_string = to_string(sbr);
+        if (sbr_meta.m_valid_utf && sbr_meta.m_has_ansi) {
+            scrub_ansi_string(this->ldh_attr_line.al_string,
+                              &this->ldh_attr_line.al_attrs);
+            sbr.share(this->ldh_share_manager,
+                      this->ldh_attr_line.al_string.data(),
+                      this->ldh_attr_line.al_string.size());
+        }
         format->annotate(this->ldh_file.get(),
                          this->ldh_line_index,
-                         sa,
+                         this->ldh_attr_line.al_attrs,
                          this->ldh_line_values);
 
         this->ldh_extra_json.clear();
@@ -190,6 +213,17 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
         retval = true;
     }
 
+    if (retval) {
+        for (auto& sa : this->ldh_attr_line.al_attrs) {
+            if (sa.sa_type != &VC_HYPERLINK) {
+                continue;
+            }
+            sa.sa_type = &SA_UNSUPPORTED;
+            sa.sa_value = fmt::format(FMT_STRING("hyperlink <{}>"),
+                                      sa.sa_value.get<std::string>());
+        }
+    }
+
     return retval;
 }
 
@@ -205,7 +239,7 @@ log_data_helper::parse_body()
     }
 
     auto& sbr = this->ldh_line_values.lvv_sbr;
-    auto& sa = this->ldh_line_attrs;
+    auto& sa = this->ldh_attr_line.al_attrs;
     auto body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_start == -1) {
         body.lr_start = this->ldh_line_values.lvv_sbr.length();

@@ -83,13 +83,14 @@ public:
     std::unique_ptr<column_namer> ldh_namer;
     std::optional<lnav::src_ref> ldh_src_ref;
     std::vector<std::pair<std::string, std::string>> ldh_src_vars;
-    string_attrs_t ldh_line_attrs;
+    attr_line_t ldh_attr_line;
     logline_value_vector ldh_line_values;
     std::map<const intern_string_t, std::string> ldh_extra_json;
     std::map<const intern_string_t, json_walk_collector> ldh_json_pairs;
     std::map<std::pair<const intern_string_t, std::string>, std::string>
         ldh_xml_pairs;
     std::string ldh_msg_format;
+    shared_buffer ldh_share_manager;
 };
 
 #endif

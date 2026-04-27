@@ -1023,6 +1023,20 @@ struct formatter<std::error_code> : formatter<string_view> {
         return formatter<string_view>::format(ec.message(), ctx);
     }
 };
+
+template<typename I>
+struct formatter<std::optional<I>> : formatter<I> {
+    template<typename FormatContext>
+    auto format(const std::optional<I>& opt, FormatContext& ctx) const
+    {
+        if (!opt) {
+            return formatter<string_view>::format("\u2205", ctx);
+        }
+
+        return formatter<I>::format(opt.value(), ctx);
+    }
+};
+
 }  // namespace fmt
 
 namespace std {

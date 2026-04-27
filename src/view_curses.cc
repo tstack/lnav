@@ -421,7 +421,9 @@ view_curses::mvwattrline(ncplane* window,
                             lpc_start, wcw_res - (lpc - lpc_start));
                     }
                     curr_ch_col_count = wcw_res;
-                    has_icon[char_index] = true;
+                    if (char_index < line_width_chars + 1) {
+                        has_icon[char_index] = true;
+                    }
                     char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
                         lr_bytes.lr_end = exp_start_index;
@@ -486,7 +488,8 @@ view_curses::mvwattrline(ncplane* window,
               || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC
               || iter->sa_type == &SA_LEVEL || iter->sa_type == &VC_FOREGROUND
               || iter->sa_type == &VC_BACKGROUND
-              || iter->sa_type == &VC_BLOCK_ELEM || iter->sa_type == &VC_ICON))
+              || iter->sa_type == &VC_BLOCK_ELEM || iter->sa_type == &VC_ICON
+              || iter->sa_type == &SA_UNSUPPORTED))
         {
             continue;
         }
@@ -511,6 +514,12 @@ view_curses::mvwattrline(ncplane* window,
 
         if (attr_range.lr_end == -1) {
             attr_range.lr_end = lr_chars.lr_start + line_width_chars;
+        }
+        if (attr_range.lr_start == attr_range.lr_end) {
+            if (attr_range.lr_start > 0) {
+                attr_range.lr_start -= 1;
+            }
+            attr_range.lr_end += 1;
         }
         if (attr_range.lr_end < lr_chars.lr_start) {
             continue;
@@ -570,6 +579,9 @@ view_curses::mvwattrline(ncplane* window,
                 attrs.ta_bg_color = styling::color_unit::EMPTY;
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
+            } else if (iter->sa_type == &SA_UNSUPPORTED) {
+                attrs = vc.attrs_for_role(role_t::VCR_WARNING);
+                attrs |= text_attrs::style::reverse;
             } else if (iter->sa_type == &SA_LEVEL) {
                 attrs = vc.attrs_for_level(
                     (log_level_t) iter->sa_value.get<int64_t>());
@@ -620,7 +632,12 @@ view_curses::mvwattrline(ncplane* window,
     for (int lpc = 0; lpc < line_width_chars; lpc++) {
         resolved_line_attrs[lpc] = resolved_line_attrs[lpc] | base_attrs;
     }
+    // Cache the most recent fg replacement keyed on BOTH fg and bg: the
+    // adjusted color depends on the bg it was computed against, so a line
+    // with constant fg but changing bg (e.g. selection or alert spans)
+    // must recompute when bg shifts.
     std::optional<styling::color_unit> last_replaced_fg;
+    std::optional<styling::color_unit> last_replaced_bg;
     std::optional<styling::color_unit> fg_replacement;
     for (int lpc = 0; lpc < line_width_chars; lpc++) {
         auto& cell_attrs = resolved_line_attrs[lpc];
@@ -630,11 +647,15 @@ view_curses::mvwattrline(ncplane* window,
 
         if (has_icon[lpc]) {
             last_replaced_fg.reset();
+            last_replaced_bg.reset();
             fg_replacement.reset();
-        } else if (desired_fg == last_replaced_fg) {
+        } else if (desired_fg == last_replaced_fg
+                   && desired_bg == last_replaced_bg)
+        {
             desired_fg = fg_replacement.value();
         } else {
             last_replaced_fg.reset();
+            last_replaced_bg.reset();
             fg_replacement.reset();
             auto fg_lab = view_colors::vc_active_palette->to_lab_color(
                 cell_attrs.ta_fg_color);
@@ -645,6 +666,7 @@ view_curses::mvwattrline(ncplane* window,
 
                 if (new_fg) {
                     last_replaced_fg = desired_fg;
+                    last_replaced_bg = desired_bg;
                     desired_fg = vc.match_color(
                         styling::color_unit::from_rgb(new_fg->to_rgb()));
                     fg_replacement = desired_fg;

@@ -40,11 +40,20 @@
 #include "pcrepp/pcre2pp.hh"
 #include "scn/scan.h"
 
+using std::string_literals::operator""s;
+
 static const lnav::pcre2pp::code&
 ansi_regex()
 {
     static const auto retval = lnav::pcre2pp::code::from_const(
-        R"(\x00|\x1b\[([\d=;:\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+|(\x16+))");
+        R"(
+            \x00                                      # NUL
+          | \x1b \[ ([\d=;:\?]*) ([a-zA-Z])           # CSI: ESC [ <params> <final>
+          | \x1b \] (\d+) ; (.*?) (?:\x07 | \x1b\\)   # OSC: ESC ] <code> ; <payload> (BEL|ST)
+          | (?: \X \x08 \X )+                         # Overstrike: glyph BS glyph
+          | (\x16+)                                   # SYN run
+        )",
+        PCRE2_EXTENDED);
 
     return retval;
 }
@@ -290,7 +299,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 
             if (osc_id) {
                 switch (osc_id->value()) {
-                    case 8:
+                    case 8: {
                         auto split_res = md[4]->split_pair(semi_pred);
                         if (split_res) {
                             // auto params = split_res->first;
@@ -313,6 +322,20 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                             }
                         }
                         break;
+                    }
+                    default: {
+                        if (sa != nullptr) {
+                            lr.lr_start = cp_dst;
+                            lr.lr_end = cp_dst;
+                            tmp_sa.emplace_back(
+                                lr,
+                                SA_UNSUPPORTED.value(fmt::format(
+                                    FMT_STRING("ANSI sequence: OSC {} {}"),
+                                    md[3],
+                                    md[4])));
+                        }
+                        break;
+                    }
                 }
             }
         } else if (md[1]) {
@@ -468,6 +491,19 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     }
                     break;
                 }
+                default: {
+                    if (sa != nullptr) {
+                        lr.lr_start = cp_dst;
+                        lr.lr_end = cp_dst;
+                        tmp_sa.emplace_back(
+                            lr,
+                            SA_UNSUPPORTED.value(fmt::format(
+                                FMT_STRING("ANSI sequence: ESC [ {} {}"),
+                                seq,
+                                terminator)));
+                    }
+                    break;
+                }
             }
         }
         if (md[1] || md[3] || md[5]) {
@@ -485,6 +521,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         sa.sa_range.lr_end = cp_dst;
                         if (sa.sa_range.empty()) {
                             sa.sa_type = &SA_INVALID;
+                            sa.sa_value = "zero-length attribute"s;
                         }
                     }
                     if (sf.sf_end < str.size()) {

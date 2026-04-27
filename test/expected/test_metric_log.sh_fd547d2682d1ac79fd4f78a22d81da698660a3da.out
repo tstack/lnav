@@ -1,5 +1,4 @@
 2026-04-14T10:00:00Z  cpu_pct=       0.0  mem_mb=[7m [0m      500
-[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
  [1mSources:[0m              logfile_[33m⋯[0munordered  logfile_[33m⋯[0mnordered
 2026-04-14T10:00:10Z  cpu_pct=[7m   [0m   10.0  mem_mb=[7m  [0m    1000
 2026-04-14T10:00:20Z  cpu_pct=[7m      2[0m0.0  mem_mb=[7m      [0m2000

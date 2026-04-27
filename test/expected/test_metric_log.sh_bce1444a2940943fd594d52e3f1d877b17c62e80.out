@@ -1,5 +1,4 @@
 2026-04-14T10:00:00Z  cpu_pct=[7m [0m     12.5  host=server-a    region=us-west   
-[4m▌ Line [0m[1m[4m0[0m[4m metadata[0m
  [1mSources:[0m              logfile_[33m⋯[0mics_mixed  logfile[33m⋯[0ms_mixed  logfile_[33m⋯[0mcs_mixed
 2026-04-14T10:00:05Z  cpu_pct=[7m [0m     13.2  host=server-b    region=us-east   
 2026-04-14T10:00:10Z  cpu_pct=[7m      18.7[0m  host=server-a    region=us-west   
