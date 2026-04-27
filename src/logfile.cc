@@ -317,6 +317,7 @@ void
 logfile::reset_internal_state_for_reindex()
 {
     this->lf_index.clear();
+    this->lf_input_lines = 0;
     this->lf_index_size = 0;
     this->lf_level_stats = {};
     this->lf_partial_line = false;
@@ -887,9 +888,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         };
         sbc_tmp.sbc_value_stats.reserve(64);
         for (const auto& curr : root_formats) {
-            if (this->lf_index.size()
-                >= curr->lf_max_unrecognized_lines.value_or(
-                    max_unrecognized_lines))
+            if (this->lf_input_lines
+                    >= curr->lf_max_unrecognized_lines.value_or(
+                        max_unrecognized_lines)
+                && (this->lf_format == nullptr
+                    || this->lf_format->lf_root_format != curr.get()))
             {
                 continue;
             }
@@ -1605,6 +1608,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 return rebuild_result_t::INVALID;
             }
 
+            this->lf_input_lines += 1;
             auto sbr = read_result.unwrap();
 
             if (this->lf_format == nullptr

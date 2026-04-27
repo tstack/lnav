@@ -40,6 +40,11 @@ Bug Fixes:
   read and crash in some situations.
 * Fix a lockup when viewing a file that contained log
   messages and lots of binary data.
+* More hardening for some diabolical inputs:
+  - Unsupported escape-sequences were ignored before,
+    but they are displayed now.
+  - Checks for archives with file paths that could
+    escape containment.
 
 
 ## lnav v0.14.0

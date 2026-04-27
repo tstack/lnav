@@ -567,6 +567,7 @@ private:
     std::vector<logline> lf_index;
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};
+    size_t lf_input_lines{0};
     int lf_index_generation{0};
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;

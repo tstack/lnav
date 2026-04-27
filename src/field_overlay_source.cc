@@ -80,7 +80,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     bool display = false;
 
     if (ll->is_time_skewed()
-        || ll->get_msg_level() == log_level_t::LEVEL_INVALID)
+        || ll->get_msg_level() == log_level_t::LEVEL_INVALID || ll->has_ansi())
     {
         display = true;
     }
@@ -124,7 +124,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     if (ll->get_msg_level() == LEVEL_INVALID) {
-        for (const auto& sattr : this->fos_log_helper.ldh_line_attrs) {
+        for (const auto& sattr : this->fos_log_helper.ldh_attr_line.al_attrs) {
             if (sattr.sa_type != &SA_INVALID) {
                 continue;
             }
@@ -163,6 +163,36 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                   .first.offset.count();
         ftime_z(curr_timestamp, ts_len, sizeof(curr_timestamp), tmptm);
         curr_timestamp[ts_len] = '\0';
+    }
+
+    auto first_nl = this->fos_log_helper.ldh_attr_line.al_string.find('\n');
+    for (const auto& attr : this->fos_log_helper.ldh_attr_line.al_attrs) {
+        if (attr.sa_type != &SA_UNSUPPORTED) {
+            continue;
+        }
+        if (first_nl != std::string::npos && attr.sa_range.lr_start >= first_nl)
+        {
+            continue;
+        }
+
+        const auto& msg
+            = attr.sa_value.get<decltype(SA_UNSUPPORTED)::value_type>();
+        auto msg_al
+            = attr_line_t()
+                  .pad_to(this->fos_lss.get_filename_offset()
+                          + attr.sa_range.lr_start)
+                  .append(ui_icon_t::warning)
+                  .append(" ")
+                  .append("Unsupported:"_h2)
+                  .append(" ")
+                  .append(msg)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_WARNING));
+        this->fos_lines.emplace_back(msg_al);
+    }
+
+    if (ll->is_continued()) {
+        // only need to display unsupported escapes for a continued line
+        return;
     }
 
     if (ll->is_time_skewed()) {
@@ -275,7 +305,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(time_line);
     }
 
-    if (this->fos_contexts.empty() || !this->fos_contexts.top().c_show) {
+    if (this->fos_contexts.empty() || !this->fos_contexts.top().c_show
+        || row != lv.get_selection())
+    {
         return;
     }
 
@@ -352,7 +384,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             pattern_al,
             pattern_al.length(),
             line_range{skip, (int) pattern_al.length()});
-        this->fos_lines.emplace_back(pattern_al);
+        for (const auto& pattern_line_al : pattern_al.split_lines()) {
+            this->fos_lines.emplace_back(pattern_line_al);
+        }
     }
 
     if (this->fos_log_helper.ldh_line_values.lvv_opid_value) {
@@ -939,8 +973,10 @@ field_overlay_source::list_value_for_overlay(
     vis_line_t row,
     std::vector<attr_line_t>& value_out)
 {
-    // log_debug("value for overlay %d", row);
-    if (row == lv.get_selection()) {
+    auto line_pair_opt = this->fos_lss.find_line_with_file(row);
+    if (row == lv.get_selection()
+        || (line_pair_opt && line_pair_opt->second->has_ansi()))
+    {
         this->build_field_lines(lv, row);
         value_out = this->fos_lines;
     }
@@ -1211,7 +1247,7 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
     attr_line_t retval;
 
     retval.append(this->fos_lss.get_filename_offset(), ' ');
-    if (this->fos_contexts.top().c_show) {
+    if (lv.get_selection() == vl && this->fos_contexts.top().c_show) {
         retval.appendf(FMT_STRING("\u258C Line {:L} parser details."),
                        (int) vl);
         if (media == media_t::display) {
@@ -1219,14 +1255,14 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
                 .append("p"_hotkey)
                 .append(" to hide this panel.");
         }
-    } else {
+    } else if (this->fos_lss.find_bookmark_metadata(vl)) {
         retval.append("\u258C Line ")
             .append(
                 lnav::roles::number(fmt::format(FMT_STRING("{:L}"), (int) vl)))
             .append(" metadata");
     }
 
-    if (media == media_t::display) {
+    if (!retval.empty() && media == media_t::display) {
         if (lv.get_overlay_selection()) {
             retval.append("  ")
                 .append("SPC"_hotkey)
@@ -1240,6 +1276,10 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
                 .append("CTRL-]"_hotkey)
                 .append(" to focus on this panel");
         }
+    }
+
+    if (retval.empty()) {
+        return std::nullopt;
     }
 
     return retval;
