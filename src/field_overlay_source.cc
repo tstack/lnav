@@ -167,7 +167,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     auto first_nl = this->fos_log_helper.ldh_attr_line.al_string.find('\n');
     for (const auto& attr : this->fos_log_helper.ldh_attr_line.al_attrs) {
-        if (attr.sa_type != &SA_UNSUPPORTED) {
+        if (attr.sa_type != &SAT_UNSUPPORTED) {
             continue;
         }
         if (first_nl != std::string::npos && attr.sa_range.lr_start >= first_nl)
@@ -176,7 +176,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
 
         const auto& msg
-            = attr.sa_value.get<decltype(SA_UNSUPPORTED)::value_type>();
+            = attr.sa_value.get<decltype(SAT_UNSUPPORTED)::value_type>();
         auto msg_al
             = attr_line_t()
                   .pad_to(this->fos_lss.get_filename_offset()

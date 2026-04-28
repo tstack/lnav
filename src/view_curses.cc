@@ -489,7 +489,7 @@ view_curses::mvwattrline(ncplane* window,
               || iter->sa_type == &SA_LEVEL || iter->sa_type == &VC_FOREGROUND
               || iter->sa_type == &VC_BACKGROUND
               || iter->sa_type == &VC_BLOCK_ELEM || iter->sa_type == &VC_ICON
-              || iter->sa_type == &SA_UNSUPPORTED))
+              || iter->sa_type == &SAT_UNSUPPORTED))
         {
             continue;
         }
@@ -579,7 +579,7 @@ view_curses::mvwattrline(ncplane* window,
                 attrs.ta_bg_color = styling::color_unit::EMPTY;
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
-            } else if (iter->sa_type == &SA_UNSUPPORTED) {
+            } else if (iter->sa_type == &SAT_UNSUPPORTED) {
                 attrs = vc.attrs_for_role(role_t::VCR_WARNING);
                 attrs |= text_attrs::style::reverse;
             } else if (iter->sa_type == &SA_LEVEL) {

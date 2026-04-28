@@ -46,7 +46,7 @@ constexpr string_attr_type<void> SA_REMOVED("removed");
 constexpr string_attr_type<void> SA_PREFORMATTED("preformatted");
 constexpr string_attr_type<std::string> SA_INVALID("invalid");
 constexpr string_attr_type<std::string> SA_ERROR("error");
-constexpr string_attr_type<std::string> SA_UNSUPPORTED("unsupported");
+constexpr string_attr_type<std::string> SAT_UNSUPPORTED("unsupported");
 constexpr string_attr_type<int64_t> SA_LEVEL("level");
 constexpr string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
 constexpr string_attr_type<text_format_t> SA_QUOTED_TEXT("quoted-text");

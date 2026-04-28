@@ -438,7 +438,7 @@ extern const string_attr_type<void> SA_REMOVED;
 extern const string_attr_type<void> SA_PREFORMATTED;
 extern const string_attr_type<std::string> SA_INVALID;
 extern const string_attr_type<std::string> SA_ERROR;
-extern const string_attr_type<std::string> SA_UNSUPPORTED;
+extern const string_attr_type<std::string> SAT_UNSUPPORTED;
 extern const string_attr_type<int64_t> SA_LEVEL;
 extern const string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 extern const string_attr_type<text_format_t> SA_QUOTED_TEXT;
