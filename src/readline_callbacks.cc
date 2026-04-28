@@ -1144,20 +1144,6 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 lnav_data.ld_db_preview_source[0].clear();
                 lnav_data.ld_db_preview_source[1].clear();
 
-                {
-                    auto compile_res = lnav::prql::compile(term_val);
-                    if (compile_res.isErr()) {
-                        auto um = compile_res.unwrapErr();
-                        auto err_as_line = attr_line_t()
-                                               .append(um.um_message)
-                                               .append("  \u2014  ")
-                                               .append(um.um_reason);
-                        lnav_data.ld_bottom_source.set_error(err_as_line);
-                        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-                        return;
-                    }
-                }
-
                 auto orig_prql_stmt = attr_line_t(term_val);
                 orig_prql_stmt.rtrim("| \r\n\t");
                 lnav::sql::annotate_prql_statement(orig_prql_stmt);
@@ -1251,6 +1237,18 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                             &lnav_data.ld_preview_source[0]);
                         lnav_data.ld_preview_view[0].set_overlay_source(
                             nullptr);
+                    }
+                } else {
+                    auto compile_res = lnav::prql::compile(term_val);
+                    if (compile_res.isErr()) {
+                        auto um = compile_res.unwrapErr();
+                        auto err_as_line = attr_line_t()
+                                               .append(um.um_message)
+                                               .append("  \u2014  ")
+                                               .append(um.um_reason);
+                        lnav_data.ld_bottom_source.set_error(err_as_line);
+                        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+                        return;
                     }
                 }
 
