@@ -48,11 +48,16 @@
 #include "config.h"
 #include "lnav_util.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "prql-modules.h"
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
 #include "sql_execute.hh"
 #include "sql_help.hh"
 #include "sqlitepp.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
 
 using namespace lnav::roles::literals;
 
@@ -1566,6 +1571,59 @@ sql_table_capture_guard::~sql_table_capture_guard()
     tl_authorizer_table_capture = this->stcg_prev;
 }
 
+#if HAVE_RUST_DEPS
+extern rust::Vec<lnav_rs_ext::SourceTreeElement> sqlite_extension_prql;
+#endif
+
+Result<std::string, lnav::console::user_message>
+lnav::prql::compile(const std::string& src)
+{
+#if HAVE_RUST_DEPS
+    auto opts = lnav_rs_ext::Options{true, "sql.sqlite", true};
+
+    auto tree = sqlite_extension_prql;
+    for (const auto& mod : lnav_prql_modules) {
+        auto name = mod.get_name().to_string();
+        log_debug("lnav_rs_ext adding mod %s", name.c_str());
+        tree.emplace_back(lnav_rs_ext::SourceTreeElement{
+            name.c_str(),
+            mod.to_string_fragment_producer()->to_string(),
+        });
+    }
+    tree.emplace_back(lnav_rs_ext::SourceTreeElement{"", src});
+    log_debug("BEGIN compiling tree");
+    auto cr = lnav_rs_ext::compile_tree(tree, opts);
+    log_debug("END compiling tree");
+
+    for (const auto& msg : cr.messages) {
+        if (msg.kind != lnav_rs_ext::MessageKind::Error) {
+            continue;
+        }
+
+        auto stmt_al = attr_line_t(src);
+        readline_sql_highlighter(stmt_al, lnav::sql::dialect::prql, 0);
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("unable to compile PRQL: ").append(stmt_al))
+                      .with_reason(
+                          attr_line_t::from_ansi_str((std::string) msg.reason));
+        if (!msg.display.empty()) {
+            um.with_note(attr_line_t::from_ansi_str((std::string) msg.display));
+        }
+        for (const auto& hint : msg.hints) {
+            um.with_help(attr_line_t::from_ansi_str((std::string) hint));
+            break;
+        }
+        return Err(um);
+    }
+    log_debug("done!");
+    return Ok((std::string) cr.output);
+#else
+    auto um = lnav::console::user_message::error(
+        attr_line_t("PRQL is not supported in this build"));
+    return Err(um);
+#endif
+}
+
 attr_line_t
 sqlite3_errmsg_to_attr_line(sqlite3* db)
 {
@@ -1950,7 +2008,8 @@ is_prql(const string_fragment& sf)
 {
     auto trimmed = sf.trim().skip(string_fragment::tag1{';'});
 
-    return (trimmed.startswith("let ") || trimmed.startswith("from"));
+    return trimmed == "let"_frag || trimmed.startswith("let ")
+        || trimmed.startswith("from");
 }
 
 static const char* const prql_transforms[] = {
@@ -2144,8 +2203,9 @@ annotate_prql_statement(attr_line_t& al)
     const string_attr_type_base* last_attr_type = nullptr;
     bool saw_id_dot = false;
     for (const auto& attr : sa) {
-        if (attr.sa_type == &PRQL_PIPE_ATTR &&
-            groups.size() == 1 && groups.front().first == 'l') {
+        if (attr.sa_type == &PRQL_PIPE_ATTR && groups.size() == 1
+            && groups.front().first == 'l')
+        {
             groups.pop_back();
             last_attr_type = nullptr;
             continue;
@@ -2184,8 +2244,9 @@ annotate_prql_statement(attr_line_t& al)
             }
             saw_id_dot = false;
         }
-        if (attr.sa_type == &PRQL_KEYWORD_ATTR &&
-            al.to_string_fragment(attr) == "let"_frag) {
+        if (attr.sa_type == &PRQL_KEYWORD_ATTR
+            && al.to_string_fragment(attr) == "let"_frag)
+        {
             groups.emplace_back('l', attr.sa_range.lr_start);
         }
         if (attr.sa_type != &PRQL_PAREN_ATTR) {

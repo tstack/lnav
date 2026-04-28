@@ -324,6 +324,19 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(permalink);
     }
 
+    {
+        const auto& filename
+            = this->fos_log_helper.ldh_file->get_filename_as_string();
+        auto file_al = attr_line_t(" ")
+                           .append("File:"_h2)
+                           .pad_to(15)
+                           .append(lnav::roles::file(filename));
+
+        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                            row_info{std::nullopt, filename});
+        this->fos_lines.emplace_back(file_al);
+    }
+
     this->fos_known_key_size = LOG_BODY.length();
     if (!this->fos_contexts.empty()) {
         this->fos_known_key_size += this->fos_contexts.top().c_prefix.length();
@@ -385,6 +398,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             pattern_al.length(),
             line_range{skip, (int) pattern_al.length()});
         for (const auto& pattern_line_al : pattern_al.split_lines()) {
+            this->fos_row_to_field_meta.emplace(
+                this->fos_lines.size(), row_info{std::nullopt, pattern_str});
             this->fos_lines.emplace_back(pattern_line_al);
         }
     }

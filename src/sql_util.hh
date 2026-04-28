@@ -46,6 +46,7 @@
 #include "base/attr_line.hh"
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.console.hh"
 #include "base/time_util.hh"
 
 extern const std::array<const char*, 145> sqlite_keywords;
@@ -142,8 +143,7 @@ public:
     ~sql_table_capture_guard();
 
     sql_table_capture_guard(const sql_table_capture_guard&) = delete;
-    sql_table_capture_guard& operator=(const sql_table_capture_guard&)
-        = delete;
+    sql_table_capture_guard& operator=(const sql_table_capture_guard&) = delete;
 
 private:
     std::set<std::string>* stcg_prev;
@@ -154,5 +154,11 @@ namespace lnav::sql {
 auto_mem<char, sqlite3_free> mprintf(const char* fmt, ...);
 
 }  // namespace lnav::sql
+
+namespace lnav::prql {
+
+Result<std::string, console::user_message> compile(const std::string& src);
+
+}
 
 #endif

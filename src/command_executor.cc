@@ -54,17 +54,12 @@
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
 #include "log_vtab_impl.hh"
-#include "prql-modules.h"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
-
-#ifdef HAVE_RUST_DEPS
-#    include "lnav_rs_ext.cxx.hh"
-#endif
 
 using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
@@ -330,53 +325,11 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     if (lnav::sql::is_prql(stmt_str)) {
         log_info("compiling PRQL: %s", stmt_str.c_str());
 
-#if HAVE_RUST_DEPS
-        extern rust::Vec<lnav_rs_ext::SourceTreeElement> sqlite_extension_prql;
-        auto opts = lnav_rs_ext::Options{true, "sql.sqlite", true};
-
-        auto tree = sqlite_extension_prql;
-        for (const auto& mod : lnav_prql_modules) {
-            auto name = mod.get_name().to_string();
-            log_debug("lnav_rs_ext adding mod %s", name.c_str());
-            tree.emplace_back(lnav_rs_ext::SourceTreeElement{
-                name.c_str(),
-                mod.to_string_fragment_producer()->to_string(),
-            });
+        auto compile_res = lnav::prql::compile(stmt_str);
+        if (compile_res.isErr()) {
+            return Err(compile_res.unwrapErr());
         }
-        tree.emplace_back(lnav_rs_ext::SourceTreeElement{"", stmt_str});
-        log_debug("BEGIN compiling tree");
-        auto cr = lnav_rs_ext::compile_tree(tree, opts);
-        log_debug("END compiling tree");
-
-        for (const auto& msg : cr.messages) {
-            if (msg.kind != lnav_rs_ext::MessageKind::Error) {
-                continue;
-            }
-
-            auto stmt_al = attr_line_t(stmt_str);
-            readline_sql_highlighter(stmt_al, lnav::sql::dialect::prql, 0);
-            auto um
-                = lnav::console::user_message::error(
-                      attr_line_t("unable to compile PRQL: ").append(stmt_al))
-                      .with_reason(
-                          attr_line_t::from_ansi_str((std::string) msg.reason));
-            if (!msg.display.empty()) {
-                um.with_note(
-                    attr_line_t::from_ansi_str((std::string) msg.display));
-            }
-            for (const auto& hint : msg.hints) {
-                um.with_help(attr_line_t::from_ansi_str((std::string) hint));
-                break;
-            }
-            return Err(um);
-        }
-        log_debug("done!");
-        stmt_str = (std::string) cr.output;
-#else
-        auto um = lnav::console::user_message::error(
-            attr_line_t("PRQL is not supported in this build"));
-        return Err(um);
-#endif
+        stmt_str = compile_res.unwrap();
     }
 
     log_info("Executing SQL: %s", stmt_str.c_str());

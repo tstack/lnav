@@ -65,6 +65,11 @@ public:
         this->bss_error.set_value(msg);
     }
 
+    void set_error(const attr_line_t& msg)
+    {
+        this->bss_error.set_value(msg);
+    }
+
     size_t statusview_fields() override;
 
     status_field& statusview_value_for_field(int field) override;
