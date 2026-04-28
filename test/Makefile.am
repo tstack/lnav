@@ -402,7 +402,10 @@ dist_noinst_DATA = \
 	logfile_metrics_badquote.csv \
 	logfile_metrics_colmismatch.csv \
 	logfile_metrics_colmismatch_late.csv \
+	logfile_metrics_mixed.csv \
 	logfile_metrics_quoted.csv \
+	logfile_metrics_textonly.csv \
+	logfile_metrics_unordered.csv \
 	logfile_not_metrics.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
