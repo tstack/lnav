@@ -80,7 +80,8 @@ get_config_dir_mtime(const std::filesystem::path& path,
             return retval;
         }
 
-        for (const auto& sib : std::filesystem::directory_iterator(parent)) {
+        for (const auto& sib : std::filesystem::directory_iterator(parent, ec))
+        {
             if (!sib.is_directory()) {
                 continue;
             }
@@ -110,7 +111,7 @@ static std::optional<std::string>
 get_impl(const std::filesystem::path& path)
 {
     const auto& cfg = injector::get<const config&>();
-    std::vector<std::tuple<time64_t, bool, const impl*>> candidates;
+    std::vector<std::tuple<time64_t, bool, bool, const impl*>> candidates;
 
     log_debug("editor impl count: %zu", cfg.c_impls.size());
     for (const auto& [name, impl] : cfg.c_impls) {
@@ -127,25 +128,60 @@ get_impl(const std::filesystem::path& path)
                       .ignore_error()
                       .has_value()
                 : false;
+            auto disfavors = impl.i_disfavors.pp_value
+                ? impl.i_disfavors.pp_value->find_in(path.string())
+                      .ignore_error()
+                      .has_value()
+                : false;
+            auto config_dir_mtime
+                = get_config_dir_mtime(path, impl.i_config_dir);
+            log_info("    config-dir-mtime: %llu, prefers: %s, disfavors: %s",
+                     config_dir_mtime,
+                     prefers ? "yes" : "no",
+                     disfavors ? "yes" : "no");
             candidates.emplace_back(
-                get_config_dir_mtime(path, impl.i_config_dir), prefers, &impl);
+                config_dir_mtime, prefers, disfavors, &impl);
         }
     }
 
     std::sort(candidates.begin(),
               candidates.end(),
               [](const auto& lhs, const auto& rhs) {
-                  const auto& [lmtime, lprefers, limpl] = lhs;
-                  const auto& [rmtime, rprefers, rimpl] = rhs;
+                  const auto& [lmtime, lprefers, ldisfavors, limpl] = lhs;
+                  const auto& [rmtime, rprefers, rdisfavors, rimpl] = rhs;
 
-                  return lmtime > rmtime || (lmtime == rmtime && lprefers);
+                  if (lmtime > rmtime) {
+                      return true;
+                  }
+
+                  if (lmtime < rmtime) {
+                      return false;
+                  }
+
+                  if (lprefers && !rprefers) {
+                      return true;
+                  }
+
+                  if (!lprefers && rprefers) {
+                      return false;
+                  }
+
+                  if (ldisfavors && !rdisfavors) {
+                      return false;
+                  }
+
+                  if (!ldisfavors && rdisfavors) {
+                      return true;
+                  }
+
+                  return limpl->i_command < rimpl->i_command;
               });
 
     if (candidates.empty()) {
         return std::nullopt;
     }
 
-    return std::get<2>(candidates.front())->i_command;
+    return std::get<3>(candidates.front())->i_command;
 }
 
 Result<void, std::string>

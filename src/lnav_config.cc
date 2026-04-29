@@ -1134,7 +1134,8 @@ static const struct json_path_container theme_status_styles_handlers = {
         .for_child(&lnav_theme::lt_style_status_title)
         .with_children(style_config_handlers),
     yajlpp::property_handler("alert-title")
-        .with_description("Styling for title sections of status bars with alerts")
+        .with_description(
+            "Styling for title sections of status bars with alerts")
         .for_child(&lnav_theme::lt_style_status_alert_title)
         .with_children(style_config_handlers),
     yajlpp::property_handler("disabled-title")
@@ -1664,9 +1665,15 @@ static const json_path_container editor_impl_handlers = {
         .with_example(".idea"_frag)
         .for_field(&lnav::external_editor::impl::i_config_dir),
     yajlpp::property_handler("prefers")
-        .with_description("")
+        .with_description("Regular expression that matches file names "
+                          "preferred by this editor")
         .with_example("^.*(?:\\.cpp)$"_frag)
         .for_field(&lnav::external_editor::impl::i_prefers),
+    yajlpp::property_handler("disfavors")
+        .with_description("Regular expression that matches file names not "
+                          "favored by this editor")
+        .with_example("^.*(?:\\.cpp)$"_frag)
+        .for_field(&lnav::external_editor::impl::i_disfavors),
 };
 
 static const json_path_container editor_impls_handlers = {

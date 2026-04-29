@@ -38,8 +38,17 @@ Features:
     BACKSPACE and DELETE.
   - `CTRL-t` transposes the two characters before
     the cursor.
+* In the log message details (opened by pressing `p`),
+  a `File:` row has been added that lists the file and
+  line number the log message is from.  Also, for JSON
+  logs, you can focus on the `JSON fields:` row and
+  press `c` to copy the raw log message to the
+  clipboard.
 * The `measure_with_units` collator now recognizes
   (KiB, MiB, ...).
+* Added `disfavors` to `external-editor` configuration
+  to express file names that the editor is not interested
+  in handling.
 
 Breaking changes:
 * The `humanize_file_size()` SQLite function now

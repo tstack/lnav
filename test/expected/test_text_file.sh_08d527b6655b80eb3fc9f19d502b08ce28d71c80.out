@@ -47,7 +47,7 @@ however, they do not understand log messages.  Tail can watch
 multiple files at a time, but it won't display messages in order by
 time and you can't scroll backwards.  Grep will only find matching
 lines, but won't return a full multi-line log message.  Less can only
-display a single file at a time.  Also, none of these basic tools 
+display a single file at a time.  Also, none of these basic tools
 handle compressed files.
 
 [1m## Try online before installing[0m
@@ -59,7 +59,7 @@ an example:
 
 [34m[[0m[35m`$ ssh playground@demo.lnav.org`[0m[34m]([0mssh://playground@demo.lnav.org[34m)[0m
 
-The [35m"tutorial 1"[0m account is an interactive tutorial that can teach 
+The [35m"tutorial 1"[0m account is an interactive tutorial that can teach
 you the basics of operation:
 
 [34m[[0m[35m`$ ssh tutorial1@demo.lnav.org`[0m[34m]([0mssh://tutorial1@demo.lnav.org[34m)[0m
@@ -89,17 +89,17 @@ monitor, it will figure out the rest:
 [35m$ lnav /path/to/file1 /path/to/dir ...[0m
 [35m```[0m
 
-The [1m**lnav**[0m TUI will pop up right away and begin indexing the 
-files. Progress is displayed in the [35m"Files"[0m panel at the 
-bottom. Once the indexing has finished, the LOG view will display 
-the log messages that were recognized[^1]. You can then use the 
+The [1m**lnav**[0m TUI will pop up right away and begin indexing the
+files. Progress is displayed in the [35m"Files"[0m panel at the
+bottom. Once the indexing has finished, the LOG view will display
+the log messages that were recognized[^1]. You can then use the
 usual hotkeys to move around the view (arrow keys or
 [35m`j`[0m/[35m`k`[0m/[35m`h`[0m/[35m`l`[0m to move down/up/left/right).
 
 See the [34m[[0mUsage section[34m]([0mhttps://docs.lnav.org/en/latest/usage.html[34m)[0m
 of the online documentation for more information.
 
-[34m[^[0m1[34m][0m[34m:[0m Files that do not contain log messages can be seen in the 
+[34m[^[0m1[34m][0m[34m:[0m Files that do not contain log messages can be seen in the
       TEXT view (reachable by pressing [35m`t`[0m).
 
 [4m### Usage with [0m[4m[35m`systemd-journald`[0m

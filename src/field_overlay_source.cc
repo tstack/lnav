@@ -325,15 +325,31 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     {
-        const auto& filename
-            = this->fos_log_helper.ldh_file->get_filename_as_string();
-        auto file_al = attr_line_t(" ")
-                           .append("File:"_h2)
-                           .pad_to(15)
-                           .append(lnav::roles::file(filename));
+        const auto& actual_path
+            = this->fos_log_helper.ldh_file->get_actual_path();
+        const auto& filename = actual_path
+            ? actual_path->string()
+            : this->fos_log_helper.ldh_file->get_filename_as_string();
+        auto file_line_number
+            = fmt::to_string(this->fos_log_helper.ldh_file->get_line_number(
+                this->fos_log_helper.ldh_line));
+        auto file_link
+            = attr_line_t()
+                  .append(lnav::roles::file(filename))
+                  .append(":")
+                  .append(lnav::roles::number(file_line_number))
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_HYPERLINK))
+                  .with_attr_for_all(VC_HYPERLINK.value(
+                      fmt::format(FMT_STRING("file://{}#L{}"),
+                                  filename,
+                                  file_line_number)));
+        auto file_al
+            = attr_line_t(" ").append("File:"_h2).pad_to(15).append(file_link);
 
-        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
-                                            row_info{std::nullopt, filename});
+        auto file_line_pair
+            = fmt::format(FMT_STRING("{}:{}"), filename, file_line_number);
+        this->fos_row_to_field_meta.emplace(
+            this->fos_lines.size(), row_info{std::nullopt, file_line_pair});
         this->fos_lines.emplace_back(file_al);
     }
 
@@ -558,7 +574,19 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     if (!this->fos_log_helper.ldh_extra_json.empty()
         || !this->fos_log_helper.ldh_json_pairs.empty())
     {
-        this->fos_lines.emplace_back(" JSON fields:");
+        auto read_res = this->fos_log_helper.ldh_file->read_raw_message(
+            this->fos_log_helper.ldh_line);
+        if (read_res.isOk()) {
+            auto sbr = read_res.unwrap();
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                row_info{
+                                                    std::nullopt,
+                                                    to_string(sbr),
+                                                });
+        }
+        this->fos_lines.emplace_back(
+            attr_line_t(" JSON fields: ")
+                .append("(press 'c' to copy raw JSON log message)"_comment));
     }
 
     for (const auto& extra_pair : this->fos_log_helper.ldh_extra_json) {

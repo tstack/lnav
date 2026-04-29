@@ -357,6 +357,8 @@ public:
         return ll->get_offset() + (this->lf_line_buffer.is_piper() ? 22 : 0);
     }
 
+    size_t get_line_number(const_iterator ll) const;
+
     void read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
                            line_buffer::scan_direction dir

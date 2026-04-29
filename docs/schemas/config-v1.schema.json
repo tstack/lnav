@@ -325,6 +325,15 @@
                                         },
                                         "prefers": {
                                             "title": "/tuning/external-editor/impls/<editor_impl_name>/prefers",
+                                            "description": "Regular expression that matches file names preferred by this editor",
+                                            "type": "string",
+                                            "examples": [
+                                                "^.*(?:\\.cpp)$"
+                                            ]
+                                        },
+                                        "disfavors": {
+                                            "title": "/tuning/external-editor/impls/<editor_impl_name>/disfavors",
+                                            "description": "Regular expression that matches file names not favored by this editor",
                                             "type": "string",
                                             "examples": [
                                                 "^.*(?:\\.cpp)$"

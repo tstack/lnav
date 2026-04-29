@@ -145,17 +145,20 @@
                 "IntelliJ": {
                     "config-dir": ".idea",
                     "prefers": "^.*(?:\\.java|\\.kt|\\.py)$",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$",
                     "test": "command -v idea",
                     "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\""
                 },
                 "CLion": {
                     "config-dir": ".idea",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$",
                     "test": "command -v clion",
                     "command": "clion --line ${LINE} --column ${COL} \"$FILE_PATH\""
                 },
                 "RustRover": {
                     "config-dir": ".idea",
                     "prefers": "^.*(?:Cargo.toml|\\.rs)",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$",
                     "test": "command -v rustrover",
                     "command": "rustrover --line ${LINE} --column ${COL} \"$FILE_PATH\""
                 },
