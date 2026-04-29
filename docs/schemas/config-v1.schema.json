@@ -1400,17 +1400,18 @@
                 },
                 "color": {
                     "title": "/color",
-                    "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
+                    "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, a theme variable reference, or 'semantic()' to derive the color from a hash of the matched text.",
                     "type": "string",
                     "examples": [
                         "#fff",
                         "Green",
-                        "$black"
+                        "$black",
+                        "semantic()"
                     ]
                 },
                 "background-color": {
                     "title": "/background-color",
-                    "description": "The background color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",
+                    "description": "The background color value for this style. The value can be the name of an xterm color, the hexadecimal value, a theme variable reference, or 'semantic()' to derive the color from a hash of the matched text.",
                     "type": "string",
                     "examples": [
                         "#2d2a2e",

@@ -3,10 +3,11 @@
 [1m[31m |      [0m  [1m[31mreason[0m: Could not parse color: #f
 [36m --> [0m[1mcommand-option[0m:1
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/ui/theme-defs/default/styles/text/color[0m [4m#hex|color_name[0m
+           [1m/ui/theme-defs/default/styles/text/color[0m [4m#hex|color_name|semantic()[0m
          [1mDescription[0m
-           The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.
+           The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, a theme variable reference, or 'semantic()' to derive the color from a hash of the matched text.
          [1mExamples[0m
            #fff
            Green
            $black
+           semantic()

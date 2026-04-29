@@ -143,6 +143,9 @@ the values from the :code:`styles/text` definition.
   picked based on the `CIEDE2000 <https://en.wikipedia.org/wiki/Color_difference#CIEDE2000>`_
   color difference algorithm.
 
+The special value :code:`semantic()` can also be used in place of a color.
+The displayed color is derived from a hash of the text to create a stable,
+distinguishable color.
 
 
 Example
