@@ -206,3 +206,250 @@ TEST_CASE("string_fragment::column_width")
         CHECK(1 == sf.column_width());
     }
 }
+
+TEST_CASE("string_fragment::next_word")
+{
+    {
+        const auto sf = string_fragment::from_const("hello world");
+
+        CHECK(sf.next_word(0) == std::optional<int>(6));
+        CHECK(sf.next_word(3) == std::optional<int>(6));
+        CHECK(sf.next_word(6) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("SELECT * FROM");
+
+        CHECK(sf.next_word(0) == std::optional<int>(7));
+        CHECK(sf.next_word(7) == std::optional<int>(9));
+        CHECK(sf.next_word(9) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("lnav_db.syslog_log");
+
+        CHECK(sf.next_word(0) == std::optional<int>(8));
+        CHECK(sf.next_word(3) == std::optional<int>(8));
+        CHECK(sf.next_word(8) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("abc(def)");
+
+        CHECK(sf.next_word(0) == std::optional<int>(4));
+        CHECK(sf.next_word(4) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a..b");
+
+        CHECK(sf.next_word(0) == std::optional<int>(3));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a * b");
+
+        CHECK(sf.next_word(0) == std::optional<int>(2));
+        CHECK(sf.next_word(2) == std::optional<int>(4));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("  hello");
+
+        CHECK(sf.next_word(0) == std::optional<int>(2));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a\tb");
+
+        CHECK(sf.next_word(0) == std::optional<int>(8));
+    }
+
+    {
+        const auto empty = string_fragment::from_const("");
+        const auto ws = string_fragment::from_const("   ");
+
+        CHECK(empty.next_word(0) == std::nullopt);
+        CHECK(ws.next_word(0) == std::nullopt);
+    }
+}
+
+TEST_CASE("string_fragment::prev_word")
+{
+    {
+        const auto sf = string_fragment::from_const("hello world");
+
+        CHECK(sf.prev_word(11) == std::optional<int>(6));
+        CHECK(sf.prev_word(6) == std::optional<int>(0));
+        CHECK(sf.prev_word(3) == std::optional<int>(0));
+        CHECK(sf.prev_word(0) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("SELECT * FROM");
+
+        CHECK(sf.prev_word(13) == std::optional<int>(9));
+        CHECK(sf.prev_word(9) == std::optional<int>(7));
+        CHECK(sf.prev_word(7) == std::optional<int>(0));
+        CHECK(sf.prev_word(0) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("lnav_db.syslog_log");
+
+        CHECK(sf.prev_word(18) == std::optional<int>(8));
+        CHECK(sf.prev_word(8) == std::optional<int>(0));
+        CHECK(sf.prev_word(0) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("abc(def)");
+
+        CHECK(sf.prev_word(8) == std::optional<int>(4));
+        CHECK(sf.prev_word(4) == std::optional<int>(0));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a..b");
+
+        CHECK(sf.prev_word(4) == std::optional<int>(3));
+        CHECK(sf.prev_word(3) == std::optional<int>(0));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a * b");
+
+        CHECK(sf.prev_word(5) == std::optional<int>(4));
+        CHECK(sf.prev_word(4) == std::optional<int>(2));
+        CHECK(sf.prev_word(2) == std::optional<int>(0));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("  hello");
+
+        CHECK(sf.prev_word(7) == std::optional<int>(2));
+        CHECK(sf.prev_word(2) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("a\tb");
+
+        CHECK(sf.prev_word(9) == std::optional<int>(8));
+        CHECK(sf.prev_word(8) == std::optional<int>(0));
+    }
+
+    {
+        const auto empty = string_fragment::from_const("");
+        const auto ws = string_fragment::from_const("   ");
+
+        CHECK(empty.prev_word(0) == std::nullopt);
+        CHECK(ws.prev_word(3) == std::nullopt);
+    }
+}
+
+TEST_CASE("string_fragment::curr_word")
+{
+    {
+        const auto sf = string_fragment::from_const("hello world");
+
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(4) == std::optional<int>(0));
+        CHECK(sf.curr_word(5) == std::nullopt);
+        CHECK(sf.curr_word(6) == std::optional<int>(6));
+        CHECK(sf.curr_word(8) == std::optional<int>(6));
+        CHECK(sf.curr_word(11) == std::nullopt);
+    }
+
+    {
+        const auto sf = string_fragment::from_const("SELECT * FROM");
+
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(6) == std::nullopt);
+        CHECK(sf.curr_word(7) == std::optional<int>(7));
+        CHECK(sf.curr_word(8) == std::nullopt);
+        CHECK(sf.curr_word(9) == std::optional<int>(9));
+        CHECK(sf.curr_word(12) == std::optional<int>(9));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("lnav_db.syslog_log");
+
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(7) == std::optional<int>(0));
+        CHECK(sf.curr_word(8) == std::optional<int>(8));
+        CHECK(sf.curr_word(13) == std::optional<int>(8));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("abc(def)");
+
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(2) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(4) == std::optional<int>(4));
+        CHECK(sf.curr_word(7) == std::optional<int>(4));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("  hello");
+
+        CHECK(sf.curr_word(0) == std::nullopt);
+        CHECK(sf.curr_word(1) == std::nullopt);
+        CHECK(sf.curr_word(2) == std::optional<int>(2));
+        CHECK(sf.curr_word(5) == std::optional<int>(2));
+    }
+
+    {
+        const auto empty = string_fragment::from_const("");
+        const auto ws = string_fragment::from_const("   ");
+
+        CHECK(empty.curr_word(0) == std::nullopt);
+        CHECK(ws.curr_word(0) == std::nullopt);
+        CHECK(ws.curr_word(2) == std::nullopt);
+    }
+}
+
+TEST_CASE("string_fragment::word helpers with wide chars")
+{
+    {
+        const auto sf = string_fragment::from_const("中文");
+
+        REQUIRE(sf.column_width() == 4);
+        CHECK(sf.next_word(0) == std::nullopt);
+        CHECK(sf.prev_word(4) == std::optional<int>(0));
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(1) == std::optional<int>(0));
+        CHECK(sf.curr_word(2) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("中 文");
+
+        REQUIRE(sf.column_width() == 5);
+        CHECK(sf.next_word(0) == std::optional<int>(3));
+        CHECK(sf.next_word(3) == std::nullopt);
+        CHECK(sf.prev_word(5) == std::optional<int>(3));
+        CHECK(sf.prev_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(1) == std::optional<int>(0));
+        CHECK(sf.curr_word(2) == std::nullopt);
+        CHECK(sf.curr_word(3) == std::optional<int>(3));
+        CHECK(sf.curr_word(4) == std::optional<int>(3));
+    }
+
+    {
+        const auto sf = string_fragment::from_const("ab中c");
+
+        REQUIRE(sf.column_width() == 5);
+        CHECK(sf.next_word(0) == std::nullopt);
+        CHECK(sf.prev_word(5) == std::optional<int>(0));
+        CHECK(sf.curr_word(0) == std::optional<int>(0));
+        CHECK(sf.curr_word(2) == std::optional<int>(0));
+        CHECK(sf.curr_word(3) == std::optional<int>(0));
+        CHECK(sf.curr_word(4) == std::optional<int>(0));
+    }
+}

@@ -41,6 +41,7 @@
 #include "data_scanner.hh"
 #include "readline_highlighters.hh"
 #include "sysclip.hh"
+#include "unicase.h"
 #include "unictype.h"
 #include "ww898/cp_utf8.hpp"
 
@@ -95,11 +96,29 @@ textinput_curses::get_help_text()
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("ALT  \u2190"_hotkey)
-              .append("    - Move to the previous word\n ")
+              .append(" / ")
+              .append("ALT-b"_hotkey)
+              .append(" - Move to the previous word\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("ALT  \u2192"_hotkey)
-              .append("    - Move to the end of the line\n ")
+              .append(" / ")
+              .append("ALT-f"_hotkey)
+              .append(" - Move to the next word\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-T"_hotkey)
+              .append("    - Transpose the two characters before the cursor\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("ALT-l"_hotkey)
+              .append(" / ")
+              .append("ALT-u"_hotkey)
+              .append(" - Lower/upper-case the next word\n ")
+              .append("•"_list_glyph)
+              .append(" ")
+              .append("ALT-c"_hotkey)
+              .append("    - Capitalize the next word\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-K"_hotkey)
@@ -113,9 +132,17 @@ textinput_curses::get_help_text()
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-W"_hotkey)
+              .append(" / ")
+              .append("ALT-BS"_hotkey)
               .append(
-                  "    - Cut from the beginning of the previous word into "
+                  " - Cut from the beginning of the previous word into "
                   "the clipboard\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("ALT-d"_hotkey)
+              .append(
+                  "     - Cut to the end of the next word into the "
+                  "clipboard\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("Rt-click"_hotkey)
@@ -845,6 +872,164 @@ textinput_curses::command_up(const ncinput& ch)
     }
 }
 
+void
+textinput_curses::kill_word_backward()
+{
+    log_debug("cutting to beginning of previous word");
+    auto al_sf = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+    auto prev_word_start_opt = al_sf.prev_word(this->tc_cursor.x);
+    if (!prev_word_start_opt && this->tc_cursor.x > 0) {
+        prev_word_start_opt = 0;
+    }
+    if (prev_word_start_opt) {
+        if (this->tc_cut_location != this->tc_cursor) {
+            log_debug("  cursor moved since last cut, clearing clipboard");
+            this->tc_clipboard.clear();
+        }
+        auto prev_word = al_sf.sub_cell_range(prev_word_start_opt.value(),
+                                              this->tc_cursor.x);
+        this->tc_clipboard.emplace_front(prev_word.to_string());
+        this->sync_to_sysclip();
+        this->tc_selection = selected_range::from_key(
+            this->tc_cursor.copy_with_x(prev_word_start_opt.value()),
+            this->tc_cursor);
+        this->replace_selection(string_fragment{});
+        this->tc_cut_location = this->tc_cursor;
+    }
+}
+
+void
+textinput_curses::kill_word_forward()
+{
+    log_debug("cutting to end of next word");
+    const auto& al = this->tc_lines[this->tc_cursor.y];
+    auto al_sf = al.to_string_fragment();
+    auto next_word_end_opt = al_sf.next_word(this->tc_cursor.x);
+    auto end_x = (int) next_word_end_opt.value_or(al.column_width());
+    if (end_x <= this->tc_cursor.x) {
+        return;
+    }
+    if (this->tc_cut_location != this->tc_cursor) {
+        log_debug("  cursor moved since last cut, clearing clipboard");
+        this->tc_clipboard.clear();
+    }
+    auto killed = al_sf.sub_cell_range(this->tc_cursor.x, end_x);
+    this->tc_clipboard.emplace_back(killed.to_string());
+    this->sync_to_sysclip();
+    this->tc_selection = selected_range::from_key(
+        this->tc_cursor, this->tc_cursor.copy_with_x(end_x));
+    this->replace_selection(string_fragment{});
+    this->tc_cut_location = this->tc_cursor;
+}
+
+void
+textinput_curses::change_word_case(uint32_t (*xform)(uint32_t))
+{
+    const auto& al = this->tc_lines[this->tc_cursor.y];
+    auto al_sf = al.to_string_fragment();
+    int range_start;
+    if (al_sf.curr_word(this->tc_cursor.x)) {
+        range_start = this->tc_cursor.x;
+    } else {
+        auto next_start_opt = al_sf.next_word(this->tc_cursor.x);
+        if (!next_start_opt) {
+            return;
+        }
+        range_start = next_start_opt.value();
+    }
+
+    auto next_word_end_opt = al_sf.next_word(range_start);
+    auto end_x = (int) next_word_end_opt.value_or(al.column_width());
+    if (end_x <= range_start) {
+        return;
+    }
+    auto transformed
+        = al_sf.sub_cell_range(range_start, end_x).transform_codepoints(xform);
+    auto start_cursor = this->tc_cursor.copy_with_x(range_start);
+    auto end_cursor = this->tc_cursor.copy_with_x(end_x);
+    this->tc_selection = selected_range::from_key(start_cursor, end_cursor);
+    this->replace_selection(transformed);
+    this->move_cursor_to(end_cursor);
+}
+
+void
+textinput_curses::capitalize_word()
+{
+    const auto& al = this->tc_lines[this->tc_cursor.y];
+    auto al_sf = al.to_string_fragment();
+    auto curr_word_opt = al_sf.curr_word(this->tc_cursor.x);
+    int word_start;
+    if (curr_word_opt) {
+        word_start = curr_word_opt.value();
+    } else {
+        auto next_start_opt = al_sf.next_word(this->tc_cursor.x);
+        if (!next_start_opt) {
+            return;
+        }
+        word_start = next_start_opt.value();
+    }
+
+    auto next_word_end_opt = al_sf.next_word(word_start);
+    auto end_x = (int) next_word_end_opt.value_or(al.column_width());
+    if (end_x <= word_start) {
+        return;
+    }
+    bool saw_letter = false;
+    auto transformed
+        = al_sf.sub_cell_range(word_start, end_x)
+              .transform_codepoints([&saw_letter](uint32_t cp) -> uint32_t {
+                  if (!uc_is_general_category_withtable(cp,
+                                                        UC_CATEGORY_MASK_L))
+                  {
+                      return cp;
+                  }
+                  auto new_cp
+                      = saw_letter ? uc_tolower(cp) : uc_toupper(cp);
+                  saw_letter = true;
+                  return new_cp;
+              });
+    auto start_cursor = this->tc_cursor.copy_with_x(word_start);
+    auto end_cursor = this->tc_cursor.copy_with_x(end_x);
+    this->tc_selection = selected_range::from_key(start_cursor, end_cursor);
+    this->replace_selection(transformed);
+    this->move_cursor_to(end_cursor);
+}
+
+void
+textinput_curses::transpose_chars()
+{
+    const auto& al = this->tc_lines[this->tc_cursor.y];
+    auto col_count = (int) al.column_width();
+    if (col_count < 2 || this->tc_cursor.x == 0) {
+        return;
+    }
+
+    int swap_left;
+    int swap_right;
+    bool advance_cursor;
+    if (this->tc_cursor.x >= col_count) {
+        swap_left = col_count - 2;
+        swap_right = col_count - 1;
+        advance_cursor = false;
+    } else {
+        swap_left = this->tc_cursor.x - 1;
+        swap_right = this->tc_cursor.x;
+        advance_cursor = true;
+    }
+
+    auto al_sf = al.to_string_fragment();
+    auto left_char = al_sf.sub_cell_range(swap_left, swap_right).to_string();
+    auto right_char
+        = al_sf.sub_cell_range(swap_right, swap_right + 1).to_string();
+    this->tc_selection = selected_range::from_key(
+        this->tc_cursor.copy_with_x(swap_left),
+        this->tc_cursor.copy_with_x(swap_right + 1));
+    this->replace_selection(right_char + left_char);
+    if (advance_cursor) {
+        this->move_cursor_to(this->tc_cursor.copy_with_x(swap_right + 1));
+    }
+}
+
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
@@ -929,6 +1114,8 @@ textinput_curses::handle_key(const ncinput& ch)
 
     if (ncinput_alt_p(&ch)) {
         switch (chid) {
+            case 'b':
+            case 'B':
             case NCKEY_LEFT: {
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto next_col_opt = string_fragment::from_str(al.al_string)
@@ -938,6 +1125,8 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_cursor.copy_with_x(next_col_opt.value_or(0)));
                 return true;
             }
+            case 'f':
+            case 'F':
             case NCKEY_RIGHT: {
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto next_col_opt = string_fragment::from_str(al.al_string)
@@ -945,6 +1134,30 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->move_cursor_to(
                     this->tc_cursor.copy_with_x(next_col_opt.value_or(
                         this->tc_lines[this->tc_cursor.y].column_width())));
+                return true;
+            }
+            case 'c':
+            case 'C': {
+                this->capitalize_word();
+                return true;
+            }
+            case 'd':
+            case 'D': {
+                this->kill_word_forward();
+                return true;
+            }
+            case NCKEY_BACKSPACE: {
+                this->kill_word_backward();
+                return true;
+            }
+            case 'l':
+            case 'L': {
+                this->change_word_case(uc_tolower);
+                return true;
+            }
+            case 'u':
+            case 'U': {
+                this->change_word_case(uc_toupper);
                 return true;
             }
         }
@@ -965,6 +1178,11 @@ textinput_curses::handle_key(const ncinput& ch)
                 chid = NCKEY_LEFT;
                 break;
             }
+            case 'd':
+            case 'D': {
+                chid = NCKEY_DEL;
+                break;
+            }
             case 'e':
             case 'E': {
                 this->move_cursor_to(this->tc_cursor.copy_with_x(
@@ -974,6 +1192,11 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'f':
             case 'F': {
                 chid = NCKEY_RIGHT;
+                break;
+            }
+            case 'h':
+            case 'H': {
+                chid = NCKEY_BACKSPACE;
                 break;
             }
             case 'k':
@@ -1057,6 +1280,11 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            case 't':
+            case 'T': {
+                this->transpose_chars();
+                return true;
+            }
             case 'u':
             case 'U': {
                 log_debug("cutting to beginning of line");
@@ -1080,31 +1308,7 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 'w':
             case 'W': {
-                log_debug("cutting to beginning of previous word");
-                auto al_sf
-                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
-                auto prev_word_start_opt = al_sf.prev_word(this->tc_cursor.x);
-                if (!prev_word_start_opt && this->tc_cursor.x > 0) {
-                    prev_word_start_opt = 0;
-                }
-                if (prev_word_start_opt) {
-                    if (this->tc_cut_location != this->tc_cursor) {
-                        log_debug(
-                            "  cursor moved since last cut, clearing "
-                            "clipboard");
-                        this->tc_clipboard.clear();
-                    }
-                    auto prev_word = al_sf.sub_cell_range(
-                        prev_word_start_opt.value(), this->tc_cursor.x);
-                    this->tc_clipboard.emplace_front(prev_word.to_string());
-                    this->sync_to_sysclip();
-                    this->tc_selection = selected_range::from_key(
-                        this->tc_cursor.copy_with_x(
-                            prev_word_start_opt.value()),
-                        this->tc_cursor);
-                    this->replace_selection(string_fragment{});
-                    this->tc_cut_location = this->tc_cursor;
-                }
+                this->kill_word_backward();
                 return true;
             }
             case 'x':

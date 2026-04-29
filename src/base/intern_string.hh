@@ -32,6 +32,7 @@
 #ifndef intern_string_hh
 #define intern_string_hh
 
+#include <functional>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -362,6 +363,10 @@ struct string_fragment {
 
     std::optional<int> next_word(int start_col) const;
     std::optional<int> prev_word(int start_col) const;
+    std::optional<int> curr_word(int start_col) const;
+
+    std::string transform_codepoints(
+        const std::function<uint32_t(uint32_t)>& xform) const;
 
     template<typename P>
     string_fragment find_left_boundary(size_t start,

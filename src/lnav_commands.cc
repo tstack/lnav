@@ -3104,11 +3104,13 @@ sql_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
-    auto* fos = (field_overlay_source*) log_view.get_overlay_source();
-    fos->fos_contexts.top().c_show = true;
-    tc->set_sync_selection_and_top(true);
-    tc->reload_data();
-    tc->set_overlay_selection(3_vl);
+    if (tc == &log_view) {
+        auto* fos = (field_overlay_source*) log_view.get_overlay_source();
+        fos->fos_contexts.top().c_show = true;
+        tc->set_sync_selection_and_top(true);
+        tc->reload_data();
+        tc->set_overlay_selection(3_vl);
+    }
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD(
             "CTRL+L") " for multi-line mode and " ANSI_BOLD("Esc") " to "

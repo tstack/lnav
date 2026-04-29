@@ -389,6 +389,12 @@ editing:
     * - :kbd:`Shift` + :kbd:`→`
       -
       - Move right one character and include it in the selection
+    * - :kbd:`Alt` + :kbd:`←`
+      - :kbd:`Alt` + :kbd:`b`
+      - Move to the start of the previous word
+    * - :kbd:`Alt` + :kbd:`→`
+      - :kbd:`Alt` + :kbd:`f`
+      - Move to the start of the next word
     * - :kbd:`↑`
       - :kbd:`Ctrl` + :kbd:`P`
       - In single-line mode, search the history with the current contents.
@@ -404,6 +410,18 @@ editing:
     * - :kbd:`Ctrl` + :kbd:`E`
       -
       - Move to the end of the line
+    * - :kbd:`Ctrl` + :kbd:`T`
+      -
+      - Transpose the two characters before the cursor
+    * - :kbd:`Alt` + :kbd:`l`
+      -
+      - Convert the next word to lower-case and move to the end of it
+    * - :kbd:`Alt` + :kbd:`u`
+      -
+      - Convert the next word to upper-case and move to the end of it
+    * - :kbd:`Alt` + :kbd:`c`
+      -
+      - Capitalize the next word and move to the end of it
     * - :kbd:`Ctrl` + :kbd:`K`
       -
       - Cut to the end of the line into the clipboard
@@ -411,8 +429,11 @@ editing:
       -
       - Cut from the beginning of the line to the cursor into the clipboard
     * - :kbd:`Ctrl` + :kbd:`W`
-      -
+      - :kbd:`Alt` + :kbd:`Backspace`
       - Cut from the beginning of the previous word into the clipboard
+    * - :kbd:`Alt` + :kbd:`d`
+      -
+      - Cut to the end of the next word into the clipboard
     * - :kbd:`Ctrl` + :kbd:`Y`
       -
       - Paste the clipboard contents
