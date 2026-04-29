@@ -220,6 +220,10 @@ prep_xtmodkeys(inputctx* ictx){
         .modifiers = NCKEY_MOD_ALT },
     { .esc = "\033z", .key = 'z',
         .modifiers = NCKEY_MOD_ALT },
+{ .esc = "\033-", .key = '-',
+    .modifiers = NCKEY_MOD_ALT },
+{ .esc = "\033=", .key = '=',
+    .modifiers = NCKEY_MOD_ALT },
 { .esc = "\033\x7f", .key = NCKEY_BACKSPACE,
     .modifiers = NCKEY_MOD_ALT },
 

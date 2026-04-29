@@ -525,6 +525,7 @@ public:
     std::function<void(textinput_curses&)> tc_on_reformat;
     std::function<void(textinput_curses&)> tc_on_perform;
     std::function<void(textinput_curses&)> tc_on_external_open;
+    std::function<void(textinput_curses&, int)> tc_on_height_change;
 };
 
 #endif

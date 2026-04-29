@@ -1751,6 +1751,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = std::max(2, full_height - (prompt.p_editor.get_y() + me.me_y));
         prompt.p_editor.set_height(std::min(max_height, new_height));
     };
+    lnav::prompt::get().p_editor.tc_on_height_change
+        = [](textinput_curses& tc, int delta) {
+              if (tc.tc_height == 1) {
+                  return;
+              }
+              auto full_height = (int) ncplane_dim_y(tc.tc_window);
+              auto max_height = std::max(2, full_height - 16);
+              auto new_height
+                  = std::clamp(tc.tc_height + delta, 2, max_height);
+              tc.set_height(new_height);
+          };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
         .on_click
         = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };

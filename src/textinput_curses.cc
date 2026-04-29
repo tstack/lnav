@@ -168,6 +168,19 @@ textinput_curses::get_help_text()
               .append("CTRL-O"_hotkey)
               .append("    - Open the contents in an external editor\n")
               .append("\n")
+              .append("Resizing"_h2)
+              .append("\n ")
+              .append("•"_list_glyph)
+              .append(" ")
+              .append("ALT-="_hotkey)
+              .append(
+                  "     - Grow the multi-line prompt by one line\n ")
+              .append("•"_list_glyph)
+              .append(" ")
+              .append("ALT--"_hotkey)
+              .append(
+                  "     - Shrink the multi-line prompt by one line\n")
+              .append("\n")
               .append("History"_h2)
               .append("\n ")
               .append("\u2022"_list_glyph)
@@ -1158,6 +1171,20 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'u':
             case 'U': {
                 this->change_word_case(uc_toupper);
+                return true;
+            }
+            case '=':
+            case '+': {
+                if (this->tc_on_height_change) {
+                    this->tc_on_height_change(*this, 1);
+                }
+                return true;
+            }
+            case '-':
+            case '_': {
+                if (this->tc_on_height_change) {
+                    this->tc_on_height_change(*this, -1);
+                }
                 return true;
             }
         }

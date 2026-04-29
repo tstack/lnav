@@ -460,6 +460,13 @@ editing:
       -
       - In search mode, search for the previous occurrence.  Otherwise,
         search history using current contents of the prompt
+    * - :kbd:`Alt` + :kbd:`=`
+      -
+      - In multi-line mode, grow the prompt by one line.  The prompt's
+        status bar can also be dragged with the mouse to resize.
+    * - :kbd:`Alt` + :kbd:`-`
+      -
+      - In multi-line mode, shrink the prompt by one line.
 
 Customizing
 -----------

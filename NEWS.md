@@ -26,6 +26,11 @@ Features:
   - `⌘-X` to cut the current selection to the
     clipboard.
   - `⌘-Z` to undo the last change.
+* The multi-line prompt can now be resized with the
+  keyboard: `ALT-=` grows the prompt by one line and
+  `ALT--` shrinks it by one line.  This complements
+  the existing click-and-drag resize on the prompt's
+  status bar.
 * Additional readline-style key bindings in the
   prompt (issue #1676):
   - `ALT-f` / `ALT-b` move forward/backward by word.
