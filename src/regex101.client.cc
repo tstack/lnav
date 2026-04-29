@@ -153,9 +153,21 @@ upsert(entry& en)
                        lnav::console::user_message::render_flags::none)));
 }
 
+struct retrieve_version {
+    int32_t rv_version{0};
+    std::string rv_preferred_editor_mode;
+};
+
 struct retrieve_entity {
     std::string re_permalink_fragment;
-    std::vector<int32_t> re_versions;
+    std::vector<retrieve_version> re_versions;
+};
+
+static const json_path_container RETRIEVE_VERSION_HANDLERS = {
+    yajlpp::property_handler("version").for_field(
+        &retrieve_version::rv_version),
+    yajlpp::property_handler("preferredEditorMode")
+        .for_field(&retrieve_version::rv_preferred_editor_mode),
 };
 
 static const typed_json_path_container<retrieve_entity> RETRIEVE_ENTITY_HANDLERS
@@ -163,7 +175,8 @@ static const typed_json_path_container<retrieve_entity> RETRIEVE_ENTITY_HANDLERS
         yajlpp::property_handler("permalinkFragment")
             .for_field(&retrieve_entity::re_permalink_fragment),
         yajlpp::property_handler("versions#")
-            .for_field(&retrieve_entity::re_versions),
+            .for_field(&retrieve_entity::re_versions)
+            .with_children(RETRIEVE_VERSION_HANDLERS),
 };
 
 retrieve_result_t
@@ -172,6 +185,8 @@ retrieve(const std::string& permalink)
     auto entry_url = REGEX101_BASE_URL / permalink;
     curl_request entry_req(entry_url.string());
 
+    log_info("retrieving entry from regex101.com -- url: %s",
+             entry_url.c_str());
     curl_easy_setopt(entry_req, CURLOPT_URL, entry_req.get_name().c_str());
     curl_easy_setopt(entry_req, CURLOPT_USERAGENT, USER_AGENT);
 
@@ -187,6 +202,7 @@ retrieve(const std::string& permalink)
     auto response = perform_res.unwrap();
     auto resp_code = entry_req.get_response_code();
     if (resp_code == 404) {
+        log_error("  entry not found: %s", response.c_str());
         return no_entry{};
     }
     if (resp_code != 200) {
@@ -221,7 +237,9 @@ retrieve(const std::string& permalink)
 
     auto entry_value = parse_res.unwrap();
 
-    auto latest_version = entry_value.re_versions | lnav::itertools::max();
+    auto latest_version = entry_value.re_versions
+        | lnav::itertools::map(&retrieve_version::rv_version)
+        | lnav::itertools::max();
     if (!latest_version) {
         return no_entry{};
     }

@@ -324,7 +324,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
     for (auto& sa : this->lss_token_al.al_attrs) {
         if (sa.sa_type == &VC_HYPERLINK) {
-            sa.sa_type = &SA_UNSUPPORTED;
+            sa.sa_type = &SAT_UNSUPPORTED;
         }
     }
     this->lss_token_shifts.clear();

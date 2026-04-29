@@ -110,11 +110,13 @@ column_namer::add_column(const string_fragment& in_name)
 
         fmt::format_to(
             std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
+#if 0
         log_trace("column name already exists (%.*s), trying (%.*s)",
                   retval.length(),
                   retval.data(),
                   (int) buf.size(),
                   buf.data());
+#endif
         retval = string_fragment::from_memory_buffer(buf);
         num += 1;
     }

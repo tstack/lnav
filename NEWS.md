@@ -69,7 +69,7 @@ Features:
 * The DB view now shows a status bar above the bottom
   status bar with the SQL query that populated the view,
   the relative time when it was run, and how long it took.
-  A reload icon at the left side of the bar can be clicked
+  A reload icon on the left side of the bar can be clicked
   to re-run the query.  For queries that read from log-backed
   tables, the status bar also calls out whether the results
   are "on current log data" or "on old log data" relative to
@@ -84,8 +84,29 @@ Features:
   - `⌘-X` to cut the current selection to the
     clipboard.
   - `⌘-Z` to undo the last change.
+* Additional readline-style key bindings in the
+  prompt (issue #1676):
+  - `ALT-f` / `ALT-b` move forward/backward by word.
+  - `ALT-d` cuts to the end of the next word.
+  - `ALT-BACKSPACE` is an alias for `CTRL-W`.
+  - `ALT-l` / `ALT-u` lower- or upper-case the
+    next word.
+  - `ALT-c` capitalizes the next word.
+  - `CTRL-h` and `CTRL-d` are aliases for
+    BACKSPACE and DELETE.
+  - `CTRL-t` transposes the two characters before
+    the cursor.
+* In the log message details (opened by pressing `p`),
+  a `File:` row has been added that lists the file and
+  line number the log message is from.  Also, for JSON
+  logs, you can focus on the `JSON fields:` row and
+  press `c` to copy the raw log message to the
+  clipboard.
 * The `measure_with_units` collator now recognizes
   (KiB, MiB, ...).
+* Added `disfavors` to `external-editor` configuration
+  to express file names that the editor is not interested
+  in handling.
 
 Breaking changes:
 * The `humanize_file_size()` SQLite function now
@@ -98,6 +119,8 @@ Bug Fixes:
   read and crash in some situations.
 * Fix a lockup when viewing a file that contained log
   messages and lots of binary data.
+* Update Regex101 import functionality to handle a
+  change in their API response.
 * More hardening for some diabolical inputs:
   - Unsupported escape-sequences were ignored before,
     but they are displayed now.

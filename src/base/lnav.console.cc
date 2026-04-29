@@ -633,7 +633,7 @@ println(FILE* file, const attr_line_t& al)
                     if (color_opt) {
                         fg_style = fmt::fg(color_opt.value());
                     }
-                } else if (attr.sa_type == &SA_UNSUPPORTED) {
+                } else if (attr.sa_type == &SAT_UNSUPPORTED) {
                     line_style |= fmt::fg(fmt::terminal_color::yellow);
                 } else if (attr.sa_type == &VC_STYLE) {
                     auto saw = string_attr_wrapper<text_attrs>(&attr);

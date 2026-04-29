@@ -218,7 +218,7 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
             if (sa.sa_type != &VC_HYPERLINK) {
                 continue;
             }
-            sa.sa_type = &SA_UNSUPPORTED;
+            sa.sa_type = &SAT_UNSUPPORTED;
             sa.sa_value = fmt::format(FMT_STRING("hyperlink <{}>"),
                                       sa.sa_value.get<std::string>());
         }

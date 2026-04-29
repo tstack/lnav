@@ -128,37 +128,43 @@
                     "test": "command -v clion",
                     "command": "clion --line ${LINE} --column ${COL} \"$FILE_PATH\"",
                     "config-dir": ".idea",
-                    "prefers": ""
+                    "prefers": "",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$"
                 },
                 "IntelliJ": {
                     "test": "command -v idea",
                     "command": "idea --line ${LINE} --column ${COL} \"$FILE_PATH\"",
                     "config-dir": ".idea",
-                    "prefers": "^.*(?:\\.java|\\.kt|\\.py)$"
+                    "prefers": "^.*(?:\\.java|\\.kt|\\.py)$",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$"
                 },
                 "RustRover": {
                     "test": "command -v rustrover",
                     "command": "rustrover --line ${LINE} --column ${COL} \"$FILE_PATH\"",
                     "config-dir": ".idea",
-                    "prefers": "^.*(?:Cargo.toml|\\.rs)"
+                    "prefers": "^.*(?:Cargo.toml|\\.rs)",
+                    "disfavors": "^.*(?:\\.log|\\.json|\\.gz|\\.bz2|\\.\\d+)$"
                 },
                 "VSCode": {
                     "test": "command -v code",
                     "command": "env VSCODE_PWD=\"$PWD\" code -g \"$FILE_PATH\":$LINE:$COL",
                     "config-dir": ".vscode",
-                    "prefers": ""
+                    "prefers": "",
+                    "disfavors": ""
                 },
                 "VSCode.app": {
                     "test": "command -v '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'",
                     "command": "env VSCODE_PWD=\"$PWD\" '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' -g \"$FILE_PATH\":$LINE:$COL",
                     "config-dir": ".vscode",
-                    "prefers": ""
+                    "prefers": "",
+                    "disfavors": ""
                 },
                 "zzz.MacOS": {
                     "test": "command -v open",
                     "command": "open -t \"$FILE_PATH\"",
                     "config-dir": "",
-                    "prefers": ""
+                    "prefers": "",
+                    "disfavors": ""
                 }
             }
         },

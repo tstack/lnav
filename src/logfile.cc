@@ -2106,6 +2106,24 @@ logfile::read_range(const file_range& fr)
     return this->lf_line_buffer.read_range(fr);
 }
 
+size_t
+logfile::get_line_number(const_iterator ll) const
+{
+    size_t retval = 1;
+
+    if (this->lf_format != nullptr && this->lf_format->lf_formatted_lines) {
+        for (auto iter = this->begin(); iter != ll; ++iter) {
+            if (iter->get_sub_offset() == 0) {
+                retval += 1;
+            }
+        }
+    } else {
+        retval += std::distance(this->begin(), ll);
+    }
+
+    return retval;
+}
+
 void
 logfile::read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,

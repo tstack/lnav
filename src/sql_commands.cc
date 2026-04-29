@@ -610,6 +610,16 @@ prql_cmd_join(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+prql_cmd_let(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
+{
+    std::string retval;
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 prql_cmd_select(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -767,6 +777,20 @@ static readline_context::command_t sql_commands[] = {
             }),
         prql_cmd_from_prompt,
         "prql-source",
+    },
+    {
+        "let",
+        prql_cmd_let,
+        help_text("let")
+            .prql_transform()
+            .with_tags({"prql"})
+            .with_summary("Define a variable")
+            .with_parameter({"name", "The name for the variable"})
+            .with_example({
+                "To set 'x' to 5",
+                "let x = 5",
+                help_example::language::prql,
+            }),
     },
     {
         "aggregate",

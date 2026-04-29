@@ -172,7 +172,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     auto first_nl = this->fos_log_helper.ldh_attr_line.al_string.find('\n');
     for (const auto& attr : this->fos_log_helper.ldh_attr_line.al_attrs) {
-        if (attr.sa_type != &SA_UNSUPPORTED) {
+        if (attr.sa_type != &SAT_UNSUPPORTED) {
             continue;
         }
         if (first_nl != std::string::npos && attr.sa_range.lr_start >= first_nl)
@@ -181,7 +181,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
 
         const auto& msg
-            = attr.sa_value.get<decltype(SA_UNSUPPORTED)::value_type>();
+            = attr.sa_value.get<decltype(SAT_UNSUPPORTED)::value_type>();
         auto msg_al
             = attr_line_t()
                   .pad_to(this->fos_lss.get_filename_offset()
@@ -403,6 +403,35 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(permalink);
     }
 
+    {
+        const auto& actual_path
+            = this->fos_log_helper.ldh_file->get_actual_path();
+        const auto& filename = actual_path
+            ? actual_path->string()
+            : this->fos_log_helper.ldh_file->get_filename_as_string();
+        auto file_line_number
+            = fmt::to_string(this->fos_log_helper.ldh_file->get_line_number(
+                this->fos_log_helper.ldh_line));
+        auto file_link
+            = attr_line_t()
+                  .append(lnav::roles::file(filename))
+                  .append(":")
+                  .append(lnav::roles::number(file_line_number))
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_HYPERLINK))
+                  .with_attr_for_all(VC_HYPERLINK.value(
+                      fmt::format(FMT_STRING("file://{}#L{}"),
+                                  filename,
+                                  file_line_number)));
+        auto file_al
+            = attr_line_t(" ").append("File:"_h2).pad_to(15).append(file_link);
+
+        auto file_line_pair
+            = fmt::format(FMT_STRING("{}:{}"), filename, file_line_number);
+        this->fos_row_to_field_meta.emplace(
+            this->fos_lines.size(), row_info{std::nullopt, file_line_pair});
+        this->fos_lines.emplace_back(file_al);
+    }
+
     this->fos_known_key_size = LOG_BODY.length();
     if (!this->fos_contexts.empty()) {
         this->fos_known_key_size += this->fos_contexts.top().c_prefix.length();
@@ -464,6 +493,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             pattern_al.length(),
             line_range{skip, (int) pattern_al.length()});
         for (const auto& pattern_line_al : pattern_al.split_lines()) {
+            this->fos_row_to_field_meta.emplace(
+                this->fos_lines.size(), row_info{std::nullopt, pattern_str});
             this->fos_lines.emplace_back(pattern_line_al);
         }
     }
@@ -645,7 +676,19 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     if (!this->fos_log_helper.ldh_extra_json.empty()
         || !this->fos_log_helper.ldh_json_pairs.empty())
     {
-        this->fos_lines.emplace_back(" JSON fields:");
+        auto read_res = this->fos_log_helper.ldh_file->read_raw_message(
+            this->fos_log_helper.ldh_line);
+        if (read_res.isOk()) {
+            auto sbr = read_res.unwrap();
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                row_info{
+                                                    std::nullopt,
+                                                    to_string(sbr),
+                                                });
+        }
+        this->fos_lines.emplace_back(
+            attr_line_t(" JSON fields: ")
+                .append("(press 'c' to copy raw JSON log message)"_comment));
     }
 
     for (const auto& extra_pair : this->fos_log_helper.ldh_extra_json) {

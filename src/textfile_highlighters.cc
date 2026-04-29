@@ -402,10 +402,20 @@ setup_highlights_int()
               .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "srcfile"}]
-        = highlighter(xpcre_compile(
-                          "[\\w\\-_]+\\."
-                          "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
-                          "\\d+"))
+        = highlighter(xpcre_compile(R"((?x)
+                [\w\-_]+                       # file basename
+                \.                             # extension separator
+                (?:                            # known source extensions
+                      a   | c   | cc  | cpp | cxx | erl
+                    | ex  | go  | h   | hh  | hpp | hxx
+                    | java| js  | kt  | m   | mjs | mm
+                    | o   | php | py  | pyc | rb  | rs
+                    | scala     | sh  | so  | swift
+                    | ts  | tsx
+                )
+                :                              # line-number separator
+                \d+                            # line number
+              )"))
               .with_role(role_t::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "1.stringd"}]
         = highlighter(xpcre_compile(R"("(?:\\.|[^"])*")"))

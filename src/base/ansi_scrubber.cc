@@ -329,7 +329,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                             lr.lr_end = cp_dst;
                             tmp_sa.emplace_back(
                                 lr,
-                                SA_UNSUPPORTED.value(fmt::format(
+                                SAT_UNSUPPORTED.value(fmt::format(
                                     FMT_STRING("ANSI sequence: OSC {} {}"),
                                     md[3],
                                     md[4])));
@@ -497,7 +497,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         lr.lr_end = cp_dst;
                         tmp_sa.emplace_back(
                             lr,
-                            SA_UNSUPPORTED.value(fmt::format(
+                            SAT_UNSUPPORTED.value(fmt::format(
                                 FMT_STRING("ANSI sequence: ESC [ {} {}"),
                                 seq,
                                 terminator)));

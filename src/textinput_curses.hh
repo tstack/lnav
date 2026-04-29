@@ -424,6 +424,16 @@ public:
 
     void cut_selection();
 
+    void kill_word_backward();
+
+    void kill_word_forward();
+
+    void change_word_case(uint32_t (*xform)(uint32_t));
+
+    void capitalize_word();
+
+    void transpose_chars();
+
     void sync_to_sysclip() const;
 
     enum class mode_t {

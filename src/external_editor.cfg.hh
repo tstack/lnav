@@ -46,6 +46,7 @@ struct impl {
     std::string i_command;
     std::filesystem::path i_config_dir;
     factory_container<lnav::pcre2pp::code> i_prefers;
+    factory_container<lnav::pcre2pp::code> i_disfavors;
 };
 
 struct config {

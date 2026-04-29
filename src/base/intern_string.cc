@@ -577,12 +577,40 @@ string_fragment::byte_to_column_index(const size_t byte_index) const
     return curr_col;
 }
 
-static bool
-iswordbreak(wchar_t wchar)
+enum class word_char_class {
+    space,
+    word,
+    symbol,
+};
+
+static word_char_class
+classify_word_char(wchar_t wchar)
 {
-    static constexpr uint32_t mask
+    if (uc_is_property_white_space(wchar)) {
+        return word_char_class::space;
+    }
+    static constexpr uint32_t word_mask
         = UC_CATEGORY_MASK_L | UC_CATEGORY_MASK_N | UC_CATEGORY_MASK_Pc;
-    return !uc_is_general_category_withtable(wchar, mask);
+    if (uc_is_general_category_withtable(wchar, word_mask)) {
+        return word_char_class::word;
+    }
+    return word_char_class::symbol;
+}
+
+static bool
+is_word_start(word_char_class curr_class, word_char_class prev_class)
+{
+    if (curr_class == word_char_class::word
+        && prev_class != word_char_class::word)
+    {
+        return true;
+    }
+    if (curr_class == word_char_class::symbol
+        && prev_class == word_char_class::space)
+    {
+        return true;
+    }
+    return false;
 }
 
 std::optional<int>
@@ -590,44 +618,36 @@ string_fragment::next_word(const int start_col) const
 {
     auto index = this->sf_begin;
     int curr_col = 0;
-    auto in_word = false;
+    auto prev_class = word_char_class::space;
 
     while (index < this->sf_end) {
         auto read_res = ww898::utf::utf8::read(
             [this, &index]() { return this->sf_string[index++]; });
         if (read_res.isErr()) {
             curr_col += 1;
-        } else {
-            auto ch = read_res.unwrap();
-
-            switch (ch) {
-                case '\t':
-                    do {
-                        curr_col += 1;
-                    } while (curr_col % 8);
-                    break;
-                default: {
-                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
-                    if (wcw_res < 0) {
-                        wcw_res = 1;
-                    }
-
-                    if (curr_col == start_col) {
-                        in_word = !iswordbreak(ch);
-                    } else if (curr_col > start_col) {
-                        if (in_word) {
-                            if (iswordbreak(ch)) {
-                                in_word = false;
-                            }
-                        } else if (!iswordbreak(ch)) {
-                            return curr_col;
-                        }
-                    }
-                    curr_col += wcw_res;
-                    break;
-                }
-            }
+            continue;
         }
+        auto ch = read_res.unwrap();
+
+        if (ch == '\t') {
+            prev_class = word_char_class::space;
+            do {
+                curr_col += 1;
+            } while (curr_col % 8);
+            continue;
+        }
+
+        auto wcw_res = uc_width(ch, "UTF-8");
+        if (wcw_res < 0) {
+            wcw_res = 1;
+        }
+
+        auto curr_class = classify_word_char(ch);
+        if (curr_col > start_col && is_word_start(curr_class, prev_class)) {
+            return curr_col;
+        }
+        prev_class = curr_class;
+        curr_col += wcw_res;
     }
 
     return std::nullopt;
@@ -638,7 +658,7 @@ string_fragment::prev_word(const int start_col) const
 {
     auto index = this->sf_begin;
     int curr_col = 0;
-    auto in_word = false;
+    auto prev_class = word_char_class::space;
     std::optional<int> last_word_col;
 
     while (index < this->sf_end) {
@@ -646,40 +666,120 @@ string_fragment::prev_word(const int start_col) const
             [this, &index]() { return this->sf_string[index++]; });
         if (read_res.isErr()) {
             curr_col += 1;
-        } else {
-            auto ch = read_res.unwrap();
-
-            switch (ch) {
-                case '\t':
-                    do {
-                        curr_col += 1;
-                    } while (curr_col % 8);
-                    break;
-                default: {
-                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
-                    if (wcw_res < 0) {
-                        wcw_res = 1;
-                    }
-
-                    if (curr_col == start_col) {
-                        return last_word_col;
-                    }
-                    if (iswordbreak(ch)) {
-                        in_word = false;
-                    } else {
-                        if (!in_word) {
-                            last_word_col = curr_col;
-                        }
-                        in_word = true;
-                    }
-                    curr_col += wcw_res;
-                    break;
-                }
-            }
+            continue;
         }
+        auto ch = read_res.unwrap();
+
+        if (ch == '\t') {
+            if (curr_col >= start_col) {
+                return last_word_col;
+            }
+            prev_class = word_char_class::space;
+            do {
+                curr_col += 1;
+            } while (curr_col % 8);
+            continue;
+        }
+
+        if (curr_col >= start_col) {
+            return last_word_col;
+        }
+
+        auto wcw_res = uc_width(ch, "UTF-8");
+        if (wcw_res < 0) {
+            wcw_res = 1;
+        }
+
+        auto curr_class = classify_word_char(ch);
+        if (is_word_start(curr_class, prev_class)) {
+            last_word_col = curr_col;
+        }
+        prev_class = curr_class;
+        curr_col += wcw_res;
     }
 
     return last_word_col;
+}
+
+std::optional<int>
+string_fragment::curr_word(const int start_col) const
+{
+    auto index = this->sf_begin;
+    int curr_col = 0;
+    auto prev_class = word_char_class::space;
+    std::optional<int> last_word_col;
+
+    while (index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            curr_col += 1;
+            continue;
+        }
+        auto ch = read_res.unwrap();
+
+        if (ch == '\t') {
+            if (curr_col >= start_col) {
+                return std::nullopt;
+            }
+            prev_class = word_char_class::space;
+            do {
+                curr_col += 1;
+            } while (curr_col % 8);
+            continue;
+        }
+
+        auto wcw_res = uc_width(ch, "UTF-8");
+        if (wcw_res < 0) {
+            wcw_res = 1;
+        }
+
+        auto curr_class = classify_word_char(ch);
+
+        if (start_col < curr_col + wcw_res) {
+            if (curr_class == word_char_class::space) {
+                return std::nullopt;
+            }
+            if (is_word_start(curr_class, prev_class)) {
+                return curr_col;
+            }
+            return last_word_col;
+        }
+
+        if (is_word_start(curr_class, prev_class)) {
+            last_word_col = curr_col;
+        }
+        prev_class = curr_class;
+        curr_col += wcw_res;
+    }
+
+    return std::nullopt;
+}
+
+std::string
+string_fragment::transform_codepoints(
+    const std::function<uint32_t(uint32_t)>& xform) const
+{
+    std::string out;
+    out.reserve(this->length());
+
+    auto index = this->sf_begin;
+    while (index < this->sf_end) {
+        auto byte_before = index;
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            for (auto j = byte_before; j < index; ++j) {
+                out.push_back(this->sf_string[j]);
+            }
+            continue;
+        }
+        auto cp = read_res.unwrap();
+        auto new_cp = xform(cp);
+        ww898::utf::utf8::write(
+            new_cp, [&out](const char b) { out.push_back(b); });
+    }
+    return out;
 }
 
 size_t
