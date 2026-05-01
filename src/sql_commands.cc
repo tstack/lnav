@@ -976,7 +976,7 @@ static readline_context::command_t sql_commands[] = {
             .with_parameter(help_text{"col", "The column to count"})
             .with_parameter(help_text{"slice", "The time slice"}
                                 .optional()
-                                .with_default_value("'1h'"))
+                                .with_default_value("$zoom_level"))
             .with_parameter(
                 help_text{"top", "The limit on the number of values to report"}
                     .optional()
@@ -1012,12 +1012,33 @@ static readline_context::command_t sql_commands[] = {
         {"prql-source"},
     },
     {
+        "stats.timeseries",
+        prql_cmd_sort,
+        help_text("stats.timeseries", "Aggregate values per bucket of time")
+            .prql_function()
+            .with_tags({"prql"})
+            .with_parameter(help_text{"agg", "The aggregation to perform"})
+            .with_grouping("{", "}")
+            .with_parameter(help_text{"slice", "The time slice"}
+                                .optional()
+                                .with_default_value("$zoom_level"))
+            .with_example({
+                "To chart the sum of sc_bytes over time",
+                "from lnav_example_log | stats.timeseries { total_duration = "
+                "humanize.duration (sum ex_duration) }",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
         "stats.by",
         prql_cmd_sort,
         help_text("stats.by", "A shorthand for grouping and aggregating")
             .prql_function()
             .with_tags({"prql"})
-            .with_parameter(help_text{"col", "The column to sum"})
+            .with_parameter(help_text{"col", "The column to aggregate"})
             .with_parameter(help_text{"values", "The aggregations to perform"})
             .with_example({
                 "To partition by a and get the sum of b",

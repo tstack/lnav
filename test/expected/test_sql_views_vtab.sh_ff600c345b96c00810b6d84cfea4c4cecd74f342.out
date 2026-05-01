@@ -105,7 +105,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": null
+        "view_details": "{\"zoom-level\":\"5-minute\"}"
     },
     {
         "name": "text",
@@ -129,7 +129,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": null
+        "view_details": "{\"zoom-level\":\"5-minute\"}"
     },
     {
         "name": "help",
@@ -178,7 +178,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": null
+        "view_details": "{\"zoom-level\":\"5-minute\"}"
     },
     {
         "name": "db",
@@ -205,7 +205,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": "{\"query\":\"SELECT * FROM lnav_views\",\"}"
+        "view_details": "{\"zoom-level\":\"5-minute\",\"query\":\"SELECT * FROM lnav_views\",\"}"
     },
     {
         "name": "schema",
@@ -272,7 +272,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": null
+        "view_details": "{\"zoom-level\":\"5-minute\"}"
     },
     {
         "name": "timeline",
@@ -295,6 +295,6 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": null
+        "view_details": "{\"zoom-level\":\"5-minute\"}"
     }
 ]

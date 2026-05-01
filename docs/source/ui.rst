@@ -434,6 +434,16 @@ the view, how long ago it ran, and how long it took.  Clicking the reload
 icon (↻) at the left of the bar — or pressing :kbd:`F5` — re-runs the
 query via the :code:`:reload-view` command.
 
+Pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` (or running
+:code:`:zoom-to`) in the DB view changes the view's zoom level
+and re-runs the last query so that any references to the
+:code:`$zoom_level` SQL variable pick up the new value.  Passing this
+value to the :code:`timeslice()` function can be useful for easily
+adjusting the time slice duration based on the zoom level.
+This is useful with the :ref:`stats_hist` and :ref:`stats_timeseries`
+PRQL functions, whose default :code:`slice` parameter is
+:code:`$zoom_level`.
+
 If the query reads from log-backed tables (:code:`all_logs`,
 per-format tables like :code:`syslog_log`, :code:`all_opids`, etc.),
 the timing status also notes whether the results are based on
@@ -443,7 +453,8 @@ does not mention the log data freshness.
 
 The same query metadata is exposed via the :code:`view_details`
 column on the :code:`lnav_views` vtable as a JSON object containing
-:code:`query`, :code:`run_at`, and :code:`duration_us`.
+:code:`zoom-level`, :code:`query`, :code:`run-at`, and
+:code:`duration-us`.
 
 .. [#] lnav must be compiled in an environment with Rust/Cargo available
    for PRQL support.

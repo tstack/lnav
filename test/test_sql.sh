@@ -210,19 +210,10 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_uwsgi.0
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT s_runtime FROM uwsgi_log LIMIT 5" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_uwsgi.0
-
-check_output "uwsgi scaling not working?" <<EOF
-s_runtime
-0.129
-0.035
-6.8e-05
-0.016
-0.01
-EOF
 
 run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ";SELECT bro_conn_log.bro_duration as duration, bro_conn_log.bro_uid, group_concat( distinct (bro_method || ' ' || bro_host)) as req from bro_http_log, bro_conn_log where bro_http_log.bro_uid = bro_conn_log.bro_uid group by bro_http_log.bro_uid order by duration desc limit 10" \

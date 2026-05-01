@@ -162,7 +162,7 @@ statusview_curses::do_update()
         auto field_count = this->sc_source->statusview_fields();
         for (size_t field = 0; field < field_count; field++) {
             auto& sf = this->sc_source->statusview_value_for_field(field);
-            struct line_range lr(0, sf.get_width());
+            auto lr = line_range{0, static_cast<int>(sf.get_width())};
             int x;
 
             if (sf.is_cylon()) {
@@ -261,9 +261,9 @@ statusview_curses::window_change()
     for (int field = 0; field < field_count; field++) {
         auto& sf = this->sc_source->statusview_value_for_field(field);
 
-        remaining -= sf.get_share() ? sf.get_min_width() : sf.get_width();
+        remaining -= sf.get_share() > 0 ? sf.get_min_width() : sf.get_width();
         total_shares += sf.get_share();
-        if (sf.get_share()) {
+        if (sf.get_share() > 0) {
             resizable.emplace_back(&sf);
         }
     }
@@ -273,7 +273,14 @@ statusview_curses::window_change()
     }
 
     std::stable_sort(begin(resizable), end(resizable), [](auto l, auto r) {
-        return r->get_share() < l->get_share();
+        if (r->get_share() < l->get_share()) {
+            return true;
+        }
+        if (r->get_share() == l->get_share()) {
+            return l->get_value().column_width()
+                < r->get_value().column_width();
+        }
+        return false;
     });
     for (auto* sf : resizable) {
         double divisor = total_shares / sf->get_share();

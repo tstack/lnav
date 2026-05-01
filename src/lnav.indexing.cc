@@ -36,7 +36,6 @@
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_util.hh"
@@ -123,10 +122,7 @@ void
 rebuild_hist()
 {
     auto& lss = lnav_data.ld_log_source;
-    auto& hs = lnav_data.ld_hist_source2;
-    const auto zoom = lnav_data.ld_zoom_level;
 
-    hs.set_time_slice(ZOOM_LEVELS[zoom]);
     lss.reload_index_delegate();
 }
 

@@ -368,20 +368,16 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 tc_tss->tss_context_after += 1;
                 tc_tss->text_filters_changed();
                 tc->reload_data();
-                prompt.p_editor.set_inactive_value(
-                    fmt::format(FMT_STRING("filter context: {} before, {} after"),
-                                tc_tss->tss_context_before,
-                                tc_tss->tss_context_after));
-            } else if ((lnav_data.ld_zoom_level - 1) < 0) {
-                alerter::singleton().chime("maximum zoom-in level reached");
+                prompt.p_editor.set_inactive_value(fmt::format(
+                    FMT_STRING("filter context: {} before, {} after"),
+                    tc_tss->tss_context_before,
+                    tc_tss->tss_context_after));
             } else {
-                auto res = ec.execute(
-                    INTERNAL_SRC_LOC,
-                    fmt::format(
-                        FMT_STRING(":zoom-to {}"),
-                        lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                auto res = ec.execute(INTERNAL_SRC_LOC, ":zoom-to +");
                 if (res.isOk()) {
                     prompt.p_editor.set_inactive_value(res.unwrap());
+                } else {
+                    alerter::singleton().chime("zoom-level reached");
                 }
             }
             break;
@@ -409,16 +405,12 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 } else {
                     alerter::singleton().chime("context is already zero");
                 }
-            } else if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
-                alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                auto res = ec.execute(
-                    INTERNAL_SRC_LOC,
-                    fmt::format(
-                        FMT_STRING(":zoom-to {}"),
-                        lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                auto res = ec.execute(INTERNAL_SRC_LOC, ":zoom-to -");
                 if (res.isOk()) {
                     prompt.p_editor.set_inactive_value(res.unwrap());
+                } else {
+                    alerter::singleton().chime("zoom-level reached");
                 }
             }
             break;

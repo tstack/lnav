@@ -307,16 +307,6 @@ public:
 
     void init();
 
-    void set_time_slice(std::chrono::microseconds slice)
-    {
-        this->hs_time_slice = slice;
-    }
-
-    std::chrono::microseconds get_time_slice() const
-    {
-        return this->hs_time_slice;
-    }
-
     size_t text_line_count() override { return this->hs_line_count; }
 
     size_t text_line_width(textview_curses& curses) override;
@@ -380,7 +370,6 @@ private:
 
     bucket_t& find_bucket(int64_t index);
 
-    std::chrono::microseconds hs_time_slice;
     int64_t hs_line_count{0};
     int64_t hs_current_row{0};
     std::chrono::microseconds hs_last_ts;

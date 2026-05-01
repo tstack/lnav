@@ -168,6 +168,17 @@ textinput_curses::get_help_text()
               .append("CTRL-O"_hotkey)
               .append("    - Open the contents in an external editor\n")
               .append("\n")
+              .append("Resizing"_h2)
+              .append("\n ")
+              .append("•"_list_glyph)
+              .append(" ")
+              .append("ALT-="_hotkey)
+              .append("     - Grow the multi-line prompt by one line\n ")
+              .append("•"_list_glyph)
+              .append(" ")
+              .append("ALT--"_hotkey)
+              .append("     - Shrink the multi-line prompt by one line\n")
+              .append("\n")
               .append("History"_h2)
               .append("\n ")
               .append("\u2022"_list_glyph)
@@ -979,12 +990,10 @@ textinput_curses::capitalize_word()
         = al_sf.sub_cell_range(word_start, end_x)
               .transform_codepoints([&saw_letter](uint32_t cp) -> uint32_t {
                   if (!uc_is_general_category_withtable(cp,
-                                                        UC_CATEGORY_MASK_L))
-                  {
+                                                        UC_CATEGORY_MASK_L)) {
                       return cp;
                   }
-                  auto new_cp
-                      = saw_letter ? uc_tolower(cp) : uc_toupper(cp);
+                  auto new_cp = saw_letter ? uc_tolower(cp) : uc_toupper(cp);
                   saw_letter = true;
                   return new_cp;
               });
@@ -1021,9 +1030,9 @@ textinput_curses::transpose_chars()
     auto left_char = al_sf.sub_cell_range(swap_left, swap_right).to_string();
     auto right_char
         = al_sf.sub_cell_range(swap_right, swap_right + 1).to_string();
-    this->tc_selection = selected_range::from_key(
-        this->tc_cursor.copy_with_x(swap_left),
-        this->tc_cursor.copy_with_x(swap_right + 1));
+    this->tc_selection
+        = selected_range::from_key(this->tc_cursor.copy_with_x(swap_left),
+                                   this->tc_cursor.copy_with_x(swap_right + 1));
     this->replace_selection(right_char + left_char);
     if (advance_cursor) {
         this->move_cursor_to(this->tc_cursor.copy_with_x(swap_right + 1));
@@ -1158,6 +1167,20 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'u':
             case 'U': {
                 this->change_word_case(uc_toupper);
+                return true;
+            }
+            case '=':
+            case '+': {
+                if (this->tc_on_height_change) {
+                    this->tc_on_height_change(*this, 1);
+                }
+                return true;
+            }
+            case '-':
+            case '_': {
+                if (this->tc_on_height_change) {
+                    this->tc_on_height_change(*this, -1);
+                }
                 return true;
             }
         }
@@ -2138,6 +2161,7 @@ textinput_curses::blur()
     this->tc_popup_type = popup_type_t::none;
     this->tc_popup.set_visible(false);
     this->vc_enabled = false;
+    this->move_cursor_to(input_point::home());
     if (this->tc_on_blur) {
         this->tc_on_blur(*this);
     }
@@ -2201,7 +2225,7 @@ textinput_curses::do_update()
     if (!this->vc_enabled) {
         ncplane_erase_region(
             this->tc_window, this->vc_y, this->vc_x, 1, dim.dr_width);
-        auto lr = line_range{this->tc_left, this->tc_left + dim.dr_width};
+        auto lr = line_range{0, dim.dr_width};
         mvwattrline(this->tc_window,
                     this->vc_y,
                     this->vc_x,

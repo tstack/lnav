@@ -6,14 +6,29 @@
         "multiline": false,
         "regex": {
             "std": {
-                "pattern": "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)(?<body>.*)"
+                "pattern": "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+ \\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)(?<body>.*)"
             }
         },
         "level-field": "sc_status",
         "level": {
             "error": "^[^123]"
         },
-        "opid-field": "s_pid",
+        "duration-field": "s_runtime",
+        "opid": {
+            "source": "from-whole-msg",
+            "description": {
+                "request": {
+                    "format": [
+                        {
+                            "field": "cs_method"
+                        },
+                        {
+                            "field": "cs_uri_stem"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "s_pid": {
                 "kind": "string",
@@ -67,21 +82,7 @@
                 }
             },
             "s_runtime": {
-                "kind": "float",
-                "description": "hello, world",
-                "unit": {
-                    "field": "rt_unit",
-                    "scaling-factor": {
-                        "msecs": {
-                            "op": "divide",
-                            "value": 1000.0
-                        },
-                        "micros": {
-                            "op": "divide",
-                            "value": 1000000.0
-                        }
-                    }
-                }
+                "kind": "string"
             },
             "cs_version": {
                 "kind": "string",

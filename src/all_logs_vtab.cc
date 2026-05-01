@@ -190,6 +190,7 @@ all_logs_vtab::extract(logfile* lf,
         = to_owned(sub_values.lvv_src_file_value, values.lvv_allocator);
     values.lvv_src_line_value
         = to_owned(sub_values.lvv_src_line_value, values.lvv_allocator);
+    values.lvv_duration_value = sub_values.lvv_duration_value;
 }
 
 bool

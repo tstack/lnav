@@ -239,6 +239,10 @@ The following variables are available in SQL statements:
 
 * :code:`$LINES` - The number of lines in the terminal window.
 * :code:`$COLS` - The number of columns in the terminal window.
+* :code:`$zoom_level` - The current zoom level of the DB view as a
+  duration string (e.g. :code:`5m`, :code:`1h`).  Passing this
+  value to the `timeslice`_ function can be useful for easily
+  adjusting the time slice duration based on the zoom level.
 
 Environment
 -----------

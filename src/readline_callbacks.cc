@@ -625,7 +625,19 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                       attr_iter->sa_range.lr_start,
                       attr_iter->sa_range.lr_end,
                       attr_iter->sa_type->sat_name);
-            auto prev_attr_iter = std::prev(attr_iter);
+            auto prev_attr_iter = attr_iter;
+            if (prev_attr_iter != anno_line.al_attrs.begin()) {
+                --prev_attr_iter;
+            }
+            while (prev_attr_iter != anno_line.al_attrs.begin()
+                   && prev_attr_iter->sa_type == &VC_ROLE)
+            {
+                --prev_attr_iter;
+            }
+            log_debug("prev prql attr [%d:%d) %s",
+                      prev_attr_iter->sa_range.lr_start,
+                      prev_attr_iter->sa_range.lr_end,
+                      prev_attr_iter->sa_type->sat_name);
             if (attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR
                 || (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR
                     && (prev_attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR

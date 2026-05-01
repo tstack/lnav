@@ -2191,10 +2191,10 @@
 :zoom-to *zoom-level*
 ^^^^^^^^^^^^^^^^^^^^^
 
-  Zoom the histogram view to the given level
+  Zoom the current view to the given level
 
   **Parameters**
-    * **zoom-level\*** --- The zoom level
+    * **zoom-level\*** --- The zoom level, or '+'/'-' to step in or out from the current level
 
   **Examples**
     To set the zoom level to '1-week':
@@ -2202,6 +2202,12 @@
     .. code-block::  lnav
 
       :zoom-to 1-week
+
+    To zoom in by one level from the current zoom:
+
+    .. code-block::  lnav
+
+      :zoom-to +
 
 
 ----

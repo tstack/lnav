@@ -191,7 +191,6 @@ struct lnav_data_t {
 
     logfile_sub_source ld_log_source;
     hist_source2 ld_hist_source2;
-    int ld_zoom_level;
     std::unique_ptr<spectrogram_source> ld_spectro_source;
 
     textfile_sub_source ld_text_source;

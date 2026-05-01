@@ -1,0 +1,22 @@
+[1m[4m[35m   Duration   [0m[4m|[0m[4m [0m[1m[4m[31m✘[0m[4m[33m▲[0m[4m [0m[4m|[0m[4m [0m[1m[4m[35mI[0m[1m[4m[35mt[0m[1m[4m[35mem[0m[4m         [0m[4m|[0m[4m2m       [0m[4m|[0m[4m3m       [0m[4m|[0m[4m5m       [0m[4m|[0m[4m6m[0m
+[32m [0m[32m          129[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m7c5[0m[32m[45me[0m[32me4cb61f06d4cf51751fa73ce44fe[0m[32m POST /update_metrics[0m
+[32m [0m[32m        7m03s[0m[32m  [0m[1m[31m [0m[33m [0m[32m  [0m🧵[32m [0m[32m    [0m[32m[45m                             [0m
+[1m[32m [0m[1m[32m        7m03s[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m  [0m📄[1m[32m [0m[1m[32mlogf[0m[1m[32m[45mile_uwsgi.0[0m[1m[32m[45m                  [0m
+[1m[32m [0m[1m[32m          035[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m8b17[0m[1m[32m[45md[0m[1m[32mc4912cb56fd32dcdd09012cbd47[0m[1m[32m POST /update_metrics[0m
+[32m [0m[32m          016[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m4d1e[0m[32m[45mf[0m[32mabde81016c04c9e25d55db752b2[0m[32m POST /endpoint2[0m
+[32m [0m[32m         68us[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32ma17f[0m[32m[45m2[0m[32m777cba525f769555abce5a67257[0m[32m POST /endpoint2[0m
+[1m[32m [0m[1m[32m          010[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32md06b899bea[0m[1m[32m[45m1[0m[1m[32m40a8938592ce775afdee5[0m[1m[32m POST /update_metrics[0m
+[1m[32m [0m[1m[32m          065[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32mc30e60bdb9[0m[1m[32m[45m6[0m[1m[32me1b300b24c1fa53900dea[0m[1m[32m POST /update_metrics[0m
+[32m [0m[32m          011[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m68e6664b9d8891097[0m[32m[45m7[0m[32mc32fb13db0c1b6[0m[32m POST /update_metrics[0m
+[32m [0m[32m          066[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m725f66df2af39025d[0m[32m[45mb[0m[32m0fdd9d096b0ca8[0m[32m POST /update_metrics[0m
+[1m[32m [0m[1m[32m          011[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m8051af8c02eb172d21ac88f[0m[1m[32m[45m4[0m[1m[32m0b7b2f6d[0m[1m[32m POST /update_metrics[0m
+[1m[32m [0m[1m[32m          018[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32md81a423fa5a4cee80a4c70b5[0m[1m[32m[45m7[0m[1m[32mde0c6ba[0m[1m[32m POST /update_metrics[0m
+[32m [0m[32m          107[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32mb0e573b45d31bbb98dfbac148e844c[0m[32m[45ma[0m[32m2[0m[32m POST /update_metrics[0m
+[32m [0m[32m          017[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m543066590684417110b0907e115094[0m[32m[45md[0m[32m3[0m[32m POST /update_metrics[0m
+[1m[32m [0m[1m[32m          016[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m32a2f0d3fbb4436de8dc02a3930f5f91[0m[1m[32m POST[0m[1m[32m[45m [0m[1m[32m/update_metrics[0m
+[1m[32m [0m[1m[32m          052[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m73b77a78062e22c70c47b34876769286[0m[1m[32m POST[0m[1m[32m[45m [0m[1m[32m/update_metrics[0m
+[32m [0m[32m          035[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32me044091fbe2f1dd887148ddcae42c049[0m[32m POST[0m[32m[45m [0m[32m/endpoint2[0m
+[32m [0m[32m          011[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32m28d842e1b39e021f45648c553566610f[0m[32m POST /upda[0m[32m[45mt[0m[32me_metrics[0m
+[1m[32m [0m[1m[32m          014[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m9dcc4fe2bb86224870e7b473c4ea9754[0m[1m[32m POST /updat[0m[1m[32m[45me[0m[1m[32m_metrics[0m
+[1m[32m [0m[1m[32m          011[0m[1m[32m  [0m[1m[31m [0m[1m[33m [0m[1m[32m     [0m[1m[32m3c13054f9e9774350396dc0f74fa8ea2[0m[1m[32m POST /update_metr[0m[1m[32m[45mi[0m[1m[32mcs[0m
+[32m [0m[32m          040[0m[32m  [0m[1m[31m [0m[33m [0m[32m     [0m[32ma5c665ce5638e58d66c4ed9992a2455d[0m[32m POST /update_metr[0m[32m[45mi[0m[32mcs[0m

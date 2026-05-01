@@ -211,11 +211,11 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         spectrogram_request sr(sb);
         attr_line_t retval;
 
-        auto sel_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-            + (sel.value() * this->ss_granularity);
+        auto sel_time = rounddown(sb.sb_begin_time, this->ttt_zoom_level)
+            + (sel.value() * this->ttt_zoom_level);
         sr.sr_width = width;
         sr.sr_begin_time = sel_time;
-        sr.sr_end_time = sel_time + this->ss_granularity;
+        sr.sr_end_time = sel_time + this->ttt_zoom_level;
         sr.sr_column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
             / (double) (width - 1);
         auto range_min = sb.sb_min_value_out
@@ -344,8 +344,8 @@ spectrogram_source::time_for_row_int(vis_line_t row)
 
     this->cache_bounds();
     retval.tv_sec = to_time_t(
-        rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity)
-        + row * this->ss_granularity);
+        rounddown(this->ss_cached_bounds.sb_begin_time, this->ttt_zoom_level)
+        + row * this->ttt_zoom_level);
 
     return row_info{retval, row};
 }
@@ -360,13 +360,13 @@ spectrogram_source::row_for_time(timeval time_bucket)
     this->cache_bounds();
     const auto tb_us = to_us(time_bucket);
     const auto grain_begin_time
-        = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity);
+        = rounddown(this->ss_cached_bounds.sb_begin_time, this->ttt_zoom_level);
     if (tb_us < grain_begin_time) {
         return 0_vl;
     }
 
     const auto diff = tb_us - grain_begin_time;
-    const auto retval = diff / this->ss_granularity;
+    const auto retval = diff / this->ttt_zoom_level;
 
     return vis_line_t(retval);
 }
@@ -463,7 +463,7 @@ spectrogram_source::text_mark(const bookmark_type_t* bm,
     auto begin_time = begin_time_opt.value();
     auto end_time = to_us(begin_time.ri_time);
 
-    end_time += this->ss_granularity;
+    end_time += this->ttt_zoom_level;
 
     double column_size
         = (sb.sb_max_value_out - sb.sb_min_value_out) / (double) (width - 1);
@@ -521,6 +521,13 @@ spectrogram_source::reset_details_source()
     this->ss_cursor_details_checksum.clear();
 }
 
+Result<std::string, lnav::console::user_message>
+spectrogram_source::text_reload_data(exec_context& ec)
+{
+    this->invalidate();
+    return Ok(std::string());
+}
+
 void
 spectrogram_source::cache_bounds()
 {
@@ -555,12 +562,12 @@ spectrogram_source::cache_bounds()
 
     auto [height, width] = this->tss_view->get_dimensions();
     width -= UNUSABLE_WIDTH;
-    auto grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
-    auto grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
+    auto grain_begin_time = rounddown(sb.sb_begin_time, this->ttt_zoom_level);
+    auto grain_end_time = roundup_size(sb.sb_end_time, this->ttt_zoom_level);
 
     auto diff = std::max(1us, grain_end_time - grain_begin_time);
     this->ss_cached_line_count
-        = (diff + this->ss_granularity - 1us) / this->ss_granularity;
+        = (diff + this->ttt_zoom_level - 1us) / this->ttt_zoom_level;
 
     auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
     bm.clear();
@@ -568,10 +575,10 @@ spectrogram_source::cache_bounds()
         spectrogram_request sr(sb);
 
         sr.sr_width = width;
-        auto row_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-            + row * this->ss_granularity;
+        auto row_time = rounddown(sb.sb_begin_time, this->ttt_zoom_level)
+            + row * this->ttt_zoom_level;
         sr.sr_begin_time = row_time;
-        sr.sr_end_time = row_time + this->ss_granularity;
+        sr.sr_end_time = row_time + this->ttt_zoom_level;
 
         sr.sr_column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
             / (double) (width - 1);
@@ -594,10 +601,10 @@ spectrogram_source::load_row(const listview_curses& tc, int row)
     spectrogram_request sr(sb);
 
     sr.sr_width = width;
-    auto row_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-        + row * this->ss_granularity;
+    auto row_time = rounddown(sb.sb_begin_time, this->ttt_zoom_level)
+        + row * this->ttt_zoom_level;
     sr.sr_begin_time = row_time;
-    sr.sr_end_time = row_time + this->ss_granularity;
+    sr.sr_end_time = row_time + this->ttt_zoom_level;
 
     sr.sr_column_size
         = (sb.sb_max_value_out - sb.sb_min_value_out) / (double) (width - 1);

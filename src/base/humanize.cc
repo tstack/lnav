@@ -84,8 +84,10 @@ try_from(const string_fragment& sf)
             | ( [\-\+]? \d+ \. \d+ (?: [eE] [\-\+] \d+ )? )
               # file size: 4KiB, 2 MB, 100B, 500KBps
             | ( [\-\+]? \d+ (?:\.\d+)? \s* (?:[KMGTPE] i?)? [Bb] (?:ps)? )
-              # seconds with SI prefix: 1.2s, 1ms, 5us, 10ns
-            | ( [\-\+]? \d+ (?:\.\d+)? \s* [munpf]? ) s
+              # seconds: 1.2s, 1ms, 5us, 68 micros, 5 milliseconds
+            | ( [\-\+]? \d+ (?:\.\d+)? \s*
+                (?: milli | micro | nano | pico | femto | [munpf] )? )
+                s (?: ec (?:ond)? s? )?
               # duration h:m:s
             | ( \d{1,2} : \d{2} : \d{2} (?: \. \d{1,6} )? )
               # duration m:s
@@ -173,21 +175,39 @@ try_from(const string_fragment& sf)
 
         if (!unit_range.empty()) {
             size_t start = 0;
-            while (isspace(unit_range[start])) {
+            while (start < unit_range.size() && isspace(unit_range[start])) {
                 start += 1;
             }
-            switch (unit_range[start]) {
-                case 'f':
-                    retval /= 1000.0;
-                case 'p':
-                    retval /= 1000.0;
-                case 'n':
-                    retval /= 1000.0;
-                case 'u':
-                    retval /= 1000.0;
-                case 'm':
-                    retval /= 1000.0;
-                    break;
+            // The "micro" word form starts with 'm' but means /1e6, not
+            // /1e3 like the single-letter "m" SI prefix.  Match the word
+            // forms before falling through to the SI-letter switch.
+            auto starts_with = [&](std::string_view word) {
+                if (start + word.size() > unit_range.size()) {
+                    return false;
+                }
+                for (size_t i = 0; i < word.size(); ++i) {
+                    if (unit_range[start + i] != word[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            if (starts_with("micro")) {
+                retval /= 1000000.0;
+            } else if (start < unit_range.size()) {
+                switch (unit_range[start]) {
+                    case 'f':
+                        retval /= 1000.0;
+                    case 'p':
+                        retval /= 1000.0;
+                    case 'n':
+                        retval /= 1000.0;
+                    case 'u':
+                        retval /= 1000.0;
+                    case 'm':
+                        retval /= 1000.0;
+                        break;
+                }
             }
         }
 

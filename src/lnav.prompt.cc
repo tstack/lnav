@@ -421,6 +421,7 @@ prompt::refresh_sql_completions(textview_curses& tc)
     }
     this->insert_sql_completion("$LINES", sql_var_t{});
     this->insert_sql_completion("$COLS", sql_var_t{});
+    this->insert_sql_completion("$zoom_level", sql_var_t{});
     for (const auto& [name, value] : ec.ec_global_vars) {
         this->insert_sql_completion(fmt::format(FMT_STRING("${}"), name),
                                     sql_var_t{});

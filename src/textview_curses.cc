@@ -47,8 +47,43 @@
 #include "logfile.hh"
 #include "shlex.hh"
 #include "view_curses.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 constexpr auto REVERSE_SEARCH_OFFSET = 2000_vl;
+
+using namespace std::literals::chrono_literals;
+
+const std::chrono::microseconds text_time_translator::ZOOM_LEVELS[ZOOM_COUNT]
+    = {
+        1s,
+        30s,
+        60s,
+        5min,
+        15min,
+        1h,
+        4h,
+        8h,
+        24h,
+        7 * 24h,
+        30 * 24h,
+        365 * 24h,
+};
+
+const std::array<string_fragment, text_time_translator::ZOOM_COUNT>
+    text_time_translator::ZOOM_STRINGS = {
+        "1-second"_frag,
+        "30-second"_frag,
+        "1-minute"_frag,
+        "5-minute"_frag,
+        "15-minute"_frag,
+        "1-hour"_frag,
+        "4-hour"_frag,
+        "8-hour"_frag,
+        "1-day"_frag,
+        "1-week"_frag,
+        "1-month"_frag,
+        "1-year"_frag,
+};
 
 void
 text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
@@ -299,7 +334,8 @@ textview_curses::reload_config(error_reporter& reporter)
                         reporter(&sc.sc_background_color,
                                  lnav::console::user_message::error(
                                      attr_line_t("invalid background color -- ")
-                                         .append_quoted(sc.sc_background_color.pp_value))
+                                         .append_quoted(
+                                             sc.sc_background_color.pp_value))
                                      .with_reason(msg));
                         invalid = true;
                         return styling::color_unit::EMPTY;
@@ -1338,7 +1374,7 @@ text_sub_source::clear_preview()
 Result<std::string, lnav::console::user_message>
 text_sub_source::text_reload_data(exec_context& ec)
 {
-    return ec.make_error("this view cannot be reloaded");
+    return Ok(std::string());
 }
 
 void
@@ -1394,6 +1430,43 @@ text_time_translator::data_reloaded(textview_curses* tc)
         this->row_for(this->ttt_top_row_info.value()) |
             [tc](auto new_top) { tc->set_selection(new_top); };
     }
+}
+
+void
+text_time_translator::set_zoom_level(std::chrono::microseconds level)
+{
+    if (this->ttt_zoom_level == level) {
+        return;
+    }
+    this->ttt_zoom_level = level;
+}
+
+std::string
+text_time_translator::format_zoom_level() const
+{
+    const auto* begin = ZOOM_LEVELS;
+    const auto* end = begin + ZOOM_COUNT;
+    const auto* it = std::find(begin, end, this->ttt_zoom_level);
+    if (it != end) {
+        return ZOOM_STRINGS[it - begin].to_string();
+    }
+    return fmt::format(FMT_STRING("{}us"), this->ttt_zoom_level.count());
+}
+
+std::optional<std::string>
+text_sub_source::text_view_details() const
+{
+    const auto* ttt = dynamic_cast<const text_time_translator*>(this);
+    if (ttt == nullptr) {
+        return std::nullopt;
+    }
+    yajlpp_gen gen;
+    {
+        yajlpp_map root(gen);
+        root.gen("zoom-level");
+        root.gen(ttt->format_zoom_level());
+    }
+    return gen.to_string_fragment().to_string();
 }
 
 template class bookmark_vector<vis_line_t>;

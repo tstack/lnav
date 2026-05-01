@@ -32,6 +32,7 @@
 #ifndef textview_curses_hh
 #define textview_curses_hh
 
+#include <array>
 #include <chrono>
 #include <memory>
 #include <utility>
@@ -294,6 +295,21 @@ public:
 
     void ttt_scroll_invoked(textview_curses* tc);
 
+    static constexpr ssize_t ZOOM_COUNT = 12;
+
+    static const std::chrono::microseconds ZOOM_LEVELS[ZOOM_COUNT];
+
+    static const std::array<string_fragment, ZOOM_COUNT> ZOOM_STRINGS;
+
+    std::chrono::microseconds get_zoom_level() const
+    {
+        return this->ttt_zoom_level;
+    }
+
+    void set_zoom_level(std::chrono::microseconds level);
+
+    std::string format_zoom_level() const;
+
     std::optional<timeval> get_min_row_time() const
     {
         if (this->ttt_min_row_time == min_time_init) {
@@ -360,6 +376,7 @@ protected:
     timeval ttt_max_row_time = max_time_init;
     uint32_t ttt_time_filter_generation{0};
     std::optional<row_info> ttt_top_row_info;
+    std::chrono::microseconds ttt_zoom_level{ZOOM_LEVELS[3]};
 };
 
 class text_accel_source {
@@ -597,17 +614,14 @@ public:
     virtual void add_commands_for_session(
         const std::function<void(const std::string&)>& receiver);
 
-    virtual std::optional<std::string> text_view_details() const
-    {
-        return std::nullopt;
-    }
+    virtual std::optional<std::string> text_view_details() const;
 
     // Re-run whatever operation populated this view.  Default behavior
     // is to report that the view cannot be reloaded; views like the DB
     // view and the TIMELINE view override this to re-execute the last
     // SQL query or rebuild the timeline index, respectively.
-    virtual Result<std::string, lnav::console::user_message>
-    text_reload_data(exec_context& ec);
+    virtual Result<std::string, lnav::console::user_message> text_reload_data(
+        exec_context& ec);
 
     [[nodiscard]] log_level_t get_min_log_level() const
     {

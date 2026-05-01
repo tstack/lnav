@@ -29,7 +29,6 @@
 
 #include <fstream>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -47,7 +46,6 @@
 #include "base/injector.hh"
 #include "base/isc.hh"
 #include "base/itertools.hh"
-#include "base/itertools.similar.hh"
 #include "base/lnav.tz.hh"
 #include "base/paths.hh"
 #include "base/relative_time.hh"
@@ -96,36 +94,6 @@
 
 using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
-
-constexpr std::chrono::microseconds ZOOM_LEVELS[] = {
-    1s,
-    30s,
-    60s,
-    5min,
-    15min,
-    1h,
-    4h,
-    8h,
-    24h,
-    7 * 24h,
-    30 * 24h,
-    365 * 24h,
-};
-
-constexpr std::array<string_fragment, ZOOM_COUNT> lnav_zoom_strings = {
-    "1-second"_frag,
-    "30-second"_frag,
-    "1-minute"_frag,
-    "5-minute"_frag,
-    "15-minute"_frag,
-    "1-hour"_frag,
-    "4-hour"_frag,
-    "8-hour"_frag,
-    "1-day"_frag,
-    "1-week"_frag,
-    "1-month"_frag,
-    "1-year"_frag,
-};
 
 std::string
 remaining_args(const std::string& cmdline,
@@ -2377,73 +2345,100 @@ com_zoom_to(exec_context& ec,
     std::optional<int> zoom_level;
 
     if (args.size() == 1) {
-        auto um = lnav::console::user_message::error("expecting a zoom level")
+        auto um
+            = lnav::console::user_message::error("expecting a zoom level")
+                  .with_snippets(ec.ec_source)
+                  .with_help(attr_line_t("available levels: ")
+                                 .join(text_time_translator::ZOOM_STRINGS, ", ")
+                                 .append("\nuse '+' to zoom in or '-' to zoom "
+                                         "out from the current level"))
+                  .move();
+        return Err(um);
+    }
+
+    auto* tc = lnav_data.ld_view_stack.top().value();
+    auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
+    if (ttt == nullptr) {
+        auto um = lnav::console::user_message::error(
+                      "the current view does not support zooming")
                       .with_snippets(ec.ec_source)
-                      .with_help(attr_line_t("available levels: ")
-                                     .join(lnav_zoom_strings, ", "))
                       .move();
         return Err(um);
     }
 
-    for (size_t lpc = 0; lpc < lnav_zoom_strings.size() && !zoom_level; lpc++) {
-        if (lnav_zoom_strings[lpc].iequal(args[1])) {
-            zoom_level = lpc;
+    if (args[1] == "+" || args[1] == "-") {
+        const auto cur = ttt->get_zoom_level();
+        const auto* begin = text_time_translator::ZOOM_LEVELS;
+        const auto* end = begin + text_time_translator::ZOOM_COUNT;
+        if (args[1] == "+") {
+            const auto* it = std::lower_bound(begin, end, cur);
+            if (it == begin) {
+                return Ok(std::string("info: maximum zoom-in level reached"));
+            }
+            zoom_level = (it - begin) - 1;
+        } else {
+            const auto* it = std::upper_bound(begin, end, cur);
+            if (it == end) {
+                return Ok(std::string("info: maximum zoom-out level reached"));
+            }
+            zoom_level = it - begin;
         }
-    }
+    } else {
+        for (size_t lpc = 0;
+             lpc < text_time_translator::ZOOM_STRINGS.size() && !zoom_level;
+             lpc++)
+        {
+            if (text_time_translator::ZOOM_STRINGS[lpc].iequal(args[1])) {
+                zoom_level = lpc;
+            }
+        }
 
-    if (!zoom_level) {
-        auto um = lnav::console::user_message::error(
+        if (!zoom_level) {
+            auto um
+                = lnav::console::user_message::error(
                       attr_line_t("invalid zoom level: ")
                           .append(lnav::roles::symbol(args[1])))
                       .with_snippets(ec.ec_source)
-                      .with_help(attr_line_t("available levels: ")
-                                     .join(lnav_zoom_strings, ", "))
+                      .with_help(
+                          attr_line_t("available levels: ")
+                              .join(text_time_translator::ZOOM_STRINGS, ", ")
+                              .append("\nuse '+' to zoom in or '-' to zoom "
+                                      "out from the current level"))
                       .move();
-        return Err(um);
+            return Err(um);
+        }
     }
     if (!ec.ec_dry_run) {
-        auto& ss = *lnav_data.ld_spectro_source;
-        timeval old_time;
+        const auto level_idx = zoom_level.value();
+        const auto level = text_time_translator::ZOOM_LEVELS[level_idx];
 
-        lnav_data.ld_zoom_level = zoom_level.value();
-
-        auto& hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
-
-        if (hist_view.get_inner_height() > 0) {
-            auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
-                lnav_data.ld_views[LNV_HISTOGRAM].get_top());
-            if (old_time_opt) {
-                old_time = old_time_opt.value().ri_time;
-                rebuild_hist();
-                lnav_data.ld_hist_source2.row_for_time(old_time) |
-                    [](auto new_top) {
-                        lnav_data.ld_views[LNV_HISTOGRAM].set_top(new_top);
-                    };
+        std::optional<text_time_translator::row_info> top;
+        if (tc->get_inner_height() > 0) {
+            if (auto sel = tc->get_selection()) {
+                top = ttt->time_for_row(sel.value());
             }
         }
 
-        auto& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
-
-        if (spectro_view.get_inner_height() > 0) {
-            auto old_time_opt = lnav_data.ld_spectro_source->time_for_row(
-                lnav_data.ld_views[LNV_SPECTRO].get_selection().value_or(0_vl));
-            ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
-            ss.invalidate();
-            spectro_view.reload_data();
-            if (old_time_opt) {
-                lnav_data.ld_spectro_source->row_for_time(
-                    old_time_opt.value().ri_time)
-                    |
-                    [](auto new_top) {
-                        lnav_data.ld_views[LNV_SPECTRO].set_selection(new_top);
-                    };
+        ttt->set_zoom_level(level);
+        if (ttt == &lnav_data.ld_hist_source2) {
+            rebuild_hist();
+        } else {
+            auto reload_res = tc->get_sub_source()->text_reload_data(ec);
+            if (reload_res.isErr()) {
+                auto reload_err = reload_res.unwrapErr();
+                return Err(reload_err);
             }
+        }
+        tc->reload_data();
+        if (top) {
+            ttt->row_for(top.value()) |
+                [&tc](auto new_top) { tc->set_selection(new_top); };
         }
 
         lnav_data.ld_view_stack.set_needs_update();
 
         retval = fmt::format(FMT_STRING("info: set zoom-level to {}"),
-                             lnav_zoom_strings[zoom_level.value()]);
+                             text_time_translator::ZOOM_STRINGS[level_idx]);
     }
 
     return Ok(retval);
@@ -2906,7 +2901,12 @@ com_spectrogram(exec_context& ec,
         auto& ss = *lnav_data.ld_spectro_source;
         bool found = false;
 
-        ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+        auto* top_tc = lnav_data.ld_view_stack.top().value();
+        auto* top_ttt
+            = dynamic_cast<text_time_translator*>(top_tc->get_sub_source());
+        if (top_ttt != nullptr) {
+            ss.set_zoom_level(top_ttt->get_zoom_level());
+        }
         if (ss.ss_value_source != nullptr) {
             delete std::exchange(ss.ss_value_source, nullptr);
         }
@@ -3775,10 +3775,16 @@ readline_context::command_t STD_COMMANDS[] = {
         com_zoom_to,
 
         help_text(":zoom-to")
-            .with_summary("Zoom the histogram view to the given level")
-            .with_parameter(help_text("zoom-level", "The zoom level")
-                                .with_enum_values(lnav_zoom_strings))
-            .with_example({"To set the zoom level to '1-week'", "1-week"}),
+            .with_summary("Zoom the current view to the given level")
+            .with_parameter(
+                help_text("zoom-level",
+                          "The zoom level, or '+'/'-' to step in or out "
+                          "from the current level")
+                    .with_enum_values(text_time_translator::ZOOM_STRINGS))
+            .with_example({"To set the zoom level to '1-week'", "1-week"})
+            .with_example({"To zoom in by one level from the current "
+                           "zoom",
+                           "+"}),
     },
     {
         "config",

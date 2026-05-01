@@ -51,9 +51,9 @@ db_status_source::db_status_source()
     this->dss_fields[DSF_STITCH_TITLE].set_stitch_value(
         role_t::VCR_STATUS_STITCH_SUB_TO_NORMAL, role_t::VCR_INACTIVE_STATUS);
     this->dss_fields[DSF_RELOAD].set_width(3);
-    this->dss_fields[DSF_QUERY].set_share(3);
+    this->dss_fields[DSF_QUERY].set_share(1);
     this->dss_fields[DSF_TIMING].right_justify(true);
-    this->dss_fields[DSF_TIMING].set_width(80);
+    this->dss_fields[DSF_TIMING].set_share(1);
 }
 
 bool

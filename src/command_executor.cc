@@ -36,17 +36,19 @@
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
+#include "base/humanize.time.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
+#include "base/time_util.hh"
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
 #include "config.h"
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
-#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
@@ -59,6 +61,7 @@
 #include "shlex.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "sqlitepp.client.hh"
 #include "vtab_module.hh"
 
 using namespace std::literals::chrono_literals;
@@ -203,6 +206,8 @@ static Result<std::map<std::string, scoped_value_t>,
               lnav::console::user_message>
 bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
 {
+    constexpr auto ZOOM_LEVEL_VAR = "$zoom_level"_frag;
+
     std::map<std::string, scoped_value_t> retval;
     auto param_count = sqlite3_bind_parameter_count(stmt);
     for (int lpc = 0; lpc < param_count; lpc++) {
@@ -255,6 +260,26 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
             } else if ((env_value = getenv(&name[1])) != nullptr) {
                 sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
                 retval[name] = string_fragment::from_c_str(env_value);
+            } else if (ZOOM_LEVEL_VAR == name) {
+                if (ec.ec_label_source_stack.empty()) {
+                    sqlite3_bind_null(stmt, lpc + 1);
+                    log_warning(
+                        "Cannot bind variable: %s because there is no "
+                        "active label source",
+                        name);
+                    retval[name] = string_fragment::from_c_str(
+                        db_label_source::NULL_STR);
+                } else {
+                    auto zoom_level
+                        = ec.ec_label_source_stack.back()->get_zoom_level();
+                    auto zoom_level_str = humanize::time::duration::from_tv(
+                                              to_timeval(zoom_level))
+                                              .with_compact(false)
+                                              .to_string();
+
+                    bind_to_sqlite(stmt, lpc + 1, zoom_level_str);
+                    retval[name] = zoom_level_str;
+                }
             }
         } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
             for (auto& lv : ec.ec_line_values->lvv_values) {
@@ -432,8 +457,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 auto& dls = *ec.ec_label_source_stack.back();
                 dls.dls_user_query = sql;
                 if (!ec.ec_source.empty()) {
-                    dls.dls_user_query_src_loc
-                        = ec.ec_source.back().s_location;
+                    dls.dls_user_query_src_loc = ec.ec_source.back().s_location;
                 } else {
                     dls.dls_user_query_src_loc = std::nullopt;
                 }
@@ -515,8 +539,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                             .remove_internal_snippets();
                     }
 
-                    if (last_is_readonly && !ec.ec_label_source_stack.empty())
-                    {
+                    if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
                         auto& dls = *ec.ec_label_source_stack.back();
                         dls.dls_query_end = std::chrono::system_clock::now();
                         dls.dls_log_gen_at_query
@@ -542,8 +565,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
         auto& dls = *ec.ec_label_source_stack.back();
         dls.dls_query_end = std::chrono::system_clock::now();
-        dls.dls_log_gen_at_query
-            = lnav_data.ld_log_source.lss_index_generation;
+        dls.dls_log_gen_at_query = lnav_data.ld_log_source.lss_index_generation;
         dls.dls_log_line_count_at_query
             = lnav_data.ld_log_source.text_line_count();
         if (&dls == &lnav_data.ld_db_row_source

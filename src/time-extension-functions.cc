@@ -46,15 +46,14 @@
 #include "vtab_module.hh"
 
 static std::optional<text_auto_buffer>
-timeslice(sqlite3_value* time_in, std::optional<const char*> slice_in_opt)
+timeslice(sqlite3_value* time_in, std::optional<string_fragment> slice_in_opt)
 {
     thread_local date_time_scanner dts;
     thread_local struct {
         std::string c_slice_str;
         relative_time c_rel_time;
     } cache;
-    const auto slice_in
-        = string_fragment::from_c_str(slice_in_opt.value_or("15m"));
+    const auto slice_in = slice_in_opt.value_or("15m"_frag);
 
     if (slice_in.empty()) {
         throw sqlite_func_error("no time slice value given");

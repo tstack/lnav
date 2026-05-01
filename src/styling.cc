@@ -72,21 +72,24 @@ const json_path_container style_config_handlers =
         .with_description("How to align text within a cell")
         .for_field(&style_config::sc_text_align),
         yajlpp::property_handler("color")
-            .with_synopsis("#hex|color_name")
+            .with_synopsis("#hex|color_name|semantic()")
             .with_description(
                 "The foreground color value for this style. The value can be "
-                "the name of an xterm color, the hexadecimal value, or a theme "
-                "variable reference.")
+                "the name of an xterm color, the hexadecimal value, a theme "
+                "variable reference, or 'semantic()' to derive the color from "
+                "a hash of the matched text.")
             .with_example("#fff"_frag)
             .with_example("Green"_frag)
             .with_example("$black"_frag)
+            .with_example("semantic()"_frag)
             .for_field(&style_config::sc_color),
         yajlpp::property_handler("background-color")
-            .with_synopsis("#hex|color_name")
+            .with_synopsis("#hex|color_name|semantic()")
             .with_description(
                 "The background color value for this style. The value can be "
-                "the name of an xterm color, the hexadecimal value, or a theme "
-                "variable reference.")
+                "the name of an xterm color, the hexadecimal value, a theme "
+                "variable reference, or 'semantic()' to derive the color from "
+                "a hash of the matched text.")
             .with_example("#2d2a2e"_frag)
             .with_example("Green"_frag)
             .for_field(&style_config::sc_background_color),

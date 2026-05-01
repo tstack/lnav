@@ -238,13 +238,13 @@ public:
 
     void reset_details_source();
 
+    Result<std::string, lnav::console::user_message> text_reload_data(
+        exec_context& ec) override;
+
     textview_curses* ss_details_view{nullptr};
     text_sub_source* ss_no_details_source{nullptr};
     exec_context* ss_exec_context{nullptr};
     std::unique_ptr<text_sub_source> ss_details_source;
-    std::chrono::microseconds ss_granularity
-        = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::seconds{60});
     spectrogram_value_source* ss_value_source{nullptr};
     spectrogram_bounds ss_cached_bounds;
     size_t ss_cached_line_count{0};

@@ -84,6 +84,11 @@ Features:
   - `⌘-X` to cut the current selection to the
     clipboard.
   - `⌘-Z` to undo the last change.
+* The multi-line prompt can now be resized with the
+  keyboard: `ALT-=` grows the prompt by one line and
+  `ALT--` shrinks it by one line.  This complements
+  the existing click-and-drag resize on the prompt's
+  status bar.
 * Additional readline-style key bindings in the
   prompt (issue #1676):
   - `ALT-f` / `ALT-b` move forward/backward by word.
@@ -107,6 +112,29 @@ Features:
 * Added `disfavors` to `external-editor` configuration
   to express file names that the editor is not interested
   in handling.
+* The `lnav_views.view_details` column is now populated
+  for every time-based view (log, histogram, spectro,
+  timeline, db) with a JSON `zoom-level` field reflecting
+  the current `:zoom-to` setting.
+* The `:zoom-to` command (and the `z`/`Z` hotkeys) now
+  affects only the currently focused view; previously,
+  zooming in either the histogram or the spectrogram
+  view would change both views' zoom level in lockstep.
+  Each view (log, histogram, spectro, timeline, db) now
+  has its own independent zoom level.
+* The `:zoom-to` command now accepts `+` and `-` as
+  shortcuts to step in or out by one level from the
+  current view's zoom (the same behavior as the `z`/`Z`
+  hotkeys).
+* SQL statements can now use `$zoom_level` to refer to
+  the current zoom level in the DB view.  Pressing
+  `z`/`Z` in the DB view will now rerun the last query
+  with the new zoom value.  The `stats.hist` PRQL
+  function now uses `$zoom_level` as the default value
+  for the `slice` parameter.
+* A `stats.timeseries` PRQL function has been added to
+  make it easier to perform an aggregation over buckets
+  of time.
 
 Breaking changes:
 * The `humanize_file_size()` SQLite function now

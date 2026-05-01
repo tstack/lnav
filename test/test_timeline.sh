@@ -138,6 +138,22 @@ run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     ${test_dir}/logfile_glog.0
 
+# consecutive partitions with the same name should be coalesced into a
+# single timeline row, while a different intervening partition keeps
+# the runs separate
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":partition-name stage" \
+    -c ":goto 2" \
+    -c ":partition-name stage" \
+    -c ":goto 3" \
+    -c ":partition-name phase" \
+    -c ":goto 5" \
+    -c ":partition-name stage" \
+    -c ':switch-to-view timeline' \
+    -c ":goto 0" \
+    ${test_dir}/logfile_glog.0
+
 # hide opid rows in the timeline
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
@@ -179,6 +195,10 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_cloudflare.1
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_uwsgi.0
 
 # timeline-metric: shorthand adds a sparkline row from all_metrics
 run_cap_test ${lnav_test} -n \

@@ -40,13 +40,11 @@
 #include "hist_source_T.hh"
 #include "vis_line.hh"
 
-using namespace std::chrono_literals;
-
 std::optional<vis_line_t>
 hist_source2::row_for_time(timeval tv_bucket)
 {
     int retval = 0;
-    auto time_bucket = rounddown(to_us(tv_bucket), this->hs_time_slice);
+    auto time_bucket = rounddown(to_us(tv_bucket), this->ttt_zoom_level);
 
     for (auto& bb : this->hs_blocks) {
         if (time_bucket < bb.bb_buckets[0].b_time) {
@@ -84,7 +82,7 @@ hist_source2::text_value_for_line(textview_curses& tc,
     if (bucket.empty()) {
         const auto& next_bucket = this->find_bucket(row + 1);
         auto time_diff = next_bucket.b_time - bucket.b_time;
-        auto slices = time_diff / this->hs_time_slice;
+        auto slices = time_diff / this->ttt_zoom_level;
         auto count = std::log(slices) + 1;
         value_out = repeat(" \u2022", count);
         return {};
@@ -153,15 +151,15 @@ hist_source2::add_value(std::chrono::microseconds ts,
 {
     require_ge(ts.count(), this->hs_last_ts.count());
 
-    ts = rounddown(ts, this->hs_time_slice);
+    ts = rounddown(ts, this->ttt_zoom_level);
     if (ts != this->hs_last_ts) {
         this->end_of_row();
 
         auto diff = ts - this->hs_last_ts;
-        if (diff > this->hs_time_slice) {
+        if (diff > this->ttt_zoom_level) {
             this->hs_current_row += 1;
             auto& bucket = this->find_bucket(this->hs_current_row);
-            bucket.b_time = this->hs_last_ts + this->hs_time_slice;
+            bucket.b_time = this->hs_last_ts + this->ttt_zoom_level;
             this->hs_line_count += 1;
         }
         this->hs_current_row += 1;
@@ -175,7 +173,7 @@ hist_source2::add_value(std::chrono::microseconds ts,
     this->hs_needs_flush = true;
 }
 
-hist_source2::hist_source2() : hs_time_slice(1min)
+hist_source2::hist_source2()
 {
     this->clear();
 }

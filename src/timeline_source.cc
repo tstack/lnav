@@ -1218,26 +1218,37 @@ timeline_source::rebuild_indexes()
         }
     }
 
-    for (auto part_iter = part_map.begin(); part_iter != part_map.end();
-         ++part_iter)
-    {
+    for (auto part_iter = part_map.begin(); part_iter != part_map.end();) {
+        const auto begin_time = part_iter->first;
+        const auto& part_name = part_iter->second;
+
         auto next_iter = std::next(part_iter);
-        auto part_name_sf = string_fragment::from_str(part_iter->second)
-                                .to_owned(this->ts_allocator);
+        while (next_iter != part_map.end() && next_iter->second == part_name) {
+            next_iter = std::next(next_iter);
+        }
+
+        auto part_key = fmt::format(
+            FMT_STRING("{}@{}"), part_name, begin_time.count());
+        auto part_key_sf = string_fragment::from_str(part_key).to_owned(
+            this->ts_allocator);
+        auto part_name_sf
+            = string_fragment::from_str(part_name).to_owned(this->ts_allocator);
         auto part_otr = opid_time_range{};
-        part_otr.otr_range.tr_begin = part_iter->first;
+        part_otr.otr_range.tr_begin = begin_time;
         if (next_iter != part_map.end()) {
             part_otr.otr_range.tr_end = next_iter->first;
         } else {
             part_otr.otr_range.tr_end = last_log_time;
         }
-        this->ts_active_opids.emplace(part_name_sf,
+        this->ts_active_opids.emplace(part_key_sf,
                                       opid_row{
                                           row_type::partition,
                                           part_name_sf,
                                           part_otr,
                                           string_fragment::invalid(),
                                       });
+
+        part_iter = next_iter;
     }
 
     log_info("active opids: %zu", this->ts_active_opids.size());
