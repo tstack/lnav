@@ -154,6 +154,23 @@ Bug Fixes:
     but they are displayed now.
   - Checks for archives with file paths that could
     escape containment.
+* The duplicate file check is less aggressive now.
+  Previously, if the first lines of logfiles matched
+  exactly, they were considered duplicates and the
+  smallest/oldest was hidden.  Now, the duplication
+  check is only done on files that contain at least
+  100 lines and those lines are checked to see if
+  they have the same timestamp/file-offset.
+* In the TIMELINE view, tags whose names start or end
+  with "stop", "stopped", "end", "ended", "finish", or
+  "finished" (case-insensitive) are now paired with
+  matching "start", "started", or "begin" tags that
+  share the same base name (for example, `#start-foo`
+  is paired with `#stop-foo`).  The start tag's row
+  spans from the start time to the stop time, and the
+  stop tag is no longer shown as a separate row.  Tags
+  without a base name (such as a bare `#start`) are
+  not paired.
 
 
 ## lnav v0.14.0

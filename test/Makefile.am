@@ -430,6 +430,7 @@ dist_noinst_DATA = \
 	logfile_rust_tracing.0 \
 	logfile_shop_access_log.0 \
 	logfile_spark.0 \
+	logfile_spark_dupe.0 \
 	logfile_strace_log.0 \
 	logfile_strace_log.1 \
 	logfile_strace_log.2 \

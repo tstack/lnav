@@ -1183,37 +1183,86 @@ timeline_source::rebuild_indexes()
         this->ts_index_progress(std::nullopt);
     }
 
+    std::set<string_fragment> consumed_tag_keys;
     {
-        static const auto START_RE = lnav::pcre2pp::code::from_const(
-            R"(^(?:start(?:ed)?|begin)|\b(?:start(?:ed)?|begin)$)",
+        static const auto START_PREFIX_RE = lnav::pcre2pp::code::from_const(
+            R"(^#(?:start(?:ed)?|begin)[-_:.]?(.*)$)", PCRE2_CASELESS);
+        static const auto START_SUFFIX_RE = lnav::pcre2pp::code::from_const(
+            R"(^(.*?)(?:[-_:.])?\b(?:start(?:ed)?|begin)$)", PCRE2_CASELESS);
+        static const auto STOP_PREFIX_RE = lnav::pcre2pp::code::from_const(
+            R"(^#(?:stop(?:ped)?|end(?:ed)?|finish(?:ed)?)[-_:.]?(.*)$)",
+            PCRE2_CASELESS);
+        static const auto STOP_SUFFIX_RE = lnav::pcre2pp::code::from_const(
+            R"(^(.*?)(?:[-_:.])?\b(?:stop(?:ped)?|end(?:ed)?|finish(?:ed)?)$)",
             PCRE2_CASELESS);
 
-        std::vector<opid_row*> start_tags;
+        struct span_event {
+            bool se_is_start;
+            std::chrono::microseconds se_time;
+            opid_row* se_row;
+            string_fragment se_key;
+        };
+        std::map<string_fragment, std::vector<span_event>> events_by_base;
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
         for (auto& pair : this->ts_active_opids) {
             if (pair.second.or_type != row_type::tag) {
                 continue;
             }
-            if (START_RE.find_in(pair.second.or_name).ignore_error()) {
-                start_tags.emplace_back(&pair.second);
+            auto tag = pair.second.or_name;
+            std::optional<bool> is_start;
+            std::optional<string_fragment> base;
+            if (START_PREFIX_RE.capture_from(tag).into(md).found_p()) {
+                is_start = true;
+                base = md[1];
+            } else if (START_SUFFIX_RE.capture_from(tag).into(md).found_p()) {
+                is_start = true;
+                base = md[1];
+            } else if (STOP_PREFIX_RE.capture_from(tag).into(md).found_p()) {
+                is_start = false;
+                base = md[1];
+            } else if (STOP_SUFFIX_RE.capture_from(tag).into(md).found_p()) {
+                is_start = false;
+                base = md[1];
             }
+            if (!is_start.has_value()) {
+                continue;
+            }
+            if (base->empty()) {
+                continue;
+            }
+            events_by_base[base.value()].push_back({
+                is_start.value(),
+                pair.second.or_value.otr_range.tr_begin,
+                &pair.second,
+                pair.first,
+            });
         }
-        std::stable_sort(start_tags.begin(),
-                         start_tags.end(),
-                         [](const auto* lhs, const auto* rhs) {
-                             if (lhs->or_name == rhs->or_name) {
-                                 return lhs->or_value.otr_range.tr_begin
-                                     < rhs->or_value.otr_range.tr_begin;
-                             }
-                             return lhs->or_name < rhs->or_name;
-                         });
-        for (size_t i = 0; i < start_tags.size(); i++) {
-            if (i + 1 < start_tags.size()
-                && start_tags[i]->or_name == start_tags[i + 1]->or_name)
-            {
-                start_tags[i]->or_value.otr_range.tr_end
-                    = start_tags[i + 1]->or_value.otr_range.tr_begin - 1us;
-            } else {
-                start_tags[i]->or_value.otr_range.tr_end = last_log_time;
+
+        for (auto& base_pair : events_by_base) {
+            auto& events = base_pair.second;
+            std::stable_sort(
+                events.begin(), events.end(), [](const auto& l, const auto& r) {
+                    if (l.se_time != r.se_time) {
+                        return l.se_time < r.se_time;
+                    }
+                    return l.se_is_start && !r.se_is_start;
+                });
+            opid_row* current_start = nullptr;
+            for (const auto& evt : events) {
+                if (evt.se_is_start) {
+                    if (current_start != nullptr) {
+                        current_start->or_value.otr_range.tr_end
+                            = evt.se_time - 1us;
+                    }
+                    current_start = evt.se_row;
+                } else if (current_start != nullptr) {
+                    current_start->or_value.otr_range.tr_end = evt.se_time;
+                    consumed_tag_keys.insert(evt.se_key);
+                    current_start = nullptr;
+                }
+            }
+            if (current_start != nullptr) {
+                current_start->or_value.otr_range.tr_end = last_log_time;
             }
         }
     }
@@ -1227,10 +1276,10 @@ timeline_source::rebuild_indexes()
             next_iter = std::next(next_iter);
         }
 
-        auto part_key = fmt::format(
-            FMT_STRING("{}@{}"), part_name, begin_time.count());
-        auto part_key_sf = string_fragment::from_str(part_key).to_owned(
-            this->ts_allocator);
+        auto part_key
+            = fmt::format(FMT_STRING("{}@{}"), part_name, begin_time.count());
+        auto part_key_sf
+            = string_fragment::from_str(part_key).to_owned(this->ts_allocator);
         auto part_name_sf
             = string_fragment::from_str(part_name).to_owned(this->ts_allocator);
         auto part_otr = opid_time_range{};
@@ -1276,6 +1325,9 @@ timeline_source::rebuild_indexes()
     candidates.reserve(this->ts_active_opids.size());
 
     for (auto& pair : this->ts_active_opids) {
+        if (consumed_tag_keys.count(pair.first) > 0) {
+            continue;
+        }
         opid_row& row = pair.second;
         opid_time_range& otr = pair.second.or_value;
         std::string full_desc;

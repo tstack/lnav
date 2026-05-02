@@ -207,6 +207,108 @@ public:
     bool did_promotion{false};
 };
 
+static bool
+remove_duplicates()
+{
+    static constexpr size_t MINIMUM_DUPLICATE_SIZE = 100;
+
+    std::unordered_map<std::string, std::vector<std::shared_ptr<logfile>>>
+        id_to_files;
+    bool retval = false;
+
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        if (lf->get_format_ptr() == nullptr) {
+            continue;
+        }
+        id_to_files[lf->get_content_id()].push_back(lf);
+    }
+
+    for (auto& [name, poss_dupes] : id_to_files) {
+        if (poss_dupes.size() == 1) {
+            continue;
+        }
+
+        std::sort(poss_dupes.begin(),
+                  poss_dupes.end(),
+                  [](const auto& left, const auto& right) {
+                      const auto& lst = left->get_stat();
+                      const auto& rst = right->get_stat();
+                      return lst.st_size < rst.st_size
+                          || (lst.st_size == rst.st_size
+                              && rst.st_mtime < lst.st_mtime);
+                  });
+
+        const auto& dupe_name = poss_dupes.back()->get_unique_path();
+        auto main_lf = poss_dupes.back();
+        poss_dupes.pop_back();
+
+        if (main_lf->size() < MINIMUM_DUPLICATE_SIZE) {
+            continue;
+        }
+
+        std::vector<std::shared_ptr<logfile>> to_remove;
+        for (const auto& poss_dupe_lf : poss_dupes) {
+            if (poss_dupe_lf->size() < MINIMUM_DUPLICATE_SIZE) {
+                // not worth hiding
+                continue;
+            }
+
+            if (main_lf->get_format_ptr()->get_name()
+                != poss_dupe_lf->get_format_ptr()->get_name())
+            {
+                // not a duplicate
+                continue;
+            }
+
+            auto found_mismatch = false;
+            for (size_t lpc = 0; lpc < MINIMUM_DUPLICATE_SIZE; lpc++) {
+                auto main_iter = main_lf->begin() + lpc;
+                auto poss_dupe_iter = poss_dupe_lf->begin() + lpc;
+
+                if (main_iter->get_time<std::chrono::microseconds>()
+                        != poss_dupe_iter->get_time<std::chrono::microseconds>()
+                    || main_iter->get_msg_level()
+                        != poss_dupe_iter->get_msg_level()
+                    || main_iter->get_offset() != poss_dupe_iter->get_offset())
+                {
+                    // not a duplicate
+                    found_mismatch = true;
+                    break;
+                }
+            }
+
+            if (!found_mismatch) {
+                to_remove.push_back(poss_dupe_lf);
+            }
+        }
+
+        if (to_remove.empty()) {
+            continue;
+        }
+        log_info("Keeping duplicated file: %s; size=%lld; mtime=%ld; path=%s",
+                 main_lf->get_content_id().c_str(),
+                 main_lf->get_stat().st_size,
+                 main_lf->get_stat().st_mtime,
+                 main_lf->get_filename_as_string().c_str());
+        std::for_each(to_remove.begin(),
+                      to_remove.end(),
+                      [&dupe_name, &retval](auto& lf) {
+                          if (lf->mark_as_duplicate(dupe_name)) {
+                              log_info(
+                                  "  Hiding copy: size=%lld; mtime=%ld; "
+                                  "path=%s",
+                                  lf->get_stat().st_size,
+                                  lf->get_stat().st_mtime,
+                                  lf->get_filename_as_string().c_str());
+                              lnav_data.ld_log_source.find_data(lf) |
+                                  [](auto ld) { ld->set_visibility(false); };
+                              retval = true;
+                          }
+                      });
+    }
+    return retval;
+}
+
 rebuild_indexes_result_t
 rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
@@ -359,56 +461,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
 
         if (retval.rir_completed && !retval.rir_rescan_needed) {
-            std::unordered_map<std::string,
-                               std::vector<std::shared_ptr<logfile>>>
-                id_to_files;
-            auto reload = false;
-
-            for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-                if (lf->get_format_ptr() == nullptr) {
-                    continue;
-                }
-                id_to_files[lf->get_content_id()].push_back(lf);
-            }
-
-            for (auto& [name, lf] : id_to_files) {
-                if (lf.size() == 1) {
-                    continue;
-                }
-
-                std::sort(lf.begin(),
-                          lf.end(),
-                          [](const auto& left, const auto& right) {
-                              const auto& lst = left->get_stat();
-                              const auto& rst = right->get_stat();
-                              return lst.st_size < rst.st_size
-                                  || (lst.st_size == rst.st_size
-                                      && rst.st_mtime < lst.st_mtime);
-                          });
-
-                const auto& dupe_name = lf.back()->get_unique_path();
-                log_info(
-                    "Keeping duplicated file: %s; size=%lld; mtime=%ld; "
-                    "path=%s",
-                    lf.back()->get_content_id().c_str(),
-                    lf.back()->get_stat().st_size,
-                    lf.back()->get_stat().st_mtime,
-                    lf.back()->get_filename_as_string().c_str());
-                lf.pop_back();
-                std::for_each(
-                    lf.begin(), lf.end(), [&dupe_name, &reload](auto& lf) {
-                        if (lf->mark_as_duplicate(dupe_name)) {
-                            log_info(
-                                "  Hiding copy: size=%lld; mtime=%ld; path=%s",
-                                lf->get_stat().st_size,
-                                lf->get_stat().st_mtime,
-                                lf->get_filename_as_string().c_str());
-                            lnav_data.ld_log_source.find_data(lf) |
-                                [](auto ld) { ld->set_visibility(false); };
-                            reload = true;
-                        }
-                    });
-            }
+            auto reload = remove_duplicates();
 
             if (reload) {
                 log_trace(

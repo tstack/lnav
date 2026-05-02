@@ -1736,6 +1736,8 @@ dist_noinst_DATA = \
     test_sql_views_vtab.sh_45dbef06572b43cb997682436e753a13e003f792.out \
     test_sql_views_vtab.sh_485a6ac7c69bd4b5d34d3399a9c17f6a2dc89ad3.err \
     test_sql_views_vtab.sh_485a6ac7c69bd4b5d34d3399a9c17f6a2dc89ad3.out \
+    test_sql_views_vtab.sh_4af3a57478faa9f206e90bb0500abbad566d534c.err \
+    test_sql_views_vtab.sh_4af3a57478faa9f206e90bb0500abbad566d534c.out \
     test_sql_views_vtab.sh_5a1bca0859a81a5206bc95872f262a0568949f51.err \
     test_sql_views_vtab.sh_5a1bca0859a81a5206bc95872f262a0568949f51.out \
     test_sql_views_vtab.sh_62d15cb9d5a9259f198aa01ca8ed200d6da38d68.err \
@@ -1946,6 +1948,8 @@ dist_noinst_DATA = \
     test_timeline.sh_17a494ba535bc7cf6dd511f42c0a254609872a79.out \
     test_timeline.sh_183e441e1ec6d1207c6cdbcc1d13dc9b812ea4f5.err \
     test_timeline.sh_183e441e1ec6d1207c6cdbcc1d13dc9b812ea4f5.out \
+    test_timeline.sh_1858be38a9d8d6e74b2ae8e73e1c805118ee6b77.err \
+    test_timeline.sh_1858be38a9d8d6e74b2ae8e73e1c805118ee6b77.out \
     test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.err \
     test_timeline.sh_18f6dd738d8daece3db6e25e99322209dea604af.out \
     test_timeline.sh_1a611c8752ca85361f436768a9982051530a5d2a.err \

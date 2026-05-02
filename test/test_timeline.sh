@@ -318,3 +318,14 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     -c ':timeline-metric-sql oops SELECT log_time, raise_error("metric source unavailable") AS value FROM all_metrics' \
     ${test_dir}/logfile_glog.0 ${test_dir}/logfile_glog_metrics.csv
+
+# start/stop tag pairing: a "stop" tag with the same base name as a
+# preceding "start" tag should consume the stop and extend the start
+# row's span to the stop time
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs SET log_tags = json_array('#start-query') WHERE log_line = 1" \
+    -c ";UPDATE all_logs SET log_tags = json_array('#stop-query') WHERE log_line = 4" \
+    -c ";UPDATE all_logs SET log_tags = json_array('#begin-backup') WHERE log_line = 5" \
+    -c ";UPDATE all_logs SET log_tags = json_array('#end-backup') WHERE log_line = 6" \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_glog.0

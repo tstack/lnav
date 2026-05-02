@@ -3120,7 +3120,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         vl, bookmark_metadata::categories::partition);
     if (bmc.bmc_current_metadata) {
         const auto& name = bmc.bmc_current_metadata.value()->bm_name;
-        auto key = text_anchors::to_anchor_string(name);
+        auto key = to_anchor_string(name);
         auto display = attr_line_t()
                            .append("\u2291 "_symbol)
                            .append(lnav::roles::variable(name))
@@ -3140,8 +3140,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                     }
 
                     const auto& name = meta_opt.value()->bm_name;
-                    retval.emplace_back(text_anchors::to_anchor_string(name),
-                                        name);
+                    retval.emplace_back(to_anchor_string(name), name);
                 }
 
                 return retval;
@@ -3979,7 +3978,10 @@ logfile_sub_source::anchor_for_row(vis_line_t vl)
 {
     auto line_meta = this->get_bookmark_metadata_context(
         vl, bookmark_metadata::categories::partition);
-    if (!line_meta.bmc_current_metadata) {
+    if (!line_meta.bmc_current || vl != line_meta.bmc_current
+        || !line_meta.bmc_current_metadata
+        || line_meta.bmc_current_metadata.value()->bm_name.empty())
+    {
         auto lw = window_at(vl);
 
         for (const auto& li : *lw) {
@@ -4000,8 +4002,7 @@ logfile_sub_source::anchor_for_row(vis_line_t vl)
         return std::nullopt;
     }
 
-    return text_anchors::to_anchor_string(
-        line_meta.bmc_current_metadata.value()->bm_name);
+    return to_anchor_string(line_meta.bmc_current_metadata.value()->bm_name);
 }
 
 std::unordered_set<std::string>
