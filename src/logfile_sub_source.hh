@@ -139,7 +139,6 @@ class logfile_sub_source
     : public text_sub_source
     , public text_time_translator
     , public text_accel_source
-    , public list_input_delegate
     , public text_anchors
     , public text_delegate
     , public text_detail_provider
@@ -205,6 +204,11 @@ public:
     void text_attrs_for_line(textview_curses& tc,
                              int row,
                              string_attrs_t& value_out);
+
+    void text_horiz_columns(textview_curses& tc,
+                            vis_line_t start_row,
+                            vis_line_t end_row,
+                            std::set<int>& columns_out);
 
     size_t text_size_for_line(textview_curses& tc, int row, line_flags_t flags);
 

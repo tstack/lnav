@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <climits>
 #include <string>
 #include <vector>
 
@@ -1295,14 +1296,96 @@ textview_curses&
 textview_curses::set_sub_source(text_sub_source* src)
 {
     if (this->tc_sub_source != src) {
+        if (this->tc_sub_source != nullptr) {
+            this->remove_input_delegate(*this->tc_sub_source);
+        }
         this->tc_bookmarks.clear();
         this->tc_sub_source = src;
         if (src) {
             src->register_view(this);
+            this->add_input_delegate(*src);
         }
         this->reload_data();
     }
     return *this;
+}
+
+bool
+text_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
+{
+    // Only intercept plain Left/Right; let everything else fall through to
+    // listview_curses::handle_key so the existing 10-char / half-width /
+    // line-nav behavior applies unchanged.
+    if (ncinput_shift_p(&ch) || this->tss_view == nullptr) {
+        return false;
+    }
+    int direction;
+    switch (ch.eff_text[0]) {
+        case NCKEY_LEFT:
+            direction = -1;
+            break;
+        case NCKEY_RIGHT:
+            direction = 1;
+            break;
+        default:
+            return false;
+    }
+
+    auto& tc = *this->tss_view;
+    auto [height, width] = tc.get_dimensions();
+    auto top = tc.get_top();
+    auto count = vis_line_t((int) this->text_line_count());
+    auto start = std::max(0_vl, top - height);
+    auto end = std::min(count, top + 2_vl * height);
+
+    std::set<int> cols;
+    this->text_horiz_columns(tc, start, end, cols);
+    if (cols.empty()) {
+        return false;
+    }
+    cols.insert(0);
+
+    // Step by a viewport width, but don't cross a column boundary in the
+    // press direction.  When the current column is wider than the viewport,
+    // this lets repeated presses scroll through its content; when a
+    // boundary is closer than a viewport away, the press snaps to it.
+    int cur = tc.get_left();
+    int target;
+    if (direction > 0) {
+        while (true) {
+            auto it = cols.upper_bound(cur);
+            int next_boundary = (it != cols.end()) ? *it : INT_MAX;
+            if (next_boundary - cur <= 2) {
+                cur = next_boundary;
+                continue;
+            }
+            target = std::min(cur + (int) width / 2, next_boundary);
+            break;
+        }
+    } else {
+        while (true) {
+            auto it = cols.lower_bound(cur);
+            int prev_boundary = (it != cols.begin()) ? *std::prev(it) : 0;
+            if (prev_boundary < cur && cur - prev_boundary <= 2) {
+                cur = prev_boundary;
+                continue;
+            }
+            target = std::max(cur - (int) width / 2, prev_boundary);
+            break;
+        }
+        if (target < 0) {
+            target = 0;
+        }
+    }
+
+    if (target == cur) {
+        // No movement possible at this edge — fall through so the
+        // listview's default Left/Right behavior (and its right-edge
+        // chime in set_left) applies.
+        return false;
+    }
+    tc.set_left(target);
+    return true;
 }
 
 std::optional<line_info>

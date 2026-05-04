@@ -156,7 +156,6 @@ class spectrogram_source
     : public text_sub_source
     , public text_time_translator
     , public list_overlay_source
-    , public list_input_delegate
     , public text_delegate {
 public:
     ~spectrogram_source() override = default;

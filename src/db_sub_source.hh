@@ -52,7 +52,6 @@
 class db_label_source
     : public text_sub_source
     , public text_time_translator
-    , public list_input_delegate
     , public text_delegate
     , public text_detail_provider {
 public:
@@ -87,6 +86,11 @@ public:
     void text_attrs_for_line(textview_curses& tc,
                              int row,
                              string_attrs_t& sa) override;
+
+    void text_horiz_columns(textview_curses& tc,
+                            vis_line_t start_row,
+                            vis_line_t end_row,
+                            std::set<int>& columns_out) override;
 
     void push_header(const std::string& colstr, int type);
 

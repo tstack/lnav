@@ -35,6 +35,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -461,9 +462,9 @@ protected:
 /**
  * Source for the text to be shown in a textview_curses view.
  */
-class text_sub_source {
+class text_sub_source : public list_input_delegate {
 public:
-    virtual ~text_sub_source() = default;
+    ~text_sub_source() override = default;
 
     enum {
         RB_RAW,
@@ -560,6 +561,25 @@ public:
                                      string_attrs_t& value_out)
     {
     }
+
+    /**
+     * Insert column offsets where logical "fields" start in the rows
+     * [start_row, end_row).  Used by horizontal-snap navigation.  The
+     * view (not the source) decides which offset to scroll to relative
+     * to its current position.  `0` is implicitly always a snap target,
+     * so sources do NOT need to insert it.  Default inserts nothing,
+     * which causes navigation to fall through to the listview's default
+     * half-screen step.
+     */
+    virtual void text_horiz_columns(textview_curses& tc,
+                                    vis_line_t start_row,
+                                    vis_line_t end_row,
+                                    std::set<int>& columns_out)
+    {
+    }
+
+    bool list_input_handle_key(listview_curses& lv,
+                               const ncinput& ch) override;
 
     /**
      * Update the bookmarks used by the text view based on the bookmarks

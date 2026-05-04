@@ -28,6 +28,9 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log_dupe.0
 
+touch -t 200711030923 ${test_dir}/logfile_spark.0
+touch -t 200811030923 ${test_dir}/logfile_spark_dupe.0
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT view_name,basename(filepath),visible FROM lnav_view_files" \
     -c ":write-csv-to -" \

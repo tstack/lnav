@@ -223,6 +223,13 @@ public:
         return *this;
     }
 
+    listview_curses& remove_input_delegate(list_input_delegate& lid)
+    {
+        this->lv_input_delegates.remove(&lid);
+
+        return *this;
+    }
+
     /**
      * @param va The action to invoke when the view is scrolled.
      * @todo Allow multiple observers.

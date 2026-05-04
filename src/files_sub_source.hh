@@ -46,7 +46,6 @@
 
 class files_sub_source
     : public text_sub_source
-    , public list_input_delegate
     , public text_delegate {
 public:
     bool empty() const override { return false; }

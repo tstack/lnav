@@ -1138,6 +1138,127 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     value_out = std::move(this->lss_token_al.al_attrs);
 }
 
+void
+logfile_sub_source::text_horiz_columns(textview_curses& tc,
+                                       vis_line_t start_row,
+                                       vis_line_t end_row,
+                                       std::set<int>& columns_out)
+{
+    if (this->lss_indexing_in_progress) {
+        return;
+    }
+
+    auto count = vis_line_t((int) this->text_line_count());
+    auto begin = std::max(0_vl, start_row);
+    auto last = std::min(count, end_row);
+    if (last <= begin) {
+        return;
+    }
+    auto win = this->window_at(begin, last);
+    std::map<intern_string_t, int> field2left;
+    std::optional<int> ts_left_opt;
+    std::optional<int> level_left_opt;
+    std::optional<int> body_left_opt;
+    for (const auto& msg : *win) {
+        const auto& values = msg.get_values();
+        auto line_sf = values.lvv_sbr.to_string_fragment();
+        std::optional<line_range> ts_range;
+        std::optional<line_range> level_range;
+        auto time_col_size = this->lss_time_column_size;
+        if (time_col_size > 0) {
+            time_col_size -= 1;
+        }
+        for (const auto& sa : msg.get_attrs()) {
+            if (sa.sa_type != &L_TIMESTAMP && sa.sa_type != &L_LEVEL) {
+                continue;
+            }
+            if (!sa.sa_range.is_valid()) {
+                continue;
+            }
+            if (this->lss_line_context == line_context_t::time_column) {
+                if (sa.sa_type == &L_TIMESTAMP) {
+                    ts_range = sa.sa_range;
+                } else {
+                    level_range = sa.sa_range;
+                }
+            } else {
+                auto sa_left
+                    = (int) line_sf.byte_to_column_index(sa.sa_range.lr_start);
+                if (sa.sa_type == &L_TIMESTAMP) {
+                    if (!ts_left_opt || sa_left < ts_left_opt.value()) {
+                        ts_left_opt = sa_left;
+                    }
+                } else {
+                    if (!level_left_opt || sa_left < level_left_opt.value()) {
+                        level_left_opt = sa_left;
+                    }
+                }
+            }
+        }
+        for (const auto& sa : msg.get_attrs()) {
+            if (sa.sa_type != &SA_BODY) {
+                continue;
+            }
+            if (!sa.sa_range.is_valid()) {
+                continue;
+            }
+            auto curr_range = sa.sa_range;
+            if (ts_range && ts_range.value() < sa.sa_range) {
+                curr_range.lr_start -= ts_range->length();
+            }
+            if (level_range && level_range.value() < sa.sa_range) {
+                curr_range.lr_start -= level_range->length();
+            }
+            curr_range.lr_start += time_col_size;
+            auto body_left
+                = (int) line_sf.byte_to_column_index(curr_range.lr_start);
+            if (!body_left_opt || body_left < body_left_opt.value()) {
+                body_left_opt = body_left;
+            }
+        }
+        for (const auto& lv : values.lvv_values) {
+            if (!lv.lv_origin.is_valid() || lv.lv_origin.lr_start < 0) {
+                continue;
+            }
+            if (lv.lv_meta.lvm_column.is<logline_value_meta::internal_column>())
+            {
+                continue;
+            }
+            auto curr_range = lv.lv_origin;
+            if (ts_range && ts_range.value() < lv.lv_origin) {
+                curr_range.lr_start -= ts_range->length();
+            }
+            if (level_range && level_range.value() < lv.lv_origin) {
+                curr_range.lr_start -= level_range->length();
+            }
+            curr_range.lr_start += time_col_size;
+
+            auto left_for_value
+                = (int) line_sf.byte_to_column_index(curr_range.lr_start);
+            auto iter = field2left.find(lv.lv_meta.lvm_name);
+            if (iter == field2left.end()) {
+                field2left.emplace(lv.lv_meta.lvm_name, left_for_value);
+            } else if (left_for_value < iter->second) {
+                iter->second = left_for_value;
+            }
+        }
+    }
+
+    for (const auto& [name, left] : field2left) {
+        log_debug("inserting %d for %s", left, name.c_str());
+        columns_out.insert(left);
+    }
+    if (body_left_opt) {
+        columns_out.insert(body_left_opt.value());
+    }
+    if (ts_left_opt) {
+        columns_out.insert(ts_left_opt.value());
+    }
+    if (level_left_opt) {
+        columns_out.insert(level_left_opt.value());
+    }
+}
+
 struct logline_cmp {
     explicit logline_cmp(logfile_sub_source& lc) : llss_controller(lc) {}
 
@@ -2172,7 +2293,7 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
             }
             break;
     }
-    return false;
+    return text_sub_source::list_input_handle_key(lv, ch);
 }
 
 std::optional<

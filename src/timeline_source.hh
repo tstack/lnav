@@ -61,7 +61,6 @@ class timeline_header_overlay;
 
 class timeline_source
     : public text_sub_source
-    , public list_input_delegate
     , public text_time_translator
     , public text_delegate {
 public:

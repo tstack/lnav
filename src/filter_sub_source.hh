@@ -47,7 +47,6 @@ class textinput_curses;
 
 class filter_sub_source
     : public text_sub_source
-    , public list_input_delegate
     , public text_delegate {
 public:
     explicit filter_sub_source(std::shared_ptr<textinput_curses> editor);

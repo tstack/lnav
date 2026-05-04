@@ -2,6 +2,7 @@
 
 export TZ=UTC
 export YES_COLOR=1
+export LC_ALL=C
 export HOME="./metric-sessions"
 unset XDG_CONFIG_HOME
 rm -rf "./metric-sessions"

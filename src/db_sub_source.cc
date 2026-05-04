@@ -322,6 +322,27 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
 }
 
 void
+db_label_source::text_horiz_columns(textview_curses& tc,
+                                    vis_line_t start_row,
+                                    vis_line_t end_row,
+                                    std::set<int>& columns_out)
+{
+    int cell_start = 0;
+    for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
+        if (lpc == this->dls_row_style_column
+            && !this->dls_row_styles_have_errors)
+        {
+            continue;
+        }
+        if (this->dls_headers[lpc].hm_hidden) {
+            continue;
+        }
+        columns_out.insert(cell_start);
+        cell_start += this->dls_cell_width[lpc] + 1;
+    }
+}
+
+void
 db_label_source::set_col_as_graphable(int lpc)
 {
     static auto& vc = view_colors::singleton();
@@ -772,7 +793,7 @@ db_label_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
         }
     }
 
-    return false;
+    return text_sub_source::list_input_handle_key(lv, ch);
 }
 
 std::optional<json_string>
