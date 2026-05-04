@@ -58,6 +58,19 @@ Features:
   e.g. a field storing milliseconds with `"suffix": "s"`
   declares `"divisor": 1000`.
 
+Interface Changes:
+* Moving horizontally now defaults to moving to the
+  next "column" in the content instead of half the
+  width of the view.  This should make it easier to
+  fit the full content of a column/captured-field
+  into the view.  This behavior is supported in the
+  following views:
+  - In the DB view, pressing the arrow keys will
+    move to the adjacent column.
+  - In the LOG view, pressing the arrow keys will
+    move to the adjacent field as captured by the
+    log format.
+
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.
   The marks now include a reference to the nearest
