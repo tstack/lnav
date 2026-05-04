@@ -862,34 +862,37 @@ looper::loop()
                 } else {
                     gettimeofday(&line_tv, nullptr);
                 }
-                wrc = write_line_meta(os.os_fd.get(),
-                                      line_tv,
-                                      os.os_level.value_or(cap.cf_level),
-                                      os.os_woff);
-                if (wrc == -1) {
-                    log_error("unable to write timestamp: %s -- %s",
-                              this->l_name.c_str(),
-                              strerror(errno));
-                    this->l_looping = false;
-                    break;
-                }
-                os.os_woff += wrc;
 
-                /* Need to do pwrite here since the fd is used by the main
-                 * lnav process as well.
-                 */
-                wrc = pwrite(os.os_fd.get(),
-                             body_sf.data(),
-                             body_sf.length(),
-                             os.os_woff);
-                if (wrc == -1) {
-                    log_error("unable to write captured data: %s -- %s",
-                              this->l_name.c_str(),
-                              strerror(errno));
-                    this->l_looping = false;
-                    break;
+                for (const auto line_sf : body_sf.split_lines()) {
+                    wrc = write_line_meta(os.os_fd.get(),
+                                          line_tv,
+                                          os.os_level.value_or(cap.cf_level),
+                                          os.os_woff);
+                    if (wrc == -1) {
+                        log_error("unable to write timestamp: %s -- %s",
+                                  this->l_name.c_str(),
+                                  strerror(errno));
+                        this->l_looping = false;
+                        break;
+                    }
+                    os.os_woff += wrc;
+
+                    /* Need to do pwrite here since the fd is used by the main
+                     * lnav process as well.
+                     */
+                    wrc = pwrite(os.os_fd.get(),
+                                 line_sf.data(),
+                                 line_sf.length(),
+                                 os.os_woff);
+                    if (wrc == -1) {
+                        log_error("unable to write captured data: %s -- %s",
+                                  this->l_name.c_str(),
+                                  strerror(errno));
+                        this->l_looping = false;
+                        break;
+                    }
+                    os.os_woff += wrc;
                 }
-                os.os_woff += wrc;
                 if (!body_sf.endswith("\n")) {
                     wrc = pwrite(os.os_fd.get(), "\n", 1, os.os_woff);
                     if (wrc == -1) {

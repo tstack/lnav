@@ -607,17 +607,22 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         }
     }
 
+    auto lffs = this->lss_token_file->get_format_file_state();
+    auto ts_flags = format->lf_timestamp_flags;
+    auto pat_opt = lffs.lffs_pattern_locks.get_pattern_for_line(line);
+    if (pat_opt) {
+        ts_flags = pat_opt->pfl_timestamp_flags;
+    }
     std::optional<exttm> adjusted_tm;
     auto time_attr
         = find_string_attr(this->lss_token_al.al_attrs, &L_TIMESTAMP);
     if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
         && (this->lss_token_file->is_time_adjusted()
-            || ((format->lf_timestamp_flags & ETF_ZONE_SET
+            || ((ts_flags & ETF_ZONE_SET
                  || format->lf_date_time.dts_default_zone != nullptr)
                 && format->lf_date_time.dts_zoned_to_local)
-            || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
-            || !(format->lf_timestamp_flags & ETF_DAY_SET)
-            || !(format->lf_timestamp_flags & ETF_MONTH_SET))
+            || ts_flags & ETF_MACHINE_ORIENTED || !(ts_flags & ETF_DAY_SET)
+            || !(ts_flags & ETF_MONTH_SET))
         && format->lf_date_time.dts_fmt_lock != -1)
     {
         if (time_attr != this->lss_token_al.al_attrs.end()) {
@@ -632,15 +637,14 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             const char* fmt;
             ssize_t len;
 
-            if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
-                || !(format->lf_timestamp_flags & ETF_DAY_SET)
-                || !(format->lf_timestamp_flags & ETF_MONTH_SET))
+            if (ts_flags & ETF_MACHINE_ORIENTED || !(ts_flags & ETF_DAY_SET)
+                || !(ts_flags & ETF_MONTH_SET))
             {
-                if (format->lf_timestamp_flags & ETF_NANOS_SET) {
+                if (ts_flags & ETF_NANOS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%N";
-                } else if (format->lf_timestamp_flags & ETF_MICROS_SET) {
+                } else if (ts_flags & ETF_MICROS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%f";
-                } else if (format->lf_timestamp_flags & ETF_MILLIS_SET) {
+                } else if (ts_flags & ETF_MILLIS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%L";
                 } else {
                     fmt = "%Y-%m-%d %H:%M:%S";

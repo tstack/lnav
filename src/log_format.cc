@@ -45,6 +45,7 @@
 #include "base/itertools.hh"
 #include "base/map_util.hh"
 #include "base/opt_util.hh"
+#include "base/separated_string.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_attr_type.hh"
 #include "base/string_util.hh"
@@ -1043,6 +1044,8 @@ log_format::log_scanf(scan_batch_context& sbc,
 
                     sbc.sbc_pattern_locks.pl_lines.emplace_back(lock_line,
                                                                 curr_fmt);
+                    sbc.sbc_pattern_locks.pl_lines.back().pfl_timestamp_flags
+                        = tm_out->et_flags;
                 }
                 this->lf_timestamp_flags = tm_out->et_flags;
                 done = true;
@@ -1110,7 +1113,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
               off_hour);
     for (auto& ll : dst) {
         time_t ot = ll.get_time<std::chrono::seconds>().count();
-        struct tm otm;
+        tm otm;
 
         gmtime_r(&ot, &otm);
         otm.tm_yday = -1;
@@ -1373,8 +1376,11 @@ read_json_number(yajlpp_parse_context* ypc,
             std::chrono::milliseconds(millis));
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         if (jlu->jlu_format->elf_level_pairs.empty()) {
-            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-                number_frag, jlu->jlu_batch_context));
+            auto new_level = jlu->jlu_format->convert_level(
+                number_frag, jlu->jlu_batch_context);
+            if (new_level != LEVEL_UNKNOWN) {
+                jlu->jlu_base_line->set_level(new_level);
+            }
         } else {
             auto scan_res
                 = scn::scan_int<int64_t>(number_frag.to_string_view());
@@ -1759,20 +1765,15 @@ external_log_format::scan_json(std::vector<logline>& dst,
                                shared_buffer_ref& sbr,
                                scan_batch_context& sbc)
 {
-    logline ll(
-        li.li_file_range.fr_offset, std::chrono::microseconds{0}, LEVEL_INFO);
     auto line_frag = sbr.to_string_fragment();
+    auto& ll = dst.back();
 
     if (!line_frag.startswith("{")) {
         if (!this->lf_specialized) {
             return scan_no_match{"line is not a JSON object"};
         }
 
-        if (!dst.empty()) {
-            ll.set_time(dst.back().get_time<>());
-        }
         ll.set_level(LEVEL_INVALID);
-        dst.emplace_back(std::move(ll));
         return scan_match{0};
     }
 
@@ -1784,11 +1785,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         log_debug("skipping partial line at offset %lld",
                   li.li_file_range.fr_offset);
         if (this->lf_specialized) {
-            if (!dst.empty()) {
-                ll.set_time(dst.back().get_time<>());
-            }
             ll.set_level(LEVEL_INVALID);
-            dst.emplace_back(std::move(ll));
         }
         return scan_incomplete{};
     }
@@ -1798,6 +1795,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
     this->lf_desc_captures.clear();
     this->lf_desc_allocator.reset();
 
+    ll.set_time(0us);
     yajl_reset(handle);
     ypc.set_static_handler(json_log_handlers.jpc_children[0]);
     ypc.ypc_userdata = &jlu;
@@ -1817,23 +1815,15 @@ external_log_format::scan_json(std::vector<logline>& dst,
     {
         if (jlu.jlu_scan_error) {
             if (this->lf_specialized) {
-                if (!dst.empty()) {
-                    ll.set_time(dst.back().get_time<>());
-                }
                 ll.set_level(LEVEL_INVALID);
-                dst.emplace_back(std::move(ll));
-                return scan_match{0};
+                return scan_match{};
             }
             return jlu.jlu_scan_error.value();
         }
-        if (ll.get_time<>().count() == 0) {
+        if (ll.get_time() == 0us) {
+            ll.set_ignore(true);
             if (this->lf_specialized) {
-                if (!dst.empty()) {
-                    ll.set_time(dst.back().get_time<>());
-                }
-                ll.set_ignore(true);
-                dst.emplace_back(std::move(ll));
-                return scan_match{0};
+                return scan_match{};
             }
 
             return scan_no_match{
@@ -1906,14 +1896,11 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 = jlu.jlu_opid_frag->to_string();
             this->jlf_line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
-            auto opid_iter
-                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
-                                          jlu.jlu_opid_frag.value(),
-                                          ll.get_time<>(),
-                                          this->lf_timestamp_point_of_reference,
-                                          jlu.jlu_duration.value_or(1us));
-            opid_iter->second.otr_level_stats.update_msg_count(
-                ll.get_msg_level());
+            auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
+                                               jlu.jlu_duration.value_or(1us),
+                                               ll.get_time<>(),
+                                               ll.get_msg_level(),
+                                               sbc);
             auto& elems = opid_iter->second.otr_description.lod_elements;
             if (jlu.jlu_opid_desc_frag && elems.empty()) {
                 elems.insert(0,
@@ -1954,10 +1941,11 @@ external_log_format::scan_json(std::vector<logline>& dst,
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
         ll.set_has_ansi(jlu.jlu_has_ansi);
         ll.set_valid_utf(jlu.jlu_valid_utf);
-        for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
-            ll.set_sub_offset(lpc);
-            ll.set_continued(lpc > 0);
-            dst.emplace_back(std::move(ll));
+        auto sub_ll = ll.clone();
+        sub_ll.set_continued(true);
+        for (int lpc = 1; lpc < jlu.jlu_sub_line_count; lpc++) {
+            sub_ll.set_sub_offset(lpc);
+            dst.emplace_back(std::move(sub_ll));
         }
         this->lf_timestamp_flags = jlu.jlu_exttm.et_flags;
 
@@ -2002,14 +1990,14 @@ external_log_format::scan_json(std::vector<logline>& dst,
         if (!this->lf_specialized || dst.empty()) {
             return scan_no_match{"JSON parsing failed"};
         }
-        for (int lpc = 0; lpc < line_count; lpc++) {
-            log_level_t level = LEVEL_INVALID;
-
-            ll.set_time(dst.back().get_timeval());
-            ll.set_continued(lpc > 0);
-            ll.set_level(level);
-            ll.set_sub_offset(lpc);
-            dst.emplace_back(std::move(ll));
+        ll.set_has_ansi(jlu.jlu_has_ansi);
+        ll.set_valid_utf(jlu.jlu_valid_utf);
+        ll.set_level(LEVEL_INVALID);
+        auto sub_ll = ll.clone();
+        sub_ll.set_continued(true);
+        for (int lpc = 1; lpc < line_count; lpc++) {
+            sub_ll.set_sub_offset(lpc);
+            dst.emplace_back(std::move(sub_ll));
         }
     }
 
@@ -2019,6 +2007,417 @@ external_log_format::scan_json(std::vector<logline>& dst,
     return scan_match{jlu.jlu_quality, jlu.jlu_strikes, jlu.jlu_precision};
 }
 
+static void
+ingest_numeric_value(const external_log_format::value_def& vd,
+                     string_fragment field_sf,
+                     std::optional<string_fragment> unit_sf,
+                     scan_batch_context& sbc)
+{
+    if (vd.vd_meta.lvm_identifier || vd.vd_meta.lvm_foreign_key) {
+        return;
+    }
+    if (!field_sf.is_valid()) {
+        return;
+    }
+
+    std::optional<double> dvalue_opt;
+    switch (vd.vd_meta.lvm_kind) {
+        case value_kind_t::VALUE_INTEGER: {
+            int64_t ivalue;
+            auto from_res = fast_float::from_chars(
+                field_sf.begin(), field_sf.end(), ivalue);
+            if (from_res.ec == std::errc()) {
+                dvalue_opt = ivalue;
+            }
+            break;
+        }
+        case value_kind_t::VALUE_FLOAT: {
+            auto scan_res = scn::scan_value<double>(field_sf.to_string_view());
+            if (scan_res) {
+                dvalue_opt = scan_res->value();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    if (!dvalue_opt) {
+        return;
+    }
+
+    auto dvalue = dvalue_opt.value();
+    if (unit_sf && unit_sf->is_valid()) {
+        auto unit_iter
+            = vd.vd_unit_scaling.find(intern_string::lookup(unit_sf.value()));
+        if (unit_iter != vd.vd_unit_scaling.end()) {
+            unit_iter->second.scale(dvalue);
+        }
+    }
+    sbc.sbc_value_stats[vd.vd_meta.lvm_values_index.value()].add_value(dvalue);
+}
+
+log_opid_map::iterator
+external_log_format::record_opid(string_fragment opid_cap,
+                                 std::chrono::microseconds duration,
+                                 std::chrono::microseconds log_us,
+                                 log_level_t level,
+                                 scan_batch_context& sbc)
+{
+    auto iter = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                        opid_cap,
+                                        log_us,
+                                        this->lf_timestamp_point_of_reference,
+                                        duration);
+    iter->second.otr_level_stats.update_msg_count(level);
+    return iter;
+}
+
+std::optional<log_opid_map::iterator>
+external_log_format::finalize_line(logline& new_line,
+                                   line_finalize_inputs& in,
+                                   scan_batch_context& sbc)
+{
+    const auto log_us = new_line.get_time();
+    const auto level = new_line.get_msg_level();
+
+    if (!in.lfi_opid_cap && this->elf_opid_field.empty()
+        && !in.lfi_opid_desc_frags.empty())
+    {
+        hasher h;
+        for (const auto& frag : in.lfi_opid_desc_frags) {
+            h.update(frag);
+        }
+        h.to_string(in.lfi_synth_opid_buf);
+        in.lfi_opid_cap = string_fragment::from_bytes(
+            in.lfi_synth_opid_buf, sizeof(in.lfi_synth_opid_buf) - 1);
+    }
+    if (!in.lfi_opid_cap && (in.lfi_duration_cap || in.lfi_start_ts_cap)) {
+        hasher h;
+        h.update(in.lfi_line_sf);
+        h.to_string(in.lfi_synth_opid_buf);
+        in.lfi_opid_cap = string_fragment::from_bytes(
+            in.lfi_synth_opid_buf, sizeof(in.lfi_synth_opid_buf) - 1);
+    }
+
+    std::optional<log_opid_map::iterator> opid_iter;
+    if (in.lfi_opid_cap && !in.lfi_opid_cap->empty()) {
+        auto duration = std::chrono::microseconds::zero();
+        if (in.lfi_duration_cap) {
+            auto from_res
+                = humanize::try_from<double>(in.lfi_duration_cap.value());
+            if (from_res) {
+                auto dur_secs = from_res->value / this->elf_duration_divisor;
+                duration = std::chrono::microseconds(
+                    static_cast<int64_t>(dur_secs * 1000000));
+            }
+        } else if (in.lfi_start_ts_cap) {
+            exttm start_tm;
+            timeval start_tv;
+            auto dts = this->build_time_scanner();
+            if (dts.scan(in.lfi_start_ts_cap->data(),
+                         in.lfi_start_ts_cap->length(),
+                         this->get_timestamp_formats(),
+                         &start_tm,
+                         start_tv))
+            {
+                auto start_us = to_us(start_tv);
+                if (log_us > start_us) {
+                    duration = log_us - start_us;
+                }
+            }
+        }
+
+        opid_iter = this->record_opid(
+            in.lfi_opid_cap.value(), duration, log_us, level, sbc);
+        new_line.merge_bloom_bits(in.lfi_opid_cap->bloom_bits());
+    }
+
+    auto tid_iter = sbc.sbc_tids.insert_tid(
+        sbc.sbc_allocator, in.lfi_tid_cap.value_or(string_fragment{}), log_us);
+    tid_iter->second.titr_level_stats.update_msg_count(level);
+    if (in.lfi_tid_cap) {
+        new_line.merge_bloom_bits(in.lfi_tid_cap->bloom_bits());
+    }
+
+    if (in.lfi_src_file_cap && in.lfi_src_line_cap) {
+        auto h = hasher();
+        h.update(this->get_name().c_str());
+        h.update(in.lfi_src_file_cap.value());
+        h.update(in.lfi_src_line_cap.value());
+        new_line.merge_bloom_bits(h.to_bloom_bits());
+        new_line.set_schema_computed(true);
+    }
+
+    return opid_iter;
+}
+
+external_log_format::timestamp_outcome
+external_log_format::ingest_timestamp(string_fragment ts_sf,
+                                      const logfile* lf,
+                                      std::vector<logline>& dst,
+                                      exttm& log_time_tm,
+                                      timeval& log_tv,
+                                      scan_batch_context& sbc)
+{
+    const char* last = this->lf_date_time.scan(ts_sf.data(),
+                                               ts_sf.length(),
+                                               this->get_timestamp_formats(),
+                                               &log_time_tm,
+                                               log_tv);
+    if (last == nullptr) {
+        auto ls = this->lf_date_time.unlock();
+        last = this->lf_date_time.scan(ts_sf.data(),
+                                       ts_sf.length(),
+                                       this->get_timestamp_formats(),
+                                       &log_time_tm,
+                                       log_tv);
+        if (last == nullptr) {
+            this->lf_date_time.relock(ls);
+            return timestamp_outcome::no_parse;
+        }
+        auto old_flags = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+        auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
+        if (new_flags != old_flags) {
+            return timestamp_outcome::relock_mismatch;
+        }
+        if (lf != nullptr) {
+            log_debug("%s:%zu: date-time re-locked to %d",
+                      lf->get_unique_path().c_str(),
+                      dst.size(),
+                      this->lf_date_time.dts_fmt_lock);
+        }
+    }
+
+    this->lf_timestamp_flags = log_time_tm.et_flags;
+    if (!sbc.sbc_pattern_locks.pl_lines.empty()) {
+        sbc.sbc_pattern_locks.pl_lines.back().pfl_timestamp_flags
+            = log_time_tm.et_flags;
+    }
+
+    if (!(this->lf_timestamp_flags
+          & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
+        && !dst.empty()
+        && dst.back().get_time<std::chrono::seconds>().count() == log_tv.tv_sec
+        && dst.back().get_subsecond_time<std::chrono::milliseconds>().count()
+            != 0)
+    {
+        auto log_ms
+            = dst.back().get_subsecond_time<std::chrono::microseconds>();
+        log_time_tm.et_nsec
+            = std::chrono::duration_cast<std::chrono::nanoseconds>(log_ms)
+                  .count();
+        log_tv.tv_usec
+            = std::chrono::duration_cast<std::chrono::microseconds>(log_ms)
+                  .count();
+    }
+
+    if (!((log_time_tm.et_flags & ETF_DAY_SET)
+          && (log_time_tm.et_flags & ETF_MONTH_SET)
+          && (log_time_tm.et_flags & ETF_YEAR_SET)))
+    {
+        this->check_for_new_year(dst, log_time_tm, log_tv);
+    }
+
+    return timestamp_outcome::ok;
+}
+
+log_format::scan_result_t
+external_log_format::scan_tabular(logfile& lf,
+                                  std::vector<logline>& dst,
+                                  const line_info& li,
+                                  shared_buffer_ref& sbr,
+                                  scan_batch_context& sbc)
+{
+    auto sf = sbr.to_string_fragment();
+    if (this->lf_specialized) {
+        auto& ll = dst.back();
+        if (dst.size() <= this->tlf_header_lines) {
+            // ignore header
+            ll.set_ignore(true);
+            return scan_match{1000};
+        }
+
+        auto ss = separated_string(sf);
+        ss.ss_separator = this->tlf_separator;
+        ss.ss_expected_count = this->elf_value_def_read_order.size();
+        size_t value_index = 0;
+        line_finalize_inputs lfi;
+        lfi.lfi_line_sf = sf;
+        // Gather the column-name set used for opid synthesis when the format
+        // declares no explicit opid field but does declare an opid description.
+        std::set<intern_string_t> opid_desc_field_names;
+        if (!this->lf_opid_description_def->empty()) {
+            const auto& opid_def
+                = this->lf_opid_description_def->begin()->second;
+            for (const auto& desc : *opid_def.od_descriptors) {
+                opid_desc_field_names.insert(desc.od_field.pp_value);
+            }
+        }
+        for (auto field_sf : ss) {
+            if (value_index >= this->elf_value_def_read_order.size()) {
+                break;
+            }
+            const auto* vd = this->elf_value_def_read_order[value_index].second;
+            value_index += 1;
+            if (vd == nullptr) {
+                continue;
+            }
+
+            if (vd->vd_meta.lvm_values_index) {
+                auto& lvs
+                    = sbc.sbc_value_stats[vd->vd_meta.lvm_values_index.value()];
+                if (field_sf.length() > lvs.lvs_width) {
+                    lvs.lvs_width = field_sf.length();
+                }
+            }
+            if (vd->vd_meta.lvm_name == this->lf_timestamp_field) {
+                exttm log_time_tm;
+                timeval log_tv;
+                if (this->ingest_timestamp(
+                        field_sf, &lf, dst, log_time_tm, log_tv, sbc)
+                    == timestamp_outcome::ok)
+                {
+                    ll.set_time(log_tv);
+                } else {
+                    ll.set_level(LEVEL_INVALID);
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_level_field) {
+                ll.set_level(this->convert_level(field_sf, &sbc));
+            } else if (vd->vd_meta.lvm_name == this->elf_opid_field) {
+                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
+                    lfi.lfi_opid_cap = field_sf;
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_thread_id_field) {
+                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
+                    lfi.lfi_tid_cap = field_sf;
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_duration_field) {
+                if (!field_sf.empty()) {
+                    lfi.lfi_duration_cap = field_sf;
+                }
+            } else if (vd->vd_meta.lvm_name == this->lf_start_timestamp_field) {
+                if (!field_sf.empty()) {
+                    lfi.lfi_start_ts_cap = field_sf;
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_src_file_field) {
+                if (!field_sf.empty()) {
+                    lfi.lfi_src_file_cap = field_sf;
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_src_line_field) {
+                if (!field_sf.empty()) {
+                    lfi.lfi_src_line_cap = field_sf;
+                }
+            } else {
+                ingest_numeric_value(*vd, field_sf, std::nullopt, sbc);
+            }
+            if (!field_sf.empty()
+                && opid_desc_field_names.count(vd->vd_meta.lvm_name) > 0)
+            {
+                lfi.lfi_opid_desc_frags.push_back(field_sf);
+            }
+        }
+        if (value_index >= this->elf_value_def_read_order.size()) {
+            this->finalize_line(dst.back(), lfi, sbc);
+        } else {
+            if (sf.startswith("#")) {
+                ll.set_ignore(true);
+            }
+            ll.set_level(LEVEL_INVALID);
+        }
+
+        return scan_match{1000};
+    }
+    if (dst.size() > 20) {
+        return scan_no_match{"no tabular header found"};
+    }
+
+    enum class tabular_header_state : uint8_t {
+        reading_metadata,
+        have_column_header,
+    };
+
+    auto header_state = tabular_header_state::reading_metadata;
+    std::optional<char> sep;
+    for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
+        auto read_res = lf.read_line(ll_iter);
+        if (read_res.isErr()) {
+            return scan_no_match{"cannot read header"};
+        }
+
+        auto hdr_sbr = read_res.unwrap();
+        auto hdr_sf = hdr_sbr.to_string_fragment();
+        if (header_state == tabular_header_state::reading_metadata) {
+            // Excel-flavor CSVs sometimes start with `sep=<ch>` to
+            // hint the delimiter.  Consume that as metadata and wait
+            // for the real header on the next line.
+            if (hdr_sf.startswith("sep=")) {
+                const auto sep_sf = hdr_sf.substr(4);
+                if (sep_sf.empty()) {
+                    return scan_error{"sep= hint missing separator character"};
+                }
+                sep = sep_sf.data()[0];
+                ll_iter->set_time(std::chrono::microseconds::zero());
+                ll_iter->set_level(LEVEL_UNKNOWN);
+                ll_iter->set_ignore(true);
+                log_info("  %ld:found 'sep=' header: %x",
+                         std::distance(dst.begin(), ll_iter),
+                         sep.value());
+            } else if (hdr_sf.startswith("#")) {
+                ll_iter->set_time(std::chrono::microseconds::zero());
+                ll_iter->set_level(LEVEL_UNKNOWN);
+                ll_iter->set_ignore(true);
+                log_info("  %ld:ignoring comment -- %.*s",
+                         std::distance(dst.begin(), ll_iter),
+                         hdr_sf.length(),
+                         hdr_sf.data());
+            } else {
+                if (!sep) {
+                    sep = separated_string::detect_separator(sf);
+                }
+                if (!sep) {
+                    return scan_no_match{"no separator found"};
+                }
+
+                auto ss = separated_string(sf);
+                ss.ss_separator = sep.value();
+                uint32_t hits = 0, misses = 0;
+
+                log_info("  %ld:found header -- %.*s",
+                         std::distance(dst.begin(), ll_iter),
+                         hdr_sf.length(),
+                         hdr_sf.data());
+                this->elf_value_def_read_order.clear();
+                for (auto hdr_name : ss) {
+                    auto value_iter
+                        = this->elf_value_def_frag_map.find(hdr_name);
+                    if (value_iter != this->elf_value_def_frag_map.end()) {
+                        hits += 1;
+                        this->elf_value_def_read_order.emplace_back(
+                            value_iter->first, value_iter->second);
+                    } else {
+                        misses += 1;
+                        this->elf_value_def_read_order.emplace_back(""_frag,
+                                                                    nullptr);
+                    }
+                }
+                if (hits <= 2) {
+                    return scan_no_match{"not enough columns matched"};
+                }
+                header_state = tabular_header_state::have_column_header;
+                auto& ll = dst.back();
+                ll.set_ignore(true);
+                ll.set_level(LEVEL_INVALID);
+                this->tlf_separator = sep.value();
+                this->tlf_header_lines
+                    = std::distance(dst.begin(), ll_iter) + 1;
+                return scan_match{1000, misses, hits};
+            }
+        }
+    }
+
+    return scan_no_match{"no tabular header found"};
+}
+
 log_format::scan_result_t
 external_log_format::scan(logfile& lf,
                           std::vector<logline>& dst,
@@ -2026,7 +2425,7 @@ external_log_format::scan(logfile& lf,
                           shared_buffer_ref& sbr,
                           scan_batch_context& sbc)
 {
-    if (dst.empty()) {
+    if (dst.size() == 1) {
         auto file_options = lf.get_file_options();
 
         if (file_options) {
@@ -2038,6 +2437,11 @@ external_log_format::scan(logfile& lf,
     }
 
     sbc.sbc_value_stats.resize(this->elf_value_defs.size());
+
+    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+        return this->scan_tabular(lf, dst, li, sbr, sbc);
+    }
+
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         return this->scan_json(dst, li, sbr, sbc);
     }
@@ -2046,7 +2450,6 @@ external_log_format::scan(logfile& lf,
     int pat_index = orig_lock;
     auto line_sf = sbr.to_string_fragment();
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
-    char tmp_opid_buf[hasher::STRING_SIZE];
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
@@ -2062,13 +2465,32 @@ external_log_format::scan(logfile& lf,
             continue;
         }
 
+        auto pushed_pattern_lock = false;
+        if (orig_lock != curr_fmt) {
+            uint32_t lock_line;
+
+            if (!this->lf_specialized && orig_lock != -1) {
+                log_debug("%s:%zu: changing pattern lock %d -> (%d)%s",
+                          lf.get_unique_path().c_str(),
+                          dst.size() - 1,
+                          orig_lock,
+                          curr_fmt,
+                          this->elf_pattern_order[curr_fmt]->p_name.c_str());
+            }
+            if (sbc.sbc_pattern_locks.empty()) {
+                lock_line = 0;
+            } else {
+                lock_line = dst.size() - 1;
+            }
+            sbc.sbc_pattern_locks.pl_lines.emplace_back(lock_line, curr_fmt);
+            pushed_pattern_lock = true;
+        }
+
         auto ts = md[fpat->p_timestamp_field_index];
         auto level_cap = md[fpat->p_level_field_index];
         auto opid_cap = md[fpat->p_opid_field_index];
-        const char* last;
         exttm log_time_tm;
         timeval log_tv;
-        uint64_t opid_bloom = 0;
         char combined_datetime_buf[512];
 
         if (fpat->p_time_field_index != -1) {
@@ -2091,137 +2513,66 @@ external_log_format::scan(logfile& lf,
 
         if (!ts) {
             level = log_level_t::LEVEL_INVALID;
-        } else if ((last
-                    = this->lf_date_time.scan(ts->data(),
-                                              ts->length(),
-                                              this->get_timestamp_formats(),
-                                              &log_time_tm,
-                                              log_tv))
-                   == nullptr)
-        {
-            auto ls = this->lf_date_time.unlock();
-            if ((last = this->lf_date_time.scan(ts->data(),
-                                                ts->length(),
-                                                this->get_timestamp_formats(),
-                                                &log_time_tm,
-                                                log_tv))
-                == nullptr)
-            {
-                this->lf_date_time.relock(ls);
+        } else {
+            auto outcome = this->ingest_timestamp(
+                *ts, &lf, dst, log_time_tm, log_tv, sbc);
+            if (outcome != timestamp_outcome::ok) {
+                if (pushed_pattern_lock) {
+                    sbc.sbc_pattern_locks.pl_lines.pop_back();
+                }
                 continue;
             }
-            if (last != nullptr) {
-                auto old_flags = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
-                auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
-
-                // It is unlikely a valid timestamp would lose much
-                // precision.
-                if (new_flags != old_flags) {
-                    continue;
-                }
-            }
-
-            log_debug("%s:%zu: date-time re-locked to %d",
-                      lf.get_unique_path().c_str(),
-                      dst.size(),
-                      this->lf_date_time.dts_fmt_lock);
-        }
-
-        this->lf_timestamp_flags = log_time_tm.et_flags;
-
-        if (!(this->lf_timestamp_flags
-              & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
-            && !dst.empty()
-            && dst.back().get_time<std::chrono::seconds>().count()
-                == log_tv.tv_sec
-            && dst.back()
-                    .get_subsecond_time<std::chrono::milliseconds>()
-                    .count()
-                != 0)
-        {
-            auto log_ms
-                = dst.back().get_subsecond_time<std::chrono::microseconds>();
-
-            log_time_tm.et_nsec
-                = std::chrono::duration_cast<std::chrono::nanoseconds>(log_ms)
-                      .count();
-            log_tv.tv_usec
-                = std::chrono::duration_cast<std::chrono::microseconds>(log_ms)
-                      .count();
-        }
-
-        if (!((log_time_tm.et_flags & ETF_DAY_SET)
-              && (log_time_tm.et_flags & ETF_MONTH_SET)
-              && (log_time_tm.et_flags & ETF_YEAR_SET)))
-        {
-            this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
         auto log_us = to_us(log_tv);
-        if (this->elf_opid_field.empty()
-            && !fpat->p_opid_description_field_indexes.empty())
-        {
-            auto empty_desc = true;
-            hasher h;
-            for (const auto& fidx : fpat->p_opid_description_field_indexes) {
-                auto desc_cap = md[fidx];
-                if (desc_cap) {
-                    h.update(desc_cap.value());
-                    empty_desc = false;
-                }
+        for (const auto& ivd : fpat->p_value_by_index) {
+            if (!ivd.ivd_value_def->vd_meta.lvm_values_index) {
+                continue;
             }
-            if (!empty_desc) {
-                h.to_string(tmp_opid_buf);
-                opid_cap = string_fragment::from_bytes(
-                    tmp_opid_buf, sizeof(tmp_opid_buf) - 1);
+
+            ssize_t cap_size = md.capture_size(ivd.ivd_index);
+            auto& lvs = sbc.sbc_value_stats[ivd.ivd_value_def->vd_meta
+                                                .lvm_values_index.value()];
+
+            if (cap_size > lvs.lvs_width) {
+                lvs.lvs_width = cap_size;
             }
         }
 
-        auto duration_cap = md[fpat->p_duration_field_index];
-        auto start_ts_cap = md[fpat->p_start_timestamp_field_index];
-        if ((duration_cap || start_ts_cap) && !opid_cap) {
-            hasher h;
-            h.update(line_sf);
-            h.to_string(tmp_opid_buf);
-            opid_cap = string_fragment::from_bytes(tmp_opid_buf,
-                                                   sizeof(tmp_opid_buf) - 1);
-        }
-        if (opid_cap && !opid_cap->empty()) {
-            auto duration = std::chrono::microseconds{0};
-            if (duration_cap) {
-                auto from_res
-                    = humanize::try_from<double>(duration_cap.value());
-                if (from_res) {
-                    auto dur_secs
-                        = from_res->value / this->elf_duration_divisor;
-                    duration = std::chrono::microseconds(
-                        static_cast<int64_t>(dur_secs * 1000000));
-                }
-            } else if (start_ts_cap) {
-                exttm start_tm;
-                timeval start_tv;
-                auto dts = this->build_time_scanner();
-                if (dts.scan(start_ts_cap->data(),
-                             start_ts_cap->length(),
-                             this->get_timestamp_formats(),
-                             &start_tm,
-                             start_tv))
-                {
-                    auto start_us = to_us(start_tv);
-                    if (log_us > start_us) {
-                        duration = log_us - start_us;
-                    }
-                }
+        for (auto value_index : fpat->p_numeric_value_indexes) {
+            const indexed_value_def& ivd = fpat->p_value_by_index[value_index];
+            auto num_cap = md[ivd.ivd_index];
+            if (!num_cap) {
+                continue;
             }
-            auto opid_iter
-                = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
-                                          opid_cap.value(),
-                                          log_us,
-                                          this->lf_timestamp_point_of_reference,
-                                          duration);
+            auto unit_cap = ivd.ivd_unit_field_index >= 0
+                ? md[ivd.ivd_unit_field_index]
+                : std::nullopt;
+            ingest_numeric_value(*ivd.ivd_value_def, *num_cap, unit_cap, sbc);
+        }
+
+        auto& new_line = dst.back();
+        new_line.set_time(log_us);
+        new_line.set_level(level);
+
+        line_finalize_inputs lfi;
+        lfi.lfi_opid_cap = opid_cap;
+        lfi.lfi_tid_cap = md[fpat->p_thread_id_field_index];
+        lfi.lfi_duration_cap = md[fpat->p_duration_field_index];
+        lfi.lfi_start_ts_cap = md[fpat->p_start_timestamp_field_index];
+        lfi.lfi_src_file_cap = md[fpat->p_src_file_field_index];
+        lfi.lfi_src_line_cap = md[fpat->p_src_line_field_index];
+        lfi.lfi_line_sf = line_sf;
+        for (const auto& fidx : fpat->p_opid_description_field_indexes) {
+            auto desc_cap = md[fidx];
+            if (desc_cap) {
+                lfi.lfi_opid_desc_frags.push_back(desc_cap.value());
+            }
+        }
+        auto opid_iter_opt = this->finalize_line(new_line, lfi, sbc);
+        if (opid_iter_opt) {
+            auto opid_iter = *opid_iter_opt;
             auto& otr = opid_iter->second;
-
-            otr.otr_level_stats.update_msg_count(level);
             if (fpat->p_subid_field_index != -1) {
                 auto subid_cap = md[fpat->p_subid_field_index];
                 if (subid_cap && !subid_cap->empty()) {
@@ -2251,143 +2602,12 @@ external_log_format::scan(logfile& lf,
                                         otr.otr_description,
                                         fpat,
                                         md);
-            opid_bloom = opid_cap->bloom_bits();
-        }
-
-        for (const auto& ivd : fpat->p_value_by_index) {
-            if (!ivd.ivd_value_def->vd_meta.lvm_values_index) {
-                continue;
-            }
-
-            ssize_t cap_size = md.capture_size(ivd.ivd_index);
-            auto& lvs = sbc.sbc_value_stats[ivd.ivd_value_def->vd_meta
-                                                .lvm_values_index.value()];
-
-            if (cap_size > lvs.lvs_width) {
-                lvs.lvs_width = cap_size;
-            }
-        }
-
-        for (auto value_index : fpat->p_numeric_value_indexes) {
-            const indexed_value_def& ivd = fpat->p_value_by_index[value_index];
-            const value_def& vd = *ivd.ivd_value_def;
-            auto num_cap = md[ivd.ivd_index];
-
-            if (vd.vd_meta.lvm_identifier || vd.vd_meta.lvm_foreign_key) {
-                continue;
-            }
-
-            if (num_cap && num_cap->is_valid()) {
-                const scaling_factor* scaling = nullptr;
-
-                if (ivd.ivd_unit_field_index >= 0) {
-                    auto unit_cap = md[ivd.ivd_unit_field_index];
-
-                    if (unit_cap && unit_cap->is_valid()) {
-                        intern_string_t unit_val
-                            = intern_string::lookup(unit_cap.value());
-
-                        auto unit_iter = vd.vd_unit_scaling.find(unit_val);
-                        if (unit_iter != vd.vd_unit_scaling.end()) {
-                            const auto& sf = unit_iter->second;
-
-                            scaling = &sf;
-                        }
-                    }
-                }
-
-                std::optional<double> dvalue_opt;
-                switch (vd.vd_meta.lvm_kind) {
-                    case value_kind_t::VALUE_INTEGER: {
-                        int64_t ivalue;
-                        auto from_res = fast_float::from_chars(
-                            num_cap->begin(), num_cap->end(), ivalue);
-                        if (from_res.ec == std::errc()) {
-                            dvalue_opt = ivalue;
-                        }
-                        break;
-                    }
-                    case value_kind_t::VALUE_FLOAT: {
-                        auto scan_res = scn::scan_value<double>(
-                            num_cap->to_string_view());
-                        if (scan_res) {
-                            dvalue_opt = scan_res->value();
-                        }
-                        break;
-                    }
-                    default:
-                        break;
-                }
-                if (dvalue_opt) {
-                    auto dvalue = dvalue_opt.value();
-                    if (scaling != nullptr) {
-                        scaling->scale(dvalue);
-                    }
-                    sbc.sbc_value_stats[vd.vd_meta.lvm_values_index.value()]
-                        .add_value(dvalue);
-                }
-            }
-        }
-
-        dst.emplace_back(li.li_file_range.fr_offset, log_us, level);
-        auto& new_line = dst.back();
-        new_line.merge_bloom_bits(opid_bloom);
-
-        auto src_file_cap = md[fpat->p_src_file_field_index];
-        auto src_line_cap = md[fpat->p_src_line_field_index];
-        if (src_file_cap && src_line_cap) {
-            auto h = hasher();
-            h.update(this->get_name().c_str());
-            h.update(src_file_cap.value());
-            h.update(src_line_cap.value());
-            new_line.merge_bloom_bits(h.to_bloom_bits());
-            new_line.set_schema_computed(true);
-        }
-        auto thread_id_cap = md[fpat->p_thread_id_field_index];
-        if (thread_id_cap) {
-            auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, thread_id_cap.value(), log_us);
-            tid_iter->second.titr_level_stats.update_msg_count(level);
-            new_line.merge_bloom_bits(thread_id_cap->bloom_bits());
-        } else {
-            auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, log_us);
-            tid_iter->second.titr_level_stats.update_msg_count(level);
-        }
-
-        if (orig_lock != curr_fmt) {
-            uint32_t lock_line;
-
-            if (!this->lf_specialized && orig_lock != -1) {
-                log_debug("%s:%zu: changing pattern lock %d -> (%d)%s",
-                          lf.get_unique_path().c_str(),
-                          dst.size() - 1,
-                          orig_lock,
-                          curr_fmt,
-                          this->elf_pattern_order[curr_fmt]->p_name.c_str());
-            }
-            if (sbc.sbc_pattern_locks.empty()) {
-                lock_line = 0;
-            } else {
-                lock_line = dst.size() - 1;
-            }
-            sbc.sbc_pattern_locks.pl_lines.emplace_back(lock_line, curr_fmt);
         }
         return scan_match{1000};
     }
 
-    if (this->lf_specialized && !this->lf_multiline && !dst.empty()) {
-        const auto& last_line = dst.back();
-
-        log_debug("%s: invalid line %zu file_offset=%" PRIu64,
-                  lf.get_filename().c_str(),
-                  dst.size(),
-                  li.li_file_range.fr_offset);
-        dst.emplace_back(li.li_file_range.fr_offset,
-                         last_line.get_time<>(),
-                         log_level_t::LEVEL_INVALID);
-
-        return scan_match{0};
+    if (this->lf_specialized && !this->lf_multiline) {
+        return scan_error{"line does not match any patterns"};
     }
 
     return scan_no_match{"no patterns matched"};
@@ -2405,6 +2625,42 @@ external_log_format::annotate(logfile* lf,
     line_range lr;
 
     line.erase_ansi();
+    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+        auto sf = line.to_string_fragment();
+        auto ss = separated_string(sf);
+        ss.ss_separator = this->tlf_separator;
+        size_t value_index = 0;
+        for (auto field_sf : ss) {
+            if (value_index >= this->elf_value_def_read_order.size()) {
+                break;
+            }
+            const auto* vd = this->elf_value_def_read_order[value_index].second;
+            if (vd == nullptr) {
+                continue;
+            }
+
+            lr = to_line_range(field_sf);
+            if (vd->vd_meta.lvm_name == this->lf_timestamp_field) {
+                sa.emplace_back(lr, L_TIMESTAMP.value());
+            } else if (vd->vd_meta.lvm_name == this->elf_level_field) {
+                sa.emplace_back(lr, L_LEVEL.value());
+            } else if (vd->vd_meta.lvm_name == this->elf_opid_field) {
+                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
+                    values.lvv_opid_value = field_sf.to_string();
+                    values.lvv_opid_provenance
+                        = logline_value_vector::opid_provenance::file;
+                    sa.emplace_back(lr, L_OPID.value());
+                }
+            } else if (vd->vd_meta.lvm_name == this->elf_body_field) {
+                sa.emplace_back(lr, SA_BODY.value());
+            }
+            values.lvv_values.emplace_back(vd->vd_meta, line, lr);
+            value_index += 1;
+        }
+
+        return;
+    }
+
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
         if (this->jlf_cached_opts.full_message) {
             values = this->jlf_line_values;
@@ -3867,6 +4123,7 @@ external_log_format::test_line(sample_t& sample,
         };
         shared_buffer sb;
         shared_buffer_ref sbr;
+        dst.emplace_back(0, 0us, LEVEL_UNKNOWN);
         sbr.share(sb, lines[0].data(), (size_t) lines[0].length());
 
         return this->scan_json(dst, li, sbr, sbc);
@@ -4635,6 +4892,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 yajl_handle_deleter());
             yajl_config(
                 this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
+        } else if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+            this->lf_multiline = false;
+            this->lf_structured = true;
         }
     } else {
         if (this->elf_patterns.empty()) {
@@ -4865,7 +5125,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+    if (this->elf_type == elf_type_t::ELF_TYPE_JSON
+        || this->elf_type == elf_type_t::ELF_TYPE_TABULAR)
+    {
         for (const auto& vd : this->elf_value_def_order) {
             this->elf_value_def_frag_map[vd->vd_meta.lvm_name
                                              .to_string_fragment()] = vd.get();
@@ -5773,11 +6035,11 @@ format_partition_def::path_restriction::matches(const char* fn) const
     return fnmatch(this->p_glob.c_str(), fn, 0) == 0;
 }
 
-int
-pattern_locks::pattern_index_for_line(uint64_t line_number) const
+std::optional<pattern_for_lines>
+pattern_locks::get_pattern_for_line(uint64_t line_number) const
 {
     if (this->pl_lines.empty()) {
-        return -1;
+        return std::nullopt;
     }
 
     auto iter
@@ -5792,7 +6054,18 @@ pattern_locks::pattern_index_for_line(uint64_t line_number) const
         --iter;
     }
 
-    return iter->pfl_pat_index;
+    return *iter;
+}
+
+int
+pattern_locks::pattern_index_for_line(uint64_t line_number) const
+{
+    auto pat_opt = this->get_pattern_for_line(line_number);
+    if (pat_opt.has_value()) {
+        return pat_opt.value().pfl_pat_index;
+    }
+
+    return -1;
 }
 
 /* XXX */

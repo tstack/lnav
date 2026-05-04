@@ -630,6 +630,8 @@ private:
     auto_buffer lf_plain_msg_buffer = auto_buffer::alloc(256);
     shared_buffer lf_plain_msg_shared;
 
+    time_range lf_content_time_range;
+
     struct content_map_entry {
         file_range cme_range;
         std::chrono::microseconds cme_time;

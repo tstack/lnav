@@ -369,9 +369,8 @@ logline_window::logmsg_info::sibling_range::at(size_t offset) const
     // lead itself is always visible and matches its own timestamp.
     if (offset > 0) {
         if (this->sr_policy.skip_filtered_out
-            && this->sr_lss.row_is_filtered_out(sib_idx,
-                                                this->sr_filter_in_mask,
-                                                this->sr_filter_out_mask))
+            && this->sr_lss.row_is_filtered_out(
+                sib_idx, this->sr_filter_in_mask, this->sr_filter_out_mask))
         {
             return {outcome::skip, {}};
         }

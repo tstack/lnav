@@ -194,6 +194,7 @@ struct pattern_for_lines {
 
     uint32_t pfl_line;
     int pfl_pat_index;
+    uint32_t pfl_timestamp_flags{0};
 };
 
 struct pattern_locks {
@@ -202,6 +203,9 @@ struct pattern_locks {
     bool empty() const { return this->pl_lines.empty(); }
 
     int pattern_index_for_line(uint64_t line_number) const;
+
+    std::optional<pattern_for_lines> get_pattern_for_line(
+        uint64_t line_number) const;
 
     int last_pattern_index() const
     {
@@ -261,8 +265,6 @@ public:
     {
     }
 
-    logline(const logline&) = delete;
-    logline& operator=(const logline&) = delete;
     logline(logline&&) = default;
     logline& operator=(logline&&) = default;
 
@@ -277,7 +279,7 @@ public:
         return *this;
     }
 
-    template<typename S=std::chrono::microseconds>
+    template<typename S = std::chrono::microseconds>
     S get_time() const
     {
         return std::chrono::duration_cast<S>(this->ll_time);
@@ -445,7 +447,13 @@ public:
 
     static constexpr size_t BLOOM_BITS_SIZE = 56;
 
+    logline clone() const { return *this; }
+
+    void replace(const logline& ll) { *this = ll; }
+
 private:
+    logline(const logline&) = default;
+    logline& operator=(const logline&) = default;
 
     std::chrono::microseconds ll_time;
     file_off_t ll_offset : 44;

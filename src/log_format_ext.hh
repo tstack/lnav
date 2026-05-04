@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "hasher.hh"
 #include "log_format.hh"
 #include "log_search_table_fwd.hh"
 #include "styling.hh"
@@ -402,7 +403,7 @@ public:
     enum class elf_type_t {
         ELF_TYPE_TEXT,
         ELF_TYPE_JSON,
-        ELF_TYPE_CSV,
+        ELF_TYPE_TABULAR,
     };
 
     elf_type_t elf_type{elf_type_t::ELF_TYPE_TEXT};
@@ -411,6 +412,58 @@ public:
                             const line_info& li,
                             shared_buffer_ref& sbr,
                             scan_batch_context& sbc);
+
+    scan_result_t scan_tabular(logfile& lf,
+                               std::vector<logline>& dst,
+                               const line_info& li,
+                               shared_buffer_ref& sbr,
+                               scan_batch_context& sbc);
+
+    enum class timestamp_outcome {
+        ok,  // log_tv & log_time_tm populated; lf_timestamp_flags updated
+        relock_mismatch,  // unlock + rescan succeeded, but the flag set
+                          // changed; caller may want to bail
+        no_parse,  // unable to parse, even after unlock + rescan
+    };
+
+    timestamp_outcome ingest_timestamp(string_fragment ts_sf,
+                                       const logfile* lf,
+                                       std::vector<logline>& dst,
+                                       exttm& log_time_tm,
+                                       timeval& log_tv,
+                                       scan_batch_context& sbc);
+
+    log_opid_map::iterator record_opid(string_fragment opid_cap,
+                                       std::chrono::microseconds duration,
+                                       std::chrono::microseconds log_us,
+                                       log_level_t level,
+                                       scan_batch_context& sbc);
+
+    struct line_finalize_inputs {
+        std::optional<string_fragment> lfi_opid_cap;
+        std::optional<string_fragment> lfi_tid_cap;
+        std::optional<string_fragment> lfi_duration_cap;
+        std::optional<string_fragment> lfi_start_ts_cap;
+        std::optional<string_fragment> lfi_src_file_cap;
+        std::optional<string_fragment> lfi_src_line_cap;
+        std::vector<string_fragment> lfi_opid_desc_frags;
+        string_fragment lfi_line_sf;
+        // Scratch buffer for a synthesized opid; `lfi_opid_cap` is pointed
+        // at this when `finalize_line` synthesizes one.  Caller's struct
+        // must outlive the iter returned by `finalize_line`.
+        char lfi_synth_opid_buf[hasher::STRING_SIZE];
+    };
+
+    /**
+     * Process the captured fields in a line and update various tables/stats.
+     *
+     * @param new_line The logline to finalize
+     * @param in The collection of captures to process
+     * @param sbc The logfile's batch context
+     * @return The iterator for the inserted opid.
+     */
+    std::optional<log_opid_map::iterator> finalize_line(
+        logline& new_line, line_finalize_inputs& in, scan_batch_context& sbc);
 
     void update_op_description(const std::vector<opid_descriptors*>& desc_def,
                                log_op_description& lod,
@@ -469,6 +522,9 @@ public:
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
     shared_buffer jlf_share_manager;
+
+    size_t tlf_header_lines{0};
+    char tlf_separator{','};
 
 private:
     const intern_string_t elf_name;

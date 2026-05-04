@@ -1,0 +1,5 @@
+ts,level,client_ip,user,dur_ms,msg
+2026-04-14T10:00:00Z,GREEN,10.0.0.1,alice,42,login ok
+2026-04-14T10:00:01Z,GREEN,10.0.0.1,alice,17,fetch profile
+2026-04-14T10:00:02Z,YELLOW,10.0.0.2,bob,93,slow request
+2026-04-14T10:00:03Z,RED,10.0.0.2,bob,1500,timeout

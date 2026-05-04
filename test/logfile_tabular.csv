@@ -1,0 +1,6 @@
+when,level,opid,thread,dur_ms,cpu_pct,queue,src_file,src_line,msg
+2026-04-14T10:00:00Z,INFO,op1,t1,150,12.5,5,server.cc,42,starting service
+2026-04-14T10:00:01Z,DEBUG,-,t1,20,11.9,3,server.cc,55,heartbeat
+2026-04-14T10:00:02Z,WARN,op1,t2,4200,18.7,12,handler.cc,103,slow query detected
+2026-04-14T10:00:03Z,ERROR,op2,-,99,99.9,42,handler.cc,210,failed handshake
+2026-04-14T10:00:04Z,INFO,op2,t1,8,13.0,4,server.cc,77,retry succeeded

@@ -453,3 +453,34 @@ TEST_CASE("string_fragment::word helpers with wide chars")
         CHECK(sf.curr_word(4) == std::optional<int>(0));
     }
 }
+
+TEST_CASE("string_fragment::cursor")
+{
+    {
+        const auto input = ""_frag;
+        auto cursor = input.cursor();
+        CHECK_FALSE(cursor.lookbehind().has_value());
+        CHECK_FALSE(cursor.lookahead().has_value());
+        CHECK_FALSE(cursor.next().has_value());
+    }
+    {
+        const auto input = "hello"_frag;
+        auto cursor = input.cursor();
+        CHECK_FALSE(cursor.lookbehind().has_value());
+        CHECK('h' == cursor.lookahead());
+        CHECK('h' == cursor.lookahead());
+        CHECK('h' == cursor.next());
+        CHECK_FALSE(cursor.lookbehind().has_value());
+        CHECK('e' == cursor.lookahead());
+        CHECK('e' == cursor.next());
+        CHECK('h' == cursor.lookbehind());
+        CHECK('l' == cursor.next());
+        CHECK('l' == cursor.next());
+        CHECK('o' == cursor.next());
+        CHECK_FALSE(cursor.next().has_value());
+        CHECK('o' == cursor.lookbehind());
+        CHECK_FALSE(cursor.next().has_value());
+        CHECK('o' == cursor.lookbehind());
+        CHECK_FALSE(cursor.lookahead().has_value());
+    }
+}

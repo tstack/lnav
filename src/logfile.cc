@@ -71,6 +71,7 @@
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
+using namespace std::chrono_literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -248,6 +249,7 @@ logfile::logfile(std::filesystem::path filename,
       lf_filename_as_string(lf_filename.string()), lf_options(loo),
       lf_basename(lf_filename.filename())
 {
+    this->lf_content_time_range.invalidate();
     this->lf_line_buffer.set_decompress_extra(true);
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
     this->lf_thread_ids.writeAccess()->ltis_tid_ranges.reserve(64);
@@ -316,6 +318,7 @@ logfile::file_options_have_changed()
 void
 logfile::reset_internal_state_for_reindex()
 {
+    log_debug("resetting internal state for reindex");
     this->lf_index.clear();
     this->lf_input_lines = 0;
     this->lf_index_size = 0;
@@ -329,6 +332,7 @@ logfile::reset_internal_state_for_reindex()
     this->lf_opids.writeAccess()->clear();
     this->lf_thread_ids.writeAccess()->clear();
     this->lf_allocator.reset();
+    this->lf_content_time_range.invalidate();
     if (this->lf_logline_observer) {
         this->lf_logline_observer->logline_clear(*this);
     }
@@ -428,6 +432,8 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             };
             end_li.li_utf8_scan_result = utf8_res;
             std::vector<logline> tmp_index;
+            tmp_index.emplace_back(
+                end_li.li_file_range.fr_offset, 0us, LEVEL_UNKNOWN);
             auto scan_res = this->lf_format->scan(
                 *this, tmp_index, end_li, tmp_sbr, sbc_tmp);
             if (scan_res.is<log_format::scan_match>() && !tmp_index.empty()) {
@@ -621,6 +627,8 @@ logfile::build_content_map()
                 auto map_li = line_info{map_line_fr};
                 map_li.li_utf8_scan_result = utf8_res;
                 std::vector<logline> tmp_index;
+                tmp_index.emplace_back(
+                    map_li.li_file_range.fr_offset, 0us, LEVEL_UNKNOWN);
                 auto scan_res = this->lf_format->scan(
                     *this, tmp_index, map_li, tmp_sbr, sbc_tmp);
                 if (scan_res.is<log_format::scan_match>()) {
@@ -822,17 +830,14 @@ logfile::set_format_base_time(log_format* lf, const line_info& li)
 time_range
 logfile::get_content_time_range() const
 {
-    if (this->lf_format == nullptr || this->lf_index.empty()) {
+    if (this->lf_format == nullptr) {
         return {
             std::chrono::seconds{this->lf_stat.st_ctime},
             std::chrono::seconds{this->lf_stat.st_mtime},
         };
     }
 
-    return {
-        this->lf_index.front().get_time<>(),
-        this->lf_index.back().get_time<>(),
-    };
+    return this->lf_content_time_range;
 }
 
 bool
@@ -849,6 +854,31 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     auto prescan_time = std::chrono::microseconds{0};
     bool retval = false;
 
+    {
+        log_level_t last_level = LEVEL_UNKNOWN;
+        auto last_time = this->lf_index_time;
+
+        if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
+            last_time = to_us(li.li_timestamp);
+            last_level = li.li_level;
+        } else if (!this->lf_index.empty()) {
+            const auto& ll = this->lf_index.back();
+
+            /*
+             * Assume this line is part of the previous one(s) and copy the
+             * metadata over.
+             */
+            last_time = ll.get_time();
+            last_level = ll.get_msg_level();
+        }
+        this->lf_index.emplace_back(
+            li.li_file_range.fr_offset, last_time, last_level);
+        auto& new_line = this->lf_index.back();
+        new_line.set_valid_utf(li.li_utf8_scan_result.is_valid());
+        new_line.set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
+    }
+    auto base_ll = this->lf_index.back().clone();
+
     if (this->lf_options.loo_detect_format
         && (this->lf_format == nullptr
             || this->lf_index.size() < RETRY_MATCH_SIZE))
@@ -858,8 +888,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             best_match;
         size_t scan_count = 0;
 
-        if (!this->lf_index.empty()) {
-            prescan_time = this->lf_index[prescan_size - 1].get_time<>();
+        if (prescan_size > 0) {
+            prescan_time = this->lf_index[prescan_size - 1].get_time();
         }
         if (this->lf_format != nullptr) {
             best_match
@@ -940,10 +970,17 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 continue;
             }
 
+            std::vector<logline> prev_subs;
             scan_count += 1;
             curr->clear();
             this->set_format_base_time(curr.get(), li);
             log_format::scan_result_t scan_res{mapbox::util::no_init{}};
+            while (this->lf_index.back().get_sub_offset() != 0) {
+                prev_subs.emplace_back(this->lf_index.back().clone());
+                this->lf_index.pop_back();
+            }
+            auto prev_ll = this->lf_index.back().clone();
+            this->lf_index.back().replace(base_ll);
             if (this->lf_format != nullptr
                 && this->lf_format->lf_root_format == curr.get())
             {
@@ -958,16 +995,18 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc_tmp.sbc_level_cache = {};
                 scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc_tmp);
             }
-
+            if (!scan_res.is<log_format::scan_match>()) {
+                while (this->lf_index.back().get_sub_offset() != 0) {
+                    this->lf_index.pop_back();
+                }
+                this->lf_index.back().replace(prev_ll);
+                while (!prev_subs.empty()) {
+                    this->lf_index.emplace_back(prev_subs.back().clone());
+                    prev_subs.pop_back();
+                }
+            }
             scan_res.match(
-                [this,
-                 &sbc,
-                 &sbc_tmp,
-                 &found,
-                 &curr,
-                 &best_match,
-                 &prev_index_size,
-                 starting_index_size](const log_format::scan_match& sm) {
+                [&](const log_format::scan_match& sm) {
                     if (best_match && this->lf_format != nullptr
                         && this->lf_format->lf_root_format == curr.get()
                         && best_match->first == this->lf_format.get())
@@ -982,6 +1021,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         this->lf_format_match.merge_best(sm);
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;
+                        base_ll.set_time(this->lf_index.back().get_time());
                     } else if (!best_match
                                || sm.is_better_than(best_match->second))
                     {
@@ -1026,15 +1066,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                           .append(" strikes"))
                                   .move();
                         this->lf_format_match_messages.emplace_back(match_um);
-                        if (best_match) {
-                            auto starting_iter = std::next(
-                                this->lf_index.begin(), starting_index_size);
-                            auto last_iter = std::next(this->lf_index.begin(),
-                                                       prev_index_size);
-                            this->lf_index.erase(starting_iter, last_iter);
-                        }
                         best_match = std::make_pair(curr.get(), sm);
                         prev_index_size = this->lf_index.size();
+                        base_ll.set_time(this->lf_index.back().get_time());
                     } else {
                         log_trace(
                             "  scan with format (%s) matched, but "
@@ -1047,8 +1081,14 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             best_match->second.sm_precision,
                             sm.sm_strikes,
                             best_match->second.sm_strikes);
-                        while (this->lf_index.size() > prev_index_size) {
+                        while (this->lf_index.back().get_sub_offset() != 0) {
                             this->lf_index.pop_back();
+                        }
+                        this->lf_index.back().replace(prev_ll);
+                        while (!prev_subs.empty()) {
+                            this->lf_index.emplace_back(
+                                prev_subs.back().clone());
+                            prev_subs.pop_back();
                         }
                     }
                 },
@@ -1128,7 +1168,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             this->lf_format = curr->specialized();
             this->lf_level_stats = {};
             for (const auto& ll : this->lf_index) {
-                if (ll.is_continued()) {
+                if (!ll.is_message()) {
                     continue;
                 }
                 this->lf_level_stats.update_msg_count(ll.get_msg_level());
@@ -1184,6 +1224,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
             if (format_changed) {
                 this->reset_internal_state_for_reindex();
+                sbc.sbc_pattern_locks.pl_lines.clear();
+                sbc.sbc_opids.clear();
+                sbc.sbc_tids.clear();
+                sbc.sbc_value_stats.clear();
                 retval = true;
             } else {
                 /*
@@ -1193,15 +1237,14 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                  */
                 const auto& last_line = this->lf_index.back();
 
-                require_lt(starting_index_size, this->lf_index.size());
-                for (size_t lpc = 0; lpc < starting_index_size; lpc++) {
+                for (size_t lpc = 0; lpc < starting_index_size - 1; lpc++) {
                     if (this->lf_format->lf_multiline) {
-                        this->lf_index[lpc].set_time(last_line.get_time<>());
+                        this->lf_index[lpc].set_time(last_line.get_time());
                         if (this->lf_format->lf_structured) {
                             this->lf_index[lpc].set_ignore(true);
                         }
                     } else {
-                        this->lf_index[lpc].set_time(last_line.get_time<>());
+                        this->lf_index[lpc].set_time(last_line.get_time());
                         this->lf_index[lpc].set_level(LEVEL_INVALID);
                     }
                     retval = true;
@@ -1211,7 +1254,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             found = best_match->second;
         }
     } else if (this->lf_format.get() != nullptr) {
-        if (!this->lf_index.empty()) {
+        if (prescan_size > 0) {
             prescan_time = this->lf_index[prescan_size - 1].get_time<>();
         }
         /* We've locked onto a format, just use that scanner. */
@@ -1269,36 +1312,19 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             }
         }
     } else if (found.is<log_format::scan_no_match>()) {
-        log_level_t last_level = LEVEL_UNKNOWN;
-        auto last_time = this->lf_index_time;
-        auto continued = false;
-
-        if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
-            last_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                            std::chrono::seconds{li.li_timestamp.tv_sec})
-                + std::chrono::microseconds(li.li_timestamp.tv_usec);
-            last_level = li.li_level;
-        } else if (!this->lf_index.empty()) {
-            const auto& ll = this->lf_index.back();
-
-            /*
-             * Assume this line is part of the previous one(s) and copy the
-             * metadata over.
-             */
-            last_time = ll.get_time<>();
-            if (this->lf_format.get() != nullptr) {
-                last_level = ll.get_msg_level();
-                if (this->lf_format->lf_multiline) {
-                    continued = true;
-                }
+        if (this->lf_format.get() != nullptr) {
+            if (this->lf_format->lf_multiline) {
+                this->lf_index.back().set_continued(true);
+            } else {
+                this->lf_index.back().set_level(LEVEL_INVALID);
             }
         }
-        this->lf_index.emplace_back(
-            li.li_file_range.fr_offset, last_time, last_level);
-        auto& new_line = this->lf_index.back();
-        new_line.set_continued(continued);
-        new_line.set_valid_utf(li.li_utf8_scan_result.is_valid());
-        new_line.set_has_ansi(li.li_utf8_scan_result.usr_has_ansi);
+    }
+
+    if (this->lf_format != nullptr && !this->lf_index.empty()
+        && !this->lf_index.back().is_ignored())
+    {
+        this->lf_content_time_range.extend_to(this->lf_index.back().get_time());
     }
 
     if (this->lf_format != nullptr && !this->lf_index.empty()

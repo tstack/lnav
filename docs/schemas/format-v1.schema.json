@@ -943,7 +943,7 @@
                     "enum": [
                         "text",
                         "json",
-                        "csv"
+                        "tabular"
                     ]
                 },
                 "max-unrecognized-lines": {

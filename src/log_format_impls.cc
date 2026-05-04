@@ -40,7 +40,6 @@
 
 #include "base/humanize.hh"
 #include "base/injector.bind.hh"
-#include "base/opt_util.hh"
 #include "base/separated_string.hh"
 #include "base/string_attr_type.hh"
 #include "config.h"
@@ -72,9 +71,9 @@ public:
         if (lf.has_line_metadata()
             && lf.get_text_format() == text_format_t::TF_LOG)
         {
-            dst.emplace_back(li.li_file_range.fr_offset,
-                             to_us(li.li_timestamp),
-                             li.li_level);
+            auto& ll = dst.back();
+            ll.set_time(li.li_timestamp);
+            ll.set_level(li.li_level);
             return scan_match{1};
         }
 
@@ -162,26 +161,26 @@ public:
         | \d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,9})?)?   # HH:MM[:SS[.frac]]
         | Z                                   # UTC zulu marker
         | [+\-]\d{2}:?\d{2}                   # timezone offset, +0500 or +05:00
-        | (?!DBG|DEBUG|ERR|INFO|WARN|NONE)    # ...not one of these levels
+        | (?!DBG|DEBUG\d?|ERR|INFO|WARN|NONE|CRITICAL|FATAL)    # ...not one of these levels
           [A-Z]{3,4}                          # 3-4 uppercase letters (e.g. month/tz abbrev)
       )+
   )
   [:|\s]?                                     # optional separator
-  (trc|trace|dbg|debug|info|warn(?:ing)?|err(?:or)?)   # log level
+  (trc|trace|critical|fatal|dbg\d?|debug\d?|info|warn(?:ing)?|err(?:or)?)   # log level
   [:|\s]                                      # separator
   \s*
 )"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) \[(trace|debug|info|warn(?:ing)?|error|critical)\]\s+)"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) \[(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)\]\s+)"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) -- (trace|debug|info|warn(?:ing)?|error|critical) --\s+)"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) -- (trace|debug\d?|info|warn(?:ing)?|error|critical|fatal) --\s+)"),
 
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+/\.-]+) \[\w\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+)\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+) -\s+)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+) -\s+)"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\] \[(trace|debug|info|warn(?:ing)?|error|critical)\]\s+)"),
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\] \[(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)\]\s+)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: "
                         "\\.,/-]+)\\[[^\\]]+\\]\\s+"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+)\s+)"),
@@ -228,7 +227,7 @@ public:
         std::optional<string_fragment> level;
         const char* last_pos;
 
-        if (dst.empty()) {
+        if (dst.size() == 1) {
             auto file_options = lf.get_file_options();
 
             if (file_options) {
@@ -273,17 +272,17 @@ public:
                         .count()
                     != 0)
             {
-                auto log_ms
+                auto log_us
                     = dst.back()
                           .get_subsecond_time<std::chrono::microseconds>();
 
                 log_time.et_nsec
                     = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          log_ms)
+                          log_us)
                           .count();
                 log_tv.tv_usec
                     = std::chrono::duration_cast<std::chrono::microseconds>(
-                          log_ms)
+                          log_us)
                           .count();
             }
 
@@ -291,7 +290,9 @@ public:
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, string_fragment{}, log_us);
             tid_iter->second.titr_level_stats.update_msg_count(level_val);
-            dst.emplace_back(li.li_file_range.fr_offset, log_us, level_val);
+            auto& ll = dst.back();
+            ll.set_time(log_us);
+            ll.set_level(level_val);
             return scan_match{5};
         }
 
@@ -324,7 +325,8 @@ public:
         auto level_cap = md[2];
 
         if (!level_cap) {
-            lr.lr_end = prefix_len = lr.lr_start + this->lf_date_time.dts_fmt_len;
+            lr.lr_end = prefix_len
+                = lr.lr_start + this->lf_date_time.dts_fmt_len;
         }
         sa.emplace_back(lr, L_TIMESTAMP.value());
 
@@ -481,6 +483,9 @@ public:
     {
         separated_string ss{line_sf};
         ss.with_separator(this->mlf_separator);
+        if (!this->mlf_headers.empty()) {
+            ss.ss_expected_count = this->mlf_headers.size();
+        }
         auto iter = ss.begin();
         if (iter == ss.end()) {
             return scan_error{"empty metric row"};
@@ -566,13 +571,9 @@ public:
         // post-clear scan arrives here with an empty `dst`.  Seed
         // from epoch rather than reading `dst.back()` on an empty
         // vector.
-        const auto prev_time = dst.empty() ? std::chrono::microseconds::zero()
-                                           : dst.back().get_time<>();
-        dst.emplace_back(li.li_file_range.fr_offset, prev_time, LEVEL_STATS);
+        auto& ll = dst.back();
+        ll.set_level(LEVEL_STATS);
         auto retval = this->parse_line(line_sf, dst, sbc);
-        if (!retval.is<scan_match>()) {
-            dst.pop_back();
-        }
         return retval;
     }
 
@@ -599,28 +600,27 @@ public:
         }
 
         if (this->lf_specialized) {
-            if (dst.empty()) {
+            if (dst.size() == 1) {
                 // Reindex (e.g. after `:set-file-timezone`) clears
                 // `lf_index` and starts scanning from byte zero again.
                 // The format is still locked in from the prior pass,
                 // so just reproduce the header's ignored-logline so
                 // the data rows that follow land in `scan_int` with
                 // a valid `dst.back()`.
-                dst.emplace_back(li.li_file_range.fr_offset,
-                                 std::chrono::microseconds::zero(),
-                                 LEVEL_UNKNOWN);
-                dst.back().set_ignore(true);
+                auto& ll = dst.back();
+                ll.set_level(LEVEL_UNKNOWN);
+                ll.set_ignore(true);
                 return scan_match{500};
             }
             // we've locked on, don't need to figure out the header
             return scan_int(dst, li, sbr, sbc);
         }
 
-        if (dst.size() < 1) {
+        if (dst.size() < 2) {
             return scan_no_match{"waiting for header and data row"};
         }
 
-        if (dst.size() > 2) {
+        if (dst.size() > 3) {
             return scan_no_match{
                 "line is after CSV headers and first data row"};
         }
@@ -630,6 +630,7 @@ public:
         this->mlf_headers.clear();
         this->mlf_field_defs.clear();
         this->mlf_separator = ',';
+        auto has_sep_directive = false;
         for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
             auto read_res = lf.read_line(ll_iter);
             if (read_res.isErr()) {
@@ -654,6 +655,7 @@ public:
                 ll_iter->set_time(std::chrono::microseconds::zero());
                 ll_iter->set_level(LEVEL_UNKNOWN);
                 ll_iter->set_ignore(true);
+                has_sep_directive = true;
                 log_info("metrics_log found 'sep=' header: %x",
                          this->mlf_separator);
             } else if (this->mlf_headers.empty()) {
@@ -662,6 +664,15 @@ public:
                 // detector — files without a leading timestamp-named
                 // column are left to other formats.
                 separated_string ss{hdr_sf};
+                if (!has_sep_directive) {
+                    auto detect_res
+                        = separated_string::detect_separator(hdr_sf);
+                    if (detect_res) {
+                        this->mlf_separator = detect_res.value();
+                        log_info("metrics_log detected separator: %x",
+                                 this->mlf_separator);
+                    }
+                }
                 ss.with_separator(this->mlf_separator);
                 std::vector<intern_string_t> fields;
                 for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
@@ -1013,6 +1024,7 @@ public:
 
     bro_log_format()
     {
+        this->lf_multiline = false;
         this->lf_structured = true;
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
@@ -1076,7 +1088,8 @@ public:
         ss.with_separator(this->blf_separator.get()[0]);
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
-            if (iter.index() == 0 && *iter == "#close") {
+            if (iter.index() == 0 && *iter == "#close"_frag) {
+                dst.back().set_ignore(true);
                 return scan_match{2000};
             }
 
@@ -1136,13 +1149,14 @@ public:
         }
 
         if (found_ts == 1) {
+            auto log_us = to_us(tv);
             if (!this->lf_specialized) {
                 for (auto& ll : dst) {
+                    ll.set_time(log_us);
                     ll.set_ignore(true);
                 }
             }
 
-            auto log_us = to_us(tv);
             if (opid_cap.is_valid()) {
                 auto opid_iter = sbc.sbc_opids.insert_op(
                     sbc.sbc_allocator,
@@ -1161,8 +1175,12 @@ public:
                         0, host_cap.to_string());
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, log_us, level);
-            dst.back().merge_bloom_bits(opid_bloom);
+
+            auto& ll = dst.back();
+            ll.set_time(log_us);
+            ll.set_level(level);
+            ll.set_ignore(false);
+            ll.merge_bloom_bits(opid_bloom);
             return scan_match{2000};
         }
         return scan_no_match{"no header found"};
@@ -1177,7 +1195,7 @@ public:
         static const auto SEP_RE
             = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
 
-        if (dst.empty()) {
+        if (dst.size() == 1) {
             auto file_options = lf.get_file_options();
 
             if (file_options) {
@@ -1830,6 +1848,7 @@ public:
 
     w3c_log_format()
     {
+        this->lf_multiline = false;
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
         this->lf_structured = true;
@@ -1917,10 +1936,9 @@ public:
                         }
                     }
                 }
-                dst.emplace_back(li.li_file_range.fr_offset,
-                                 std::chrono::microseconds{0},
-                                 LEVEL_UNKNOWN);
-                dst.back().set_ignore(true);
+                auto& ll = dst.back();
+                ll.set_level(LEVEL_UNKNOWN);
+                ll.set_ignore(true);
                 return scan_match{2000};
             }
 
@@ -1982,10 +2000,14 @@ public:
             auto tv = tm.to_timeval();
             if (!this->lf_specialized) {
                 for (auto& ll : dst) {
+                    ll.set_time(tv);
                     ll.set_ignore(true);
                 }
             }
-            dst.emplace_back(li.li_file_range.fr_offset, to_us(tv), level);
+            auto& ll = dst.back();
+            ll.set_time(tv);
+            ll.set_level(level);
+            ll.set_ignore(false);
             return scan_match{2000};
         }
 
@@ -2008,7 +2030,7 @@ public:
             return scan_incomplete{};
         }
 
-        if (dst.empty()) {
+        if (dst.size() == 1) {
             auto file_options = lf.get_file_options();
 
             if (file_options) {
@@ -2023,7 +2045,7 @@ public:
             return this->scan_int(dst, li, sbr, sbc);
         }
 
-        if (dst.size() <= 2 || dst.size() > 20 || sbr.empty()
+        if (dst.size() < 2 || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
             return scan_no_match{"no header found"};
@@ -2453,7 +2475,7 @@ public:
         bool done = false;
         logfmt_pair_handler lph(this->lf_date_time);
 
-        if (dst.empty()) {
+        if (dst.size() == 1) {
             auto file_options = lf.get_file_options();
 
             if (file_options) {
@@ -2545,8 +2567,9 @@ public:
 
         if (lph.lph_found_time == 1) {
             this->lf_timestamp_flags = lph.lph_time_tm.et_flags;
-            dst.emplace_back(
-                li.li_file_range.fr_offset, to_us(lph.lph_tv), lph.lph_level);
+            auto& ll = dst.back();
+            ll.set_time(lph.lph_tv);
+            ll.set_level(lph.lph_level);
             retval = scan_match{500};
         }
 

@@ -1,0 +1,57 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "tabular_synth_opid_log": {
+        "title": "Tabular log with opid synthesis",
+        "description": "No explicit opid column — the opid description block names the columns whose values are hashed together to form a synthetic opid for the all_opids view.  Also uses non-standard level strings (GREEN/YELLOW/RED) to exercise the format-specific level pattern path rather than the built-in level regex.",
+        "file-type": "tabular",
+        "file-pattern": "logfile_tabular_synth\\.csv",
+        "timestamp-field": "ts",
+        "level-field": "level",
+        "body-field": "msg",
+        "duration-field": "dur_ms",
+        "duration-divisor": 1000.0,
+        "opid": {
+            "description": {
+                "request": {
+                    "format": [
+                        {
+                            "field": "client_ip"
+                        },
+                        {
+                            "field": "user"
+                        }
+                    ]
+                }
+            }
+        },
+        "level": {
+            "info": "GREEN",
+            "warning": "YELLOW",
+            "error": "RED"
+        },
+        "value": {
+            "ts": {
+                "kind": "string",
+                "hidden": true
+            },
+            "level": {
+                "kind": "string",
+                "hidden": true
+            },
+            "client_ip": {
+                "kind": "string",
+                "identifier": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "dur_ms": {
+                "kind": "integer"
+            },
+            "msg": {
+                "kind": "string"
+            }
+        }
+    }
+}

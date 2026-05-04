@@ -54,9 +54,9 @@
 #include "pcrepp/pcre2pp.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
-#include "vtab_module.hh"
 #include "sysclip.hh"
 #include "tlx/container/btree_map.hpp"
+#include "vtab_module.hh"
 
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
@@ -2179,7 +2179,8 @@ timeline_source::update_metric_status()
     // that window instead of just the as-of-end value.  When nothing
     // is selected we fall back to the first sample so at least one
     // value shows up.
-    std::optional<std::pair<std::chrono::microseconds, std::chrono::microseconds>>
+    std::optional<
+        std::pair<std::chrono::microseconds, std::chrono::microseconds>>
         focus_range;
     if (sel && sel.value() < static_cast<ssize_t>(this->ts_time_order.size())) {
         const auto& row = *this->ts_time_order[sel.value()];
@@ -2209,20 +2210,18 @@ timeline_source::update_metric_status()
             // Samples are sorted ascending by timestamp; binary-search
             // for the first sample at-or-after lb and the first one
             // strictly after ub, then min/max across the slice.
-            auto lo = std::lower_bound(
-                m.ms_samples.begin(),
-                m.ms_samples.end(),
-                lb,
-                [](const auto& sample, const auto& ts) {
-                    return sample.first < ts;
-                });
-            auto hi = std::upper_bound(
-                lo,
-                m.ms_samples.end(),
-                ub,
-                [](const auto& ts, const auto& sample) {
-                    return ts < sample.first;
-                });
+            auto lo = std::lower_bound(m.ms_samples.begin(),
+                                       m.ms_samples.end(),
+                                       lb,
+                                       [](const auto& sample, const auto& ts) {
+                                           return sample.first < ts;
+                                       });
+            auto hi = std::upper_bound(lo,
+                                       m.ms_samples.end(),
+                                       ub,
+                                       [](const auto& ts, const auto& sample) {
+                                           return ts < sample.first;
+                                       });
             for (auto it = lo; it != hi; ++it) {
                 if (!range_min || it->second < *range_min) {
                     range_min = it->second;

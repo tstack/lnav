@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: unable to open file: [1m{test_dir}/logfile_bro_http.log.0[0m
+ [1m[31mreason[0m: file contents are out-of-range of time cutoffs “[1m{test_dir}/logfile_bro_http.log.0[0m”
+[1m[31m |      [0m [36m =[0m [36mnote[0m: File time range is “2011-11-03 00:19:26.452687” to “2011-11-03 00:21:13.204466”
+[1m[31m |      [0m [36m =[0m [36mnote[0m: Minimum time cutoff is “2011-11-05 00:19:26.831473”

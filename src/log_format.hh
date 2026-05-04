@@ -358,7 +358,7 @@ public:
     std::optional<subsecond_unit> lf_subsecond_unit;
     intern_string_t lf_time_field;
     std::vector<const char*> lf_timestamp_format;
-    unsigned int lf_timestamp_flags{0};
+    uint32_t lf_timestamp_flags{0};
     timestamp_point_of_reference_t lf_timestamp_point_of_reference{
         timestamp_point_of_reference_t::end};
     std::map<std::string, action_def> lf_action_defs;

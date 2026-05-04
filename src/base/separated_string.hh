@@ -55,9 +55,12 @@ struct separated_string {
         other,  // anything else — text, identifiers, JSON blobs, etc.
     };
 
+    static std::optional<char> detect_separator(const string_fragment& str);
+
     const char* ss_str;
     size_t ss_len;
     char ss_separator{','};
+    std::optional<size_t> ss_expected_count;
 
     separated_string(const char* str, size_t len) : ss_str(str), ss_len(len) {}
 
@@ -119,9 +122,9 @@ struct separated_string {
 
         iterator& operator++()
         {
+            this->i_index += 1;
             this->i_pos = this->i_next_pos;
             this->update();
-            this->i_index += 1;
 
             return *this;
         }

@@ -405,10 +405,10 @@ exttm::from_tv(const timeval& tv)
     return retval;
 }
 
-struct timeval
+timeval
 exttm::to_timeval() const
 {
-    struct timeval retval;
+    timeval retval;
 
     retval.tv_sec = tm2sec(&this->et_tm);
     retval.tv_sec -= this->et_gmtoff;
@@ -438,7 +438,8 @@ time_range::extend_to(const std::chrono::microseconds& tv)
     if (tv < this->tr_begin) {
         // logs aren't always in time-order
         this->tr_begin = tv;
-    } else if (this->tr_end < tv) {
+    }
+    if (this->tr_end < tv) {
         this->tr_end = tv;
     }
 }

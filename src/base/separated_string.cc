@@ -40,6 +40,97 @@ is_suffix_char(char ch)
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '%';
 }
 
+std::optional<char>
+separated_string::detect_separator(const string_fragment& str)
+{
+    struct sep_state {
+        char ss_char;
+        size_t ss_count{0};
+    };
+
+    size_t comma = 0;
+    size_t tab = 0;
+    size_t semi = 0;
+    size_t vbar = 0;
+    size_t space = 0;
+
+    auto in_quote = false;
+    auto has_leading_spaces = false;
+
+    auto cur = str.cursor();
+    while (cur.lookahead() == ' ') {
+        (void) cur.next();
+        has_leading_spaces = true;
+    }
+    while (true) {
+        auto ch = cur.next();
+        if (!ch) {
+            break;
+        }
+
+        auto behind = cur.lookbehind();
+        auto ahead = cur.lookahead();
+        if (in_quote) {
+            if (ch == '"') {
+                in_quote = false;
+            }
+        } else if (ch == '"') {
+            in_quote = true;
+        } else if (ch == '\t') {
+            if (behind && behind != '\t') {
+                tab += 1;
+            }
+        } else if (ch == ',') {
+            if (behind && ahead && behind != ' ' && ahead != ' ') {
+                comma += 1;
+            }
+        } else if (ch == ';') {
+            if (behind && ahead && behind != ' ' && ahead != ' ') {
+                semi += 1;
+            }
+        } else if (ch == '|') {
+            if (behind && ahead && behind != ' ' && ahead != ' ') {
+                vbar += 1;
+            }
+        } else if (ch == ' ') {
+            if (behind && ahead && behind != ' ' && ahead == ' ') {
+                space += 1;
+            }
+        }
+    }
+
+    if (has_leading_spaces) {
+        if (space > 0) {
+            return ' ';
+        }
+        return std::nullopt;
+    }
+
+    if (in_quote) {
+        return std::nullopt;
+    }
+
+    std::array<sep_state, 5> states = {{
+        {',', comma},
+        {'\t', tab},
+        {';', semi},
+        {'|', vbar},
+        {' ', space},
+    }};
+
+    std::sort(states.begin(),
+              states.end(),
+              [](const sep_state& a, const sep_state& b) {
+                  return a.ss_count > b.ss_count;
+              });
+
+    if (states[0].ss_count == 0 || states[0].ss_count == states[1].ss_count) {
+        return std::nullopt;
+    }
+
+    return states[0].ss_char;
+}
+
 std::string
 separated_string::unescape_quoted(string_fragment sf)
 {
@@ -108,7 +199,22 @@ separated_string::iterator::update()
     const char* p = this->i_pos;
     while (p < data_end) {
         if (!in_quotes && *p == sep_ch) {
-            break;
+            if (sep_ch == ' ' && p + 1 < data_end) {
+                if ((!this->i_parent.ss_expected_count
+                     || this->i_index + 1
+                         < this->i_parent.ss_expected_count.value())
+                    && p + 1 < data_end && *(p + 1) == ' ')
+                {
+                    while (p + 1 < data_end && *(p + 1) == ' ') {
+                        p += 1;
+                    }
+                    break;
+                }
+                state = TRAIL_WS;
+                p += 1;
+            } else {
+                break;
+            }
         }
         const char c = *p;
 
@@ -206,7 +312,8 @@ separated_string::iterator::update()
     // end of input, convention says one more empty cell should be
     // emitted.  Defer it to the next update() call via
     // i_pending_ghost so the user still sees the current cell first.
-    if (p < data_end && p + 1 == data_end) {
+    if (p < data_end && p + 1 == data_end && this->i_parent.ss_separator != ' ')
+    {
         this->i_pending_ghost = true;
     }
     this->i_next_pos = (p < data_end) ? p + 1 : data_end;

@@ -10,13 +10,6 @@ Features:
   The `z`/`Z` keys can also be used to increase/decrease the
   context by one in the LOG, TEXT, and TIMELINE views.  Context
   lines are styled using the new `context-line` theme style.
-* Added a log format for the `fsck_apfs` and `fsck_hfs` tools on
-  macOS, covering both the `started`/`completed` lifecycle lines
-  and legacy `run` entries.  This replaces the previous
-  `fsck_hfs_log` format, which only matched the start lines.
-  The new format exposes `device`, `tool`, and `action` fields,
-  groups messages by device in the TIMELINE view, and highlights
-  `error:` lines and `FILESYSTEM CLEAN` status messages.
 * Added a built-in `metrics_log` format that recognizes CSV
   files whose first column header is `Time`/`Timestamp`/`ts`/
   `Date...` and whose subsequent rows begin with a parseable
@@ -43,6 +36,21 @@ Features:
     target any table, including search-table columns.
   - `:clear-timeline-metric <label>` removes metrics.
   Up to four metrics can be added.
+* Added support for "tabular" formats (e.g. CSV, TSV).
+  The format definition for this type of file sets
+  `file-type` to `tabular` and then defines the known
+  columns.  When opening a file of this type, the
+  separator will be automatically detected and the header
+  compared against the columns defined in the tabular
+  formats.  If a good match is found, it will be used as
+  the format for the file.
+* Added a log format for the `fsck_apfs` and `fsck_hfs` tools on
+  macOS, covering both the `started`/`completed` lifecycle lines
+  and legacy `run` entries.  This replaces the previous
+  `fsck_hfs_log` format, which only matched the start lines.
+  The new format exposes `device`, `tool`, and `action` fields,
+  groups messages by device in the TIMELINE view, and highlights
+  `error:` lines and `FILESYSTEM CLEAN` status messages.
 * Log format value definitions now accept a `unit` object
   with `suffix` and `divisor` properties.  `suffix` specifies
   how numeric fields are humanized. `divisor` normalizes

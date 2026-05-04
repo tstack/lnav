@@ -165,7 +165,7 @@ struct exttm {
 
     tm et_tm{};
     int32_t et_nsec{0};
-    unsigned int et_flags{0};
+    uint32_t et_flags{0};
     long et_gmtoff{0};
     long et_orig_gmtoff{0};
 

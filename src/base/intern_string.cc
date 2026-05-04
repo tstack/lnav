@@ -776,8 +776,8 @@ string_fragment::transform_codepoints(
         }
         auto cp = read_res.unwrap();
         auto new_cp = xform(cp);
-        ww898::utf::utf8::write(
-            new_cp, [&out](const char b) { out.push_back(b); });
+        ww898::utf::utf8::write(new_cp,
+                                [&out](const char b) { out.push_back(b); });
     }
     return out;
 }
@@ -814,6 +814,45 @@ string_fragment::column_width() const
         }
     }
 
+    return retval;
+}
+
+std::optional<uint32_t>
+string_fragment::cursor_impl::lookahead() const
+{
+    if (this->ci_next_index >= this->ci_end) {
+        return std::nullopt;
+    }
+
+    int32_t index = this->ci_next_index;
+    auto read_res = ww898::utf::utf8::read(
+        [this, &index]() { return this->ci_string[index++]; });
+    if (read_res.isErr()) {
+        return this->ci_string[this->ci_next_index];
+    }
+    return read_res.unwrap();
+}
+
+std::optional<uint32_t>
+string_fragment::cursor_impl::next()
+{
+    this->ci_lookbehind = this->ci_next_lookbehind;
+    if (this->ci_next_index >= this->ci_end) {
+        return std::nullopt;
+    }
+
+    int32_t index = this->ci_next_index;
+    auto read_res = ww898::utf::utf8::read(
+        [this, &index]() { return this->ci_string[index++]; });
+    uint32_t retval;
+    if (read_res.isErr()) {
+        retval = this->ci_string[this->ci_next_index];
+        this->ci_next_index += 1;
+    } else {
+        retval = read_res.unwrap();
+        this->ci_next_index = index;
+    }
+    this->ci_next_lookbehind = retval;
     return retval;
 }
 

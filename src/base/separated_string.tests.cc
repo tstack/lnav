@@ -380,3 +380,94 @@ TEST_CASE("iterator index tracks cell position")
     }
     CHECK(n == 4);
 }
+
+TEST_CASE("detect separator")
+{
+    {
+        auto input = "a,b,c"_frag;
+        CHECK(separated_string::detect_separator(input) == ',');
+    }
+    {
+        auto input = "abc,def"_frag;
+        CHECK(separated_string::detect_separator(input) == ',');
+    }
+    {
+        auto input = "a;b;c"_frag;
+        CHECK(separated_string::detect_separator(input) == ';');
+    }
+    {
+        auto input = "a  b  c"_frag;
+        CHECK(separated_string::detect_separator(input) == ' ');
+    }
+    {
+        auto input = "a  b  c  "_frag;
+        CHECK(separated_string::detect_separator(input) == ' ');
+    }
+    {
+        auto input = "a\tb\tc"_frag;
+        CHECK(separated_string::detect_separator(input) == '\t');
+    }
+    {
+        auto input = "a|b|c"_frag;
+        CHECK(separated_string::detect_separator(input) == '|');
+    }
+    {
+        auto input = "Hello, World!"_frag;
+        CHECK_FALSE(separated_string::detect_separator(input));
+    }
+    {
+        auto input = "foo bar"_frag;
+        CHECK_FALSE(separated_string::detect_separator(input));
+    }
+    {
+        auto input = "  abc,def"_frag;
+        CHECK_FALSE(separated_string::detect_separator(input));
+    }
+}
+
+TEST_CASE("space separator")
+{
+    {
+        auto input = "a  b b  c  "_frag;
+        separated_string ss(input);
+        ss.with_separator(' ');
+        std::vector<std::string> cells;
+        for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+            cells.push_back((*iter).to_string());
+        }
+        REQUIRE(cells.size() == 3);
+        CHECK(cells[0] == "a");
+        CHECK(cells[1] == "b b");
+        CHECK(cells[2] == "c");
+    }
+    {
+        auto input = "abc  1.2 KB"_frag;
+        separated_string ss(input);
+        ss.with_separator(' ');
+        std::vector<separated_string::iterator> cells;
+        for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+            cells.push_back(iter);
+        }
+        REQUIRE(cells.size() == 2);
+        CHECK(*cells[0] == "abc");
+        CHECK(*cells[1] == "1.2 KB");
+        CHECK(cells[1].kind()
+              == separated_string::cell_kind::number_with_suffix);
+    }
+}
+
+TEST_CASE("space separator with message")
+{
+    auto input = "a  b  c  d  e"_frag;
+    separated_string ss(input);
+    ss.with_separator(' ');
+    ss.ss_expected_count = 3;
+    std::vector<std::string> cells;
+    for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+        cells.push_back((*iter).to_string());
+    }
+    REQUIRE(cells.size() == 3);
+    CHECK(cells[0] == "a");
+    CHECK(cells[1] == "b");
+    CHECK(cells[2] == "c  d  e");
+}

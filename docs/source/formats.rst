@@ -55,6 +55,23 @@ See the following formats that are built into lnav as examples:
 * `cloudflare_log.json <https://github.com/tstack/lnav/blob/master/src/formats/cloudflare_log.json>`_
 * `github_events_log.json <https://github.com/tstack/lnav/blob/master/src/formats/github_events_log.json>`_
 
+.. _tabular_format:
+
+Tabular files
+-------------
+
+Delimited files (CSV, TSV, and similar) can be parsed by declaring
+a format with :code:`"file-type": "tabular"`.  The first row of the
+file must be a header naming each column; the separator is
+auto-detected from the header and is one of comma, tab, semicolon,
+pipe (:code:`|`), or runs of two-or-more spaces.
+
+Each column is mapped to a :code:`value` definition by name.  The
+standard field bindings work the same as for other types of formats.
+A row may use a single :code:`-` or :code:`--` to indicate that
+:code:`opid-field` or :code:`thread-id-field` is absent for that
+row.
+
 logfmt
 ------
 
@@ -194,7 +211,19 @@ object with the following fields:
     The `PCRE2 <http://www.pcre.org>`_ library is used by **lnav** to do all
     regular expression matching.
 
-:json: True if each log line is JSON-encoded.
+:file-type: The shape of the file.  One of:
+
+  :text: Plain-text log files matched by one or more
+    :code:`regex` patterns.  This is the default.
+  :json: Each line is a JSON object (JSON-lines).  The
+    :code:`value` definitions name the JSON properties to
+    extract and :code:`line-format` controls how messages
+    are rendered.
+  :tabular: A delimited file whose first row is a header
+    naming each column.  See :ref:`tabular_format`.
+
+:json: (Deprecated, use :code:`"file-type": "json"` instead.) True if
+  each log line is JSON-encoded.
 
 :converter: An object that describes how an input file can be detected and
   then converted to a form that can be interpreted by **lnav**.  For

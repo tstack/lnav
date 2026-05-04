@@ -1,0 +1,56 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "tabular_test_log": {
+        "title": "Tabular test log",
+        "description": "Exercises tabular format features: timestamp, level, opid (with `-` placeholder), thread, duration, src file/line, and numeric ingest.",
+        "file-type": "tabular",
+        "file-pattern": "logfile_tabular\\.csv",
+        "timestamp-field": "when",
+        "level-field": "level",
+        "body-field": "msg",
+        "opid-field": "opid",
+        "thread-id-field": "thread",
+        "duration-field": "dur_ms",
+        "duration-divisor": 1000.0,
+        "src-file-field": "src_file",
+        "src-line-field": "src_line",
+        "value": {
+            "when": {
+                "kind": "string",
+                "hidden": true
+            },
+            "level": {
+                "kind": "string",
+                "hidden": true
+            },
+            "opid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            },
+            "dur_ms": {
+                "kind": "integer"
+            },
+            "cpu_pct": {
+                "kind": "float"
+            },
+            "queue": {
+                "kind": "integer"
+            },
+            "src_file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_line": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "msg": {
+                "kind": "string"
+            }
+        }
+    }
+}

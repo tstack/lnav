@@ -170,12 +170,14 @@ main(int argc, char* argv[])
                         const_cast<pattern_locks&>(lffs.lffs_pattern_locks),
                         lffs.lffs_value_stats,
                     };
+                    line_info li = {{13}};
+                    index.emplace_back(li.li_file_range.fr_offset,
+                                       std::chrono::microseconds::zero(),
+                                       LEVEL_UNKNOWN);
                     for (iter = root_formats.begin();
                          iter != root_formats.end() && !found;
                          ++iter)
                     {
-                        line_info li = {{13}};
-
                         (*iter)->clear();
                         if ((*iter)
                                 ->scan(*lf, index, li, sbr, sbc)

@@ -760,7 +760,7 @@ static const struct json_path_container sample_handlers = {
 static constexpr json_path_handler_base::enum_value_t TYPE_ENUM[] = {
     {"text"_frag, external_log_format::elf_type_t::ELF_TYPE_TEXT},
     {"json"_frag, external_log_format::elf_type_t::ELF_TYPE_JSON},
-    {"csv"_frag, external_log_format::elf_type_t::ELF_TYPE_CSV},
+    {"tabular"_frag, external_log_format::elf_type_t::ELF_TYPE_TABULAR},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

@@ -1385,7 +1385,7 @@ line_buffer::load_next_line(file_range prev_line)
     retval.li_file_range.fr_metadata.m_valid_utf
         = retval.li_utf8_scan_result.is_valid();
 
-    if (this->lb_line_metadata) {
+    if (this->lb_line_metadata && retval.li_file_range.fr_size > 0) {
         auto sv = std::string_view{
             line_start,
             (size_t) retval.li_file_range.fr_size,

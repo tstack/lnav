@@ -223,6 +223,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_meta.sh \
 	test_metric_log.sh \
+	test_tabular_format.sh \
 	test_mvwattrline.sh \
 	test_prql.sh \
 	test_regex101.sh \
@@ -407,6 +408,8 @@ dist_noinst_DATA = \
 	logfile_metrics_textonly.csv \
 	logfile_metrics_unordered.csv \
 	logfile_not_metrics.csv \
+	logfile_tabular.csv \
+	logfile_tabular_synth.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
 	logfile_mysql_error.0 \
@@ -506,6 +509,8 @@ dist_noinst_DATA = \
 	formats/scripts/redirecting.lnav \
 	formats/scripts/nested-redirecting.lnav \
 	formats/sqldir/init.sql \
+	formats/tabular/tabular_test_log.json \
+	formats/tabular/tabular_synth_opid_log.json \
 	formats/timestamp/format.json \
 	formats/timestamp_value/format.json \
 	formats/xmlmsg/format.json \
@@ -573,6 +578,7 @@ TESTS = \
 	test_log_accel \
 	test_logfile.sh \
 	test_metric_log.sh \
+	test_tabular_format.sh \
     test_regex101.sh \
 	test_reltime \
 	test_scripts.sh \

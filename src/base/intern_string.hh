@@ -783,6 +783,36 @@ struct string_fragment {
 
     uint64_t bloom_bits() const;
 
+    class cursor_impl {
+    public:
+        std::optional<uint32_t> lookbehind() const
+        {
+            return this->ci_lookbehind;
+        }
+
+        std::optional<uint32_t> lookahead() const;
+
+        std::optional<uint32_t> next();
+
+    private:
+        friend string_fragment;
+
+        explicit cursor_impl(const string_fragment& parent)
+            : ci_string(parent.sf_string),
+              ci_end(parent.sf_end),
+              ci_next_index(parent.sf_begin)
+        {
+        }
+
+        const char* ci_string;
+        int32_t ci_end;
+        int32_t ci_next_index;
+        std::optional<uint32_t> ci_lookbehind;
+        std::optional<uint32_t> ci_next_lookbehind;
+    };
+
+    cursor_impl cursor() const { return cursor_impl(*this); }
+
     const char* sf_string;
     int32_t sf_begin;
     int32_t sf_end;

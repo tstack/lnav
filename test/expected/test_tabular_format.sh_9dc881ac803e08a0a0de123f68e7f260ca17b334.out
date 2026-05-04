@@ -1,0 +1,6 @@
+log_time,log_level,log_body
+2026-04-14 10:00:00.000000,info,starting service
+2026-04-14 10:00:01.000000,debug,heartbeat
+2026-04-14 10:00:02.000000,warning,slow query detected
+2026-04-14 10:00:03.000000,error,failed handshake
+2026-04-14 10:00:04.000000,info,retry succeeded
