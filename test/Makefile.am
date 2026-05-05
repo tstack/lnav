@@ -463,6 +463,7 @@ dist_noinst_DATA = \
 	logfile_w3c.5 \
 	logfile_w3c.6 \
 	logfile_w3c_big.0 \
+	logfile_win_events_csv.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	logfile_with_zones.0 \
 	logfile_xml_msg.0 \

@@ -1,0 +1,103 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "windows_event_log": {
+        "title": "Windows Event Log (PowerShell CSV)",
+        "description": "Windows event log exported via `Get-WinEvent | Export-Csv -NoTypeInformation`. Multi-line `Message` cells need to be flattened to a single line before export, e.g. `Get-WinEvent ... | Select-Object *, @{n='Message';e={$_.Message -replace '[\\r\\n]+',' '}} -ExcludeProperty Message | Export-Csv ...`.",
+        "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent",
+        "file-type": "tabular",
+        "timestamp-field": "TimeCreated",
+        "level-field": "LevelDisplayName",
+        "body-field": "Message",
+        "opid-field": "ActivityId",
+        "value": {
+            "Message": {
+                "kind": "string"
+            },
+            "Id": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "Version": {
+                "kind": "integer"
+            },
+            "Qualifiers": {
+                "kind": "integer"
+            },
+            "Level": {
+                "kind": "integer"
+            },
+            "Task": {
+                "kind": "integer"
+            },
+            "Opcode": {
+                "kind": "integer"
+            },
+            "Keywords": {
+                "kind": "string"
+            },
+            "RecordId": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "ProviderName": {
+                "kind": "string",
+                "identifier": true
+            },
+            "ProviderId": {
+                "kind": "string"
+            },
+            "LogName": {
+                "kind": "string",
+                "identifier": true
+            },
+            "ProcessId": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "ThreadId": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "MachineName": {
+                "kind": "string",
+                "identifier": true
+            },
+            "UserId": {
+                "kind": "string",
+                "identifier": true
+            },
+            "TimeCreated": {
+                "kind": "string"
+            },
+            "ActivityId": {
+                "kind": "string",
+                "identifier": true
+            },
+            "RelatedActivityId": {
+                "kind": "string",
+                "identifier": true
+            },
+            "ContainerLog": {
+                "kind": "string"
+            },
+            "MatchedQueryIds": {
+                "kind": "string"
+            },
+            "Bookmark": {
+                "kind": "string"
+            },
+            "LevelDisplayName": {
+                "kind": "string"
+            },
+            "OpcodeDisplayName": {
+                "kind": "string"
+            },
+            "TaskDisplayName": {
+                "kind": "string"
+            },
+            "KeywordsDisplayNames": {
+                "kind": "string"
+            }
+        }
+    }
+}

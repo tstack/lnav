@@ -88,6 +88,7 @@ TIME_FORMATS = \
     "%m/%e/%Y %l:%M:%S %p%z" \
     "%m/%e/%Y %l:%M:%S %p %z" \
     "%m/%e/%Y %I:%M:%S %p" \
+    "%m/%e/%Y %l:%M:%S %p" \
     "%m/%e/%Y %l:%M:%S%p" \
     "%m/%d/%y %H:%M:%S" \
     "%m/%d/%Y %H:%M:%S" \

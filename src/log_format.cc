@@ -2231,7 +2231,7 @@ external_log_format::scan_tabular(logfile& lf,
     auto sf = sbr.to_string_fragment();
     if (this->lf_specialized) {
         auto& ll = dst.back();
-        if (dst.size() <= this->tlf_header_lines) {
+        if (li.li_file_range.fr_offset < this->tlf_header_end) {
             // ignore header
             ll.set_ignore(true);
             return scan_match{1000};
@@ -2318,10 +2318,9 @@ external_log_format::scan_tabular(logfile& lf,
         }
         if (value_index >= this->elf_value_def_read_order.size()) {
             this->finalize_line(dst.back(), lfi, sbc);
+        } else if (sf.startswith("#")) {
+            ll.set_ignore(true);
         } else {
-            if (sf.startswith("#")) {
-                ll.set_ignore(true);
-            }
             ll.set_level(LEVEL_INVALID);
         }
 
@@ -2338,7 +2337,7 @@ external_log_format::scan_tabular(logfile& lf,
 
     auto header_state = tabular_header_state::reading_metadata;
     std::optional<char> sep;
-    for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
+    for (auto ll_iter = lf.begin(); ll_iter != lf.end(); ++ll_iter) {
         auto read_res = lf.read_line(ll_iter);
         if (read_res.isErr()) {
             return scan_no_match{"cannot read header"};
@@ -2356,17 +2355,11 @@ external_log_format::scan_tabular(logfile& lf,
                     return scan_error{"sep= hint missing separator character"};
                 }
                 sep = sep_sf.data()[0];
-                ll_iter->set_time(std::chrono::microseconds::zero());
-                ll_iter->set_level(LEVEL_UNKNOWN);
-                ll_iter->set_ignore(true);
                 log_info("  %ld:found 'sep=' header: %x",
                          std::distance(dst.begin(), ll_iter),
                          sep.value());
             } else if (hdr_sf.startswith("#")) {
-                ll_iter->set_time(std::chrono::microseconds::zero());
-                ll_iter->set_level(LEVEL_UNKNOWN);
-                ll_iter->set_ignore(true);
-                log_info("  %ld:ignoring comment -- %.*s",
+                log_info("  %ld:comment header -- %.*s",
                          std::distance(dst.begin(), ll_iter),
                          hdr_sf.length(),
                          hdr_sf.data());
@@ -2382,10 +2375,6 @@ external_log_format::scan_tabular(logfile& lf,
                 ss.ss_separator = sep.value();
                 uint32_t hits = 0, misses = 0;
 
-                log_info("  %ld:found header -- %.*s",
-                         std::distance(dst.begin(), ll_iter),
-                         hdr_sf.length(),
-                         hdr_sf.data());
                 this->elf_value_def_read_order.clear();
                 for (auto hdr_name : ss) {
                     auto value_iter
@@ -2403,13 +2392,25 @@ external_log_format::scan_tabular(logfile& lf,
                 if (hits <= 2) {
                     return scan_no_match{"not enough columns matched"};
                 }
+
+                for (auto prev_iter = dst.begin(); prev_iter != ll_iter;
+                     ++prev_iter)
+                {
+                    prev_iter->set_time(std::chrono::microseconds::zero());
+                    prev_iter->set_level(LEVEL_UNKNOWN);
+                    prev_iter->set_ignore(true);
+                }
+
+                log_info("  %ld:found column header -- %.*s",
+                         std::distance(dst.begin(), ll_iter),
+                         hdr_sf.length(),
+                         hdr_sf.data());
+
                 header_state = tabular_header_state::have_column_header;
-                auto& ll = dst.back();
-                ll.set_ignore(true);
-                ll.set_level(LEVEL_INVALID);
+                ll_iter->set_ignore(true);
+                ll_iter->set_level(LEVEL_INVALID);
                 this->tlf_separator = sep.value();
-                this->tlf_header_lines
-                    = std::distance(dst.begin(), ll_iter) + 1;
+                this->tlf_header_end = li.li_file_range.next_offset();
                 return scan_match{1000, misses, hits};
             }
         }
@@ -4893,7 +4894,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             yajl_config(
                 this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
         } else if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
-            this->lf_multiline = false;
             this->lf_structured = true;
         }
     } else {

@@ -861,15 +861,25 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
             last_time = to_us(li.li_timestamp);
             last_level = li.li_level;
-        } else if (!this->lf_index.empty()) {
-            const auto& ll = this->lf_index.back();
+        } else {
+            for (auto riter = this->lf_index.rbegin();
+                 riter != this->lf_index.rend();
+                 ++riter)
+            {
+                if (riter->is_ignored()
+                    || riter->get_msg_level() == LEVEL_INVALID)
+                {
+                    continue;
+                }
 
-            /*
-             * Assume this line is part of the previous one(s) and copy the
-             * metadata over.
-             */
-            last_time = ll.get_time();
-            last_level = ll.get_msg_level();
+                /*
+                 * Assume this line is part of the previous one(s) and copy the
+                 * metadata over.
+                 */
+                last_time = riter->get_time();
+                last_level = riter->get_msg_level();
+                break;
+            }
         }
         this->lf_index.emplace_back(
             li.li_file_range.fr_offset, last_time, last_level);
@@ -1313,10 +1323,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
     } else if (found.is<log_format::scan_no_match>()) {
         if (this->lf_format.get() != nullptr) {
+            auto& ll = this->lf_index.back();
             if (this->lf_format->lf_multiline) {
-                this->lf_index.back().set_continued(true);
+                if (this->lf_index.size() > 1) {
+                    auto& prev_ll = this->lf_index[this->lf_index.size() - 2];
+                    if (prev_ll.is_continued() || !prev_ll.is_ignored()) {
+                        ll.set_continued(true);
+                    }
+                }
             } else {
-                this->lf_index.back().set_level(LEVEL_INVALID);
+                ll.set_level(LEVEL_INVALID);
             }
         }
     }

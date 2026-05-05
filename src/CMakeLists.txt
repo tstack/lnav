@@ -119,6 +119,7 @@ set(TIME_FORMATS
         "%m/%e/%Y %l:%M:%S %p%z"
         "%m/%e/%Y %l:%M:%S %p %z"
         "%m/%e/%Y %I:%M:%S %p"
+        "%m/%e/%Y %l:%M:%S %p"
         "%m/%e/%Y %l:%M:%S%p"
         "%m/%d/%y %H:%M:%S"
         "%m/%d/%Y %H:%M:%S"
@@ -240,6 +241,7 @@ set(FORMAT_FILES
         formats/vmw_vc_svc_log.json
         formats/vmw_py_log.json
         formats/vpostgres_log.json
+        formats/windows_event_log.json
         formats/xmlrpc_log.json
         formats/zookeeper_log.json
 )

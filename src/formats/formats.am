@@ -68,6 +68,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vmw_py_log.json \
     $(srcdir)/%reldir%/vpostgres_log.json \
     $(srcdir)/%reldir%/web_robot_log.json \
+    $(srcdir)/%reldir%/windows_event_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
     $(srcdir)/%reldir%/zap_console_log.json \
     $(srcdir)/%reldir%/zellij_log.json \

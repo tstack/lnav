@@ -829,3 +829,6 @@ run_cap_test ${lnav_test} -n \
     -c ':set-min-log-level error' \
     -c ':filter-context 1' \
     ${test_dir}/logfile_postgres.1
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_win_events_csv.0

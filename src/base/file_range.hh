@@ -67,7 +67,7 @@ public:
         this->fr_size = 0;
     }
 
-    ssize_t next_offset() const { return this->fr_offset + this->fr_size; }
+    file_ssize_t next_offset() const { return this->fr_offset + this->fr_size; }
 
     bool empty() const { return this->fr_size == 0; }
 };

@@ -1501,7 +1501,7 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
                                 logfile* lf,
                                 logfile::iterator ll)
 {
-    if (ll->is_continued()
+    if (!ll->is_message()
         || ll->get_time<>() == std::chrono::microseconds::zero())
     {
         return;
