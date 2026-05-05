@@ -523,7 +523,7 @@ public:
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
     shared_buffer jlf_share_manager;
 
-    file_ssize_t tlf_header_end;
+    file_ssize_t tlf_header_end{0};
     char tlf_separator{','};
 
 private:

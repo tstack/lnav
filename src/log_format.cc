@@ -2356,11 +2356,11 @@ external_log_format::scan_tabular(logfile& lf,
                 }
                 sep = sep_sf.data()[0];
                 log_info("  %ld:found 'sep=' header: %x",
-                         std::distance(dst.begin(), ll_iter),
+                         std::distance(lf.begin(), ll_iter),
                          sep.value());
             } else if (hdr_sf.startswith("#")) {
                 log_info("  %ld:comment header -- %.*s",
-                         std::distance(dst.begin(), ll_iter),
+                         std::distance(lf.begin(), ll_iter),
                          hdr_sf.length(),
                          hdr_sf.data());
             } else {
@@ -2393,7 +2393,7 @@ external_log_format::scan_tabular(logfile& lf,
                     return scan_no_match{"not enough columns matched"};
                 }
 
-                for (auto prev_iter = dst.begin(); prev_iter != ll_iter;
+                for (auto prev_iter = lf.begin(); prev_iter != ll_iter;
                      ++prev_iter)
                 {
                     prev_iter->set_time(std::chrono::microseconds::zero());
@@ -2402,7 +2402,7 @@ external_log_format::scan_tabular(logfile& lf,
                 }
 
                 log_info("  %ld:found column header -- %.*s",
-                         std::distance(dst.begin(), ll_iter),
+                         std::distance(lf.begin(), ll_iter),
                          hdr_sf.length(),
                          hdr_sf.data());
 
