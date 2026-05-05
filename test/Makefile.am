@@ -692,6 +692,7 @@ distclean-local:
 	$(RM_V)rm -rf regex101-home
 	$(RM_V)rm -rf events-home
 	$(RM_V)rm -rf support-dump
+	$(RM_V)rm -rf support-bookmarks
 	$(RM_V)rm -rf tabular-sessions
 	$(RM_V)rm -rf tui-home
 	$(RM_V)rm -rf ../installer-test-home
