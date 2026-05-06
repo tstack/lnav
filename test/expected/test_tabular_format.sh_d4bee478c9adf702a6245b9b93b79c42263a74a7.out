@@ -1,0 +1,6 @@
+log_line,log_thread_id,log_duration,log_src_file,log_src_line
+0,t1,0.15,server.cc,42
+1,t1,0.02,server.cc,55
+2,t2,4.2,handler.cc,103
+3,<NULL>,0.099,handler.cc,210
+4,t1,0.008,server.cc,77

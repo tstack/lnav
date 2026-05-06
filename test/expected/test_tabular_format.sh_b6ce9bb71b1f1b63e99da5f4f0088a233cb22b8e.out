@@ -1,5 +1,5 @@
-[33m⋮[0m,[33m⋮[0m,op1,t1,150,12.5,5,server.cc,42,starting service
-[33m⋮[0m,[33m⋮[0m,-,t1,20,11.9,3,server.cc,55,heartbeat
-[33m⋮[0m[33m,[0m[33m⋮[0m[33m,[0m[33mop1[0m[33m,[0m[33mt2[0m[33m,4200,18.7,12,[0m[33mhandler.cc[0m[33m,103,[0m[33mslow query detected[0m
-[31m⋮[0m[31m,[0m[31m⋮[0m[31m,[0m[31mop2[0m[31m,[0m[31m-[0m[31m,99,99.9,42,[0m[31mhandler.cc[0m[31m,210,[0m[31mfailed handshake[0m
-[33m⋮[0m,[33m⋮[0m,op2,t1,8,13.0,4,server.cc,77,retry succeeded
+[33m⋮[0m,[33m⋮[0m,op1,t1,150,12.5,5,[4ms[0merver.cc,42,starting service
+[33m⋮[0m,[33m⋮[0m,-,t1,20,11.9,3,[4ms[0merver.cc,55,heartbeat
+[33m⋮[0m[33m,[0m[33m⋮[0m[33m,[0m[33mop1[0m[33m,[0m[33mt2[0m[33m,[0m[33m4200[0m[33m,18.7,12,[0m[4m[33mh[0m[33mandler.cc[0m[33m,[0m[33m103[0m[33m,[0m[33mslow query detected[0m
+[31m⋮[0m[31m,[0m[31m⋮[0m[31m,[0m[31mop2[0m[31m,[0m[31m-[0m[31m,[0m[31m99[0m[31m,99.9,42,[0m[4m[31mh[0m[31mandler.cc[0m[31m,[0m[31m210[0m[31m,[0m[31mfailed handshake[0m
+[33m⋮[0m,[33m⋮[0m,op2,t1,8,13.0,4,[4ms[0merver.cc,77,retry succeeded

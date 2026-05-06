@@ -1,0 +1,12 @@
+10/22/2018 04:13:27 AM  docker  first event
+  Id: 1001
+  Version: 1
+  CustomTag: alpha
+  SomeNumber: 42
+  Floaty: 3.140000
+10/22/2018 04:13:28 AM  docker  second event
+  Id: 1002
+  Version: 2
+  CustomTag: beta
+  SomeNumber: 100
+  Floaty: 2.710000

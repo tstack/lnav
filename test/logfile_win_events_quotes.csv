@@ -1,0 +1,5 @@
+#TYPE Selected.System.Diagnostics.Eventing.Reader.EventLogRecord
+"TimeCreated","ProviderName","LevelDisplayName","Message","Id","ActivityId","ThreadId"
+"10/22/2018  4:13:27 AM","docker","Information","User said ""hi""","1001","op""1","42"
+"10/22/2018  4:13:28 AM","docker","Warning","msg, with comma","1002","op""1","43"
+"10/22/2018  4:13:29 AM","docker","Information","plain message","1003","op2","44"

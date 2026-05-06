@@ -442,6 +442,8 @@ public:
     static const intern_string_t LOG_LEVEL_STR;
     static const intern_string_t LOG_OPID_STR;
     static const intern_string_t LOG_THREAD_ID_STR;
+    static const intern_string_t LOG_RAW_TEXT_STR;
+    static const intern_string_t LOG_EXTRA_FIELDS_STR;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;

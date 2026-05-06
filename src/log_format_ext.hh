@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/separated_string.hh"
 #include "hasher.hh"
 #include "log_format.hh"
 #include "log_search_table_fwd.hh"
@@ -501,7 +502,7 @@ public:
                      const string_fragment& sf);
 
     logline_value_meta get_value_meta(intern_string_t field_name,
-                                      value_kind_t kind);
+                                      value_kind_t kind) const;
 
     logline_value_meta get_value_meta(yajlpp_parse_context* ypc,
                                       const value_def* vd,
@@ -518,6 +519,7 @@ public:
     line_range jlf_cached_sub_range;
     subline_options jlf_cached_opts{};
     std::vector<off_t> jlf_line_offsets;
+    std::vector<bool> jlf_used_values;
     attr_line_t jlf_attr_line;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
@@ -525,9 +527,45 @@ public:
 
     file_ssize_t tlf_header_end{0};
     char tlf_separator{','};
+    size_t tlf_extra_count{0};
 
 private:
     const intern_string_t elf_name;
+
+    void rewrite_tabular_subline(const log_format_file_state& lffs,
+                                 const logline& ll,
+                                 shared_buffer_ref& sbr,
+                                 subline_options opts);
+
+    void compute_subline_offsets();
+
+    void share_rewritten_subline(const logline& ll,
+                                 shared_buffer_ref& sbr,
+                                 subline_options opts);
+
+    void apply_text_transform(size_t begin_size,
+                              json_format_element::transform_t transform);
+
+    bool emit_overflow(const log_format_file_state& lffs,
+                       const json_format_element& jfe,
+                       const value_def* vd,
+                       std::string& str);
+
+    void emit_detail_block(const std::vector<bool>& used_values,
+                           int& sub_offset);
+
+    void render_line_format(const log_format_file_state& lffs,
+                            const logline& ll,
+                            subline_options opts,
+                            const exttm* ts_extra_bits,
+                            std::vector<bool>& used_values,
+                            int& sub_offset);
+
+    void process_csv_cell(logline_value_vector& values,
+                          string_attrs_t* sa,
+                          size_t value_index,
+                          const separated_string::iterator& it,
+                          shared_buffer_ref& sbr) const;
 };
 
 #endif

@@ -1,0 +1,4 @@
+log_opid,log_body
+"op""1","User said ""hi"""
+"op""1","msg, with comma"
+op2,plain message

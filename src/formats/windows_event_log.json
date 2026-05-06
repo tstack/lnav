@@ -9,6 +9,21 @@
         "level-field": "LevelDisplayName",
         "body-field": "Message",
         "opid-field": "ActivityId",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            "  ",
+            {
+                "field": "ProviderName",
+                "default-value": "-",
+                "auto-width": true
+            },
+            "  ",
+            {
+                "field": "Message"
+            }
+        ],
         "value": {
             "Message": {
                 "kind": "string"

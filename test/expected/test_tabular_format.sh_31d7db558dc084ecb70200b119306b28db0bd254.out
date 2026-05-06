@@ -1,0 +1,3 @@
+log_line,log_extra_fields
+0,"{""Note"":""She said \""hi\"""",""Tag\""Key"":""alpha"",""Empty"":null}"
+5,"{""Note"":""with, comma"",""Tag\""Key"":""beta"",""Empty"":""val""}"

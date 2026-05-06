@@ -144,11 +144,15 @@ log_data_helper::load_line(content_line_t line, bool allow_middle)
                 auto* buf = allocator.allocate(
                     ldh_line_value.lv_meta.lvm_name.size() + 2);
 
-                auto rc = fmt::format_to(
+                auto* rc = fmt::format_to(
                     buf, FMT_STRING("/{}"), ldh_line_value.lv_meta.lvm_name);
                 *rc = '\0';
+                auto ns = ldh_line_value.lv_meta.lvm_struct_name;
+                if (ns.empty()) {
+                    ns = log_format::LOG_RAW_TEXT_STR;
+                }
                 this->ldh_extra_json[intern_string::lookup(buf, -1)]
-                    = ldh_line_value.to_string();
+                    = std::make_pair(ns, ldh_line_value.to_string());
                 continue;
             }
 

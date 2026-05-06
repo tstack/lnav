@@ -693,18 +693,20 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     for (const auto& extra_pair : this->fos_log_helper.ldh_extra_json) {
         auto qname = lnav::sql::mprintf("%Q", extra_pair.first.c_str());
-        auto key_line = attr_line_t("   jget(log_raw_text, ")
+        auto key_line = attr_line_t("   jget(")
+                            .append(extra_pair.second.first)
+                            .append(", ")
                             .append(qname.in())
                             .append(")")
                             .move();
         readline_sql_highlighter(
             key_line, lnav::sql::dialect::sqlite, std::nullopt);
         auto key_size = key_line.length();
-        key_line.append(" = ").append(scrub_ws(extra_pair.second));
+        key_line.append(" = ").append(scrub_ws(extra_pair.second.second));
         this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
                                             row_info{
                                                 std::nullopt,
-                                                extra_pair.second,
+                                                extra_pair.second.second,
                                             });
         this->fos_lines.emplace_back(key_line);
         this->add_key_line_attrs(key_size - 3);

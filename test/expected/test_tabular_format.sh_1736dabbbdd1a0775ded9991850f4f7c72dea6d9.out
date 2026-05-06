@@ -1,0 +1,15 @@
+10/22/2018 04:13:27 AM  docker  User said "hi"
+  LevelDisplayName: Information
+  Id: 1001
+  ActivityId: op"1
+  ThreadId: 42
+[33m10/22/2018 04:13:28 AM[0m[33m  [0m[33mdocker[0m[33m  [0m[33mmsg, with comma[0m
+[33m  LevelDisplayName: [0m[33mWarning[0m
+[33m  Id: [0m[33m1002[0m
+[33m  ActivityId: [0m[33mop"1[0m
+[33m  ThreadId: [0m[33m43[0m
+10/22/2018 04:13:29 AM  docker  plain message
+  LevelDisplayName: Information
+  Id: 1003
+  ActivityId: op2
+  ThreadId: 44

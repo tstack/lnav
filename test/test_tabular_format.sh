@@ -57,3 +57,93 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT total, errors, warnings FROM all_opids ORDER BY total DESC, errors" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_tabular_synth.csv
+
+# Builtin scalar columns: thread/duration/src_file/src_line cells should
+# flow through process_csv_cell into log_thread_id / log_duration /
+# log_src_file / log_src_line.  Row 3's `-` thread placeholder must
+# null-out log_thread_id; durations come back in seconds (dur_ms /
+# elf_duration_divisor).
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_thread_id, log_duration, log_src_file, log_src_line FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular.csv
+
+# Detail block: covers two cases —
+#  - declared columns the windows_event_log format does NOT reference in
+#    its line-format (Id, Version): these go through process_csv_cell's
+#    declared branch and use the format's declared kind (integer).
+#  - header columns the format doesn't declare at all (CustomTag,
+#    SomeNumber, Floaty): synthesized via get_value_meta() with kinds
+#    derived from separated_string::cell_kind.  Floaty's `3.14`
+#    round-trips through VALUE_FLOAT and renders with %lf precision,
+#    matching the JSON path's behavior for typed numerics.
+# Both end up in the rewritten subline's detail block; `log_text` returns
+# the full multi-line content per row.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_text FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_extras.csv
+
+# Detail block default render: scan_tabular emits continued sub-loglines
+# for every detail-block cell so the listview can navigate them.  `lnav
+# -n` prints each sub-line, so both declared-not-consumed columns and
+# extras appear as `  name: value` rows beneath each event.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_win_events_extras.csv
+
+# CSV `""` escapes: a body cell `"User said ""hi"""` and an opid cell
+# `"op""1"` should both round-trip to their canonical (single-quote)
+# form in the rendered line, the log_body column, and downstream
+# bookkeeping (opid grouping in all_opids).
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_win_events_quotes.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_opid, log_body FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_quotes.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT opid, total FROM all_opids ORDER BY opid" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_quotes.csv
+
+# log_extra_fields column: undeclared header columns (CustomTag,
+# SomeNumber, Floaty) get rolled up into a JSON object on the
+# per-format vtab.  Type fidelity comes from separated_string's
+# cell_kind classifier — strings stay strings, integers numeric, and
+# floats round-trip through VALUE_FLOAT.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_extra_fields FROM windows_event_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_extras.csv
+
+# Same column drilled with json_extract(): proves the emitted JSON is
+# well-formed and that SQLite's json1 sees the typed values back out
+# (string, integer, float).
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT json_extract(log_extra_fields, '\$.CustomTag') AS tag, json_extract(log_extra_fields, '\$.SomeNumber') AS num, json_extract(log_extra_fields, '\$.Floaty') AS flt FROM windows_event_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_extras.csv
+
+# Quote escaping in extras: an undeclared column whose name and value
+# both contain CSV `""` escapes (`Tag"Key`, `She said "hi"`) must come
+# back through log_extra_fields as a JSON object with the embedded
+# quotes properly `\"`-escaped, and an empty cell must become JSON
+# null rather than an empty string.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_extra_fields FROM windows_event_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_extras_quotes.csv
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_win_events_extras_quotes.csv
+
+# Format with no extras: tabular_test_log declares every header
+# column, so tlf_extra_count is 0 and log_extra_fields stays NULL.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_extra_fields FROM tabular_test_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular.csv

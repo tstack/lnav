@@ -1822,16 +1822,38 @@ dist_noinst_DATA = \
     test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.out \
     test_tabular_format.sh_0a16ddca642c2016495c892311167bbc5e790fa6.err \
     test_tabular_format.sh_0a16ddca642c2016495c892311167bbc5e790fa6.out \
+    test_tabular_format.sh_1736dabbbdd1a0775ded9991850f4f7c72dea6d9.err \
+    test_tabular_format.sh_1736dabbbdd1a0775ded9991850f4f7c72dea6d9.out \
+    test_tabular_format.sh_2b3d59305fdb5f1cb6506274c647b8faad69e52a.err \
+    test_tabular_format.sh_2b3d59305fdb5f1cb6506274c647b8faad69e52a.out \
     test_tabular_format.sh_2b8622eb5592bae9d958cfa0d44a1c29973bc7a0.err \
     test_tabular_format.sh_2b8622eb5592bae9d958cfa0d44a1c29973bc7a0.out \
+    test_tabular_format.sh_31d7db558dc084ecb70200b119306b28db0bd254.err \
+    test_tabular_format.sh_31d7db558dc084ecb70200b119306b28db0bd254.out \
+    test_tabular_format.sh_46436f282b7388283df7fcda8a6199b49c57d966.err \
+    test_tabular_format.sh_46436f282b7388283df7fcda8a6199b49c57d966.out \
+    test_tabular_format.sh_6bf18074da9e323c57631d0393bb86f9f0b23649.err \
+    test_tabular_format.sh_6bf18074da9e323c57631d0393bb86f9f0b23649.out \
+    test_tabular_format.sh_809e2ecdddd3ca05c9b11694e82cfebdc690cf46.err \
+    test_tabular_format.sh_809e2ecdddd3ca05c9b11694e82cfebdc690cf46.out \
+    test_tabular_format.sh_8adbcacd2975bb46b9906920c13222d8773576f1.err \
+    test_tabular_format.sh_8adbcacd2975bb46b9906920c13222d8773576f1.out \
     test_tabular_format.sh_9023a68f2eb5c958cc94d445b472c2af35c6c14d.err \
     test_tabular_format.sh_9023a68f2eb5c958cc94d445b472c2af35c6c14d.out \
     test_tabular_format.sh_9dc881ac803e08a0a0de123f68e7f260ca17b334.err \
     test_tabular_format.sh_9dc881ac803e08a0a0de123f68e7f260ca17b334.out \
     test_tabular_format.sh_b6ce9bb71b1f1b63e99da5f4f0088a233cb22b8e.err \
     test_tabular_format.sh_b6ce9bb71b1f1b63e99da5f4f0088a233cb22b8e.out \
+    test_tabular_format.sh_b91531895bb3a8d876b7eb30cc5bee310b6b2e64.err \
+    test_tabular_format.sh_b91531895bb3a8d876b7eb30cc5bee310b6b2e64.out \
     test_tabular_format.sh_cb30a00e9516f34a6967940bb1cea498660b05f8.err \
     test_tabular_format.sh_cb30a00e9516f34a6967940bb1cea498660b05f8.out \
+    test_tabular_format.sh_d4bee478c9adf702a6245b9b93b79c42263a74a7.err \
+    test_tabular_format.sh_d4bee478c9adf702a6245b9b93b79c42263a74a7.out \
+    test_tabular_format.sh_f832a3d06d425b2a44565dc0a2b34fbb5cd95361.err \
+    test_tabular_format.sh_f832a3d06d425b2a44565dc0a2b34fbb5cd95361.out \
+    test_tabular_format.sh_fbf90222fed7c3052d63a6b3bc381507a1790596.err \
+    test_tabular_format.sh_fbf90222fed7c3052d63a6b3bc381507a1790596.out \
     test_text_file.sh_02a0514e0e384e5511ae202ea519552ba04030ed.err \
     test_text_file.sh_02a0514e0e384e5511ae202ea519552ba04030ed.out \
     test_text_file.sh_08d527b6655b80eb3fc9f19d502b08ce28d71c80.err \

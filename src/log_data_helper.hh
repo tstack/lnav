@@ -85,7 +85,8 @@ public:
     std::vector<std::pair<std::string, std::string>> ldh_src_vars;
     attr_line_t ldh_attr_line;
     logline_value_vector ldh_line_values;
-    std::map<const intern_string_t, std::string> ldh_extra_json;
+    std::map<const intern_string_t, std::pair<intern_string_t, std::string>>
+        ldh_extra_json;
     std::map<const intern_string_t, json_walk_collector> ldh_json_pairs;
     std::map<std::pair<const intern_string_t, std::string>, std::string>
         ldh_xml_pairs;

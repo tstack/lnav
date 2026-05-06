@@ -95,6 +95,10 @@ const intern_string_t log_format::LOG_OPID_STR
     = intern_string::lookup("log_opid");
 const intern_string_t log_format::LOG_THREAD_ID_STR
     = intern_string::lookup("log_thread_id");
+const intern_string_t log_format::LOG_RAW_TEXT_STR
+    = intern_string::lookup("log_raw_text");
+const intern_string_t log_format::LOG_EXTRA_FIELDS_STR
+    = intern_string::lookup("log_extra_fields");
 
 static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
     | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
@@ -2221,6 +2225,24 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
     return timestamp_outcome::ok;
 }
 
+// Returns the canonical text of a CSV cell.  separated_string's
+// iterator preserves embedded `""` escape pairs verbatim; this
+// collapses them back to a single `"` when present.  The fast path
+// returns `field_sf` unchanged so cells without an embedded quote
+// stay zero-copy; only cells that actually need unescaping get
+// allocated out of `alloc`.
+template<typename A>
+static string_fragment
+unescape_csv_cell(string_fragment field_sf, A alloc)
+{
+    if (!field_sf.find('"').has_value()) {
+        return field_sf;
+    }
+    return string_fragment::from_str(
+               separated_string::unescape_quoted(field_sf))
+        .to_owned(alloc);
+}
+
 log_format::scan_result_t
 external_log_format::scan_tabular(logfile& lf,
                                   std::vector<logline>& dst,
@@ -2270,11 +2292,16 @@ external_log_format::scan_tabular(logfile& lf,
                     lvs.lvs_width = field_sf.length();
                 }
             }
+            // CSV cells may carry a `""`-escaped double-quote literal;
+            // collapse those before any downstream comparison or
+            // conversion so e.g. a level field of `"WARN"` matches and
+            // an opid of `"a""b"` becomes the canonical `a"b`.
+            auto canon_sf = unescape_csv_cell(field_sf, sbc.sbc_allocator);
             if (vd->vd_meta.lvm_name == this->lf_timestamp_field) {
                 exttm log_time_tm;
                 timeval log_tv;
                 if (this->ingest_timestamp(
-                        field_sf, &lf, dst, log_time_tm, log_tv, sbc)
+                        canon_sf, &lf, dst, log_time_tm, log_tv, sbc)
                     == timestamp_outcome::ok)
                 {
                     ll.set_time(log_tv);
@@ -2282,38 +2309,38 @@ external_log_format::scan_tabular(logfile& lf,
                     ll.set_level(LEVEL_INVALID);
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_level_field) {
-                ll.set_level(this->convert_level(field_sf, &sbc));
+                ll.set_level(this->convert_level(canon_sf, &sbc));
             } else if (vd->vd_meta.lvm_name == this->elf_opid_field) {
-                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
-                    lfi.lfi_opid_cap = field_sf;
+                if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
+                    lfi.lfi_opid_cap = canon_sf;
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_thread_id_field) {
-                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
-                    lfi.lfi_tid_cap = field_sf;
+                if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
+                    lfi.lfi_tid_cap = canon_sf;
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_duration_field) {
-                if (!field_sf.empty()) {
-                    lfi.lfi_duration_cap = field_sf;
+                if (!canon_sf.empty()) {
+                    lfi.lfi_duration_cap = canon_sf;
                 }
             } else if (vd->vd_meta.lvm_name == this->lf_start_timestamp_field) {
-                if (!field_sf.empty()) {
-                    lfi.lfi_start_ts_cap = field_sf;
+                if (!canon_sf.empty()) {
+                    lfi.lfi_start_ts_cap = canon_sf;
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_src_file_field) {
-                if (!field_sf.empty()) {
-                    lfi.lfi_src_file_cap = field_sf;
+                if (!canon_sf.empty()) {
+                    lfi.lfi_src_file_cap = canon_sf;
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_src_line_field) {
-                if (!field_sf.empty()) {
-                    lfi.lfi_src_line_cap = field_sf;
+                if (!canon_sf.empty()) {
+                    lfi.lfi_src_line_cap = canon_sf;
                 }
             } else {
-                ingest_numeric_value(*vd, field_sf, std::nullopt, sbc);
+                ingest_numeric_value(*vd, canon_sf, std::nullopt, sbc);
             }
-            if (!field_sf.empty()
+            if (!canon_sf.empty()
                 && opid_desc_field_names.count(vd->vd_meta.lvm_name) > 0)
             {
-                lfi.lfi_opid_desc_frags.push_back(field_sf);
+                lfi.lfi_opid_desc_frags.push_back(canon_sf);
             }
         }
         if (value_index >= this->elf_value_def_read_order.size()) {
@@ -2322,6 +2349,35 @@ external_log_format::scan_tabular(logfile& lf,
             ll.set_ignore(true);
         } else {
             ll.set_level(LEVEL_INVALID);
+        }
+
+        if (!this->jlf_line_format.empty()) {
+            static const intern_string_t body_name
+                = intern_string::lookup("body", -1);
+            int sub_line_count = 1 + this->jlf_line_format_init_count;
+            for (size_t lpc = 0; lpc < this->elf_value_def_read_order.size()
+                 && lpc < value_index;
+                 lpc++)
+            {
+                const auto* vd = this->elf_value_def_read_order[lpc].second;
+                if (vd == nullptr) {
+                    if (!this->jlf_hide_extra) {
+                        sub_line_count += 1;
+                    }
+                    continue;
+                }
+                if (!vd->vd_meta.is_hidden() && !vd->vd_line_format_index
+                    && vd->vd_meta.lvm_name != body_name)
+                {
+                    sub_line_count += 1;
+                }
+            }
+            auto sub_ll = ll.clone();
+            sub_ll.set_continued(true);
+            for (int lpc = 1; lpc < sub_line_count; lpc++) {
+                sub_ll.set_sub_offset(lpc);
+                dst.emplace_back(std::move(sub_ll));
+            }
         }
 
         return scan_match{1000};
@@ -2377,15 +2433,23 @@ external_log_format::scan_tabular(logfile& lf,
 
                 this->elf_value_def_read_order.clear();
                 for (auto hdr_name : ss) {
+                    // Header cells may be CSV-quoted (e.g. an export
+                    // wrapping a name that contains the separator or
+                    // doubled quotes); collapse `""` back to `"` so the
+                    // lookup matches what the format declares.
+                    auto canon_hdr
+                        = unescape_csv_cell(hdr_name, this->elf_allocator);
                     auto value_iter
-                        = this->elf_value_def_frag_map.find(hdr_name);
+                        = this->elf_value_def_frag_map.find(canon_hdr);
                     if (value_iter != this->elf_value_def_frag_map.end()) {
                         hits += 1;
                         this->elf_value_def_read_order.emplace_back(
                             value_iter->first, value_iter->second);
                     } else {
                         misses += 1;
-                        this->elf_value_def_read_order.emplace_back(""_frag,
+                        auto owned_name
+                            = canon_hdr.to_owned(this->elf_allocator);
+                        this->elf_value_def_read_order.emplace_back(owned_name,
                                                                     nullptr);
                     }
                 }
@@ -2411,6 +2475,7 @@ external_log_format::scan_tabular(logfile& lf,
                 ll_iter->set_level(LEVEL_INVALID);
                 this->tlf_separator = sep.value();
                 this->tlf_header_end = li.li_file_range.next_offset();
+                this->tlf_extra_count = misses;
                 return scan_match{1000, misses, hits};
             }
         }
@@ -2623,39 +2688,22 @@ external_log_format::annotate(logfile* lf,
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     auto& line = values.lvv_sbr;
-    line_range lr;
 
     line.erase_ansi();
-    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR
+        && this->jlf_line_format.empty())
+    {
+        // Tabular format without line-format: get_subline left the row
+        // raw, so parse it here directly.
         auto sf = line.to_string_fragment();
         auto ss = separated_string(sf);
         ss.ss_separator = this->tlf_separator;
         size_t value_index = 0;
-        for (auto field_sf : ss) {
+        for (auto it = ss.begin(); it != ss.end(); ++it) {
             if (value_index >= this->elf_value_def_read_order.size()) {
                 break;
             }
-            const auto* vd = this->elf_value_def_read_order[value_index].second;
-            if (vd == nullptr) {
-                continue;
-            }
-
-            lr = to_line_range(field_sf);
-            if (vd->vd_meta.lvm_name == this->lf_timestamp_field) {
-                sa.emplace_back(lr, L_TIMESTAMP.value());
-            } else if (vd->vd_meta.lvm_name == this->elf_level_field) {
-                sa.emplace_back(lr, L_LEVEL.value());
-            } else if (vd->vd_meta.lvm_name == this->elf_opid_field) {
-                if (!field_sf.empty() && !field_sf.is_one_of("-", "--")) {
-                    values.lvv_opid_value = field_sf.to_string();
-                    values.lvv_opid_provenance
-                        = logline_value_vector::opid_provenance::file;
-                    sa.emplace_back(lr, L_OPID.value());
-                }
-            } else if (vd->vd_meta.lvm_name == this->elf_body_field) {
-                sa.emplace_back(lr, SA_BODY.value());
-            }
-            values.lvv_values.emplace_back(vd->vd_meta, line, lr);
+            this->process_csv_cell(values, &sa, value_index, it, line);
             value_index += 1;
         }
 
@@ -2720,8 +2768,7 @@ external_log_format::annotate(logfile* lf,
               .ignore_error();
     if (!match_res) {
         // A continued line still needs a body.
-        lr.lr_start = 0;
-        lr.lr_end = line.length();
+        auto lr = line_range{0, (int) line.length()};
         sa.emplace_back(lr, SA_BODY.value());
         if (!this->lf_multiline) {
             auto len
@@ -2895,6 +2942,7 @@ external_log_format::annotate(logfile* lf,
         }
     }
 
+    line_range lr;
     if (body_cap && body_cap->is_valid()) {
         lr = to_line_range(body_cap.value());
     } else {
@@ -3318,6 +3366,639 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     return 1;
 }
 
+static value_kind_t
+csv_cell_kind_to_value_kind(separated_string::cell_kind k)
+{
+    switch (k) {
+        case separated_string::cell_kind::empty:
+            return value_kind_t::VALUE_NULL;
+        case separated_string::cell_kind::integer:
+            return value_kind_t::VALUE_INTEGER;
+        case separated_string::cell_kind::floating:
+            return value_kind_t::VALUE_FLOAT;
+        case separated_string::cell_kind::number_with_suffix:
+        case separated_string::cell_kind::other:
+            return value_kind_t::VALUE_TEXT;
+    }
+    return value_kind_t::VALUE_TEXT;
+}
+
+void
+external_log_format::process_csv_cell(logline_value_vector& values,
+                                      string_attrs_t* sa,
+                                      size_t value_index,
+                                      const separated_string::iterator& it,
+                                      shared_buffer_ref& sbr) const
+{
+    const auto& [col_name, vd] = this->elf_value_def_read_order[value_index];
+    auto field_sf = *it;
+    auto lr = to_line_range(field_sf);
+    // separated_string preserves CSV `""` escapes verbatim in the
+    // returned fragment; collapse them so renderers, SQL queries,
+    // and downstream caps see the canonical text.  No-op when the
+    // cell has no embedded quote.
+    const bool needs_unescape = field_sf.find('"').has_value();
+
+    if (vd == nullptr) {
+        auto lvm = this->get_value_meta(intern_string::lookup(col_name),
+                                        csv_cell_kind_to_value_kind(it.kind()))
+                       .with_struct_name(LOG_EXTRA_FIELDS_STR);
+        values.lvv_values.emplace_back(lvm, sbr, lr);
+        if (needs_unescape) {
+            values.lvv_values.back().lv_str
+                = separated_string::unescape_quoted(field_sf);
+        }
+        return;
+    }
+
+    values.lvv_values.emplace_back(vd->vd_meta, sbr, lr);
+    if (needs_unescape) {
+        values.lvv_values.back().lv_str
+            = separated_string::unescape_quoted(field_sf);
+    }
+
+    const auto& name = vd->vd_meta.lvm_name;
+
+    if (sa != nullptr) {
+        if (name == this->lf_timestamp_field) {
+            sa->emplace_back(lr, L_TIMESTAMP.value());
+        } else if (name == this->elf_level_field) {
+            sa->emplace_back(lr, L_LEVEL.value());
+        } else if (name == this->elf_body_field) {
+            sa->emplace_back(lr, SA_BODY.value());
+        }
+    }
+
+    auto canon_sf = needs_unescape
+        ? unescape_csv_cell(field_sf, values.lvv_allocator)
+        : field_sf;
+
+    if (name == this->elf_opid_field) {
+        if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
+            values.lvv_opid_value = canon_sf.to_string();
+            values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::file;
+            if (sa != nullptr) {
+                sa->emplace_back(lr, L_OPID.value());
+            }
+        }
+    } else if (name == this->elf_duration_field) {
+        if (!canon_sf.empty()) {
+            auto from_res = humanize::try_from<double>(canon_sf);
+            if (from_res) {
+                auto dur_secs = from_res->value / this->elf_duration_divisor;
+                values.lvv_duration_value = std::chrono::microseconds(
+                    static_cast<int64_t>(dur_secs * 1000000));
+                if (sa != nullptr) {
+                    sa->emplace_back(lr, SA_DURATION.value());
+                }
+            }
+        }
+    } else if (name == this->elf_thread_id_field) {
+        if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
+            values.lvv_thread_id_value
+                = canon_sf.to_owned(values.lvv_allocator);
+            if (sa != nullptr) {
+                sa->emplace_back(lr, SA_THREAD_ID.value());
+            }
+        }
+    } else if (name == this->elf_src_file_field) {
+        if (!canon_sf.empty()) {
+            values.lvv_src_file_value = canon_sf.to_owned(values.lvv_allocator);
+            if (sa != nullptr) {
+                sa->emplace_back(lr, SA_SRC_FILE.value());
+            }
+        }
+    } else if (name == this->elf_src_line_field) {
+        if (!canon_sf.empty()) {
+            values.lvv_src_line_value = canon_sf.to_owned(values.lvv_allocator);
+            if (sa != nullptr) {
+                sa->emplace_back(lr, SA_SRC_LINE.value());
+            }
+        }
+    }
+}
+
+void
+external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
+                                             const logline& ll,
+                                             shared_buffer_ref& sbr,
+                                             subline_options opts)
+{
+    auto line_frag = sbr.to_string_fragment();
+
+    this->jlf_share_manager.invalidate_refs();
+    this->jlf_attr_line.clear();
+    this->jlf_line_values.clear();
+    this->jlf_line_offsets.clear();
+
+    // Parse the row using the locked separator and column order from
+    // the header detected in scan_tabular.
+    auto ss = separated_string(line_frag);
+    ss.ss_separator = this->tlf_separator;
+    ss.ss_expected_count = this->elf_value_def_read_order.size();
+
+    size_t value_index = 0;
+    for (auto it = ss.begin(); it != ss.end(); ++it) {
+        if (value_index >= this->elf_value_def_read_order.size()) {
+            break;
+        }
+        this->process_csv_cell(
+            this->jlf_line_values, nullptr, value_index, it, sbr);
+        value_index++;
+        // Hidden values' lv_origin would otherwise point at the
+        // original CSV byte range, but lvv_sbr is about to be
+        // re-pointed at the rewritten line where those offsets are
+        // meaningless.  Invalidate the origin so text_attrs_for_line
+        // skips emplacing SA_HIDDEN — apply_hide() would otherwise
+        // smear a U+22EE icon over whatever happened to land at
+        // those byte positions in the rewritten line.  The value
+        // itself still appears in annotate's output for SQL.
+        if (this->jlf_line_values.lvv_values.back().lv_meta.is_hidden()) {
+            this->jlf_line_values.lvv_values.back().lv_origin.clear();
+        }
+    }
+
+    this->jlf_used_values.assign(this->jlf_line_values.lvv_values.size(),
+                                 false);
+    int sub_offset = this->jlf_line_format_init_count;
+
+    this->render_line_format(
+        lffs, ll, opts, nullptr, this->jlf_used_values, sub_offset);
+
+    this->json_append_to_cache("\n", 1);
+    sub_offset += 1;
+
+    this->emit_detail_block(this->jlf_used_values, sub_offset);
+
+    this->compute_subline_offsets();
+}
+
+void
+external_log_format::compute_subline_offsets()
+{
+    this->jlf_line_offsets.push_back(0);
+    for (size_t lpc = 0; lpc < this->jlf_attr_line.al_string.size(); lpc++) {
+        if (this->jlf_attr_line.al_string[lpc] == '\n') {
+            this->jlf_line_offsets.push_back(lpc + 1);
+        }
+    }
+    this->jlf_line_offsets.push_back(this->jlf_attr_line.al_string.size());
+}
+
+void
+external_log_format::share_rewritten_subline(const logline& ll,
+                                             shared_buffer_ref& sbr,
+                                             subline_options opts)
+{
+    off_t this_off = 0, next_off = 0;
+
+    if (!this->jlf_line_offsets.empty()
+        && ll.get_sub_offset() < (int) this->jlf_line_offsets.size())
+    {
+        this_off = this->jlf_line_offsets[ll.get_sub_offset()];
+        if ((ll.get_sub_offset() + 1) < (int) this->jlf_line_offsets.size()) {
+            next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        } else {
+            next_off = this->jlf_attr_line.al_string.size();
+        }
+        if (next_off > 0 && this->jlf_attr_line.al_string[next_off - 1] == '\n'
+            && this_off != next_off)
+        {
+            next_off -= 1;
+        }
+    }
+
+    if (opts.full_message) {
+        sbr.share(this->jlf_share_manager,
+                  this->jlf_attr_line.al_string.data(),
+                  this->jlf_attr_line.al_string.size());
+    } else {
+        sbr.share(this->jlf_share_manager,
+                  this->jlf_attr_line.al_string.data() + this_off,
+                  next_off - this_off);
+    }
+    sbr.get_metadata().m_valid_utf = ll.is_valid_utf();
+    sbr.get_metadata().m_has_ansi = ll.has_ansi();
+    this->jlf_cached_sub_range.lr_start = this_off;
+    this->jlf_cached_sub_range.lr_end = next_off;
+    this->jlf_line_values.lvv_sbr = sbr.clone();
+}
+
+void
+external_log_format::apply_text_transform(
+    size_t begin_size, json_format_element::transform_t transform)
+{
+    auto& s = this->jlf_attr_line.al_string;
+    switch (transform) {
+        case json_format_element::transform_t::NONE:
+            break;
+        case json_format_element::transform_t::UPPERCASE:
+            for (size_t cindex = begin_size; cindex < s.size(); cindex++) {
+                s[cindex] = toupper(s[cindex]);
+            }
+            break;
+        case json_format_element::transform_t::LOWERCASE:
+            for (size_t cindex = begin_size; cindex < s.size(); cindex++) {
+                s[cindex] = tolower(s[cindex]);
+            }
+            break;
+        case json_format_element::transform_t::CAPITALIZE:
+            if (begin_size < s.size()) {
+                s[begin_size] = toupper(s[begin_size]);
+            }
+            for (size_t cindex = begin_size + 1; cindex < s.size(); cindex++) {
+                s[cindex] = tolower(s[cindex]);
+            }
+            break;
+    }
+}
+
+bool
+external_log_format::emit_overflow(const log_format_file_state& lffs,
+                                   const json_format_element& jfe,
+                                   const value_def* vd,
+                                   std::string& str)
+{
+    if ((int) str.size() <= jfe.jfe_max_width) {
+        return false;
+    }
+    switch (jfe.jfe_overflow) {
+        case json_format_element::overflow_t::ABBREV: {
+            size_t new_size
+                = abbreviate_str(&str[0], str.size(), jfe.jfe_max_width);
+            str.resize(new_size);
+            this->json_append(lffs, jfe, vd, str);
+            break;
+        }
+        case json_format_element::overflow_t::TRUNCATE:
+            this->json_append_to_cache(str.c_str(), jfe.jfe_max_width);
+            break;
+        case json_format_element::overflow_t::DOTDOT: {
+            size_t middle = (jfe.jfe_max_width / 2) - 1;
+            this->json_append_to_cache(str.c_str(), middle);
+            this->json_append_to_cache("..", 2);
+            size_t rest = (jfe.jfe_max_width - middle - 2);
+            this->json_append_to_cache(str.c_str() + str.size() - rest, rest);
+            break;
+        }
+        case json_format_element::overflow_t::LASTWORD: {
+            size_t new_size
+                = last_word_str(&str[0], str.size(), jfe.jfe_max_width);
+            str.resize(new_size);
+            this->json_append(lffs, jfe, vd, str);
+            break;
+        }
+    }
+    return true;
+}
+
+void
+external_log_format::render_line_format(const log_format_file_state& lffs,
+                                        const logline& ll,
+                                        subline_options opts,
+                                        const exttm* ts_extra_bits,
+                                        std::vector<bool>& used_values,
+                                        int& sub_offset)
+{
+    static const intern_string_t ts_field
+        = intern_string::lookup("__timestamp__", -1);
+    static const intern_string_t level_field
+        = intern_string::lookup("__level__");
+    static const intern_string_t duration_field
+        = intern_string::lookup("__duration__");
+
+    line_range lr;
+
+    for (const auto& jfe : this->jlf_line_format) {
+        size_t begin_size = this->jlf_attr_line.al_string.size();
+
+        switch (jfe.jfe_type) {
+            case json_log_field::CONSTANT:
+                this->json_append_to_cache(jfe.jfe_default_value.c_str(),
+                                           jfe.jfe_default_value.size());
+                break;
+            case json_log_field::VARIABLE: {
+                auto lv_iter = std::find_if(
+                    this->jlf_line_values.lvv_values.begin(),
+                    this->jlf_line_values.lvv_values.end(),
+                    logline_value_name_cmp(&jfe.jfe_value.pp_value));
+                if (lv_iter != this->jlf_line_values.lvv_values.end()) {
+                    auto str = lv_iter->to_string();
+                    value_def* vd = nullptr;
+                    if (lv_iter->lv_meta.lvm_values_index) {
+                        vd = this->elf_value_def_order
+                                 [lv_iter->lv_meta.lvm_values_index.value()]
+                                     .get();
+                    }
+                    while (endswith(str, "\n")) {
+                        str.pop_back();
+                    }
+                    size_t nl_pos = str.find('\n');
+
+                    if (!jfe.jfe_prefix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_prefix);
+                    }
+                    lr.lr_start = this->jlf_attr_line.al_string.size();
+
+                    if (!this->emit_overflow(lffs, jfe, vd, str)) {
+                        sub_offset += std::count(str.begin(), str.end(), '\n');
+                        if (vd != nullptr
+                            && vd->vd_meta.lvm_kind == value_kind_t::VALUE_JSON)
+                        {
+                            auto json_al = attr_line_t();
+                            json_al.append(str);
+                            highlight_syntax(
+                                text_format_t::TF_JSON, json_al, std::nullopt);
+                            this->jlf_attr_line.append(json_al);
+                        } else {
+                            this->json_append(lffs, jfe, vd, str);
+                        }
+                    }
+
+                    if (nl_pos == std::string::npos || opts.full_message) {
+                        lr.lr_end = this->jlf_attr_line.al_string.size();
+                    } else {
+                        lr.lr_end = lr.lr_start + nl_pos;
+                    }
+
+                    const auto& name = lv_iter->lv_meta.lvm_name;
+                    if (name == this->lf_timestamp_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, L_TIMESTAMP.value());
+                    } else if (name == this->elf_body_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_BODY.value());
+                    } else if (name == this->elf_src_loc_field) {
+                        size_t digits = 0;
+                        for (auto str_iter = str.rbegin();
+                             str_iter != str.rend();
+                             ++str_iter)
+                        {
+                            if (isdigit(*str_iter)) {
+                                digits += 1;
+                            } else {
+                                break;
+                            }
+                        }
+                        auto diff = str.size() - digits;
+                        auto file_lr = lr;
+                        file_lr.lr_end -= digits;
+                        auto line_lr = lr;
+                        line_lr.lr_start += diff;
+                        if (digits > 0) {
+                            file_lr.lr_end -= 1;
+                        }
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_SRC_LOC.value());
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            file_lr, SA_SRC_FILE.value());
+                        this->jlf_line_values.lvv_src_file_value
+                            = this->jlf_attr_line
+                                  .to_string_fragment(
+                                      this->jlf_attr_line.al_attrs.back())
+                                  .to_owned(
+                                      this->jlf_line_values.lvv_allocator);
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            line_lr, SA_SRC_LINE.value());
+                        this->jlf_line_values.lvv_src_line_value
+                            = this->jlf_attr_line
+                                  .to_string_fragment(
+                                      this->jlf_attr_line.al_attrs.back())
+                                  .to_owned(
+                                      this->jlf_line_values.lvv_allocator);
+                    } else if (name == this->elf_src_file_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_SRC_FILE.value());
+                        this->jlf_line_values.lvv_src_file_value
+                            = this->jlf_attr_line
+                                  .to_string_fragment(
+                                      this->jlf_attr_line.al_attrs.back())
+                                  .to_owned(
+                                      this->jlf_line_values.lvv_allocator);
+                    } else if (name == this->elf_src_line_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_SRC_LINE.value());
+                        this->jlf_line_values.lvv_src_line_value
+                            = this->jlf_attr_line
+                                  .to_string_fragment(
+                                      this->jlf_attr_line.al_attrs.back())
+                                  .to_owned(
+                                      this->jlf_line_values.lvv_allocator);
+                    } else if (name == this->elf_thread_id_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_THREAD_ID.value());
+                    } else if (name == this->elf_duration_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_DURATION.value());
+                    } else if (name == this->elf_level_field) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, L_LEVEL.value());
+                    } else if (name == this->elf_opid_field && !lr.empty()) {
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, L_OPID.value());
+                    }
+                    lv_iter->lv_origin = lr;
+                    lv_iter->lv_sub_offset = sub_offset;
+                    used_values[std::distance(
+                        this->jlf_line_values.lvv_values.begin(), lv_iter)]
+                        = true;
+
+                    if (!jfe.jfe_suffix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_suffix);
+                    }
+                } else if (jfe.jfe_value.pp_value == ts_field) {
+                    char ts[64];
+                    exttm et;
+
+                    ll.to_exttm(et);
+                    et.et_flags |= this->lf_timestamp_flags;
+                    if (ts_extra_bits != nullptr) {
+                        et.et_nsec += ts_extra_bits->et_nsec % 1000;
+                        et.et_gmtoff = ts_extra_bits->et_gmtoff;
+                        et.et_flags |= ts_extra_bits->et_flags;
+                    }
+                    if (!jfe.jfe_prefix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_prefix);
+                    }
+                    ssize_t ts_len;
+                    if (jfe.jfe_ts_format.empty()) {
+                        ts_len = this->lf_date_time.ftime(
+                            ts, sizeof(ts), this->get_timestamp_formats(), et);
+                    } else {
+                        ts_len = ftime_fmt(
+                            ts, sizeof(ts), jfe.jfe_ts_format.c_str(), et);
+                    }
+                    lr.lr_start = this->jlf_attr_line.al_string.size();
+                    this->json_append_to_cache(ts, ts_len);
+                    lr.lr_end = this->jlf_attr_line.al_string.size();
+                    this->jlf_attr_line.al_attrs.emplace_back(
+                        lr, L_TIMESTAMP.value());
+                    if (!jfe.jfe_suffix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_suffix);
+                    }
+                    auto ts_iter = std::find_if(
+                        this->jlf_line_values.lvv_values.begin(),
+                        this->jlf_line_values.lvv_values.end(),
+                        logline_value_name_cmp(&this->lf_timestamp_field));
+                    if (ts_iter != this->jlf_line_values.lvv_values.end()) {
+                        used_values[std::distance(
+                            this->jlf_line_values.lvv_values.begin(), ts_iter)]
+                            = true;
+                    }
+                } else if (jfe.jfe_value.pp_value == level_field
+                           || jfe.jfe_value.pp_value == this->elf_level_field)
+                {
+                    auto level_name = ll.get_level_name();
+                    if (!jfe.jfe_prefix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_prefix);
+                    }
+                    lr.lr_start = this->jlf_attr_line.al_string.size();
+                    this->json_append(lffs, jfe, nullptr, level_name);
+                    if (jfe.jfe_auto_width
+                        && level_name.length() < MAX_LEVEL_NAME_LEN)
+                    {
+                        this->json_append_to_cache(MAX_LEVEL_NAME_LEN
+                                                   - level_name.length());
+                    }
+                    lr.lr_end = this->jlf_attr_line.al_string.size();
+                    this->jlf_attr_line.al_attrs.emplace_back(lr,
+                                                              L_LEVEL.value());
+                    if (!jfe.jfe_suffix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_suffix);
+                    }
+                    if (jfe.jfe_value.pp_value == this->elf_level_field) {
+                        auto lvl_iter = std::find_if(
+                            this->jlf_line_values.lvv_values.begin(),
+                            this->jlf_line_values.lvv_values.end(),
+                            logline_value_name_cmp(&this->elf_level_field));
+                        if (lvl_iter != this->jlf_line_values.lvv_values.end())
+                        {
+                            used_values[std::distance(
+                                this->jlf_line_values.lvv_values.begin(),
+                                lvl_iter)] = true;
+                        }
+                    }
+                } else if (jfe.jfe_value.pp_value == duration_field) {
+                    if (this->jlf_line_values.lvv_duration_value) {
+                        if (!jfe.jfe_prefix.empty()) {
+                            this->json_append_to_cache(jfe.jfe_prefix);
+                        }
+                        lr.lr_start = this->jlf_attr_line.al_string.size();
+                        auto dur_str
+                            = humanize::time::duration::from_tv(
+                                  to_timeval(this->jlf_line_values
+                                                 .lvv_duration_value.value()))
+                                  .with_compact(false)
+                                  .to_string();
+                        this->json_append(lffs, jfe, nullptr, dur_str);
+                        lr.lr_end = this->jlf_attr_line.al_string.size();
+                        this->jlf_attr_line.al_attrs.emplace_back(
+                            lr, SA_DURATION.value());
+                        if (!jfe.jfe_suffix.empty()) {
+                            this->json_append_to_cache(jfe.jfe_suffix);
+                        }
+                    } else if (!jfe.jfe_default_value.empty()) {
+                        if (!jfe.jfe_prefix.empty()) {
+                            this->json_append_to_cache(jfe.jfe_prefix);
+                        }
+                        this->json_append(
+                            lffs, jfe, nullptr, jfe.jfe_default_value);
+                        if (!jfe.jfe_suffix.empty()) {
+                            this->json_append_to_cache(jfe.jfe_suffix);
+                        }
+                    }
+                    if (!this->elf_duration_field.empty()) {
+                        auto dur_iter = std::find_if(
+                            this->jlf_line_values.lvv_values.begin(),
+                            this->jlf_line_values.lvv_values.end(),
+                            logline_value_name_cmp(&this->elf_duration_field));
+                        if (dur_iter != this->jlf_line_values.lvv_values.end())
+                        {
+                            used_values[std::distance(
+                                this->jlf_line_values.lvv_values.begin(),
+                                dur_iter)] = true;
+                        }
+                    }
+                } else if (!jfe.jfe_default_value.empty()) {
+                    if (!jfe.jfe_prefix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_prefix);
+                    }
+                    this->json_append(
+                        lffs, jfe, nullptr, jfe.jfe_default_value);
+                    if (!jfe.jfe_suffix.empty()) {
+                        this->json_append_to_cache(jfe.jfe_suffix);
+                    }
+                }
+
+                this->apply_text_transform(begin_size, jfe.jfe_text_transform);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+void
+external_log_format::emit_detail_block(const std::vector<bool>& used_values,
+                                       int& sub_offset)
+{
+    static const intern_string_t body_name = intern_string::lookup("body", -1);
+
+    for (size_t lpc = 0; lpc < this->jlf_line_values.lvv_values.size(); lpc++) {
+        auto& lv = this->jlf_line_values.lvv_values[lpc];
+
+        if (lv.lv_meta.is_hidden() || used_values[lpc]
+            || body_name == lv.lv_meta.lvm_name)
+        {
+            continue;
+        }
+
+        auto str = lv.to_string();
+        while (endswith(str, "\n")) {
+            str.pop_back();
+        }
+
+        lv.lv_sub_offset = sub_offset;
+        lv.lv_origin.lr_start = this->jlf_attr_line.al_string.size() + 2
+            + lv.lv_meta.lvm_name.size() + 2;
+        auto frag = string_fragment::from_str(str);
+        line_range lr;
+        while (true) {
+            auto utf_scan_res = is_utf8(frag, '\n');
+
+            this->json_append_to_cache("  ", 2);
+            this->json_append_to_cache(
+                lv.lv_meta.lvm_name.to_string_fragment());
+            this->json_append_to_cache(": ", 2);
+            lr.lr_start = this->jlf_attr_line.al_string.size();
+            this->json_append_to_cache(utf_scan_res.usr_valid_frag);
+            lr.lr_end = this->jlf_attr_line.al_string.size();
+            if (lv.lv_meta.lvm_name == this->elf_body_field) {
+                this->jlf_attr_line.al_attrs.emplace_back(lr, SA_BODY.value());
+            } else {
+                this->jlf_attr_line.al_attrs.emplace_back(
+                    lr, SA_EXTRA_CONTENT.value());
+            }
+            this->json_append_to_cache("\n", 1);
+            sub_offset += 1;
+            if (utf_scan_res.usr_remaining) {
+                frag = utf_scan_res.usr_remaining.value();
+            } else {
+                break;
+            }
+        }
+        lv.lv_origin.lr_end = this->jlf_attr_line.al_string.size() - 1;
+        if (lv.lv_meta.lvm_name == this->elf_opid_field
+            && !lv.lv_origin.empty())
+        {
+            this->jlf_attr_line.al_attrs.emplace_back(lv.lv_origin,
+                                                      L_OPID.value());
+        }
+    }
+}
+
 void
 external_log_format::get_subline(const log_format_file_state& lffs,
                                  const logline& ll,
@@ -3325,6 +4006,24 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                  subline_options opts)
 {
     if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
+        return;
+    }
+
+    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+        // Without a line-format, leave the raw row in place — formats
+        // that haven't opted into rewriting keep their pre-existing
+        // display.
+        if (this->jlf_line_format.empty()) {
+            return;
+        }
+        if (this->jlf_cached_offset != ll.get_offset()
+            || this->jlf_cached_opts != opts)
+        {
+            this->rewrite_tabular_subline(lffs, ll, sbr, opts);
+            this->jlf_cached_offset = ll.get_offset();
+            this->jlf_cached_opts = opts;
+        }
+        this->share_rewritten_subline(ll, sbr, opts);
         return;
     }
 
@@ -3405,12 +4104,9 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                      ? jlu.jlu_scan_error->se_message
                                      : "JSON line failed to parse"));
         } else {
-            std::vector<logline_value>::iterator lv_iter;
-            bool used_values[this->jlf_line_values.lvv_values.size()];
-            line_range lr;
-
-            memset(used_values, 0, sizeof(used_values));
-            for (lv_iter = this->jlf_line_values.lvv_values.begin();
+            this->jlf_used_values.assign(
+                this->jlf_line_values.lvv_values.size(), false);
+            for (auto lv_iter = this->jlf_line_values.lvv_values.begin();
                  lv_iter != this->jlf_line_values.lvv_values.end();
                  ++lv_iter)
             {
@@ -3482,477 +4178,26 @@ external_log_format::get_subline(const log_format_file_state& lffs,
             this->jlf_line_values.lvv_duration_value = jlu.jlu_duration;
 
             int sub_offset = this->jlf_line_format_init_count;
-            for (const auto& jfe : this->jlf_line_format) {
-                static const intern_string_t ts_field
-                    = intern_string::lookup("__timestamp__", -1);
-                static const intern_string_t level_field
-                    = intern_string::lookup("__level__");
-                static const intern_string_t duration_field
-                    = intern_string::lookup("__duration__");
-                size_t begin_size = this->jlf_attr_line.al_string.size();
 
-                switch (jfe.jfe_type) {
-                    case json_log_field::CONSTANT:
-                        this->json_append_to_cache(
-                            jfe.jfe_default_value.c_str(),
-                            jfe.jfe_default_value.size());
-                        break;
-                    case json_log_field::VARIABLE:
-                        lv_iter = find_if(
-                            this->jlf_line_values.lvv_values.begin(),
-                            this->jlf_line_values.lvv_values.end(),
-                            logline_value_name_cmp(&jfe.jfe_value.pp_value));
-                        if (lv_iter != this->jlf_line_values.lvv_values.end()) {
-                            auto str = lv_iter->to_string();
-                            value_def* vd = nullptr;
+            this->render_line_format(lffs,
+                                     ll,
+                                     opts,
+                                     &jlu.jlu_exttm,
+                                     this->jlf_used_values,
+                                     sub_offset);
 
-                            if (lv_iter->lv_meta.lvm_values_index) {
-                                vd = this->elf_value_def_order
-                                         [lv_iter->lv_meta.lvm_values_index
-                                              .value()]
-                                             .get();
-                            }
-                            while (endswith(str, "\n")) {
-                                str.pop_back();
-                            }
-                            size_t nl_pos = str.find('\n');
-
-                            if (!jfe.jfe_prefix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_prefix);
-                            }
-                            lr.lr_start = this->jlf_attr_line.al_string.size();
-
-                            if ((int) str.size() > jfe.jfe_max_width) {
-                                switch (jfe.jfe_overflow) {
-                                    case json_format_element::overflow_t::
-                                        ABBREV: {
-                                        size_t new_size
-                                            = abbreviate_str(&str[0],
-                                                             str.size(),
-                                                             jfe.jfe_max_width);
-                                        str.resize(new_size);
-                                        this->json_append(lffs, jfe, vd, str);
-                                        break;
-                                    }
-                                    case json_format_element::overflow_t::
-                                        TRUNCATE: {
-                                        this->json_append_to_cache(
-                                            str.c_str(), jfe.jfe_max_width);
-                                        break;
-                                    }
-                                    case json_format_element::overflow_t::
-                                        DOTDOT: {
-                                        size_t middle
-                                            = (jfe.jfe_max_width / 2) - 1;
-                                        this->json_append_to_cache(str.c_str(),
-                                                                   middle);
-                                        this->json_append_to_cache("..", 2);
-                                        size_t rest
-                                            = (jfe.jfe_max_width - middle - 2);
-                                        this->json_append_to_cache(
-                                            str.c_str() + str.size() - rest,
-                                            rest);
-                                        break;
-                                    }
-                                    case json_format_element::overflow_t::
-                                        LASTWORD: {
-                                        size_t new_size
-                                            = last_word_str(&str[0],
-                                                            str.size(),
-                                                            jfe.jfe_max_width);
-                                        str.resize(new_size);
-                                        this->json_append(lffs, jfe, vd, str);
-                                        break;
-                                    }
-                                }
-                            } else {
-                                sub_offset
-                                    += std::count(str.begin(), str.end(), '\n');
-                                if (vd != nullptr
-                                    && vd->vd_meta.lvm_kind
-                                        == value_kind_t::VALUE_JSON)
-                                {
-                                    auto json_al = attr_line_t();
-                                    json_al.append(str);
-                                    highlight_syntax(text_format_t::TF_JSON,
-                                                     json_al,
-                                                     std::nullopt);
-                                    this->jlf_attr_line.append(json_al);
-                                } else {
-                                    this->json_append(lffs, jfe, vd, str);
-                                }
-                            }
-
-                            if (nl_pos == std::string::npos
-                                || opts.full_message)
-                            {
-                                lr.lr_end
-                                    = this->jlf_attr_line.al_string.size();
-                            } else {
-                                lr.lr_end = lr.lr_start + nl_pos;
-                            }
-
-                            if (lv_iter->lv_meta.lvm_name
-                                == this->lf_timestamp_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, L_TIMESTAMP.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_body_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_BODY.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_src_loc_field)
-                            {
-                                size_t digits = 0;
-                                for (auto str_iter = str.rbegin();
-                                     str_iter != str.rend();
-                                     ++str_iter)
-                                {
-                                    if (isdigit(*str_iter)) {
-                                        digits += 1;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                auto diff = str.size() - digits;
-                                auto file_lr = lr;
-                                file_lr.lr_end -= digits;
-                                auto line_lr = lr;
-                                line_lr.lr_start += diff;
-                                if (digits > 0) {
-                                    file_lr.lr_end -= 1;
-                                }
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_SRC_LOC.value());
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    file_lr, SA_SRC_FILE.value());
-                                this->jlf_line_values.lvv_src_file_value
-                                    = this->jlf_attr_line
-                                          .to_string_fragment(
-                                              this->jlf_attr_line.al_attrs
-                                                  .back())
-                                          .to_owned(this->jlf_line_values
-                                                        .lvv_allocator);
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    line_lr, SA_SRC_LINE.value());
-                                this->jlf_line_values.lvv_src_line_value
-                                    = this->jlf_attr_line
-                                          .to_string_fragment(
-                                              this->jlf_attr_line.al_attrs
-                                                  .back())
-                                          .to_owned(this->jlf_line_values
-                                                        .lvv_allocator);
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_src_file_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_SRC_FILE.value());
-                                this->jlf_line_values.lvv_src_file_value
-                                    = this->jlf_attr_line
-                                          .to_string_fragment(
-                                              this->jlf_attr_line.al_attrs
-                                                  .back())
-                                          .to_owned(this->jlf_line_values
-                                                        .lvv_allocator);
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_src_line_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_SRC_LINE.value());
-                                this->jlf_line_values.lvv_src_line_value
-                                    = this->jlf_attr_line
-                                          .to_string_fragment(
-                                              this->jlf_attr_line.al_attrs
-                                                  .back())
-                                          .to_owned(this->jlf_line_values
-                                                        .lvv_allocator);
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_thread_id_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_THREAD_ID.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_duration_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_DURATION.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_level_field)
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, L_LEVEL.value());
-                            } else if (lv_iter->lv_meta.lvm_name
-                                           == this->elf_opid_field
-                                       && !lr.empty())
-                            {
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, L_OPID.value());
-                            }
-                            lv_iter->lv_origin = lr;
-                            lv_iter->lv_sub_offset = sub_offset;
-                            used_values[std::distance(
-                                this->jlf_line_values.lvv_values.begin(),
-                                lv_iter)] = true;
-
-                            if (!jfe.jfe_suffix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_suffix);
-                            }
-                        } else if (jfe.jfe_value.pp_value == ts_field) {
-                            line_range lr;
-                            ssize_t ts_len;
-                            char ts[64];
-                            exttm et;
-
-                            ll.to_exttm(et);
-                            et.et_nsec += jlu.jlu_exttm.et_nsec % 1000;
-                            et.et_gmtoff = jlu.jlu_exttm.et_gmtoff;
-                            et.et_flags |= jlu.jlu_exttm.et_flags;
-                            if (!jfe.jfe_prefix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_prefix);
-                            }
-                            if (jfe.jfe_ts_format.empty()) {
-                                ts_len = this->lf_date_time.ftime(
-                                    ts,
-                                    sizeof(ts),
-                                    this->get_timestamp_formats(),
-                                    et);
-                            } else {
-                                ts_len = ftime_fmt(ts,
-                                                   sizeof(ts),
-                                                   jfe.jfe_ts_format.c_str(),
-                                                   et);
-                            }
-                            lr.lr_start = this->jlf_attr_line.al_string.size();
-                            this->json_append_to_cache(ts, ts_len);
-                            lr.lr_end = this->jlf_attr_line.al_string.size();
-                            this->jlf_attr_line.al_attrs.emplace_back(
-                                lr, L_TIMESTAMP.value());
-
-                            lv_iter = find_if(
-                                this->jlf_line_values.lvv_values.begin(),
-                                this->jlf_line_values.lvv_values.end(),
-                                logline_value_name_cmp(
-                                    &this->lf_timestamp_field));
-                            if (lv_iter
-                                != this->jlf_line_values.lvv_values.end())
-                            {
-                                used_values[distance(
-                                    this->jlf_line_values.lvv_values.begin(),
-                                    lv_iter)] = true;
-                            }
-                            if (!jfe.jfe_suffix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_suffix);
-                            }
-                        } else if (jfe.jfe_value.pp_value == level_field
-                                   || jfe.jfe_value.pp_value
-                                       == this->elf_level_field)
-                        {
-                            auto level_name = ll.get_level_name();
-                            lr.lr_start = this->jlf_attr_line.al_string.size();
-                            this->json_append(lffs, jfe, nullptr, level_name);
-                            if (jfe.jfe_auto_width) {
-                                this->json_append_to_cache(
-                                    MAX_LEVEL_NAME_LEN - level_name.length());
-                            }
-                            lr.lr_end = this->jlf_attr_line.al_string.size();
-                            this->jlf_attr_line.al_attrs.emplace_back(
-                                lr, L_LEVEL.value());
-                        } else if (jfe.jfe_value.pp_value == duration_field) {
-                            if (this->jlf_line_values.lvv_duration_value) {
-                                if (!jfe.jfe_prefix.empty()) {
-                                    this->json_append_to_cache(jfe.jfe_prefix);
-                                }
-                                lr.lr_start
-                                    = this->jlf_attr_line.al_string.size();
-                                auto dur_str
-                                    = humanize::time::duration::from_tv(
-                                          to_timeval(
-                                              this->jlf_line_values
-                                                  .lvv_duration_value.value()))
-                                          .with_compact(false)
-                                          .to_string();
-                                this->json_append(lffs, jfe, nullptr, dur_str);
-                                lr.lr_end
-                                    = this->jlf_attr_line.al_string.size();
-                                this->jlf_attr_line.al_attrs.emplace_back(
-                                    lr, SA_DURATION.value());
-                                if (!jfe.jfe_suffix.empty()) {
-                                    this->json_append_to_cache(jfe.jfe_suffix);
-                                }
-                            } else if (!jfe.jfe_default_value.empty()) {
-                                if (!jfe.jfe_prefix.empty()) {
-                                    this->json_append_to_cache(jfe.jfe_prefix);
-                                }
-                                this->json_append(
-                                    lffs, jfe, nullptr, jfe.jfe_default_value);
-                                if (!jfe.jfe_suffix.empty()) {
-                                    this->json_append_to_cache(jfe.jfe_suffix);
-                                }
-                            }
-                        } else if (!jfe.jfe_default_value.empty()) {
-                            if (!jfe.jfe_prefix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_prefix);
-                            }
-                            this->json_append(
-                                lffs, jfe, nullptr, jfe.jfe_default_value);
-                            if (!jfe.jfe_suffix.empty()) {
-                                this->json_append_to_cache(jfe.jfe_suffix);
-                            }
-                        }
-
-                        switch (jfe.jfe_text_transform) {
-                            case json_format_element::transform_t::NONE:
-                                break;
-                            case json_format_element::transform_t::UPPERCASE:
-                                for (size_t cindex = begin_size; cindex
-                                     < this->jlf_attr_line.al_string.size();
-                                     cindex++)
-                                {
-                                    this->jlf_attr_line.al_string[cindex]
-                                        = toupper(this->jlf_attr_line
-                                                      .al_string[cindex]);
-                                }
-                                break;
-                            case json_format_element::transform_t::LOWERCASE:
-                                for (size_t cindex = begin_size; cindex
-                                     < this->jlf_attr_line.al_string.size();
-                                     cindex++)
-                                {
-                                    this->jlf_attr_line.al_string[cindex]
-                                        = tolower(this->jlf_attr_line
-                                                      .al_string[cindex]);
-                                }
-                                break;
-                            case json_format_element::transform_t::CAPITALIZE:
-                                for (size_t cindex = begin_size;
-                                     cindex < begin_size + 1;
-                                     cindex++)
-                                {
-                                    this->jlf_attr_line.al_string[cindex]
-                                        = toupper(this->jlf_attr_line
-                                                      .al_string[cindex]);
-                                }
-                                for (size_t cindex = begin_size + 1; cindex
-                                     < this->jlf_attr_line.al_string.size();
-                                     cindex++)
-                                {
-                                    this->jlf_attr_line.al_string[cindex]
-                                        = tolower(this->jlf_attr_line
-                                                      .al_string[cindex]);
-                                }
-                                break;
-                        }
-                        break;
-                }
-            }
             this->json_append_to_cache("\n", 1);
             sub_offset += 1;
 
-            for (size_t lpc = 0; lpc < this->jlf_line_values.lvv_values.size();
-                 lpc++)
-            {
-                static const intern_string_t body_name
-                    = intern_string::lookup("body", -1);
-                auto& lv = this->jlf_line_values.lvv_values[lpc];
-
-                if (lv.lv_meta.is_hidden() || used_values[lpc]
-                    || body_name == lv.lv_meta.lvm_name)
-                {
-                    continue;
-                }
-
-                auto str = lv.to_string();
-                while (endswith(str, "\n")) {
-                    str.pop_back();
-                }
-
-                lv.lv_sub_offset = sub_offset;
-                lv.lv_origin.lr_start = this->jlf_attr_line.al_string.size() + 2
-                    + lv.lv_meta.lvm_name.size() + 2;
-                auto frag = string_fragment::from_str(str);
-                while (true) {
-                    auto utf_scan_res = is_utf8(frag, '\n');
-
-                    this->json_append_to_cache("  ", 2);
-                    this->json_append_to_cache(
-                        lv.lv_meta.lvm_name.to_string_fragment());
-                    this->json_append_to_cache(": ", 2);
-                    lr.lr_start = this->jlf_attr_line.al_string.size();
-                    this->json_append_to_cache(utf_scan_res.usr_valid_frag);
-                    lr.lr_end = this->jlf_attr_line.al_string.size();
-                    if (lv.lv_meta.lvm_name == this->elf_body_field) {
-                        this->jlf_attr_line.al_attrs.emplace_back(
-                            lr, SA_BODY.value());
-                    } else {
-                        this->jlf_attr_line.al_attrs.emplace_back(
-                            lr, SA_EXTRA_CONTENT.value());
-                    }
-                    this->json_append_to_cache("\n", 1);
-                    sub_offset += 1;
-                    if (utf_scan_res.usr_remaining) {
-                        frag = utf_scan_res.usr_remaining.value();
-                    } else {
-                        break;
-                    }
-                }
-                lv.lv_origin.lr_end = this->jlf_attr_line.al_string.size() - 1;
-                if (lv.lv_meta.lvm_name == this->elf_opid_field
-                    && !lv.lv_origin.empty())
-                {
-                    this->jlf_attr_line.al_attrs.emplace_back(lv.lv_origin,
-                                                              L_OPID.value());
-                }
-            }
+            this->emit_detail_block(this->jlf_used_values, sub_offset);
         }
 
-        this->jlf_line_offsets.push_back(0);
-        for (size_t lpc = 0; lpc < this->jlf_attr_line.al_string.size(); lpc++)
-        {
-            if (this->jlf_attr_line.al_string[lpc] == '\n') {
-                this->jlf_line_offsets.push_back(lpc + 1);
-            }
-        }
-        this->jlf_line_offsets.push_back(this->jlf_attr_line.al_string.size());
+        this->compute_subline_offsets();
         this->jlf_cached_offset = ll.get_offset();
         this->jlf_cached_opts = opts;
     }
 
-    off_t this_off = 0, next_off = 0;
-
-    if (!this->jlf_line_offsets.empty()
-        && ll.get_sub_offset() < this->jlf_line_offsets.size())
-    {
-        require(ll.get_sub_offset() < this->jlf_line_offsets.size());
-
-        this_off = this->jlf_line_offsets[ll.get_sub_offset()];
-        if ((ll.get_sub_offset() + 1) < (int) this->jlf_line_offsets.size()) {
-            next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
-        } else {
-            next_off = this->jlf_attr_line.al_string.size();
-        }
-        if (next_off > 0 && this->jlf_attr_line.al_string[next_off - 1] == '\n'
-            && this_off != next_off)
-        {
-            next_off -= 1;
-        }
-    }
-
-    if (opts.full_message) {
-        sbr.share(this->jlf_share_manager,
-                  this->jlf_attr_line.al_string.data(),
-                  this->jlf_attr_line.al_string.size());
-    } else {
-        sbr.share(this->jlf_share_manager,
-                  this->jlf_attr_line.al_string.data() + this_off,
-                  next_off - this_off);
-    }
-    sbr.get_metadata().m_valid_utf = ll.is_valid_utf();
-    sbr.get_metadata().m_has_ansi = ll.has_ansi();
-    this->jlf_cached_sub_range.lr_start = this_off;
-    this->jlf_cached_sub_range.lr_end = next_off;
-    this->jlf_line_values.lvv_sbr = sbr.clone();
+    this->share_rewritten_subline(ll, sbr, opts);
 }
 
 struct compiled_header_expr {
@@ -4895,6 +5140,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
         } else if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
             this->lf_structured = true;
+            if (!this->jlf_line_format.empty()) {
+                // The format owns its rendering via line-format.
+                this->lf_formatted_lines = true;
+            }
         }
     } else {
         if (this->elf_patterns.empty()) {
@@ -4976,6 +5225,18 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                           .move();
             errors.emplace_back(um);
         }
+    }
+
+    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+        auto vd
+            = std::make_shared<value_def>(LOG_EXTRA_FIELDS_STR,
+                                          value_kind_t::VALUE_JSON,
+                                          logline_value_meta::external_column{},
+                                          this);
+        vd->vd_description
+            = "unknown fields in the file are stored in this JSON column";
+        this->elf_value_defs[LOG_EXTRA_FIELDS_STR] = vd;
+        this->elf_value_def_order.emplace_back(vd);
     }
 
     for (auto& vd : this->elf_value_def_order) {
@@ -5574,6 +5835,46 @@ public:
 
         sa.clear();
         format->annotate(lf, line_number, sa, values);
+        if (this->elt_format->elf_type
+                == external_log_format::elf_type_t::ELF_TYPE_TABULAR
+            && this->elt_format->tlf_extra_count > 0)
+        {
+            auto iter = this->elt_format->elf_value_defs.find(
+                log_format::LOG_EXTRA_FIELDS_STR);
+            require(iter != this->elt_format->elf_value_defs.end());
+            yajlpp_gen gen;
+
+            {
+                yajlpp_map root(gen);
+
+                for (const auto& lv : values.lvv_values) {
+                    if (lv.lv_meta.lvm_struct_name
+                        != log_format::LOG_EXTRA_FIELDS_STR)
+                    {
+                        continue;
+                    }
+
+                    root.gen(lv.lv_meta.lvm_name);
+                    switch (lv.lv_meta.lvm_kind) {
+                        case value_kind_t::VALUE_NULL:
+                            root.gen();
+                            break;
+                        case value_kind_t::VALUE_INTEGER:
+                            root.gen(lv.lv_value.i);
+                            break;
+                        case value_kind_t::VALUE_FLOAT:
+                            root.gen(lv.lv_value.d);
+                            break;
+                        default:
+                            root.gen(lv.text_value_fragment());
+                            break;
+                    }
+                }
+            }
+            auto owned_sf
+                = gen.to_string_fragment().to_owned(values.lvv_allocator);
+            values.lvv_values.emplace_back(iter->second->vd_meta, owned_sf);
+        }
     }
 
     const external_log_format* elt_format;
@@ -5723,12 +6024,15 @@ external_log_format::convert_level(string_fragment sf,
 
 logline_value_meta
 external_log_format::get_value_meta(intern_string_t field_name,
-                                    value_kind_t kind)
+                                    value_kind_t kind) const
 {
     const auto iter = this->elf_value_defs.find(field_name);
     if (iter == this->elf_value_defs.end()) {
-        auto retval = logline_value_meta(
-            field_name, kind, logline_value_meta::external_column{}, this);
+        auto retval
+            = logline_value_meta(field_name,
+                                 kind,
+                                 logline_value_meta::external_column{},
+                                 const_cast<external_log_format*>(this));
 
         retval.lvm_hidden = this->jlf_hide_extra;
         return retval;
@@ -5983,7 +6287,7 @@ external_log_format::hide_field(const intern_string_t field_name, bool val)
     }
 
     vd_iter->second->vd_meta.lvm_user_hidden = val;
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+    if (!this->jlf_line_format.empty()) {
         bool found = false;
 
         if (!field_name.to_string_fragment().find('#')) {
