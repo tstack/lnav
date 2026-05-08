@@ -55,8 +55,6 @@ public:
 
     std::string spectro_value_suffix() const override;
 
-    double spectro_value_divisor() const override;
-
     intern_string_t lsvs_colname;
     // Cached copy of the column's metadata for fast access to
     // humanization hints (`lvm_unit_suffix` / `lvm_unit_divisor`).
@@ -88,6 +86,8 @@ public:
                       mark_op_t op) override
     {
     }
+
+    std::string spectro_value_suffix() const override;
 
     std::string dsvs_colname;
     logline_value_stats dsvs_stats;

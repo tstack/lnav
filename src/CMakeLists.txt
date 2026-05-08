@@ -838,6 +838,8 @@ add_library(
         third-party/date/include/date/tz.h
         third-party/date/include/date/islamic.h
 
+        third-party/cpp-HyperLogLog/include/hyperloglog.hpp
+
         third-party/digestible/include/digestible/digestible.h
 
         third-party/intervaltree/IntervalTree.h
@@ -872,6 +874,7 @@ set(lnav_SRCS lnav.cc file_vtab.cc all_ids_vtabs.cc breakpoint_vtab.cc metrics_v
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
+        third-party/cpp-HyperLogLog/include
         third-party/date/include
         third-party/digestible/include
         third-party/lnav-rs-ext

@@ -540,7 +540,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
-        auto value_str = lv.to_string();
+        auto value_str = lv.to_humanized_string();
 
         if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table "
@@ -554,6 +554,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
         std::string field_name, orig_field_name;
         line_range hl_range;
+        size_t prefix_len = 0;
         al.append(" ").append("|", VC_GRAPHIC.value(NCACS_LTEE)).append(" ");
         if (meta.lvm_struct_name.empty()) {
             if (curr_elf && curr_elf->elf_body_field == meta.lvm_name) {
@@ -585,11 +586,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                     al.append(":bar_chart:"_emoji).append(" ");
                     break;
             }
-            auto prefix_len = al.column_width();
+            prefix_len = al.column_width() + this->fos_known_key_size;
             hl_range.lr_start = al.get_string().length();
             al.append(field_name);
             hl_range.lr_end = al.get_string().length();
-            al.pad_to(prefix_len + this->fos_known_key_size);
+            al.pad_to(prefix_len);
 
             this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
                                                 row_info{meta, value_str});
@@ -599,6 +600,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                                                meta.lvm_name.get());
             hl_range.lr_start = al.get_string().length();
             al.append(jget_str.in());
+            prefix_len = al.column_width();
             hl_range.lr_end = al.get_string().length();
 
             this->fos_row_to_field_meta.emplace(
@@ -606,29 +608,6 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
         readline_sql_highlighter_int(
             al, lnav::sql::dialect::sqlite, std::nullopt, hl_range);
-
-        if (!meta.lvm_unit_suffix.empty()) {
-            std::optional<double> numeric;
-            switch (meta.lvm_kind) {
-                case value_kind_t::VALUE_INTEGER:
-                    numeric = (double) lv.lv_value.i;
-                    break;
-                case value_kind_t::VALUE_FLOAT:
-                    numeric = lv.lv_value.d;
-                    break;
-                default:
-                    break;
-            }
-            if (numeric) {
-                if (meta.lvm_unit_divisor != 0.0
-                    && meta.lvm_unit_divisor != 1.0)
-                {
-                    *numeric /= meta.lvm_unit_divisor;
-                }
-                value_str = humanize::format(
-                    *numeric, meta.lvm_unit_suffix.to_string_fragment());
-            }
-        }
 
         if (meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
             auto dts = curr_format->build_time_scanner();
@@ -653,7 +632,65 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
         al.append(" = ").append(scrub_ws(value_str.c_str()));
 
+        // Per-column stats summary: numeric columns get a min..max
+        // range and total count; text columns get an HLL-estimated
+        // distinct count.  Both render in the column's unit if one is
+        // declared, mirroring the value's own formatting above.
+        const logline_value_stats* stats = nullptr;
+        const auto* curr_lf = this->fos_log_helper.ldh_file.get();
+        if (curr_lf != nullptr) {
+            stats = curr_lf->stats_for_value(meta.lvm_name);
+        }
+
+        if (stats != nullptr) {
+            std::string summary;
+            if (stats->lvs_count > 0) {
+                summary
+                    = fmt::format(FMT_STRING("  {}..{} of {}"),
+                                  meta.to_humanized_value(stats->lvs_min_value),
+                                  meta.to_humanized_value(stats->lvs_max_value),
+                                  stats->lvs_count);
+            } else if (auto est = stats->distinct_estimate(); est) {
+                summary = fmt::format(FMT_STRING("  ~{:.0f} distinct of {}"),
+                                      est.value(),
+                                      stats->lvs_text_count);
+            }
+            if (!summary.empty()) {
+                al.append(attr_line_t(summary).with_attr_for_all(
+                    VC_ROLE.value(role_t::VCR_COMMENT)));
+            }
+        }
+
         this->fos_lines.emplace_back(al);
+
+        // Numeric percentile sub-line: typical / tail / extreme.
+        // Suppressed when the sample is too small to be statistically
+        // meaningful, when the distribution is degenerate (single
+        // value), or when the upper percentiles all collapse to the
+        // max — in those cases the inline `min..max of N` already
+        // tells the whole story.
+        if (stats != nullptr && stats->lvs_count >= 20
+            && stats->lvs_min_value < stats->lvs_max_value)
+        {
+            const auto p50 = stats->lvs_tdigest.quantile(50);
+            const auto p90 = stats->lvs_tdigest.quantile(90);
+            const auto p99 = stats->lvs_tdigest.quantile(99);
+            if (!(p50 == p99 && p99 == stats->lvs_max_value)) {
+                attr_line_t pct_line;
+                pct_line.append("    ")
+                    .with_attr(string_attr(line_range{1, 2},
+                                           VC_GRAPHIC.value(NCACS_VLINE)))
+                    .with_attr(string_attr(line_range{1, 2},
+                                           VC_ROLE.value(role_t::VCR_COMMENT)))
+                    .pad_to(prefix_len + 5)
+                    .append(fmt::format(FMT_STRING("p50={}  p90={}  p99={}"),
+                                        meta.to_humanized_value(p50),
+                                        meta.to_humanized_value(p90),
+                                        meta.to_humanized_value(p99)));
+                pct_line.with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
+                this->fos_lines.emplace_back(pct_line);
+            }
+        }
 
         if (meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             json_string js = extract(value_str.c_str());

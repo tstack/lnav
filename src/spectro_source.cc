@@ -223,12 +223,8 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         auto range_max = range_min + sr.sr_column_size;
 
         auto value_suffix = this->ss_value_source->spectro_value_suffix();
-        auto value_divisor = this->ss_value_source->spectro_value_divisor();
         auto format_bucket = [&](double v, bool is_max) {
             if (!value_suffix.empty()) {
-                if (value_divisor != 0.0 && value_divisor != 1.0) {
-                    v /= value_divisor;
-                }
                 return humanize::format(
                     v, string_fragment::from_str(value_suffix));
             }
@@ -730,12 +726,8 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     const auto& st = s_row.sr_thresholds;
 
     auto value_suffix = this->ss_value_source->spectro_value_suffix();
-    auto value_divisor = this->ss_value_source->spectro_value_divisor();
-    auto format_bound = [&value_suffix, value_divisor](double v) {
+    auto format_bound = [&value_suffix](double v) {
         if (!value_suffix.empty()) {
-            if (value_divisor != 0.0 && value_divisor != 1.0) {
-                v /= value_divisor;
-            }
             return humanize::format(
                 v, string_fragment::from_str(value_suffix));
         }

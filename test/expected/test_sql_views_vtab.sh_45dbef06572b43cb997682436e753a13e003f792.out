@@ -5,8 +5,8 @@
  [1mFile:[0m         ]8;;file://{test_dir}/logfile_xml_msg.0#L3\[1m{test_dir}/logfile_xml_msg.0[0m]8;;\]8;;file://{test_dir}/logfile_xml_msg.0#L3\:]8;;\]8;;file://{test_dir}/logfile_xml_msg.0#L3\[1m3[0m]8;;\
  [1mPattern:[0m      /xml_msg_log/regex/std = [1m[36m^[0m\[[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[32m{[0m4[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0m [1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m,[1m\d[0m[1m[32m{[0m3[1m[32m}[0m[1m[32m)[0m\][1m\s[0m[1m[36m+[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m\s[0m[1m[36m+[0m\[[1m[32m([0m[1m[32m?[0m[1m[36m<[0mmodule[1m[36m>[0m[1m[32m[[0m[1m[36m^[0m:[1m[32m][0m[1m[36m*[0m[1m[32m)[0m:[1m[32m([0m[1m[32m?[0m[1m[36m<[0mline[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\][1m\s[0m[1m[36m*[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m[32m[[0m[1m[36m^[0m\n[1m[32m][0m[1m[36m*[0m[1m[32m)[0m\n[1m[36m?[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mmsg_data[1m[36m>[0m[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m
  Known message fields for table [1mxml_msg_log[0m:
- | [1m[32m◆[0m 📊 module   = connect.client
- | [1m[32m◆[0m 📊 line     = 69
+ | [1m[32m◆[0m 📊 module   = connect.client[32m  ~2 distinct of 4[0m
+ | [1m[32m◆[0m 📊 line     = 69[32m  69..108 of 4[0m
  | [1m[32m◆[0m    msg_data = <?xml version='1.0' encoding='iso-8859-2'?>␊<a-request>␊  <head>␊    x␊  </head>␊  <source>␊    x␊  </source>␊  <request id="1">␊    <name>␊      x␊    </name>␊  </request>␊</a-request>␊
  XML fields:
    [1mxpath[0m([35m'/a-request/head/text()'[0m, xml_msg_log.msg_data) = [1mx[0m

@@ -1973,6 +1973,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         this->lf_value_stats.resize(sbc.sbc_value_stats.size());
         for (size_t lpc = 0; lpc < sbc.sbc_value_stats.size(); lpc++) {
+            // Ensure the per-batch t-digest's pending buffer is
+            // compacted into ordered centroids before we fold it in:
+            // `tdigest::insert(other)` walks `other.active->values`,
+            // which is empty when the source still has data sitting
+            // in the buffer.
+            sbc.sbc_value_stats[lpc].finalize();
             this->lf_value_stats[lpc].merge(sbc.sbc_value_stats[lpc]);
         }
         {
@@ -2050,13 +2056,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         for (auto& lvs : this->lf_value_stats) {
-            {
-                lvs.lvs_tdigest.merge();
-                auto p25 = lvs.lvs_tdigest.quantile(25);
-                auto p50 = lvs.lvs_tdigest.quantile(50);
-                auto p75 = lvs.lvs_tdigest.quantile(75);
-                log_debug("stats[] p25=%f p50=%f p75=%f", p25, p50, p75);
-            }
+            lvs.finalize();
         }
     } else {
         this->lf_stat = st;

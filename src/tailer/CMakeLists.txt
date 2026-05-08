@@ -20,6 +20,7 @@ add_library(tailerservice
         tailerbin.cc)
 target_include_directories(tailerservice
         PUBLIC
+        ../third-party/cpp-HyperLogLog/include
         ../third-party/digestible/include
         ${CMAKE_CURRENT_BINARY_DIR}
 )

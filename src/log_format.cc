@@ -390,6 +390,30 @@ logline_value_meta::to_chart_type() const
     return retval;
 }
 
+std::string
+logline_value_meta::to_humanized_value(int64_t i) const
+{
+    if (!this->lvm_unit_suffix.empty()
+        || (this->lvm_unit_divisor != 0.0 && this->lvm_unit_divisor != 1.0))
+    {
+        double d = i;
+        if (this->lvm_unit_divisor != 0.0 && this->lvm_unit_divisor != 1.0) {
+            d /= this->lvm_unit_divisor;
+        }
+        return humanize::format(d, this->lvm_unit_suffix.to_string_fragment());
+    }
+    return fmt::to_string(i);
+}
+
+std::string
+logline_value_meta::to_humanized_value(double d) const
+{
+    if (this->lvm_unit_divisor != 0.0 && this->lvm_unit_divisor != 1.0) {
+        d /= this->lvm_unit_divisor;
+    }
+    return humanize::format(d, this->lvm_unit_suffix.to_string_fragment());
+}
+
 struct line_range
 logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
 {
@@ -590,6 +614,19 @@ logline_value::to_string() const
     }
 
     return {buffer};
+}
+
+std::string
+logline_value::to_humanized_string() const
+{
+    switch (this->lv_meta.lvm_kind) {
+        case value_kind_t::VALUE_INTEGER:
+            return this->lv_meta.to_humanized_value(this->lv_value.i);
+        case value_kind_t::VALUE_FLOAT:
+            return this->lv_meta.to_humanized_value(this->lv_value.d);
+        default:
+            return this->to_string();
+    }
 }
 
 string_fragment
@@ -2291,6 +2328,9 @@ external_log_format::scan_tabular(logfile& lf,
                 if (field_sf.length() > lvs.lvs_width) {
                     lvs.lvs_width = field_sf.length();
                 }
+                if (vd->vd_meta.lvm_identifier && !field_sf.empty()) {
+                    lvs.add_text(field_sf);
+                }
             }
             // CSV cells may carry a `""`-escaped double-quote literal;
             // collapse those before any downstream comparison or
@@ -2602,6 +2642,15 @@ external_log_format::scan(logfile& lf,
 
             if (cap_size > lvs.lvs_width) {
                 lvs.lvs_width = cap_size;
+            }
+            // Identifier fields are explicitly excluded from numeric
+            // ingest in `ingest_numeric_value`; route them to the
+            // distinct-count estimator instead so columns like opid,
+            // hostname, request_id surface a useful cardinality.
+            if (ivd.ivd_value_def->vd_meta.lvm_identifier) {
+                if (auto cap = md[ivd.ivd_index]) {
+                    lvs.add_text(*cap);
+                }
             }
         }
 
@@ -5967,6 +6016,11 @@ external_log_format::value_line_count(scan_batch_context& sbc,
         }
         if (val) {
             lvs.add_value(val.value());
+        } else if (vd->vd_meta.lvm_identifier && str != nullptr && len > 0) {
+            // Identifier fields parsed as strings (no numeric `val`)
+            // contribute to the column's distinct-count estimate
+            // instead, mirroring the regex/tabular paths.
+            lvs.add_text(string_fragment::from_bytes(str, len));
         }
     }
 
@@ -6206,6 +6260,18 @@ logline_value_stats::merge(const logline_value_stats& other)
         this->lvs_width = other.lvs_width;
     }
 
+    // Distinct-count merge runs before the lvs_count == 0 short-circuit
+    // because a text-only column has count == 0 but may still carry an
+    // HLL whose registers we need to fold in.
+    this->lvs_text_count += other.lvs_text_count;
+    if (other.lvs_distinct) {
+        if (this->lvs_distinct) {
+            this->lvs_distinct->merge(other.lvs_distinct.value());
+        } else {
+            this->lvs_distinct = other.lvs_distinct;
+        }
+    }
+
     if (other.lvs_count == 0) {
         return;
     }
@@ -6237,6 +6303,31 @@ logline_value_stats::add_value(double value)
     this->lvs_count += 1;
     this->lvs_total += value;
     this->lvs_tdigest.insert(value);
+}
+
+void
+logline_value_stats::add_text(string_fragment sf)
+{
+    if (!this->lvs_distinct) {
+        this->lvs_distinct.emplace(12);
+    }
+    this->lvs_distinct->add(sf.data(), static_cast<uint32_t>(sf.length()));
+    this->lvs_text_count += 1;
+}
+
+std::optional<double>
+logline_value_stats::distinct_estimate() const
+{
+    if (!this->lvs_distinct) {
+        return std::nullopt;
+    }
+    return this->lvs_distinct->estimate();
+}
+
+void
+logline_value_stats::finalize()
+{
+    this->lvs_tdigest.merge();
 }
 
 std::vector<logline_value_meta>

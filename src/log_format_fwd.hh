@@ -52,6 +52,7 @@
 #include "base/time_util.hh"
 #include "byte_array.hh"
 #include "digestible/digestible.h"
+#include "hyperloglog.hpp"
 #include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
@@ -181,12 +182,32 @@ struct logline_value_stats {
 
     void add_value(double value);
 
+    // Feed a non-numeric cell into the per-column distinct-count
+    // estimator.  Lazy-initializes `lvs_distinct` on first call so
+    // numeric-only columns don't pay the ~4KB register-vector cost.
+    void add_text(string_fragment sf);
+
+    // HLL cardinality estimate for the column, or std::nullopt if no
+    // text cells were ever fed in.
+    std::optional<double> distinct_estimate() const;
+
+    // Compact the t-digest's pending buffer into ordered centroids so
+    // `lvs_tdigest.quantile(p)` returns accurate percentiles.  Call
+    // once after the per-file scan completes; no-op for repeated
+    // calls.
+    void finalize();
+
     int64_t lvs_width{0};
     int64_t lvs_count{0};
+    int64_t lvs_text_count{0};
     double lvs_total{0};
     double lvs_min_value{std::numeric_limits<double>::max()};
     double lvs_max_value{-std::numeric_limits<double>::max()};
     digestible::tdigest<double> lvs_tdigest{200};
+    // p=12 → ~4KB registers, ~1.6% standard error.  Right size for
+    // typical metrics text columns (HTTP methods, status codes,
+    // hostnames, op IDs all ≪ 2^52 — the post-XXH3 ceiling).
+    std::optional<hll::HyperLogLog> lvs_distinct;
 };
 
 struct pattern_for_lines {
@@ -624,6 +645,10 @@ struct logline_value_meta {
 
     chart_type_t to_chart_type() const;
 
+    std::string to_humanized_value(int64_t i) const;
+
+    std::string to_humanized_value(double d) const;
+
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
     column_t lvm_column{external_column{}};
@@ -694,6 +719,8 @@ public:
     void apply_scaling(const scaling_factor* sf);
 
     std::string to_string() const;
+
+    std::string to_humanized_string() const;
 
     string_fragment to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const;
 

@@ -529,6 +529,13 @@ public:
             if (cell_len > stats.lvs_width) {
                 stats.lvs_width = cell_len;
             }
+            // Non-numeric cells get fed into the column's HLL distinct
+            // estimator instead of the numeric stats.  Hash the raw
+            // cell bytes — CSV uses a consistent escape form for any
+            // given logical value, so unescape isn't required.
+            if (iter.kind() == separated_string::cell_kind::other) {
+                stats.add_text(*iter);
+            }
             parse_cell(iter, parse_context::scan)
                 .match(
                     [](empty_cell) {},

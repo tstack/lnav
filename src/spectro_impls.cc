@@ -40,6 +40,24 @@
 
 using namespace lnav::roles::literals;
 
+namespace {
+// Scale a raw column value into the display unit declared by the
+// column's `lvm_unit_divisor`.  Spectro consumers (axis labels,
+// bucket boundaries, mark-range comparison) all see display units,
+// so the divisor is applied once at the source instead of being a
+// parameter on the spectrogram_value_source interface.
+double
+scale_for_display(const std::optional<logline_value_meta>& meta, double v)
+{
+    if (meta && meta->lvm_unit_divisor > 0.0
+        && meta->lvm_unit_divisor != 1.0)
+    {
+        return v / meta->lvm_unit_divisor;
+    }
+    return v;
+}
+}  // namespace
+
 class filtered_sub_source
     : public text_sub_source
     , public text_time_translator
@@ -239,8 +257,10 @@ log_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
 
     sb_out.sb_begin_time = this->lsvs_begin_time;
     sb_out.sb_end_time = this->lsvs_end_time;
-    sb_out.sb_min_value_out = this->lsvs_stats.lvs_min_value;
-    sb_out.sb_max_value_out = this->lsvs_stats.lvs_max_value;
+    sb_out.sb_min_value_out
+        = scale_for_display(this->lsvs_meta, this->lsvs_stats.lvs_min_value);
+    sb_out.sb_max_value_out
+        = scale_for_display(this->lsvs_meta, this->lsvs_stats.lvs_max_value);
     sb_out.sb_count = this->lsvs_stats.lvs_count;
     sb_out.sb_mark_generation = lnav_data.ld_views[LNV_LOG]
                                     .get_bookmarks()[&textview_curses::BM_USER]
@@ -261,20 +281,21 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
 
     auto add_value_from = [&](const logline_value& lv, bool marked) {
         switch (lv.lv_meta.lvm_kind) {
-            case value_kind_t::VALUE_FLOAT:
-                row_out.add_value(sr,
-                                  spectrogram_row::value_type::real,
-                                  lv.lv_value.d,
-                                  marked);
-                row_out.sr_tdigest.insert(lv.lv_value.d);
+            case value_kind_t::VALUE_FLOAT: {
+                auto d = scale_for_display(this->lsvs_meta, lv.lv_value.d);
+                row_out.add_value(
+                    sr, spectrogram_row::value_type::real, d, marked);
+                row_out.sr_tdigest.insert(d);
                 break;
-            case value_kind_t::VALUE_INTEGER:
-                row_out.add_value(sr,
-                                  spectrogram_row::value_type::integer,
-                                  lv.lv_value.i,
-                                  marked);
-                row_out.sr_tdigest.insert(lv.lv_value.i);
+            }
+            case value_kind_t::VALUE_INTEGER: {
+                auto d = scale_for_display(
+                    this->lsvs_meta, static_cast<double>(lv.lv_value.i));
+                row_out.add_value(
+                    sr, spectrogram_row::value_type::integer, d, marked);
+                row_out.sr_tdigest.insert(d);
                 break;
+            }
             default:
                 break;
         }
@@ -420,12 +441,15 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
 
     auto in_range = [&](const logline_value& lv) {
         switch (lv.lv_meta.lvm_kind) {
-            case value_kind_t::VALUE_FLOAT:
-                return range_min <= lv.lv_value.d
-                    && lv.lv_value.d <= range_max;
-            case value_kind_t::VALUE_INTEGER:
-                return range_min <= lv.lv_value.i
-                    && lv.lv_value.i <= range_max;
+            case value_kind_t::VALUE_FLOAT: {
+                auto d = scale_for_display(this->lsvs_meta, lv.lv_value.d);
+                return range_min <= d && d <= range_max;
+            }
+            case value_kind_t::VALUE_INTEGER: {
+                auto d = scale_for_display(
+                    this->lsvs_meta, static_cast<double>(lv.lv_value.i));
+                return range_min <= d && d <= range_max;
+            }
             default:
                 return false;
         }
@@ -485,15 +509,6 @@ log_spectro_value_source::spectro_value_suffix() const
         return this->lsvs_meta->lvm_unit_suffix.to_string();
     }
     return {};
-}
-
-double
-log_spectro_value_source::spectro_value_divisor() const
-{
-    if (this->lsvs_meta && this->lsvs_meta->lvm_unit_divisor > 0.0) {
-        return this->lsvs_meta->lvm_unit_divisor;
-    }
-    return 1.0;
 }
 
 db_spectro_value_source::db_spectro_value_source(std::string colname)
@@ -624,6 +639,16 @@ db_spectro_value_source::update_stats()
     }
 
     this->dsvs_stats.lvs_count = dls.dls_row_cursors.size();
+}
+
+std::string
+db_spectro_value_source::spectro_value_suffix() const
+{
+    if (!this->dsvs_column_index) {
+        return {};
+    }
+    auto& dls = lnav_data.ld_db_row_source;
+    return dls.dls_headers[this->dsvs_column_index.value()].hm_unit_suffix;
 }
 
 void

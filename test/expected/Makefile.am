@@ -976,6 +976,8 @@ dist_noinst_DATA = \
     test_shlexer.sh_e99fe1cde36b85ebbab86ca820f55ec861cdc20b.out \
     test_spectro.sh_4b04dd7663f94be7cf711daaf4674e9a0c729e24.err \
     test_spectro.sh_4b04dd7663f94be7cf711daaf4674e9a0c729e24.out \
+    test_spectro.sh_5a8522a8cf5a7998163672eced217e61788f13af.err \
+    test_spectro.sh_5a8522a8cf5a7998163672eced217e61788f13af.out \
     test_spectro.sh_61f687d0aef681c7c6dcdc96d384f17097401d6f.err \
     test_spectro.sh_61f687d0aef681c7c6dcdc96d384f17097401d6f.out \
     test_sql.sh_02def66745b063518473df862987747909f56ccc.err \

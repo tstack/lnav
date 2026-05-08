@@ -4,11 +4,11 @@
  [1mPermalink:[0m    #msg0005f7a62d108738-v1:d44cb353234fbbacfaf795d11079917f
  [1mFile:[0m         ]8;;file://{test_dir}/logfile_bunyan.0#L4\[1m{test_dir}/logfile_bunyan.0[0m]8;;\]8;;file://{test_dir}/logfile_bunyan.0#L4\:]8;;\]8;;file://{test_dir}/logfile_bunyan.0#L4\[1m4[0m]8;;\
  Known message fields for table [1mbunyan_log[0m:
- | [1m[32m◆[0m 📊 name     = renovate
- | [32m◇[0m 📊 hostname = renovate-gitlab-67c4bcb5-9ggbv
- | [1m[32m◆[0m 📊 pid      = 7
- | [32m◇[0m 📊 level    = 30
- | [32m◇[0m 📊 v        = 0
+ | [1m[32m◆[0m 📊 name     = renovate[32m  ~1 distinct of 11[0m
+ | [32m◇[0m 📊 hostname = renovate-gitlab-67c4bcb5-9ggbv[32m  ~1 distinct of 11[0m
+ | [1m[32m◆[0m 📊 pid      = 7[32m  ~1 distinct of 11[0m
+ | [32m◇[0m 📊 level    = 30[32m  ~2 distinct of 11[0m
+ | [32m◇[0m 📊 v        = 0[32m  0..0 of 11[0m
  JSON fields: [32m(press 'c' to copy raw JSON log message)[0m
    [1mjget[0m(log_raw_text, [35m'/baseBranch'[0m) = [1mmain[0m
    [1mjget[0m(log_raw_text, [35m'/logContext'[0m) = [1mqjifsaDDI[0m

@@ -43,6 +43,7 @@ libtailerpp_a_CPPFLAGS = \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib \
     -I$(srcdir)/../third-party \
+	-I$(top_srcdir)/src/third-party/cpp-HyperLogLog/include \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/digestible/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
@@ -59,6 +60,7 @@ libtailerservice_a_CPPFLAGS = \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib \
     -I$(srcdir)/../third-party \
+	-I$(top_srcdir)/src/third-party/cpp-HyperLogLog/include \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/digestible/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \

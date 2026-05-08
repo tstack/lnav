@@ -5,9 +5,9 @@
  [1mPermalink:[0m    #msg00064f68a98c4800-v1:0d146159752bb5d07c3ed7420ff46246
  [1mFile:[0m         ]8;;file://{test_dir}/logfile_metrics2.csv#L2\[1m{test_dir}/logfile_metrics2.csv[0m]8;;\]8;;file://{test_dir}/logfile_metrics2.csv#L2\:]8;;\]8;;file://{test_dir}/logfile_metrics2.csv#L2\[1m2[0m]8;;\
  Known message fields for table [1mmetrics_log[0m:
- | [1m[32m◆[0m 📊 queue_depth = 5
- | [1m[32m◆[0m 📊 error_rate  = 0
- | [1m[32m◆[0m 📊 cpu_pct     = 12.500000
+ | [1m[32m◆[0m 📊 queue_depth = 5[32m  5..12 of 8[0m
+ | [1m[32m◆[0m 📊 error_rate  = 0[32m  0..3 of 8[0m
+ | [1m[32m◆[0m 📊 cpu_pct     = 12.5
  | [1m[32m◆[0m 📊 mem_mb      = 2048
  | [1m[32m◆[0m 📊 disk_iops   = 150
  [32mNo discovered message fields[0m

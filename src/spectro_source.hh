@@ -143,13 +143,12 @@ public:
     // the header renderer to humanize Min/Max (e.g. "1.2 MB" instead
     // of "1258291") when the source column declares a unit.  Empty
     // string means "no humanization — render raw number".
+    //
+    // Sources are responsible for emitting bounds and row values in
+    // the same units the suffix describes — any divisor between the
+    // raw column representation and the display unit is applied
+    // inside the source, not here.
     virtual std::string spectro_value_suffix() const { return {}; }
-
-    // Divisor applied to raw values before humanization.  For
-    // example, a column stored in milliseconds with a display suffix
-    // of "s" would return 1000.0 here.  Default 1.0 means "no
-    // scaling".
-    virtual double spectro_value_divisor() const { return 1.0; }
 };
 
 class spectrogram_source

@@ -31,6 +31,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/third-party \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/digestible/include \
+	-I$(top_srcdir)/src/third-party/cpp-HyperLogLog/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	$(CODE_COVERAGE_CPPFLAGS) \
@@ -434,6 +435,7 @@ dist_noinst_DATA = \
 	logfile_shop_access_log.0 \
 	logfile_spark.0 \
 	logfile_spark_dupe.0 \
+	logfile_spectro_humanized.0 \
 	logfile_strace_log.0 \
 	logfile_strace_log.1 \
 	logfile_strace_log.2 \

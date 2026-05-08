@@ -18,3 +18,14 @@ run_cap_test ${lnav_test} -n \
     -c ":mark" \
     -c ":switch-to-view log" \
     ${test_dir}/logfile_access_log.0
+
+# Spectrogram against a SQL search-table column whose cells are
+# humanized text exercises db_spectro_value_source::spectro_value_suffix's
+# pull from db_label_source's hm_unit_suffix.  Without the override,
+# axis labels and bucket ranges render bare numbers; with it, they
+# carry the inferred "B" suffix.
+run_cap_test ${lnav_test} -n \
+    -c ":create-search-table req_sizes size=(?<size>\S+)" \
+    -c ";SELECT log_time, size FROM req_sizes" \
+    -c ":spectrogram size" \
+    ${test_dir}/logfile_spectro_humanized.0

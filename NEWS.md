@@ -57,6 +57,16 @@ Features:
   the raw value to the base unit implied by `suffix` —
   e.g. a field storing milliseconds with `"suffix": "s"`
   declares `"divisor": 1000`.
+* The details overlay now shows per-column statistics for
+  the focused message.  Numeric columns get a `min..max of
+  N` range summary on the value line, plus a `p50/p90/p99`
+  percentile sub-line for columns with enough samples to
+  characterize the distribution shape.  Identifier and
+  metrics-text columns get an estimated distinct-value
+  count (`~K distinct of N`).  Distinct counts are computed
+  from a HyperLogLog sketch (~4 KB per text column,
+  ~1.6% standard error).  Stats render in the column's
+  declared unit when one is set.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the
