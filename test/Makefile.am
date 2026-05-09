@@ -410,6 +410,7 @@ dist_noinst_DATA = \
 	logfile_metrics_unordered.csv \
 	logfile_not_metrics.csv \
 	logfile_tabular.csv \
+	logfile_tabular_multiline.csv \
 	logfile_tabular_synth.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
