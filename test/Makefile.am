@@ -468,6 +468,7 @@ dist_noinst_DATA = \
 	logfile_win_events_csv.0 \
 	logfile_win_events_extras.csv \
 	logfile_win_events_extras_quotes.csv \
+	logfile_win_events_multiline.csv \
 	logfile_win_events_quotes.csv \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	logfile_with_zones.0 \

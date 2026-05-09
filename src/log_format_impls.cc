@@ -639,7 +639,10 @@ public:
         this->mlf_separator = ',';
         auto has_sep_directive = false;
         for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
-            auto read_res = lf.read_line(ll_iter);
+            if (ll_iter->get_sub_offset() != 0) {
+                continue;
+            }
+            auto read_res = lf.read_raw_message(ll_iter);
             if (read_res.isErr()) {
                 return scan_no_match{"cannot read header"};
             }
@@ -1224,7 +1227,7 @@ public:
         }
 
         auto line_iter = dst.begin();
-        auto read_result = lf.read_line(line_iter);
+        auto read_result = lf.read_raw_message(line_iter);
 
         if (read_result.isErr()) {
             return scan_no_match{"unable to read first line"};
@@ -1247,7 +1250,10 @@ public:
         this->blf_separator = intern_string::lookup(sep);
 
         for (++line_iter; line_iter != dst.end(); ++line_iter) {
-            auto next_read_result = lf.read_line(line_iter);
+            if (line_iter->get_sub_offset() != 0) {
+                continue;
+            }
+            auto next_read_result = lf.read_raw_message(line_iter);
 
             if (next_read_result.isErr()) {
                 return scan_no_match{"unable to read header line"};
@@ -2062,7 +2068,10 @@ public:
 
         for (auto line_iter = dst.begin(); line_iter != dst.end(); ++line_iter)
         {
-            auto next_read_result = lf.read_line(line_iter);
+            if (line_iter->get_sub_offset() != 0) {
+                continue;
+            }
+            auto next_read_result = lf.read_raw_message(line_iter);
 
             if (next_read_result.isErr()) {
                 return scan_no_match{"unable to read first line"};

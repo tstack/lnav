@@ -2173,10 +2173,16 @@ external_log_format::finalize_line(logline& new_line,
         new_line.merge_bloom_bits(in.lfi_opid_cap->bloom_bits());
     }
 
-    auto tid_iter = sbc.sbc_tids.insert_tid(
-        sbc.sbc_allocator, in.lfi_tid_cap.value_or(string_fragment{}), log_us);
-    tid_iter->second.titr_level_stats.update_msg_count(level);
-    if (in.lfi_tid_cap) {
+    if (this->elf_thread_id_field.empty()) {
+        if (in.lfi_terminated) {
+            auto tid_iter = sbc.sbc_tids.insert_tid(
+                sbc.sbc_allocator, string_fragment{}, log_us);
+            tid_iter->second.titr_level_stats.update_msg_count(level);
+        }
+    } else if (in.lfi_tid_cap) {
+        auto tid_iter = sbc.sbc_tids.insert_tid(
+            sbc.sbc_allocator, in.lfi_tid_cap.value(), log_us);
+        tid_iter->second.titr_level_stats.update_msg_count(level);
         new_line.merge_bloom_bits(in.lfi_tid_cap->bloom_bits());
     }
 
@@ -2297,9 +2303,15 @@ external_log_format::scan_tabular(logfile& lf,
         }
 
         auto ss = separated_string(sf);
+        ss.ss_resume = std::exchange(this->tlf_suspended_state, std::nullopt);
+        if (ss.ss_resume.has_value()) {
+            ll.set_continued(true);
+            ll.set_ignore(!this->jlf_line_format.empty());
+        } else {
+            this->tlf_sub_lines = 1 + this->jlf_line_format_init_count;
+        }
         ss.ss_separator = this->tlf_separator;
         ss.ss_expected_count = this->elf_value_def_read_order.size();
-        size_t value_index = 0;
         line_finalize_inputs lfi;
         lfi.lfi_line_sf = sf;
         // Gather the column-name set used for opid synthesis when the format
@@ -2312,12 +2324,19 @@ external_log_format::scan_tabular(logfile& lf,
                 opid_desc_field_names.insert(desc.od_field.pp_value);
             }
         }
-        for (auto field_sf : ss) {
+        size_t last_value_index = 0;
+        for (auto ss_iter = ss.begin(); ss_iter != ss.end(); ++ss_iter) {
+            auto field_sf = *ss_iter;
+            if (ss_iter.unterminated_quote()) {
+                this->tlf_suspended_state = ss_iter.suspend();
+                lfi.lfi_terminated = false;
+            }
+            const auto value_index = ss_iter.index();
+            last_value_index = value_index;
             if (value_index >= this->elf_value_def_read_order.size()) {
                 break;
             }
             const auto* vd = this->elf_value_def_read_order[value_index].second;
-            value_index += 1;
             if (vd == nullptr) {
                 continue;
             }
@@ -2383,7 +2402,14 @@ external_log_format::scan_tabular(logfile& lf,
                 lfi.lfi_opid_desc_frags.push_back(canon_sf);
             }
         }
-        if (value_index >= this->elf_value_def_read_order.size()) {
+        if (this->tlf_suspended_state) {
+            this->tlf_sub_lines += 1;
+        } else {
+            last_value_index += 1;
+        }
+        if (last_value_index >= this->elf_value_def_read_order.size()
+            || this->tlf_suspended_state.has_value())
+        {
             this->finalize_line(dst.back(), lfi, sbc);
         } else if (sf.startswith("#")) {
             ll.set_ignore(true);
@@ -2394,29 +2420,35 @@ external_log_format::scan_tabular(logfile& lf,
         if (!this->jlf_line_format.empty()) {
             static const intern_string_t body_name
                 = intern_string::lookup("body", -1);
-            int sub_line_count = 1 + this->jlf_line_format_init_count;
-            for (size_t lpc = 0; lpc < this->elf_value_def_read_order.size()
-                 && lpc < value_index;
+            size_t lpc = 0;
+            if (ss.ss_resume) {
+                lpc = ss.ss_resume->rs_index;
+            }
+            for (; lpc < this->elf_value_def_read_order.size()
+                 && lpc < last_value_index;
                  lpc++)
             {
                 const auto* vd = this->elf_value_def_read_order[lpc].second;
                 if (vd == nullptr) {
                     if (!this->jlf_hide_extra) {
-                        sub_line_count += 1;
+                        this->tlf_sub_lines += 1;
                     }
                     continue;
                 }
                 if (!vd->vd_meta.is_hidden() && !vd->vd_line_format_index
                     && vd->vd_meta.lvm_name != body_name)
                 {
-                    sub_line_count += 1;
+                    this->tlf_sub_lines += 1;
                 }
             }
-            auto sub_ll = ll.clone();
-            sub_ll.set_continued(true);
-            for (int lpc = 1; lpc < sub_line_count; lpc++) {
-                sub_ll.set_sub_offset(lpc);
-                dst.emplace_back(std::move(sub_ll));
+            if (!this->tlf_suspended_state) {
+                auto sub_ll = ll.clone();
+                sub_ll.set_continued(true);
+                sub_ll.set_ignore(false);
+                for (int lpc = 1; lpc < this->tlf_sub_lines; lpc++) {
+                    sub_ll.set_sub_offset(lpc);
+                    dst.emplace_back(std::move(sub_ll));
+                }
             }
         }
 
@@ -2434,7 +2466,10 @@ external_log_format::scan_tabular(logfile& lf,
     auto header_state = tabular_header_state::reading_metadata;
     std::optional<char> sep;
     for (auto ll_iter = lf.begin(); ll_iter != lf.end(); ++ll_iter) {
-        auto read_res = lf.read_line(ll_iter);
+        if (ll_iter->get_sub_offset() != 0) {
+            continue;
+        }
+        auto read_res = lf.read_raw_message(ll_iter);
         if (read_res.isErr()) {
             return scan_no_match{"cannot read header"};
         }
@@ -2516,6 +2551,7 @@ external_log_format::scan_tabular(logfile& lf,
                 this->tlf_separator = sep.value();
                 this->tlf_header_end = li.li_file_range.next_offset();
                 this->tlf_extra_count = misses;
+                this->tlf_suspended_state = std::nullopt;
                 return scan_match{1000, misses, hits};
             }
         }
@@ -2742,18 +2778,22 @@ external_log_format::annotate(logfile* lf,
     if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR
         && this->jlf_line_format.empty())
     {
+        auto ll_iter = std::next(lf->begin(), line_number);
+
+        if (ll_iter->is_continued()) {
+            // XXX read previous lines so we can do a proper annotation
+            return;
+        }
         // Tabular format without line-format: get_subline left the row
         // raw, so parse it here directly.
         auto sf = line.to_string_fragment();
         auto ss = separated_string(sf);
         ss.ss_separator = this->tlf_separator;
-        size_t value_index = 0;
         for (auto it = ss.begin(); it != ss.end(); ++it) {
-            if (value_index >= this->elf_value_def_read_order.size()) {
+            if (it.index() >= this->elf_value_def_read_order.size()) {
                 break;
             }
-            this->process_csv_cell(values, &sa, value_index, it, line);
-            value_index += 1;
+            this->process_csv_cell(values, &sa, it, line);
         }
 
         return;
@@ -3435,11 +3475,10 @@ csv_cell_kind_to_value_kind(separated_string::cell_kind k)
 void
 external_log_format::process_csv_cell(logline_value_vector& values,
                                       string_attrs_t* sa,
-                                      size_t value_index,
                                       const separated_string::iterator& it,
                                       shared_buffer_ref& sbr) const
 {
-    const auto& [col_name, vd] = this->elf_value_def_read_order[value_index];
+    const auto& [col_name, vd] = this->elf_value_def_read_order[it.index()];
     auto field_sf = *it;
     auto lr = to_line_range(field_sf);
     // separated_string preserves CSV `""` escapes verbatim in the
@@ -3547,14 +3586,11 @@ external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
     ss.ss_separator = this->tlf_separator;
     ss.ss_expected_count = this->elf_value_def_read_order.size();
 
-    size_t value_index = 0;
     for (auto it = ss.begin(); it != ss.end(); ++it) {
-        if (value_index >= this->elf_value_def_read_order.size()) {
+        if (it.index() >= this->elf_value_def_read_order.size()) {
             break;
         }
-        this->process_csv_cell(
-            this->jlf_line_values, nullptr, value_index, it, sbr);
-        value_index++;
+        this->process_csv_cell(this->jlf_line_values, nullptr, it, sbr);
         // Hidden values' lv_origin would otherwise point at the
         // original CSV byte range, but lvv_sbr is about to be
         // re-pointed at the rewritten line where those offsets are

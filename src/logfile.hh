@@ -342,6 +342,8 @@ public:
         return retval;
     }
 
+    std::pair<iterator, iterator> message_lines(iterator ll);
+
     struct message_length_result {
         file_ssize_t mlr_length;
         size_t mlr_line_count;

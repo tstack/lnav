@@ -147,3 +147,25 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_extra_fields FROM tabular_test_log ORDER BY log_line" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_tabular.csv
+
+# Multi-line cells: a quoted CSV value that contains literal newlines
+# must be glued back into a single logline.  The fixture's middle row
+# spans three physical lines; we expect three loglines total, with the
+# warn row's log_body carrying the full multi-line text.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_tabular_multiline.csv
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_level, log_body FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_multiline.csv
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_win_events_multiline.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_level, log_body, log_raw_text FROM all_logs ORDER BY log_line" \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_win_events_multiline.csv

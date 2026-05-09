@@ -1824,8 +1824,12 @@ dist_noinst_DATA = \
     test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.out \
     test_tabular_format.sh_0a16ddca642c2016495c892311167bbc5e790fa6.err \
     test_tabular_format.sh_0a16ddca642c2016495c892311167bbc5e790fa6.out \
+    test_tabular_format.sh_13cb6200436895f10a3dfb8530840ed847d32f2a.err \
+    test_tabular_format.sh_13cb6200436895f10a3dfb8530840ed847d32f2a.out \
     test_tabular_format.sh_1736dabbbdd1a0775ded9991850f4f7c72dea6d9.err \
     test_tabular_format.sh_1736dabbbdd1a0775ded9991850f4f7c72dea6d9.out \
+    test_tabular_format.sh_1aed283ec74459b1ea33fa3fe6be505a65b9f155.err \
+    test_tabular_format.sh_1aed283ec74459b1ea33fa3fe6be505a65b9f155.out \
     test_tabular_format.sh_2b3d59305fdb5f1cb6506274c647b8faad69e52a.err \
     test_tabular_format.sh_2b3d59305fdb5f1cb6506274c647b8faad69e52a.out \
     test_tabular_format.sh_2b8622eb5592bae9d958cfa0d44a1c29973bc7a0.err \
@@ -1836,6 +1840,8 @@ dist_noinst_DATA = \
     test_tabular_format.sh_46436f282b7388283df7fcda8a6199b49c57d966.out \
     test_tabular_format.sh_6bf18074da9e323c57631d0393bb86f9f0b23649.err \
     test_tabular_format.sh_6bf18074da9e323c57631d0393bb86f9f0b23649.out \
+    test_tabular_format.sh_7f72b4d6e7631477661a16b952ab22e0b3bfe5a6.err \
+    test_tabular_format.sh_7f72b4d6e7631477661a16b952ab22e0b3bfe5a6.out \
     test_tabular_format.sh_809e2ecdddd3ca05c9b11694e82cfebdc690cf46.err \
     test_tabular_format.sh_809e2ecdddd3ca05c9b11694e82cfebdc690cf46.out \
     test_tabular_format.sh_8adbcacd2975bb46b9906920c13222d8773576f1.err \
@@ -1854,6 +1860,8 @@ dist_noinst_DATA = \
     test_tabular_format.sh_d4bee478c9adf702a6245b9b93b79c42263a74a7.out \
     test_tabular_format.sh_f832a3d06d425b2a44565dc0a2b34fbb5cd95361.err \
     test_tabular_format.sh_f832a3d06d425b2a44565dc0a2b34fbb5cd95361.out \
+    test_tabular_format.sh_fabc3a51da3bbdba0ae3ed001d737a6367542255.err \
+    test_tabular_format.sh_fabc3a51da3bbdba0ae3ed001d737a6367542255.out \
     test_tabular_format.sh_fbf90222fed7c3052d63a6b3bc381507a1790596.err \
     test_tabular_format.sh_fbf90222fed7c3052d63a6b3bc381507a1790596.out \
     test_text_file.sh_02a0514e0e384e5511ae202ea519552ba04030ed.err \

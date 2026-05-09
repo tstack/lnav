@@ -2082,10 +2082,50 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     return retval;
 }
 
+std::pair<logfile::iterator, logfile::iterator>
+logfile::message_lines(iterator ll)
+{
+    auto starting_ll = ll;
+    while (starting_ll != this->begin()) {
+        if (!starting_ll->is_continued()) {
+            break;
+        }
+        --starting_ll;
+    }
+    auto ending_ll = starting_ll;
+    while (ending_ll != this->end()) {
+        if (ending_ll->get_sub_offset() != 0) {
+            break;
+        }
+        if (!ending_ll->is_continued()) {
+            break;
+        }
+        ++ending_ll;
+    }
+    return std::make_pair(starting_ll, ending_ll);
+}
+
 Result<shared_buffer_ref, std::string>
 logfile::read_line(iterator ll, subline_options opts)
 {
     try {
+        if (this->lf_format && this->lf_format->lf_formatted_lines) {
+            auto raw_read_res = this->read_raw_message(this->message_start(ll));
+            if (raw_read_res.isErr()) {
+                return Err(raw_read_res.unwrapErr());
+            }
+            auto sbr = raw_read_res.unwrap();
+            sbr.rtrim(is_line_ending);
+            auto& sbr_meta = sbr.get_metadata();
+            if (opts.scrub_invalid_utf8 && !sbr_meta.m_valid_utf) {
+                scrub_to_utf8(sbr.get_writable_data(), sbr.length());
+                sbr_meta.m_valid_utf = true;
+            }
+            this->lf_format->get_subline(
+                {this->lf_value_stats, this->lf_pattern_locks}, *ll, sbr, opts);
+            return Ok(std::move(sbr));
+        }
+
         auto get_range_res = this->get_file_range(ll, false);
         return this->lf_line_buffer.read_range(get_range_res)
             .map([&ll, &get_range_res, &opts, this](auto sbr) {
@@ -2104,7 +2144,6 @@ logfile::read_line(iterator ll, subline_options opts)
                         sbr,
                         opts);
                 }
-
                 return sbr;
             });
     } catch (const line_buffer::error& e) {
@@ -2378,11 +2417,60 @@ logfile::message_byte_length(const_iterator ll, bool include_continues)
 }
 
 Result<shared_buffer_ref, std::string>
-logfile::read_raw_message(logfile::const_iterator ll)
+logfile::read_raw_message(const_iterator ll)
 {
     require(ll->get_sub_offset() == 0);
 
-    return this->lf_line_buffer.read_range(this->get_file_range(ll));
+    auto ending_ll = std::next(ll);
+    while (ending_ll != this->end()) {
+        if (!ending_ll->is_continued()) {
+            // hit the next log message
+            break;
+        }
+        if (ending_ll->get_sub_offset() != 0) {
+            // hit a synthesized line
+            break;
+        }
+        ++ending_ll;
+    }
+
+    auto line_count = std::distance(ll, ending_ll);
+    if (line_count == 1) {
+        const auto curr_range = this->get_file_range(ll, false);
+        auto read_res = this->lf_line_buffer.read_range(
+            curr_range, line_buffer::scan_direction::forward);
+        if (read_res.isErr()) {
+            return Err(read_res.unwrapErr());
+        }
+        auto sbr = read_res.unwrap();
+        sbr.rtrim(is_line_ending);
+        return Ok(std::move(sbr));
+    }
+
+    this->lf_plain_msg_shared.invalidate_refs();
+    this->lf_plain_msg_buffer.clear();
+
+    auto curr_ll = ll;
+    while (curr_ll != ending_ll) {
+        const auto curr_range = this->get_file_range(curr_ll, false);
+        auto read_res = this->lf_line_buffer.read_range(
+            curr_range, line_buffer::scan_direction::forward);
+        if (read_res.isErr()) {
+            return Err(read_res.unwrapErr());
+        }
+        auto sbr = read_res.unwrap();
+        this->lf_plain_msg_buffer.append(sbr.to_string_view());
+        ++curr_ll;
+        if (curr_ll != ending_ll) {
+            this->lf_plain_msg_buffer.push_back('\n');
+        }
+    }
+
+    shared_buffer_ref retval;
+    retval.share(this->lf_plain_msg_shared,
+                 this->lf_plain_msg_buffer.data(),
+                 this->lf_plain_msg_buffer.size());
+    return Ok(std::move(retval));
 }
 
 intern_string_t

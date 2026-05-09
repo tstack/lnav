@@ -1,0 +1,14 @@
+[
+    {
+        "log_line": 0,
+        "log_level": "unknown",
+        "log_body": "first event",
+        "log_raw_text": "\"10/22/2018  4:13:27 AM\",\"docker\",\"first event\",\"1001\",\"1\",\"alpha\",\"42\",\"3.14\""
+    },
+    {
+        "log_line": 6,
+        "log_level": "unknown",
+        "log_body": "second\nevent",
+        "log_raw_text": "\"10/22/2018  4:13:28 AM\",\"docker\",\"second\nevent\",\"1002\",\"2\",\"beta\",\"100\",\"2.71\""
+    }
+]

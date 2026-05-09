@@ -271,6 +271,142 @@ TEST_CASE("unterminated quote captures rest of input")
     CHECK(cells[0].value == "start,here,no-close");
 }
 
+TEST_CASE("unterminated_quote flag flips only on the trailing open cell")
+{
+    auto input = std::string(R"(a,"unterminated cell)");
+    separated_string ss(input.data(), input.length());
+    std::vector<bool> flags;
+    for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+        flags.push_back(iter.unterminated_quote());
+    }
+    REQUIRE(flags.size() == 2);
+    CHECK_FALSE(flags[0]);
+    CHECK(flags[1]);
+}
+
+TEST_CASE("unterminated_quote stays false when every quote is closed")
+{
+    auto input = std::string(R"("one","two","three")");
+    separated_string ss(input.data(), input.length());
+    for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+        CHECK_FALSE(iter.unterminated_quote());
+    }
+}
+
+TEST_CASE("unterminated_quote sees through `\"\"` escapes")
+{
+    // The `""` is an embedded literal, not a close-quote — so the
+    // outer quoted region is still open at end-of-buffer.
+    auto input = std::string(R"("a""b,rest)");
+    separated_string ss(input.data(), input.length());
+    auto iter = ss.begin();
+    REQUIRE(iter != ss.end());
+    CHECK(iter.unterminated_quote());
+    ++iter;
+    CHECK(iter == ss.end());
+}
+
+TEST_CASE("ss_resume: continuation closes and emits remaining cells")
+{
+    // Caller previously parsed `"line one` (open quote), is now
+    // feeding the rest after a `\n` glue: `line two",x,y`.
+    auto input = std::string(R"(line two",x,y)");
+    separated_string ss(input.data(), input.length());
+    ss.ss_resume = separated_string::resume_state{0, true};
+    auto cells = std::vector<parsed_cell>{};
+    for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+        cells.push_back(parsed_cell{(*iter).to_string(), iter.kind()});
+        CHECK_FALSE(iter.unterminated_quote());
+    }
+    REQUIRE(cells.size() == 3);
+    CHECK(cells[0].value == "line two");
+    CHECK(cells[1].value == "x");
+    CHECK(cells[2].value == "y");
+}
+
+TEST_CASE("ss_resume: continuation still unterminated re-flags")
+{
+    // Open-quote chunk N+1: still no closing `"` in this buffer
+    // either.  Caller will need to keep stitching.
+    auto input = std::string("more middle text");
+    separated_string ss(input.data(), input.length());
+    ss.ss_resume = separated_string::resume_state{0, true};
+    auto iter = ss.begin();
+    REQUIRE(iter != ss.end());
+    CHECK((*iter).to_string() == "more middle text");
+    CHECK(iter.unterminated_quote());
+    ++iter;
+    CHECK(iter == ss.end());
+}
+
+TEST_CASE("ss_resume: `\"\"` inside a continuation stays embedded")
+{
+    // `""` in a continuation chunk is still a literal `"`, not a
+    // close-quote; the surrounding region remains open until a
+    // lone `"`.
+    auto input = std::string(R"(has ""embedded"" still open)");
+    separated_string ss(input.data(), input.length());
+    ss.ss_resume = separated_string::resume_state{0, true};
+    auto iter = ss.begin();
+    REQUIRE(iter != ss.end());
+    CHECK((*iter).to_string() == R"(has ""embedded"" still open)");
+    CHECK(iter.unterminated_quote());
+}
+
+TEST_CASE("ss_resume: continuation that closes immediately")
+{
+    // Edge case: the buffer is just the close-quote, separator, next
+    // cell.  The leading character closes the open region and yields
+    // an empty cell value (no bytes from this chunk belonged to the
+    // quoted run).
+    auto input = std::string(R"(",tail)");
+    separated_string ss(input.data(), input.length());
+    ss.ss_resume = separated_string::resume_state{0, true};
+    auto cells = std::vector<parsed_cell>{};
+    for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
+        cells.push_back(parsed_cell{(*iter).to_string(), iter.kind()});
+    }
+    REQUIRE(cells.size() == 2);
+    CHECK(cells[0].value.empty());
+    CHECK(cells[1].value == "tail");
+}
+
+TEST_CASE("ss_resume: suspend() preserves row-level cell index")
+{
+    // Buffer 1: 3 closed cells, then a 4th that opens a quote and
+    // never closes.  suspend() snapshot should report index 3 +
+    // in-quote.
+    auto buf1 = std::string(R"(a,b,c,"open and unfinished)");
+    separated_string ss1(buf1.data(), buf1.length());
+    std::optional<separated_string::resume_state> snap;
+    for (auto iter = ss1.begin(); iter != ss1.end(); ++iter) {
+        if (iter.unterminated_quote()) {
+            snap = iter.suspend();
+        }
+    }
+    REQUIRE(snap.has_value());
+    CHECK(snap->rs_index == 3);
+    CHECK(snap->rs_in_quote);
+
+    // Buffer 2: continuation closes the cell, then two more.  Indices
+    // emitted should be 3, 4, 5 — the snapshot's row-level position
+    // carried across the buffer boundary.
+    auto buf2 = std::string(R"(rest of cell",d,e)");
+    separated_string ss2(buf2.data(), buf2.length());
+    ss2.ss_resume = *snap;
+    std::vector<size_t> indices;
+    std::vector<std::string> values;
+    for (auto iter = ss2.begin(); iter != ss2.end(); ++iter) {
+        indices.push_back(iter.index());
+        values.push_back((*iter).to_string());
+    }
+    REQUIRE(indices.size() == 3);
+    CHECK(indices == std::vector<size_t>{3, 4, 5});
+    CHECK(values[0] == "rest of cell");
+    CHECK(values[1] == "d");
+    CHECK(values[2] == "e");
+}
+
 TEST_CASE("newlines inside a quoted cell are preserved verbatim")
 {
     auto cells = tokenize("\"line1\nline2\",next");

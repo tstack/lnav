@@ -197,8 +197,22 @@ separated_string::iterator::update()
     bool saw_quote = false;
     const char* quote_start = nullptr;
     const char* quote_end = nullptr;
+    this->i_unterminated_quote = false;
 
     const char* p = this->i_pos;
+    // Continuation case: the prior chunk ended mid-quote and the
+    // caller stitched the next chunk on.  Begin parsing this cell
+    // already inside the quoted region — value bytes start at p,
+    // not after a leading `"`.  Only applies to the very first cell
+    // of the buffer.
+    if (this->i_parent.ss_resume && this->i_parent.ss_resume->rs_in_quote
+        && p == ss.ss_str)
+    {
+        in_quotes = true;
+        saw_quote = true;
+        quote_start = p;
+        state = OTHER;
+    }
     while (p < data_end) {
         if (!in_quotes && *p == sep_ch) {
             if (sep_ch == ' ' && p + 1 < data_end) {
@@ -319,6 +333,14 @@ separated_string::iterator::update()
         this->i_pending_ghost = true;
     }
     this->i_next_pos = (p < data_end) ? p + 1 : data_end;
+
+    // The parse loop only exits with `in_quotes` still set when it
+    // ran off data_end without seeing a close-quote.  Surface that
+    // to the caller so they can decide whether more bytes are
+    // pending (e.g. a CSV cell whose value spans physical lines).
+    if (in_quotes) {
+        this->i_unterminated_quote = true;
+    }
 
     if (saw_quote) {
         // Use the span between the quotes.  An unterminated

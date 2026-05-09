@@ -35,7 +35,7 @@
 /** Strongly-typed integer for visible lines. */
 STRONG_INT_TYPE(int, vis_line);
 
-constexpr vis_line_t operator"" _vl(unsigned long long line) noexcept
+constexpr vis_line_t operator""_vl(unsigned long long line) noexcept
 {
     return vis_line_t((int) line);
 }

@@ -453,6 +453,7 @@ public:
         // at this when `finalize_line` synthesizes one.  Caller's struct
         // must outlive the iter returned by `finalize_line`.
         char lfi_synth_opid_buf[hasher::STRING_SIZE];
+        bool lfi_terminated{true};
     };
 
     /**
@@ -528,6 +529,8 @@ public:
     file_ssize_t tlf_header_end{0};
     char tlf_separator{','};
     size_t tlf_extra_count{0};
+    std::optional<separated_string::resume_state> tlf_suspended_state;
+    size_t tlf_sub_lines{0};
 
 private:
     const intern_string_t elf_name;
@@ -563,7 +566,6 @@ private:
 
     void process_csv_cell(logline_value_vector& values,
                           string_attrs_t* sa,
-                          size_t value_index,
                           const separated_string::iterator& it,
                           shared_buffer_ref& sbr) const;
 };

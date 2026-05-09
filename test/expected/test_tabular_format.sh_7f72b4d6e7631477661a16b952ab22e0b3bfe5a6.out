@@ -1,0 +1,6 @@
+log_line,log_level,log_body
+0,info,first row
+1,warning,"multi-line message
+that continues onto
+a third line"
+4,info,after multi-line

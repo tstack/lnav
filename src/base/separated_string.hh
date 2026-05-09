@@ -59,8 +59,29 @@ struct separated_string {
 
     const char* ss_str;
     size_t ss_len;
+    // Cross-buffer parser state.  Captured by `iterator::suspend()`
+    // when a buffer ends mid-row (typically a quoted cell whose
+    // closing `"` lives in a not-yet-arrived chunk) and replayed by
+    // assigning the snapshot to `ss_resume` on the next buffer.
+    // Carries:
+    //   - rs_index — the row-level cell index the next iterator
+    //     should report on its first cell, so a continuation that
+    //     finishes column 7 of 10 reports indices 7..9 instead of
+    //     restarting at 0.
+    //   - rs_in_quote — when true, the first cell starts already
+    //     inside an open quoted region: no leading `"` required,
+    //     separators stay suppressed until a closing `"`, and `""`
+    //     is still an embedded literal.  If the close never arrives,
+    //     the trailing cell again carries `unterminated_quote()` and
+    //     the caller can keep stitching.
+    struct resume_state {
+        size_t rs_index{0};
+        bool rs_in_quote{false};
+    };
+
     char ss_separator{','};
     std::optional<size_t> ss_expected_count;
+    std::optional<resume_state> ss_resume;
 
     separated_string(const char* str, size_t len) : ss_str(str), ss_len(len) {}
 
@@ -103,10 +124,17 @@ struct separated_string {
         // show" from "at data_end, natural end" so operator==(end())
         // doesn't cut iteration short.
         bool i_in_ghost{false};
+        // True when update() reached data_end while still inside a
+        // quoted region — the closing `"` was never seen because the
+        // buffer was cut short.  Only the trailing cell can ever
+        // carry it.  Callers (e.g. multi-line CSV ingest) can use it
+        // to decide whether to splice in more bytes and re-parse.
+        bool i_unterminated_quote{false};
 
         iterator(const separated_string& ss, const char* pos)
             : i_parent(ss), i_pos(pos), i_next_pos(pos), i_value_start(pos),
-              i_value_end(pos), i_index(0)
+              i_value_end(pos),
+              i_index(ss.ss_resume ? ss.ss_resume->rs_index : 0)
         {
             this->update();
         }
@@ -139,6 +167,24 @@ struct separated_string {
         }
 
         cell_kind kind() const { return this->i_kind; }
+
+        // True only on the trailing cell when the buffer ended inside
+        // an open quoted region.  Stays false on every other cell.
+        bool unterminated_quote() const
+        {
+            return this->i_unterminated_quote;
+        }
+
+        // Snapshot the cross-buffer parser state at the current cell.
+        // Typical use: when `unterminated_quote()` returns true on the
+        // trailing cell, capture the snapshot, accumulate the cell's
+        // partial value into your own buffer, then assign the snapshot
+        // to the next buffer's `ss_resume` so the continuation iterator
+        // picks up at the right index already inside the open quote.
+        resume_state suspend() const
+        {
+            return {this->i_index, this->i_unterminated_quote};
+        }
 
         bool operator==(const iterator& other) const
         {
