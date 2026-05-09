@@ -58,15 +58,19 @@ def main():
     srcdir = Path(sys.argv[1])
     builddir = Path(sys.argv[2])
     expected_dir = srcdir / "expected"
-    expected_am = expected_dir / "Makefile.am"
 
     expected_dir.mkdir(parents=True, exist_ok=True)
+
+    # expected/Makefile.am uses a `dist-hook` to bulk-glob *.out / *.err
+    # into the distdir instead of an explicit per-file `dist_noinst_DATA`
+    # list.  The explicit form expanded to >128KB of recipe text and
+    # tripped Linux's MAX_ARG_STRLEN, breaking `make dist` with
+    # `bash: Argument list too long`.  We no longer touch the Makefile.am
+    # from this script — the dist-hook picks up new fixtures automatically.
 
     builddir = builddir.resolve()
     cmd_files = sorted(builddir.glob("*.cmd"),
                        key=lambda p: p.stat().st_mtime, reverse=True)
-
-    am_entries = []
 
     for cmd_file in cmd_files:
         print()
@@ -76,9 +80,6 @@ def main():
         stem = str(cmd_file)[:-len(".cmd")]
         base = os.path.basename(stem)
         exp_stem = expected_dir / base
-
-        am_entries.append(f"    {base}.out \\")
-        am_entries.append(f"    {base}.err \\")
 
         check_output(
             Path(f"{exp_stem}.out"),
@@ -90,12 +91,6 @@ def main():
             Path(f"{stem}.err"),
             "stderr", RED,
         )
-
-    am_entries.sort()
-    new_content = f"\ndist_noinst_DATA = \\\n" + "\n".join(am_entries) + "\n    $()\n"
-
-    if not expected_am.exists() or expected_am.read_text() != new_content:
-        expected_am.write_text(new_content)
 
 
 if __name__ == "__main__":

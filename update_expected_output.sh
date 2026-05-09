@@ -4,9 +4,15 @@ srcdir="$1"
 builddir="$2"
 
 expected_dir="$1/expected"
-expected_am="${expected_dir}/Makefile.am"
 
 mkdir -p "${expected_dir}"
+
+# expected/Makefile.am uses a `dist-hook` to bulk-glob *.out / *.err
+# into the distdir instead of an explicit per-file `dist_noinst_DATA`
+# list.  The explicit form expanded to >128KB of recipe text and
+# tripped Linux's MAX_ARG_STRLEN, breaking `make dist` with
+# `bash: Argument list too long`.  We no longer touch the Makefile.am
+# from this script — the dist-hook picks up new fixtures automatically.
 
 for fname in $(ls -t ${builddir}/*.cmd); do
   echo
@@ -15,9 +21,6 @@ for fname in $(ls -t ${builddir}/*.cmd); do
   cat "${fname}"
   stem=$(echo $fname | sed -e 's/.cmd$//')
   exp_stem="${srcdir}/expected/$(basename $stem)"
-
-  echo "    $(basename "$stem").out \\" >> "${expected_am}.tmp"
-  echo "    $(basename "$stem").err \\" >> "${expected_am}.tmp"
 
   if ! test -f "${exp_stem}.out"; then
     printf '\033[0;32mBEGIN\033[0m %s.out\n' "${stem}"
@@ -84,16 +87,3 @@ for fname in $(ls -t ${builddir}/*.cmd); do
   fi
 done
 
-cat > "${expected_am}.new" <<EOF
-
-dist_noinst_DATA = \\
-$(sort "${expected_am}.tmp")
-    \$()
-EOF
-
-if ! cmp "${expected_am}" "${expected_am}.new"; then
-  cp "${expected_am}.new" "${expected_am}"
-fi
-
-rm "${expected_am}.new"
-rm "${expected_am}.tmp"
