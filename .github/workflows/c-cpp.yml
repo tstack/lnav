@@ -85,7 +85,7 @@ jobs:
       - name: Install python packages
         run: pipx install check-jsonschema
       - name: ulimit
-        run: ulimit -s
+        run: ulimit -s 65536
       - name: autogen
         run: ./autogen.sh
       - name: configure
