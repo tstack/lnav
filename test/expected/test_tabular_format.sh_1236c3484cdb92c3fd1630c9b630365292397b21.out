@@ -1,0 +1,2 @@
+log_line,log_time,log_level,log_body
+0,2026-04-14 10:00:00.000000,info,with BOM prefix

@@ -4,7 +4,7 @@
         "title": "Tabular test log",
         "description": "Exercises tabular format features: timestamp, level, opid (with `-` placeholder), thread, duration, src file/line, and numeric ingest.",
         "file-type": "tabular",
-        "file-pattern": "logfile_tabular(_multiline)?\\.csv",
+        "file-pattern": "logfile_tabular(_(multiline|bom|crlf|num_multiline))?\\.csv",
         "timestamp-field": "when",
         "level-field": "level",
         "body-field": "msg",

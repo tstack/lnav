@@ -1,0 +1,4 @@
+log_line,log_level,log_body,dur_ms
+0,info,baseline,150
+1,warning,multi-line int,200
+3,info,after,8

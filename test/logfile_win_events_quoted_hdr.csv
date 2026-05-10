@@ -1,0 +1,4 @@
+#TYPE Selected.System.Diagnostics.Eventing.Reader.EventLogRecord
+"TimeCreated","ProviderName","Mes,sage","Id","ThreadId"
+"10/22/2018  4:13:27 AM","docker","hello","1001","42"
+"10/22/2018  4:13:28 AM","docker","world","1002","43"

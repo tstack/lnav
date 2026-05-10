@@ -1,0 +1,3 @@
+log_line,log_extra_fields
+0,"{""Mes,sage"":""hello""}"
+4,"{""Mes,sage"":""world""}"

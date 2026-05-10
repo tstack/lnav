@@ -169,3 +169,79 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_level, log_body, log_raw_text FROM all_logs ORDER BY log_line" \
     -c ':write-json-to -' \
     ${test_dir}/logfile_win_events_multiline.csv
+
+# UTF-8 BOM at the start of the CSV (Excel exports do this).  The BOM
+# bytes are silently consumed upstream and `when` still binds — pin
+# down so a regression that breaks BOM handling is visible.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_tabular_bom.csv
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_time, log_level, log_body FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_bom.csv
+
+# CRLF row endings + LF-only inside a quoted multi-line cell — the
+# normal Windows-exported CSV pattern for free-text fields.  The
+# splice in read_raw_message uses `\n` glue between physical lines,
+# so the original CRLF row terminators don't survive verbatim;
+# characterize the rendered + SQL views.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_tabular_crlf.csv
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_level, log_body FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_crlf.csv
+
+# Numeric-typed multi-line cell: an integer-declared column (`dur_ms`)
+# whose value contains an embedded LF.  The merged text is "200\nextra";
+# humanize::try_from<long> consumes the leading `200` and stops, so
+# dur_ms ingests as 200.  Pin so a future stricter parser (rejecting
+# trailing junk) shows up as a diff.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_level, log_body, dur_ms FROM tabular_test_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_num_multiline.csv
+
+# CSV write-back round-trip: feed a multi-line CSV in, project the
+# columns through SQL, write-csv-to.  A faithful round-trip preserves
+# the embedded LF inside a properly-quoted output cell.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_time, log_level, log_opid, log_body FROM all_logs ORDER BY log_time" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_multiline.csv
+
+# Piper / stdin path: a multi-line CSV piped through stdin.  Uses the
+# windows_event_log format because it's content-detected (via the
+# `#TYPE` header + column-name matching) — formats that gate on
+# `file-pattern` won't match piper-renamed session paths, but
+# content-detected formats work end-to-end through the splice +
+# suspend/resume path.
+cat ${test_dir}/logfile_win_events_multiline.csv | run_cap_test ${lnav_test} -n
+
+# Search across a multi-line cell via SQL: the warn row's body spans
+# three physical lines, but log_body returns the merged cell text, so
+# a LIKE that straddles the embedded LF still matches.  A miss here
+# would mean body content is stored per-physical-line rather than
+# per-row.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_body FROM all_logs WHERE log_body LIKE '%continues onto%'" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_multiline.csv
+
+# Quoted header cell with separator inside (`"Mes,sage"`).  The
+# windows_event_log format declares `Message`, not `Mes,sage`, so the
+# column doesn't bind — the cell rolls into log_extra_fields with the
+# comma-bearing key preserved.  Confirms the quote-aware header split.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_extra_fields FROM windows_event_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_win_events_quoted_hdr.csv

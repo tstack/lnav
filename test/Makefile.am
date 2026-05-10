@@ -410,7 +410,10 @@ dist_noinst_DATA = \
 	logfile_metrics_unordered.csv \
 	logfile_not_metrics.csv \
 	logfile_tabular.csv \
+	logfile_tabular_bom.csv \
+	logfile_tabular_crlf.csv \
 	logfile_tabular_multiline.csv \
+	logfile_tabular_num_multiline.csv \
 	logfile_tabular_synth.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
@@ -470,6 +473,7 @@ dist_noinst_DATA = \
 	logfile_win_events_extras.csv \
 	logfile_win_events_extras_quotes.csv \
 	logfile_win_events_multiline.csv \
+	logfile_win_events_quoted_hdr.csv \
 	logfile_win_events_quotes.csv \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	logfile_with_zones.0 \

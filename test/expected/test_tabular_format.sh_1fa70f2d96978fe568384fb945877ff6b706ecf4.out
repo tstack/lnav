@@ -1,0 +1,6 @@
+log_time,log_level,log_opid,log_body
+2026-04-14 11:00:00.000000,info,op1,first row
+2026-04-14 11:00:01.000000,warning,op1,"multi-line message
+that continues onto
+a third line"
+2026-04-14 11:00:02.000000,info,op2,after multi-line

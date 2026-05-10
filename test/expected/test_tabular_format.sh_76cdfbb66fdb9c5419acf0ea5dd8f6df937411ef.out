@@ -1,0 +1,5 @@
+log_line,log_level,log_body
+0,info,"first row"
+1,warning,"line one
+line two"
+3,info,"after multi-line"

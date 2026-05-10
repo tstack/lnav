@@ -1,0 +1,5 @@
+when,level,opid,thread,dur_ms,cpu_pct,queue,src_file,src_line,msg
+2026-04-14T12:00:00Z,INFO,op1,t1,150,12.5,5,server.cc,42,baseline
+2026-04-14T12:00:01Z,WARN,op1,t1,"200
+extra",15.0,6,server.cc,43,multi-line int
+2026-04-14T12:00:02Z,INFO,op2,t1,8,13.0,4,server.cc,77,after
