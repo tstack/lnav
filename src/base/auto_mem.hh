@@ -300,7 +300,7 @@ public:
 
     auto_buffer& append(std::string_view sv)
     {
-        if (this->ab_size + sv.length() < this->ab_capacity) {
+        if (this->ab_size + sv.length() > this->ab_capacity) {
             this->expand_by(sv.length() + 1024);
         }
         memcpy(&this->ab_buffer[this->ab_size], sv.data(), sv.length());
