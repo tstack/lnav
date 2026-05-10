@@ -79,6 +79,8 @@ Features:
   of time.
 
 Breaking changes:
+* Mouse mode is disabled by default again since there
+  has been some grumbling and it needs some refinement.
 * The `humanize_file_size()` SQLite function now
   uses 1,000 for the base instead of 1,024.
 
