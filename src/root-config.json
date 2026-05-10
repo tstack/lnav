@@ -14,7 +14,7 @@
         "keymap": "default",
         "theme": "default",
         "mouse": {
-            "mode": "enabled"
+            "mode": "disabled"
         },
         "movement": {
             "mode": "cursor"
