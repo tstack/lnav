@@ -446,7 +446,7 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
 
         value_out.with_ansi_string(fmt::format(
             FMT_STRING("{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                                                              "... {:>8}/{}"),
+                                                               "... {:>8}/{}"),
             humanize::sparkline(prog.ep_out_size, prog.ep_total_size),
             prog.ep_path.filename().string(),
             humanize::file_size(prog.ep_out_size, humanize::alignment::none),
@@ -459,7 +459,7 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
 
         value_out.with_ansi_string(fmt::format(
             FMT_STRING("{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                                                                 ": {}"),
+                                                                  ": {}"),
             PROG[spinner_index() % PROG_SIZE],
             first_iter->first,
             first_iter->second.tp_message));
@@ -681,6 +681,49 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                      .append(": ")
                                      .append(lnav::roles::number(fmt::format(
                                          FMT_STRING("{:L}"), lf->size()))));
+            {
+                const auto& activity = lf->get_activity();
+                if (activity.la_index.is_wall_us
+                    > std::chrono::microseconds::zero())
+                {
+                    auto fmt_us = [](std::chrono::microseconds us) {
+                        return humanize::time::duration::from(us)
+                            .with_compact(false)
+                            .to_string();
+                    };
+                    auto index_line
+                        = attr_line_t()
+                              .append("Index Time"_h3)
+                              .right_justify(NAME_WIDTH)
+                              .append(": ")
+                              .append(fmt_us(activity.la_index.is_wall_us))
+                              .append(" wall, ")
+                              .append(fmt_us(activity.la_index.is_cpu_us))
+                              .append(" CPU")
+                              .move();
+                    details.emplace_back(std::move(index_line));
+                }
+                if (activity.la_index.is_memory_bytes > 0) {
+                    details.emplace_back(
+                        attr_line_t()
+                            .append("Index Memory"_h3)
+                            .right_justify(NAME_WIDTH)
+                            .append(": ")
+                            .append(humanize::file_size(
+                                activity.la_index.is_memory_bytes,
+                                humanize::alignment::none)));
+                }
+                if (activity.la_line_buffer_memory_bytes > 0) {
+                    details.emplace_back(
+                        attr_line_t()
+                            .append("Line Buffer"_h3)
+                            .right_justify(NAME_WIDTH)
+                            .append(": ")
+                            .append(humanize::file_size(
+                                activity.la_line_buffer_memory_bytes,
+                                humanize::alignment::none)));
+                }
+            }
             if (format != nullptr && lf->size() > 0) {
                 auto tr = lf->get_content_time_range();
                 details.emplace_back(attr_line_t()
@@ -712,15 +755,13 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                 to_timeval(open_opts.loo_time_range.tr_end),
                                 'T')));
                 }
-                details.emplace_back(
-                    attr_line_t()
-                        .append("Duration"_h3)
-                        .right_justify(NAME_WIDTH)
-                        .append(": ")
-                        .append(humanize::time::duration::from_tv(
-                                    lf->back().get_timeval()
-                                    - lf->front().get_timeval())
-                                    .to_string()));
+                details.emplace_back(attr_line_t()
+                                         .append("Duration"_h3)
+                                         .right_justify(NAME_WIDTH)
+                                         .append(": ")
+                                         .append(humanize::time::duration::from(
+                                                     tr.tr_end - tr.tr_begin)
+                                                     .to_string()));
             }
 
             auto file_options_opt = lf->get_file_options();

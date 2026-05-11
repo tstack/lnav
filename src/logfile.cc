@@ -42,7 +42,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/param.h>
-#include <sys/resource.h>
 #include <sys/stat.h>
 #include <time.h>
 
@@ -1500,16 +1499,18 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         // We haven't reached the end of the file.  Note that we use the
         // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != nullptr;
-        struct rusage begin_rusage;
         file_off_t off;
         size_t begin_size = this->lf_index.size();
-        bool record_rusage = this->lf_index.size() == 1;
         off_t begin_index_size = this->lf_index_size;
         size_t rollback_size = 0, rollback_index_start = 0;
 
-        if (record_rusage) {
-            getrusage(RUSAGE_SELF, &begin_rusage);
-        }
+        // Bracket the read+scan loop with a wall and a thread-CPU
+        // clock; the post-loop block at end-of-this-branch folds
+        // their deltas into la_index_{wall,cpu}_us if any new index
+        // entries actually landed.
+        const auto wall_begin = std::chrono::steady_clock::now();
+        struct timespec cpu_begin{};
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_begin);
 
         if (begin_size == 0 && !has_format) {
             log_debug("scanning file... fd(%d) %s",
@@ -1946,21 +1947,16 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_logline_observer->logline_eof(*this);
         }
 
-        if (record_rusage
-            && (prev_range.fr_offset - begin_index_size) > (500 * 1024))
-        {
-            rusage end_rusage;
+        if (this->lf_index.size() > begin_size) {
+            struct timespec cpu_end{};
+            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpu_end);
+            const auto wall_end = std::chrono::steady_clock::now();
 
-            getrusage(RUSAGE_SELF, &end_rusage);
-            rusagesub(end_rusage,
-                      begin_rusage,
-                      this->lf_activity.la_initial_index_rusage);
-            log_info("Resource usage for initial indexing of file: %s:%zu-%zu",
-                     this->lf_filename_as_string.c_str(),
-                     begin_size,
-                     this->lf_index.size());
-            log_rusage(lnav_log_level_t::INFO,
-                       this->lf_activity.la_initial_index_rusage);
+            this->lf_activity.la_index.is_wall_us
+                += std::chrono::duration_cast<std::chrono::microseconds>(
+                    wall_end - wall_begin);
+            this->lf_activity.la_index.is_cpu_us
+                += to_us(cpu_end) - to_us(cpu_begin);
         }
 
         /*
@@ -2078,6 +2074,14 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                  this->lf_filename_as_string.c_str());
         this->lf_out_of_time_order_count = 0;
     }
+
+    this->lf_activity.la_index.is_memory_bytes
+        = (this->lf_index.capacity() * sizeof(logline))
+        + (this->lf_value_stats.capacity() * sizeof(logline_value_stats))
+        + this->lf_plain_msg_buffer.capacity()
+        + this->lf_allocator.getNumBytesAllocated();
+    this->lf_activity.la_line_buffer_memory_bytes
+        = this->lf_line_buffer.get_byte_size();
 
     return retval;
 }
@@ -2637,6 +2641,12 @@ logfile::dump_stats()
     if (buf_stats.empty()) {
         return;
     }
+    log_info("memory usage:");
+    log_info("  index=%zu", this->lf_index.capacity() * sizeof(logline));
+    log_info("  value_stats=%zu",
+             this->lf_value_stats.capacity() * sizeof(logline_value_stats));
+    log_info("  plain_msg_buffer=%zu", this->lf_plain_msg_buffer.capacity());
+    log_info("  allocator=%zu", this->lf_allocator.getNumBytesAllocated());
     log_info("line buffer stats for file: %s",
              this->lf_filename_as_string.c_str());
     log_info("  file_size=%lld", this->lf_line_buffer.get_file_size());

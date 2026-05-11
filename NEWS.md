@@ -43,7 +43,12 @@ Features:
   separator will be automatically detected and the header
   compared against the columns defined in the tabular
   formats.  If a good match is found, it will be used as
-  the format for the file.
+  the format for the file.  Quoted cells that span
+  multiple physical lines (an embedded LF inside `"..."`)
+  are stitched back into a single log message, so an
+  Excel-exported CSV with a multi-line free-text column
+  shows one logline per row and SQL/search operates on
+  the merged cell value.
 * Added a log format for the `fsck_apfs` and `fsck_hfs` tools on
   macOS, covering both the `started`/`completed` lifecycle lines
   and legacy `run` entries.  This replaces the previous
@@ -67,6 +72,19 @@ Features:
   from a HyperLogLog sketch (~4 KB per text column,
   ~1.6% standard error).  Stats render in the column's
   declared unit when one is set.
+* The FILES panel now reports per-file indexing cost: an
+  `Index Time` row shows cumulative wall-clock vs.
+  thread-CPU spent indexing the file.  In addition,
+  `Index Memory` and `Line Buffer` rows show allocations
+  for indexing and I/O-cache.  The same data is queryable
+  as a JSON object through the new `stats` column on the
+  `lnav_file` SQL vtab, with keys `polls`, `reads`,
+  `index/wall-us`, `index/cpu-us`, `index/memory-bytes`,
+  and `line-buffer-memory-bytes`.
+* The `humanize_duration()` SQL function now preserves
+  nanosecond inputs: a value like `0.0000001` (100 ns)
+  renders as `"100ns"` instead of being floored to
+  `"0s"`.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

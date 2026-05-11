@@ -324,7 +324,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         auto max_width = size_t{0};
         while (remaining_width > 0) {
             total_us += us_per_inc;
-            auto dur = humanize::time::duration::from_tv(to_timeval(total_us));
+            auto dur = humanize::time::duration::from(total_us);
             if (us_per_inc > 24 * 1h) {
                 dur.with_resolution(24 * 1h);
             } else if (us_per_inc > 1h) {
@@ -555,7 +555,7 @@ timeline_header_overlay::list_value_for_overlay(
         auto duration = sub.ostr_range.tr_end - sub.ostr_range.tr_begin;
         auto duration_str = fmt::format(
             FMT_STRING(" {: >13}"),
-            humanize::time::duration::from_tv(to_timeval(duration))
+            humanize::time::duration::from(duration)
                 .to_string());
         al.pad_to(14)
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
@@ -792,7 +792,7 @@ timeline_source::text_value_for_line(textview_curses& tc,
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
         auto duration_str = fmt::format(
             FMT_STRING("{: >13}"),
-            humanize::time::duration::from_tv(to_timeval(duration))
+            humanize::time::duration::from(duration)
                 .to_string());
 
         this->ts_rendered_line.clear();

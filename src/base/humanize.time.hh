@@ -77,7 +77,15 @@ private:
 
 class duration {
 public:
-    static duration from_tv(const timeval& tv);
+    // Accept any chrono::duration source and canonicalize to ns.
+    // Lets callers pass e.g. `std::chrono::nanoseconds`, `microseconds`,
+    // or a `steady_clock::duration` directly.
+    template<class Rep, class Period>
+    static duration from(const std::chrono::duration<Rep, Period>& d)
+    {
+        return duration{
+            std::chrono::duration_cast<std::chrono::nanoseconds>(d)};
+    }
 
     duration& with_compact(bool compact)
     {
@@ -85,22 +93,26 @@ public:
         return *this;
     }
 
+    // The smallest unit `to_string()` will render.  Sub-microsecond
+    // values (below `1us`) always print as `Nns` regardless of this;
+    // values in `[1us, 1ms)` print as `Nus`; for `>= 1ms`, the
+    // resolution is interpreted in milliseconds (anything finer than
+    // 1ms collapses to 1ms in the segmented hh/mm/ss/ms output).
     template<class Rep, class Period>
     duration& with_resolution(const std::chrono::duration<Rep, Period>& res)
     {
-        this->d_msecs_resolution
-            = std::chrono::duration_cast<std::chrono::milliseconds>(res)
-                  .count();
+        this->d_resolution
+            = std::chrono::duration_cast<std::chrono::nanoseconds>(res);
         return *this;
     }
 
     [[nodiscard]] std::string to_string() const;
 
 private:
-    explicit duration(const timeval& tv) : d_timeval(tv) {}
+    explicit duration(std::chrono::nanoseconds d) : d_nsecs(d) {}
 
-    timeval d_timeval;
-    uint64_t d_msecs_resolution{1};
+    std::chrono::nanoseconds d_nsecs{0};
+    std::chrono::nanoseconds d_resolution{std::chrono::milliseconds{1}};
     bool d_compact{true};
 };
 

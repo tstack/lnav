@@ -40,7 +40,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -82,9 +81,26 @@ public:
 };
 
 struct logfile_activity {
+    // Stats for the indexing pipeline — wall/cpu time accumulate
+    // across each rebuild_index() call that consumed bytes (empty
+    // polls don't); memory_bytes is refreshed to a current snapshot.
+    // The wall/cpu gap is roughly time spent blocked on the
+    // underlying file (raw read, decompressor, remote fetch, etc.).
+    struct index_stats {
+        std::chrono::microseconds is_wall_us{};
+        std::chrono::microseconds is_cpu_us{};
+        size_t is_memory_bytes{0};
+    };
+
     int64_t la_polls{0};
     int64_t la_reads{0};
-    struct rusage la_initial_index_rusage{};
+    index_stats la_index;
+    // Approximate per-file memory held by the line_buffer (I/O
+    // buffer + per-line offset / utf / ansi / col-width vectors).
+    // Tracked separately from index memory because the line_buffer
+    // is an I/O cache with very different sizing dynamics than the
+    // indexed view.
+    size_t la_line_buffer_memory_bytes{0};
 };
 
 /**

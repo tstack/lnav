@@ -89,7 +89,7 @@ db_status_source::update_from_db_source()
         if (dls.dls_query_end.has_value()) {
             auto dur_us = std::chrono::duration_cast<std::chrono::microseconds>(
                 dls.dls_query_end.value() - dls.dls_query_start.value());
-            auto dur = humanize::time::duration::from_tv(to_timeval(dur_us))
+            auto dur = humanize::time::duration::from(dur_us)
                            .with_compact(false)
                            .to_string();
             timing_al.append("ran ").append(lnav::roles::time_ago(ago));

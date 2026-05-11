@@ -272,8 +272,8 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                 } else {
                     auto zoom_level
                         = ec.ec_label_source_stack.back()->get_zoom_level();
-                    auto zoom_level_str = humanize::time::duration::from_tv(
-                                              to_timeval(zoom_level))
+                    auto zoom_level_str = humanize::time::duration::from(
+                                              zoom_level)
                                               .with_compact(false)
                                               .to_string();
 

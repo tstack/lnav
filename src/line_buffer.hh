@@ -290,6 +290,23 @@ public:
 
     size_t line_count_guess() const { return this->lb_line_starts.size(); }
 
+    size_t get_byte_size() const
+    {
+        size_t total = this->lb_buffer.capacity();
+        if (this->lb_alt_buffer) {
+            total += this->lb_alt_buffer->capacity();
+        }
+        total += this->lb_line_starts.capacity() * sizeof(uint32_t);
+        total += this->lb_alt_line_starts.capacity() * sizeof(uint32_t);
+        total += this->lb_line_col_widths.capacity() * sizeof(size_t);
+        total += this->lb_alt_line_col_widths.capacity() * sizeof(size_t);
+        total += (this->lb_line_is_utf.capacity() + 7) / 8;
+        total += (this->lb_alt_line_is_utf.capacity() + 7) / 8;
+        total += (this->lb_line_has_ansi.capacity() + 7) / 8;
+        total += (this->lb_alt_line_has_ansi.capacity() + 7) / 8;
+        return total;
+    }
+
     const std::string& get_decompress_error() const
     {
         return this->lb_decompress_error;

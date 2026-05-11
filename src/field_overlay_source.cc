@@ -152,7 +152,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
-    timeval curr_tv, offset_tv, orig_tv, diff_tv = {0, 0};
+    timeval curr_tv, offset_tv, orig_tv;
+    std::chrono::microseconds diff{0};
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     line_range time_lr;
@@ -256,11 +257,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             time_line.with_attr(
                 string_attr(time_lr, VC_ROLE.value(role_t::VCR_SKEWED_TIME)));
 
-            timersub(&curr_tv, &actual_tv, &diff_tv);
+            diff = to_us(curr_tv) - to_us(actual_tv);
             time_str.append(";  Diff: ");
             time_lr.lr_start = time_str.length();
             time_str.append(
-                humanize::time::duration::from_tv(diff_tv).to_string());
+                humanize::time::duration::from(diff).to_string());
             time_lr.lr_end = time_str.length();
             time_line.with_attr(
                 string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
@@ -305,7 +306,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show)
-        || diff_tv.tv_sec > 0 || ll->is_time_skewed())
+        || diff >= std::chrono::seconds{1} || ll->is_time_skewed())
     {
         this->fos_lines.emplace_back(time_line);
     }

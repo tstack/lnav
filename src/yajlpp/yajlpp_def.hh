@@ -1491,6 +1491,34 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
+             std::enable_if_t<
+                 raw_field_is_v<std::chrono::microseconds, Args...>,
+                 bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        // Sub-second chrono fields serialize as a plain integer
+        // microsecond count (no relative_time string formatting),
+        // since the use sites for these are raw stats counters where
+        // an int is more useful than a humanized "1.2s".
+        this->add_cb(int_field_cb);
+        this->jph_integer_cb
+            = [args...](yajlpp_parse_context* ypc, long long val) {
+                  auto* obj = ypc->ypc_obj_stack.top();
+                  json_path_handler::get_field(obj, args...)
+                      = std::chrono::microseconds{val};
+                  return 1;
+              };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                yajlpp_generator gen(handle);
+                return gen(static_cast<long long>(field.count()));
+            },
+            args...);
+        install_field_getter(args...);
+        return *this;
+    }
+
+    template<typename... Args,
              std::enable_if_t<inner_kind_is_v<field_kind::enumeration, Args...>,
                               bool> = true>
     json_path_handler& for_field(Args... args)

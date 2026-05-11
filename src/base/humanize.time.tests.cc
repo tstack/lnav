@@ -103,31 +103,74 @@ TEST_CASE("time ago")
 
 TEST_CASE("duration to_string")
 {
+    using namespace std::chrono_literals;
     std::string val;
 
-    val = humanize::time::duration::from_tv({15 * 60, 0})
+    val = humanize::time::duration::from(15min)
               .with_compact(false)
               .to_string();
     CHECK(val == "15m00s");
-    val = humanize::time::duration::from_tv({0, 100000})
-              .with_compact(false)
-              .to_string();
+    val = humanize::time::duration::from(100ms).with_compact(false).to_string();
     CHECK(val == "100ms");
-    val = humanize::time::duration::from_tv({25 * 60 * 60, 123000}).to_string();
+    val = humanize::time::duration::from(25h + 123ms).to_string();
     CHECK(val == "1d01h00m00s");
-    val = humanize::time::duration::from_tv({25 * 60 * 60 + 25 * 60, 123000})
-              .to_string();
+    val = humanize::time::duration::from(25h + 25min + 123ms).to_string();
     CHECK(val == "1d01h25m00s");
-    val = humanize::time::duration::from_tv({10, 123000}).to_string();
+    val = humanize::time::duration::from(10s + 123ms).to_string();
     CHECK(val == "10s123");
-    val = humanize::time::duration::from_tv({10, 0}).to_string();
+    val = humanize::time::duration::from(10s).to_string();
     CHECK(val == "10s");
-    val = humanize::time::duration::from_tv({0, 100000}).to_string();
+    val = humanize::time::duration::from(100ms).to_string();
     CHECK(val == "100");
-    val = humanize::time::duration::from_tv({0, 0}).to_string();
+    val = humanize::time::duration::from(0s).to_string();
     CHECK(val == "");
-    val = humanize::time::duration::from_tv({0, -10000}).to_string();
+    val = humanize::time::duration::from(-10ms).to_string();
     CHECK(val == "-010");
-    val = humanize::time::duration::from_tv({-10, 0}).to_string();
+    val = humanize::time::duration::from(-10s).to_string();
     CHECK(val == "-10s");
+}
+
+TEST_CASE("duration nanosecond input")
+{
+    using namespace std::chrono_literals;
+    std::string val;
+
+    // Sub-microsecond → `Nns`, full precision regardless of resolution.
+    val = humanize::time::duration::from(500ns).to_string();
+    CHECK(val == "500ns");
+
+    // Negative sub-microsecond carries the leading sign.
+    val = humanize::time::duration::from(-1ns).to_string();
+    CHECK(val == "-1ns");
+
+    // `[1us, 1ms)` → `Nus`, sub-microsecond remainder dropped (matches
+    // pre-nanosecond timeval truncation behavior).
+    val = humanize::time::duration::from(1234ns).to_string();
+    CHECK(val == "1us");
+
+    val = humanize::time::duration::from(999us + 999ns).to_string();
+    CHECK(val == "999us");
+
+    // `>= 1ms` falls into the segmented path; sub-millisecond
+    // precision collapses to 1ms (the existing format doesn't carry
+    // sub-ms segments).
+    val = humanize::time::duration::from(1ms + 500us).to_string();
+    CHECK(val == "001");
+
+    val = humanize::time::duration::from(10s + 123ms + 456us).to_string();
+    CHECK(val == "10s123");
+
+    // Zero stays empty in compact mode regardless of source duration.
+    val = humanize::time::duration::from(0ns).to_string();
+    CHECK(val == "");
+    val = humanize::time::duration::from(0ns).with_compact(false).to_string();
+    CHECK(val == "0s");
+
+    // with_resolution(ns) doesn't grant sub-ms precision in the
+    // segmented path — explicitly characterize the floor so a future
+    // extension shows up as a diff.
+    val = humanize::time::duration::from(10s + 123ms + 456us)
+              .with_resolution(1ns)
+              .to_string();
+    CHECK(val == "10s123");
 }

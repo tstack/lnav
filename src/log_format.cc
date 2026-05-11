@@ -3971,9 +3971,9 @@ external_log_format::render_line_format(const log_format_file_state& lffs,
                         }
                         lr.lr_start = this->jlf_attr_line.al_string.size();
                         auto dur_str
-                            = humanize::time::duration::from_tv(
-                                  to_timeval(this->jlf_line_values
-                                                 .lvv_duration_value.value()))
+                            = humanize::time::duration::from(
+                                  this->jlf_line_values.lvv_duration_value
+                                      .value())
                                   .with_compact(false)
                                   .to_string();
                         this->json_append(lffs, jfe, nullptr, dur_str);

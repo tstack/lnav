@@ -730,7 +730,6 @@ add_library(
         logfile_sub_source.cfg.hh
         logfile.hh
         logfile_fwd.hh
-        logfile_stats.hh
         logline_window.hh
         md2attr_line.hh
         md4cpp.hh

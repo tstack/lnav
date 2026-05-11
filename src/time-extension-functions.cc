@@ -179,13 +179,7 @@ sql_timediff(string_fragment time1, string_fragment time2)
 static std::string
 sql_humanize_duration(double value)
 {
-    auto secs = std::trunc(value);
-    auto usecs = (value - secs) * 1000000.0;
-    timeval tv;
-
-    tv.tv_sec = secs;
-    tv.tv_usec = usecs;
-    return humanize::time::duration::from_tv(tv)
+    return humanize::time::duration::from(std::chrono::duration<double>{value})
         .with_compact(false)
         .to_string();
 }

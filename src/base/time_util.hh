@@ -52,6 +52,15 @@ to_us(const timeval& tv)
         + std::chrono::microseconds{tv.tv_usec};
 }
 
+inline std::chrono::microseconds
+to_us(const timespec& ts)
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::seconds{ts.tv_sec})
+        + std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::nanoseconds{ts.tv_nsec});
+}
+
 namespace lnav {
 
 using time64_t = uint64_t;

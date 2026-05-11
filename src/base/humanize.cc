@@ -500,11 +500,9 @@ format(double value, string_fragment suffix, alignment align)
             const auto sr = si_scale(value, -4);
             return fmt::format(FMT_STRING("{:.3g}{}s"), sr.value, sr.prefix);
         }
-        timeval tv;
-        const auto secs = std::trunc(value);
-        tv.tv_sec = static_cast<time_t>(secs);
-        tv.tv_usec = static_cast<suseconds_t>((value - secs) * 1e6);
-        return humanize::time::duration::from_tv(tv).to_string();
+        return humanize::time::duration::from(
+                   std::chrono::duration<double>{value})
+            .to_string();
     }
     // Any other suffix gets up-only SI scaling so large counts /
     // rates / frequencies render compactly (e.g. `1.2kHz`,

@@ -46,8 +46,34 @@
 #include "text_format.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace {
+
+// Schema for the lnav_file.stats column.  Field names mirror the
+// logfile_activity members (minus the `la_` prefix); the container's
+// to_json_string() handles encoding + JSON_SUBTYPE tagging via
+// vtab_module_json.hh's to_sqlite overload.
+const typed_json_path_container<logfile_activity::index_stats>
+    index_stats_handlers = {
+        yajlpp::property_handler("wall-us")
+            .for_field(&logfile_activity::index_stats::is_wall_us),
+        yajlpp::property_handler("cpu-us")
+            .for_field(&logfile_activity::index_stats::is_cpu_us),
+        yajlpp::property_handler("memory-bytes")
+            .for_field(&logfile_activity::index_stats::is_memory_bytes),
+};
+
+const typed_json_path_container<logfile_activity> activity_handlers = {
+    yajlpp::property_handler("polls").for_field(&logfile_activity::la_polls),
+    yajlpp::property_handler("reads").for_field(&logfile_activity::la_reads),
+    yajlpp::property_handler("index")
+        .for_child(&logfile_activity::la_index)
+        .with_children(index_stats_handlers),
+    yajlpp::property_handler("line-buffer-memory-bytes")
+        .for_field(&logfile_activity::la_line_buffer_memory_bytes),
+};
+
 struct lnav_file : tvt_iterator_cursor<lnav_file> {
     using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
 
@@ -65,6 +91,7 @@ CREATE TABLE lnav_db.lnav_file (
     time_offset integer,  -- The millisecond offset for timestamps.
     options_path TEXT,    -- The matched path for the file options.
     options TEXT,         -- The effective options for the file.
+    stats TEXT,           -- JSON-encoded indexing statistics for the file.
 
     content BLOB HIDDEN   -- The contents of the file.
 );
@@ -144,7 +171,11 @@ CREATE TABLE lnav_db.lnav_file (
                 }
                 break;
             }
-            case 10: {
+            case 10:
+                to_sqlite(ctx,
+                          activity_handlers.to_json_string(lf->get_activity()));
+                break;
+            case 11: {
                 if (sqlite3_vtab_nochange(ctx)) {
                     return SQLITE_OK;
                 }
@@ -225,6 +256,7 @@ CREATE TABLE lnav_db.lnav_file (
                    int64_t time_offset,
                    const char* options_path,
                    const char* options,
+                   const char* stats,
                    const char* content)
     {
         auto lf = this->lf_collection.fc_files[rowid];

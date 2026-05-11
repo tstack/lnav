@@ -43,7 +43,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
-#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -78,50 +77,6 @@ to_string(const char* s)
     return s;
 }
 }  // namespace std
-
-inline void
-rusagesub(const struct rusage& left,
-          const struct rusage& right,
-          struct rusage& diff_out)
-{
-    timersub(&left.ru_utime, &right.ru_utime, &diff_out.ru_utime);
-    timersub(&left.ru_stime, &right.ru_stime, &diff_out.ru_stime);
-    diff_out.ru_maxrss = left.ru_maxrss - right.ru_maxrss;
-    diff_out.ru_ixrss = left.ru_ixrss - right.ru_ixrss;
-    diff_out.ru_idrss = left.ru_idrss - right.ru_idrss;
-    diff_out.ru_isrss = left.ru_isrss - right.ru_isrss;
-    diff_out.ru_minflt = left.ru_minflt - right.ru_minflt;
-    diff_out.ru_majflt = left.ru_majflt - right.ru_majflt;
-    diff_out.ru_nswap = left.ru_nswap - right.ru_nswap;
-    diff_out.ru_inblock = left.ru_inblock - right.ru_inblock;
-    diff_out.ru_oublock = left.ru_oublock - right.ru_oublock;
-    diff_out.ru_msgsnd = left.ru_msgsnd - right.ru_msgsnd;
-    diff_out.ru_msgrcv = left.ru_msgrcv - right.ru_msgrcv;
-    diff_out.ru_nvcsw = left.ru_nvcsw - right.ru_nvcsw;
-    diff_out.ru_nivcsw = left.ru_nivcsw - right.ru_nivcsw;
-}
-
-inline void
-rusageadd(const struct rusage& left,
-          const struct rusage& right,
-          struct rusage& diff_out)
-{
-    timeradd(&left.ru_utime, &right.ru_utime, &diff_out.ru_utime);
-    timeradd(&left.ru_stime, &right.ru_stime, &diff_out.ru_stime);
-    diff_out.ru_maxrss = left.ru_maxrss + right.ru_maxrss;
-    diff_out.ru_ixrss = left.ru_ixrss + right.ru_ixrss;
-    diff_out.ru_idrss = left.ru_idrss + right.ru_idrss;
-    diff_out.ru_isrss = left.ru_isrss + right.ru_isrss;
-    diff_out.ru_minflt = left.ru_minflt + right.ru_minflt;
-    diff_out.ru_majflt = left.ru_majflt + right.ru_majflt;
-    diff_out.ru_nswap = left.ru_nswap + right.ru_nswap;
-    diff_out.ru_inblock = left.ru_inblock + right.ru_inblock;
-    diff_out.ru_oublock = left.ru_oublock + right.ru_oublock;
-    diff_out.ru_msgsnd = left.ru_msgsnd + right.ru_msgsnd;
-    diff_out.ru_msgrcv = left.ru_msgrcv + right.ru_msgrcv;
-    diff_out.ru_nvcsw = left.ru_nvcsw + right.ru_nvcsw;
-    diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
-}
 
 bool is_dev_null(const struct stat& st);
 bool is_dev_null(int fd);

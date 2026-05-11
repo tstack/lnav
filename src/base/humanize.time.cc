@@ -139,12 +139,6 @@ point::as_precise_time_ago() const
     return this->as_time_ago();
 }
 
-duration
-duration::from_tv(const timeval& tv)
-{
-    return duration{tv};
-}
-
 std::string
 duration::to_string() const
 {
@@ -163,33 +157,66 @@ duration::to_string() const
     };
 
     const auto* curr_interval = intervals;
-    auto usecs = to_us(this->d_timeval);
+    auto nsecs = this->d_nsecs;
     std::string retval;
     bool neg = false;
 
-    if (usecs == 0us) {
+    if (nsecs == 0ns) {
         if (!this->d_compact) {
             retval = "0s";
         }
         return retval;
     }
 
-    if (usecs < 0s) {
+    if (nsecs < 0ns) {
         neg = true;
-        usecs = -usecs;
+        nsecs = -nsecs;
     }
 
-    if (usecs < 1ms) {
-        return fmt::format(FMT_STRING("{}us"), usecs.count());
+    // Sub-microsecond: render as `Nns`.  Always emitted at full
+    // precision — there's no segmented form below `us`, and rounding
+    // the only value we have produces zeros.
+    if (nsecs < 1us) {
+        auto out = fmt::format(FMT_STRING("{}ns"), nsecs.count());
+        if (neg) {
+            out.insert(0, "-");
+        }
+        return out;
     }
 
-    uint64_t remaining = usecs.count() / 1000;
+    // `[1us, 1ms)`: render as `Nus`, truncating any sub-microsecond
+    // remainder.  Matches the pre-nanosecond behavior of the old
+    // timeval-based path which couldn't represent sub-us anyway.
+    if (nsecs < 1ms) {
+        auto usecs
+            = std::chrono::duration_cast<std::chrono::microseconds>(nsecs);
+        auto out = fmt::format(FMT_STRING("{}us"), usecs.count());
+        if (neg) {
+            out.insert(0, "-");
+        }
+        return out;
+    }
+
+    // `>= 1ms`: fall into the segmented hh/mm/ss/ms peeling loop.
+    // Resolution is interpreted in milliseconds here; anything finer
+    // (e.g. `with_resolution(1ns)`) collapses to a 1ms floor — full
+    // sub-ms precision in the segmented form would require extending
+    // the intervals table below the ms tier.
+    auto resolution_ms
+        = std::chrono::duration_cast<std::chrono::milliseconds>(
+              this->d_resolution)
+              .count();
+    if (resolution_ms < 1) {
+        resolution_ms = 1;
+    }
+
+    uint64_t remaining
+        = std::chrono::duration_cast<std::chrono::milliseconds>(nsecs)
+              .count();
     uint64_t scale = 1;
-    if (this->d_msecs_resolution > 0) {
-        remaining = roundup(remaining, this->d_msecs_resolution);
-    }
+    remaining = roundup(remaining, static_cast<uint64_t>(resolution_ms));
     auto skipped = 0;
-    if (usecs >= 10min) {
+    if (nsecs >= 10min) {
         remaining /= curr_interval->length;
         scale *= curr_interval->length;
         ++curr_interval;
@@ -199,7 +226,7 @@ duration::to_string() const
     for (; curr_interval != std::end(intervals); curr_interval++) {
         uint64_t amount;
         char segment[32];
-        auto skip = scale < this->d_msecs_resolution;
+        auto skip = scale < static_cast<uint64_t>(resolution_ms);
 
         if (curr_interval->length) {
             amount = remaining % curr_interval->length;

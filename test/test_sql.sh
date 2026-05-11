@@ -162,6 +162,28 @@ logfile_access_log.0,access_log,3,0
 logfile_access_log.1,access_log,1,0
 EOF
 
+# lnav_file.stats: pin the JSON shape without locking in
+# timing-dependent values.  json_type() returns the SQLite type
+# string for each path, so an unexpected schema change shows up
+# as a diff while the actual counters stay free to vary.
+run_test ${lnav_test} -n \
+    -c ";SELECT json_valid(stats)                                AS valid, \
+                json_type(stats, '\$.polls')                     AS polls, \
+                json_type(stats, '\$.reads')                     AS reads, \
+                json_type(stats, '\$.index')                     AS idx, \
+                json_type(stats, '\$.index.\"wall-us\"')         AS wall, \
+                json_type(stats, '\$.index.\"cpu-us\"')          AS cpu, \
+                json_type(stats, '\$.index.\"memory-bytes\"')    AS mem, \
+                json_type(stats, '\$.\"line-buffer-memory-bytes\"') AS lb \
+         FROM lnav_file LIMIT 1" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "lnav_file.stats JSON shape changed?" <<EOF
+valid,polls,reads,idx,wall,cpu,mem,lb
+1,integer,integer,object,integer,integer,integer,integer
+EOF
+
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET time_offset = 60 * 1000" \
     ${test_dir}/logfile_access_log.0 \

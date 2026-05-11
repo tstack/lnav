@@ -218,8 +218,8 @@ std::string
 text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
 {
     auto ll = this->text_accel_get_line(vl);
-    auto curr_tv = ll->get_timeval();
-    timeval diff_tv;
+    auto curr = ll->get_time();
+    std::chrono::microseconds diff;
 
     auto prev_umark = tc.get_bookmarks()[&textview_curses::BM_USER].prev(vl);
     auto next_umark = tc.get_bookmarks()[&textview_curses::BM_USER].next(vl);
@@ -231,16 +231,15 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
         auto next_line = this->text_accel_get_line(
             std::max(next_umark.value_or(0_vl), next_emark.value_or(0_vl)));
 
-        diff_tv = curr_tv - next_line->get_timeval();
+        diff = curr - next_line->get_time();
     } else {
         auto prev_row
             = std::max(prev_umark.value_or(0_vl), prev_emark.value_or(0_vl));
         auto* first_line = this->text_accel_get_line(prev_row);
-        auto start_tv = first_line->get_timeval();
-        diff_tv = curr_tv - start_tv;
+        diff = curr - first_line->get_time();
     }
 
-    return humanize::time::duration::from_tv(diff_tv).to_string();
+    return humanize::time::duration::from(diff).to_string();
 }
 
 const DIST_SLICE(bm_types) bookmark_type_t textview_curses::BM_ERRORS("error");
