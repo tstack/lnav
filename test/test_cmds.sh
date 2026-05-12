@@ -497,6 +497,11 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
+    -c ":pipe-entry-to sed -e 's/World!/Bork!/g' -e 's/2009//g'" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
     -c ":pipe-line-to xargs echo \$cs_uri_stem \$sc_status - " \
     ${test_dir}/logfile_access_log.0
 

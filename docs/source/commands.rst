@@ -73,6 +73,7 @@ an error message in the status bar, like so:
    - :code:`:open`
    - :code:`:pipe-to`
    - :code:`:pipe-line-to`
+   - :code:`:pipe-entry-to`
    - :code:`:redirecto-to`
    - :code:`:sh`
    - :code:`:write-*-to`

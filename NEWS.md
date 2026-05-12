@@ -77,6 +77,10 @@ Features:
 * A `stats.timeseries` PRQL function has been added to
   make it easier to perform an aggregation over buckets
   of time.
+* Added the `:pipe-entry-to` command that pipes all
+  lines of the focused log message to the given shell
+  command, complementing `:pipe-to` (marked lines) and
+  `:pipe-line-to` (focused line).
 
 Breaking changes:
 * Mouse mode is disabled by default again since there

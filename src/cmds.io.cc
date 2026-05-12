@@ -1954,10 +1954,12 @@ com_pipe_to(exec_context& ec,
     auto* tc = *lnav_data.ld_view_stack.top();
     auto bv = combined_user_marks(tc->get_bookmarks());
     bool pipe_line_to = (args[0] == "pipe-line-to");
+    bool pipe_entry_to = (args[0] == "pipe-entry-to");
+    bool pipe_focused = pipe_line_to || pipe_entry_to;
     auto path_v = ec.ec_path_stack;
     std::map<std::string, std::string> extra_env;
 
-    if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
+    if (pipe_focused && tc == &lnav_data.ld_views[LNV_LOG]) {
         log_data_helper ldh(lnav_data.ld_log_source);
         char tmp_str[64];
 
@@ -2053,7 +2055,7 @@ com_pipe_to(exec_context& ec,
                     = ec.ec_pipe_callback(ec, cmdline, child_fds[1].read_end());
             }
 
-            if (pipe_line_to) {
+            if (pipe_focused) {
                 if (tc->get_inner_height() == 0) {
                     // Nothing to do
                 } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
@@ -2438,6 +2440,21 @@ static readline_context::command_t IO_COMMANDS[] = {
                 help_text("shell-cmd", "The shell command-line to execute"))
             .with_tags({"io"})
             .with_example({"To write the focused line to 'sed' for processing",
+                           "sed -e 's/foo/bar/g'"}),
+    },
+    {
+        "pipe-entry-to",
+        com_pipe_to,
+
+        help_text(":pipe-entry-to")
+            .with_summary("Pipe all lines of the focused log message to the "
+                          "given shell command.  Any fields defined by the "
+                          "format will be set as environment variables.")
+            .with_parameter(
+                help_text("shell-cmd", "The shell command-line to execute"))
+            .with_tags({"io"})
+            .with_example({"To write the focused log message to 'sed' for "
+                           "processing",
                            "sed -e 's/foo/bar/g'"}),
     },
     {
