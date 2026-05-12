@@ -1,5 +1,5 @@
 freebsd_instance:
-  image_family: freebsd-13-2
+  image_family: freebsd-14-2
 task:
   install_script: pkg install -y wget git m4 bash autoconf automake sqlite3 gmake curl libarchive pcre2 bzip2
   build_script: ./autogen.sh && ./configure && gmake -j3
