@@ -146,7 +146,7 @@ static const char charLookupTable[256] =
 /*10*/ IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    ,
 /*18*/ IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    ,
 
-/*20*/ 0      , 0      , NFP|VEC|IJC, PEC, 0      , 0      , 0      , NFP    ,
+/*20*/ 0      , 0      , NFP|VEC|IJC, PEC, 0      , 0      , 0      , 0      ,
 /*28*/ 0      , 0      , 0      , 0      , 0      , 0      , 0      , VEC|PEC,
 /*30*/ VHC    , VHC    , VHC    , VHC    , VHC    , VHC    , VHC    , VHC    ,
 /*38*/ VHC    , VHC    , 0      , 0      , 0      , 0      , 0      , 0      ,
