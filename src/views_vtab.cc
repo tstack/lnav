@@ -589,7 +589,7 @@ CREATE TABLE lnav_db.lnav_views (
                    bool do_filtering,
                    string_fragment movement,
                    const char* top_meta,
-                   int64_t selection,
+                   std::optional<int64_t> selection,
                    std::optional<string_fragment> options,
                    std::optional<string_fragment> selected_text,
                    std::optional<string_fragment> row_details,
@@ -672,7 +672,8 @@ CREATE TABLE lnav_db.lnav_views (
             }
         }
         if (tc.get_selection() != selection) {
-            tc.set_selection(vis_line_t(selection));
+
+            tc.set_selection(vis_line_t(selection.value_or(-1_vl)));
         }
         if (top_meta != nullptr) {
             static const intern_string_t SQL_SRC
