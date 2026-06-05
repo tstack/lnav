@@ -96,11 +96,17 @@ struct highlighter {
         return *this;
     }
 
+    highlighter& with_full_line(bool val)
+    {
+        this->h_full_line = val;
+        return *this;
+    }
+
     text_attrs get_attrs() const { return this->h_attrs; }
 
     bool annotate(attr_line_t& al, const line_range& lr) const;
 
-    void annotate_capture(attr_line_t& al, const line_range& lr) const;
+    void annotate_capture(attr_line_t& al, line_range lr) const;
 
     bool applies_to_format(text_format_t tf) const
     {
@@ -117,6 +123,7 @@ struct highlighter {
     lnav::set::small<text_format_t> h_text_formats;
     bool h_nestable{true};
     bool h_preview{false};
+    bool h_full_line{false};
 };
 
 #endif

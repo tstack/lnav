@@ -46,6 +46,11 @@ struct line_range {
         return line_range{start, start};
     }
 
+    static constexpr line_range full()
+    {
+        return line_range{0, -1};
+    }
+
     int lr_start;
     int lr_end;
     unit lr_unit;

@@ -40,7 +40,7 @@ highlighter::highlighter(const std::shared_ptr<lnav::pcre2pp::code>& regex)
 }
 
 void
-highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
+highlighter::annotate_capture(attr_line_t& al, line_range lr) const
 {
     auto& sa = al.get_attrs();
 
@@ -62,6 +62,10 @@ highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
                 return;
             }
         }
+    }
+
+    if (this->h_full_line) {
+        lr = line_range::full();
     }
 
     if (this->h_role != role_t::VCR_NONE) {

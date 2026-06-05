@@ -199,3 +199,12 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     ${test_dir}/gharchive_log.jsonl
 
+
+# postgres_json_log format
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    ${test_dir}/logfile_postgres_json.json
+
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -c ';select log_level, error_severity, pid, dbname, log_opid, log_body from postgres_json_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_postgres_json.json

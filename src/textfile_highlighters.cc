@@ -441,10 +441,12 @@ setup_highlights_int()
     hm[{highlight_source_t::INTERNAL, "diffp"}]
         = highlighter(xpcre_compile("^\\+.*"))
               .with_text_format(text_format_t::TF_DIFF)
+              .with_full_line(true)
               .with_role(role_t::VCR_DIFF_ADD);
     hm[{highlight_source_t::INTERNAL, "diffm"}]
         = highlighter(xpcre_compile("^(?:--- .*|-$|-[^-].*)"))
               .with_text_format(text_format_t::TF_DIFF)
+              .with_full_line(true)
               .with_role(role_t::VCR_DIFF_DELETE);
     hm[{highlight_source_t::INTERNAL, "diffs"}]
         = highlighter(xpcre_compile("^\\@@ .*"))

@@ -221,6 +221,7 @@ set(FORMAT_FILES
         formats/openstack_log.json
         formats/page_log.json
         formats/pcap_log.json
+        formats/postgres_json_log.json
         formats/postgres_log.json
         formats/procstate_log.json
         formats/proxifier_log.json

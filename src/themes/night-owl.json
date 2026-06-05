@@ -215,10 +215,14 @@
                         "color": "$yellow"
                     },
                     "diff-delete": {
-                        "color": "#b03435"
+                        "color": "#e5a8e3",
+                        "background-color": "#1f1217",
+                        "nestable": true
                     },
                     "diff-add": {
-                        "color": "#264b33"
+                        "color": "#92c9df",
+                        "background-color": "#0a1e26",
+                        "nestable": true
                     },
                     "diff-section": {
                         "color": "$magenta"
