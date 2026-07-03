@@ -23,6 +23,17 @@ The following log formats are built into **lnav**:
    :widths: 8 5 20
    :file: format-table.csv
 
+The definitions for these formats can be read in two places:
+
+* On GitHub, in the
+  `src/formats <https://github.com/tstack/lnav/tree/master/src/formats>`_
+  directory of the **lnav** source tree.
+* Locally, in the :file:`~/.lnav/formats/default` directory.  On startup,
+  **lnav** writes a copy of each built-in format to a
+  :file:`<name>.sample` file in that directory, so you can consult the exact
+  definition **lnav** is using as a reference when writing or modifying your
+  own formats.
+
 XSV Formats
 -----------
 
@@ -80,10 +91,11 @@ Defining a New Format
 New log formats can be defined by placing JSON configuration files in
 subdirectories of the :file:`/etc/lnav/formats` and :file:`~/.lnav/formats/`
 directories. The directories and files can be named anything you like, but the
-files must have the '.json' suffix.  A sample file containing the builtin
-configuration will be written to this directory when **lnav** starts up.
-You can consult that file when writing your own formats or if you need to
-modify existing ones.  Format directories can also contain '.sql' and '.lnav'
+files must have the '.json' suffix.  Sample files containing the builtin
+configurations are written to the :file:`~/.lnav/formats/default` directory
+when **lnav** starts up (see `Built-in Formats`_).  You can consult those
+files when writing your own formats or if you need to modify existing ones.
+Format directories can also contain '.sql' and '.lnav'
 script files that can be used automate log file analysis.
 
 Creating a Format Using Regex101.com (v0.11.0+)
