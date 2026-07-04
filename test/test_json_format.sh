@@ -186,6 +186,12 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_ecs_log.json
 
+# issue #1712: identifiers on sub-lines after a newline in the line-format
+# should still be highlighted.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_jsonid.json
+
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_mongodb.0
 

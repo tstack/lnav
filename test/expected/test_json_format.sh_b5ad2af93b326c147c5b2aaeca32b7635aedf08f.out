@@ -1,0 +1,8 @@
+13-09-06 20:00:48.124817
+logger: [1mcom.example.foo.bar[0m
+user: [33m⋮[0m
+startup
+13-09-06 20:00:49.124817
+logger: [1mcom.example.web.server[0m
+user: [33m⋮[0m
+request handled

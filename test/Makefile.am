@@ -383,6 +383,7 @@ dist_noinst_DATA = \
 	logfile_json.json \
 	logfile_json2.json \
 	logfile_json3.json \
+	logfile_jsonid.json \
 	logfile_json_invalid.json \
 	logfile_json_subsec.json \
 	logfile_laravel.0 \

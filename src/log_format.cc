@@ -3441,7 +3441,11 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                     lr, L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
-                            lv_iter->lv_sub_offset = sub_offset;
+                            lv_iter->lv_sub_offset = std::count(
+                                this->jlf_attr_line.al_string.begin(),
+                                this->jlf_attr_line.al_string.begin()
+                                    + lr.lr_start,
+                                '\n');
                             used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)] = true;

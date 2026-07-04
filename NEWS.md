@@ -115,6 +115,9 @@ Bug Fixes:
   stop tag is no longer shown as a separate row.  Tags
   without a base name (such as a bare `#start`) are
   not paired.
+* In a JSON-lines format definition, if a
+  `line-format` contained a line-feed, fix
+  highlighting of fields.
 
 
 ## lnav v0.14.0

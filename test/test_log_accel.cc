@@ -28,6 +28,7 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "config.h"
 #include "log_accel.hh"
