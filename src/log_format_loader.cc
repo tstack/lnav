@@ -1554,6 +1554,18 @@ load_formats(const std::vector<std::filesystem::path>& extra_paths,
         alpha_ordered_formats.push_back(elf);
     }
 
+    // Prioritize formats that have a filename pattern over those that don't so
+    // that they are tried first when detecting a file's format.
+    std::stable_sort(alpha_ordered_formats.begin(),
+                     alpha_ordered_formats.end(),
+                     [](const auto& lhs, const auto& rhs) {
+                         auto lhs_has_pattern
+                             = lhs->elf_filename_pcre.pp_value != nullptr;
+                         auto rhs_has_pattern
+                             = rhs->elf_filename_pcre.pp_value != nullptr;
+                         return lhs_has_pattern && !rhs_has_pattern;
+                     });
+
     auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;
 
     while (!alpha_ordered_formats.empty()) {
