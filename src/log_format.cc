@@ -3231,7 +3231,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
             }
             this->jlf_line_values.lvv_duration_value = jlu.jlu_duration;
 
-            int sub_offset = this->jlf_line_format_init_count;
+            int sub_offset = 0;
             for (const auto& jfe : this->jlf_line_format) {
                 static const intern_string_t ts_field
                     = intern_string::lookup("__timestamp__", -1);
@@ -3246,6 +3246,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         this->json_append_to_cache(
                             jfe.jfe_default_value.c_str(),
                             jfe.jfe_default_value.size());
+                        sub_offset += jfe.jfe_default_value_line_feeds;
                         break;
                     case json_log_field::VARIABLE:
                         lv_iter = find_if(
@@ -3269,6 +3270,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
 
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
+                                sub_offset += jfe.jfe_prefix_line_feeds;
                             }
                             lr.lr_start = this->jlf_attr_line.al_string.size();
 
@@ -3441,17 +3443,14 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                     lr, L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
-                            lv_iter->lv_sub_offset = std::count(
-                                this->jlf_attr_line.al_string.begin(),
-                                this->jlf_attr_line.al_string.begin()
-                                    + lr.lr_start,
-                                '\n');
+                            lv_iter->lv_sub_offset = sub_offset;
                             used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)] = true;
 
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
+                                sub_offset += jfe.jfe_suffix_line_feeds;
                             }
                         } else if (jfe.jfe_value.pp_value == ts_field) {
                             line_range lr;
@@ -3465,6 +3464,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             et.et_flags |= jlu.jlu_exttm.et_flags;
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
+                                sub_offset += jfe.jfe_prefix_line_feeds;
                             }
                             if (jfe.jfe_ts_format.empty()) {
                                 ts_len = this->lf_date_time.ftime(
@@ -3498,6 +3498,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             }
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
+                                sub_offset += jfe.jfe_suffix_line_feeds;
                             }
                         } else if (jfe.jfe_value.pp_value == level_field
                                    || jfe.jfe_value.pp_value
@@ -3517,6 +3518,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                             if (this->jlf_line_values.lvv_duration_value) {
                                 if (!jfe.jfe_prefix.empty()) {
                                     this->json_append_to_cache(jfe.jfe_prefix);
+                                    sub_offset += jfe.jfe_prefix_line_feeds;
                                 }
                                 lr.lr_start
                                     = this->jlf_attr_line.al_string.size();
@@ -3534,25 +3536,30 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                     lr, SA_DURATION.value());
                                 if (!jfe.jfe_suffix.empty()) {
                                     this->json_append_to_cache(jfe.jfe_suffix);
+                                    sub_offset += jfe.jfe_suffix_line_feeds;
                                 }
                             } else if (!jfe.jfe_default_value.empty()) {
                                 if (!jfe.jfe_prefix.empty()) {
                                     this->json_append_to_cache(jfe.jfe_prefix);
+                                    sub_offset += jfe.jfe_prefix_line_feeds;
                                 }
                                 this->json_append(
                                     lffs, jfe, nullptr, jfe.jfe_default_value);
                                 if (!jfe.jfe_suffix.empty()) {
                                     this->json_append_to_cache(jfe.jfe_suffix);
+                                    sub_offset += jfe.jfe_suffix_line_feeds;
                                 }
                             }
                         } else if (!jfe.jfe_default_value.empty()) {
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
+                                sub_offset += jfe.jfe_prefix_line_feeds;
                             }
                             this->json_append(
                                 lffs, jfe, nullptr, jfe.jfe_default_value);
                             if (!jfe.jfe_suffix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_suffix);
+                                sub_offset += jfe.jfe_suffix_line_feeds;
                             }
                         }
 
@@ -5162,15 +5169,17 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 }
                 break;
             }
-            case json_log_field::CONSTANT:
-                this->jlf_line_format_init_count
-                    += std::count(jfe.jfe_default_value.begin(),
-                                  jfe.jfe_default_value.end(),
-                                  '\n');
-                break;
             default:
                 break;
         }
+        jfe.jfe_default_value_line_feeds = std::count(
+            jfe.jfe_default_value.begin(), jfe.jfe_default_value.end(), '\n');
+        jfe.jfe_prefix_line_feeds = std::count(
+            jfe.jfe_prefix.begin(), jfe.jfe_prefix.end(), '\n');
+        jfe.jfe_suffix_line_feeds = std::count(
+            jfe.jfe_suffix.begin(), jfe.jfe_suffix.end(), '\n');
+        this->jlf_line_format_init_count += jfe.jfe_default_value_line_feeds
+            + jfe.jfe_prefix_line_feeds + jfe.jfe_suffix_line_feeds;
     }
 
     for (auto& hd_pair : this->elf_highlighter_patterns) {

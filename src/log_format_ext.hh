@@ -250,6 +250,7 @@ public:
         json_log_field jfe_type{json_log_field::CONSTANT};
         positioned_property<intern_string_t> jfe_value;
         std::string jfe_default_value{"-"};
+        size_t jfe_default_value_line_feeds{0};
         long long jfe_min_width{0};
         bool jfe_auto_width{false};
         long long jfe_max_width{LLONG_MAX};
@@ -258,7 +259,9 @@ public:
         transform_t jfe_text_transform{transform_t::NONE};
         std::string jfe_ts_format;
         std::string jfe_prefix;
+        size_t jfe_prefix_line_feeds{0};
         std::string jfe_suffix;
+        size_t jfe_suffix_line_feeds{0};
     };
 
     struct json_field_cmp {
