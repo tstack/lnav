@@ -186,6 +186,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_ecs_log.json
 
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';SELECT filepath, format FROM lnav_file' \
+    ${test_dir}/logfile_jsonid.json
+
 # issue #1712: identifiers on sub-lines after a newline in the line-format
 # should still be highlighted.
 run_cap_test ${lnav_test} -n \
