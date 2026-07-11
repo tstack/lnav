@@ -477,6 +477,7 @@ dist_noinst_DATA = \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
 	formats/customlevel/format.json \
+	formats/jsonidtest/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest/lnav-logstash.json \
 	formats/jsontest/rewrite-user.lnav \
