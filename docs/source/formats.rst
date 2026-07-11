@@ -283,6 +283,10 @@ object with the following fields:
   :%6: Microseconds from the epoch.
   :%9: Nanoseconds from the epoch.
 
+:convert-to-local-time: If :code:`true`, timestamps are converted to the
+  local time zone before being displayed.  This is useful for log formats
+  whose timestamps are recorded in UTC.  Defaults to :code:`false`.
+
 :timestamp-divisor: For JSON logs with numeric timestamps, this value is used
   to divide the timestamp by to get the number of seconds and fractional
   seconds.
