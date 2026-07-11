@@ -11,11 +11,11 @@
 
 #pragma once
 
+#include <cstdlib>
+#include <cstdio>
 #include <exception>
 #include <functional>
 #include <type_traits>
-
-#include <stdio.h>
 
 namespace types {
 template<typename T>
@@ -818,7 +818,7 @@ struct Result {
     {
         if (!isOk()) {
             ::fprintf(stderr, "%s\n", str);
-            abort();
+            std::abort();
         }
         return expect_impl(std::is_same<T, void>());
     }

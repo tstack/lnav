@@ -148,7 +148,7 @@ add_custom_command(
         DEPENDS ptimec
         COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc)
 
-add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_spec.hh ptimec_rt.cc time_fmts.cc)
+add_library(lnavdt STATIC ${CMAKE_BINARY_DIR}/src/config.h ptimec.hh ptimec_spec.hh ptimec_rt.cc time_fmts.cc)
 target_include_directories(lnavdt PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}
@@ -512,7 +512,7 @@ target_link_libraries(lnavfileio cppfmt spookyhash pcrepp base BZip2::BZip2 ZLIB
 add_library(
         diag STATIC
         ${GEN_SRCS}
-        config.h.in
+        ${CMAKE_BINARY_DIR}/src/config.h
         all_logs_vtab.cc
         apps.cc
         archive_manager.cc

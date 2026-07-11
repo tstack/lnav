@@ -1,6 +1,6 @@
 add_library(
         base STATIC
-        ../config.h.in
+        ${CMAKE_BINARY_DIR}/src/config.h
         ansi_scrubber.cc
         attr_line.cc
         attr_line.builder.cc
