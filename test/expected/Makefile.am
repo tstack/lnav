@@ -1488,6 +1488,8 @@ dist_noinst_DATA = \
     test_sql_str_func.sh_887afe94962d958aca2e03f7873d58ca93e190b5.out \
     test_sql_str_func.sh_89c7a8f1e90e3ab7217e81ba10d4192e6886e5ed.err \
     test_sql_str_func.sh_89c7a8f1e90e3ab7217e81ba10d4192e6886e5ed.out \
+    test_sql_str_func.sh_8af54a908e42b29e420a5a1c56bcc60aca9e9009.err \
+    test_sql_str_func.sh_8af54a908e42b29e420a5a1c56bcc60aca9e9009.out \
     test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.err \
     test_sql_str_func.sh_8c9ef83431ea75050fd16824075bf72056cf5f53.out \
     test_sql_str_func.sh_8cef54f0617960320b5d3615068eb27333dcf6a3.err \
