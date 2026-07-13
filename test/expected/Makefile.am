@@ -1728,10 +1728,14 @@ dist_noinst_DATA = \
     test_text_file.sh_143a40164c93c7ec44a66e7940b92b128a421147.out \
     test_text_file.sh_1ce4056d72b871f8bb844c86aade2a9b1da58030.err \
     test_text_file.sh_1ce4056d72b871f8bb844c86aade2a9b1da58030.out \
+    test_text_file.sh_1da037817bb58ca1a174d9c98f7cdf95e7027695.err \
+    test_text_file.sh_1da037817bb58ca1a174d9c98f7cdf95e7027695.out \
     test_text_file.sh_25cef06efcbe106c2e1cc4a166b673e7b244c6d7.err \
     test_text_file.sh_25cef06efcbe106c2e1cc4a166b673e7b244c6d7.out \
     test_text_file.sh_265a8a5825e6c7dbc85cbe496dab6be7a349f3db.err \
     test_text_file.sh_265a8a5825e6c7dbc85cbe496dab6be7a349f3db.out \
+    test_text_file.sh_2966105df28196389be8e373c3c304bb18c8b6a7.err \
+    test_text_file.sh_2966105df28196389be8e373c3c304bb18c8b6a7.out \
     test_text_file.sh_34feffc61c428462eb091ded878f655b46bf9dff.err \
     test_text_file.sh_34feffc61c428462eb091ded878f655b46bf9dff.out \
     test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.err \

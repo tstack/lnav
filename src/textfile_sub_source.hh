@@ -233,7 +233,7 @@ public:
         std::string fvs_error;
         std::unique_ptr<plain_text_source> fvs_text_source;
         lnav::document::metadata fvs_metadata;
-        bool fvs_consumed_init_location{false};
+        std::optional<file_location_t> fvs_applied_init_location;
     };
 
     using file_iterator

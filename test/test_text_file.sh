@@ -84,6 +84,22 @@ run_cap_test ${lnav_test} -n \
     -c ':write-json-to -' \
     ${top_srcdir}/README.md
 
+# Opening a text file with a line location should move to that line.
+run_cap_test env TEST_COMMENT="open a text file to a specific line" \
+    ${lnav_test} -nN \
+    -c ":open ${test_dir}/textfile_plain.0:3" \
+    -c ";SELECT name, selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -'
+
+# Re-opening an already-loaded text file with a different line location
+# should move to the new line (see issue #1720).
+run_cap_test env TEST_COMMENT="re-open a text file to a different line" \
+    ${lnav_test} -nN \
+    -c ":open ${test_dir}/textfile_plain.0:3" \
+    -c ":open ${test_dir}/textfile_plain.0:6" \
+    -c ";SELECT name, selection FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -'
+
 run_cap_test ${lnav_test} -n \
     ${top_srcdir}/src/log_level.cc
 

@@ -1734,13 +1734,14 @@ textfile_sub_source::get_effective_view_mode() const
 void
 textfile_sub_source::move_to_init_location(file_iterator& iter)
 {
-    if ((*iter)->fvs_consumed_init_location) {
+    auto& lf = (*iter)->fvs_file;
+    const auto& requested_loc = lf->get_open_options().loo_init_location;
+    if ((*iter)->fvs_applied_init_location == requested_loc) {
         return;
     }
 
-    auto& lf = (*iter)->fvs_file;
     std::optional<vis_line_t> new_sel_opt;
-    require(lf->get_open_options().loo_init_location.valid());
+    require(requested_loc.valid());
     lf->get_open_options().loo_init_location.match(
         [this, &new_sel_opt, &lf](default_for_text_format def) {
             if (!this->tss_apply_default_init_location) {
@@ -1802,7 +1803,7 @@ textfile_sub_source::move_to_init_location(file_iterator& iter)
             this->tss_view->set_selection((*iter)->fvs_selection.value());
         }
     }
-    (*iter)->fvs_consumed_init_location = true;
+    (*iter)->fvs_applied_init_location = requested_loc;
 }
 
 textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src,

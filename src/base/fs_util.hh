@@ -48,8 +48,12 @@
 #include "result.h"
 #include "time_util.hh"
 
-struct default_for_text_format {};
-struct file_location_tail {};
+struct default_for_text_format {
+    bool operator==(const default_for_text_format&) const { return true; }
+};
+struct file_location_tail {
+    bool operator==(const file_location_tail&) const { return true; }
+};
 
 using file_location_t = mapbox::util::
     variant<default_for_text_format, file_location_tail, int, std::string>;
