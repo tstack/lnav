@@ -41,7 +41,7 @@ jobs:
       options: --platform ${{ matrix.platform }}
       volumes:
         - /opt:/opt:rw,rshared
-        - /opt:/__e/node20:ro,rshared
+        - /opt:/__e/node24:ro,rshared
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-linux-musl-${{ matrix.arch }}.zip
