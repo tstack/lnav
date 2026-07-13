@@ -55,7 +55,7 @@ jobs:
           ln -s /usr/bin/node /opt/bin/node
         shell: sh  # No bash in Alpine by default
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: list
         run: find /fake.root
       - name: make
@@ -70,7 +70,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           # Artifact name
           name: lnav-linux-musl-${{ matrix.arch }}.zip
@@ -103,7 +103,7 @@ jobs:
       LNAV_ARTIFACT: lnav-linux-musl-${{ matrix.arch }}.zip
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: make
@@ -123,7 +123,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           # Artifact name
           name: ${{ env.LNAV_ARTIFACT }}
@@ -152,7 +152,7 @@ jobs:
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-${{ matrix.arch }}-macos.zip
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: install packages
         run: brew install pcre2 sqlite xz zstd lz4 libarchive curl autoconf automake libunistring
       - name: autogen
@@ -181,7 +181,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           # Artifact name
@@ -218,7 +218,7 @@ jobs:
         shell: msys2 {0}
     steps:
       - name: "🧰 Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # Install Rust using moonrepo/setup-rust
@@ -297,7 +297,7 @@ jobs:
           $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
       - name: upload-unsigned-artifact
         id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lnav-windows-${{ matrix.arch }}.zip
           # path: ${{ env.LNAV_ZIPNAME }}
@@ -327,7 +327,7 @@ jobs:
       - name: upload-signed-artifact
         id: upload-signed-artifact
         if: ${{ inputs.upload_url != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lnav-signed-windows-${{ matrix.arch }}.zip
           path: "lnav-signed"

@@ -21,7 +21,7 @@ jobs:
       lnav_version_number: ${{ env.LNAV_VERSION_NUMBER }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Make release notes
         run: make -C release release-NEWS.md
       - name: Get the release version from the tag
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
