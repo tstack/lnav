@@ -8,7 +8,7 @@
         ],
         "regex": {
             "std": {
-                "pattern": "^\\[(?<timestamp>[\\d\\-:\\s]+)\\]\\s(?<env>\\w+)\\.(?<level>DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT|EMERGENCY):\\s(?<body>.*?)(?:\\s(?<context>\\{.*\\}|\\[.*\\])\\s*)?$"
+                "pattern": "^\\[(?<timestamp>[\\d\\-:\\s]+)\\]\\s(?<env>[\\w-]+)\\.(?<level>DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT|EMERGENCY):\\s(?<body>.*?)(?:\\s(?<context>\\{.*\\}|\\[.*\\])\\s*)?$"
             }
         },
         "value": {
@@ -32,6 +32,9 @@
             },
             {
                 "line": "[2025-08-31 12:34:56] local.ERROR: Something bad happened {\"user_id\":123,\"ip\":\"127.0.0.1\"}"
+            },
+            {
+                "line": "[2026-07-16 10:17:45] payment-systems.ERROR: Failed to process payment"
             }
         ]
     }
