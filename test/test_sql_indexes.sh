@@ -78,6 +78,21 @@ run_cap_test ${lnav_test} -d sql_index.err -n \
 grep "vt_next at EOF" sql_index.err > sql_index_vt_next.err
 run_cap_test sed -e 's/^.*\(vt_next at EOF.*\)$/\1/g' sql_index_vt_next.err
 
+run_test ${lnav_test} -n \
+    -c ":goto 661" \
+    -c "|find-msg next access_log cs_referer not-match" \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'log'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_shop_access_log.0
+
+check_output "find-msg did not find the next non-matching message" <<EOF
+selection
+662
+EOF
+
+check_error_output "find-msg not-match mode produced an error" <<EOF
+EOF
+
 rm -f sql_index.err
 run_cap_test ${lnav_test} -d sql_index.err -n \
     -c ":goto 661" \

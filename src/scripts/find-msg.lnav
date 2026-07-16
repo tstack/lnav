@@ -1,6 +1,6 @@
 #
-# @synopsis: find-msg {next|prev} format-name field-name
-# @description: Find the next/previous message that matches the field of the currently focused message
+# @synopsis: find-msg {next|prev} format-name field-name [match|not-match]
+# @description: Find the next/previous message that matches or does not match the field of the currently focused message
 #
 
 ;SELECT CASE $1
@@ -14,6 +14,11 @@
         END AS line_order
 ;SELECT $2 AS format_name
 ;SELECT $3 AS field_name
+;SELECT CASE coalesce($4, 'match')
+           WHEN 'match' THEN '='
+           WHEN 'not-match' THEN 'IS NOT'
+           ELSE raise_error('invalid match mode "' || $4 || '", expecting "match" or "not-match"')
+        END AS field_cmp
 
 # Get the value of the field in the currently focused message
 :eval ;SELECT $field_name AS curr_value
@@ -21,10 +26,10 @@
    WHERE log_line = log_msg_line() AND $field_name != '-' AND $field_name IS NOT NULL
 ;SELECT ifnull($curr_value, raise_error('focused line does not have a %s value', $field_name))
 
-# Find the next/previous message with a matching field
+# Find the next/previous message with a matching/non-matching field
 :eval ;SELECT log_line AS next_selection
    FROM $format_name
-   WHERE log_line $line_cmp log_msg_line() AND $field_name = \$curr_value
+   WHERE log_line $line_cmp log_msg_line() AND $field_name $field_cmp \$curr_value
    ORDER BY log_line $line_order
    LIMIT 1
 ;SELECT ifnull($next_selection,
