@@ -168,7 +168,7 @@ file parse_file(const std::filesystem::path& src, const string_fragment& sf);
 namespace literals {
 
 inline std::string
-operator"" _emoji(const char* str, std::size_t len)
+operator""_emoji(const char* str, std::size_t len)
 {
     const auto& em = get_emoji_map();
     const auto key = std::string(str, len);
