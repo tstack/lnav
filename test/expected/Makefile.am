@@ -1272,6 +1272,8 @@ dist_noinst_DATA = \
     test_sql_indexes.sh_7cf6e25cb5eb0aab9f75a59d36beab44aba89f79.out \
     test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.err \
     test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.out \
+    test_sql_indexes.sh_a890644e57c5d660e2c3260c2f52292bad64f3b6.err \
+    test_sql_indexes.sh_a890644e57c5d660e2c3260c2f52292bad64f3b6.out \
     test_sql_indexes.sh_ef6993847513a8a6479234f4459a562708201ce3.err \
     test_sql_indexes.sh_ef6993847513a8a6479234f4459a562708201ce3.out \
     test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.err \

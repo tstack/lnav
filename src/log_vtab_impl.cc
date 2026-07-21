@@ -630,9 +630,18 @@ vt_next(sqlite3_vtab_cursor* cur)
         && vc->log_cursor.lc_indexed_lines_range.contains(
             vc->log_cursor.lc_curr_line))
     {
+#ifdef DEBUG_INDEXING
+        log_debug("going to next line from index %d",
+                  (int) vc->log_cursor.lc_curr_line);
+#endif
         vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
         vc->log_cursor.lc_indexed_lines.pop_back();
     } else {
+#ifdef DEBUG_INDEXING
+        log_debug("stepping to next line %d + %d",
+                  (int) vc->log_cursor.lc_curr_line,
+                  (int) vc->log_cursor.lc_direction);
+#endif
         vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
     }
     vc->log_cursor.lc_sub_index = 0;
@@ -2259,7 +2268,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     log_debug("before initial next [%d:%d)",
               (int) p_cur->log_cursor.lc_curr_line,
               (int) p_cur->log_cursor.lc_end_line);
-    if (vt->base.pModule->xNext != vt_next_no_rowid) {
+    if (vt->base.pModule->xNext != vt_next_no_rowid
+        && p_cur->log_cursor.lc_indexed_lines.empty())
+    {
         p_cur->log_cursor.lc_curr_line -= p_cur->log_cursor.lc_direction;
     }
     vt->base.pModule->xNext(p_vtc);
