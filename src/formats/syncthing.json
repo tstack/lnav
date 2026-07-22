@@ -1,0 +1,32 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "syncthing_log" : {
+        "title" : "Syncthing",
+        "description" : "The Syncthing P2P file synchronization program's log format",
+        "url" : "https://syncthing.net/",
+        "regex" : {
+            "std" : {
+                "pattern" : "^\\[[A-Za-z0-9]{5}\\] (?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}(.\\d+)?) ?([a-zA-Z0-9.]+:\\d+:)? (?<level>\\w+): (?<body>.*)$"
+            }
+        },
+        "level-field" : "level",
+        "sample" : [
+            {
+                "line": "[AAAAA] 2024/07/04 13:11:39 INFO: Exiting",
+                "level": "info"
+            },
+            {
+                "line": "[start] 2024/07/04 13:10:53 INFO: syncthing v1.27.9",
+                "level": "info"
+            },
+            {
+                "line": "[AAAAA] 2024/07/02 13:37:27 WARNING: Automatically upgraded to version \"v1.27.9\". Restarting in 1 minute.",
+                "level": "warning"
+            },
+            {
+                "line": "[AAAAA] 2023/11/06 19:00:47.078070 local.go:203: DEBUG: discover: Received local announcement",
+                "level": "debug"
+            }
+        ]
+    }
+}
