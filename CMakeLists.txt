@@ -13,24 +13,47 @@ project(
 
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
+include(cmake/options.cmake)
 
 find_package(PkgConfig REQUIRED)
-find_package(unofficial-sqlite3 CONFIG REQUIRED)
-find_package(BZip2 REQUIRED)
-find_package(LibArchive REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(pcre2 CONFIG REQUIRED)
-find_package(CURL REQUIRED)
 
-set(lnav_LIBS
-        CURL::libcurl
-        unofficial::sqlite3::sqlite3
-        BZip2::BZip2
-        PCRE2::8BIT PCRE2::16BIT PCRE2::32BIT PCRE2::POSIX
-        LibArchive::LibArchive
-        ZLIB::ZLIB
-        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libunistring.a
-)
+if (LNAV_USE_VCPKG)
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    find_package(BZip2 REQUIRED)
+    find_package(LibArchive REQUIRED)
+    find_package(ZLIB REQUIRED)
+    find_package(pcre2 CONFIG REQUIRED)
+    find_package(CURL REQUIRED)
+
+    set(lnav_LIBS
+            CURL::libcurl
+            unofficial::sqlite3::sqlite3
+            BZip2::BZip2
+            PCRE2::8BIT PCRE2::16BIT PCRE2::32BIT PCRE2::POSIX
+            LibArchive::LibArchive
+            ZLIB::ZLIB
+            ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libunistring.a
+    )
+else ()
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/packages)
+
+    find_package(SQLite3 REQUIRED)
+    find_package(BZip2 REQUIRED)
+    find_package(LibArchive REQUIRED)
+    find_package(ZLIB REQUIRED)
+    find_package(pcre2 REQUIRED)
+    find_package(CURL REQUIRED)
+    find_package(Unistring REQUIRED)
+
+    set(lnav_LIBS
+            CURL::libcurl
+            SQLite3::SQLite3
+            BZip2::BZip2
+            pcre2::pcre2
+            LibArchive::LibArchive
+            ZLIB::ZLIB
+            Unistring::Unistring)
+endif ()
 
 add_subdirectory(src)
 add_subdirectory(test)

@@ -1,4 +1,4 @@
-add_library(remote STATIC ../config.h.in remote.ssh.cc remote.ssh.hh)
+add_library(remote STATIC ${CMAKE_BINARY_DIR}/src/config.h remote.ssh.cc remote.ssh.hh)
 
 target_include_directories(remote PUBLIC . .. ../fmtlib
         ${CMAKE_CURRENT_BINARY_DIR}/..)
