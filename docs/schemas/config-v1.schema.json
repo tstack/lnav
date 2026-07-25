@@ -400,6 +400,11 @@
                         "%a %b %d %H:%M:%S %Z"
                     ]
                 },
+                "show-top-status": {
+                    "title": "/ui/show-top-status",
+                    "description": "Show the top status bar",
+                    "type": "boolean"
+                },
                 "dim-text": {
                     "title": "/ui/dim-text",
                     "description": "Reduce the brightness of text (useful for xterms). This setting can be useful when running in an xterm where the white color is very bright.",

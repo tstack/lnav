@@ -2,6 +2,8 @@
 ## lnav v0.14.1
 
 Features:
+* Added a `/ui/show-top-status` configuration option that
+  controls whether the top status bar is displayed.
 * Added the `:reload-view` command, bound to `F5`/`⌘-R`,
   that re-runs the operation that populated the current
   view.

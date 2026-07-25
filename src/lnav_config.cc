@@ -1323,6 +1323,10 @@ static const json_path_container ui_handlers = {
         .with_example("%a %b %d %H:%M:%S %Z"_frag)
         .for_field(&_lnav_config::lc_top_status_cfg,
                    &top_status_source_cfg::tssc_clock_format),
+    yajlpp::property_handler("show-top-status")
+        .with_synopsis("bool")
+        .with_description("Show the top status bar")
+        .for_field(&_lnav_config::lc_ui_show_top_status),
     yajlpp::property_handler("dim-text")
         .with_synopsis("bool")
         .with_description("Reduce the brightness of text (useful for xterms). "

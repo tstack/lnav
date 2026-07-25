@@ -9,6 +9,7 @@
     },
     "ui": {
         "clock-format": "%Y-%m-%dT%H:%M:%S %Z",
+        "show-top-status": true,
         "dim-text": false,
         "default-colors": true,
         "keymap": "default",

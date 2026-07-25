@@ -78,6 +78,8 @@ your liking.  The options can be changed using the :code:`:config` command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/clock-format
 
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/show-top-status
+
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/dim-text
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/default-colors
