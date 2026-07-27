@@ -2,6 +2,17 @@
 ## lnav v0.14.1
 
 Features:
+* Opening the details overlay with `p` now also focuses the
+  overlay.  Pressing `Esc` closes the details overlay whether
+  or not it is focused.
+* Added a `json-fields` view option that controls how JSON
+  fields are shown in the details overlay (`p`).  Set it to
+  `tree` for an indented tree, or `flat` (the default) for
+  the existing `jget()` path list:
+  ```
+  ;UPDATE lnav_top_view SET options =
+      json_set(options, '$.json-fields', 'tree')
+  ```
 * Added a `/ui/show-top-status` configuration option that
   controls whether the top status bar is displayed.
 * Added the `:reload-view` command, bound to `F5`/`⌘-R`,

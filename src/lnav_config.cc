@@ -543,13 +543,15 @@ static const struct json_path_container key_command_handlers = {
 
 static const struct json_path_container keymap_def_handlers = {
     yajlpp::pattern_property_handler(
-        "(?<key_seq>(?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2})+)")
+        "(?<key_seq>(?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2}|n[0-7]{4,7})+)")
         .with_synopsis("<utf8-key-code-in-hex>")
         .with_description(
             "Map of key codes to commands to execute.  The field names are "
             "the keys to be mapped using as a hexadecimal representation of "
             "the UTF-8 encoding.  Each byte of the UTF-8 should start with "
-            "an 'x' followed by the hexadecimal representation of the byte.")
+            "an 'x' followed by the hexadecimal representation of the byte. "
+            "Special keys are encoded as an 'n' followed by the octal key "
+            "identifier (for example, Enter is 'n4201761').")
         .with_obj_provider<key_command, key_map>(
             [](const yajlpp_provider_context& ypc, key_map* km) {
                 auto& retval = km->km_seq_to_cmd[ypc.get_substr("key_seq")];

@@ -1124,8 +1124,8 @@
                             "title": "/ui/keymap-defs/<keymap_name>",
                             "type": "object",
                             "patternProperties": {
-                                "^((?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2})+)$": {
-                                    "description": "Map of key codes to commands to execute.  The field names are the keys to be mapped using as a hexadecimal representation of the UTF-8 encoding.  Each byte of the UTF-8 should start with an 'x' followed by the hexadecimal representation of the byte.",
+                                "^((?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2}|n[0-7]{4,7})+)$": {
+                                    "description": "Map of key codes to commands to execute.  The field names are the keys to be mapped using as a hexadecimal representation of the UTF-8 encoding.  Each byte of the UTF-8 should start with an 'x' followed by the hexadecimal representation of the byte. Special keys are encoded as an 'n' followed by the octal key identifier (for example, Enter is 'n4201761').",
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
                                     "properties": {

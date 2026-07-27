@@ -240,6 +240,18 @@ available in this table:
   in the view.
 :selection: The number of the line that is focused for selection.
 :options: A JSON object that contains optional settings for this view.
+  Known properties include:
+
+  * :code:`row-details` -- :code:`show` or :code:`hide` the details overlay
+  * :code:`json-fields` -- :code:`flat` (default) to list JSON fields as
+    :code:`jget()` paths, or :code:`tree` to show them as an indented tree
+    in the details overlay
+  * :code:`word-wrap` -- :code:`none` or :code:`normal`
+  * :code:`hidden-fields` -- :code:`show` or :code:`hide` fields that have
+    been hidden by the user
+  * :code:`row-time-offset` -- :code:`show` or :code:`hide` the time offset
+    from a row to the previous mark
+  * :code:`overlay-focused-line` -- the focused line in an overlay
 
 lnav_views_echo
 ---------------

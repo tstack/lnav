@@ -76,14 +76,14 @@ The DB view has the following display features:
 * Column headers stick to the top of the view when scrolling.
 * Numeric columns contain a bar chart of the values.
 * Pressing :kbd:`p` opens an overlay with the columns and the values from the
-  focused row in a vertical orientation for easier reading.  Columns with
-  JSON objects/arrays are pretty-printed with bar-charts for numeric values
-  as well. The display will show the value and JSON-Pointer path that can be
-  passed to the `jget`_ function.
-* With the overlay open, pressing :kbd:`CTRL-]` will focus into it.  Then,
-  you can select a column and copy its contents by pressing :kbd:`c` or
-  hide/show it by pressing the space bar.  You can also hide/show a column
-  by clicking on the diamond on the left side.
+  focused row in a vertical orientation for easier reading and focuses the
+  overlay.  Columns with JSON objects/arrays are pretty-printed with
+  bar-charts for numeric values as well. The display will show the value and
+  JSON-Pointer path that can be passed to the `jget`_ function.  Press
+  :kbd:`Esc` to close the overlay.  With the overlay focused, you can select
+  a column and copy its contents by pressing :kbd:`c` or hide/show it by
+  pressing the space bar.  You can also hide/show a column by clicking on
+  the diamond on the left side.
 * Table cells can be styled by adding a :code:`__lnav_style__` column to the
   query. This column must be a JSON object with the key `columns` that contains
   the the column names to be styled and the :ref:`style

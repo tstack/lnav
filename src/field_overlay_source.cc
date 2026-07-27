@@ -50,11 +50,65 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
+#include "yajlpp/json_ptr.hh"
 
 using namespace md4cpp::literals;
 using namespace lnav::roles::literals;
 
 json_string extract(const char* str);
+
+static std::vector<std::string>
+json_ptr_to_segments(const std::string& ptr)
+{
+    std::vector<std::string> retval;
+
+    if (ptr.empty() || ptr[0] != '/') {
+        return retval;
+    }
+
+    size_t start = 1;
+    while (start <= ptr.size()) {
+        auto slash = ptr.find('/', start);
+        auto end = slash == std::string::npos ? ptr.size() : slash;
+        auto frag = string_fragment::from_byte_range(ptr.data(), start, end);
+        stack_buf allocator;
+        auto decoded = json_ptr::decode(frag, allocator);
+        retval.emplace_back(decoded.data(), decoded.length());
+        if (slash == std::string::npos) {
+            break;
+        }
+        start = slash + 1;
+    }
+
+    return retval;
+}
+
+static bool
+json_tree_is_last_sibling(
+    const std::vector<std::vector<std::string>>& all_segs,
+    size_t leaf_idx,
+    size_t depth)
+{
+    const auto& segs = all_segs[leaf_idx];
+
+    for (size_t j = leaf_idx + 1; j < all_segs.size(); j++) {
+        const auto& other = all_segs[j];
+        if (other.size() <= depth) {
+            continue;
+        }
+        auto same_prefix = true;
+        for (size_t k = 0; k < depth; k++) {
+            if (other[k] != segs[k]) {
+                same_prefix = false;
+                break;
+            }
+        }
+        if (same_prefix && other[depth] != segs[depth]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 void
 field_overlay_source::build_field_lines(const listview_curses& lv,
@@ -611,22 +665,100 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     for (const auto& jpairs_map : this->fos_log_helper.ldh_json_pairs) {
         const auto& jpairs = jpairs_map.second;
 
+        if (this->fos_json_fields == json_fields_t::flat) {
+            for (size_t lpc = 0; lpc < jpairs.jwc_values.size(); lpc++) {
+                auto key_line
+                    = attr_line_t("   ")
+                          .append(this->fos_log_helper.format_json_getter(
+                              jpairs_map.first, lpc))
+                          .move();
+                readline_sql_highlighter(
+                    key_line, lnav::sql::dialect::sqlite, std::nullopt);
+                auto key_size = key_line.length();
+                key_line.append(" = ").append(
+                    scrub_ws(fmt::to_string(jpairs.jwc_values[lpc].second)));
+                this->fos_row_to_field_meta.emplace(
+                    this->fos_lines.size(),
+                    row_info{std::nullopt,
+                             fmt::to_string(jpairs.jwc_values[lpc].second)});
+                this->fos_lines.emplace_back(key_line);
+                this->add_key_line_attrs(key_size - 3);
+            }
+            continue;
+        }
+
+        this->fos_lines.emplace_back(
+            attr_line_t("   ").append(jpairs_map.first.get()).move());
+
+        std::vector<std::vector<std::string>> all_segs;
+        all_segs.reserve(jpairs.jwc_values.size());
+        for (const auto& jv : jpairs.jwc_values) {
+            all_segs.emplace_back(json_ptr_to_segments(jv.first));
+        }
+
+        std::vector<std::string> prev_segs;
         for (size_t lpc = 0; lpc < jpairs.jwc_values.size(); lpc++) {
-            auto key_line = attr_line_t("   ")
-                                .append(this->fos_log_helper.format_json_getter(
-                                    jpairs_map.first, lpc))
-                                .move();
-            readline_sql_highlighter(
-                key_line, lnav::sql::dialect::sqlite, std::nullopt);
-            auto key_size = key_line.length();
-            key_line.append(" = ").append(
-                scrub_ws(fmt::to_string(jpairs.jwc_values[lpc].second)));
-            this->fos_row_to_field_meta.emplace(
-                this->fos_lines.size(),
-                row_info{std::nullopt,
-                         fmt::to_string(jpairs.jwc_values[lpc].second)});
-            this->fos_lines.emplace_back(key_line);
-            this->add_key_line_attrs(key_size - 3);
+            const auto& segs = all_segs[lpc];
+            if (segs.empty()) {
+                auto value_str = fmt::to_string(jpairs.jwc_values[lpc].second);
+                auto key_line = attr_line_t("   = ")
+                                    .append(scrub_ws(value_str.c_str()))
+                                    .move();
+                this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                    row_info{
+                                                        std::nullopt,
+                                                        value_str,
+                                                    });
+                this->fos_lines.emplace_back(key_line);
+                continue;
+            }
+
+            size_t common = 0;
+            while (common < prev_segs.size() && common < segs.size()
+                   && prev_segs[common] == segs[common])
+            {
+                common += 1;
+            }
+
+            for (size_t depth = common; depth < segs.size(); depth++) {
+                const auto is_leaf = depth + 1 == segs.size();
+                const auto last
+                    = json_tree_is_last_sibling(all_segs, lpc, depth);
+                attr_line_t key_line(" ");
+
+                for (size_t anc = 0; anc < depth; anc++) {
+                    if (json_tree_is_last_sibling(all_segs, lpc, anc)) {
+                        key_line.append("   ");
+                    } else {
+                        key_line.append(" ")
+                            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
+                            .append(" ");
+                    }
+                }
+                key_line.append(" ")
+                    .append("|",
+                            VC_GRAPHIC.value(last ? NCACS_LLCORNER
+                                                  : NCACS_LTEE))
+                    .append(" ")
+                    .append(segs[depth]);
+
+                if (is_leaf) {
+                    auto value_str
+                        = fmt::to_string(jpairs.jwc_values[lpc].second);
+                    auto name_end = key_line.length();
+                    key_line.append(" = ").append(scrub_ws(value_str.c_str()));
+                    key_line.get_attrs().emplace_back(
+                        line_range{(int) name_end + 3, -1},
+                        VC_STYLE.value(text_attrs::with_bold()));
+                    this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                        row_info{
+                                                            std::nullopt,
+                                                            value_str,
+                                                        });
+                }
+                this->fos_lines.emplace_back(key_line);
+            }
+            prev_segs = segs;
         }
     }
 

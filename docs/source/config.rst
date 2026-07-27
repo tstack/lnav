@@ -229,7 +229,10 @@ Key presses are converted into a string that is used to lookup an
 entry in the keymap.  Function keys are encoded as an :code:`f` followed by
 the key number.  Other keys are encoded as UTF-8 bytes and formatted as an
 :code:`x` followed by the hex-encoding in lowercase.  For example, the encoding
-for the :code:`£` key would be :code:`xc2xa3`.  To make it easier to discover the
+for the :code:`£` key would be :code:`xc2xa3`.  Special keys that do not have
+a UTF-8 representation (for example, Enter under the Kitty keyboard protocol)
+are encoded as an :code:`n` followed by the octal key identifier
+(Enter is :code:`n4201761`).  To make it easier to discover the
 encoding for unassigned keys, **lnav** will print in the command prompt the
 :code:`:config` command and
 `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_ for assigning a command

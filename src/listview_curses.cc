@@ -279,8 +279,23 @@ listview_curses::handle_key(const ncinput& ch)
             this->shift_selection(shift_amount_t::up_line);
             break;
 
-        case 'q':
         case KEY_ESCAPE:
+            if (this->lv_overlay_source != nullptr
+                && this->lv_overlay_source->get_show_details_in_overlay())
+            {
+                this->set_show_details_in_overlay(false);
+                this->lv_source->listview_selection_changed(*this);
+                this->set_needs_update();
+            } else if (this->lv_overlay_focused) {
+                this->lv_overlay_focused = false;
+                this->lv_source->listview_selection_changed(*this);
+                this->set_needs_update();
+            } else {
+                retval = false;
+            }
+            break;
+
+        case 'q':
             if (this->lv_overlay_focused) {
                 this->lv_overlay_focused = false;
                 this->lv_source->listview_selection_changed(*this);
@@ -884,10 +899,13 @@ listview_curses::set_show_details_in_overlay(bool val)
     this->lv_overlay_source->set_show_details_in_overlay(val);
     if (!val) {
         this->lv_overlay_focused = false;
+        this->lv_focused_overlay_top = 0_vl;
+        this->lv_focused_overlay_selection = 0_vl;
         return;
     }
 
     this->update_top_from_selection();
+    this->set_overlay_selection(0_vl);
 }
 
 void
