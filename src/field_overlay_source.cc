@@ -29,6 +29,7 @@
 
 #include "field_overlay_source.hh"
 
+#include <cctype>
 #include <curl/curl.h>
 
 #include "base/attr_line.builder.hh"
@@ -108,6 +109,43 @@ json_tree_is_last_sibling(
         }
     }
     return true;
+}
+
+static void
+append_json_tree_key(attr_line_t& al, const std::string& seg)
+{
+    auto is_index = !seg.empty()
+        && std::all_of(seg.begin(), seg.end(), [](unsigned char ch) {
+               return std::isdigit(ch);
+           });
+
+    if (is_index) {
+        al.append(lnav::roles::number(seg));
+    } else {
+        al.append(lnav::roles::variable(seg));
+    }
+}
+
+static void
+append_json_tree_value(attr_line_t& al, const scoped_value_t& sv)
+{
+    sv.match(
+        [&al](const std::string& str) {
+            al.append(lnav::roles::string(scrub_ws(str.c_str())));
+        },
+        [&al](string_fragment sf) {
+            al.append(lnav::roles::string(scrub_ws(sf)));
+        },
+        [&al](null_value_t) { al.append(lnav::roles::keyword("null")); },
+        [&al](int64_t value) {
+            al.append(lnav::roles::number(fmt::to_string(value)));
+        },
+        [&al](double value) {
+            al.append(lnav::roles::number(fmt::to_string(value)));
+        },
+        [&al](bool value) {
+            al.append(lnav::roles::keyword(value ? "true" : "false"));
+        });
 }
 
 void
@@ -687,8 +725,15 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             continue;
         }
 
-        this->fos_lines.emplace_back(
-            attr_line_t("   ").append(jpairs_map.first.get()).move());
+        {
+            auto root_name = jpairs_map.first.to_string();
+            auto root_line = attr_line_t("   ").append(root_name).move();
+            root_line.get_attrs().emplace_back(
+                line_range{3, -1},
+                VC_STYLE.value(vc.attrs_for_ident(root_name)
+                               | text_attrs::style::bold));
+            this->fos_lines.emplace_back(root_line);
+        }
 
         std::vector<std::vector<std::string>> all_segs;
         all_segs.reserve(jpairs.jwc_values.size());
@@ -699,11 +744,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         std::vector<std::string> prev_segs;
         for (size_t lpc = 0; lpc < jpairs.jwc_values.size(); lpc++) {
             const auto& segs = all_segs[lpc];
+            const auto& jv = jpairs.jwc_values[lpc].second;
             if (segs.empty()) {
-                auto value_str = fmt::to_string(jpairs.jwc_values[lpc].second);
-                auto key_line = attr_line_t("   = ")
-                                    .append(scrub_ws(value_str.c_str()))
-                                    .move();
+                auto value_str = fmt::to_string(jv);
+                attr_line_t key_line("   = ");
+                append_json_tree_value(key_line, jv);
                 this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
                                                     row_info{
                                                         std::nullopt,
@@ -739,17 +784,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                     .append("|",
                             VC_GRAPHIC.value(last ? NCACS_LLCORNER
                                                   : NCACS_LTEE))
-                    .append(" ")
-                    .append(segs[depth]);
+                    .append(" ");
+                append_json_tree_key(key_line, segs[depth]);
 
                 if (is_leaf) {
-                    auto value_str
-                        = fmt::to_string(jpairs.jwc_values[lpc].second);
-                    auto name_end = key_line.length();
-                    key_line.append(" = ").append(scrub_ws(value_str.c_str()));
-                    key_line.get_attrs().emplace_back(
-                        line_range{(int) name_end + 3, -1},
-                        VC_STYLE.value(text_attrs::with_bold()));
+                    auto value_str = fmt::to_string(jv);
+                    key_line.append(" = ");
+                    append_json_tree_value(key_line, jv);
                     this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
                                                         row_info{
                                                             std::nullopt,

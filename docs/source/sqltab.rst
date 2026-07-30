@@ -245,7 +245,8 @@ available in this table:
   * :code:`row-details` -- :code:`show` or :code:`hide` the details overlay
   * :code:`json-fields` -- :code:`flat` (default) to list JSON fields as
     :code:`jget()` paths, or :code:`tree` to show them as an indented tree
-    in the details overlay
+    in the details overlay.  The persistent default can also be set with
+    :code:`:config /ui/views/log/json-fields`
   * :code:`word-wrap` -- :code:`none` or :code:`normal`
   * :code:`hidden-fields` -- :code:`show` or :code:`hide` fields that have
     been hidden by the user

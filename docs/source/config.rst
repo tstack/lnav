@@ -88,6 +88,8 @@ your liking.  The options can be changed using the :code:`:config` command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/views/properties/log/properties/time-column
 
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/views/properties/log/properties/json-fields
+
 .. _config_external_editor:
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/external-editor

@@ -3684,6 +3684,20 @@ logfile_sub_source::reload_config(error_reporter& reporter)
         case logfile_sub_source_ns::time_column_feature_t::Enabled:
             break;
     }
+
+    if (this->tss_view != nullptr) {
+        if (auto* fos = dynamic_cast<field_overlay_source*>(
+                this->tss_view->get_overlay_source());
+            fos != nullptr)
+        {
+            fos->fos_json_fields
+                = cfg.c_json_fields
+                    == logfile_sub_source_ns::json_fields_t::tree
+                ? field_overlay_source::json_fields_t::tree
+                : field_overlay_source::json_fields_t::flat;
+            this->tss_view->set_needs_update();
+        }
+    }
 }
 
 void

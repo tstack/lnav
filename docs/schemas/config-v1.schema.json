@@ -1179,6 +1179,18 @@
                                     "examples": [
                                         "enabled"
                                     ]
+                                },
+                                "json-fields": {
+                                    "title": "/ui/views/log/json-fields",
+                                    "description": "How to display JSON fields in the details overlay: 'flat' for jget() paths or 'tree' for an indented tree",
+                                    "type": "string",
+                                    "enum": [
+                                        "flat",
+                                        "tree"
+                                    ],
+                                    "examples": [
+                                        "tree"
+                                    ]
                                 }
                             },
                             "additionalProperties": false

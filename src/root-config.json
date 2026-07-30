@@ -22,7 +22,8 @@
         },
         "views": {
             "log": {
-                "time-column": "disabled"
+                "time-column": "disabled",
+                "json-fields": "flat"
             }
         }
     },

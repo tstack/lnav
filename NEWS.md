@@ -5,10 +5,15 @@ Features:
 * Opening the details overlay with `p` now also focuses the
   overlay.  Pressing `Esc` closes the details overlay whether
   or not it is focused.
-* Added a `json-fields` view option that controls how JSON
-  fields are shown in the details overlay (`p`).  Set it to
-  `tree` for an indented tree, or `flat` (the default) for
-  the existing `jget()` path list:
+* Added a `/ui/views/log/json-fields` configuration option
+  (and matching `json-fields` view option) that controls how
+  JSON fields are shown in the details overlay (`p`).  Set
+  it to `tree` for an indented tree, or `flat` (the default)
+  for the existing `jget()` path list:
+  ```
+  :config /ui/views/log/json-fields tree
+  ```
+  Or for the current session only:
   ```
   ;UPDATE lnav_top_view SET options =
       json_set(options, '$.json-fields', 'tree')

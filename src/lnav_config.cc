@@ -1297,6 +1297,13 @@ static constexpr json_path_handler_base::enum_value_t _time_column_values[] = {
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
+static constexpr json_path_handler_base::enum_value_t _json_fields_values[] = {
+    {"flat"_frag, logfile_sub_source_ns::json_fields_t::flat},
+    {"tree"_frag, logfile_sub_source_ns::json_fields_t::tree},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const json_path_container log_view_handlers = {
     yajlpp::property_handler("time-column")
         .with_description(
@@ -1309,6 +1316,14 @@ static const json_path_container log_view_handlers = {
         .with_example("enabled"_frag)
         .for_field(&_lnav_config::lc_log_source,
                    &logfile_sub_source_ns::config::c_time_column),
+    yajlpp::property_handler("json-fields")
+        .with_description(
+            "How to display JSON fields in the details overlay: "
+            "'flat' for jget() paths or 'tree' for an indented tree")
+        .with_enum_values(_json_fields_values)
+        .with_example("tree"_frag)
+        .for_field(&_lnav_config::lc_log_source,
+                   &logfile_sub_source_ns::config::c_json_fields),
 };
 
 static const json_path_container views_handlers = {
