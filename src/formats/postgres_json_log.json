@@ -1,0 +1,178 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "postgres_json_log": {
+        "title": "PostgreSQL JSON",
+        "description": "Format for PostgreSQL logs in the jsonlog format",
+        "url": "https://www.postgresql.org/docs/15/runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-JSONLOG",
+        "file-type": "json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " [",
+            {
+                "field": "pid"
+            },
+            "] ",
+            {
+                "field": "user",
+                "default-value": ""
+            },
+            "@",
+            {
+                "field": "dbname",
+                "default-value": ""
+            },
+            " ",
+            {
+                "field": "error_severity"
+            },
+            ": ",
+            {
+                "field": "message"
+            }
+        ],
+        "timestamp-field": "timestamp",
+        "timestamp-format": [
+            "%Y-%m-%d %H:%M:%S.%L %Z"
+        ],
+        "level-field": "error_severity",
+        "level": {
+            "debug": "DEBUG\\d?",
+            "info": "INFO|LOG",
+            "notice": "NOTICE",
+            "warning": "WARNING",
+            "error": "ERROR",
+            "critical": "FATAL",
+            "fatal": "PANIC"
+        },
+        "body-field": "message",
+        "thread-id-field": "pid",
+        "opid-field": "txid",
+        "opid": {
+            "description": {
+                "connection": {
+                    "format": [
+                        {
+                            "field": "user"
+                        },
+                        {
+                            "prefix": "@",
+                            "field": "dbname"
+                        },
+                        {
+                            "prefix": " ",
+                            "field": "statement"
+                        }
+                    ]
+                }
+            }
+        },
+        "value": {
+            "timestamp": {
+                "kind": "string"
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "dbname": {
+                "kind": "string",
+                "identifier": true
+            },
+            "pid": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "remote_host": {
+                "kind": "string",
+                "identifier": true
+            },
+            "remote_port": {
+                "kind": "integer"
+            },
+            "session_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "line_num": {
+                "kind": "integer"
+            },
+            "ps": {
+                "kind": "string"
+            },
+            "session_start": {
+                "kind": "string",
+                "hidden": true
+            },
+            "vxid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "txid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "error_severity": {
+                "kind": "string",
+                "identifier": true,
+                "foreign-key": true
+            },
+            "state_code": {
+                "kind": "string",
+                "identifier": true
+            },
+            "message": {
+                "kind": "string"
+            },
+            "detail": {
+                "kind": "string"
+            },
+            "hint": {
+                "kind": "string"
+            },
+            "internal_query": {
+                "kind": "string"
+            },
+            "internal_position": {
+                "kind": "integer"
+            },
+            "context": {
+                "kind": "string"
+            },
+            "statement": {
+                "kind": "string"
+            },
+            "cursor_position": {
+                "kind": "integer"
+            },
+            "func_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "file_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "file_line_num": {
+                "kind": "integer"
+            },
+            "application_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "backend_type": {
+                "kind": "string",
+                "identifier": true
+            },
+            "leader_pid": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "query_id": {
+                "kind": "integer",
+                "identifier": true
+            }
+        }
+    }
+}
