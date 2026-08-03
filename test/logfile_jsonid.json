@@ -1,0 +1,2 @@
+{"ts": "2013-09-06T20:00:48.124817Z", "level": "INFO", "msg": "startup", "logger": "com.example.foo.bar", "user": "steve@example.com"}
+{"ts": "2013-09-06T20:00:49.124817Z", "level": "INFO", "msg": "request handled", "logger": "com.example.web.server", "user": "alice@example.com"}

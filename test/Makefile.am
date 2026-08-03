@@ -389,6 +389,7 @@ dist_noinst_DATA = \
 	logfile_json.json \
 	logfile_json2.json \
 	logfile_json3.json \
+	logfile_jsonid.json \
 	logfile_json_invalid.json \
 	logfile_json_subsec.json \
 	logfile_postgres_json.json \
@@ -510,6 +511,7 @@ dist_noinst_DATA = \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
 	formats/customlevel/format.json \
+	formats/jsonidtest/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest/lnav-logstash.json \
 	formats/jsontest/rewrite-user.lnav \

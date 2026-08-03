@@ -15,7 +15,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
@@ -63,7 +63,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
@@ -95,7 +95,7 @@ jobs:
       - name: make distcheck
         run: timeout 18m make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           # Artifact name
           name: lnav-tot-linux-64bit.zip

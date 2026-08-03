@@ -26,6 +26,8 @@ run_cap_test ./drive_sql "select endswith('foo.txt', '.txt')"
 
 run_cap_test ./drive_sql "select endswith('a', '.txt')"
 
+run_cap_test ./drive_sql "SELECT '' REGEXP '~x'"
+
 run_cap_test ./drive_sql "select regexp('abcd', 'abcd')"
 
 run_cap_test ./drive_sql "select regexp('bc', 'abcd')"

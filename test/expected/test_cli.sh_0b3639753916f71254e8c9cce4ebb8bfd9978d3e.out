@@ -9217,7 +9217,7 @@
             }
         },
         "mouse": {
-            "mode": "enabled"
+            "mode": "disabled"
         },
         "movement": {
             "mode": "cursor"

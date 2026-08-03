@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Get the release version from the tag
         shell: bash
@@ -34,7 +34,7 @@ jobs:
           spec_file: "release/lnav.spec"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Binary RPM
           path: ${{ steps.rpm.outputs.rpm_dir_path }}

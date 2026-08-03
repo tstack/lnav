@@ -1,0 +1,59 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_jsonid_log": {
+        "title": "Test JSON identifier Log",
+        "json": true,
+        "file-pattern": "logfile_jsonid\\.json",
+        "description": "Regression format for issue #1712 -- identifiers on sub-lines after a newline in the line-format",
+        "line-format": [
+            {
+                "field": "__timestamp__",
+                "auto-width": true,
+                "align": "left",
+                "timestamp-format": "%y-%m-%d %H:%M:%S.%f"
+            },
+            "\n",
+            {
+                "prefix": "logger: ",
+                "field": "logger"
+            },
+            "\n",
+            {
+                "prefix": "user: ",
+                "field": "user"
+            },
+            "\n",
+            {
+                "field": "msg"
+            }
+        ],
+        "level-field": "level",
+        "timestamp-field": "ts",
+        "body-field": "msg",
+        "value": {
+            "msg": {
+                "kind": "string"
+            },
+            "level": {
+                "kind": "string",
+                "hidden": true
+            },
+            "logger": {
+                "kind": "string",
+                "highlights": {
+                    "tester": {
+                        "pattern": "(.*)",
+                        "base-style": {
+                            "bold": true
+                        }
+                    }
+                }
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            }
+        }
+    }
+}

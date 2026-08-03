@@ -186,6 +186,8 @@ Features:
   of time.
 
 Breaking changes:
+* Mouse mode is disabled by default again since there
+  has been some grumbling and it needs some refinement.
 * The `humanize_file_size()` SQLite function now
   uses 1,000 for the base instead of 1,024.
 
@@ -220,6 +222,9 @@ Bug Fixes:
   stop tag is no longer shown as a separate row.  Tags
   without a base name (such as a bare `#start`) are
   not paired.
+* In a JSON-lines format definition, if a
+  `line-format` contained a line-feed, fix
+  highlighting of fields.
 
 
 ## lnav v0.14.0
