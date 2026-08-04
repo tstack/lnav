@@ -1,0 +1,50 @@
+2024-03-14 10:30:00.123 Z [4711] @ LOG: database system was shut down at 2024-03-14 10:29:55 UTC
+  session_id: 65f2c1a0.1267
+  line_num: 1
+  vxid: 
+  txid: 0
+  backend_type: startup
+2024-03-14 10:30:00.456 Z [4711] @ LOG: database system is ready to accept connections
+  session_id: 65f2c1a0.1267
+  line_num: 2
+  vxid: 
+  txid: 0
+  backend_type: postmaster
+2024-03-14 10:30:05.789 Z [4913] postgres@stackoverflow LOG: duration: 0.211 ms  statement: SELECT current_setting('nj.maint')
+  remote_host: 172.23.0.1
+  remote_port: 52134
+  session_id: 65f2c1a5.1331
+  line_num: 1
+  ps: SELECT
+  vxid: 3/12
+  txid: 0
+  application_name: psql
+  backend_type: client backend
+  query_id: 1081270519976314062
+[33m2024-03-14 10:30:07.001 Z[0m[33m [[0m[33m4920[0m[33m] [0m[33mapp[0m[33m@[0m[33mmydb[0m[33m [0m[33mWARNING[0m[33m: [0m[33mthere is no transaction in progress[0m
+[33m  remote_host: [0m[33m172.23.0.5[0m
+[33m  remote_port: [0m[33m40222[0m
+[33m  session_id: [0m[33m65f2c1a7.1338[0m
+[33m  line_num: [0m[33m3[0m
+[33m  vxid: [0m[33m4/57[0m
+[33m  txid: [0m[33m912[0m
+[33m  state_code: [0m[33m22012[0m
+[33m  application_name: [0m[33mwebapp[0m
+[33m  backend_type: [0m[33mclient backend[0m
+[31m2024-03-14 10:30:09.555 Z[0m[31m [[0m[31m4920[0m[31m] [0m[31mapp[0m[31m@[0m[31mmydb[0m[31m [0m[31mERROR[0m[31m: [0m[31mduplicate key value violates unique constraint "users_pkey"[0m
+[31m  remote_host: [0m[31m172.23.0.5[0m
+[31m  remote_port: [0m[31m40222[0m
+[31m  session_id: [0m[31m65f2c1a7.1338[0m
+[31m  line_num: [0m[31m4[0m
+[31m  vxid: [0m[31m4/58[0m
+[31m  txid: [0m[31m913[0m
+[31m  state_code: [0m[31m23505[0m
+[31m  detail: [0m[31mKey (id)=(42) already exists.[0m
+[31m  statement: [0m[31mINSERT INTO users (id, name) VALUES (42, 'alice')[0m
+[31m  application_name: [0m[31mwebapp[0m
+[31m  backend_type: [0m[31mclient backend[0m
+[31m2024-03-14 10:30:11.999 Z[0m[31m [[0m[31m4711[0m[31m] @ [0m[31mFATAL[0m[31m: [0m[31mthe database system is shutting down[0m
+[31m  session_id: [0m[31m65f2c1a0.1267[0m
+[31m  line_num: [0m[31m3[0m
+[31m  state_code: [0m[31m57P03[0m
+[31m  backend_type: [0m[31mpostmaster[0m

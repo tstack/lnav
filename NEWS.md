@@ -85,6 +85,36 @@ Features:
   nanosecond inputs: a value like `0.0000001` (100 ns)
   renders as `"100ns"` instead of being floored to
   `"0s"`.
+* Added support for "named" searches, which stay active
+  and highlighted while other searches are run. This
+  allows several patterns to be tracked at the same time.
+  The commands related to named searches are:
+  - `:create-named-search <name> [pattern]` for creating
+    one.  If no `pattern` is given, the currently active
+    search is adopted and then cleared.  So, a search
+    can be promoted once it turns out to be worth keeping.
+  - `:delete-named-search <name>` removes a named search.
+  The matching text is given a background-color derived
+  from the name, so each search reads as its own block,
+  with the foreground adjusted to stay readable against
+  it.  The `n` / `N` and `<` / `>` keys move through the
+  hits of named searches as well as the current search.
+  Named searches are also surfaced in:
+  - The TIMELINE view where each search is a row that
+    shows the span of hits.  The
+    `:hide-in-timeline search` command hides these rows.
+  - The `log_named_searches` column on the log tables.
+    It contains a JSON list of the searches that
+    matched a message.
+  - The `lnav_view_searches` table.  Rows can be
+    `INSERT`ed and `DELETE`d to create and remove them
+    from SQL.
+  Named searches are saved in the session and included
+  in the output of `:export-session-to`.
+* Added the `:show-only-in-timeline` command to show
+  only the given row type(s) in the timeline view and
+  hide all the others.  If no arguments are given,
+  only the type of the focused row is shown.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

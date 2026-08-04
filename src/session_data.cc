@@ -2414,6 +2414,8 @@ reset_session()
             }
         }
 
+        tc.clear_named_searches();
+
         if (ttt != nullptr) {
             ttt->clear_min_max_row_times();
         }

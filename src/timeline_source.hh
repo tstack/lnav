@@ -167,6 +167,23 @@ public:
         opid,
         tag,
         partition,
+        search,
+    };
+
+    /**
+     * Every row type, for the operations that need to work over the whole set
+     * rather than a named subset (e.g. showing only the given types).
+     *
+     * Adding a row type means adding it here as well.  The switches over
+     * row_type are checked by the compiler; this array is not.
+     */
+    static constexpr std::array<row_type, 6> ALL_ROW_TYPES = {
+        row_type::logfile,
+        row_type::thread,
+        row_type::opid,
+        row_type::tag,
+        row_type::partition,
+        row_type::search,
     };
 
     struct opid_row {
@@ -180,6 +197,8 @@ public:
         lnav::map::small<size_t, std::string> or_description_value;
         size_t or_max_subid_width{0};
         logfile* or_logfile{nullptr};
+        /** For row_type::search, the pattern slot the search occupies. */
+        size_t or_search_slot{0};
         bool or_is_context{false};
 
         bool operator<(const opid_row& rhs) const

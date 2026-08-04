@@ -140,6 +140,7 @@ struct lnav_theme {
     positioned_property<icon_config> lt_icon_thread;
     positioned_property<icon_config> lt_icon_tag;
     positioned_property<icon_config> lt_icon_partition;
+    positioned_property<icon_config> lt_icon_search;
     positioned_property<icon_config> lt_icon_busy;
     positioned_property<icon_config> lt_icon_reload;
 

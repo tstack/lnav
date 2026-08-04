@@ -1262,6 +1262,168 @@ CREATE TABLE lnav_db.lnav_view_filters (
     }
 };
 
+struct lnav_view_search_base {
+    struct iterator {
+        using difference_type = int;
+        using value_type = textview_curses::named_search;
+        using pointer = textview_curses::named_search*;
+        using reference = textview_curses::named_search&;
+        using iterator_category = std::forward_iterator_tag;
+
+        lnav_view_t i_view_index;
+        int i_search_index;
+
+        iterator(lnav_view_t view = LNV_LOG, int search = -1)
+            : i_view_index(view), i_search_index(search)
+        {
+        }
+
+        iterator& operator++()
+        {
+            while (this->i_view_index < LNV__MAX) {
+                const auto& tc = lnav_data.ld_views[this->i_view_index];
+
+                this->i_search_index += 1;
+                if (this->i_search_index
+                    >= (ssize_t) tc.get_named_searches().size())
+                {
+                    this->i_search_index = -1;
+                    this->i_view_index = lnav_view_t(this->i_view_index + 1);
+                } else {
+                    break;
+                }
+            }
+
+            return *this;
+        }
+
+        bool operator==(const iterator& other) const
+        {
+            return this->i_view_index == other.i_view_index
+                && this->i_search_index == other.i_search_index;
+        }
+
+        bool operator!=(const iterator& other) const
+        {
+            return !(*this == other);
+        }
+    };
+
+    iterator begin()
+    {
+        iterator retval = iterator();
+
+        return ++retval;
+    }
+
+    iterator end() { return {LNV__MAX, -1}; }
+
+    sqlite_int64 get_rowid(iterator iter)
+    {
+        const auto& tc = lnav_data.ld_views[iter.i_view_index];
+        const auto& ns = tc.get_named_searches()[iter.i_search_index];
+
+        sqlite_int64 retval = iter.i_view_index;
+
+        retval = retval << 32;
+        retval = retval | ns.ns_slot;
+
+        return retval;
+    }
+};
+
+struct lnav_view_searches
+    : tvt_iterator_cursor<lnav_view_searches>
+    , lnav_view_search_base {
+    static constexpr const char* NAME = "lnav_view_searches";
+    static constexpr const char* CREATE_STMT = R"(
+-- Access lnav's named searches through this table.
+CREATE TABLE lnav_db.lnav_view_searches (
+    view_name TEXT,   -- The name of the view.
+    name      TEXT,   -- The name of the search.
+    pattern   TEXT    -- The regular expression being searched for.
+);
+)";
+
+    int get_column(cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& tc = lnav_data.ld_views[vc.iter.i_view_index];
+        const auto& ns = tc.get_named_searches()[vc.iter.i_search_index];
+
+        switch (col) {
+            case 0: {
+                const auto& vs = lnav_view_strings[vc.iter.i_view_index];
+                sqlite3_result_text(ctx, vs.data(), vs.length(), SQLITE_STATIC);
+                break;
+            }
+            case 1:
+                to_sqlite(ctx, ns.ns_name);
+                break;
+            case 2:
+                to_sqlite(ctx, ns.ns_pattern);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    int insert_row(sqlite3_vtab* tab,
+                   sqlite3_int64& rowid_out,
+                   lnav_view_t view_index,
+                   const char* name,
+                   const char* pattern)
+    {
+        auto& tc = lnav_data.ld_views[view_index];
+
+        if (name == nullptr || pattern == nullptr) {
+            tab->zErrMsg = sqlite3_mprintf(
+                "a name and a pattern are required to create a search");
+            return SQLITE_ERROR;
+        }
+
+        auto create_res = tc.create_named_search(name, pattern);
+        if (create_res.isErr()) {
+            tab->zErrMsg = sqlite3_mprintf(
+                "%s", create_res.unwrapErr().um_message.get_string().c_str());
+            return SQLITE_ERROR;
+        }
+        tc.set_needs_update();
+
+        return SQLITE_OK;
+    }
+
+    int delete_row(sqlite3_vtab* tab, sqlite3_int64 rowid)
+    {
+        auto view_index = lnav_view_t(rowid >> 32);
+        size_t slot = rowid & 0xffffffffLL;
+        auto& tc = lnav_data.ld_views[view_index];
+
+        for (const auto& ns : tc.get_named_searches()) {
+            if (ns.ns_slot == slot) {
+                tc.delete_named_search(ns.ns_name);
+                break;
+            }
+        }
+        tc.set_needs_update();
+
+        return SQLITE_OK;
+    }
+
+    int update_row(sqlite3_vtab* tab,
+                   sqlite3_int64& rowid,
+                   lnav_view_t new_view_index,
+                   const char* new_name,
+                   const char* new_pattern)
+    {
+        // Changing a pattern in place would mean reallocating the slot and
+        // re-scanning, which is what DELETE followed by INSERT already does.
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be updated in the lnav_view_searches table, use "
+            "DELETE and INSERT instead");
+        return SQLITE_ERROR;
+    }
+};
+
 struct lnav_view_filter_stats
     : tvt_iterator_cursor<lnav_view_filter_stats>
     , lnav_view_filter_base {
@@ -1399,6 +1561,7 @@ auto a = injector::bind_multiple<vtab_module_base>()
              .add<vtab_module<lnav_views>>()
              .add<vtab_module<lnav_view_stack>>()
              .add<vtab_module<lnav_view_filters>>()
+             .add<vtab_module<lnav_view_searches>>()
              .add<vtab_module<tvt_no_update<lnav_view_filter_stats>>>()
              .add<vtab_module<lnav_view_files>>();
 

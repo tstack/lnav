@@ -129,11 +129,14 @@ bool
 bottom_status_source::update_marks(listview_curses* lc)
 {
     auto* tc = static_cast<textview_curses*>(lc);
-    auto& bm = tc->get_bookmarks();
     status_field& sf = this->bss_fields[BSF_HITS];
     auto retval = false;
 
-    const auto& bv = bm[&textview_curses::BM_SEARCH];
+    // The field is labelled with the interactive search's pattern, so it
+    // counts that search alone.  Named searches contribute to BM_SEARCH -- and
+    // so to n/N -- but including them here would report a total that does not
+    // belong to the pattern shown beside it.
+    const auto& bv = tc->get_interactive_matches();
 
     if (!bv.empty() || !tc->get_current_search().empty()) {
         auto vl = tc->get_selection();
@@ -142,11 +145,17 @@ bottom_status_source::update_marks(listview_curses* lc)
             if (lb != bv.bv_tree.end()) {
                 retval = sf.set_value("  Hit %'d of %'d for ",
                                       (lb - bv.bv_tree.begin()) + 1,
-                                      tc->get_match_count());
+                                      tc->get_interactive_match_count());
             } else {
-                retval = sf.set_value("  %'d hits for ", tc->get_match_count());
+                retval = sf.set_value("  %'d hits for ",
+                                      tc->get_interactive_match_count());
             }
         }
+    } else if (tc->is_searching()) {
+        // A search that this field is not counting -- a named search, say --
+        // is running, so update_hits() has the cylon going.  Say what is
+        // happening instead of animating an empty field.
+        retval = sf.set_value("  Searching...  "_frag);
     } else {
         retval = sf.clear();
     }

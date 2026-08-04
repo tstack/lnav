@@ -575,3 +575,24 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     support-bookmarks/small_edit.txt
 
+# Named searches are exported as INSERTs into lnav_view_searches.
+run_cap_test ${lnav_test} -nq \
+    -c ":create-named-search am automount" \
+    -c ":create-named-search sud sudo" \
+    -c ":export-session-to -" \
+    ${test_dir}/logfile_syslog.0
+
+# ... and a saved session restores them, matching lines again rather
+# than coming back registered but empty.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ":create-named-search sud sudo" \
+    -c ":save-session" \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT view_name, name, pattern FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM syslog_log WHERE log_named_searches IS NOT NULL" \
+    ${test_dir}/logfile_syslog.0
+

@@ -1,0 +1,8 @@
+[1m[31m✘[0m [1m[31merror[0m: unknown row type(s) -- bogus
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mshow-only-in-timeline[0m[37m[40m bogus            [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mshow-only-in-timeline[0m[4m [0m[4mrow-type[0m
+         ══════════════════════════════════════════════════════════════════════
+           Show only rows of the given type(s) in the timeline view, hiding
+           all of the others.  With no arguments, only the type of the focused
+           row is shown.

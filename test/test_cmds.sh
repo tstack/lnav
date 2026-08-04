@@ -726,3 +726,79 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -H \
     -c ':filter-context 4'
+
+# Naming the active search adopts its hits and then clears it, so the
+# highlighted lines survive with the named search's own color.
+run_cap_test ${lnav_test} -n \
+    -c "/vmw" \
+    -c ":create-named-search vmw" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# A pattern can be given directly, with no search active.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search cgi cgi" \
+    -c ":goto 2" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# Two named searches are active at once and get distinct colors.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    ${test_dir}/logfile_access_log.0
+
+# Deleting one search must not unmark a line that the other one still
+# matches -- line 0 matches both 'vmw' and 'cgi'.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ":delete-named-search one" \
+    -c ":goto 1" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# ... but deleting the last search matching a line does unmark it.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ":delete-named-search one" \
+    -c ":goto 1" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# Resetting the session deletes the named searches, so their marks go with
+# them.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ":reset-session" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# ... and the names and slots are free to be used again.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":reset-session" \
+    -c ":create-named-search all vmw" \
+    -c ";SELECT view_name, name, pattern FROM lnav_view_searches" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search dup vmw" \
+    -c ":create-named-search dup cgi" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":delete-named-search nonexistent" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search noname" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search bad (unclosed" \
+    ${test_dir}/logfile_access_log.0

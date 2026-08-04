@@ -417,6 +417,30 @@
 ----
 
 
+.. _create_named_search:
+
+:create-named-search *name* *\[pattern\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Give a name to a search so that it stays active and highlighted while other searches are run
+
+  **Parameters**
+    * **name\*** --- The name to give to the search
+    * **pattern** --- The regular expression to search for.  If not given, the currently active search is used and then cleared.
+
+  **Examples**
+    To name the currently active search 'req':
+
+    .. code-block::  lnav
+
+      :create-named-search req
+
+  **See Also**
+    :ref:`delete_named_search`
+
+----
+
+
 .. _create_search_table:
 
 :create-search-table *table-name* *\[pattern\]*
@@ -494,6 +518,29 @@
 
   **See Also**
     :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+
+----
+
+
+.. _delete_named_search:
+
+:delete-named-search *name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Delete a search created with create-named-search
+
+  **Parameters**
+    * **name\*** --- The name of the search to delete
+
+  **Examples**
+    To delete the named search 'req':
+
+    .. code-block::  lnav
+
+      :delete-named-search req
+
+  **See Also**
+    :ref:`create_named_search`
 
 ----
 
@@ -1654,7 +1701,7 @@
       :show-in-timeline logfile thread
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`, :ref:`show_only_in_timeline`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1668,6 +1715,29 @@
 
   **See Also**
     :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+
+----
+
+
+.. _show_only_in_timeline:
+
+:show-only-in-timeline *row-type*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Show only rows of the given type(s) in the timeline view, hiding all of the others.  With no arguments, only the type of the focused row is shown.
+
+  **Parameters**
+    * **row-type** --- The type of row to show
+
+  **Examples**
+    To show only opid rows:
+
+    .. code-block::  lnav
+
+      :show-only-in-timeline opid
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 

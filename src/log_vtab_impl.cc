@@ -92,6 +92,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_src_line"_frag,
         "log_thread_id"_frag,
         "log_duration"_frag,
+        "log_named_searches"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -128,7 +129,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_src_file     TEXT HIDDEN,                       -- The source file the log message came from
   log_src_line     TEXT HIDDEN,                       -- The source line the log message came from
   log_thread_id    TEXT HIDDEN,                       -- The ID of the thread that generated this message
-  log_duration     REAL HIDDEN                        -- The duration associated with this log message
+  log_duration     REAL HIDDEN,                       -- The duration associated with this log message
+  log_named_searches TEXT HIDDEN                      -- A JSON list of the named searches that matched this message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -158,6 +160,7 @@ enum class log_footer_columns : uint32_t {
     src_line,
     thread_id,
     duration,
+    named_searches,
 };
 
 const std::string&
@@ -1275,6 +1278,50 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         to_sqlite(ctx, duration_opt);
                         break;
                     }
+                    case log_footer_columns::named_searches: {
+                        // The search match vectors are keyed by the view's
+                        // line numbers, which is the same space as log_line
+                        // (note that this is not `line_number`, which is
+                        // relative to the file).  A multi-line message has to
+                        // be tested across all of its lines: the hit may well
+                        // be on a continuation line rather than the first one.
+                        auto msg_lines = vis_line_t{1};
+                        for (auto next = std::next(ll);
+                             next != lf->end() && next->is_continued();
+                             ++next)
+                        {
+                            msg_lines += 1_vl;
+                        }
+                        auto matches = vt->tc->named_search_matches(
+                            vc->log_cursor.lc_curr_line,
+                            vc->log_cursor.lc_curr_line + msg_lines);
+
+                        if (matches == 0) {
+                            sqlite3_result_null(ctx);
+                        } else {
+                            yajlpp_gen gen;
+
+                            yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                            {
+                                yajlpp_array arr(gen);
+
+                                for (const auto& ns :
+                                     vt->tc->get_named_searches())
+                                {
+                                    if (matches
+                                        & grep_pattern_bit(ns.ns_slot))
+                                    {
+                                        arr.gen(ns.ns_name);
+                                    }
+                                }
+                            }
+
+                            to_sqlite(ctx, gen.to_string_fragment());
+                            sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+                        }
+                        break;
+                    }
                 }
             } else {
                 if (vc->line_values.lvv_values.empty()) {
@@ -1940,6 +1987,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::tags:
                         case log_footer_columns::annotations:
                         case log_footer_columns::filters:
+                        case log_footer_columns::named_searches:
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
@@ -2433,6 +2481,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::tags:
                         case log_footer_columns::annotations:
                         case log_footer_columns::filters:
+                        case log_footer_columns::named_searches:
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:

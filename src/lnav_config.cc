@@ -740,6 +740,10 @@ static const json_path_container theme_icons_handlers = {
         .with_description("Icon for partitions")
         .for_child(&lnav_theme::lt_icon_partition)
         .with_children(icon_config_handlers),
+    yajlpp::property_handler("search")
+        .with_description("Icon for named searches")
+        .for_child(&lnav_theme::lt_icon_search)
+        .with_children(icon_config_handlers),
     yajlpp::property_handler("busy")
         .with_description("Icon for a 'busy' status")
         .for_child(&lnav_theme::lt_icon_busy)

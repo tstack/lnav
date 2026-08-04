@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: “dup” is already a named search
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mcreate-named-search[0m[37m[40m dup cgi            [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mcreate-named-search[0m[4m [0m[4mname[0m[4m [[0m[4mpattern[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Give a name to a search so that it stays active and highlighted
+           while other searches are run

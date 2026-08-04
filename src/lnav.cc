@@ -1591,7 +1591,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     attr_line_t("search completed in ")
                         .append(lnav::roles::number(
                             fmt::format(FMT_STRING("{:.3}"), secs)))
-                        .append(" seconds"));
+                        .append(" seconds \u2014 convert to a named search with ")
+                        .append(":create-named-search"_symbol));
             }
         }
     };
@@ -3792,6 +3793,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     init_lnav_io_commands(lnav_commands);
     init_lnav_metadata_commands(lnav_commands);
     init_lnav_scripting_commands(lnav_commands);
+    init_lnav_search_commands(lnav_commands);
 
     lnav_data.ld_looping = true;
     set_view_mode(ln_mode_t::PAGING);

@@ -533,6 +533,7 @@ add_library(
         cmds.io.cc
         cmds.metadata.cc
         cmds.scripting.cc
+        cmds.search.cc
         collation-functions.cc
         column_namer.cc
         command_executor.cc

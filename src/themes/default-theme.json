@@ -70,6 +70,9 @@
                     "partition": {
                         "value": "\u2291"
                     },
+                    "search": {
+                        "value": "\ud83d\udd0d"
+                    },
                     "busy": {
                         "value": "\u23f3"
                     },

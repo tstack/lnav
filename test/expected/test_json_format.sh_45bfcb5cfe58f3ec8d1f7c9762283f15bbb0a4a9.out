@@ -1,0 +1,7 @@
+log_level,error_severity,pid,dbname,log_opid,log_body
+info,LOG,4711,<NULL>,0,database system was shut down at 2024-03-14 10:29:55 UTC
+info,LOG,4711,<NULL>,0,database system is ready to accept connections
+info,LOG,4913,stackoverflow,0,duration: 0.211 ms  statement: SELECT current_setting('nj.maint')
+warning,WARNING,4920,mydb,912,there is no transaction in progress
+error,ERROR,4920,mydb,913,"duplicate key value violates unique constraint ""users_pkey"""
+critical,FATAL,4711,<NULL>,<NULL>,the database system is shutting down

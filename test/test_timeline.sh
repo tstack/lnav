@@ -329,3 +329,98 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE all_logs SET log_tags = json_array('#end-backup') WHERE log_line = 6" \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_glog.0
+
+# Each named search becomes one row spanning its first to its last match.
+# ':goto 0' is needed because the headless writer starts from the view's
+# current top, which is not necessarily the first row.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ":create-named-search sud sudo" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# A search that matches nothing does not get a row.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search nope does-not-appear-anywhere" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline search' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# A match landing on the continuation lines of a multi-line message must
+# count that message once, not once per line.
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ":create-named-search multi extra-multi" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_json.json
+
+# Deleting the search removes its row.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ":delete-named-search am" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# ... as does resetting the session.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ":reset-session" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# Showing only a couple of row types should not require naming all of the
+# others.
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':show-only-in-timeline opid' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':show-only-in-timeline opid thread' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# With no arguments, only the focused row's type is shown, like
+# :show-only-this-file.  Row 3 is an opid row.
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':goto 3' \
+    -c ':show-only-in-timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# ... and the existing show/hide commands still compose with it.
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':show-only-in-timeline opid' \
+    -c ':show-in-timeline logfile' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ':show-only-in-timeline bogus' \
+    ${test_dir}/logfile_syslog.0
+
+# A tag attached to a continuation line of a multi-line message belongs to
+# that message: bookmark metadata is keyed by the exact line, so the row and
+# its preview both have to look past the first line.
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ':goto 26' \
+    -c ':tag #probe' \
+    -c ';SELECT log_line, log_tags FROM all_logs WHERE log_tags IS NOT NULL' \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_json.json

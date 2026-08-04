@@ -562,6 +562,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/icons/partition",
                                             "$ref": "#/definitions/icon"
                                         },
+                                        "search": {
+                                            "description": "Icon for named searches",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/search",
+                                            "$ref": "#/definitions/icon"
+                                        },
                                         "busy": {
                                             "description": "Icon for a 'busy' status",
                                             "title": "/ui/theme-defs/<theme_name>/icons/busy",

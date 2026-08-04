@@ -39,6 +39,7 @@
 enum class highlight_source_t : uint8_t {
     INTERACTIVE,
     PREVIEW,
+    NAMED_SEARCH,
     CONFIGURATION,
     THEME,
     INTERNAL,

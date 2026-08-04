@@ -83,7 +83,11 @@ class my_sink : public grep_proc_sink<vis_line_t> {
 public:
     my_sink() : ms_finished(false) {};
 
-    void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line) override {}
+    void grep_match(grep_proc<vis_line_t>& gp,
+                    vis_line_t line,
+                    grep_pattern_mask_t patterns) override
+    {
+    }
 
     void grep_end(grep_proc<vis_line_t>& gp) override
     {

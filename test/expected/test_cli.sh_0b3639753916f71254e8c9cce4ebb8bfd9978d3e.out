@@ -274,6 +274,9 @@
                     "partition": {
                         "value": "⊑"
                     },
+                    "search": {
+                        "value": "🔍"
+                    },
                     "busy": {
                         "value": "⏳"
                     },
@@ -1325,6 +1328,9 @@
                     "partition": {
 
                     },
+                    "search": {
+
+                    },
                     "busy": {
 
                     },
@@ -2315,6 +2321,9 @@
                     "partition": {
 
                     },
+                    "search": {
+
+                    },
                     "busy": {
 
                     },
@@ -3302,6 +3311,9 @@
 
                     },
                     "partition": {
+
+                    },
+                    "search": {
 
                     },
                     "busy": {
@@ -4328,6 +4340,9 @@
                     "partition": {
 
                     },
+                    "search": {
+
+                    },
                     "busy": {
 
                     },
@@ -5316,6 +5331,9 @@
 
                     },
                     "partition": {
+
+                    },
+                    "search": {
 
                     },
                     "busy": {
@@ -6307,6 +6325,9 @@
                     "partition": {
 
                     },
+                    "search": {
+
+                    },
                     "busy": {
 
                     },
@@ -6885,8 +6906,8 @@
                         "nestable": true
                     },
                     "diff-delete": {
-                        "color": "#b03435",
-                        "background-color": "",
+                        "color": "#e5a8e3",
+                        "background-color": "#1f1217",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -6894,8 +6915,8 @@
                         "nestable": true
                     },
                     "diff-add": {
-                        "color": "#264b33",
-                        "background-color": "",
+                        "color": "#92c9df",
+                        "background-color": "#0a1e26",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7304,6 +7325,9 @@
 
                     },
                     "partition": {
+
+                    },
+                    "search": {
 
                     },
                     "busy": {
@@ -8303,6 +8327,9 @@
 
                     },
                     "partition": {
+
+                    },
+                    "search": {
 
                     },
                     "busy": {

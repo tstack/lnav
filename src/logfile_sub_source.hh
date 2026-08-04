@@ -639,11 +639,14 @@ public:
 
         void grep_begin(grep_proc<vis_line_t>& gp,
                         vis_line_t start,
-                        vis_line_t stop) override;
+                        vis_line_t stop,
+                        grep_pattern_mask_t patterns) override;
 
         void grep_end(grep_proc<vis_line_t>& gp) override;
 
-        void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line) override;
+        void grep_match(grep_proc<vis_line_t>& gp,
+                        vis_line_t line,
+                        grep_pattern_mask_t patterns) override;
 
         logfile_sub_source& lmg_source;
         bool lmg_done{false};

@@ -74,6 +74,7 @@ enum class ui_icon_t : int32_t {
     thread,
     tag,
     partition,
+    search,
     busy,
     reload,
 };

@@ -539,6 +539,8 @@ wchar_for_icon(ui_icon_t ic)
             return {U'\U0001F3F7', role_t::VCR_TEXT};
         case ui_icon_t::partition:
             return {U'\u2291', role_t::VCR_TEXT};
+        case ui_icon_t::search:
+            return {U'\U0001F50D', role_t::VCR_TEXT};
         case ui_icon_t::busy:
             return {U'\u23f3', role_t::VCR_TEXT};
         case ui_icon_t::reload:

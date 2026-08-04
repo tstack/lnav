@@ -1504,6 +1504,20 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          });
                 break;
             }
+            case help_parameter_format_t::HPF_NAMED_SEARCHES: {
+                std::vector<std::string> poss_strs;
+
+                for (const auto& ns : tc.get_named_searches()) {
+                    poss_strs.emplace_back(ns.ns_name);
+                }
+
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
+            }
             case help_parameter_format_t::HPF_HIGHLIGHTED_FIELD: {
                 std::vector<std::string> poss_strs;
                 for (const auto& hl : lnav_data.ld_log_source.lss_highlighters)

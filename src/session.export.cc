@@ -92,6 +92,26 @@ struct from_sqlite<log_filter_session_state> {
     }
 };
 
+struct named_search_session_state {
+    std::string nsss_view_name;
+    std::string nsss_name;
+    std::string nsss_pattern;
+};
+
+template<>
+struct from_sqlite<named_search_session_state> {
+    named_search_session_state operator()(int argc,
+                                          sqlite3_value** argv,
+                                          int argi)
+    {
+        return {
+            from_sqlite<std::string>()(argc, argv, argi + 0),
+            from_sqlite<std::string>()(argc, argv, argi + 1),
+            from_sqlite<std::string>()(argc, argv, argi + 2),
+        };
+    }
+};
+
 struct log_file_session_state {
     std::string lfss_content_id;
     std::string lfss_format;
@@ -195,6 +215,10 @@ SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotati
 SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 )";
 
+    static const char* SEARCH_QUERY = R"(
+SELECT view_name, name, pattern FROM lnav_view_searches
+)";
+
     static const char* FILE_QUERY = R"(
 SELECT content_id, format, time_offset FROM lnav_file
   WHERE format IS NOT NULL AND time_offset != 0
@@ -236,6 +260,13 @@ SELECT content_id, format, time_offset FROM lnav_file
 
 # The following SQL statements will restore the filters that
 # were added in the session.
+
+)";
+
+    static const char* SEARCH_HEADER = R"(
+
+# The following SQL statements will restore the named searches
+# that were created in the session.
 
 )";
 
@@ -411,6 +442,38 @@ SELECT content_id, format, time_offset FROM lnav_file
         return Err(console::user_message::error(
                        "failed to fetch filter state for views")
                        .with_reason(each_filter_res.unwrapErr().fe_msg));
+    }
+
+    auto prep_search_res = prepare_stmt(lnav_db.in(), SEARCH_QUERY);
+    if (prep_search_res.isErr()) {
+        return Err(
+            console::user_message::error("unable to export named searches")
+                .with_reason(prep_search_res.unwrapErr()));
+    }
+
+    auto added_search_header = false;
+    auto each_search_res
+        = prep_search_res.unwrap().for_each_row<named_search_session_state>(
+            [file, &added_search_header](
+                const named_search_session_state& nsss) {
+                if (!added_search_header) {
+                    fmt::print(file, FMT_STRING("{}"), SEARCH_HEADER);
+                    added_search_header = true;
+                }
+                fmt::print(file,
+                           FMT_STRING(";INSERT INTO lnav_view_searches "
+                                      "(view_name, name, pattern) "
+                                      "VALUES ({}, {}, {})\n"),
+                           sqlitepp::quote(nsss.nsss_view_name).in(),
+                           sqlitepp::quote(nsss.nsss_name).in(),
+                           sqlitepp::quote(nsss.nsss_pattern).in());
+                return false;
+            });
+
+    if (each_search_res.isErr()) {
+        return Err(console::user_message::error(
+                       "failed to fetch named searches for views")
+                       .with_reason(each_search_res.unwrapErr().fe_msg));
     }
 
     auto prep_file_res = prepare_stmt(lnav_db.in(), FILE_QUERY);

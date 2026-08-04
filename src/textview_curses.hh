@@ -33,6 +33,7 @@
 #define textview_curses_hh
 
 #include <array>
+#include <bitset>
 #include <chrono>
 #include <memory>
 #include <set>
@@ -850,8 +851,11 @@ public:
 
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,
-                    vis_line_t stop);
-    void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line);
+                    vis_line_t stop,
+                    grep_pattern_mask_t patterns);
+    void grep_match(grep_proc<vis_line_t>& gp,
+                    vis_line_t line,
+                    grep_pattern_mask_t patterns);
 
     bool is_searching() const { return this->tc_searching > 0; }
 
@@ -870,12 +874,101 @@ public:
 
     size_t get_match_count() { return this->tc_bookmarks[&BM_SEARCH].size(); }
 
-    void match_reset()
+    /**
+     * The slot in the search grep_procs that is driven by execute_search().
+     * The remaining slots are handed out by alloc_search_slot().
+     */
+    static constexpr size_t SEARCH_SLOT_INTERACTIVE = 0;
+
+    /**
+     * Reserve a pattern slot for a search that is not the interactive one.
+     * The slot number is shared by both search procs so that a given search
+     * matches message text and metadata under the same identity.
+     */
+    std::optional<size_t> alloc_search_slot();
+
+    /**
+     * Release a slot taken by alloc_search_slot().  Dropping the slot's
+     * matches is left to the caller so that freeing several slots only needs
+     * a single match_reset().
+     */
+    void free_search_slot(size_t slot);
+
+    /** Forget the matches recorded for the given patterns. */
+    void match_reset(grep_pattern_mask_t patterns);
+
+    void match_reset() { this->match_reset(~0U); }
+
+    /** The number of hits for the interactive search alone. */
+    size_t get_interactive_match_count() const
     {
-        this->tc_bookmarks[&BM_SEARCH].clear();
-        if (this->tc_sub_source != nullptr) {
-            this->tc_sub_source->text_clear_marks(&BM_SEARCH);
-        }
+        return this->tc_search_matches[SEARCH_SLOT_INTERACTIVE].size();
+    }
+
+    const bookmark_vector<vis_line_t>& get_interactive_matches() const
+    {
+        return this->tc_search_matches[SEARCH_SLOT_INTERACTIVE];
+    }
+
+    /**
+     * A search that has been given a name so that it persists while the
+     * interactive search changes underneath it.  Its hits live in
+     * tc_search_matches[ns_slot]; there is no second copy.
+     */
+    struct named_search {
+        std::string ns_name;
+        std::string ns_pattern;
+        size_t ns_slot;
+    };
+
+    const std::vector<named_search>& get_named_searches() const
+    {
+        return this->tc_named_searches;
+    }
+
+    /**
+     * Promote a pattern into a named search.  When the pattern matches the
+     * active search and that search has finished, its hits are moved into the
+     * new slot instead of being found again.
+     */
+    Result<void, lnav::console::user_message> create_named_search(
+        const std::string& name, const std::string& pattern);
+
+    /** @return false if there is no search with the given name. */
+    bool delete_named_search(const std::string& name);
+
+    /** Remove all of the named searches in this view. */
+    void clear_named_searches();
+
+    /**
+     * @return The mask of pattern slots whose named search matches the given
+     * line.  Callers that need the names walk get_named_searches() and test
+     * grep_pattern_bit(ns_slot), which keeps this off the allocation path for
+     * the common case of a line that nothing matched.
+     */
+    /**
+     * @return The mask of pattern slots whose named search matches a line in
+     * the half-open range.  Callers that need the names walk
+     * get_named_searches() and test grep_pattern_bit(ns_slot).
+     *
+     * This deliberately takes a range rather than a single line: a log message
+     * spanning several lines belongs to a search when *any* of its lines
+     * match, and testing only the first line misses a hit that landed on a
+     * continuation line.
+     */
+    grep_pattern_mask_t named_search_matches(vis_line_t start, vis_line_t end);
+
+    /**
+     * @return The lines matched by the search in the given slot.  Iterating
+     * this is proportional to the number of matches, unlike testing every line
+     * with named_search_matches().
+     */
+    const bookmark_vector<vis_line_t>& search_matches_for_slot(
+        size_t slot) const
+    {
+        require(slot < GREP_MAX_PATTERNS);
+
+        return this->tc_search_matches[slot];
     }
 
     highlight_map_t& get_highlights() { return this->tc_highlights; }
@@ -1003,35 +1096,6 @@ public:
         VC_STYLE.value(text_attrs::with_reverse())};
 
 protected:
-    class grep_highlighter {
-    public:
-        grep_highlighter(std::shared_ptr<grep_proc<vis_line_t>>& gp,
-                         highlight_source_t source,
-                         std::string hl_name,
-                         highlight_map_t& hl_map)
-            : gh_grep_proc(std::move(gp)), gh_hl_source(source),
-              gh_hl_name(std::move(hl_name)), gh_hl_map(hl_map)
-        {
-        }
-
-        ~grep_highlighter()
-        {
-            this->gh_hl_map.erase(
-                this->gh_hl_map.find({this->gh_hl_source, this->gh_hl_name}));
-        }
-
-        grep_proc<vis_line_t>* get_grep_proc()
-        {
-            return this->gh_grep_proc.get();
-        }
-
-    private:
-        std::shared_ptr<grep_proc<vis_line_t>> gh_grep_proc;
-        highlight_source_t gh_hl_source;
-        std::string gh_hl_name;
-        highlight_map_t& gh_hl_map;
-    };
-
     text_sub_source* tc_sub_source{nullptr};
     std::shared_ptr<text_delegate> tc_delegate;
 
@@ -1055,8 +1119,36 @@ protected:
     std::string tc_current_search;
     std::string tc_previous_search;
     std::optional<std::string> tc_search_op_id;
-    std::shared_ptr<grep_highlighter> tc_search_child;
-    std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
+
+    /**
+     * The search procs outlive any individual pattern -- patterns are swapped
+     * in and out of their slots -- so that one search can be changed without
+     * disturbing the others.  tc_search_proc covers the view's lines and
+     * tc_meta_search_proc covers the sub-source's metadata (comments, tags).
+     * Both use the same slot number for a given search.
+     */
+    std::shared_ptr<grep_proc<vis_line_t>> tc_search_proc;
+    std::shared_ptr<grep_proc<vis_line_t>> tc_meta_search_proc;
+
+    /**
+     * Matches recorded per pattern slot.  BM_SEARCH is the union of these; the
+     * per-slot breakdown is what lets one search be cleared without dropping
+     * lines that another search also matched.
+     */
+    std::array<bookmark_vector<vis_line_t>, GREP_MAX_PATTERNS>
+        tc_search_matches;
+    /** Slots that alloc_search_slot() has handed out. */
+    std::bitset<GREP_MAX_PATTERNS> tc_search_slots_used;
+    std::vector<named_search> tc_named_searches;
+
+    /** Lazily construct the search procs.  @return tc_search_proc. */
+    grep_proc<vis_line_t>* ensure_search_procs();
+
+    /**
+     * Recompute the BM_SEARCH union over [start, stop) from tc_search_matches,
+     * updating the sub-source marks to match.
+     */
+    void rebuild_search_marks(vis_line_t start, vis_line_t stop);
     std::optional<std::chrono::steady_clock::time_point> tc_search_start_time;
     std::optional<std::chrono::milliseconds> tc_search_duration;
     std::function<void(textview_curses&)> tc_reload_config_delegate;

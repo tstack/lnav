@@ -269,3 +269,65 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_top_view" \
     -c ":write-json-to -" \
     ${test_dir}/textfile_patch.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ";SELECT view_name, name, pattern FROM lnav_view_searches" \
+    ${test_dir}/logfile_access_log.0
+
+# A line matched by more than one search lists every name.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+# Deleting one search drops only its own name from the column.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ":delete-named-search one" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+# The column is NULL when nothing is searching for the line.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+# A multi-line message whose match falls only on a continuation line must
+# still be attributed to the search -- log_line is the message's first line,
+# but the search matched further down.
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ":create-named-search multi extra-multi" \
+    -c ";SELECT log_line, log_named_searches FROM all_logs WHERE log_named_searches IS NOT NULL" \
+    ${test_dir}/logfile_json.json
+
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'sql', 'tramp')" \
+    -c ";SELECT name, pattern FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ";DELETE FROM lnav_view_searches WHERE name = 'one'" \
+    -c ";SELECT name FROM lnav_view_searches" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ";UPDATE lnav_view_searches SET pattern = 'cgi' WHERE name = 'all'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'all', 'cgi')" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'bad', '(unclosed')" \
+    ${test_dir}/logfile_access_log.0

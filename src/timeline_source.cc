@@ -646,6 +646,9 @@ timeline_source::row_type_from_string(const std::string& str)
     if (str == "partition") {
         return row_type::partition;
     }
+    if (str == "search") {
+        return row_type::search;
+    }
     return std::nullopt;
 }
 
@@ -663,6 +666,8 @@ timeline_source::row_type_to_string(row_type rt)
             return "tag";
         case row_type::partition:
             return "partition";
+        case row_type::search:
+            return "search";
     }
     return "unknown";
 }
@@ -819,6 +824,9 @@ timeline_source::text_value_for_line(textview_curses& tc,
                 break;
             case row_type::partition:
                 icon = ui_icon_t::partition;
+                break;
+            case row_type::search:
+                icon = ui_icon_t::search;
                 break;
         }
         if (this->ts_preview_hidden_row_types.count(row.or_type) > 0) {
@@ -1183,6 +1191,67 @@ timeline_source::rebuild_indexes()
         this->ts_index_progress(std::nullopt);
     }
 
+    // Each named search on the log view becomes a single row spanning its
+    // first to its last match.  The matches are keyed by the log view's line
+    // numbers, so walking them is proportional to the number of hits rather
+    // than the size of the log.
+    for (const auto& ns : this->ts_log_view.get_named_searches()) {
+        const auto& matches
+            = this->ts_log_view.search_matches_for_slot(ns.ns_slot);
+
+        if (matches.empty()) {
+            continue;
+        }
+
+        auto search_otr = opid_time_range{};
+        auto first = true;
+        auto last_base = std::optional<content_line_t>{};
+        for (const auto& vl : matches.bv_tree) {
+            // Fold a multi-line message down to its first line so that its
+            // level is only counted once, no matter how many of its lines
+            // the search matched.
+            auto base_cl = this->ts_lss.at_base(vl);
+            const auto* ll = this->ts_lss.find_line(base_cl);
+
+            if (ll == nullptr) {
+                continue;
+            }
+
+            auto line_time = ll->get_time<>();
+            if (first) {
+                search_otr.otr_range.tr_begin = line_time;
+                search_otr.otr_range.tr_end = line_time;
+                first = false;
+            } else if (line_time > search_otr.otr_range.tr_end) {
+                search_otr.otr_range.tr_end = line_time;
+            }
+            if (last_base != base_cl) {
+                search_otr.otr_level_stats.update_msg_count(
+                    ll->get_msg_level());
+                last_base = base_cl;
+            }
+        }
+        if (first) {
+            // Every match resolved to a line that is no longer around.
+            continue;
+        }
+
+        auto search_key
+            = fmt::format(FMT_STRING("search:{}"), ns.ns_name);
+        auto search_key_sf = string_fragment::from_str(search_key).to_owned(
+            this->ts_allocator);
+        auto search_name_sf = string_fragment::from_str(ns.ns_name).to_owned(
+            this->ts_allocator);
+        auto search_row = opid_row{
+            row_type::search,
+            search_name_sf,
+            search_otr,
+            string_fragment::invalid(),
+        };
+        search_row.or_search_slot = ns.ns_slot;
+        this->ts_active_opids.emplace(search_key_sf, search_row);
+    }
+
     std::set<string_fragment> consumed_tag_keys;
     {
         static const auto START_PREFIX_RE = lnav::pcre2pp::code::from_const(
@@ -1482,7 +1551,9 @@ timeline_source::rebuild_indexes()
         const auto& row = *this->ts_time_order[lpc];
         if (row.or_type == row_type::logfile) {
             bm_files.insert_once(vis_line_t(lpc));
-        } else if (row.or_type == row_type::tag) {
+        } else if (row.or_type == row_type::tag
+                   || row.or_type == row_type::search)
+        {
             bm_meta.insert_once(vis_line_t(lpc));
         } else if (row.or_type == row_type::partition) {
             bm_parts.insert_once(vis_line_t(lpc));
@@ -1706,16 +1777,43 @@ timeline_source::text_selection_changed(textview_curses& tc)
                 break;
             }
             case row_type::tag: {
+                // Metadata is keyed by the exact line it was attached to, not
+                // by the start of the message, so a tag placed on one of the
+                // continuation lines of a multi-line message is only found by
+                // checking all of them.
                 const auto& bm
                     = msg_line.get_file_ptr()->get_bookmark_metadata();
-                auto bm_iter = bm.find(msg_line.get_file_line_number());
-                if (bm_iter == bm.end()) {
+                auto tag_name = row.or_name.to_string();
+                auto first_line = msg_line.get_file_line_number();
+                auto tagged = false;
+
+                for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
+                    auto bm_iter = bm.find(first_line + lpc);
+
+                    if (bm_iter == bm.end()) {
+                        continue;
+                    }
+                    if (bm_iter->second.bm_tags
+                        | lnav::itertools::find(tag_name))
+                    {
+                        tagged = true;
+                        break;
+                    }
+                }
+                if (!tagged) {
                     continue;
                 }
-                auto tag_name = row.or_name.to_string();
-                if (!(bm_iter->second.bm_tags
-                      | lnav::itertools::find(tag_name)))
-                {
+                break;
+            }
+            case row_type::search: {
+                // Test every line of the message: the hit may be on a
+                // continuation line rather than the first one.
+                auto msg_start = msg_line.get_vis_line();
+                auto matches = this->ts_log_view.named_search_matches(
+                    msg_start,
+                    msg_start + vis_line_t(msg_line.get_line_count()));
+
+                if (!(matches & grep_pattern_bit(row.or_search_slot))) {
                     continue;
                 }
                 break;

@@ -1069,6 +1069,7 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_thread,
              lt.lt_icon_tag,
              lt.lt_icon_partition,
+             lt.lt_icon_search,
              lt.lt_icon_busy,
              lt.lt_icon_reload,
          })

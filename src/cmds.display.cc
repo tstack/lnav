@@ -168,16 +168,30 @@ com_timeline_row_type_visibility(exec_context& ec,
 {
     std::string retval;
 
-    if (args.size() < 2) {
-        auto* tss = static_cast<timeline_source*>(
-            lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
-        tss->ts_preview_hidden_row_types.clear();
-        lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
-        return ec.make_error("Expecting a row type");
-    }
-
+    auto& tc = lnav_data.ld_views[LNV_TIMELINE];
+    auto* tss = static_cast<timeline_source*>(tc.get_sub_source());
+    const auto only = args[0] == "show-only-in-timeline";
     const auto hide = args[0] == "hide-in-timeline";
+
+    // Without arguments, "show-only" works off the focused row, in the same
+    // way that :show-only-this-file works off the focused line.
     std::vector<std::string> found_types, unknown_types;
+
+    if (args.size() < 2) {
+        if (!only) {
+            tss->ts_preview_hidden_row_types.clear();
+            tc.set_needs_update();
+            return ec.make_error("Expecting a row type");
+        }
+
+        auto sel = tc.get_selection();
+        if (!sel || sel.value() >= (ssize_t) tss->ts_time_order.size()) {
+            return ec.make_error(
+                "no row is focused in the timeline, expecting a row type");
+        }
+        found_types.emplace_back(timeline_source::row_type_to_string(
+            tss->ts_time_order[sel.value()]->or_type));
+    }
 
     for (size_t lpc = 1; lpc < args.size(); lpc++) {
         auto rt_opt = timeline_source::row_type_from_string(args[lpc]);
@@ -193,27 +207,44 @@ com_timeline_row_type_visibility(exec_context& ec,
                              fmt::join(unknown_types, ", "));
     }
 
-    auto* tss = static_cast<timeline_source*>(
-        lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+    // For "show-only", the types that were named are the ones to keep and
+    // everything else is hidden, so that showing one or two types does not
+    // mean spelling out all of the others.
+    std::set<timeline_source::row_type> named_types;
+    for (const auto& type_name : found_types) {
+        named_types.insert(
+            timeline_source::row_type_from_string(type_name).value());
+    }
+
     if (ec.ec_dry_run) {
         tss->ts_preview_hidden_row_types.clear();
-        if (hide) {
-            for (const auto& type_name : found_types) {
-                auto rt_opt = timeline_source::row_type_from_string(type_name);
-                tss->ts_preview_hidden_row_types.insert(rt_opt.value());
+        if (only) {
+            for (const auto rt : timeline_source::ALL_ROW_TYPES) {
+                if (named_types.count(rt) == 0) {
+                    tss->ts_preview_hidden_row_types.insert(rt);
+                }
+            }
+        } else if (hide) {
+            for (const auto rt : named_types) {
+                tss->ts_preview_hidden_row_types.insert(rt);
             }
         }
-        lnav_data.ld_views[LNV_TIMELINE].set_needs_update();
+        tc.set_needs_update();
         retval = "";
     } else {
         tss->ts_preview_hidden_row_types.clear();
-        for (const auto& type_name : found_types) {
-            auto rt_opt = timeline_source::row_type_from_string(type_name);
-            tss->set_row_type_visibility(rt_opt.value(), !hide);
+        if (only) {
+            for (const auto rt : timeline_source::ALL_ROW_TYPES) {
+                tss->set_row_type_visibility(rt, named_types.count(rt) > 0);
+            }
+        } else {
+            for (const auto rt : named_types) {
+                tss->set_row_type_visibility(rt, !hide);
+            }
         }
         tss->text_filters_changed();
 
-        auto visibility = hide ? "hiding" : "showing";
+        auto visibility = only ? "showing only" : (hide ? "hiding" : "showing");
         retval = fmt::format(FMT_STRING("info: {} row type(s) -- {}"),
                              visibility,
                              fmt::join(found_types, ", "));
@@ -476,6 +507,7 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
                                     "opid"_frag,
                                     "tag"_frag,
                                     "partition"_frag,
+                                    "search"_frag,
                                 }))
             .with_example({"To hide logfile and thread rows", "logfile thread"})
             .with_opposites({"show-in-timeline"})
@@ -496,9 +528,33 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
                                     "opid"_frag,
                                     "tag"_frag,
                                     "partition"_frag,
+                                    "search"_frag,
                                 }))
             .with_example({"To show logfile and thread rows", "logfile thread"})
             .with_opposites({"hide-in-timeline"})
+            .with_tags({"display"}),
+    },
+    {
+        "show-only-in-timeline",
+        com_timeline_row_type_visibility,
+
+        help_text(":show-only-in-timeline")
+            .with_summary("Show only rows of the given type(s) in the "
+                          "timeline view, hiding all of the others.  With no "
+                          "arguments, only the type of the focused row is "
+                          "shown.")
+            .with_parameter(help_text("row-type", "The type of row to show")
+                                .zero_or_more()
+                                .with_enum_values({
+                                    "logfile"_frag,
+                                    "thread"_frag,
+                                    "opid"_frag,
+                                    "tag"_frag,
+                                    "partition"_frag,
+                                    "search"_frag,
+                                }))
+            .with_example({"To show only opid rows", "opid"})
+            .with_opposites({"show-in-timeline"})
             .with_tags({"display"}),
     },
     {

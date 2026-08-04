@@ -32,9 +32,12 @@
 #ifndef grep_proc_hh
 #define grep_proc_hh
 
+#include <array>
+#include <cstdint>
 #include <deque>
 #include <exception>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -54,6 +57,31 @@
 
 template<typename LineType>
 class grep_proc;
+
+/**
+ * The maximum number of patterns a single grep_proc can search for at once.
+ * Each pattern occupies a slot and is identified by its bit in a
+ * grep_pattern_mask_t.
+ */
+constexpr size_t GREP_MAX_PATTERNS = 32;
+
+/**
+ * A bitmask over the pattern slots of a grep_proc.  Requests carry a mask of
+ * the patterns they should be matched against and matches report the mask of
+ * the patterns that hit, so that a single pass over the source can service
+ * several searches at once.
+ */
+using grep_pattern_mask_t = uint32_t;
+
+static_assert(GREP_MAX_PATTERNS
+              <= sizeof(grep_pattern_mask_t) * 8);
+
+/** @return The mask bit for the pattern in the given slot. */
+constexpr grep_pattern_mask_t
+grep_pattern_bit(size_t slot)
+{
+    return static_cast<grep_pattern_mask_t>(1) << slot;
+}
 
 /**
  * Data source for lines to be searched using a grep_proc.
@@ -112,10 +140,17 @@ public:
 
     virtual void grep_quiesce() {}
 
-    /** Called at the start of a new grep run. */
+    /**
+     * Called at the start of a new grep run.
+     *
+     * @param patterns The patterns that this run will match against.  Any
+     * results previously recorded for these patterns in [start, stop) are
+     * about to be replaced.
+     */
     virtual void grep_begin(grep_proc<LineType>& gp,
                             LineType start,
-                            LineType stop)
+                            LineType stop,
+                            grep_pattern_mask_t patterns)
     {
     }
 
@@ -126,14 +161,15 @@ public:
     virtual void grep_end(grep_proc<LineType>& gp) {}
 
     /**
-     * Called when a match is found on 'line' and between [start, end).
+     * Called when a match is found on 'line'.
      *
      * @param line The line number that matched.
-     * @param start The offset within the line where the match begins.
-     * @param end The offset of the character after the last character in the
-     * match.
+     * @param patterns The patterns that matched the line.
      */
-    virtual void grep_match(grep_proc<LineType>& gp, LineType line) = 0;
+    virtual void grep_match(grep_proc<LineType>& gp,
+                            LineType line,
+                            grep_pattern_mask_t patterns)
+        = 0;
 };
 
 /**
@@ -160,7 +196,8 @@ public:
      * Construct a grep_proc object.  You must call the start() method
      * to fork off the child process and begin processing.
      *
-     * @param code The pcre code to run over the lines of input.
+     * @param code The pcre code to run over the lines of input.  It is
+     * installed in slot zero; use set_pattern() to add more.
      * @param gps The source of the data to match.
      */
     grep_proc(std::shared_ptr<lnav::pcre2pp::code> code,
@@ -179,7 +216,63 @@ public:
     /** @param gpd The sink to send results to. */
     void set_sink(grep_proc_sink<LineType>* gpd) { this->gp_sink = gpd; }
 
-    grep_proc& invalidate();
+    /**
+     * Install a pattern in the given slot.  Slots are allocated by the owner
+     * of this object.  The pattern set is captured by the child processes when
+     * start() is called, so a change only takes effect on the next run.
+     *
+     * @return The mask bit for the slot.
+     */
+    grep_pattern_mask_t set_pattern(size_t slot,
+                                    std::shared_ptr<lnav::pcre2pp::code> code)
+    {
+        require(slot < GREP_MAX_PATTERNS);
+
+        this->gp_patterns[slot] = std::move(code);
+        return grep_pattern_bit(slot);
+    }
+
+    /** Remove the pattern in the given slot, if any. */
+    void clear_pattern(size_t slot)
+    {
+        require(slot < GREP_MAX_PATTERNS);
+
+        this->gp_patterns[slot] = nullptr;
+    }
+
+    /** @return The pattern in the given slot, or nullptr. */
+    const std::shared_ptr<lnav::pcre2pp::code>& get_pattern(size_t slot) const
+    {
+        require(slot < GREP_MAX_PATTERNS);
+
+        return this->gp_patterns[slot];
+    }
+
+    /** @return The mask of every slot that currently holds a pattern. */
+    grep_pattern_mask_t all_patterns_mask() const
+    {
+        grep_pattern_mask_t retval = 0;
+
+        for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+            if (this->gp_patterns[slot] != nullptr) {
+                retval |= grep_pattern_bit(slot);
+            }
+        }
+
+        return retval;
+    }
+
+    /**
+     * Drop any pending work for the given patterns.  Requests that cover other
+     * patterns are re-queued with the remaining bits.
+     *
+     * Note that the children are killed outright, so work that has already been
+     * dispatched for the surviving patterns is lost and must be queued again by
+     * the caller.
+     */
+    grep_proc& invalidate(grep_pattern_mask_t patterns);
+
+    grep_proc& invalidate() { return this->invalidate(~0U); }
 
     /** @param gpc The control to send results to. */
     void set_control(grep_proc_control* gpc) { this->gp_control = gpc; }
@@ -209,13 +302,24 @@ public:
         return {until_type_t::eof, LineType(line)};
     }
 
+    struct request_t {
+        LineType r_start;
+        request_until_t r_until;
+        grep_pattern_mask_t r_patterns;
+    };
+
     /**
      * Queue a request to search the input between the given line numbers.
      *
      * @param start The line number to start the search at.
      * @param stop The stop condition.
+     * @param patterns The patterns to match against in this range.  Defaults
+     * to every pattern that is currently installed.
      */
-    grep_proc& queue_request(LineType start, request_until_t stop);
+    grep_proc& queue_request(LineType start,
+                             request_until_t stop,
+                             std::optional<grep_pattern_mask_t> patterns
+                             = std::nullopt);
 
     /**
      * Start the search requests that have been queued up with queue_request.
@@ -268,14 +372,22 @@ protected:
 
     virtual void child_term() { fflush(stdout); }
 
-    std::shared_ptr<lnav::pcre2pp::code> gp_pcre;
+    /** The patterns to match, indexed by slot. */
+    std::array<std::shared_ptr<lnav::pcre2pp::code>, GREP_MAX_PATTERNS>
+        gp_patterns;
     grep_proc_source<LineType>& gp_source; /*< The data source delegate. */
 
     std::vector<std::unique_ptr<child_state>> gp_children;
     size_t gp_child_queue_size{0};
 
     /** The queue of search requests. */
-    std::deque<std::pair<LineType, request_until_t>> gp_queue;
+    std::deque<request_t> gp_queue;
+    /**
+     * The requests handed to the current set of children.  Retained so that
+     * invalidate() can re-queue the work for any patterns that it is not
+     * cancelling.
+     */
+    std::deque<request_t> gp_dispatched;
     LineType gp_highest_line{0}; /*< The highest numbered line processed
                                   * by the grep child process.  This
                                   * value is used when the start line

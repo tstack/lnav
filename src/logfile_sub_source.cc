@@ -3171,11 +3171,12 @@ logfile_sub_source::meta_grepper::grep_next_line(vis_line_t& line)
 void
 logfile_sub_source::meta_grepper::grep_begin(grep_proc<vis_line_t>& gp,
                                              vis_line_t start,
-                                             vis_line_t stop)
+                                             vis_line_t stop,
+                                             grep_pattern_mask_t patterns)
 {
     this->lmg_source.quiesce();
 
-    this->lmg_source.tss_view->grep_begin(gp, start, stop);
+    this->lmg_source.tss_view->grep_begin(gp, start, stop, patterns);
 }
 
 void
@@ -3186,9 +3187,10 @@ logfile_sub_source::meta_grepper::grep_end(grep_proc<vis_line_t>& gp)
 
 void
 logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t>& gp,
-                                             vis_line_t line)
+                                             vis_line_t line,
+                                             grep_pattern_mask_t patterns)
 {
-    this->lmg_source.tss_view->grep_match(gp, line);
+    this->lmg_source.tss_view->grep_match(gp, line, patterns);
 }
 
 static std::vector<breadcrumb::possibility>

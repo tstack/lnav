@@ -56,11 +56,11 @@ template<typename LineType>
 grep_proc<LineType>::grep_proc(std::shared_ptr<lnav::pcre2pp::code> code,
                                grep_proc_source<LineType>& gps,
                                std::shared_ptr<pollable_supervisor> ps)
-    : pollable(ps, pollable::category::background), gp_pcre(code),
-      gp_source(gps)
+    : pollable(ps, pollable::category::background), gp_source(gps)
 {
     require(this->invariant());
 
+    this->set_pattern(0, std::move(code));
     gps.register_proc(this);
 }
 
@@ -72,14 +72,22 @@ grep_proc<LineType>::~grep_proc()
 
 template<typename LineType>
 grep_proc<LineType>&
-grep_proc<LineType>::queue_request(LineType start, request_until_t stop)
+grep_proc<LineType>::queue_request(LineType start,
+                                   request_until_t stop,
+                                   std::optional<grep_pattern_mask_t> patterns)
 {
     static constexpr LineType CHUNK_SIZE = LineType{100'000};
 
+    auto mask = patterns.value_or(this->all_patterns_mask());
+    if (mask == 0) {
+        // Nothing to search for, so there is nothing to do.
+        return *this;
+    }
+
     if (start == -1) {
-        this->gp_queue.emplace_back(start, stop);
+        this->gp_queue.push_back(request_t{start, stop, mask});
         if (this->gp_sink) {
-            this->gp_sink->grep_begin(*this, start, stop.ru_line);
+            this->gp_sink->grep_begin(*this, start, stop.ru_line, mask);
         }
         return *this;
     }
@@ -90,17 +98,17 @@ grep_proc<LineType>::queue_request(LineType start, request_until_t stop)
     auto total_lines = stop.ru_line - start;
     while (total_lines > CHUNK_SIZE) {
         auto until = request_until_t{until_type_t::line, start + CHUNK_SIZE};
-        this->gp_queue.emplace_back(start, until);
+        this->gp_queue.push_back(request_t{start, until, mask});
         if (this->gp_sink) {
-            this->gp_sink->grep_begin(*this, start, until.ru_line);
+            this->gp_sink->grep_begin(*this, start, until.ru_line, mask);
         }
         start += CHUNK_SIZE;
         total_lines -= CHUNK_SIZE;
     }
     if (total_lines > 0) {
-        this->gp_queue.emplace_back(start, stop);
+        this->gp_queue.push_back(request_t{start, stop, mask});
         if (this->gp_sink) {
-            this->gp_sink->grep_begin(*this, start, stop.ru_line);
+            this->gp_sink->grep_begin(*this, start, stop.ru_line, mask);
         }
     }
 
@@ -131,10 +139,11 @@ grep_proc<LineType>::start()
 
     for (const auto& [index, elem] : lnav::itertools::enumerate(this->gp_queue))
     {
-        log_info("  queue[%lu]: [%d:%d)",
+        log_info("  queue[%lu]: [%d:%d) patterns=0x%x",
                  index,
-                 (int) elem.first,
-                 (int) elem.second.ru_line);
+                 (int) elem.r_start,
+                 (int) elem.r_until.ru_line,
+                 (unsigned) elem.r_patterns);
     }
 
     auto num_children = std::min({
@@ -147,13 +156,17 @@ grep_proc<LineType>::start()
     }
 
     // Distribute queue items round-robin across children.
-    std::vector<std::deque<std::pair<LineType, request_until_t>>> sub_queues(
-        num_children);
+    std::vector<std::deque<request_t>> sub_queues(num_children);
     for (size_t i = 0; i < this->gp_queue.size(); i++) {
         sub_queues[i % num_children].push_back(this->gp_queue[i]);
     }
 
     this->gp_child_queue_size = this->gp_queue.size();
+    // Remember what is being handed to the children.  A child is a forked
+    // snapshot that cannot be partially cancelled, so if some other pattern is
+    // invalidated later, this is what has to be queued again for the patterns
+    // that survive.
+    this->gp_dispatched = this->gp_queue;
 
     for (size_t i = 0; i < num_children; i++) {
         if (sub_queues[i].empty()) {
@@ -231,10 +244,22 @@ grep_proc<LineType>::child_loop()
         = make_optional_from_nullable(fopen("/tmp/lnav.grep.err", "a"));
     line_value.reserve(BUFSIZ * 2);
     while (!this->gp_queue.empty()) {
-        LineType start_line = this->gp_queue.front().first;
-        auto stop_line = this->gp_queue.front().second;
+        auto req = this->gp_queue.front();
+        auto start_line = req.r_start;
+        auto stop_line = req.r_until;
         bool done = false;
         LineType line;
+
+        // Collect the slots to test up front so the inner loop does not have
+        // to walk the empty ones for every line.
+        std::vector<size_t> slots;
+        for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+            if ((req.r_patterns & grep_pattern_bit(slot))
+                && this->gp_patterns[slot] != nullptr)
+            {
+                slots.push_back(slot);
+            }
+        }
 
         this->gp_queue.pop_front();
         for (line = this->gp_source.grep_initial_line(start_line,
@@ -256,12 +281,25 @@ grep_proc<LineType>::child_loop()
                 if (li.li_utf8_scan_result.is_valid()) {
                     re_opts = PCRE2_NO_UTF_CHECK;
                 }
-                auto match_res = this->gp_pcre->capture_from(line_value)
-                                     .into(md)
-                                     .matches(re_opts)
-                                     .ignore_error();
-                if (match_res) {
-                    fmt::println(stdout, FMT_STRING("{}"), (int) line);
+                // The line is read once and then tested against every pattern
+                // so that several searches can share a single pass over the
+                // source.
+                grep_pattern_mask_t matched = 0;
+                for (const auto slot : slots) {
+                    auto match_res = this->gp_patterns[slot]
+                                         ->capture_from(line_value)
+                                         .into(md)
+                                         .matches(re_opts)
+                                         .ignore_error();
+                    if (match_res) {
+                        matched |= grep_pattern_bit(slot);
+                    }
+                }
+                if (matched != 0) {
+                    fmt::println(stdout,
+                                 FMT_STRING("{}/{:x}"),
+                                 (int) line,
+                                 matched);
                 }
             }
 
@@ -301,6 +339,10 @@ grep_proc<LineType>::cleanup()
         }
     }
     this->gp_child_queue_size = 0;
+    // The children are gone, so there is nothing left to re-queue on their
+    // behalf.  Any work that needed to survive has already been moved back
+    // onto gp_queue by invalidate().
+    this->gp_dispatched.clear();
 
     ensure(this->invariant());
 
@@ -326,13 +368,14 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
                       (int) this->gp_highest_line);
         }
     } else {
-        auto ll_scan_res = scn::scan<int>(sv, "{}");
+        auto ll_scan_res = scn::scan<int, grep_pattern_mask_t>(sv, "{}/{:x}");
         if (ll_scan_res) {
-            auto last_line = LineType{ll_scan_res->value()};
+            auto [line_number, patterns] = ll_scan_res->values();
+            auto last_line = LineType{line_number};
             /* Starting a new line with matches. */
-            /* Pass the match offsets to the sink delegate. */
+            /* Pass the matching patterns to the sink delegate. */
             if (this->gp_sink != nullptr) {
-                this->gp_sink->grep_match(*this, last_line);
+                this->gp_sink->grep_match(*this, last_line, patterns);
             }
         } else {
             log_error(
@@ -454,16 +497,50 @@ grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd>& pollfds)
 
 template<typename LineType>
 grep_proc<LineType>&
-grep_proc<LineType>::invalidate()
+grep_proc<LineType>::invalidate(grep_pattern_mask_t patterns)
 {
-    log_debug("grep_proc(%p): invalidated", this);
+    log_debug("grep_proc(%p): invalidated patterns 0x%x",
+              this,
+              (unsigned) patterns);
+
+    // Strip the doomed patterns out of the pending requests.  A request that
+    // still covers something else is kept so that its work is not lost.
+    std::deque<request_t> survivors;
+    for (auto& req : this->gp_queue) {
+        req.r_patterns &= ~patterns;
+        if (req.r_patterns != 0) {
+            survivors.push_back(req);
+        }
+    }
+
     if (this->gp_sink) {
-        for (size_t lpc = 0; lpc < this->gp_queue.size(); lpc++) {
+        auto dropped = this->gp_queue.size() - survivors.size();
+        for (size_t lpc = 0; lpc < dropped; lpc++) {
             this->gp_sink->grep_end(*this);
         }
     }
-    this->gp_queue.clear();
-    this->gp_highest_line = LineType{0};
+
+    // cleanup() is about to kill the children, which cannot be told to drop
+    // just one pattern.  Queue their work again for the patterns that are not
+    // being invalidated.  Re-scanning a range that had already partly finished
+    // is harmless: the sink records matches idempotently and grep_begin()
+    // clears the range first.
+    for (auto& req : this->gp_dispatched) {
+        req.r_patterns &= ~patterns;
+        if (req.r_patterns != 0) {
+            survivors.push_back(req);
+            if (this->gp_sink) {
+                this->gp_sink->grep_begin(
+                    *this, req.r_start, req.r_until.ru_line, req.r_patterns);
+            }
+        }
+    }
+    this->gp_dispatched.clear();
+
+    this->gp_queue = std::move(survivors);
+    if (this->gp_queue.empty()) {
+        this->gp_highest_line = LineType{0};
+    }
     this->cleanup();
     return *this;
 }

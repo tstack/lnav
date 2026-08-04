@@ -974,6 +974,23 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mcreate-named-search[0m[4m [0m[4mname[0m[4m [[0m[4mpattern[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Give a name to a search so that it stays active and highlighted
+  while other searches are run
+[4mParameters[0m
+  [4mname[0m      The name to give to the search
+  [4mpattern[0m   The regular expression to search for.  If not
+            given, the currently active search is used and then
+            cleared.
+[4mSee Also[0m
+  [1m:delete-named-search[0m
+[4mExample[0m
+#1 To name the currently active search 'req':
+   [37m[40m:[0m[1m[36m[40mcreate-named-search[0m[37m[40m req                          [0m
+   
+
+
 [4m:[0m[1m[4mcreate-search-table[0m[4m [0m[4mtable-name[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Create an SQL table based on a regex search
@@ -1027,6 +1044,19 @@ For support questions, email:
 [4mExample[0m
 #1 To delete the logline-style table named 'task_durations':
    [37m[40m:[0m[1m[36m[40mdelete-logline-table[0m[37m[40m task_durations              [0m
+   
+
+
+[4m:[0m[1m[4mdelete-named-search[0m[4m [0m[4mname[0m
+══════════════════════════════════════════════════════════════════════
+  Delete a search created with create-named-search
+[4mParameter[0m
+  [4mname[0m   The name of the search to delete
+[4mSee Also[0m
+  [1m:create-named-search[0m
+[4mExample[0m
+#1 To delete the named search 'req':
+   [37m[40m:[0m[1m[36m[40mdelete-named-search[0m[37m[40m req                          [0m
    
 
 
@@ -1349,7 +1379,7 @@ For support questions, email:
   Hide rows of the given type(s) in the timeline view
 [4mParameter[0m
   [4mrow-type[0m   The type of row to hide
-             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
+             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:set-text-view-mode[0m, [1m:show-in-timeline[0m, [1m:toggle-sticky-header[0m
@@ -1803,10 +1833,11 @@ For support questions, email:
   timeline view
 [4mParameter[0m
   [4mrow-type[0m   The type of row to show
-             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m
+             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:hide-in-timeline[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:hide-in-timeline[0m, [1m:set-text-view-mode[0m, [1m:show-only-in-timeline[0m, 
+  [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To show logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mshow-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1819,6 +1850,23 @@ For support questions, email:
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+
+[4m:[0m[1m[4mshow-only-in-timeline[0m[4m [0m[4mrow-type[0m
+══════════════════════════════════════════════════════════════════════
+  Show only rows of the given type(s) in the timeline view, hiding
+  all of the others.  With no arguments, only the type of the focused
+  row is shown.
+[4mParameter[0m
+  [4mrow-type[0m   The type of row to show
+             [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+[4mExample[0m
+#1 To show only opid rows:
+   [37m[40m:[0m[1m[36m[40mshow-only-in-timeline[0m[37m[40m opid                       [0m
+   
+
 
 [4m:[0m[1m[4mshow-only-this-file[0m
 ══════════════════════════════════════════════════════════════════════
