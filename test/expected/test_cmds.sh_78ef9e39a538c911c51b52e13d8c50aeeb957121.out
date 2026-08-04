@@ -1,0 +1,34 @@
+2009-07-20 22:59:27,672:DEBUG:Hello, World!
+[4m▌ Line 0 parser details.[0m
+ Received Time: [1m2009-07-20T22:59:27.672000+0000[0m — [1mover 3 years ago[0m  Format: [1m%Y-%m-%d %H:%M:%S,%L[0m  Default Zone: [32mnone[0m
+ [1mPermalink:[0m    #msg00046f2b170a52c0-v1:db4a74e72e97b41dffc5adea690a753f
+ [1mFile:[0m         ]8;;file://{test_dir}/logfile_multiline.0#L1\[1m{test_dir}/logfile_multiline.0[0m]8;;\]8;;file://{test_dir}/logfile_multiline.0#L1\:]8;;\]8;;file://{test_dir}/logfile_multiline.0#L1\[1m1[0m]8;;\
+ [1mPattern:[0m      builtin (1) = [1m[32m([0m[1m[32m?[0mx[1m[32m)[0m[1m[36m^[0m
+  [1m[32m([0m[1m[32m?:[0m\*\*\*[1m\s[0m[1m[36m+[0m[1m[32m)[0m[1m[36m?[0m                              # optional [33m"[0m[1m[36m*[0m[1m[36m*[0m[1m[36m*[0m " prefix
+  [1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m
+      [1m[32m([0m[1m[32m?:[0m
+          [1m\s[0m
+        [1m[36m|[0m [1m\d[0m[1m[32m{[0m4[1m[32m}[0m[1m[32m[[0m\-\/[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m[[0m\-\/[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m         # YYYY-MM-DD or YYYY/MM/DD
+        [1m[36m|[0m T                                   # ISO date/time separator
+        [1m[36m|[0m [1m\d[0m[1m[32m{[0m1,2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m[1m[32m[[0m\.,[1m[32m][0m[1m\d[0m[1m[32m{[0m1,9[1m[32m}[0m[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[36m?[0m   # HH:MM[1m[32m[[0m:SS[1m[32m[[0m[1m[36m.[0mfrac[1m[32m][0m[1m[32m][0m
+        [1m[36m|[0m Z                                   # UTC zulu marker
+        [1m[36m|[0m [1m[32m[[0m[1m[36m+[0m\-[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[33m:[0m[1m[36m?[0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m                   # timezone offset,[33m [0m[1m[36m+[0m0500 or[33m [0m[1m[36m+[0m05:00
+        [1m[36m|[0m [1m[32m([0m[1m[32m?![0mDBG[1m[36m|[0mDEBUG[1m\d[0m[1m[36m?[0m[1m[36m|[0mERR[1m[36m|[0mINFO[1m[36m|[0mWARN[1m[36m|[0mNONE[1m[36m|[0mCRITICAL[1m[36m|[0mFATAL[1m[32m)[0m    # [1m[36m.[0m[1m[36m.[0m[1m[36m.[0mnot one of these levels
+          [1m[32m[[0mA-Z[1m[32m][0m[1m[32m{[0m3,4[1m[32m}[0m                          # 3-4 uppercase letters [1m[32m([0me[1m[36m.[0mg[1m[36m.[0m month/tz abbrev[1m[32m)[0m
+      [1m[32m)[0m[1m[36m+[0m
+  [1m[32m)[0m
+  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m[1m[32m][0m[1m[36m?[0m                                     # optional separator
+  [1m[32m([0mtrc[1m[36m|[0mtrace[1m[36m|[0mcritical[1m[36m|[0mfatal[1m[36m|[0mdbg[1m\d[0m[1m[36m?[0m[1m[36m|[0mdebug[1m\d[0m[1m[36m?[0m[1m[36m|[0minfo[1m[36m|[0mwarn[1m[32m([0m[1m[32m?:[0ming[1m[32m)[0m[1m[36m?[0m[1m[36m|[0merr[1m[32m([0m[1m[32m?:[0mor[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m   # log level
+  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m[1m[32m][0m                                      # separator
+  [1m\s[0m[1m[36m*[0m
+ Searches:
+ | 🔍 greeting = today
+ Known message fields for table [1mgeneric_log[0m:
+ | [1m[32m◆[0m 📊 log_time  = 2009-07-20 22:59:27,672
+ | [1m[32m◆[0m 📊 log_level = DEBUG
+ Discovered fields for logline table from message format: [1m#, #[0m
+   col_0 = [1mHello[0m
+   col_1 = [1mWorld!
+  How are you today?[0m
+  How are you today?
+[31m2009-07-20 22:59:30,221[0m[31m:[0m[31mERROR[0m[31m:[0m[31mGoodbye, World![0m

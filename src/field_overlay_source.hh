@@ -67,6 +67,11 @@ public:
                                 std::vector<attr_line_t>& value_out) override;
 
     void build_field_lines(const listview_curses& lv, vis_line_t row);
+    /**
+     * Append a row for each named search that matched the message loaded into
+     * fos_log_helper, along with the text it matched.
+     */
+    void build_search_lines(const listview_curses& lv, vis_line_t row);
     void build_meta_line(const listview_curses& lv,
                          std::vector<attr_line_t>& dst,
                          vis_line_t row);

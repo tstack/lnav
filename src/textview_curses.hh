@@ -919,6 +919,12 @@ public:
         std::string ns_name;
         std::string ns_pattern;
         size_t ns_slot;
+        /**
+         * The same code that is installed in the grep procs and the
+         * highlighter, kept here so that callers can re-run the pattern to
+         * find out what a line matched.
+         */
+        std::shared_ptr<lnav::pcre2pp::code> ns_code;
     };
 
     const std::vector<named_search>& get_named_searches() const
@@ -941,22 +947,19 @@ public:
     void clear_named_searches();
 
     /**
-     * @return The mask of pattern slots whose named search matches the given
-     * line.  Callers that need the names walk get_named_searches() and test
-     * grep_pattern_bit(ns_slot), which keeps this off the allocation path for
-     * the common case of a line that nothing matched.
-     */
-    /**
      * @return The mask of pattern slots whose named search matches a line in
      * the half-open range.  Callers that need the names walk
-     * get_named_searches() and test grep_pattern_bit(ns_slot).
+     * get_named_searches() and test grep_pattern_bit(ns_slot), which keeps
+     * this off the allocation path for the common case of a line that nothing
+     * matched.
      *
      * This deliberately takes a range rather than a single line: a log message
      * spanning several lines belongs to a search when *any* of its lines
      * match, and testing only the first line misses a hit that landed on a
      * continuation line.
      */
-    grep_pattern_mask_t named_search_matches(vis_line_t start, vis_line_t end);
+    grep_pattern_mask_t named_search_matches(vis_line_t start,
+                                             vis_line_t end) const;
 
     /**
      * @return The lines matched by the search in the given slot.  Iterating

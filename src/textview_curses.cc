@@ -546,7 +546,8 @@ textview_curses::create_named_search(const std::string& name,
     hl.with_attrs(attrs);
     this->tc_highlights[{highlight_source_t::NAMED_SEARCH, name}] = hl;
 
-    this->tc_named_searches.emplace_back(named_search{name, pattern, slot});
+    this->tc_named_searches.emplace_back(
+        named_search{name, pattern, slot, code});
 
     // The interactive search has already found exactly these lines, so adopt
     // its results rather than scanning for them again.  This is only valid
@@ -580,12 +581,12 @@ textview_curses::create_named_search(const std::string& name,
 }
 
 grep_pattern_mask_t
-textview_curses::named_search_matches(vis_line_t start, vis_line_t end)
+textview_curses::named_search_matches(vis_line_t start, vis_line_t end) const
 {
     grep_pattern_mask_t retval = 0;
 
     for (const auto& ns : this->tc_named_searches) {
-        auto& slot_bv = this->tc_search_matches[ns.ns_slot];
+        const auto& slot_bv = this->tc_search_matches[ns.ns_slot];
         auto range = slot_bv.equal_range(start, end);
 
         if (range.first != range.second) {

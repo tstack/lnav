@@ -786,6 +786,38 @@ run_cap_test ${lnav_test} -n \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0
 
+# The details panel names the searches that matched the message.  Line 0
+# matches both 'all' and 'one'...
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# ... and line 1 matches neither, so the section is left out.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 1" \
+    ${test_dir}/logfile_access_log.0
+
+# Several hits in one message are listed as the distinct strings that
+# matched.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search gwords g[a-z]+" \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# The hit is on the second line of the message, but the details panel for
+# the message still finds it.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search greeting today" \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_multiline.0
+
 run_cap_test ${lnav_test} -n \
     -c ":create-named-search dup vmw" \
     -c ":create-named-search dup cgi" \

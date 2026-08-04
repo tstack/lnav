@@ -521,6 +521,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(opid_al);
     }
 
+    this->build_search_lines(lv, row);
+
     if (this->fos_log_helper.ldh_line_values.lvv_values.empty()) {
         this->fos_lines.emplace_back(" No known message fields");
     }
@@ -911,6 +913,134 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 .join(matching_tables,
                       VC_ROLE.value(role_t::VCR_VARIABLE),
                       ", "));
+    }
+}
+
+void
+field_overlay_source::build_search_lines(const listview_curses& lv,
+                                         vis_line_t row)
+{
+    static constexpr size_t MAX_MATCH_TEXTS = 5;
+
+    const auto* tc = dynamic_cast<const textview_curses*>(&lv);
+
+    if (tc == nullptr || tc->get_named_searches().empty()) {
+        return;
+    }
+
+    // A message that spans several lines belongs to a search when any of its
+    // lines match, so the whole extent has to be tested.  The hit may well be
+    // on a continuation line rather than the first one.
+    auto msg_lines = 1_vl;
+    for (auto next = std::next(this->fos_log_helper.ldh_line);
+         next != this->fos_log_helper.ldh_file->end() && next->is_continued();
+         ++next)
+    {
+        msg_lines += 1_vl;
+    }
+
+    auto matches = tc->named_search_matches(row, row + msg_lines);
+    if (matches == 0) {
+        return;
+    }
+
+    struct search_row {
+        const textview_curses::named_search* sr_search;
+        attr_line_t sr_value;
+        std::string sr_copy_value;
+    };
+
+    // The search machinery works on the rendered view lines while this panel
+    // only has the message text, so a search can be marked here without the
+    // pattern finding anything to show.  The name is still listed: the panel
+    // must not disagree with the search marks.
+    const auto& msg_str = this->fos_log_helper.ldh_attr_line.al_string;
+    const auto msg_sf = string_fragment::from_str_range(
+        msg_str, 0, std::min(size_t{8192}, msg_str.size()));
+    std::vector<search_row> rows;
+    size_t name_size = 0;
+
+    for (const auto& ns : tc->get_named_searches()) {
+        if (!(matches & grep_pattern_bit(ns.ns_slot))) {
+            continue;
+        }
+
+        std::vector<std::string> texts;
+        auto truncated = false;
+        if (ns.ns_code != nullptr && msg_sf.is_valid()) {
+            ns.ns_code->capture_from(msg_sf).for_each<PCRE2_NO_UTF_CHECK>(
+                [&texts, &truncated](lnav::pcre2pp::match_data& md) {
+                    auto text = md[0]->to_string();
+
+                    if (std::find(texts.begin(), texts.end(), text)
+                        != texts.end())
+                    {
+                        return;
+                    }
+                    if (texts.size() == MAX_MATCH_TEXTS) {
+                        truncated = true;
+                        return;
+                    }
+                    texts.emplace_back(text);
+                });
+        }
+
+        attr_line_t value_al;
+        std::string copy_value;
+        if (texts.empty()) {
+            value_al.append("(matched elsewhere in the line)"_comment);
+        } else {
+            for (const auto& text : texts) {
+                if (!copy_value.empty()) {
+                    value_al.append(", ");
+                    copy_value.append(", ");
+                }
+                auto scrubbed = scrub_ws(text);
+                value_al.append(scrubbed);
+                copy_value.append(scrubbed);
+            }
+            if (truncated) {
+                value_al.append(" …"_comment);
+            }
+        }
+
+        name_size = std::max(name_size, ns.ns_name.size());
+        rows.emplace_back(search_row{&ns, value_al, copy_value});
+    }
+
+    this->fos_lines.emplace_back(" Searches:");
+
+    for (size_t lpc = 0; lpc < rows.size(); lpc++) {
+        const auto& sr = rows[lpc];
+        const auto* graphic
+            = (lpc == rows.size() - 1) ? NCACS_LLCORNER : NCACS_LTEE;
+        // The prefix is all ASCII apart from the icon, which reserves two
+        // spaces, so byte offsets and column widths agree here.
+        auto al = attr_line_t(" ")
+                      .append("|", VC_GRAPHIC.value(graphic))
+                      .append(" ")
+                      .append(ui_icon_t::search)
+                      .append(" ");
+        auto name_start = al.get_string().length();
+        al.append(sr.sr_search->ns_name);
+        auto name_end = al.get_string().length();
+
+        // The name is drawn in the color the search picked for itself, which
+        // ties this row to the highlighting of the matched text out in the log
+        // message.  It goes in the foreground rather than the background used
+        // out there: the readable() pass that keeps highlighted text legible
+        // only has something to work with when the text has a foreground of
+        // its own, which these overlay rows do not.
+        al.with_attr(string_attr(
+            line_range{(int) name_start, (int) name_end},
+            VC_STYLE.value(view_colors::singleton().attrs_for_ident(
+                sr.sr_search->ns_name))));
+
+        al.pad_to(name_start + name_size).append(" = ").append(sr.sr_value);
+
+        this->fos_row_to_field_meta.emplace(
+            this->fos_lines.size(), row_info{std::nullopt, sr.sr_copy_value});
+        this->fos_lines.emplace_back(al);
     }
 }
 
