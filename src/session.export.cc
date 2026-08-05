@@ -94,6 +94,7 @@ struct from_sqlite<log_filter_session_state> {
 
 struct named_search_session_state {
     std::string nsss_view_name;
+    bool nsss_enabled;
     std::string nsss_name;
     std::string nsss_pattern;
 };
@@ -106,8 +107,9 @@ struct from_sqlite<named_search_session_state> {
     {
         return {
             from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<std::string>()(argc, argv, argi + 1),
+            from_sqlite<bool>()(argc, argv, argi + 1),
             from_sqlite<std::string>()(argc, argv, argi + 2),
+            from_sqlite<std::string>()(argc, argv, argi + 3),
         };
     }
 };
@@ -216,7 +218,7 @@ SELECT view_name, enabled, type, language, pattern FROM lnav_view_filters
 )";
 
     static const char* SEARCH_QUERY = R"(
-SELECT view_name, name, pattern FROM lnav_view_searches
+SELECT view_name, enabled, name, pattern FROM lnav_view_searches
 )";
 
     static const char* FILE_QUERY = R"(
@@ -462,9 +464,10 @@ SELECT content_id, format, time_offset FROM lnav_file
                 }
                 fmt::print(file,
                            FMT_STRING(";INSERT INTO lnav_view_searches "
-                                      "(view_name, name, pattern) "
-                                      "VALUES ({}, {}, {})\n"),
+                                      "(view_name, enabled, name, pattern) "
+                                      "VALUES ({}, {}, {}, {})\n"),
                            sqlitepp::quote(nsss.nsss_view_name).in(),
+                           nsss.nsss_enabled ? 1 : 0,
                            sqlitepp::quote(nsss.nsss_name).in(),
                            sqlitepp::quote(nsss.nsss_pattern).in());
                 return false;

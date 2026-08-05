@@ -1961,6 +1961,9 @@ com_file_visibility(exec_context& ec,
         if (!ec.ec_dry_run) {
             if (only_this_file) {
                 for (const auto& ld : lnav_data.ld_log_source) {
+                    if (ld->get_file_ptr() == nullptr) {
+                        continue;
+                    }
                     ld->set_visibility(false);
                     ld->get_file_ptr()->set_indexing(false);
                 }

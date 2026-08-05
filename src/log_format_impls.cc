@@ -693,7 +693,6 @@ public:
                     // the user wrote.
                     fields.emplace_back(intern_string::lookup(
                         separated_string::unescape_quoted(*iter)));
-                    log_info("  metrics header: %s", fields.back().c_str());
                 }
                 if (fields.size() < 2) {
                     return scan_no_match{"too few columns for a metric CSV"};

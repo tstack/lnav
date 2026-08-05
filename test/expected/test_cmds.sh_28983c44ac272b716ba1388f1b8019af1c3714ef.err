@@ -1,0 +1,5 @@
+[1m[31m✘[0m [1m[31merror[0m: “'my” is not a valid name for a search
+ [1m[31mreason[0m: a name cannot contain whitespace or quotes
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mcreate-named-search[0m[37m[40m 'my search' vmw    [0m
+[36m =[0m [36mhelp[0m: the name is written verbatim into the create-named-search command that is saved in the session, so it must be a single, unquoted word

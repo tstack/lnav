@@ -152,6 +152,8 @@ The following information is shown in the details view:
   like hiding the file if it was seen as a duplicate of another file;
 * the details of the demultiplexing and log format matching process.
 
+.. _ui_filters:
+
 Filters
 ^^^^^^^
 
@@ -170,6 +172,11 @@ following:
 To edit the filters, you can press TAB to change the focus from the main
 view to the filter editor.  The editor allows you to create, enable/disable,
 and delete filters easily.
+
+The view's :ref:`named searches<named_searches>` are listed below its filters,
+with the number of lines each one matches.  They are created by pressing
+:kbd:`s` and respond to the same keys as the filters, so a search can be
+enabled, disabled, edited, and deleted from here as well.
 
 Bottom Status Bar
 -----------------
@@ -494,9 +501,10 @@ TIMELINE
    VMWare Update Manager.  Most rows show API requests as they
    are received and processed.
 
-The timeline view [#]_ visualizes operations, log files, threads, tags, and
-partitions over time. The items are ordered top-to-bottom by their start time.
-So, scrolling down will move forward in time.
+The timeline view [#]_ visualizes operations, log files, threads, tags,
+partitions, and :ref:`named searches<named_searches>` over time. The items are
+ordered top-to-bottom by their start time.  So, scrolling down will move
+forward in time.
 
 The timeline index is not refreshed automatically as new log data arrives.
 Press :kbd:`F5` (or run :code:`:reload-view`) to rebuild the index with the

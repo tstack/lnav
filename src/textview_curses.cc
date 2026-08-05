@@ -441,8 +441,11 @@ textview_curses::rebuild_search_marks(vis_line_t start, vis_line_t stop)
     for (auto mark_iter = pair.first; mark_iter != pair.second; ++mark_iter) {
         auto still_matched = false;
 
-        for (auto& slot_bv : this->tc_search_matches) {
-            if (slot_bv.contains(*mark_iter)) {
+        for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+            if (this->tc_disabled_search_slots & grep_pattern_bit(slot)) {
+                continue;
+            }
+            if (this->tc_search_matches[slot].contains(*mark_iter)) {
                 still_matched = true;
                 break;
             }
@@ -494,10 +497,55 @@ textview_curses::free_search_slot(size_t slot)
 }
 
 Result<void, lnav::console::user_message>
+textview_curses::validate_search_name(const std::string& name)
+{
+    if (name.empty()) {
+        return Err(lnav::console::user_message::error(
+            "a named search must have a name"));
+    }
+
+    for (const auto ch : name) {
+        if (isspace((unsigned char) ch) || ch == '\'' || ch == '"') {
+            return Err(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .append_quoted(name)
+                        .append(" is not a valid name for a search"))
+                    .with_reason("a name cannot contain whitespace or quotes")
+                    .with_help(
+                        "the name is written verbatim into the "
+                        "create-named-search command that is saved in the "
+                        "session, so it must be a single, unquoted word"));
+        }
+    }
+
+    return Ok();
+}
+
+void
+textview_curses::add_named_search_highlight(
+    const std::string& name, const std::shared_ptr<lnav::pcre2pp::code>& code)
+{
+    highlighter hl(code);
+    // The name picks the background color, so each named search reads as its
+    // own block of highlighting.  Only the background is set: the renderer
+    // pushes whatever foreground the line already has into readable contrast
+    // against it (see the lab_color::readable() pass in view_curses.cc), which
+    // adapts to the format's own field coloring instead of fighting it.
+    text_attrs attrs;
+    attrs.ta_bg_color = view_colors::singleton().color_for_ident(
+        string_fragment::from_str(name));
+    hl.with_attrs(attrs);
+    this->tc_highlights[{highlight_source_t::NAMED_SEARCH, name}] = hl;
+}
+
+Result<void, lnav::console::user_message>
 textview_curses::create_named_search(const std::string& name,
                                      const std::string& pattern)
 {
     static const intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
+
+    TRY(validate_search_name(name));
 
     for (const auto& ns : this->tc_named_searches) {
         if (ns.ns_name == name) {
@@ -534,17 +582,7 @@ textview_curses::create_named_search(const std::string& name,
         this->tc_meta_search_proc->set_pattern(slot, code);
     }
 
-    highlighter hl(code);
-    // The name picks the background color, so each named search reads as its
-    // own block of highlighting.  Only the background is set: the renderer
-    // pushes whatever foreground the line already has into readable contrast
-    // against it (see the lab_color::readable() pass in view_curses.cc), which
-    // adapts to the format's own field coloring instead of fighting it.
-    text_attrs attrs;
-    attrs.ta_bg_color
-        = view_colors::singleton().color_for_ident(string_fragment::from_str(name));
-    hl.with_attrs(attrs);
-    this->tc_highlights[{highlight_source_t::NAMED_SEARCH, name}] = hl;
+    this->add_named_search_highlight(name, code);
 
     this->tc_named_searches.emplace_back(
         named_search{name, pattern, slot, code});
@@ -586,6 +624,10 @@ textview_curses::named_search_matches(vis_line_t start, vis_line_t end) const
     grep_pattern_mask_t retval = 0;
 
     for (const auto& ns : this->tc_named_searches) {
+        if (!ns.ns_enabled) {
+            continue;
+        }
+
         const auto& slot_bv = this->tc_search_matches[ns.ns_slot];
         auto range = slot_bv.equal_range(start, end);
 
@@ -595,6 +637,58 @@ textview_curses::named_search_matches(vis_line_t start, vis_line_t end) const
     }
 
     return retval;
+}
+
+const textview_curses::named_search*
+textview_curses::find_named_search(const std::string& name) const
+{
+    for (const auto& ns : this->tc_named_searches) {
+        if (ns.ns_name == name) {
+            return &ns;
+        }
+    }
+
+    return nullptr;
+}
+
+bool
+textview_curses::set_named_search_enabled(const std::string& name, bool enabled)
+{
+    auto iter = std::find_if(
+        this->tc_named_searches.begin(),
+        this->tc_named_searches.end(),
+        [&name](const auto& ns) { return ns.ns_name == name; });
+
+    if (iter == this->tc_named_searches.end()) {
+        return false;
+    }
+    if (iter->ns_enabled == enabled) {
+        return true;
+    }
+
+    iter->ns_enabled = enabled;
+    if (enabled) {
+        this->tc_disabled_search_slots &= ~grep_pattern_bit(iter->ns_slot);
+        this->add_named_search_highlight(iter->ns_name, iter->ns_code);
+        // The hits were kept while the search was off, so the marks can be
+        // put back without another scan.
+        for (const auto vl : this->tc_search_matches[iter->ns_slot].bv_tree) {
+            this->tc_bookmarks[&BM_SEARCH].insert_once(vl);
+            if (this->tc_sub_source != nullptr) {
+                this->tc_sub_source->text_mark(&BM_SEARCH, vl, true);
+            }
+        }
+    } else {
+        this->tc_disabled_search_slots |= grep_pattern_bit(iter->ns_slot);
+        this->tc_highlights.erase({highlight_source_t::NAMED_SEARCH, name});
+        // Rebuilding the union drops the marks that only this search was
+        // holding, while lines that another search matched keep theirs.
+        // equal_range() treats a stop of -1 as "through the end".
+        this->rebuild_search_marks(0_vl, -1_vl);
+    }
+    this->set_needs_update();
+
+    return true;
 }
 
 bool
@@ -611,6 +705,7 @@ textview_curses::delete_named_search(const std::string& name)
 
     this->tc_highlights.erase({highlight_source_t::NAMED_SEARCH, name});
     this->free_search_slot(iter->ns_slot);
+    this->tc_disabled_search_slots &= ~grep_pattern_bit(iter->ns_slot);
     // Drops the slot's matches and rebuilds the union, so lines that another
     // search also matched keep their mark.
     this->match_reset(grep_pattern_bit(iter->ns_slot));
@@ -632,6 +727,7 @@ textview_curses::clear_named_searches()
         patterns |= grep_pattern_bit(ns.ns_slot);
     }
     this->tc_named_searches.clear();
+    this->tc_disabled_search_slots = 0;
     if (patterns != 0) {
         // The marks are rebuilt once for all of the slots instead of once per
         // search.
@@ -715,6 +811,12 @@ textview_curses::grep_match(grep_proc<vis_line_t>& gp,
         if (patterns & grep_pattern_bit(slot)) {
             this->tc_search_matches[slot].insert_once(vis_line_t(line));
         }
+    }
+
+    // A disabled search keeps collecting hits so that it can be turned back
+    // on without a rescan, but it must not mark the line.
+    if ((patterns & ~this->tc_disabled_search_slots) == 0) {
+        return;
     }
 
     this->tc_bookmarks[&BM_SEARCH].insert_once(vis_line_t(line));
@@ -1806,6 +1908,11 @@ text_sub_source::add_commands_for_session(
     for (const auto& ns : this->tss_view->get_named_searches()) {
         receiver(fmt::format(
             FMT_STRING("create-named-search {} {}"), ns.ns_name, ns.ns_pattern));
+
+        if (!ns.ns_enabled) {
+            receiver(fmt::format(FMT_STRING("disable-named-search {}"),
+                                 ns.ns_name));
+        }
     }
 }
 

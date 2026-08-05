@@ -115,7 +115,9 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto& tf = rows[lv.get_selection().value()];
             tf->handle_key(top_view, ch);
             lv.reload_data();
-            top_view->get_sub_source()->text_filters_changed();
+            if (tf->affects_filtering()) {
+                top_view->get_sub_source()->text_filters_changed();
+            }
             top_view->reload_data();
             return true;
         }
@@ -300,6 +302,27 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->fss_filter_state = true;
             return true;
         }
+        case 's': {
+            auto* top_view = *lnav_data.ld_view_stack.top();
+
+            this->fss_new_named_search = true;
+
+            auto rows = this->rows_for(top_view);
+            lv.set_selection(vis_line_t(rows.size()) - 1_vl);
+            auto& row = rows.back();
+            lv.reload_data();
+
+            this->fss_editing = true;
+            this->tss_view->set_enabled(false);
+            this->fss_view_text_possibilities
+                = view_text_possibilities(*top_view);
+            row->prime_text_input(top_view, *this->fss_editor, *this);
+            this->fss_editor->set_y(lv.get_y_for_selection());
+            this->fss_editor->set_visible(true);
+            this->fss_editor->focus();
+            this->fss_filter_state = true;
+            return true;
+        }
         case '\r':
         case NCKEY_ENTER: {
             auto* top_view = *lnav_data.ld_view_stack.top();
@@ -372,6 +395,9 @@ filter_sub_source::text_line_width(textview_curses& curses)
 
     for (auto& filter : fs) {
         retval = std::max(filter->get_id().size() + 8, retval);
+    }
+    for (const auto& ns : top_view->get_named_searches()) {
+        retval = std::max(ns.ns_name.size() + ns.ns_pattern.size() + 9, retval);
     }
 
     return retval;
@@ -483,6 +509,7 @@ filter_sub_source::rl_perform(textinput_curses& rc)
     row->ti_perform(top_view, rc, *this);
     this->fss_min_time = std::nullopt;
     this->fss_max_time = std::nullopt;
+    this->fss_new_named_search = false;
     this->tss_view->reload_data();
 }
 
@@ -508,6 +535,7 @@ filter_sub_source::rl_abort(textinput_curses& rc)
     row->ti_abort(top_view, rc, *this);
     this->fss_min_time = std::nullopt;
     this->fss_max_time = std::nullopt;
+    this->fss_new_named_search = false;
     this->tss_view->reload_data();
 }
 
@@ -1300,6 +1328,331 @@ filter_sub_source::text_filter_row::ti_abort(textview_curses* top_view,
     tss->text_filters_changed();
 }
 
+/**
+ * The edit line for a named search is the argument text of
+ * :create-named-search.  A name cannot contain whitespace, so the first word
+ * is the name and whatever follows it is the pattern.
+ */
+static std::pair<std::string, std::string>
+split_named_search_input(const std::string& content)
+{
+    auto [name, pattern]
+        = string_fragment::from_str(content).trim().split_when(
+            [](char ch) { return isspace((unsigned char) ch) != 0; });
+
+    return {name.to_string(), pattern.trim().to_string()};
+}
+
+void
+filter_sub_source::named_search_row::value_for(const render_state& rs,
+                                               attr_line_t& al)
+{
+    attr_line_builder alb(al);
+    const auto* ns = rs.rs_top_view->find_named_search(this->nsr_name);
+
+    if (ns == nullptr || ns->ns_enabled) {
+        al.append("\u25c6"_ok);
+    } else {
+        al.append("\u25c7"_comment);
+    }
+    // The label is as wide as the IN/OUT field of a filter row so that the
+    // hit counts in the two kinds of row line up.
+    al.append(" ").append("SRCH"_table_header).append("   ");
+
+    {
+        auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
+        if (rs.rs_editing || ns == nullptr) {
+            alb.appendf(FMT_STRING("{:>9}"), "-");
+        } else {
+            alb.appendf(
+                FMT_STRING("{:>9L}"),
+                rs.rs_top_view->search_matches_for_slot(ns->ns_slot).size());
+        }
+    }
+
+    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
+
+    if (ns == nullptr) {
+        return;
+    }
+
+    // The name is shown with the background that its matches wear in the
+    // view, so the row and the highlighting read as the same thing.
+    auto name_attrs = text_attrs{};
+    name_attrs.ta_bg_color = view_colors::singleton().color_for_ident(
+        string_fragment::from_str(ns->ns_name));
+    al.append(ns->ns_name, VC_STYLE.value(name_attrs)).append(" ");
+
+    attr_line_t content{ns->ns_pattern};
+    readline_regex_highlighter(content, std::nullopt);
+    al.append(content);
+}
+
+bool
+filter_sub_source::named_search_row::handle_key(textview_curses* top_view,
+                                                const ncinput& ch)
+{
+    const auto* ns = top_view->find_named_search(this->nsr_name);
+
+    if (ns == nullptr) {
+        return false;
+    }
+
+    switch (ch.eff_text[0]) {
+        case ' ': {
+            top_view->set_named_search_enabled(this->nsr_name,
+                                               !ns->ns_enabled);
+            return true;
+        }
+        case 'D': {
+            top_view->delete_named_search(this->nsr_name);
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
+bool
+filter_sub_source::named_search_row::prime_text_input(
+    textview_curses* top_view, textinput_curses& ti, filter_sub_source& parent)
+{
+    static auto& prompt = lnav::prompt::get();
+
+    prompt.focus_for(
+        *top_view, ti, lnav::prompt::context_t::regex_filter, '\0', {});
+    ti.tc_text_format = text_format_t::TF_PCRE;
+
+    const auto* ns = top_view->find_named_search(this->nsr_name);
+    if (ns == nullptr) {
+        ti.set_content("");
+        return true;
+    }
+
+    ti.set_content(
+        fmt::format(FMT_STRING("{} {}"), ns->ns_name, ns->ns_pattern));
+
+    // Hide the search while it is being edited so that the preview is the
+    // only highlighting in the view.
+    auto retval = ns->ns_enabled;
+    top_view->set_named_search_enabled(this->nsr_name, false);
+
+    return retval;
+}
+
+void
+filter_sub_source::named_search_row::ti_change(textview_curses* top_view,
+                                               textinput_curses& rc)
+{
+    auto& err = lnav_data.ld_filter_help_status_source.fss_error;
+    auto [name, pattern] = split_named_search_input(rc.get_content());
+
+    top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
+    top_view->set_needs_update();
+
+    if (name.empty()) {
+        err.clear();
+        return;
+    }
+
+    auto name_res = textview_curses::validate_search_name(name);
+    if (name_res.isErr()) {
+        err.set_value(
+            "error: %s",
+            name_res.unwrapErr().um_message.get_string().c_str());
+        return;
+    }
+
+    // A name on its own adopts the active search, the same as leaving the
+    // pattern off of :create-named-search.
+    if (pattern.empty()) {
+        pattern = top_view->get_current_search();
+    }
+    if (pattern.empty()) {
+        err.set_value("error: no active search to adopt, enter a pattern");
+        return;
+    }
+
+    this->ti_completion_request(
+        top_view, rc, completion_request_type_t::partial);
+
+    auto regex_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
+    if (regex_res.isErr()) {
+        auto pe = regex_res.unwrapErr();
+        err.set_value("error: %s", pe.get_message().c_str());
+        return;
+    }
+
+    const auto* ns = top_view->find_named_search(name);
+    if (ns != nullptr && name != this->nsr_name) {
+        err.set_value("error: named search already exists");
+        return;
+    }
+
+    // Preview with the background that the search itself will use.
+    highlighter hl(regex_res.unwrap().to_shared());
+    auto hl_attrs = text_attrs{};
+    hl_attrs.ta_bg_color = view_colors::singleton().color_for_ident(
+        string_fragment::from_str(name));
+    hl_attrs |= text_attrs::style::blink;
+    hl.with_attrs(hl_attrs);
+    top_view->get_highlights()[{highlight_source_t::PREVIEW, "preview"}] = hl;
+    top_view->set_needs_update();
+    err.clear();
+}
+
+void
+filter_sub_source::named_search_row::ti_completion_request(
+    textview_curses* top_view,
+    textinput_curses& tc,
+    completion_request_type_t crt)
+{
+    static const auto SEARCH_HELP
+        = help_text("named-search", "give a name to a search")
+              .with_parameter(help_text("name", "The name for the search"))
+              .with_parameter(
+                  help_text("pattern", "The regular expression to search for")
+                      .with_format(help_parameter_format_t::HPF_REGEX));
+    static auto& prompt = lnav::prompt::get();
+
+    auto& al = tc.tc_lines[tc.tc_cursor.y];
+    auto al_sf = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
+    auto parse_res = lnav::command::parse_for_prompt(
+        lnav_data.ld_exec_context, al_sf, SEARCH_HELP);
+
+    switch (crt) {
+        case completion_request_type_t::partial: {
+            if (al_sf.endswith(" ")) {
+                if (tc.is_cursor_at_end_of_line()) {
+                    tc.tc_suggestion
+                        = prompt.get_regex_suggestion(*top_view, al.al_string);
+                }
+                return;
+            }
+            break;
+        }
+        case completion_request_type_t::full:
+            break;
+    }
+
+    auto byte_x = al_sf.column_to_byte_index(tc.tc_cursor.x);
+    auto arg_res_opt = parse_res.arg_at(byte_x);
+    if (!arg_res_opt) {
+        return;
+    }
+
+    auto arg_pair = arg_res_opt.value();
+    if (crt == completion_request_type_t::full
+        || tc.tc_popup_type != textinput_curses::popup_type_t::none)
+    {
+        auto poss = prompt.get_cmd_parameter_completion(
+            *top_view,
+            &SEARCH_HELP,
+            arg_pair.aar_help,
+            arg_pair.aar_element.se_value);
+        auto left = arg_pair.aar_element.se_value.empty()
+            ? tc.tc_cursor.x
+            : al_sf.byte_to_column_index(
+                  arg_pair.aar_element.se_origin.sf_begin);
+        tc.open_popup_for_completion(left, poss);
+        tc.tc_popup.set_title(arg_pair.aar_help->ht_name);
+    } else if (arg_pair.aar_element.se_value.empty()
+               && tc.is_cursor_at_end_of_line())
+    {
+        tc.tc_suggestion = prompt.get_regex_suggestion(*top_view, al.al_string);
+    } else {
+        tc.tc_suggestion.clear();
+    }
+}
+
+void
+filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
+                                                textinput_curses& ti,
+                                                filter_sub_source& parent)
+{
+    static const intern_string_t INPUT_SRC = intern_string::lookup("input");
+
+    auto report_error = [](const lnav::console::user_message& um) {
+        lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
+    };
+    auto [name, pattern] = split_named_search_input(ti.get_content());
+
+    if (name.empty()) {
+        this->ti_abort(top_view, ti, parent);
+        return;
+    }
+
+    auto name_res = textview_curses::validate_search_name(name);
+    if (name_res.isErr()) {
+        report_error(name_res.unwrapErr());
+        this->ti_abort(top_view, ti, parent);
+        return;
+    }
+
+    if (pattern.empty()) {
+        pattern = top_view->get_current_search();
+    }
+    if (pattern.empty()) {
+        report_error(lnav::console::user_message::error(
+                         "expecting a pattern for the search")
+                         .with_reason("there is no active search to adopt"));
+        this->ti_abort(top_view, ti, parent);
+        return;
+    }
+
+    // The pattern is compiled here, before anything is torn down, so that a
+    // typo cannot take the original search with it.
+    auto compile_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
+    if (compile_res.isErr()) {
+        report_error(lnav::console::to_user_message(
+            INPUT_SRC, compile_res.unwrapErr()));
+        this->ti_abort(top_view, ti, parent);
+        return;
+    }
+
+    if (name != this->nsr_name
+        && top_view->find_named_search(name) != nullptr)
+    {
+        report_error(
+            lnav::console::user_message::error(
+                attr_line_t()
+                    .append_quoted(name)
+                    .append(" is already a named search"))
+                .with_snippet(lnav::console::snippet::from(INPUT_SRC, name)));
+        this->ti_abort(top_view, ti, parent);
+        return;
+    }
+
+    // There is no way to change a search in place: the slot has to be given
+    // up and the view scanned again, which is the same trade-off that the
+    // lnav_view_searches table makes for DELETE followed by INSERT.
+    if (!this->nsr_name.empty()) {
+        top_view->delete_named_search(this->nsr_name);
+    }
+
+    auto create_res = top_view->create_named_search(name, pattern);
+    if (create_res.isErr()) {
+        report_error(create_res.unwrapErr());
+    } else if (!parent.fss_filter_state) {
+        // A search that was disabled before the edit stays that way.
+        top_view->set_named_search_enabled(name, false);
+    }
+
+    top_view->reload_data();
+}
+
+void
+filter_sub_source::named_search_row::ti_abort(textview_curses* top_view,
+                                              textinput_curses& tc,
+                                              filter_sub_source& parent)
+{
+    if (!this->nsr_name.empty()) {
+        top_view->set_named_search_enabled(this->nsr_name,
+                                           parent.fss_filter_state);
+    }
+    top_view->reload_data();
+}
+
 std::vector<std::unique_ptr<filter_sub_source::filter_row>>
 filter_sub_source::rows_for(textview_curses* tc) const
 {
@@ -1341,6 +1694,13 @@ filter_sub_source::rows_for(textview_curses* tc) const
     auto& fs = tss->get_filters();
     for (auto& tf : fs) {
         retval.emplace_back(std::make_unique<text_filter_row>(tf));
+    }
+
+    for (const auto& ns : tc->get_named_searches()) {
+        retval.emplace_back(std::make_unique<named_search_row>(ns.ns_name));
+    }
+    if (this->fss_new_named_search) {
+        retval.emplace_back(std::make_unique<named_search_row>(std::string()));
     }
 
     return retval;

@@ -1196,6 +1196,10 @@ timeline_source::rebuild_indexes()
     // numbers, so walking them is proportional to the number of hits rather
     // than the size of the log.
     for (const auto& ns : this->ts_log_view.get_named_searches()) {
+        if (!ns.ns_enabled) {
+            continue;
+        }
+
         const auto& matches
             = this->ts_log_view.search_matches_for_slot(ns.ns_slot);
 
@@ -1735,59 +1739,86 @@ timeline_source::text_selection_changed(textview_curses& tc)
     }
 
     auto preview_content = attr_line_t();
-    auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
-    auto win = this->ts_lss.window_at(low_vl.value(), high_vl);
+    auto lines_remaining = size_t{MAX_PREVIEW_LINES};
     auto id_bloom_bits = row.or_name.bloom_bits();
     auto msg_count = 0;
-    for (const auto& msg_line : *win) {
-        switch (row.or_type) {
-            case row_type::logfile:
-                if (msg_line.get_file_ptr() != row.or_logfile) {
-                    continue;
-                }
-                break;
-            case row_type::thread: {
-                if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
-                    continue;
-                }
-                const auto& lvv = msg_line.get_values();
-                if (!lvv.lvv_thread_id_value) {
-                    continue;
-                }
-                auto tid_sf = lvv.lvv_thread_id_value.value();
-                if (!(tid_sf == row.or_name)) {
-                    continue;
-                }
-                break;
-            }
-            case row_type::opid: {
-                if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits)) {
-                    continue;
-                }
 
-                const auto& lvv = msg_line.get_values();
-                if (!lvv.lvv_opid_value) {
-                    continue;
-                }
-                auto opid_sf = lvv.lvv_opid_value.value();
+    // Add a message to the preview.  @return false when the preview is full.
+    auto emit_msg
+        = [this, &preview_content, &lines_remaining, &msg_count](
+              const logline_window::logmsg_info& msg_line) {
+              // A single message can be thousands of lines long in a JSON
+              // log, and the preview pane only shows a handful, so the
+              // budget is spent in lines rather than in whole messages.
+              auto line_count
+                  = std::min(msg_line.get_line_count(), lines_remaining);
 
-                if (!(opid_sf == row.or_name)) {
-                    continue;
-                }
-                break;
+              for (size_t lpc = 0; lpc < line_count; lpc++) {
+                  auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
+                  auto cl = this->ts_lss.at(vl);
+                  auto row_al = attr_line_t();
+                  this->ts_log_view.textview_value_for_row(vl, row_al);
+                  preview_content.append(row_al).append("\n");
+                  this->ts_preview_rows.emplace_back(
+                      msg_line.get_logline().get_timeval(), cl);
+                  ++cl;
+              }
+              msg_count += 1;
+              lines_remaining -= line_count;
+
+              return lines_remaining > 0;
+          };
+
+    // A search and a tag already know which lines they cover, so their
+    // messages come from that index instead of from a scan of the span.  A
+    // search row can easily cover the whole log, which makes the difference
+    // between touching every message in it and touching only the hits.
+    const bookmark_vector<vis_line_t>* index = nullptr;
+    switch (row.or_type) {
+        case row_type::search:
+            index = &this->ts_log_view.search_matches_for_slot(
+                row.or_search_slot);
+            break;
+        case row_type::tag:
+            // The lines carrying metadata are tracked by BM_META.  It also
+            // covers comments and annotations, so the tag check below still
+            // has to run -- just over a handful of candidates rather than
+            // every message in the span.
+            index = &this->ts_log_view
+                         .get_bookmarks()[&textview_curses::BM_META];
+            break;
+        default:
+            break;
+    }
+
+    if (index != nullptr) {
+        // Both vectors are sorted by view line, which is the order the scan
+        // below would have produced.
+        auto tag_name = row.or_name.to_string();
+        auto last_msg_start = std::optional<vis_line_t>{};
+        auto index_range = index->equal_range(low_vl.value(), high_vl);
+
+        for (auto iter = index_range.first; iter != index_range.second; ++iter)
+        {
+            // A hit or a tag can land on a continuation line, so fold it back
+            // to the message that contains it.  Several of them in the same
+            // message arrive in a row, hence the check against the last one.
+            auto msg_line = logline_window::logmsg_info{this->ts_lss, *iter};
+
+            if (last_msg_start == msg_line.get_vis_line()) {
+                continue;
             }
-            case row_type::tag: {
-                // Metadata is keyed by the exact line it was attached to, not
-                // by the start of the message, so a tag placed on one of the
-                // continuation lines of a multi-line message is only found by
-                // checking all of them.
+            last_msg_start = msg_line.get_vis_line();
+
+            if (row.or_type == row_type::tag) {
+                // The tag can be on any line of the message.
                 const auto& bm
                     = msg_line.get_file_ptr()->get_bookmark_metadata();
-                auto tag_name = row.or_name.to_string();
                 auto first_line = msg_line.get_file_line_number();
+                auto line_count = msg_line.get_line_count();
                 auto tagged = false;
 
-                for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
+                for (size_t lpc = 0; lpc < line_count; lpc++) {
                     auto bm_iter = bm.find(first_line + lpc);
 
                     if (bm_iter == bm.end()) {
@@ -1803,39 +1834,66 @@ timeline_source::text_selection_changed(textview_curses& tc)
                 if (!tagged) {
                     continue;
                 }
+            }
+
+            if (!emit_msg(msg_line)) {
                 break;
             }
-            case row_type::search: {
-                // Test every line of the message: the hit may be on a
-                // continuation line rather than the first one.
-                auto msg_start = msg_line.get_vis_line();
-                auto matches = this->ts_log_view.named_search_matches(
-                    msg_start,
-                    msg_start + vis_line_t(msg_line.get_line_count()));
+        }
+    } else {
+        // The rest have nothing to look them up by, so every message in the
+        // span has to be examined.
+        auto win = this->ts_lss.window_at(low_vl.value(), high_vl);
 
-                if (!(matches & grep_pattern_bit(row.or_search_slot))) {
-                    continue;
+        for (const auto& msg_line : *win) {
+            switch (row.or_type) {
+                case row_type::logfile:
+                    if (msg_line.get_file_ptr() != row.or_logfile) {
+                        continue;
+                    }
+                    break;
+                case row_type::thread: {
+                    if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits))
+                    {
+                        continue;
+                    }
+                    const auto& lvv = msg_line.get_values();
+                    if (!lvv.lvv_thread_id_value) {
+                        continue;
+                    }
+                    auto tid_sf = lvv.lvv_thread_id_value.value();
+                    if (!(tid_sf == row.or_name)) {
+                        continue;
+                    }
+                    break;
                 }
+                case row_type::opid: {
+                    if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits))
+                    {
+                        continue;
+                    }
+
+                    const auto& lvv = msg_line.get_values();
+                    if (!lvv.lvv_opid_value) {
+                        continue;
+                    }
+                    auto opid_sf = lvv.lvv_opid_value.value();
+
+                    if (!(opid_sf == row.or_name)) {
+                        continue;
+                    }
+                    break;
+                }
+                case row_type::partition:
+                    break;
+                default:
+                    ensure(0);
+                    break;
+            }
+
+            if (!emit_msg(msg_line)) {
                 break;
             }
-            case row_type::partition:
-                break;
-        }
-
-        for (size_t lpc = 0; lpc < msg_line.get_line_count(); lpc++) {
-            auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
-            auto cl = this->ts_lss.at(vl);
-            auto row_al = attr_line_t();
-            this->ts_log_view.textview_value_for_row(vl, row_al);
-            preview_content.append(row_al).append("\n");
-            this->ts_preview_rows.emplace_back(
-                msg_line.get_logline().get_timeval(), cl);
-            ++cl;
-        }
-        msg_count += 1;
-        msgs_remaining -= 1;
-        if (msgs_remaining == 0) {
-            break;
         }
     }
 

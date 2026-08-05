@@ -331,3 +331,36 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'bad', '(unclosed')" \
     ${test_dir}/logfile_access_log.0
+
+# A name with a space in it could not be restored from the session, since the
+# saved command would parse it as a name and part of a pattern.
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'my search', 'vmw')" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', '', 'vmw')" \
+    ${test_dir}/logfile_access_log.0
+
+# The enabled column can be updated to turn a search off and back on.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ";UPDATE lnav_view_searches SET enabled = 0 WHERE name = 'one'" \
+    -c ";SELECT view_name, enabled, name, pattern FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ";UPDATE lnav_view_searches SET enabled = 1 WHERE name = 'one'" \
+    -c ";SELECT enabled, name FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+# A search can be created in the disabled state.
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_searches (view_name, enabled, name, pattern) VALUES ('log', 0, 'one', 'cgi')" \
+    -c ";SELECT enabled, name FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0

@@ -925,12 +925,31 @@ public:
          * find out what a line matched.
          */
         std::shared_ptr<lnav::pcre2pp::code> ns_code;
+        /**
+         * A disabled search keeps its slot and its hits, and new data is
+         * still scanned for it, so that it can be turned back on without
+         * another pass over the view.  It is only dropped from the
+         * highlighting, the search marks, and the places that report which
+         * searches matched a message.
+         */
+        bool ns_enabled{true};
     };
 
     const std::vector<named_search>& get_named_searches() const
     {
         return this->tc_named_searches;
     }
+
+    /** @return nullptr if there is no search with the given name. */
+    const named_search* find_named_search(const std::string& name) const;
+
+    /**
+     * A name is written into the session as the argument of a
+     * create-named-search command, where it is delimited by whitespace, so
+     * only names that survive that trip are accepted.
+     */
+    static Result<void, lnav::console::user_message> validate_search_name(
+        const std::string& name);
 
     /**
      * Promote a pattern into a named search.  When the pattern matches the
@@ -942,6 +961,9 @@ public:
 
     /** @return false if there is no search with the given name. */
     bool delete_named_search(const std::string& name);
+
+    /** @return false if there is no search with the given name. */
+    bool set_named_search_enabled(const std::string& name, bool enabled);
 
     /** Remove all of the named searches in this view. */
     void clear_named_searches();
@@ -1142,14 +1164,26 @@ protected:
         tc_search_matches;
     /** Slots that alloc_search_slot() has handed out. */
     std::bitset<GREP_MAX_PATTERNS> tc_search_slots_used;
+    /**
+     * The slots of the disabled named searches.  These still collect matches,
+     * they are just left out of the BM_SEARCH union and of the reports of
+     * which searches matched a message.
+     */
+    grep_pattern_mask_t tc_disabled_search_slots{0};
     std::vector<named_search> tc_named_searches;
 
     /** Lazily construct the search procs.  @return tc_search_proc. */
     grep_proc<vis_line_t>* ensure_search_procs();
 
+    /** Give the named search its own background color in the view. */
+    void add_named_search_highlight(
+        const std::string& name,
+        const std::shared_ptr<lnav::pcre2pp::code>& code);
+
     /**
      * Recompute the BM_SEARCH union over [start, stop) from tc_search_matches,
-     * updating the sub-source marks to match.
+     * updating the sub-source marks to match.  Disabled slots do not
+     * contribute.
      */
     void rebuild_search_marks(vis_line_t start, vis_line_t stop);
     std::optional<std::chrono::steady_clock::time_point> tc_search_start_time;

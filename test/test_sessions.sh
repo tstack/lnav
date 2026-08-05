@@ -596,3 +596,17 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_named_searches FROM syslog_log WHERE log_named_searches IS NOT NULL" \
     ${test_dir}/logfile_syslog.0
 
+# A search that was disabled comes back disabled.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search am automount" \
+    -c ":create-named-search sud sudo" \
+    -c ":disable-named-search sud" \
+    -c ":save-session" \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT view_name, enabled, name, pattern FROM lnav_view_searches" \
+    -c ";SELECT log_line, log_named_searches FROM syslog_log WHERE log_named_searches IS NOT NULL" \
+    ${test_dir}/logfile_syslog.0
+

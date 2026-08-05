@@ -628,6 +628,29 @@
 ----
 
 
+.. _disable_named_search:
+
+:disable-named-search *name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Stop highlighting the hits of a named search without deleting it
+
+  **Parameters**
+    * **name\*** --- The name of the search to disable
+
+  **Examples**
+    To disable the named search 'req':
+
+    .. code-block::  lnav
+
+      :disable-named-search req
+
+  **See Also**
+    :ref:`enable_named_search`
+
+----
+
+
 .. _disable_word_wrap:
 
 :disable-word-wrap
@@ -698,6 +721,29 @@
 
   **See Also**
     :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+
+----
+
+
+.. _enable_named_search:
+
+:enable-named-search *name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Enable a named search that was disabled with disable-named-search
+
+  **Parameters**
+    * **name\*** --- The name of the search to enable
+
+  **Examples**
+    To enable the named search 'req':
+
+    .. code-block::  lnav
+
+      :enable-named-search req
+
+  **See Also**
+    :ref:`disable_named_search`
 
 ----
 

@@ -94,12 +94,21 @@ Features:
     search is adopted and then cleared.  So, a search
     can be promoted once it turns out to be worth keeping.
   - `:delete-named-search <name>` removes a named search.
+  - `:disable-named-search <name>` stops a search from
+    highlighting and marking without deleting it.  Its
+    hits are kept up-to-date, so
+    `:enable-named-search <name>` brings it back without
+    another pass over the view.
   The matching text is given a background-color derived
   from the name, so each search reads as its own block,
   with the foreground adjusted to stay readable against
   it.  The `n` / `N` and `<` / `>` keys move through the
   hits of named searches as well as the current search.
   Named searches are also surfaced in:
+  - The filter editor (`TAB`), where they are listed
+    below the view's filters with their hit counts.
+    Pressing `s` creates one and the filter keys work
+    on them as well.
   - The TIMELINE view where each search is a row that
     shows the span of hits.  The
     `:hide-in-timeline search` command hides these rows.
@@ -108,7 +117,8 @@ Features:
     matched a message.
   - The `lnav_view_searches` table.  Rows can be
     `INSERT`ed and `DELETE`d to create and remove them
-    from SQL.
+    from SQL and the `enabled` column can be `UPDATE`d
+    to turn them on and off.
   Named searches are saved in the session and included
   in the output of `:export-session-to`.
 * Added the `:show-only-in-timeline` command to show

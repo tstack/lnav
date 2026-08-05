@@ -250,6 +250,55 @@ to enter the search prompt.  A regular expression can be entered into the
 prompt to start a search through the current view.
 
 
+.. _named_searches:
+
+Named Searches
+^^^^^^^^^^^^^^
+
+.. note:: This feature is available in v0.15.0+.
+
+A search that is worth keeping around can be given a name.  A named search
+stays active and highlighted while other searches are run, so several patterns
+can be tracked at the same time.
+
+A named search can be created with the
+:ref:`:create-named-search<create_named_search>` command, either by giving it a
+pattern directly or by leaving the pattern off to adopt the search that is
+currently active.  In the latter case, the active search is cleared, so a
+search can be promoted once it turns out to be interesting.  Searches can be
+deleted with the :ref:`:delete-named-search<delete_named_search>` command or by
+doing a :code:`DELETE` on the
+:ref:`lnav_view_searches<table_lnav_view_searches>` table.
+
+A search that is not interesting at the moment can be turned off with the
+:ref:`:disable-named-search<disable_named_search>` command instead of being
+deleted.  A disabled search keeps its hits up-to-date, so the
+:ref:`:enable-named-search<enable_named_search>` command will bring its
+highlighting back without another pass over the view.
+
+The text matched by a named search is given a background color that is derived
+from the name, so each search reads as its own block.  The :kbd:`n` /
+:kbd:`Shift` + :kbd:`n` and :kbd:`<` / :kbd:`>` keys move through the hits of
+the named searches as well as the current search.
+
+Named searches also show up in the following places:
+
+* The :ref:`filter editor<ui_filters>`, where they are listed below the view's
+  filters with their hit counts and can be created, edited, enabled/disabled,
+  and deleted.
+* The :ref:`timeline<timeline>` view, where each search is a row that spans
+  its first to its last hit.  The
+  :ref:`:hide-in-timeline<hide_in_timeline>` :code:`search` command will hide
+  these rows.
+* The :code:`log_named_searches` column on the log tables, which contains a
+  JSON list of the searches that matched a message.
+* The :ref:`lnav_view_searches<table_lnav_view_searches>` table, which supports
+  :code:`INSERT` and :code:`DELETE` to create and remove searches from SQL.
+
+Named searches are saved in the session and are included in the output of the
+:ref:`:export-session-to<export_session_to>` command.
+
+
 .. _filtering:
 
 Filtering

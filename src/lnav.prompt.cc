@@ -1504,10 +1504,27 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          });
                 break;
             }
-            case help_parameter_format_t::HPF_NAMED_SEARCHES: {
+            case help_parameter_format_t::HPF_NAMED_SEARCHES:
+            case help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES:
+            case help_parameter_format_t::HPF_DISABLED_NAMED_SEARCHES: {
                 std::vector<std::string> poss_strs;
 
                 for (const auto& ns : tc.get_named_searches()) {
+                    switch (ht->ht_format) {
+                        case help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES:
+                            if (!ns.ns_enabled) {
+                                continue;
+                            }
+                            break;
+                        case help_parameter_format_t::
+                            HPF_DISABLED_NAMED_SEARCHES:
+                            if (ns.ns_enabled) {
+                                continue;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     poss_strs.emplace_back(ns.ns_name);
                 }
 

@@ -834,3 +834,58 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ":create-named-search bad (unclosed" \
     ${test_dir}/logfile_access_log.0
+
+# The name is taken verbatim, so quoting it would only smuggle the quotes and
+# the rest of the words into the name.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search 'my search' vmw" \
+    ${test_dir}/logfile_access_log.0
+
+# A disabled search stops highlighting and gives up its marks, but line 0 is
+# still marked by the search that is left enabled.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ":goto 1" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# ... and with nothing else matching the line, the mark goes away.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ":goto 1" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# Re-enabling puts the highlighting and the marks back without another scan.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ":enable-named-search one" \
+    -c ":goto 1" \
+    -c ":prev-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# A disabled search is left out of the log_named_searches column.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search one cgi" \
+    -c ":disable-named-search one" \
+    -c ":disable-named-search one" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":disable-named-search nonexistent" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":enable-named-search nonexistent" \
+    ${test_dir}/logfile_access_log.0

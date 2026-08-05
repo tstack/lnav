@@ -1339,9 +1339,10 @@ struct lnav_view_searches
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's named searches through this table.
 CREATE TABLE lnav_db.lnav_view_searches (
-    view_name TEXT,   -- The name of the view.
-    name      TEXT,   -- The name of the search.
-    pattern   TEXT    -- The regular expression being searched for.
+    view_name TEXT,      -- The name of the view.
+    enabled   INTEGER,   -- Indicates whether this search is enabled or disabled.
+    name      TEXT,      -- The name of the search.
+    pattern   TEXT       -- The regular expression being searched for.
 );
 )";
 
@@ -1357,9 +1358,12 @@ CREATE TABLE lnav_db.lnav_view_searches (
                 break;
             }
             case 1:
-                to_sqlite(ctx, ns.ns_name);
+                sqlite3_result_int(ctx, ns.ns_enabled);
                 break;
             case 2:
+                to_sqlite(ctx, ns.ns_name);
+                break;
+            case 3:
                 to_sqlite(ctx, ns.ns_pattern);
                 break;
         }
@@ -1370,6 +1374,7 @@ CREATE TABLE lnav_db.lnav_view_searches (
     int insert_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid_out,
                    lnav_view_t view_index,
+                   std::optional<bool> enabled,
                    const char* name,
                    const char* pattern)
     {
@@ -1386,6 +1391,9 @@ CREATE TABLE lnav_db.lnav_view_searches (
             tab->zErrMsg = sqlite3_mprintf(
                 "%s", create_res.unwrapErr().um_message.get_string().c_str());
             return SQLITE_ERROR;
+        }
+        if (!enabled.value_or(true)) {
+            tc.set_named_search_enabled(name, false);
         }
         tc.set_needs_update();
 
@@ -1412,15 +1420,47 @@ CREATE TABLE lnav_db.lnav_view_searches (
     int update_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid,
                    lnav_view_t new_view_index,
+                   std::optional<bool> enabled,
                    const char* new_name,
                    const char* new_pattern)
     {
-        // Changing a pattern in place would mean reallocating the slot and
-        // re-scanning, which is what DELETE followed by INSERT already does.
-        tab->zErrMsg = sqlite3_mprintf(
-            "Rows cannot be updated in the lnav_view_searches table, use "
-            "DELETE and INSERT instead");
-        return SQLITE_ERROR;
+        auto view_index = lnav_view_t(rowid >> 32);
+        size_t slot = rowid & 0xffffffffLL;
+        auto& tc = lnav_data.ld_views[view_index];
+        const textview_curses::named_search* ns = nullptr;
+
+        for (const auto& iter : tc.get_named_searches()) {
+            if (iter.ns_slot == slot) {
+                ns = &iter;
+                break;
+            }
+        }
+
+        if (ns == nullptr) {
+            tab->zErrMsg = sqlite3_mprintf("no such named search");
+            return SQLITE_ERROR;
+        }
+
+        if (new_view_index != view_index || new_name == nullptr
+            || ns->ns_name != new_name || new_pattern == nullptr
+            || ns->ns_pattern != new_pattern)
+        {
+            // Changing a pattern in place would mean reallocating the slot
+            // and re-scanning, which is what DELETE followed by INSERT
+            // already does.
+            tab->zErrMsg = sqlite3_mprintf(
+                "Only the 'enabled' column can be updated in the "
+                "lnav_view_searches table, use DELETE and INSERT to change "
+                "the rest");
+            return SQLITE_ERROR;
+        }
+
+        const auto name = ns->ns_name;
+
+        tc.set_named_search_enabled(name, enabled.value_or(true));
+        tc.set_needs_update();
+
+        return SQLITE_OK;
     }
 };
 

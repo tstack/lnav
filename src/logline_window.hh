@@ -294,6 +294,13 @@ public:
         logfile::iterator li_logline;
         mutable string_attrs_t li_string_attrs;
         mutable logline_value_vector li_line_values;
+        /**
+         * Counting the lines of a message means walking its continuation
+         * lines, which is not free for the long messages a JSON log can
+         * produce, so the answer is kept until this info moves to another
+         * message.
+         */
+        mutable std::optional<size_t> li_line_count;
     };
 
     class iterator {

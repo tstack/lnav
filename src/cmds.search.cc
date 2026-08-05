@@ -60,6 +60,8 @@ com_create_named_search(exec_context& ec,
     }
 
     if (ec.ec_dry_run) {
+        TRY(textview_curses::validate_search_name(name));
+
         auto compile_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
 
         if (compile_res.isErr()) {
@@ -115,6 +117,41 @@ com_delete_named_search(exec_context& ec,
     return Ok("info: deleted named search -- " + name);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_set_named_search_enabled(exec_context& ec,
+                             std::string cmdline,
+                             std::vector<std::string>& args)
+{
+    const auto enable = args[0] == "enable-named-search";
+
+    if (args.size() < 2) {
+        return ec.make_error("expecting the name of a search to {}",
+                             enable ? "enable" : "disable");
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    const auto& name = args[1];
+    const auto* ns = tc->find_named_search(name);
+
+    if (ns == nullptr) {
+        return ec.make_error("unknown named search -- {}", name);
+    }
+    if (ns->ns_enabled == enable) {
+        return Ok(fmt::format(FMT_STRING("info: named search is already {}"),
+                              enable ? "enabled" : "disabled"));
+    }
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    tc->set_named_search_enabled(name, enable);
+    tc->reload_data();
+
+    return Ok(fmt::format(FMT_STRING("info: {} named search -- {}"),
+                          enable ? "enabled" : "disabled",
+                          name));
+}
+
 static readline_context::command_t SEARCH_COMMANDS[] = {
     {
         "create-named-search",
@@ -150,6 +187,36 @@ static readline_context::command_t SEARCH_COMMANDS[] = {
             .with_tags({"search"})
             .with_opposites({"create-named-search"})
             .with_example({"To delete the named search 'req'", "req"}),
+    },
+    {
+        "enable-named-search",
+        com_set_named_search_enabled,
+
+        help_text(":enable-named-search")
+            .with_summary("Enable a named search that was disabled with "
+                          "disable-named-search")
+            .with_parameter(
+                help_text("name", "The name of the search to enable")
+                    .with_format(
+                        help_parameter_format_t::HPF_DISABLED_NAMED_SEARCHES))
+            .with_tags({"search"})
+            .with_opposites({"disable-named-search"})
+            .with_example({"To enable the named search 'req'", "req"}),
+    },
+    {
+        "disable-named-search",
+        com_set_named_search_enabled,
+
+        help_text(":disable-named-search")
+            .with_summary("Stop highlighting the hits of a named search "
+                          "without deleting it")
+            .with_parameter(
+                help_text("name", "The name of the search to disable")
+                    .with_format(
+                        help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES))
+            .with_tags({"search"})
+            .with_opposites({"enable-named-search"})
+            .with_example({"To disable the named search 'req'", "req"}),
     },
 };
 

@@ -44,6 +44,7 @@ static constexpr auto EXIT_MSG = "Press " ANSI_HOTKEY("ESC") " to exit "_frag;
 static constexpr auto CREATE_HELP
     = "Create: " ANSI_HOTKEY("i") "n/" ANSI_HOTKEY("o") "ut";
 static constexpr auto CREATE_EXPR_HELP = "  SQL " ANSI_HOTKEY("e") "xpr";
+static constexpr auto CREATE_SEARCH_HELP = "  " ANSI_HOTKEY("s") "earch";
 static constexpr auto CREATE_LEVEL_HELP = "  " ANSI_HOTKEY("l") "evel";
 static constexpr auto MIN_MAX_TIME_HELP
     = "  " ANSI_HOTKEY("m") "in/" ANSI_HOTKEY("M") "ax time";
@@ -317,19 +318,27 @@ filter_help_status_source::statusview_fields()
             auto rows = fss->rows_for(tc);
             if (rows.empty()) {
                 this->fss_help.set_value(
-                    "  %s%s%s%s",
+                    "  %s%s%s%s%s",
                     CREATE_HELP,
                     lss != nullptr ? CREATE_EXPR_HELP : "",
                     lss != nullptr ? CREATE_LEVEL_HELP : "",
-                    ttt != nullptr ? MIN_MAX_TIME_HELP : "");
+                    ttt != nullptr ? MIN_MAX_TIME_HELP : "",
+                    CREATE_SEARCH_HELP);
             } else {
                 auto& row = rows[sel.value()];
                 auto* tfr = dynamic_cast<filter_sub_source::text_filter_row*>(
                     row.get());
                 auto* tir = dynamic_cast<filter_sub_source::time_filter_row*>(
                     row.get());
+                auto* nsr = dynamic_cast<filter_sub_source::named_search_row*>(
+                    row.get());
                 if (editor->fss_editing) {
-                    if (tfr != nullptr) {
+                    if (nsr != nullptr) {
+                        this->fss_help.set_value(
+                            "                           "
+                            "Enter a name and pattern, or just a name to "
+                            "adopt the current search:");
+                    } else if (tfr != nullptr) {
                         auto& tf = tfr->tfr_filter;
                         auto lang = tf->get_lang() == filter_lang_t::SQL
                             ? "an SQL"
@@ -360,11 +369,12 @@ filter_help_status_source::statusview_fields()
                 } else if (tfr != nullptr) {
                     auto& tf = tfr->tfr_filter;
                     this->fss_help.set_value(
-                        "  %s%s%s%s  %s%s  %s  %s%s  %s  %s%s",
+                        "  %s%s%s%s%s  %s%s  %s  %s%s  %s  %s%s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
                         ttt != nullptr ? MIN_MAX_TIME_HELP : "",
+                        CREATE_SEARCH_HELP,
                         ENABLE_HELP,
                         tf->is_enabled() ? "Disable" : "Enable ",
                         EDIT_HELP,
@@ -375,13 +385,27 @@ filter_help_status_source::statusview_fields()
                         FILTERING_HELP,
                         tss->tss_apply_filters ? "Disable Filtering"
                                                : "Enable Filtering");
-                } else {
+                } else if (nsr != nullptr) {
+                    const auto* ns = tc->find_named_search(nsr->nsr_name);
                     this->fss_help.set_value(
-                        "  %s%s%s%s  %s  %s  %s%s",
+                        "  %s%s%s%s%s  %s%s  %s  %s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
                         ttt != nullptr ? MIN_MAX_TIME_HELP : "",
+                        CREATE_SEARCH_HELP,
+                        ENABLE_HELP,
+                        ns != nullptr && ns->ns_enabled ? "Disable" : "Enable ",
+                        EDIT_HELP,
+                        DELETE_HELP);
+                } else {
+                    this->fss_help.set_value(
+                        "  %s%s%s%s%s  %s  %s  %s%s",
+                        CREATE_HELP,
+                        lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_LEVEL_HELP : "",
+                        ttt != nullptr ? MIN_MAX_TIME_HELP : "",
+                        CREATE_SEARCH_HELP,
                         EDIT_HELP,
                         DELETE_HELP,
                         FILTERING_HELP,

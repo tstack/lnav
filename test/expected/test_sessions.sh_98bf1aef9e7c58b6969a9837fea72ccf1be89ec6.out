@@ -19,8 +19,8 @@
 # The following SQL statements will restore the named searches
 # that were created in the session.
 
-;INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'am', 'automount')
-;INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'sud', 'sudo')
+;INSERT INTO lnav_view_searches (view_name, enabled, name, pattern) VALUES ('log', 1, 'am', 'automount')
+;INSERT INTO lnav_view_searches (view_name, enabled, name, pattern) VALUES ('log', 1, 'sud', 'sudo')
 
 
 # The following commands will restore the state of the LOG view.

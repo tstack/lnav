@@ -1113,6 +1113,19 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mdisable-named-search[0m[4m [0m[4mname[0m
+══════════════════════════════════════════════════════════════════════
+  Stop highlighting the hits of a named search without deleting it
+[4mParameter[0m
+  [4mname[0m   The name of the search to disable
+[4mSee Also[0m
+  [1m:enable-named-search[0m
+[4mExample[0m
+#1 To disable the named search 'req':
+   [37m[40m:[0m[1m[36m[40mdisable-named-search[0m[37m[40m req                         [0m
+   
+
+
 [4m:[0m[1m[4mdisable-word-wrap[0m
 ══════════════════════════════════════════════════════════════════════
   Disable word-wrapping for the current view
@@ -1165,6 +1178,19 @@ For support questions, email:
 [4mExample[0m
 #1 To enable the disabled filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40menable-filter[0m[37m[40m last message repeated              [0m
+   
+
+
+[4m:[0m[1m[4menable-named-search[0m[4m [0m[4mname[0m
+══════════════════════════════════════════════════════════════════════
+  Enable a named search that was disabled with disable-named-search
+[4mParameter[0m
+  [4mname[0m   The name of the search to enable
+[4mSee Also[0m
+  [1m:disable-named-search[0m
+[4mExample[0m
+#1 To enable the named search 'req':
+   [37m[40m:[0m[1m[36m[40menable-named-search[0m[37m[40m req                          [0m
    
 
 

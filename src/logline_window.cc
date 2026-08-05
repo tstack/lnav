@@ -104,6 +104,7 @@ logline_window::logmsg_info::next_msg()
     this->li_logline = logfile::iterator{};
     this->li_string_attrs.clear();
     this->li_line_values.clear();
+    this->li_line_count = std::nullopt;
 
     auto inner_height = vis_line_t(this->li_source.text_line_count());
 
@@ -137,6 +138,7 @@ logline_window::logmsg_info::prev_msg()
     this->li_logline = logfile::iterator{};
     this->li_string_attrs.clear();
     this->li_line_values.clear();
+    this->li_line_count = std::nullopt;
     this->li_line_number = 0;
     while (this->li_line > 0) {
         --this->li_line;
@@ -210,12 +212,17 @@ logline_window::logmsg_info::metadata_edit_guard::operator*()
 size_t
 logline_window::logmsg_info::get_line_count() const
 {
+    if (this->li_line_count) {
+        return this->li_line_count.value();
+    }
+
     size_t retval = 1;
     auto iter = std::next(this->li_logline);
     while (iter != this->li_file->end() && iter->is_continued()) {
         ++iter;
         retval += 1;
     }
+    this->li_line_count = retval;
 
     return retval;
 }

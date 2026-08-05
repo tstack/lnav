@@ -20,6 +20,7 @@ the following tables/views:
 * `lnav_view_filters`_
 * `lnav_view_filter_stats`_
 * `lnav_view_filters_and_stats`_
+* `lnav_view_searches`_
 * `lnav_top_view`_
 * `all_logs`_
 * `all_metrics`_
@@ -311,6 +312,26 @@ lnav_view_filters_and_stats
 
 The :code:`lnav_view_filters_and_stats` view joins the :code:`lnav_view_filters`
 table with the :code:`lnav_view_filter_stats` table into a single view for ease of use.
+
+.. _table_lnav_view_searches:
+
+lnav_view_searches
+------------------
+
+The :code:`lnav_view_searches` table allows you to manipulate the
+:ref:`named searches<named_searches>` in the **lnav** views.  The following
+columns are available in this table:
+
+  :view_name: The name of the view the search is applied to.
+  :enabled: Indicates whether this search is enabled or disabled.
+  :name: The name of the search.
+  :pattern: The regular expression being searched for.
+
+This table supports :code:`SELECT`, :code:`INSERT`, and :code:`DELETE` on the
+table rows to read, create, and delete named searches for the views.  Only the
+:code:`enabled` column can be changed by an :code:`UPDATE`, since changing a
+pattern means re-scanning the view for it: do a :code:`DELETE` followed by an
+:code:`INSERT` instead.
 
 lnav_top_view
 -------------

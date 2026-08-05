@@ -198,6 +198,8 @@ included in a :code:`SELECT *`:
     text from the file.
   :log_line_hash: A hash of the first line of the log message.
   :log_line_link: The permalink for the log message.
+  :log_named_searches: A JSON list of the names of the
+    :ref:`named searches<named_searches>` that matched this message.
 
 Extensions
 ----------

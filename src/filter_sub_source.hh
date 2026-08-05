@@ -125,6 +125,11 @@ public:
         virtual void value_for(const render_state& rs, attr_line_t& al) = 0;
         virtual bool handle_key(textview_curses* top_view, const ncinput& ch)
             = 0;
+        /**
+         * @return false if handle_key() cannot change what the filters hide,
+         * which lets the caller skip a filter pass over the view.
+         */
+        virtual bool affects_filtering() const { return true; }
         virtual bool prime_text_input(textview_curses* top_view,
                                       textinput_curses& ti,
                                       filter_sub_source& parent) = 0;
@@ -243,6 +248,40 @@ public:
         std::shared_ptr<text_filter> tfr_filter;
     };
 
+    /**
+     * A named search on the top view.  The search is looked up by name on
+     * every use since the row outlives neither the search vector nor its
+     * indexes: rows_for() is rebuilt on each render and deleting a search
+     * shifts the ones after it.  An empty name is a search that the user is
+     * still typing in.
+     */
+    struct named_search_row : filter_row {
+        explicit named_search_row(std::string name)
+            : nsr_name(std::move(name))
+        {
+        }
+
+        void value_for(const render_state& rs, attr_line_t& al) override;
+        bool handle_key(textview_curses* top_view, const ncinput& ch) override;
+        bool affects_filtering() const override { return false; }
+        bool prime_text_input(textview_curses* top_view,
+                              textinput_curses& ti,
+                              filter_sub_source& parent) override;
+        void ti_change(textview_curses* top_view,
+                       textinput_curses& rc) override;
+        void ti_completion_request(textview_curses* top_view,
+                                   textinput_curses& tc,
+                                   completion_request_type_t crt) override;
+        void ti_perform(textview_curses* top_view,
+                        textinput_curses& tc,
+                        filter_sub_source& parent) override;
+        void ti_abort(textview_curses* top_view,
+                      textinput_curses& tc,
+                      filter_sub_source& parent) override;
+
+        std::string nsr_name;
+    };
+
     using row_vector = std::vector<std::unique_ptr<filter_row>>;
 
     row_vector rows_for(textview_curses* tc) const;
@@ -271,6 +310,8 @@ public:
 
     bool fss_editing{false};
     bool fss_filter_state{false};
+    /** A named search that is being typed in and has not been created yet. */
+    bool fss_new_named_search{false};
 };
 
 #endif
