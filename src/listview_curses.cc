@@ -420,7 +420,16 @@ listview_curses::handle_key(const ncinput& ch)
             auto last_line = this->get_inner_height() - 1_vl;
             auto tail_bottom = this->get_top_for_last_row();
 
-            if (this->is_selectable()) {
+            if (last_line < 0_vl) {
+                break;
+            }
+
+            // once the selection is on the last line, further presses move
+            // only the top line, so that the same toggle as the
+            // non-selectable case below is reached
+            if (this->is_selectable()
+                && this->get_selection() != std::make_optional(last_line))
+            {
                 this->set_selection(last_line);
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);

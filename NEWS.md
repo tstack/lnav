@@ -118,6 +118,8 @@ Bug Fixes:
 * In a JSON-lines format definition, if a
   `line-format` contained a line-feed, fix
   highlighting of fields.
+* Pressing `G`/`END` a second time scrolls the last
+  line to the top of the view again (issue #1734).
 
 
 ## lnav v0.14.0
