@@ -357,7 +357,7 @@ ptime_s(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
-    return (epoch > 0);
+    return (off_inout > off_start);
 }
 
 inline void
@@ -415,7 +415,7 @@ ptime_q(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
-    return (epoch > 0);
+    return (off_inout > off_start);
 }
 
 inline void
@@ -536,6 +536,7 @@ ftime_H(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_ms = 0;
     lnav::time64_t epoch;
 
@@ -558,7 +559,7 @@ ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
         | ETF_SUB_NOT_IN_FORMAT;
 
-    return (epoch_ms > 0);
+    return (off_inout > off_start);
 }
 
 inline void
@@ -574,6 +575,7 @@ ftime_i(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_us = 0;
     lnav::time64_t epoch;
 
@@ -596,7 +598,7 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
         | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
-    return (epoch_us > 0);
+    return (off_inout > off_start);
 }
 
 inline void
@@ -612,6 +614,7 @@ ftime_6(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_ns = 0;
     lnav::time64_t epoch;
 
@@ -633,7 +636,7 @@ ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
-    return (epoch_ns > 0);
+    return (off_inout > off_start);
 }
 
 inline void

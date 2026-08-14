@@ -118,6 +118,10 @@ Bug Fixes:
 * In a JSON-lines format definition, if a
   `line-format` contained a line-feed, fix
   highlighting of fields.
+* An epoch timestamp of exactly zero is now parsed
+  as 1970-01-01T00:00:00Z instead of being treated as
+  a parse failure.  Affects the `%s`, `%i`, `%6`,
+  `%9`, and `%q` conversions (issue #1586).
 
 
 ## lnav v0.14.0

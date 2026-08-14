@@ -354,4 +354,37 @@ TEST_CASE("date_time_scanner")
         assert(rc == 19);
         assert(strcmp(ts, buf) == 0);
     }
+
+    {
+        // issue #1586: an epoch timestamp of exactly zero is valid
+        const char* epoch_fmts[]
+            = {"ts %s ]", "ts %i ]", "ts %6 ]", "ts %9 ]", "ts %q ]"};
+
+        for (const auto* fmt : epoch_fmts) {
+            const char* epoch_str = "ts 0 ]";
+            exttm tm;
+            off_t off = 0;
+
+            memset(&tm, 0, sizeof(tm));
+            bool rc = ptime_fmt(fmt, &tm, epoch_str, off, strlen(epoch_str));
+            CHECK(rc);
+            CHECK(tm2sec(&tm.et_tm) == 0);
+            CHECK(tm.et_nsec == 0);
+        }
+    }
+
+    {
+        // an epoch field with no digits is still a parse failure
+        const char* epoch_fmts[]
+            = {"ts %s ]", "ts %i ]", "ts %6 ]", "ts %9 ]", "ts %q ]"};
+
+        for (const auto* fmt : epoch_fmts) {
+            const char* epoch_str = "ts x ]";
+            exttm tm;
+            off_t off = 0;
+
+            memset(&tm, 0, sizeof(tm));
+            CHECK(!ptime_fmt(fmt, &tm, epoch_str, off, strlen(epoch_str)));
+        }
+    }
 }
