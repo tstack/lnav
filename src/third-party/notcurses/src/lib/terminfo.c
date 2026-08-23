@@ -487,6 +487,43 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                         argv[1].i++;
                     p++;
                     break;
+                case '\'': {
+                    // %'c' pushes the literal character c. terminfo also
+                    // allows a backslash escape here, e.g. %'\010' as used by
+                    // xterm-256color's setaf/setab to test against 8 and 16.
+                    p++;
+                    int val = 0;
+                    if (*p == '\\') {
+                        p++;
+                        if (*p >= '0' && *p <= '7') {
+                            // up to three octal digits
+                            for (int i = 0; i < 3 && *p >= '0' && *p <= '7'; i++) {
+                                val = val * 8 + (*p++ - '0');
+                            }
+                        } else {
+                            switch (*p) {
+                                case 'n': val = '\n'; break;
+                                case 'r': val = '\r'; break;
+                                case 't': val = '\t'; break;
+                                case 'b': val = '\b'; break;
+                                case 'f': val = '\f'; break;
+                                case 'e':
+                                case 'E': val = 0x1b; break;
+                                default:  val = (unsigned char) *p; break;
+                            }
+                            if (*p) {
+                                p++;
+                            }
+                        }
+                    } else if (*p) {
+                        val = (unsigned char) *p++;
+                    }
+                    if (*p == '\'') {
+                        p++;
+                    }
+                    push(&stack, (StackVal) {STK_INT, .i = val});
+                    break;
+                }
                 case '{': {
                     p++;
                     int val = 0;
