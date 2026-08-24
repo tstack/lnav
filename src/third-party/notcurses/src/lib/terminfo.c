@@ -468,7 +468,7 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 case 'p': {
                     int idx = p[1] - '1';
-                    if (idx >= 0 && idx < argc) {
+                    if (exec && idx >= 0 && idx < argc) {
                         if (argv[idx].type == TIPARM_INT) {
                             push(&stack,
                                  (StackVal) {STK_INT, .i = argv[idx].i});
@@ -487,6 +487,24 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                         argv[1].i++;
                     p++;
                     break;
+                case '\'': {
+                    // %'c' pushes the literal character c. tic resolves
+                    // backslash escapes when compiling the terminfo source, so
+                    // the byte between the quotes is always the character
+                    // itself, never an escape sequence.
+                    p++;
+                    int val = 0;
+                    if (*p) {
+                        val = (unsigned char) *p++;
+                    }
+                    if (*p == '\'') {
+                        p++;
+                    }
+                    if (exec) {
+                        push(&stack, (StackVal) {STK_INT, .i = val});
+                    }
+                    break;
+                }
                 case '{': {
                     p++;
                     int val = 0;
@@ -500,10 +518,16 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     }
                     if (*p == '}')
                         p++;
-                    push(&stack, (StackVal) {STK_INT, .i = val * sign});
+                    if (exec) {
+                        push(&stack, (StackVal) {STK_INT, .i = val * sign});
+                    }
                     break;
                 }
                 case '+': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal b = pop(&stack), a = pop(&stack);
                     if (a.type == STK_INT && b.type == STK_INT)
                         push(&stack, (StackVal) {STK_INT, .i = a.i + b.i});
@@ -511,6 +535,10 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case '-': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal b = pop(&stack), a = pop(&stack);
                     if (a.type == STK_INT && b.type == STK_INT)
                         push(&stack, (StackVal) {STK_INT, .i = a.i - b.i});
@@ -518,6 +546,10 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case '=': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal b = pop(&stack), a = pop(&stack);
                     if (a.type == STK_INT && b.type == STK_INT)
                         push(&stack, (StackVal) {STK_INT, .i = (a.i == b.i)});
@@ -525,6 +557,10 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case '<': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal b = pop(&stack), a = pop(&stack);
                     if (a.type == STK_INT && b.type == STK_INT)
                         push(&stack, (StackVal) {STK_INT, .i = (a.i < b.i)});
@@ -532,6 +568,10 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case '>': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal b = pop(&stack), a = pop(&stack);
                     if (a.type == STK_INT && b.type == STK_INT)
                         push(&stack, (StackVal) {STK_INT, .i = (a.i > b.i)});
@@ -539,8 +579,12 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case 'd': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal v = pop(&stack);
-                    if (exec && v.type == STK_INT) {
+                    if (v.type == STK_INT) {
                         char numbuf[32];
                         snprintf(numbuf, sizeof(numbuf), "%d", v.i);
                         size_t len = strlen(numbuf);
@@ -555,8 +599,12 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     break;
                 }
                 case 's': {
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal v = pop(&stack);
-                    if (exec && v.type == STK_STR && v.s) {
+                    if (v.type == STK_STR && v.s) {
                         size_t len = strlen(v.s);
                         if (out_len + len >= out_cap) {
                             while (out_len + len >= out_cap)
@@ -576,8 +624,14 @@ tiparm_s(const char* fmt, int argc, TiparmValue* argv)
                     p++;
                     break;
                 case 't': {
+                    // the condition was only evaluated, and so only pushed, if
+                    // this branch is live; exec stays false either way
+                    if (!exec) {
+                        p++;
+                        break;
+                    }
                     StackVal v = pop(&stack);
-                    exec = exec && (v.type == STK_INT && v.i);
+                    exec = (v.type == STK_INT && v.i);
                     if (exec) {
                         cond_execed = 1;
                     }
