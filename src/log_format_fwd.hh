@@ -178,6 +178,9 @@ struct log_thread_id_state {
 };
 
 struct logline_value_stats {
+    /** The compression factor for the t-digest. */
+    static constexpr size_t TDIGEST_SIZE = 200;
+
     void merge(const logline_value_stats& other);
 
     void add_value(double value);
@@ -192,9 +195,9 @@ struct logline_value_stats {
     std::optional<double> distinct_estimate() const;
 
     // Compact the t-digest's pending buffer into ordered centroids so
-    // `lvs_tdigest.quantile(p)` returns accurate percentiles.  Call
+    // `lvs_tdigest->quantile(p)` returns accurate percentiles.  Call
     // once after the per-file scan completes; no-op for repeated
-    // calls.
+    // calls, and for a column that never took a number.
     void finalize();
 
     int64_t lvs_width{0};
@@ -203,7 +206,14 @@ struct logline_value_stats {
     double lvs_total{0};
     double lvs_min_value{std::numeric_limits<double>::max()};
     double lvs_max_value{-std::numeric_limits<double>::max()};
-    digestible::tdigest<double> lvs_tdigest{200};
+    /**
+     * Built on the first value that goes in, which only happens for numeric
+     * fields.  Constructing one reserves a few thousand centroids, and a stats
+     * object is made for every value of every format that is tried while a
+     * file's format is being worked out, so the ones that will never hold a
+     * number must not pay for it.
+     */
+    std::optional<digestible::tdigest<double>> lvs_tdigest;
     // p=12 → ~4KB registers, ~1.6% standard error.  Right size for
     // typical metrics text columns (HTTP methods, status codes,
     // hostnames, op IDs all ≪ 2^52 — the post-XXH3 ceiling).

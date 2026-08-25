@@ -672,12 +672,12 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         // value), or when the upper percentiles all collapse to the
         // max — in those cases the inline `min..max of N` already
         // tells the whole story.
-        if (stats != nullptr && stats->lvs_count >= 20
+        if (stats != nullptr && stats->lvs_tdigest && stats->lvs_count >= 20
             && stats->lvs_min_value < stats->lvs_max_value)
         {
-            const auto p50 = stats->lvs_tdigest.quantile(50);
-            const auto p90 = stats->lvs_tdigest.quantile(90);
-            const auto p99 = stats->lvs_tdigest.quantile(99);
+            const auto p50 = stats->lvs_tdigest->quantile(50);
+            const auto p90 = stats->lvs_tdigest->quantile(90);
+            const auto p99 = stats->lvs_tdigest->quantile(99);
             if (!(p50 == p99 && p99 == stats->lvs_max_value)) {
                 attr_line_t pct_line;
                 pct_line.append("    ")

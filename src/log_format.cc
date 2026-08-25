@@ -6337,7 +6337,12 @@ logline_value_stats::merge(const logline_value_stats& other)
     }
     this->lvs_count += other.lvs_count;
     this->lvs_total += other.lvs_total;
-    this->lvs_tdigest.insert(other.lvs_tdigest);
+    if (other.lvs_tdigest) {
+        if (!this->lvs_tdigest) {
+            this->lvs_tdigest.emplace(TDIGEST_SIZE);
+        }
+        this->lvs_tdigest->insert(other.lvs_tdigest.value());
+    }
     ensure(this->lvs_count >= 0);
     ensure(this->lvs_min_value <= this->lvs_max_value);
 }
@@ -6353,7 +6358,10 @@ logline_value_stats::add_value(double value)
     }
     this->lvs_count += 1;
     this->lvs_total += value;
-    this->lvs_tdigest.insert(value);
+    if (!this->lvs_tdigest) {
+        this->lvs_tdigest.emplace(TDIGEST_SIZE);
+    }
+    this->lvs_tdigest->insert(value);
 }
 
 void
@@ -6378,7 +6386,9 @@ logline_value_stats::distinct_estimate() const
 void
 logline_value_stats::finalize()
 {
-    this->lvs_tdigest.merge();
+    if (this->lvs_tdigest) {
+        this->lvs_tdigest->merge();
+    }
 }
 
 std::vector<logline_value_meta>
