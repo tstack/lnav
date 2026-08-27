@@ -28,6 +28,10 @@
  */
 
 #include <assert.h>
+#include <map>
+#include <set>
+#include <vector>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -39,35 +43,82 @@
 
 using namespace std;
 
-static struct {
-    int l_number;
-    const char* l_value;
-} MS_LINES[] = {
-    {10, ""},
-    {11, ""},
-    {12, ""},
-    {13, ""},
-    {0, ""},
-    {1, ""},
-    {2, ""},
-};
+static constexpr int MS_LINE_COUNT = 20;
+
+/** @return True if the given line is one that the pattern should match. */
+static bool
+is_matching_line(int line_number)
+{
+    return (line_number % 2) == 0;
+}
 
 class my_source : public grep_proc_source<vis_line_t> {
 public:
-    my_source() : ms_current_line(0) {}
+    std::optional<line_info> grep_value_for_line(vis_line_t line_number,
+                                                 string& value_out) override
+    {
+        // The value has to be a function of the line number alone: the
+        // requests are split across several children, so a cursor into a
+        // fixed list would be wrong for every child but the first.
+        if (line_number < 0 || line_number >= MS_LINE_COUNT) {
+            return std::nullopt;
+        }
+
+        value_out = is_matching_line(line_number) ? "foobar" : "nothing here";
+
+        return line_info{};
+    }
+};
+
+/**
+ * A source that walks a list of interesting lines and latches "done" when it
+ * runs off the end, the way the metadata grepper does.  A child works through
+ * several requests in a row, so this only comes out right if grep_proc calls
+ * grep_initial_line() at the start of every one of them.
+ */
+class my_walking_source : public grep_proc_source<vis_line_t> {
+public:
+    vis_line_t grep_initial_line(vis_line_t start) override
+    {
+        this->mws_done = false;
+
+        return this->next_from(start - 1_vl);
+    }
+
+    void grep_next_line(vis_line_t& line) override
+    {
+        line = this->next_from(line);
+        if (line == -1) {
+            this->mws_done = true;
+        }
+    }
 
     std::optional<line_info> grep_value_for_line(vis_line_t line_number,
                                                  string& value_out) override
     {
-        assert(line_number == MS_LINES[this->ms_current_line].l_number);
-        value_out = MS_LINES[this->ms_current_line].l_value;
+        if (this->mws_done) {
+            return std::nullopt;
+        }
 
-        this->ms_current_line += 1;
+        value_out = "foobar";
 
         return line_info{};
     }
 
-    int ms_current_line;
+private:
+    /** @return The first interesting line after the given one, or -1. */
+    vis_line_t next_from(vis_line_t line)
+    {
+        for (auto next = line + 1_vl; next < MS_LINE_COUNT; next += 1_vl) {
+            if (is_matching_line((int) next)) {
+                return next;
+            }
+        }
+
+        return -1_vl;
+    }
+
+    bool mws_done{false};
 };
 
 class my_sleeper_source : public grep_proc_source<vis_line_t> {
@@ -81,33 +132,49 @@ class my_sleeper_source : public grep_proc_source<vis_line_t> {
 
 class my_sink : public grep_proc_sink<vis_line_t> {
 public:
-    my_sink() : ms_finished(false) {};
+    void grep_begin(grep_proc<vis_line_t>& gp,
+                    vis_line_t start,
+                    vis_line_t stop,
+                    grep_pattern_mask_t patterns) override
+    {
+        this->ms_outstanding += 1;
+        this->ms_begin_starts.push_back(start);
+    }
 
     void grep_match(grep_proc<vis_line_t>& gp,
                     vis_line_t line,
                     grep_pattern_mask_t patterns) override
     {
+        this->ms_matches.insert((int) line);
+        this->ms_matches_for_pattern[patterns].insert((int) line);
     }
 
     void grep_end(grep_proc<vis_line_t>& gp) override
     {
-        this->ms_finished = true;
+        this->ms_outstanding -= 1;
+        // Every begin is answered by exactly one end; the views count on that
+        // to know when a search has finished.
+        assert(this->ms_outstanding >= 0);
+        this->ms_ended += 1;
     }
 
-    bool ms_finished;
+    std::vector<vis_line_t> ms_begin_starts;
+    std::set<int> ms_matches;
+    std::map<grep_pattern_mask_t, std::set<int>> ms_matches_for_pattern;
+    int ms_outstanding{0};
+    int ms_ended{0};
 };
 
 static void
-looper(grep_proc<vis_line_t>& gp)
+looper(grep_proc<vis_line_t>& gp, my_sink& msink)
 {
-    my_sink msink;
-
-    gp.set_sink(&msink);
-
-    while (!msink.ms_finished) {
+    while (msink.ms_ended == 0 || msink.ms_outstanding > 0) {
         vector<struct pollfd> pollfds;
 
         gp.update_poll_set(pollfds);
+        if (pollfds.empty()) {
+            break;
+        }
         poll(&pollfds[0], pollfds.size(), -1);
 
         gp.check_poll_set(pollfds);
@@ -125,12 +192,144 @@ main(int argc, char* argv[])
     auto psuperv = std::make_shared<pollable_supervisor>();
     {
         my_source ms;
+        my_sink msink;
         grep_proc<vis_line_t> gp(code, ms, psuperv);
 
-        gp.queue_request(10_vl, gp.until_line(14_vl));
-        gp.queue_request(0_vl, gp.until_line(3_vl));
+        // The sink has to be in place before anything is queued, otherwise it
+        // sees the ends without the matching begins.
+        gp.set_sink(&msink);
+        gp.queue_request(10_vl, 14_vl);
+        gp.queue_request(0_vl, 3_vl);
         gp.start();
-        looper(gp);
+        looper(gp, msink);
+
+        // These requests are handed to different children, so a child that
+        // died early shows up here as a missing match.
+        std::set<int> expected;
+        for (const auto line : {10, 11, 12, 13, 0, 1, 2}) {
+            if (is_matching_line(line)) {
+                expected.insert(line);
+            }
+        }
+        if (msink.ms_matches != expected) {
+            fprintf(stderr, "error: matched lines are wrong:");
+            for (const auto line : msink.ms_matches) {
+                fprintf(stderr, " %d", line);
+            }
+            fprintf(stderr, "\n");
+            retval = EXIT_FAILURE;
+        }
+        assert(msink.ms_outstanding == 0);
+    }
+
+    {
+        // A tail scan must not be treated as covering a request that starts at
+        // the beginning, or a pattern added later is never run over the lines
+        // before that point.
+        my_source ms;
+        my_sink msink;
+        grep_proc<vis_line_t> gp(code, ms, psuperv);
+        auto second_pattern = gp.set_pattern(1, code);
+
+        gp.set_sink(&msink);
+
+        // With children running, start() leaves anything queued behind for the
+        // next batch, which is what puts these two requests in the queue
+        // together.
+        gp.queue_request(0_vl, 2_vl, grep_pattern_bit(0));
+        gp.start();
+        gp.queue_request(
+            vis_line_t(MS_LINE_COUNT - 2), vis_line_t(MS_LINE_COUNT),
+            second_pattern);
+        gp.queue_request(0_vl, vis_line_t(MS_LINE_COUNT), second_pattern);
+        looper(gp, msink);
+
+        auto& second_matches = msink.ms_matches_for_pattern[second_pattern];
+        for (int lpc = 0; lpc < MS_LINE_COUNT; lpc++) {
+            if (!is_matching_line(lpc)) {
+                continue;
+            }
+            if (second_matches.count(lpc) == 0) {
+                fprintf(stderr,
+                        "error: line %d was not matched by the second "
+                        "pattern\n",
+                        lpc);
+                retval = EXIT_FAILURE;
+                break;
+            }
+        }
+        assert(msink.ms_outstanding == 0);
+    }
+
+    {
+        // More requests than there are children means at least one child works
+        // through two of them, which is where a source that only arms its walk
+        // once would come up empty for the second.
+        static constexpr size_t REQUEST_COUNT = 9;
+
+        my_walking_source mws;
+        my_sink msink;
+        grep_proc<vis_line_t> gp(code, mws, psuperv);
+
+        gp.set_sink(&msink);
+        // Queued from the highest start down, so that no request covers the
+        // ground of one already in the queue and they all survive as separate
+        // runs.  Each gets its own pattern slot, so a run that reports nothing
+        // is visible here.
+        for (size_t lpc = REQUEST_COUNT; lpc > 0; lpc--) {
+            auto slot_bit = gp.set_pattern(lpc - 1, code);
+
+            gp.queue_request(
+                vis_line_t(lpc - 1), vis_line_t(MS_LINE_COUNT), slot_bit);
+        }
+        gp.start();
+        looper(gp, msink);
+
+        grep_pattern_mask_t reported = 0;
+        for (const auto& pair : msink.ms_matches_for_pattern) {
+            reported |= pair.first;
+        }
+        for (size_t lpc = 0; lpc < REQUEST_COUNT; lpc++) {
+            if (!(reported & grep_pattern_bit(lpc))) {
+                fprintf(stderr,
+                        "error: the request for slot %zu reported nothing\n",
+                        lpc);
+                retval = EXIT_FAILURE;
+                break;
+            }
+        }
+        assert(msink.ms_outstanding == 0);
+    }
+
+    {
+        // Two requests over the same ground fold together rather than each
+        // forking a child of its own.
+        my_source ms;
+        my_sink msink;
+        grep_proc<vis_line_t> gp(code, ms, psuperv);
+        auto second_pattern = gp.set_pattern(1, code);
+
+        gp.set_sink(&msink);
+        gp.queue_request(0_vl, vis_line_t(MS_LINE_COUNT), grep_pattern_bit(0));
+        gp.queue_request(0_vl, vis_line_t(MS_LINE_COUNT), second_pattern);
+
+        if (msink.ms_begin_starts.size() != 1) {
+            fprintf(stderr,
+                    "error: %zu runs were announced for the same ground\n",
+                    msink.ms_begin_starts.size());
+            retval = EXIT_FAILURE;
+        }
+        gp.start();
+        looper(gp, msink);
+
+        // The folded-in pattern still has to be searched for.
+        auto& second_matches = msink.ms_matches_for_pattern[second_pattern
+                                                            | grep_pattern_bit(0)];
+        if (second_matches.empty()) {
+            fprintf(stderr, "error: the folded-in pattern found nothing\n");
+            retval = EXIT_FAILURE;
+        }
+        assert(msink.ms_outstanding == 0);
     }
 
     {
@@ -139,7 +338,9 @@ main(int argc, char* argv[])
             = new grep_proc<vis_line_t>(code, mss, psuperv);
         int status;
 
-        gp->queue_request(-1_vl, gp->until_eof(1));
+        // The source blocks forever, so the stop line is never reached; this
+        // is about the child being killed off with the proc.
+        gp->queue_request(0_vl, vis_line_t(INT32_MAX));
         gp->start();
 
         assert(wait3(&status, WNOHANG, NULL) == 0);

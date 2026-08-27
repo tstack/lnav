@@ -632,10 +632,16 @@ public:
         std::optional<line_info> grep_value_for_line(
             vis_line_t line, std::string& value_out) override;
 
-        vis_line_t grep_initial_line(vis_line_t start,
-                                     vis_line_t highest) override;
+        vis_line_t grep_initial_line(vis_line_t start) override;
 
         void grep_next_line(vis_line_t& line) override;
+
+        void grep_quiesce() override;
+
+        void grep_reset(grep_proc<vis_line_t>& gp,
+                        vis_line_t start,
+                        vis_line_t stop,
+                        grep_pattern_mask_t patterns) override;
 
         void grep_begin(grep_proc<vis_line_t>& gp,
                         vis_line_t start,

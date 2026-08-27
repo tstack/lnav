@@ -50,6 +50,28 @@ class code;
 struct capture_builder;
 class matcher;
 
+/**
+ * Note that this process is a fork of the one that compiled the patterns it
+ * inherited.
+ *
+ * The JIT'd form of a pattern lives in a mapping that the kernel will not
+ * fault back in for a forked child on some platforms (arm64 macOS raises
+ * SIGBUS as soon as one of those pages is no longer resident).  A pattern
+ * that was compiled before the fork is therefore rebuilt, in place, the first
+ * time this process matches with it, so that the form being run belongs here.
+ *
+ * Matching with the interpreter instead would be the other way out, and is
+ * deliberately not taken: it is a large, silent slowdown on the paths that
+ * care most about matching speed.  A rebuild that fails is fatal.
+ */
+void jit_after_fork();
+
+/**
+ * @return The number of forks this process has been through, which is what
+ * decides whether a pattern's JIT'd form was built by this process.
+ */
+uint32_t current_jit_epoch();
+
 struct input {
     string_fragment i_string;
     int i_offset{0};
@@ -311,12 +333,15 @@ public:
     std::shared_ptr<code> to_shared() &&
     {
         return std::make_shared<code>(std::move(this->p_code),
-                                      std::move(this->p_pattern));
+                                      std::move(this->p_pattern),
+                                      this->p_jit_epoch);
     }
 
-    code(auto_mem<pcre2_code> code, std::string pattern)
+    code(auto_mem<pcre2_code> code,
+         std::string pattern,
+         uint32_t jit_epoch = current_jit_epoch())
         : p_code(std::move(code)), p_pattern(std::move(pattern)),
-          p_match_proto(this->create_match_data())
+          p_jit_epoch(jit_epoch), p_match_proto(this->create_match_data())
     {
     }
 
@@ -326,8 +351,34 @@ private:
 
     static code from_const(string_fragment sf, int options);
 
-    auto_mem<pcre2_code> p_code;
+    /**
+     * Compile this pattern again, with the same options, so that the result
+     * belongs to this process.
+     */
+    Result<code, compile_error> recompile() const;
+
+    /**
+     * Rebuild this pattern if its JIT'd form was built by another process, so
+     * that what pcre2_match() is about to run belongs here.  Aborts if the
+     * rebuild fails, since neither of the alternatives is acceptable: the
+     * inherited JIT would fault, and the interpreter is the silent slowdown
+     * this exists to avoid.
+     *
+     * Must be called as a statement of its own before pcre2_match(), never
+     * from within its argument list -- this swaps p_code, and the arguments
+     * of a call are unsequenced, so the pointer could otherwise be read
+     * before the swap.
+     */
+    void ensure_local_jit() const;
+
+    /**
+     * Swapped in place by ensure_local_jit(), which is why these are mutable;
+     * every matching entry point is const.
+     */
+    mutable auto_mem<pcre2_code> p_code;
     std::string p_pattern;
+    /** The fork epoch this pattern was compiled in. */
+    mutable uint32_t p_jit_epoch;
     match_data p_match_proto;
 };
 

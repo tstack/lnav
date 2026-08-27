@@ -147,14 +147,11 @@ open_schema_view()
         schema += "\n" + vtab_iter.second->get_table_statement();
     }
 
-    delete schema_tc->get_sub_source();
-
-    auto* pts = new plain_text_source();
+    auto pts = std::make_unique<plain_text_source>();
     auto schema_al = attr_line_t(schema);
     pts->replace_with_mutable(schema_al, text_format_t::TF_SQL);
 
-    schema_tc->set_sub_source(pts);
-    schema_tc->redo_search();
+    schema_tc->set_owned_sub_source(std::move(pts));
 }
 
 static bool
@@ -393,10 +390,12 @@ open_pretty_view()
 
     attr_line_t full_text;
 
-    delete pretty_tc->get_sub_source();
-    pretty_tc->set_sub_source(nullptr);
+    // Release the previous text now rather than holding it across the
+    // document build below.
+    pretty_tc->set_owned_sub_source(nullptr);
     if (top_tc->get_inner_height() == 0) {
-        pretty_tc->set_sub_source(new plain_text_source(NOTHING_MSG));
+        pretty_tc->set_owned_sub_source(
+            std::make_unique<plain_text_source>(NOTHING_MSG));
         return;
     }
 
@@ -593,7 +592,7 @@ open_pretty_view()
             pretty_indents = pp.take_indents();
         }
     }
-    auto* pts = new pretty_sub_source();
+    auto pts = std::make_unique<pretty_sub_source>();
     pts->pss_interval_tree = std::make_shared<lnav::document::sections_tree_t>(
         std::move(all_intervals));
     auto root_node = std::make_unique<lnav::document::hier_node>();
@@ -605,13 +604,12 @@ open_pretty_view()
 
     pts->replace_with_mutable(full_text,
                               top_tc->get_sub_source()->get_text_format());
-    pretty_tc->set_sub_source(pts);
+    pretty_tc->set_owned_sub_source(std::move(pts));
     if (lnav_data.ld_last_pretty_print_top != top_tc->get_top()) {
         pretty_tc->set_top(0_vl);
     }
     pretty_tc->set_selection(pretty_selected_line.value_or(0_vl));
     lnav_data.ld_last_pretty_print_top = top_tc->get_top();
-    pretty_tc->redo_search();
 }
 
 static void

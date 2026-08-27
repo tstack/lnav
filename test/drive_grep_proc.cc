@@ -28,6 +28,7 @@
  */
 
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -152,7 +153,9 @@ main(int argc, char* argv[])
         }
 
         gp.set_sink(&msink);
-        gp.queue_request(0_vl, gp.until_eof(1));
+        // The source runs out of lines before this, which is what ends the
+        // scan -- the driver has no line count to give.
+        gp.queue_request(0_vl, vis_line_t(INT32_MAX));
         gp.start();
 
         while (!msink.ms_finished) {

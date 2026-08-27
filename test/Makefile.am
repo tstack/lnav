@@ -653,6 +653,7 @@ DISTCLEANFILES = \
 	*.errbak \
 	*.tmpbak \
 	*.xz \
+	*_debug.log \
 	capture.btsnoop \
 	exported-session.0.lnav \
 	exported-sh-session.0.lnav \

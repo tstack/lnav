@@ -105,10 +105,10 @@ Features:
   it.  The `n` / `N` and `<` / `>` keys move through the
   hits of named searches as well as the current search.
   Named searches are also surfaced in:
-  - The filter editor (`TAB`), where they are listed
+  - The Text Filters panel, where they are listed
     below the view's filters with their hit counts.
-    Pressing `s` creates one and the filter keys work
-    on them as well.
+    Pressing `s` creates a new one and the same keys
+    used for filters work on these as well.
   - The TIMELINE view where each search is a row that
     shows the span of hits.  The
     `:hide-in-timeline search` command hides these rows.

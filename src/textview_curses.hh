@@ -747,9 +747,9 @@ public:
 
     ~textview_curses();
 
-    void deinit();
+    void deinit() override;
 
-    void reload_config(error_reporter& reporter);
+    void reload_config(error_reporter& reporter) override;
 
     void set_paused(bool paused)
     {
@@ -776,7 +776,24 @@ public:
 
     void set_user_mark(const bookmark_type_t* bm, vis_line_t vl, bool marked);
 
+    /**
+     * Point the view at a source that is owned by someone else and outlives
+     * it.  Use set_owned_sub_source() to hand over one that the view should
+     * free.
+     */
     textview_curses& set_sub_source(text_sub_source* src);
+
+    /**
+     * Hand the view a sub-source that it owns.  The source being replaced is
+     * released only after the view has been pointed at the new one, which is
+     * what keeps the two from ever sharing an address: set_sub_source() does
+     * nothing at all when the pointer it is given compares equal to the one
+     * already installed, so a caller that freed the old source first could
+     * get its address back for the new one and leave the view holding the
+     * bookmarks and search hits of text that is gone.
+     */
+    textview_curses& set_owned_sub_source(
+        std::unique_ptr<text_sub_source> src);
 
     text_sub_source* get_sub_source() const { return this->tc_sub_source; }
 
@@ -807,17 +824,17 @@ public:
         this->tc_search_action = std::move(sa);
     }
 
-    void grep_end_batch(grep_proc<vis_line_t>& gp);
-    void grep_end(grep_proc<vis_line_t>& gp);
+    void grep_end_batch(grep_proc<vis_line_t>& gp) override;
+    void grep_end(grep_proc<vis_line_t>& gp) override;
 
-    size_t listview_rows(const listview_curses& lv)
+    size_t listview_rows(const listview_curses& lv) override
     {
         return this->tc_sub_source == nullptr
             ? 0
             : this->tc_sub_source->text_line_count();
     }
 
-    size_t listview_width(const listview_curses& lv)
+    size_t listview_width(const listview_curses& lv) override
     {
         return this->tc_sub_source == nullptr
             ? 0
@@ -826,36 +843,42 @@ public:
 
     void listview_value_for_rows(const listview_curses& lv,
                                  vis_line_t line,
-                                 std::vector<attr_line_t>& rows_out);
+                                 std::vector<attr_line_t>& rows_out) override;
 
     void textview_value_for_row(vis_line_t line, attr_line_t& value_out);
 
-    bool listview_is_row_selectable(const listview_curses& lv, vis_line_t row);
+    bool listview_is_row_selectable(const listview_curses& lv,
+                                    vis_line_t row) override;
 
-    void listview_selection_changed(const listview_curses& lv);
+    void listview_selection_changed(const listview_curses& lv) override;
 
-    size_t listview_size_for_row(const listview_curses& lv, vis_line_t row)
+    size_t listview_size_for_row(const listview_curses& lv,
+                                 vis_line_t row) override
     {
         return this->tc_sub_source->text_size_for_line(*this, row);
     }
 
-    std::optional<line_info> grep_value_for_line(vis_line_t line,
-                                                 std::string& value_out);
+    std::optional<line_info> grep_value_for_line(
+        vis_line_t line, std::string& value_out) override;
 
-    void grep_quiesce()
+    void grep_quiesce() override
     {
         if (this->tc_sub_source != nullptr) {
             this->tc_sub_source->quiesce();
         }
     }
 
+    void grep_reset(grep_proc<vis_line_t>& gp,
+                    vis_line_t start,
+                    vis_line_t stop,
+                    grep_pattern_mask_t patterns) override;
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,
                     vis_line_t stop,
-                    grep_pattern_mask_t patterns);
+                    grep_pattern_mask_t patterns) override;
     void grep_match(grep_proc<vis_line_t>& gp,
                     vis_line_t line,
-                    grep_pattern_mask_t patterns);
+                    grep_pattern_mask_t patterns) override;
 
     bool is_searching() const { return this->tc_searching > 0; }
 
@@ -951,13 +974,26 @@ public:
     static Result<void, lnav::console::user_message> validate_search_name(
         const std::string& name);
 
+    /** What becomes of the active search when a named one is created. */
+    enum class search_adoption_t {
+        /** It is left alone; the caller supplied a pattern of its own. */
+        keep,
+        /**
+         * The pattern was taken from the active search, so that search is
+         * cleared and the named one takes it over.
+         */
+        promote,
+    };
+
     /**
-     * Promote a pattern into a named search.  When the pattern matches the
-     * active search and that search has finished, its hits are moved into the
-     * new slot instead of being found again.
+     * Turn a pattern into a named search.  When the pattern matches the active
+     * search and that search has finished, its hits are reused rather than
+     * being found again, whichever way the active search is being treated.
      */
     Result<void, lnav::console::user_message> create_named_search(
-        const std::string& name, const std::string& pattern);
+        const std::string& name,
+        const std::string& pattern,
+        search_adoption_t adoption = search_adoption_t::keep);
 
     /** @return false if there is no search with the given name. */
     bool delete_named_search(const std::string& name);
@@ -967,6 +1003,33 @@ public:
 
     /** Remove all of the named searches in this view. */
     void clear_named_searches();
+
+    /**
+     * Hold off the scan for searches created while this is alive and do a
+     * single pass for all of them at the end.  Creating searches one at a
+     * time, as a session restore does, would otherwise read the log once per
+     * pattern instead of once for all of them.
+     */
+    struct search_defer_guard {
+        explicit search_defer_guard(textview_curses& tc) : sdg_view(tc)
+        {
+            this->sdg_view.tc_defer_searches = true;
+        }
+
+        ~search_defer_guard()
+        {
+            this->sdg_view.tc_defer_searches = false;
+            this->sdg_view.flush_deferred_searches();
+        }
+
+        search_defer_guard(const search_defer_guard&) = delete;
+        search_defer_guard& operator=(const search_defer_guard&) = delete;
+
+        textview_curses& sdg_view;
+    };
+
+    /** Scan for the searches that were held back by a search_defer_guard. */
+    void flush_deferred_searches();
 
     /**
      * @return The mask of pattern slots whose named search matches a line in
@@ -1008,9 +1071,9 @@ public:
         return this->tc_disabled_highlights;
     }
 
-    bool handle_mouse(mouse_event& me);
+    bool handle_mouse(mouse_event& me) override;
 
-    void reload_data();
+    void reload_data() override;
 
     bool toggle_hide_fields()
     {
@@ -1036,11 +1099,42 @@ public:
     void redo_search();
 
     void search_range(vis_line_t start,
-                      grep_proc<vis_line_t>::request_until_t stop);
+                      vis_line_t stop);
 
-    void search_new_data(vis_line_t start = -1_vl);
+    /**
+     * Scan a range again with both the content and the metadata search, and
+     * start the run.
+     *
+     * Both searches record their hits in the same per-pattern set, so this
+     * cannot be narrowed to just the metadata search: queueing a range clears
+     * the results already recorded for it, and only the search that is run
+     * again puts its hits back.
+     */
+    void rescan_range(vis_line_t start,
+                      vis_line_t stop);
 
+    /** Scan the lines that have arrived since the last scan was queued. */
+    void search_new_data();
+
+    /**
+     * Scan from the given line on, for a source that has re-indexed from that
+     * point.
+     */
+    void search_new_data(vis_line_t start);
+
+    /** @return The search text as it was typed. */
     std::string get_current_search() const { return this->tc_current_search; }
+
+    /**
+     * @return The pattern the active search is actually matching with.  It
+     * differs from get_current_search() when what was typed would not compile
+     * and was quoted to look for it literally, so this is what a caller that
+     * needs to compile the same thing again should use.
+     */
+    std::string get_current_search_pattern() const
+    {
+        return this->tc_current_search_pattern;
+    }
 
     void save_current_search()
     {
@@ -1069,7 +1163,7 @@ public:
 
     void revert_search() { this->execute_search(this->tc_previous_search); }
 
-    void invoke_scroll();
+    void invoke_scroll() override;
 
     textview_curses& set_reload_config_delegate(
         std::function<void(textview_curses&)> func)
@@ -1090,7 +1184,7 @@ public:
                           const line_range& body,
                           const line_range& orig_line);
 
-    void update_hash_state(hasher& h) const;
+    void update_hash_state(hasher& h) const override;
 
     void clear_preview();
 
@@ -1122,11 +1216,22 @@ public:
 
 protected:
     text_sub_source* tc_sub_source{nullptr};
+    /**
+     * Set only when the view owns what tc_sub_source points at; most sources
+     * outlive the view and are owned elsewhere.
+     */
+    std::unique_ptr<text_sub_source> tc_owned_sub_source;
     std::shared_ptr<text_delegate> tc_delegate;
 
     vis_bookmarks tc_bookmarks{vis_bookmarks_t::create_array()};
 
     int tc_searching{0};
+    /**
+     * The line that the queued searches have reached, i.e. where a scan of
+     * newly arrived lines should begin.  Both search procs are handed the same
+     * ranges, so this is kept here rather than in either of them.
+     */
+    vis_line_t tc_searched_through{0_vl};
     timeval tc_follow_deadline{0, 0};
     vis_line_t tc_follow_selection{-1_vl};
     std::function<bool()> tc_follow_func;
@@ -1141,7 +1246,10 @@ protected:
     bool tc_paused{false};
     bool tc_supports_marks{false};
 
+    /** The search text as it was typed. */
     std::string tc_current_search;
+    /** What that text compiled to; see get_current_search_pattern(). */
+    std::string tc_current_search_pattern;
     std::string tc_previous_search;
     std::optional<std::string> tc_search_op_id;
 
@@ -1170,10 +1278,17 @@ protected:
      * which searches matched a message.
      */
     grep_pattern_mask_t tc_disabled_search_slots{0};
+    /** Set by search_defer_guard while searches are being created in bulk. */
+    bool tc_defer_searches{false};
+    /** The slots of the searches that are waiting for the deferred pass. */
+    grep_pattern_mask_t tc_deferred_search_slots{0};
     std::vector<named_search> tc_named_searches;
 
     /** Lazily construct the search procs.  @return tc_search_proc. */
     grep_proc<vis_line_t>* ensure_search_procs();
+
+    /** Scan the whole view for the given pattern slots. */
+    void queue_search_for(grep_pattern_mask_t patterns);
 
     /** Give the named search its own background color in the view. */
     void add_named_search_highlight(

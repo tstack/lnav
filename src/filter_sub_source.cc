@@ -1466,7 +1466,7 @@ filter_sub_source::named_search_row::ti_change(textview_curses* top_view,
     // A name on its own adopts the active search, the same as leaving the
     // pattern off of :create-named-search.
     if (pattern.empty()) {
-        pattern = top_view->get_current_search();
+        pattern = top_view->get_current_search_pattern();
     }
     if (pattern.empty()) {
         err.set_value("error: no active search to adopt, enter a pattern");
@@ -1589,8 +1589,12 @@ filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
         return;
     }
 
+    auto adoption = textview_curses::search_adoption_t::keep;
     if (pattern.empty()) {
-        pattern = top_view->get_current_search();
+        // Nothing was typed after the name, so the active search is what is
+        // being named -- and it steps aside for the named one.
+        pattern = top_view->get_current_search_pattern();
+        adoption = textview_curses::search_adoption_t::promote;
     }
     if (pattern.empty()) {
         report_error(lnav::console::user_message::error(
@@ -1630,7 +1634,8 @@ filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
         top_view->delete_named_search(this->nsr_name);
     }
 
-    auto create_res = top_view->create_named_search(name, pattern);
+    auto create_res
+        = top_view->create_named_search(name, pattern, adoption);
     if (create_res.isErr()) {
         report_error(create_res.unwrapErr());
     } else if (!parent.fss_filter_state) {

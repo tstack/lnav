@@ -373,6 +373,47 @@ run_cap_test ${lnav_test} -n \
     -c ":rebuild" \
     logfile_append.0
 
+cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
+
+# Lines arriving after a search must not cost the search the hits it already
+# found.  Nothing here may disturb the filters or force a full rebuild, since
+# either one rescans everything and hides the problem.
+run_cap_test ${lnav_test} -n \
+    -c "/Goodbye" \
+    -c ":shexec echo '2009-07-20 22:59:31,000:INFO:and another' >> logfile_append.0" \
+    -c ":rebuild" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    logfile_append.0
+
+cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
+
+# The second round of new lines is where a stale idea of how far the search has
+# got shows up, so the only line that matches here is the last one to arrive.
+run_cap_test ${lnav_test} -n \
+    -c "/zzz" \
+    -c ":shexec echo '2009-07-20 22:59:31,000:INFO:nothing to see' >> logfile_append.0" \
+    -c ":rebuild" \
+    -c ":shexec echo '2009-07-20 22:59:32,000:INFO:zzz is here' >> logfile_append.0" \
+    -c ":rebuild" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    logfile_append.0
+
+cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
+
+# A search created after lines have arrived is still run over the lines that
+# were already there, not just the new ones.
+run_cap_test ${lnav_test} -n \
+    -c ":shexec echo '2009-07-20 22:59:31,000:INFO:Goodbye again' >> logfile_append.0" \
+    -c ":rebuild" \
+    -c ":create-named-search bye Goodbye" \
+    -c ";SELECT log_line, log_named_searches FROM generic_log" \
+    logfile_append.0
+
 run_cap_test ${lnav_test} -n \
     -c ":filter-in avahi" \
     -c ":delete-filter avahi" \
@@ -743,6 +784,45 @@ run_cap_test ${lnav_test} -n \
     -c ":prev-mark search" \
     ${test_dir}/logfile_access_log.0
 
+# The pattern is taken from after the name, even when the name ends with the
+# same character that the pattern starts with.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search req q 500" \
+    -c ";SELECT name, pattern FROM lnav_view_searches" \
+    ${test_dir}/logfile_access_log.0
+
+# A pattern that will not compile is searched for literally, but the search is
+# still reported as it was typed rather than in its escaped form.
+run_cap_test ${lnav_test} -n \
+    -c "/foo[" \
+    -c ";SELECT search FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+# Naming an escaped search keeps working, since what is stored has to compile
+# again on a session load.
+run_cap_test ${lnav_test} -n \
+    -c "/foo[" \
+    -c ":create-named-search bracket" \
+    -c ";SELECT name, pattern FROM lnav_view_searches" \
+    ${test_dir}/logfile_access_log.0
+
+# Leaving the pattern off hands the active search over to the named one, even
+# when the search had to be escaped to compile.  Only the last query is what
+# the view is showing, so this is a run of its own.
+run_cap_test ${lnav_test} -n \
+    -c "/foo[" \
+    -c ":create-named-search bracket" \
+    -c ";SELECT search FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+# Spelling the pattern out keeps the active search, even when the two happen
+# to be the same.  Only leaving the pattern off hands the search over.
+run_cap_test ${lnav_test} -n \
+    -c "/vmw" \
+    -c ":create-named-search dup vmw" \
+    -c ";SELECT name, search FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
 # Two named searches are active at once and get distinct colors.
 run_cap_test ${lnav_test} -n \
     -c ":create-named-search all vmw" \
@@ -876,6 +956,15 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_named_searches FROM access_log" \
     ${test_dir}/logfile_access_log.0
 
+# Marking a line rescans it for the metadata searches, which must not cost it
+# the hits that were already found in its text.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search all vmw" \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ";SELECT log_line, log_named_searches FROM access_log" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n \
     -c ":create-named-search one cgi" \
     -c ":disable-named-search one" \
@@ -888,4 +977,38 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":enable-named-search nonexistent" \
+    ${test_dir}/logfile_access_log.0
+
+# Reopening a view builds a new source for it, so the searches have to be run
+# again over the text that just arrived.  The search bookmark is what proves
+# it, so the failure shows up on stderr as a jump that could not be made.
+run_cap_test ${lnav_test} -n \
+    -c ":toggle-view schema" \
+    -c "/lnav_view_searches" \
+    -c ":toggle-view schema" \
+    -c ":toggle-view schema" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    -c ":switch-to-view log" \
+    ${test_dir}/logfile_access_log.0
+
+# The pretty view asks for rewritten lines, which replace the buffer that the
+# shared ref for the line is a slice of.
+run_cap_test ${lnav_test} -n \
+    -c ":toggle-view pretty" \
+    -c "/vmkboot" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    ${test_dir}/logfile_access_log.0
+
+# The same reopen check as the schema view above -- the pretty view builds a new
+# source every time it is opened, so the searches have to be run again over the
+# text that just arrived.
+run_cap_test ${lnav_test} -n \
+    -c ":toggle-view pretty" \
+    -c "/vmkboot" \
+    -c ":toggle-view pretty" \
+    -c ":toggle-view pretty" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
     ${test_dir}/logfile_access_log.0

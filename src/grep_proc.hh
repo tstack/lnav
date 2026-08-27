@@ -33,6 +33,7 @@
 #define grep_proc_hh
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <deque>
 #include <exception>
@@ -106,13 +107,12 @@ public:
                                                          std::string& value_out)
         = 0;
 
-    virtual LineType grep_initial_line(LineType start, LineType highest)
-    {
-        if (start == -1) {
-            return highest;
-        }
-        return start;
-    }
+    /**
+     * @return The first line to search for the request that is starting.  A
+     * source that does not step through the lines one at a time uses this to
+     * begin its own walk.
+     */
+    virtual LineType grep_initial_line(LineType start) { return start; }
 
     virtual void grep_next_line(LineType& line) { line = line + LineType(1); }
 
@@ -141,7 +141,20 @@ public:
     virtual void grep_quiesce() {}
 
     /**
-     * Called at the start of a new grep run.
+     * Called when results previously recorded for these patterns in
+     * [start, stop) are about to be replaced.  This is separate from
+     * grep_begin() because a pattern can be folded into a request that is
+     * already queued, which adds no run of its own to wait on.
+     */
+    virtual void grep_reset(grep_proc<LineType>& gp,
+                            LineType start,
+                            LineType stop,
+                            grep_pattern_mask_t patterns)
+    {
+    }
+
+    /**
+     * Called at the start of a new grep run.  Balanced by a grep_end().
      *
      * @param patterns The patterns that this run will match against.  Any
      * results previously recorded for these patterns in [start, stop) are
@@ -280,44 +293,25 @@ public:
     /** @return The sink to send results to. */
     grep_proc_sink<LineType>* get_sink() { return this->gp_sink; }
 
-    enum class until_type_t {
-        line,
-        eof,
-    };
-
-    struct request_until_t {
-        until_type_t ru_type;
-        LineType ru_line;
-    };
-
-    template<typename T>
-    static request_until_t until_line(T line)
-    {
-        return {until_type_t::line, LineType(line)};
-    }
-
-    template<typename T>
-    static request_until_t until_eof(T line)
-    {
-        return {until_type_t::eof, LineType(line)};
-    }
-
     struct request_t {
         LineType r_start;
-        request_until_t r_until;
+        LineType r_stop;
         grep_pattern_mask_t r_patterns;
     };
 
     /**
      * Queue a request to search the input between the given line numbers.
      *
-     * @param start The line number to start the search at.
-     * @param stop The stop condition.
+     * @param start The line number to start the search at, or -1 to carry on
+     * from wherever the search got to.
+     * @param stop The line number to stop before.  The scan also stops early
+     * if the source runs out of lines, so a caller that does not know how much
+     * there is to search can pass a line number beyond the end.
      * @param patterns The patterns to match against in this range.  Defaults
      * to every pattern that is currently installed.
      */
     grep_proc& queue_request(LineType start,
-                             request_until_t stop,
+                             LineType stop,
                              std::optional<grep_pattern_mask_t> patterns
                              = std::nullopt);
 
@@ -338,21 +332,51 @@ public:
     bool children_active() const { return !this->gp_children.empty(); }
 
     /** Check the invariants for this object. */
-    bool invariant() { return true; }
+    bool invariant()
+    {
+        for (const auto& req : this->gp_queue) {
+            // A request with nothing to search for is dropped rather than
+            // queued, so that the sink is not left waiting on a run that has
+            // no work to do.
+            require(req.r_patterns != 0);
+        }
+
+        return true;
+    }
 
     struct child_state {
         auto_pid<process_state::running> cs_child;
         auto_fd cs_err_pipe;
         line_buffer cs_line_buffer;
         file_range cs_pipe_range;
+        std::chrono::steady_clock::time_point cs_start_time;
 
         explicit child_state(auto_pid<process_state::running> child)
-            : cs_child(std::move(child))
+            : cs_child(std::move(child)),
+              cs_start_time(std::chrono::steady_clock::now())
         {
+        }
+
+        /** @return The time since this child was forked. */
+        std::chrono::milliseconds runtime() const
+        {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - this->cs_start_time);
         }
     };
 
 protected:
+    /**
+     * Add the given patterns to a queued request that already covers
+     * [start, stop) instead of queueing a run of its own.
+     *
+     * @return True if the request was folded into a queued one, in which case
+     * the caller must not tell the sink that another run is beginning.
+     */
+    bool merge_into_queue(LineType start,
+                          LineType stop,
+                          grep_pattern_mask_t patterns);
+
     /**
      * Dispatch a line received from the child.
      */
@@ -388,11 +412,6 @@ protected:
      * cancelling.
      */
     std::deque<request_t> gp_dispatched;
-    LineType gp_highest_line{0}; /*< The highest numbered line processed
-                                  * by the grep child process.  This
-                                  * value is used when the start line
-                                  * for a queued request is -1.
-                                  */
     grep_proc_sink<LineType>* gp_sink{nullptr}; /*< The sink delegate. */
     grep_proc_control* gp_control{nullptr}; /*< The control delegate. */
 };

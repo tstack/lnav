@@ -2492,6 +2492,34 @@ reset_session()
     }
 }
 
+/**
+ * @return The key to compare a session command against the ones a view has
+ * already applied.  Commands that hold a single value for the view are keyed
+ * by their name so that the session does not overwrite a value that is
+ * already set; the rest are keyed by the whole command line, since a view can
+ * hold any number of them.
+ */
+static std::string
+session_command_key(const std::string& cmdline)
+{
+    static const auto SINGLETON_CMDS = std::set<std::string>{
+        "filter-context",
+        "hide-lines-after",
+        "hide-lines-before",
+        "mark-expr",
+    };
+
+    auto cmd = string_fragment::from_str(cmdline)
+                   .split_when(string_fragment::tag1{' '})
+                   .first.to_string();
+
+    if (SINGLETON_CMDS.count(cmd) > 0) {
+        return cmd;
+    }
+
+    return cmdline;
+}
+
 void
 lnav::session::apply_view_commands()
 {
@@ -2505,6 +2533,15 @@ lnav::session::apply_view_commands()
         auto& tview = lnav_data.ld_views[view_index];
 
         log_debug("  view: %s", tview.get_title().c_str());
+        // The commands that the view would save right now.  A saved command
+        // that is already in here has nothing to add, so it is skipped.  Most
+        // of them can be applied several times over -- a view can have any
+        // number of filters, highlights, or named searches -- so they are
+        // matched in full.  The settings in SINGLETON_CMDS hold a single
+        // value instead, and re-applying one would overwrite the value that
+        // is already in place, so those match on the command name alone.  See
+        // text_sub_source::add_commands_for_session() and its overrides for
+        // where these come from.
         lnav::set::small<std::string> curr_cmds;
         auto* tss = tview.get_sub_source();
         if (tview.get_sub_source() != nullptr) {
@@ -2513,10 +2550,7 @@ lnav::session::apply_view_commands()
                 tss->set_min_log_level(vs.vs_min_log_level.value());
             }
             tss->add_commands_for_session([&](auto& cmd) {
-                auto cmd_sf = string_fragment::from_str(cmd)
-                                  .split_when(string_fragment::tag1{' '})
-                                  .first;
-                curr_cmds.insert(cmd_sf.to_string());
+                curr_cmds.insert(session_command_key(cmd));
             });
         }
         if (vs.vs_commands.empty()) {
@@ -2527,15 +2561,14 @@ lnav::session::apply_view_commands()
             toggle_view(&tview);
             pop_view = true;
         }
+        // The searches created below are scanned for in a single pass when
+        // this goes out of scope instead of one pass apiece.
+        auto search_guard = textview_curses::search_defer_guard{tview};
         for (const auto& cmdline : vs.vs_commands) {
-            auto cmdline_sf = string_fragment::from_str(cmdline);
-            auto [cmd_sf, _cmdline_rem]
-                = cmdline_sf.split_when(string_fragment::tag1{' '});
-            if (curr_cmds.contains(cmd_sf.to_string())) {
-                log_debug("view %s command '%.*s' already active",
+            if (curr_cmds.contains(session_command_key(cmdline))) {
+                log_debug("view %s command '%s' already active",
                           tview.get_title().c_str(),
-                          cmd_sf.length(),
-                          cmd_sf.data());
+                          cmdline.c_str());
                 continue;
             }
             auto exec_cmd_res

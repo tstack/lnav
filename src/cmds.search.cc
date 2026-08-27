@@ -48,15 +48,21 @@ com_create_named_search(exec_context& ec,
     auto* tc = *lnav_data.ld_view_stack.top();
     const auto& name = args[1];
     std::string pattern;
+    auto adoption = textview_curses::search_adoption_t::keep;
 
     if (args.size() > 2) {
         pattern = remaining_args(cmdline, args, 2);
     } else {
-        pattern = tc->get_current_search();
+        // The compiled form, since this is what the named search will be
+        // re-created from when the session is restored.
+        pattern = tc->get_current_search_pattern();
         if (pattern.empty()) {
             return ec.make_error(
                 "no active search to name, provide a pattern instead");
         }
+        // Only the form that leaves the pattern off takes the active search
+        // over; one that spells the pattern out leaves it running.
+        adoption = textview_curses::search_adoption_t::promote;
     }
 
     if (ec.ec_dry_run) {
@@ -87,7 +93,7 @@ com_create_named_search(exec_context& ec,
         return Ok(std::string());
     }
 
-    TRY(tc->create_named_search(name, pattern));
+    TRY(tc->create_named_search(name, pattern, adoption));
     tc->reload_data();
 
     return Ok("info: created named search -- " + name);

@@ -291,8 +291,8 @@ public:
     logline(file_off_t off, std::chrono::microseconds t, log_level_t lev)
         : ll_time(t), ll_offset(off), ll_sub_offset(0), ll_valid_utf(1),
           ll_has_ansi(false), ll_ignore(false), ll_continued(false),
-          ll_time_skew(false), ll_mark(false), ll_meta_mark(0), ll_expr_mark(0),
-          ll_level(lev)
+          ll_time_skew(false), ll_bloom_bits(0), ll_mark(false),
+          ll_meta_mark(0), ll_expr_mark(0), ll_has_schema(false), ll_level(lev)
     {
     }
 

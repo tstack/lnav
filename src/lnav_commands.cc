@@ -95,23 +95,47 @@
 using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
 
+/**
+ * @return The offset in the command line where the given argument begins.
+ *
+ * Each argument is looked for after the end of the one before it.  Adding up
+ * the lengths instead would leave out the whitespace that separates them, so
+ * the search would begin inside the previous argument and could match there:
+ * ":create-named-search req q 500" came out with a pattern of "q q 500",
+ * since the scan for "q" started on the "q" at the end of "req".
+ */
+static size_t
+arg_offset(const std::string& cmdline,
+           const std::vector<std::string>& args,
+           size_t index)
+{
+    size_t retval = 0;
+
+    for (size_t lpc = 0; lpc <= index; lpc++) {
+        retval = cmdline.find(args[lpc], retval);
+        if (retval == std::string::npos) {
+            return std::string::npos;
+        }
+        if (lpc < index) {
+            retval += args[lpc].length();
+        }
+    }
+
+    return retval;
+}
+
 std::string
 remaining_args(const std::string& cmdline,
                const std::vector<std::string>& args,
                size_t index)
 {
-    size_t start_pos = 0;
-
     require(index > 0);
 
     if (index >= args.size()) {
         return "";
     }
-    for (size_t lpc = 0; lpc < index; lpc++) {
-        start_pos += args[lpc].length();
-    }
 
-    size_t index_in_cmdline = cmdline.find(args[index], start_pos);
+    size_t index_in_cmdline = arg_offset(cmdline, args, index);
 
     require(index_in_cmdline != std::string::npos);
 
@@ -128,18 +152,13 @@ remaining_args_frag(const std::string& cmdline,
                     const std::vector<std::string>& args,
                     size_t index)
 {
-    size_t start_pos = 0;
-
     require(index > 0);
 
     if (index >= args.size()) {
         return string_fragment{};
     }
-    for (size_t lpc = 0; lpc < index; lpc++) {
-        start_pos += args[lpc].length();
-    }
 
-    size_t index_in_cmdline = cmdline.find(args[index], start_pos);
+    size_t index_in_cmdline = arg_offset(cmdline, args, index);
 
     require(index_in_cmdline != std::string::npos);
 
@@ -1751,7 +1770,7 @@ com_create_search_table(exec_context& ec,
             regex_frag = remaining_args_frag(cmdline, args, 2);
             regex = regex_frag.to_string();
         } else {
-            regex = lnav_data.ld_views[LNV_LOG].get_current_search();
+            regex = lnav_data.ld_views[LNV_LOG].get_current_search_pattern();
         }
 
         auto compile_res = lnav::pcre2pp::code::from(

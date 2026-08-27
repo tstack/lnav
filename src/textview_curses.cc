@@ -390,6 +390,37 @@ textview_curses::reload_data()
 }
 
 void
+textview_curses::grep_reset(grep_proc<vis_line_t>& gp,
+                            vis_line_t start,
+                            vis_line_t stop,
+                            grep_pattern_mask_t patterns)
+{
+    // This range is about to be scanned again for these patterns, so drop what
+    // they previously found in it.  Only the union is rebuilt, so lines that
+    // some other pattern still matches keep their mark.
+    for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+        if (!(patterns & grep_pattern_bit(slot))) {
+            continue;
+        }
+
+        auto& slot_bv = this->tc_search_matches[slot];
+        auto slot_range = slot_bv.equal_range(start, stop);
+        auto to_del = std::vector<vis_line_t>{};
+
+        for (auto iter = slot_range.first; iter != slot_range.second; ++iter) {
+            to_del.emplace_back(*iter);
+        }
+        for (auto cl : to_del) {
+            slot_bv.bv_tree.erase(cl);
+        }
+    }
+
+    this->rebuild_search_marks(start, stop);
+
+    listview_curses::reload_data();
+}
+
+void
 textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
                             vis_line_t start,
                             vis_line_t stop,
@@ -402,32 +433,7 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
     this->tc_searching += 1;
     this->tc_search_action(this);
 
-    if (start != -1_vl) {
-        // This range is about to be scanned again for these patterns, so drop
-        // what they previously found in it.  Only the union is rebuilt, so
-        // lines that some other pattern still matches keep their mark.
-        for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
-            if (!(patterns & grep_pattern_bit(slot))) {
-                continue;
-            }
-
-            auto& slot_bv = this->tc_search_matches[slot];
-            auto slot_range = slot_bv.equal_range(start, stop);
-            auto to_del = std::vector<vis_line_t>{};
-
-            for (auto iter = slot_range.first; iter != slot_range.second;
-                 ++iter)
-            {
-                to_del.emplace_back(*iter);
-            }
-            for (auto cl : to_del) {
-                slot_bv.bv_tree.erase(cl);
-            }
-        }
-
-        this->rebuild_search_marks(start, stop);
-    }
-
+    this->grep_reset(gp, start, stop, patterns);
     listview_curses::reload_data();
 }
 
@@ -488,11 +494,18 @@ textview_curses::free_search_slot(size_t slot)
     require(slot < GREP_MAX_PATTERNS);
 
     this->tc_search_slots_used.reset(slot);
+    // clear_pattern() only takes effect on the next fork, so a run that is
+    // already in flight has to be cancelled as well.  Otherwise it keeps
+    // reporting this slot, refilling it after the caller has dropped its
+    // matches -- and the slot may already have been handed to another search
+    // by then, since alloc_search_slot() hands out the lowest free one.
     if (this->tc_search_proc != nullptr) {
         this->tc_search_proc->clear_pattern(slot);
+        this->tc_search_proc->invalidate(grep_pattern_bit(slot));
     }
     if (this->tc_meta_search_proc != nullptr) {
         this->tc_meta_search_proc->clear_pattern(slot);
+        this->tc_meta_search_proc->invalidate(grep_pattern_bit(slot));
     }
 }
 
@@ -541,7 +554,8 @@ textview_curses::add_named_search_highlight(
 
 Result<void, lnav::console::user_message>
 textview_curses::create_named_search(const std::string& name,
-                                     const std::string& pattern)
+                                     const std::string& pattern,
+                                     search_adoption_t adoption)
 {
     static const intern_string_t PATTERN_SRC = intern_string::lookup("pattern");
 
@@ -587,35 +601,63 @@ textview_curses::create_named_search(const std::string& name,
     this->tc_named_searches.emplace_back(
         named_search{name, pattern, slot, code});
 
-    // The interactive search has already found exactly these lines, so adopt
-    // its results rather than scanning for them again.  This is only valid
-    // once that scan has finished; a search still in flight has only partly
-    // filled its slot.
-    if (pattern == this->tc_current_search && !this->is_searching()) {
+    // The interactive search has already found exactly these lines, so take a
+    // copy of its results rather than scanning for them again.  This is only
+    // valid once that scan has finished; a search still in flight has only
+    // partly filled its slot.
+    //
+    // The comparison is against the compiled form, since that is what the
+    // callers hand over and what was actually matched against.  A search whose
+    // text had to be quoted to compile does not match what was typed.
+    if (pattern == this->tc_current_search_pattern && !this->is_searching()) {
         this->tc_search_matches[slot]
-            = std::move(this->tc_search_matches[SEARCH_SLOT_INTERACTIVE]);
-        this->tc_search_matches[SEARCH_SLOT_INTERACTIVE].clear();
-        this->execute_search("");
-    } else if (this->tc_sub_source != nullptr) {
-        auto patterns = grep_pattern_bit(slot);
-
-        gp->queue_request(
-            0_vl,
-            gp->until_eof(this->tc_sub_source->text_line_count()),
-            patterns);
-        gp->start();
-        if (this->tc_meta_search_proc != nullptr) {
-            auto& sgp = this->tc_meta_search_proc;
-
-            sgp->queue_request(
-                0_vl,
-                sgp->until_eof(this->tc_sub_source->text_line_count()),
-                patterns);
-            sgp->start();
+            = this->tc_search_matches[SEARCH_SLOT_INTERACTIVE];
+        if (adoption == search_adoption_t::promote) {
+            // The pattern came from the active search, so that search steps
+            // aside for the named one.  A caller that supplied a pattern of
+            // its own keeps its search, hits and all.
+            this->execute_search("");
         }
+    } else if (this->tc_defer_searches) {
+        // The caller is creating searches in bulk and will scan for all of
+        // them at once.
+        this->tc_deferred_search_slots |= grep_pattern_bit(slot);
+    } else if (this->tc_sub_source != nullptr) {
+        this->queue_search_for(grep_pattern_bit(slot));
     }
 
     return Ok();
+}
+
+void
+textview_curses::queue_search_for(grep_pattern_mask_t patterns)
+{
+    if (this->tc_sub_source == nullptr || patterns == 0) {
+        return;
+    }
+
+    auto* gp = this->ensure_search_procs();
+    const auto line_count = vis_line_t(this->tc_sub_source->text_line_count());
+
+    gp->queue_request(0_vl, line_count, patterns);
+    gp->start();
+    if (this->tc_meta_search_proc != nullptr) {
+        auto& sgp = this->tc_meta_search_proc;
+
+        sgp->queue_request(0_vl, line_count, patterns);
+        sgp->start();
+    }
+    this->tc_searched_through = line_count;
+}
+
+void
+textview_curses::flush_deferred_searches()
+{
+    auto patterns = this->tc_deferred_search_slots;
+
+    this->tc_deferred_search_slots = 0;
+    // One pass covers every search that was created while the guard was up.
+    this->queue_search_for(patterns);
 }
 
 grep_pattern_mask_t
@@ -745,7 +787,23 @@ textview_curses::match_reset(grep_pattern_mask_t patterns)
         }
     }
 
-    if (patterns == ~0U) {
+    auto marks_remain = false;
+    for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+        if (this->tc_disabled_search_slots & grep_pattern_bit(slot)) {
+            // A disabled search keeps its hits but contributes no marks.
+            continue;
+        }
+        if (!this->tc_search_matches[slot].empty()) {
+            marks_remain = true;
+            break;
+        }
+    }
+
+    if (!marks_remain) {
+        // With nothing left to mark, the marks can go outright.  That is worth
+        // preferring over walking the rows: a row number recorded in the
+        // bookmarks is stale as soon as a filter changes which lines are
+        // visible, while clearing by content line is not.
         this->tc_bookmarks[&BM_SEARCH].clear();
         if (this->tc_sub_source != nullptr) {
             this->tc_sub_source->text_clear_marks(&BM_SEARCH);
@@ -768,10 +826,15 @@ textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
 
         gettimeofday(&now, nullptr);
         if (this->tc_follow_deadline < now) {
+            // The search did not turn up anything to move to in time, so stop
+            // looking and let go of the callback.
+            this->tc_follow_deadline = {0, 0};
+            this->tc_follow_func = {};
         } else {
             if (this->tc_follow_func) {
                 if (this->tc_follow_func()) {
                     this->tc_follow_deadline = {0, 0};
+                    this->tc_follow_func = {};
                 }
             } else {
                 this->tc_follow_deadline = {0, 0};
@@ -1357,6 +1420,16 @@ textview_curses::ensure_search_procs()
                 no_code, *pair.first);
 
             sgp->set_sink(pair.second);
+            // This proc can be built long after the searches were set up --
+            // it is rebuilt whenever the source changes -- so it starts from
+            // whatever the main proc is already looking for.
+            for (size_t slot = 0; slot < GREP_MAX_PATTERNS; slot++) {
+                const auto& code = this->tc_search_proc->get_pattern(slot);
+
+                if (code != nullptr) {
+                    sgp->set_pattern(slot, code);
+                }
+            }
             this->tc_meta_search_proc = sgp;
         };
     }
@@ -1371,10 +1444,12 @@ textview_curses::execute_search(const std::string& regex_orig)
     static constexpr auto INTERACTIVE_PATTERN
         = grep_pattern_bit(SEARCH_SLOT_INTERACTIVE);
 
+    // The pattern that is compiled can end up being an escaped form of what
+    // was typed, but tc_current_search has to keep the original.
     std::string regex = regex_orig;
 
     if ((this->tc_search_proc == nullptr)
-        || (regex != this->tc_current_search))
+        || (regex_orig != this->tc_current_search))
     {
         auto op_guard = lnav_opid_guard::async(op);
         std::shared_ptr<lnav::pcre2pp::code> code;
@@ -1448,14 +1523,15 @@ textview_curses::execute_search(const std::string& regex_orig)
             }
             this->tc_search_op_id = std::move(op_guard).suspend();
             if (this->tc_sub_source != nullptr) {
-                gp->queue_request(
-                    top,
-                    gp->until_eof(this->tc_sub_source->text_line_count()),
-                    INTERACTIVE_PATTERN);
+                const auto line_count
+                    = vis_line_t(this->tc_sub_source->text_line_count());
+
+                gp->queue_request(top, line_count, INTERACTIVE_PATTERN);
                 if (top > 0) {
-                    gp->queue_request(
-                        0_vl, gp->until_line(top), INTERACTIVE_PATTERN);
+                    gp->queue_request(0_vl, top, INTERACTIVE_PATTERN);
                 }
+                // The pair of requests covers the whole view.
+                this->tc_searched_through = line_count;
             }
             this->tc_search_start_time = std::chrono::steady_clock::now();
             this->tc_search_duration = std::nullopt;
@@ -1475,14 +1551,21 @@ textview_curses::execute_search(const std::string& regex_orig)
 
                 sgp->queue_request(
                     0_vl,
-                    sgp->until_eof(this->tc_sub_source->text_line_count()),
+                    vis_line_t(this->tc_sub_source->text_line_count()),
                     INTERACTIVE_PATTERN);
                 sgp->start();
             }
         }
+
+        // A pattern that could not be compiled at all, even quoted, leaves
+        // nothing to search for, so it does not become the current search
+        // either -- the status bar would otherwise show a term that can never
+        // match and no highlight to go with it.
+        this->tc_current_search = code == nullptr ? std::string() : regex_orig;
+        this->tc_current_search_pattern
+            = code == nullptr ? std::string() : regex;
     }
 
-    this->tc_current_search = regex;
     if (this->tc_state_event_handler) {
         this->tc_state_event_handler(*this);
     }
@@ -1557,8 +1640,7 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
     }
 
     if (marked) {
-        this->search_range(vl, grep_proc<vis_line_t>::until_line(vl + 1_vl));
-        this->search_new_data();
+        this->rescan_range(vl, vl + 1_vl);
     }
     this->set_needs_update();
 }
@@ -1596,9 +1678,7 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
             this->tc_sub_source->text_mark(bm, curr_line, added);
         }
     }
-    this->search_range(start_line,
-                       grep_proc<vis_line_t>::until_line(end_line + 1_vl));
-    this->search_new_data();
+    this->rescan_range(start_line, end_line + 1_vl);
 
     return retval;
 }
@@ -1606,7 +1686,7 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
 void
 textview_curses::redo_search()
 {
-    if (this->tc_search_proc) {
+    if (this->tc_search_proc && this->tc_sub_source != nullptr) {
         auto op_guard
             = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
 
@@ -1617,12 +1697,12 @@ textview_curses::redo_search()
             return;
         }
 
+        const auto line_count
+            = vis_line_t(this->tc_sub_source->text_line_count());
+
         gp->invalidate(patterns);
         this->match_reset(patterns);
-        gp->queue_request(0_vl,
-                          gp->until_eof(this->tc_sub_source->text_line_count()),
-                          patterns)
-            .start();
+        gp->queue_request(0_vl, line_count, patterns).start();
 
         if (this->tc_meta_search_proc) {
             auto& sgp = this->tc_meta_search_proc;
@@ -1630,19 +1710,16 @@ textview_curses::redo_search()
 
             if (meta_patterns != 0) {
                 sgp->invalidate(meta_patterns);
-                sgp->queue_request(
-                       0_vl,
-                       sgp->until_eof(this->tc_sub_source->text_line_count()),
-                       meta_patterns)
-                    .start();
+                sgp->queue_request(0_vl, line_count, meta_patterns).start();
             }
         }
+        this->tc_searched_through = line_count;
     }
 }
 
 void
 textview_curses::search_range(vis_line_t start,
-                              grep_proc<vis_line_t>::request_until_t stop)
+                              vis_line_t stop)
 {
     // The default mask covers every pattern that is currently installed, which
     // is what an incremental range scan wants.
@@ -1659,12 +1736,46 @@ textview_curses::search_range(vis_line_t start,
 }
 
 void
+textview_curses::rescan_range(vis_line_t start,
+                              vis_line_t stop)
+{
+    this->search_range(start, stop);
+
+    if (this->tc_search_proc) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
+        this->tc_search_proc->start();
+    }
+    if (this->tc_meta_search_proc) {
+        auto op_guard
+            = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
+
+        this->tc_meta_search_proc->start();
+    }
+}
+
+void
+textview_curses::search_new_data()
+{
+    // Clamped because a source that has shrunk leaves the frontier past its
+    // end, and there is nothing new to search in that case.
+    this->search_new_data(
+        std::min(this->tc_searched_through,
+                 vis_line_t(this->tc_sub_source == nullptr
+                                ? 0
+                                : this->tc_sub_source->text_line_count())));
+}
+
+void
 textview_curses::search_new_data(vis_line_t start)
 {
     if (this->tc_sub_source != nullptr) {
-        this->search_range(start,
-                           grep_proc<vis_line_t>::until_eof(
-                               this->tc_sub_source->text_line_count()));
+        const auto line_count
+            = vis_line_t(this->tc_sub_source->text_line_count());
+
+        this->search_range(start, line_count);
+        this->tc_searched_through = line_count;
     }
     if (this->tc_search_proc) {
         auto op_guard
@@ -1710,16 +1821,43 @@ textview_curses::set_sub_source(text_sub_source* src)
         for (auto& slot_bv : this->tc_search_matches) {
             slot_bv.clear();
         }
+        // Nothing in the new source has been searched.
+        this->tc_searched_through = 0_vl;
         // The metadata proc is bound to the old source's grepper, so it cannot
-        // outlive it.  It is rebuilt on the next search.
+        // outlive it.  It is rebuilt by the search below.
         this->tc_meta_search_proc.reset();
         this->tc_sub_source = src;
+        if (this->tc_search_proc != nullptr) {
+            // Any child still running was forked from the source that was just
+            // replaced, so the lines it is about to report have nothing to do
+            // with the one coming in.  This is done after the swap since the
+            // end-of-search callbacks work off of the current source and some
+            // callers free the old one before handing over the new.
+            this->tc_search_proc->invalidate();
+        }
         if (src) {
             src->register_view(this);
             this->add_input_delegate(*src);
+            // The patterns are still installed, but everything they found
+            // belonged to the old source, so they have to be run again.
+            if (this->tc_search_proc != nullptr) {
+                this->queue_search_for(
+                    this->tc_search_proc->all_patterns_mask());
+            }
         }
         this->reload_data();
     }
+    return *this;
+}
+
+textview_curses&
+textview_curses::set_owned_sub_source(std::unique_ptr<text_sub_source> src)
+{
+    auto* raw = src.get();
+
+    this->set_sub_source(raw);
+    this->tc_owned_sub_source = std::move(src);
+
     return *this;
 }
 

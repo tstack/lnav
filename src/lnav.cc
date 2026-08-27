@@ -2823,6 +2823,8 @@ main(int argc, char* argv[])
     std::string since_time;
     std::string until_time;
     const char* LANG = getenv("LANG");
+    const char* test_file_base = getenv("LNAV_TEST_FILE_BASE");
+    const char* test_hash = getenv("LNAV_TEST_HASH");
     winsize term_size{};
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &term_size) != 0) {
@@ -3039,8 +3041,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         lnav_data.ld_child_pollers.clear();
 
-        delete lnav_data.ld_views[LNV_SCHEMA].get_sub_source();
-        delete lnav_data.ld_views[LNV_PRETTY].get_sub_source();
         for (auto& tc : lnav_data.ld_views) {
             tc.deinit();
         }
@@ -3318,6 +3318,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         && lnav_data.ld_debug_log_name != DEFAULT_DEBUG_LOG)
     {
         lnav_log_level = lnav_log_level_t::TRACE;
+    }
+
+    if (lnav_data.ld_debug_log_name.empty() && test_file_base != nullptr
+        && test_hash != nullptr)
+    {
+        lnav_data.ld_debug_log_name = fmt::format(
+            FMT_STRING("{}_{}_debug.log"), test_file_base, test_hash);
     }
 
     if (!lnav_data.ld_debug_log_name.empty()) {

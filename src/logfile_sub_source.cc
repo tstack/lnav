@@ -332,10 +332,16 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     auto format = this->lss_token_file->get_format_ptr();
 
     auto& sbr = this->lss_token_values.lvv_sbr;
+    // The sbr is a slice of al_string rather than a copy of it, and it outlives
+    // this call, so every step below that can move that buffer has to point it
+    // at the one that took its place.
+    const auto reshare_sbr = [this, &sbr]() {
+        sbr.share(this->lss_share_manager,
+                  this->lss_token_al.al_string.c_str(),
+                  this->lss_token_al.al_string.size());
+    };
 
-    sbr.share(this->lss_share_manager,
-              (char*) this->lss_token_al.al_string.c_str(),
-              this->lss_token_al.al_string.size());
+    reshare_sbr();
     format->annotate(this->lss_token_file.get(),
                      line,
                      this->lss_token_al.al_attrs,
@@ -470,13 +476,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         }
 
         this->lss_token_al.al_string = std::move(composed);
-        // The sbr and every lv_origin were slices of the previous
-        // al_string buffer we just replaced, so re-point the sbr at
-        // the composed line and drop the now-stale per-cell values.
+        // Every lv_origin was a slice of the previous al_string buffer we
+        // just replaced, so drop the now-stale per-cell values.
         this->lss_token_values.lvv_values.clear();
-        sbr.share(this->lss_share_manager,
-                  this->lss_token_al.al_string.c_str(),
-                  this->lss_token_al.al_string.size());
+        reshare_sbr();
     }
 
     auto src_file_attr
@@ -515,6 +518,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                              "|lnav-breakpoint-handler $mouse_button",
                          })});
                     this->lss_token_values.shift_origins_by(lr, 2);
+                    reshare_sbr();
                 }
             }
         }
@@ -574,6 +578,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         add_global_vars(ec);
         format->rewrite(ec, sbr, this->lss_token_al.al_attrs, rewritten_line);
         this->lss_token_al.al_string.assign(rewritten_line);
+        reshare_sbr();
         value_out = this->lss_token_al.al_string;
     }
 
@@ -2821,7 +2826,11 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
                               vis_line_t line,
                               bool added)
 {
-    if (line >= (int) this->lss_index.size()) {
+    // at() maps the row through the filtered index, so that is what bounds it.
+    // lss_index counts the lines a filter is hiding as well, which is not the
+    // same thing: a search mark recorded before a filter change can point past
+    // the last visible row.
+    if (line >= (int) this->text_line_count()) {
         return;
     }
 
@@ -2856,9 +2865,7 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
     if (bm == &textview_curses::BM_META
         && this->lss_meta_grepper.gps_proc != nullptr)
     {
-        this->tss_view->search_range(
-            line, grep_proc<vis_line_t>::until_line(line + 1_vl));
-        this->tss_view->search_new_data();
+        this->tss_view->rescan_range(line, line + 1_vl);
     }
 }
 
@@ -3143,12 +3150,16 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
 }
 
 vis_line_t
-logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
-                                                    vis_line_t highest)
+logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start)
 {
     auto& bm = this->lmg_source.tss_view->get_bookmarks();
     auto& bv = bm[&textview_curses::BM_META];
 
+    // A child works through several requests in a row, so the walk has to be
+    // rearmed here.  Otherwise the first request to run off the end of the
+    // bookmarks leaves this set and every later request in that child stops on
+    // its first line.
+    this->lmg_done = false;
     if (bv.empty()) {
         return -1_vl;
     }
@@ -3166,6 +3177,24 @@ logfile_sub_source::meta_grepper::grep_next_line(vis_line_t& line)
         this->lmg_done = true;
     }
     line = line_opt.value_or(-1_vl);
+}
+
+void
+logfile_sub_source::meta_grepper::grep_quiesce()
+{
+    // Called right before the fork, which is the point that matters -- the
+    // quiesce() in grep_begin() happens when the request is queued, and is
+    // skipped entirely when the request is merged into another one.
+    this->lmg_source.quiesce();
+}
+
+void
+logfile_sub_source::meta_grepper::grep_reset(grep_proc<vis_line_t>& gp,
+                                             vis_line_t start,
+                                             vis_line_t stop,
+                                             grep_pattern_mask_t patterns)
+{
+    this->lmg_source.tss_view->grep_reset(gp, start, stop, patterns);
 }
 
 void

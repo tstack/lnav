@@ -1586,16 +1586,23 @@ rl_callback(textinput_curses& rc)
                             first_hit = bm[&textview_curses::BM_SEARCH].next(
                                 vis_line_t(tc->get_top() - 1));
                         }
-                        if (first_hit) {
-                            auto first_hit_vl = first_hit.value();
-                            if (tc->is_selectable()) {
-                                tc->set_selection(first_hit_vl);
-                            } else {
-                                if (first_hit_vl > 0_vl) {
-                                    --first_hit_vl;
-                                }
-                                tc->set_top(first_hit_vl);
+                        if (!first_hit) {
+                            // Hits have arrived, but none of them are in the
+                            // direction being looked in.  The rest of the
+                            // search may still turn one up, so leave this
+                            // armed instead of reporting that the jump was
+                            // made.
+                            return false;
+                        }
+
+                        auto first_hit_vl = first_hit.value();
+                        if (tc->is_selectable()) {
+                            tc->set_selection(first_hit_vl);
+                        } else {
+                            if (first_hit_vl > 0_vl) {
+                                --first_hit_vl;
                             }
+                            tc->set_top(first_hit_vl);
                         }
 
                         return true;

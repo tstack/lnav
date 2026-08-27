@@ -644,7 +644,23 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
         return;
     }
 
-    log_error("Received signal: %d", sig);
+    log_error("Received signal: %d at %p (code %d)",
+              sig,
+              info == nullptr ? nullptr : info->si_addr,
+              info == nullptr ? 0 : info->si_code);
+#ifdef __APPLE__
+    {
+        // Knowing where the stack sits makes it obvious whether a fault
+        // address is a stack overflow or a wild pointer.
+        const auto* stack_top = pthread_get_stackaddr_np(pthread_self());
+        auto stack_size = pthread_get_stacksize_np(pthread_self());
+
+        log_error("  stack: [%p, %p) size=%zu",
+                  (const char*) stack_top - stack_size,
+                  stack_top,
+                  stack_size);
+    }
+#endif
 
 #ifdef HAVE_EXECINFO_H
     frame_count = backtrace(frames, 128);

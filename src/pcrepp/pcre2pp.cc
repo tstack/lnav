@@ -33,10 +33,60 @@
 
 #include <algorithm>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "config.h"
 #include "ww898/cp_utf8.hpp"
 
 namespace lnav::pcre2pp {
+
+static uint32_t jit_epoch = 0;
+
+void
+jit_after_fork()
+{
+    jit_epoch += 1;
+}
+
+uint32_t
+current_jit_epoch()
+{
+    return jit_epoch;
+}
+
+void
+code::ensure_local_jit() const
+{
+    if (this->p_jit_epoch == jit_epoch) {
+        return;
+    }
+
+    auto recompile_res = this->recompile();
+    if (recompile_res.isErr()) {
+        // The pattern compiled once already, so this only happens if the
+        // process is in no state to compile at all.  Carrying on would mean
+        // either running the inherited JIT, which faults, or the interpreter,
+        // which is the silent slowdown this exists to avoid.
+        //
+        // base/ depends on this library, so lnav_log is out of reach here --
+        // hence stderr rather than log_error().  A grep child's stderr is
+        // read and logged by the parent, which also reports the abort as the
+        // signal that killed the child.
+        fprintf(stderr,
+                "error: unable to rebuild pattern after fork: %s -- %s\n",
+                this->p_pattern.c_str(),
+                recompile_res.unwrapErr().get_message().c_str());
+        abort();
+    }
+
+    auto rebuilt = recompile_res.unwrap();
+
+    // The pattern and options are the same, so the capture count is too, and
+    // p_match_proto stays valid.
+    this->p_code = std::move(rebuilt.p_code);
+    this->p_jit_epoch = jit_epoch;
+}
 
 std::string
 match_data::to_string() const
@@ -108,6 +158,18 @@ code::from(string_fragment sf, int options)
     return Ok(code{std::move(co), sf.to_string()});
 }
 
+Result<code, compile_error>
+code::recompile() const
+{
+    uint32_t options = 0;
+
+    // The options that were handed to pcre2_compile(), so the copy behaves
+    // exactly like the original.
+    pcre2_pattern_info(this->p_code.in(), PCRE2_INFO_ARGOPTIONS, &options);
+
+    return from(string_fragment::from_str(this->p_pattern), options);
+}
+
 code::named_captures
 code::get_named_captures() const
 {
@@ -146,6 +208,8 @@ code::match_partial(string_fragment in) const
     auto md = this->create_match_data();
     auto length = std::min((size_t) in.length(), MAX_PARTIAL_LEN);
 
+    this->ensure_local_jit();
+
     // Try the full (capped) length first -- if it partially matches,
     // we're done.
     auto rc = pcre2_match(this->p_code.in(),
@@ -170,6 +234,7 @@ code::match_partial(string_fragment in) const
     while (lo <= hi) {
         auto mid = lo + (hi - lo) / 2;
 
+        // Already rebuilt above, so p_code is this process's.
         rc = pcre2_match(this->p_code.in(),
                          in.udata(),
                          mid,
@@ -464,6 +529,8 @@ matcher::found_p(uint32_t options)
         return false;
     }
 
+    this->mb_code.ensure_local_jit();
+
     auto rc = pcre2_match(this->mb_code.p_code.in(),
                           this->mb_input.i_string.udata(),
                           this->mb_input.i_string.length(),
@@ -510,6 +577,8 @@ matcher::matches(uint32_t options)
     if (this->mb_input.i_offset == -1) {
         return not_found{};
     }
+
+    this->mb_code.ensure_local_jit();
 
     auto rc = pcre2_match(this->mb_code.p_code.in(),
                           this->mb_input.i_string.udata(),
