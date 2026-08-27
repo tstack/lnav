@@ -483,7 +483,18 @@ public:
         return {
             this->lf_value_stats,
             this->lf_pattern_locks,
+            this->lf_time_scanner,
         };
+    }
+
+    /**
+     * @return The scanner that parsed this file's timestamps.  Anything
+     * rendering or re-parsing one of its lines wants this rather than the
+     * format's, which only holds the configuration it was seeded from.
+     */
+    date_time_scanner& get_time_scanner() const
+    {
+        return this->lf_time_scanner;
     }
 
     using safe_opid_state = safe::Safe<log_opid_state, std::recursive_mutex>;
@@ -578,7 +589,7 @@ protected:
                         const line_info& li,
                         scan_batch_context& sbc);
 
-    void set_format_base_time(log_format* lf, const line_info& li);
+    void set_base_time_for(scan_batch_context& sbc, const line_info& li);
 
 private:
     logfile(std::filesystem::path filename, const logfile_open_options& loo);
@@ -625,6 +636,14 @@ private:
     std::vector<logline_value_stats> lf_value_stats;
     log_level_stats lf_level_stats;
     pattern_locks lf_pattern_locks;
+    /**
+     * This file's own timestamp scanner.  The format holds the configuration
+     * it is seeded from; the format lock and conversion caches it builds up
+     * belong to this file alone.  Mutable because the display side keeps
+     * using it as a cache -- reformatting a timestamp locks onto a format and
+     * memoizes the local-time offset -- long after indexing is done.
+     */
+    mutable date_time_scanner lf_time_scanner;
     safe_opid_state lf_opids;
     safe_thread_id_state lf_thread_ids;
     size_t lf_watch_count{0};

@@ -589,7 +589,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
     // Replace VALUE_TIMESTAMP fields right-to-left so that origins
     // for earlier fields remain valid.
-    if (format->lf_date_time.dts_fmt_lock != -1) {
+    auto& file_dts = this->lss_token_file->get_time_scanner();
+    if (file_dts.dts_fmt_lock != -1) {
         for (auto lv_iter = this->lss_token_values.lvv_values.rbegin();
              lv_iter != this->lss_token_values.lvv_values.rend();
              ++lv_iter)
@@ -624,11 +625,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
         && (this->lss_token_file->is_time_adjusted()
             || ((ts_flags & ETF_ZONE_SET
-                 || format->lf_date_time.dts_default_zone != nullptr)
-                && format->lf_date_time.dts_zoned_to_local)
+                 || file_dts.dts_default_zone != nullptr)
+                && file_dts.dts_zoned_to_local)
             || ts_flags & ETF_MACHINE_ORIENTED || !(ts_flags & ETF_DAY_SET)
             || !(ts_flags & ETF_MONTH_SET))
-        && format->lf_date_time.dts_fmt_lock != -1)
+        && file_dts.dts_fmt_lock != -1)
     {
         if (time_attr != this->lss_token_al.al_attrs.end()) {
             const auto time_range = time_attr->sa_range;
@@ -636,7 +637,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 = string_fragment::from_str_range(this->lss_token_al.al_string,
                                                   time_range.lr_start,
                                                   time_range.lr_end);
-            adjusted_tm = format->tm_for_display(this->lss_token_line, time_sf);
+            adjusted_tm = format->tm_for_display(
+                this->lss_token_line, time_sf, file_dts);
 
             char buffer[128];
             const char* fmt;
@@ -657,7 +659,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 len = ftime_fmt(
                     buffer, sizeof(buffer), fmt, adjusted_tm.value());
             } else {
-                len = format->lf_date_time.ftime(
+                len = file_dts.ftime(
                     buffer,
                     sizeof(buffer),
                     format->get_timestamp_formats(),
@@ -692,8 +694,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     this->lss_token_al.al_string,
                     time_range.lr_start,
                     time_range.lr_end);
-                adjusted_tm
-                    = format->tm_for_display(this->lss_token_line, time_sf);
+                adjusted_tm = format->tm_for_display(
+                    this->lss_token_line, time_sf, file_dts);
             }
             adjusted_tm->et_flags |= this->lss_all_timestamp_flags
                 & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET);

@@ -363,6 +363,24 @@ date_time_scanner::scan(const char* time_dest,
     return retval;
 }
 
+date_time_scanner
+date_time_scanner::unlocked_copy() const
+{
+    auto retval = *this;
+
+    retval.dts_fmt_lock = -1;
+    retval.dts_fmt_len = -1;
+    retval.dts_last_tv = timeval{};
+    retval.dts_last_tm = tm{};
+    retval.dts_local_offset_cache = 0;
+    retval.dts_local_offset_valid = 0;
+    retval.dts_local_offset_expiry = 0;
+    retval.dts_localtime_cached_gmt = 0;
+    retval.dts_localtime_cached_tm = tm{};
+
+    return retval;
+}
+
 void
 date_time_scanner::clear()
 {

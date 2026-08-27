@@ -304,7 +304,7 @@ logfile::file_options_have_changed()
             }
         } else if (this->lf_format != nullptr
                    && !(this->lf_format->lf_timestamp_flags & ETF_ZONE_SET)
-                   && this->lf_format->lf_date_time.dts_default_zone != nullptr)
+                   && this->lf_time_scanner.dts_default_zone != nullptr)
         {
             tz_changed = true;
         }
@@ -412,10 +412,17 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
             // log_debug("leading %d", leading.length());
             // log_debug("last %.*s", last_line.length(), last_line.data());
             pattern_locks line_locks;
+            date_time_scanner line_time_scanner;
             scan_batch_context sbc_tmp{
                 this->lf_allocator,
                 line_locks,
+                line_time_scanner,
             };
+            // The scratch scanner starts blank, so hand it the file's base
+            // time.  Formats whose timestamps leave out the date need it to
+            // land in the right year, and the line time computed here is what
+            // the bound search below compares against.
+            this->set_base_time_for(sbc_tmp, line_info{});
             shared_buffer tmp_sb;
             shared_buffer_ref tmp_sbr;
             tmp_sbr.share(tmp_sb, last_line.data(), last_line.length());
@@ -556,10 +563,15 @@ logfile::build_content_map()
         auto skip_size = file_off_t{512 * 1024};
         auto read_size = file_ssize_t{64 * 1024};
         pattern_locks line_locks;
+        date_time_scanner line_time_scanner;
         scan_batch_context sbc_tmp{
             this->lf_allocator,
             line_locks,
+            line_time_scanner,
         };
+        // @see find_content_map_entry() -- the scratch scanner needs the
+        // file's base time for the date-less formats.
+        this->set_base_time_for(sbc_tmp, line_info{});
 
         auto peek_range = file_range{
             0,
@@ -804,7 +816,7 @@ logfile::reset_state() -> void
 }
 
 void
-logfile::set_format_base_time(log_format* lf, const line_info& li)
+logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
 {
     time_t file_time = li.li_timestamp.tv_sec != 0
         ? li.li_timestamp.tv_sec
@@ -822,8 +834,13 @@ logfile::set_format_base_time(log_format* lf, const line_info& li)
         localtime_r(&file_time, &new_base_tm);
         this->lf_cached_base_tm = new_base_tm;
     }
-    lf->lf_date_time.set_base_time(this->lf_cached_base_time.value(),
-                                   this->lf_cached_base_tm.value());
+    // Stash it for seed_time_scanner_for(), which re-applies it after copying
+    // a format's settings, and set it on the scanner directly for the case
+    // where the format is already settled and so is not reseeded.
+    sbc.sbc_base_time = this->lf_cached_base_time.value();
+    sbc.sbc_base_tm = this->lf_cached_base_tm.value();
+    sbc.sbc_time_scanner.set_base_time(this->lf_cached_base_time.value(),
+                                       this->lf_cached_base_tm.value());
 }
 
 time_range
@@ -917,9 +934,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         auto starting_index_size = this->lf_index.size();
         size_t prev_index_size = this->lf_index.size();
         pattern_locks line_locks;
+        date_time_scanner line_time_scanner;
         scan_batch_context sbc_tmp{
             this->lf_allocator,
             line_locks,
+            line_time_scanner,
         };
         sbc_tmp.sbc_value_stats.reserve(64);
         for (const auto& curr : root_formats) {
@@ -982,7 +1001,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             std::vector<logline> prev_subs;
             scan_count += 1;
             curr->clear();
-            this->set_format_base_time(curr.get(), li);
+            this->set_base_time_for(sbc_tmp, li);
             log_format::scan_result_t scan_res{mapbox::util::no_init{}};
             while (this->lf_index.back().get_sub_offset() != 0) {
                 prev_subs.emplace_back(this->lf_index.back().clone());
@@ -990,12 +1009,18 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             }
             auto prev_ll = this->lf_index.back().clone();
             this->lf_index.back().replace(base_ll);
+            // Which context this candidate scanned with decides whether the
+            // batch state below is worth copying back -- the file's own
+            // format works directly on sbc, so sbc_tmp still holds whatever
+            // the previous candidate left there.
+            auto* scanned_with = &sbc;
             if (this->lf_format != nullptr
                 && this->lf_format->lf_root_format == curr.get())
             {
                 scan_res = this->lf_format->scan(
                     *this, this->lf_index, li, sbr, sbc);
             } else {
+                scanned_with = &sbc_tmp;
                 sbc_tmp.sbc_pattern_locks.pl_lines.clear();
                 sbc_tmp.sbc_value_stats.clear();
                 sbc_tmp.sbc_opids.los_opid_ranges.clear();
@@ -1051,10 +1076,18 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                 best_match->second.sm_strikes);
                         }
 
-                        sbc.sbc_opids = sbc_tmp.sbc_opids;
-                        sbc.sbc_tids = sbc_tmp.sbc_tids;
-                        sbc.sbc_value_stats = sbc_tmp.sbc_value_stats;
-                        sbc.sbc_pattern_locks = sbc_tmp.sbc_pattern_locks;
+                        if (scanned_with == &sbc_tmp) {
+                            sbc.sbc_opids = sbc_tmp.sbc_opids;
+                            sbc.sbc_tids = sbc_tmp.sbc_tids;
+                            sbc.sbc_value_stats = sbc_tmp.sbc_value_stats;
+                            sbc.sbc_pattern_locks = sbc_tmp.sbc_pattern_locks;
+                            // Carry over what this candidate worked out about
+                            // the timestamp, so the file keeps the format lock
+                            // instead of rediscovering it on the next line.
+                            sbc.sbc_time_scanner = sbc_tmp.sbc_time_scanner;
+                            sbc.sbc_time_scanner_format
+                                = sbc_tmp.sbc_time_scanner_format;
+                        }
                         auto match_um
                             = lnav::console::user_message::info(
                                   attr_line_t()
@@ -1183,8 +1216,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_level_stats.update_msg_count(ll.get_msg_level());
             }
             this->lf_format_match = winner.second;
-            this->set_format_base_time(this->lf_format.get(), li);
-            if (this->lf_format->lf_date_time.dts_fmt_lock != -1) {
+            this->set_base_time_for(sbc, li);
+            if (this->lf_time_scanner.dts_fmt_lock != -1) {
                 this->lf_content_id
                     = hasher().update(sbr.get_data(), sbr.length()).to_string();
             }
@@ -1262,6 +1295,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
             found = best_match->second;
         }
+
+        // The scanner holds what the winning candidate worked out, but a
+        // candidate that lost may have left its own format on the context.
+        // Point it at the format that will actually be scanning from here on
+        // so the next line does not reseed the scanner and throw away the
+        // format lock and the default zone.
+        sbc.sbc_time_scanner_format = this->lf_format.get();
     } else if (this->lf_format.get() != nullptr) {
         if (prescan_size > 0) {
             prescan_time = this->lf_index[prescan_size - 1].get_time<>();
@@ -1617,7 +1657,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                       this->lf_filename_as_string.c_str(),
                       begin_size);
         }
-        scan_batch_context sbc{this->lf_allocator, this->lf_pattern_locks};
+        scan_batch_context sbc{
+            this->lf_allocator,
+            this->lf_pattern_locks,
+            this->lf_time_scanner,
+        };
+        if (this->lf_format != nullptr) {
+            // The scanner outlives this context -- it belongs to the file --
+            // and already holds what earlier batches worked out.  Say which
+            // format it is set up for so that it is not seeded over again and
+            // handed back its format lock and base time.
+            sbc.sbc_time_scanner_format = this->lf_format.get();
+        }
+        if (this->lf_cached_base_time) {
+            sbc.sbc_base_time = this->lf_cached_base_time;
+            sbc.sbc_base_tm = this->lf_cached_base_tm.value();
+        }
         sbc.sbc_opids.los_opid_ranges.reserve(32);
         sbc.sbc_tids.ltis_tid_ranges.reserve(8);
         auto prev_range = file_range{off};
@@ -2126,7 +2181,7 @@ logfile::read_line(iterator ll, subline_options opts)
                 sbr_meta.m_valid_utf = true;
             }
             this->lf_format->get_subline(
-                {this->lf_value_stats, this->lf_pattern_locks}, *ll, sbr, opts);
+                this->get_format_file_state(), *ll, sbr, opts);
             return Ok(std::move(sbr));
         }
 
@@ -2143,7 +2198,7 @@ logfile::read_line(iterator ll, subline_options opts)
 
                 if (this->lf_format != nullptr) {
                     this->lf_format->get_subline(
-                        {this->lf_value_stats, this->lf_pattern_locks},
+                        this->get_format_file_state(),
                         *ll,
                         sbr,
                         opts);
@@ -2288,7 +2343,7 @@ logfile::read_full_message(const_iterator ll,
         }
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(
-                {this->lf_value_stats, this->lf_pattern_locks},
+                this->get_format_file_state(),
                 *ll,
                 msg_out,
                 {true});

@@ -164,12 +164,14 @@ main(int argc, char* argv[])
                     auto open_res = logfile::open(argv[lpc], loo);
                     lf = open_res.unwrap();
                     ArenaAlloc::Alloc<char> allocator;
+                    date_time_scanner time_scanner;
                     auto lffs = lf->get_format_file_state();
                     scan_batch_context sbc{
                         allocator,
                         const_cast<pattern_locks&>(lffs.lffs_pattern_locks),
-                        lffs.lffs_value_stats,
+                        time_scanner,
                     };
+                    sbc.sbc_value_stats = lffs.lffs_value_stats;
                     line_info li = {{13}};
                     index.emplace_back(li.li_file_range.fr_offset,
                                        std::chrono::microseconds::zero(),

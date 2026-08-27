@@ -1148,7 +1148,7 @@ check_for_file_zones()
         }
 
         if (format->lf_timestamp_flags & ETF_ZONE_SET
-            || format->lf_date_time.dts_default_zone != nullptr)
+            || lf->get_time_scanner().dts_default_zone != nullptr)
         {
             with_tz_count += 1;
         } else {

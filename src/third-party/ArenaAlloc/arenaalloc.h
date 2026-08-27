@@ -92,6 +92,15 @@ public:
         m_impl->incrementRefCount();
     }
 
+    Alloc& operator=(const Alloc& src) throw()
+    {
+        src.m_impl->incrementRefCount();
+        m_impl->decrementRefCount();
+        m_impl = src.m_impl;
+
+        return *this;
+    }
+
     ~Alloc() throw() { m_impl->decrementRefCount(); }
 
     // return maximum number of elements that can be allocated

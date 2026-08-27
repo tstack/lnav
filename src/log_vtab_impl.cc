@@ -878,7 +878,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             struct timeval actual_tv;
                             struct exttm tm;
 
-                            if (lf->get_format_ptr()->lf_date_time.scan(
+                            if (lf->get_time_scanner().scan(
                                     time_src,
                                     time_range.length(),
                                     lf->get_format_ptr()
@@ -1438,7 +1438,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             }
                             case value_kind_t::VALUE_TIMESTAMP: {
                                 auto* fmt = lf->get_format_ptr();
-                                auto dts = fmt->build_time_scanner();
+                                auto dts = fmt->build_time_scanner(
+                                    lf->get_time_scanner());
                                 exttm tm;
                                 timeval tv;
 

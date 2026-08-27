@@ -206,6 +206,26 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
     }
 }
 
+void
+scan_batch_context::seed_time_scanner_for(const log_format* format)
+{
+    if (this->sbc_time_scanner_format == format) {
+        return;
+    }
+
+    // Take the format's configuration but none of its scan state, so that the
+    // format lock this builds up is discovered against the lines actually
+    // being read here.
+    this->sbc_time_scanner = format->lf_date_time.unlocked_copy();
+    if (this->sbc_base_time) {
+        // Re-apply after the copy, which would otherwise have brought the
+        // format's idea of the base time along with the rest of its settings.
+        this->sbc_time_scanner.set_base_time(this->sbc_base_time.value(),
+                                             this->sbc_base_tm);
+    }
+    this->sbc_time_scanner_format = format;
+}
+
 log_thread_id_map::iterator
 log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
                                 const string_fragment& tid,
@@ -805,16 +825,15 @@ logline_value_vector::operator=(const logline_value_vector& other)
 std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
 
 date_time_scanner
-log_format::build_time_scanner() const
+log_format::build_time_scanner(const date_time_scanner& file_dts) const
 {
     date_time_scanner retval;
 
-    retval.set_base_time(this->lf_date_time.dts_base_time,
-                         this->lf_date_time.dts_base_tm.et_tm);
-    if (this->lf_date_time.dts_default_zone != nullptr) {
-        retval.dts_default_zone = this->lf_date_time.dts_default_zone;
+    retval.set_base_time(file_dts.dts_base_time, file_dts.dts_base_tm.et_tm);
+    if (file_dts.dts_default_zone != nullptr) {
+        retval.dts_default_zone = file_dts.dts_default_zone;
     }
-    retval.dts_zoned_to_local = this->lf_date_time.dts_zoned_to_local;
+    retval.dts_zoned_to_local = file_dts.dts_zoned_to_local;
 
     return retval;
 }
@@ -1036,12 +1055,12 @@ log_format::log_scanf(scan_batch_context& sbc,
         } else {
             auto ts = md[fmt[curr_fmt].pf_timestamp_index];
 
-            retval = this->lf_date_time.scan(
+            retval = sbc.sbc_time_scanner.scan(
                 ts->data(), ts->length(), nullptr, tm_out, *tv_out);
 
             if (retval == nullptr) {
-                auto ls = this->lf_date_time.unlock();
-                retval = this->lf_date_time.scan(
+                auto ls = sbc.sbc_time_scanner.unlock();
+                retval = sbc.sbc_time_scanner.scan(
                     ts->data(), ts->length(), nullptr, tm_out, *tv_out);
                 if (retval != nullptr) {
                     auto old_flags
@@ -1055,19 +1074,19 @@ log_format::log_scanf(scan_batch_context& sbc,
                     }
                 }
                 if (retval == nullptr) {
-                    this->lf_date_time.relock(ls);
+                    sbc.sbc_time_scanner.relock(ls);
                 } else {
                     log_debug(
                         "%d: changed time format to '%s' due to %.*s",
                         line_number,
-                        PTIMEC_FORMAT_STR[this->lf_date_time.dts_fmt_lock],
+                        PTIMEC_FORMAT_STR[sbc.sbc_time_scanner.dts_fmt_lock],
                         ts->length(),
                         ts->data());
                 }
             }
 
             if (retval) {
-                ts->sf_end = ts->sf_begin + this->lf_date_time.dts_fmt_len;
+                ts->sf_end = ts->sf_begin + sbc.sbc_time_scanner.dts_fmt_len;
                 *ts_out = ts.value();
                 if (md[2]) {
                     *level_out = md[2];
@@ -1182,8 +1201,10 @@ log_format::check_for_new_year(std::vector<logline>& dst,
  * XXX This needs some cleanup.
  */
 struct json_log_userdata {
-    json_log_userdata(shared_buffer_ref& sbr, scan_batch_context* sbc)
-        : jlu_shared_buffer(sbr), jlu_batch_context(sbc)
+    json_log_userdata(shared_buffer_ref& sbr,
+                      scan_batch_context* sbc,
+                      date_time_scanner& dts)
+        : jlu_shared_buffer(sbr), jlu_batch_context(sbc), jlu_time_scanner(dts)
     {
     }
 
@@ -1263,6 +1284,11 @@ struct json_log_userdata {
     std::vector<bool> jlu_format_hits;
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
+    /**
+     * The scanner belonging to the file being read.  Both the scan and the
+     * subline pass have one, unlike jlu_batch_context.
+     */
+    date_time_scanner& jlu_time_scanner;
     std::optional<string_fragment> jlu_opid_frag;
     std::optional<string_fragment> jlu_opid_desc_frag;
     std::optional<string_fragment> jlu_tid_frag;
@@ -1335,10 +1361,10 @@ read_json_number(yajlpp_parse_context* ypc,
         tv.tv_sec = ts_val / divisor;
         tv.tv_usec = fmod(ts_val, divisor) * (1000000.0 / divisor);
         jlu->jlu_end_time = to_us(tv);
-        jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec, jlu->jlu_exttm);
+        jlu->jlu_time_scanner.to_localtime(tv.tv_sec, jlu->jlu_exttm);
         tv.tv_sec = tm2sec(&jlu->jlu_exttm.et_tm);
         jlu->jlu_exttm.et_gmtoff
-            = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+            = jlu->jlu_time_scanner.dts_local_offset_cache;
         jlu->jlu_exttm.et_flags
             |= ETF_MACHINE_ORIENTED | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET;
         if (divisor == 1000) {
@@ -1625,10 +1651,9 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
             tv.tv_sec = val / divisor;
             tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
             jlu->jlu_end_time = to_us(tv);
-            jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
-                                                       jlu->jlu_exttm);
+            jlu->jlu_time_scanner.to_localtime(tv.tv_sec, jlu->jlu_exttm);
             jlu->jlu_exttm.et_gmtoff
-                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+                = jlu->jlu_time_scanner.dts_local_offset_cache;
             jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED
                 | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET | ETF_Z_FOR_UTC;
             if (divisor == 1) {
@@ -1698,10 +1723,9 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
             tv.tv_sec = val / divisor;
             tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
             jlu->jlu_end_time = to_us(tv);
-            jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
-                                                       jlu->jlu_exttm);
+            jlu->jlu_time_scanner.to_localtime(tv.tv_sec, jlu->jlu_exttm);
             jlu->jlu_exttm.et_gmtoff
-                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+                = jlu->jlu_time_scanner.dts_local_offset_cache;
             jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED
                 | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET | ETF_Z_FOR_UTC;
             if (divisor == 1) {
@@ -1820,7 +1844,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
     auto& ypc = *(this->jlf_parse_context);
     yajl_handle handle = this->jlf_yajl_handle.get();
-    json_log_userdata jlu(sbr, &sbc);
+    json_log_userdata jlu(sbr, &sbc, sbc.sbc_time_scanner);
 
     if (li.li_partial) {
         log_debug("skipping partial line at offset %lld",
@@ -2154,7 +2178,7 @@ external_log_format::finalize_line(logline& new_line,
         } else if (in.lfi_start_ts_cap) {
             exttm start_tm;
             timeval start_tv;
-            auto dts = this->build_time_scanner();
+            auto dts = this->build_time_scanner(sbc.sbc_time_scanner);
             if (dts.scan(in.lfi_start_ts_cap->data(),
                          in.lfi_start_ts_cap->length(),
                          this->get_timestamp_formats(),
@@ -2206,20 +2230,20 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
                                       timeval& log_tv,
                                       scan_batch_context& sbc)
 {
-    const char* last = this->lf_date_time.scan(ts_sf.data(),
-                                               ts_sf.length(),
-                                               this->get_timestamp_formats(),
-                                               &log_time_tm,
-                                               log_tv);
+    const char* last = sbc.sbc_time_scanner.scan(ts_sf.data(),
+                                                ts_sf.length(),
+                                                this->get_timestamp_formats(),
+                                                &log_time_tm,
+                                                log_tv);
     if (last == nullptr) {
-        auto ls = this->lf_date_time.unlock();
-        last = this->lf_date_time.scan(ts_sf.data(),
-                                       ts_sf.length(),
-                                       this->get_timestamp_formats(),
-                                       &log_time_tm,
-                                       log_tv);
+        auto ls = sbc.sbc_time_scanner.unlock();
+        last = sbc.sbc_time_scanner.scan(ts_sf.data(),
+                                         ts_sf.length(),
+                                         this->get_timestamp_formats(),
+                                         &log_time_tm,
+                                         log_tv);
         if (last == nullptr) {
-            this->lf_date_time.relock(ls);
+            sbc.sbc_time_scanner.relock(ls);
             return timestamp_outcome::no_parse;
         }
         auto old_flags = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
@@ -2231,7 +2255,7 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
             log_debug("%s:%zu: date-time re-locked to %d",
                       lf->get_unique_path().c_str(),
                       dst.size(),
-                      this->lf_date_time.dts_fmt_lock);
+                      sbc.sbc_time_scanner.dts_fmt_lock);
         }
     }
 
@@ -2567,14 +2591,16 @@ external_log_format::scan(logfile& lf,
                           shared_buffer_ref& sbr,
                           scan_batch_context& sbc)
 {
+    sbc.seed_time_scanner_for(this);
+
     if (dst.size() == 1) {
         auto file_options = lf.get_file_options();
 
         if (file_options) {
-            this->lf_date_time.dts_default_zone
+            sbc.sbc_time_scanner.dts_default_zone
                 = file_options->second.fo_default_zone.pp_value;
         } else {
-            this->lf_date_time.dts_default_zone = nullptr;
+            sbc.sbc_time_scanner.dts_default_zone = nullptr;
         }
     }
 
@@ -2957,7 +2983,7 @@ external_log_format::annotate(logfile* lf,
         if (start_ts_cap) {
             exttm start_tm;
             timeval start_tv;
-            auto dts = this->build_time_scanner();
+            auto dts = this->build_time_scanner(lf->get_time_scanner());
             if (dts.scan(start_ts_cap->data(),
                          start_ts_cap->length(),
                          this->get_timestamp_formats(),
@@ -2996,7 +3022,7 @@ external_log_format::annotate(logfile* lf,
 
         if (cap) {
             if (vd.vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
-                auto dts = this->build_time_scanner();
+                auto dts = this->build_time_scanner(lf->get_time_scanner());
                 exttm tm;
                 timeval tv;
                 auto val_sf = cap.value();
@@ -3153,15 +3179,15 @@ read_json_field(yajlpp_parse_context* ypc,
             }
         }
     } else if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        const auto* last = jlu->jlu_format->lf_date_time.scan(
+        const auto* last = jlu->jlu_time_scanner.scan(
             (const char*) str,
             len,
             jlu->jlu_format->get_timestamp_formats(),
             &jlu->jlu_exttm,
             tv_out);
         if (last == nullptr) {
-            auto ls = jlu->jlu_format->lf_date_time.unlock();
-            if ((last = jlu->jlu_format->lf_date_time.scan(
+            auto ls = jlu->jlu_time_scanner.unlock();
+            if ((last = jlu->jlu_time_scanner.scan(
                      (const char*) str,
                      len,
                      jlu->jlu_format->get_timestamp_formats(),
@@ -3169,7 +3195,7 @@ read_json_field(yajlpp_parse_context* ypc,
                      tv_out))
                 == nullptr)
             {
-                jlu->jlu_format->lf_date_time.relock(ls);
+                jlu->jlu_time_scanner.relock(ls);
             }
             if (last != nullptr) {
                 auto old_flags
@@ -3198,7 +3224,7 @@ read_json_field(yajlpp_parse_context* ypc,
     {
         exttm start_tm;
         timeval start_tv;
-        const auto* last = jlu->jlu_format->lf_date_time.scan(
+        const auto* last = jlu->jlu_time_scanner.scan(
             (const char*) str,
             len,
             jlu->jlu_format->get_timestamp_formats(),
@@ -3321,15 +3347,15 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         {
             timeval tv;
 
-            const auto* last = jlu->jlu_format->lf_date_time.scan(
+            const auto* last = jlu->jlu_time_scanner.scan(
                 (const char*) str,
                 len,
                 jlu->jlu_format->get_timestamp_formats(),
                 &jlu->jlu_exttm,
                 tv);
             if (last == nullptr) {
-                auto ls = jlu->jlu_format->lf_date_time.unlock();
-                if ((last = jlu->jlu_format->lf_date_time.scan(
+                auto ls = jlu->jlu_time_scanner.unlock();
+                if ((last = jlu->jlu_time_scanner.scan(
                          (const char*) str,
                          len,
                          jlu->jlu_format->get_timestamp_formats(),
@@ -3337,7 +3363,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                          tv))
                     == nullptr)
                 {
-                    jlu->jlu_format->lf_date_time.relock(ls);
+                    jlu->jlu_time_scanner.relock(ls);
                     jlu->jlu_scan_error = log_format::scan_error{
                         fmt::format(FMT_STRING("failed to parse timestamp "
                                                "'{}' in string property '{}'"),
@@ -3347,14 +3373,14 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             }
             if (!jlu->jlu_subline_opts.hash_hack) {
                 if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET
-                    && jlu->jlu_format->lf_date_time.dts_zoned_to_local)
+                    && jlu->jlu_time_scanner.dts_zoned_to_local)
                 {
                     jlu->jlu_exttm.et_flags &= ~ETF_Z_IS_UTC;
                 }
                 jlu->jlu_exttm.et_gmtoff
-                    = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+                    = jlu->jlu_time_scanner.dts_local_offset_cache;
             }
-            jlu->jlu_format->lf_date_time.ftime(
+            jlu->jlu_time_scanner.ftime(
                 time_buf,
                 sizeof(time_buf),
                 jlu->jlu_format->get_timestamp_formats(),
@@ -3373,7 +3399,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     {
         exttm start_tm;
         timeval start_tv;
-        const auto* last = jlu->jlu_format->lf_date_time.scan(
+        const auto* last = jlu->jlu_time_scanner.scan(
             (const char*) str,
             len,
             jlu->jlu_format->get_timestamp_formats(),
@@ -3385,7 +3411,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     } else if (vd != nullptr
                && vd->vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP)
     {
-        auto dts = jlu->jlu_format->build_time_scanner();
+        auto dts
+            = jlu->jlu_format->build_time_scanner(jlu->jlu_time_scanner);
         exttm tm;
         timeval tv;
 
@@ -3912,7 +3939,7 @@ external_log_format::render_line_format(const log_format_file_state& lffs,
                     }
                     ssize_t ts_len;
                     if (jfe.jfe_ts_format.empty()) {
-                        ts_len = this->lf_date_time.ftime(
+                        ts_len = lffs.lffs_time_scanner.ftime(
                             ts, sizeof(ts), this->get_timestamp_formats(), et);
                     } else {
                         ts_len = ftime_fmt(
@@ -4130,7 +4157,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
     {
         auto& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
-        json_log_userdata jlu(sbr, nullptr);
+        json_log_userdata jlu(sbr, nullptr, lffs.lffs_time_scanner);
 
         jlu.jlu_subline_opts = opts;
 
@@ -4456,9 +4483,11 @@ external_log_format::test_line(sample_t& sample,
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         auto alloc = ArenaAlloc::Alloc<char>{};
         pattern_locks pats;
+        date_time_scanner time_scanner;
         auto sbc = scan_batch_context{
             alloc,
             pats,
+            time_scanner,
         };
         sbc.sbc_value_stats.resize(this->elf_value_defs.size());
         std::vector<logline> dst;
@@ -5993,19 +6022,35 @@ external_log_format::specialized(int fmt_lock)
     auto retval = std::make_shared<external_log_format>(*this);
 
     retval->lf_specialized = true;
+    // Everything below sets up the copy.  The root keeps what build() gave it,
+    // which is what it uses when it scans as a candidate during format
+    // detection, and is left alone here so that two files settling on the same
+    // format do not have to take turns.
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-        this->jlf_parse_context
-            = std::make_shared<yajlpp_parse_context>(this->elf_name);
-        this->jlf_yajl_handle.reset(
-            yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
+        // The parse context and the handle that refers to it come across as
+        // shared_ptr copies, so the clone needs its own pair rather than the
+        // root's.
+        retval->jlf_parse_context
+            = std::make_shared<yajlpp_parse_context>(retval->elf_name);
+        retval->jlf_yajl_handle.reset(
+            yajl_alloc(&retval->jlf_parse_context->ypc_callbacks,
                        nullptr,
-                       this->jlf_parse_context.get()),
+                       retval->jlf_parse_context.get()),
             yajl_handle_deleter());
-        yajl_config(this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
-        this->jlf_attr_line.al_string.reserve(16 * 1024);
+        yajl_config(
+            retval->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
+        retval->jlf_attr_line.al_string.reserve(16 * 1024);
     }
 
-    this->elf_specialized_value_defs_state = *this->elf_value_defs_state;
+    // Start the clone in step with the value defs as they stand, so that
+    // format_changed() only reports a change that happens from here on.
+    retval->elf_specialized_value_defs_state = *retval->elf_value_defs_state;
+
+    // ArenaAlloc's copy constructor shares the implementation by refcount, so
+    // the copy above left the clone allocating out of the root's arena.  Give
+    // it one of its own; the fragments interned at load time keep pointing
+    // into the root's, which outlives every clone in lf_root_formats.
+    retval->elf_allocator = ArenaAlloc::Alloc<char>{4096};
 
     return retval;
 }
@@ -6265,7 +6310,9 @@ log_format::find_root_format(const char* name)
 }
 
 exttm
-log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
+log_format::tm_for_display(logfile::iterator ll,
+                           string_fragment sf,
+                           date_time_scanner& dts)
 {
     auto adjusted_time = ll->get_timeval();
     exttm retval;
@@ -6276,12 +6323,12 @@ log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
     if (this->lf_timestamp_flags & ETF_NANOS_SET) {
         timeval actual_tv;
         exttm tm;
-        if (this->lf_date_time.scan(sf.data(),
-                                    sf.length(),
-                                    this->get_timestamp_formats(),
-                                    &tm,
-                                    actual_tv,
-                                    false))
+        if (dts.scan(sf.data(),
+                     sf.length(),
+                     this->get_timestamp_formats(),
+                     &tm,
+                     actual_tv,
+                     false))
         {
             adjusted_time.tv_usec = actual_tv.tv_usec;
             retval.et_nsec = tm.et_nsec;
@@ -6290,11 +6337,11 @@ log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
     gmtime_r(&adjusted_time.tv_sec, &retval.et_tm);
     retval.et_flags = this->lf_timestamp_flags;
     if (this->lf_timestamp_flags & ETF_ZONE_SET
-        && this->lf_date_time.dts_zoned_to_local)
+        && dts.dts_zoned_to_local)
     {
         retval.et_flags &= ~ETF_Z_IS_UTC;
     }
-    retval.et_gmtoff = this->lf_date_time.dts_local_offset_cache;
+    retval.et_gmtoff = dts.dts_local_offset_cache;
 
     return retval;
 }

@@ -76,6 +76,15 @@ struct date_time_scanner {
         this->dts_fmt_len = ls.ls_fmt_len;
     }
 
+    /**
+     * @return A copy that keeps this scanner's configuration -- base time,
+     * zone, and the local-time flags -- but starts with no format lock and no
+     * conversion caches, so that it does its own discovery.  Used to hand a
+     * file its own scanner without inheriting whatever the format object was
+     * last looking at.
+     */
+    date_time_scanner unlocked_copy() const;
+
     void set_base_time(time_t base_time, const tm& local_tm);
 
     /**

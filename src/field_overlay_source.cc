@@ -230,22 +230,26 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
 
     auto ts_sf = this->fos_log_helper.ldh_line_values.lvv_time_value;
+    auto& file_dts = this->fos_log_helper.ldh_file->get_time_scanner();
 
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
     if (ll->is_time_skewed() && ts_sf) {
         timeval actual_tv;
-        date_time_scanner dts;
         exttm tm;
+        // Try the format's own timestamp patterns first, then fall back to a
+        // scanner that carries the file's settings but is free to lock onto
+        // any of the built-in formats.
+        auto any_fmt_dts = date_time_scanner{};
 
-        dts.set_base_time(format->lf_date_time.dts_base_time,
-                          format->lf_date_time.dts_base_tm.et_tm);
-        dts.dts_zoned_to_local = format->lf_date_time.dts_zoned_to_local;
-        if (format->lf_date_time.scan(ts_sf->data(),
-                                      ts_sf->length(),
-                                      format->get_timestamp_formats(),
-                                      &tm,
-                                      actual_tv)
-            || dts.scan(
+        any_fmt_dts.set_base_time(file_dts.dts_base_time,
+                                  file_dts.dts_base_tm.et_tm);
+        any_fmt_dts.dts_zoned_to_local = file_dts.dts_zoned_to_local;
+        if (file_dts.scan(ts_sf->data(),
+                          ts_sf->length(),
+                          format->get_timestamp_formats(),
+                          &tm,
+                          actual_tv)
+            || any_fmt_dts.scan(
                 ts_sf->data(), ts_sf->length(), nullptr, &tm, actual_tv))
         {
             sql_strftime(
@@ -282,18 +286,17 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                            .count());
     }
 
-    if (format->lf_date_time.dts_fmt_lock != -1) {
+    if (file_dts.dts_fmt_lock != -1) {
         const auto* ts_formats = format->get_timestamp_formats();
         if (ts_formats == nullptr) {
             ts_formats = PTIMEC_FORMAT_STR;
         }
         time_line.append("  Format: ")
-            .append(lnav::roles::symbol(
-                ts_formats[format->lf_date_time.dts_fmt_lock]))
+            .append(lnav::roles::symbol(ts_formats[file_dts.dts_fmt_lock]))
             .append("  Default Zone: ");
-        if (format->lf_date_time.dts_default_zone != nullptr) {
-            time_line.append(lnav::roles::symbol(
-                format->lf_date_time.dts_default_zone->name()));
+        if (file_dts.dts_default_zone != nullptr) {
+            time_line.append(
+                lnav::roles::symbol(file_dts.dts_default_zone->name()));
         } else {
             time_line.append("none"_comment);
         }
@@ -613,7 +616,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             al, lnav::sql::dialect::sqlite, std::nullopt, hl_range);
 
         if (meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP) {
-            auto dts = curr_format->build_time_scanner();
+            auto dts = curr_format->build_time_scanner(
+                this->fos_log_helper.ldh_file->get_time_scanner());
             exttm tm;
             timeval tv;
 

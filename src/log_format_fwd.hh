@@ -43,6 +43,7 @@
 #include <time.h>
 
 #include "ArenaAlloc/arenaalloc.h"
+#include "base/date_time_scanner.hh"
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
 #include "base/log_level_enum.hh"
@@ -251,15 +252,46 @@ struct pattern_locks {
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     pattern_locks& sbc_pattern_locks;
+    /**
+     * The scanner the formats parse timestamps with.  It belongs to whoever
+     * built this context -- the file being indexed, or a scratch instance
+     * while a format is still being worked out -- so that a format object is
+     * never written to on behalf of one particular file.
+     */
+    date_time_scanner& sbc_time_scanner;
+    /**
+     * The format sbc_time_scanner is currently configured for.  A format
+     * reseeds the scanner when it sees this is not itself, which is what keeps
+     * the candidates in a detection pass from inheriting each other's settings
+     * or format lock.
+     */
+    const log_format* sbc_time_scanner_format{nullptr};
+    /**
+     * The base time the file's timestamps are relative to, for the formats
+     * whose timestamps leave out the date.  It is carried here rather than set
+     * on the format so that a candidate being tried out does not write one
+     * file's base time into an object every other file also scans with.
+     */
+    std::optional<time_t> sbc_base_time;
+    tm sbc_base_tm{};
     std::vector<logline_value_stats> sbc_value_stats;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
     lnav::small_string_map sbc_level_cache;
+
+    /**
+     * Configure sbc_time_scanner for the given format, if it is not already.
+     * Call at the top of scan(); the reseed is what keeps a scratch context
+     * usable for one candidate format after another.
+     */
+    void seed_time_scanner_for(const log_format* format);
 };
 
 struct log_format_file_state {
     const std::vector<logline_value_stats>& lffs_value_stats;
     const pattern_locks& lffs_pattern_locks;
+    /** @see logfile::get_time_scanner() */
+    date_time_scanner& lffs_time_scanner;
 };
 
 extern const string_attr_type<void> L_PREFIX;

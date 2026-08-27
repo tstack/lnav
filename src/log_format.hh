@@ -131,11 +131,14 @@ public:
 
     virtual ~log_format() = default;
 
-    virtual void clear()
-    {
-        this->lf_date_time.clear();
-        this->lf_time_scanner.clear();
-    }
+    /**
+     * Reset whatever a previous file left on this object, before it is tried
+     * as a candidate for another one.  Only the state that has not been moved
+     * onto scan_batch_context yet needs this -- the fields a subclass
+     * discovers from the file it is reading, such as the column names in a
+     * header.
+     */
+    virtual void clear() {}
 
     /**
      * Get the name of this log format.
@@ -290,7 +293,15 @@ public:
         return &this->lf_timestamp_format[0];
     }
 
-    date_time_scanner build_time_scanner() const;
+    /**
+     * @param file_dts The scanner belonging to the file the value came from,
+     * i.e. logfile::get_time_scanner().
+     * @return A scratch scanner carrying that file's base time and zone, for
+     * re-parsing a timestamp-valued field.  It has to come from the file: the
+     * format's own lf_date_time only holds what the format definition set.
+     */
+    date_time_scanner build_time_scanner(
+        const date_time_scanner& file_dts) const;
 
     void check_for_new_year(std::vector<logline>& dst,
                             exttm log_tv,
@@ -336,7 +347,9 @@ public:
         return intern_string_t::case_lt(lhs->get_name(), rhs->get_name());
     }
 
-    exttm tm_for_display(logfile::iterator ll, string_fragment sf);
+    exttm tm_for_display(logfile::iterator ll,
+                         string_fragment sf,
+                         date_time_scanner& dts);
 
     enum class subsecond_unit {
         milli,
@@ -351,7 +364,6 @@ public:
     bool lf_structured{false};
     bool lf_formatted_lines{false};
     date_time_scanner lf_date_time;
-    date_time_scanner lf_time_scanner;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
     intern_string_t lf_start_timestamp_field;
     intern_string_t lf_subsecond_field;

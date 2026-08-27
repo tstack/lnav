@@ -221,6 +221,8 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
+        sbc.seed_time_scanner_for(this);
+
         exttm log_time;
         timeval log_tv;
         string_fragment ts;
@@ -231,10 +233,10 @@ public:
             auto file_options = lf.get_file_options();
 
             if (file_options) {
-                this->lf_date_time.dts_default_zone
+                sbc.sbc_time_scanner.dts_default_zone
                     = file_options->second.fo_default_zone.pp_value;
             } else {
-                this->lf_date_time.dts_default_zone = nullptr;
+                sbc.sbc_time_scanner.dts_default_zone = nullptr;
             }
         }
 
@@ -326,7 +328,7 @@ public:
 
         if (!level_cap) {
             lr.lr_end = prefix_len
-                = lr.lr_start + this->lf_date_time.dts_fmt_len;
+                = lr.lr_start + lf->get_time_scanner().dts_fmt_len;
         }
         sa.emplace_back(lr, L_TIMESTAMP.value());
 
@@ -492,7 +494,7 @@ public:
         }
         const auto ts_sf = *iter;
 
-        auto& dts = this->lf_date_time;
+        auto& dts = sbc.sbc_time_scanner;
         exttm tm;
         timeval tv;
         if (dts.scan(ts_sf.data(), ts_sf.length(), nullptr, &tm, tv) == nullptr)
@@ -590,6 +592,8 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
+        sbc.seed_time_scanner_for(this);
+
         if (li.li_partial) {
             return scan_incomplete{};
         }
@@ -601,7 +605,7 @@ public:
         // subsequent timestamp parses against the wrong zone.
         {
             auto file_options = lf.get_file_options();
-            this->lf_date_time.dts_default_zone = file_options
+            sbc.sbc_time_scanner.dts_default_zone = file_options
                 ? file_options->second.fo_default_zone.pp_value
                 : nullptr;
         }
@@ -1112,7 +1116,7 @@ public:
                 static const char* const TIME_FMT[] = {"%s.%f"};
                 const auto sf = *iter;
 
-                if (this->lf_date_time.scan(
+                if (sbc.sbc_time_scanner.scan(
                         sf.data(), sf.length(), TIME_FMT, &tm, tv))
                 {
                     this->lf_timestamp_flags = tm.et_flags;
@@ -1201,6 +1205,8 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
+        sbc.seed_time_scanner_for(this);
+
         static const auto SEP_RE
             = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
 
@@ -1208,10 +1214,10 @@ public:
             auto file_options = lf.get_file_options();
 
             if (file_options) {
-                this->lf_date_time.dts_default_zone
+                sbc.sbc_time_scanner.dts_default_zone
                     = file_options->second.fo_default_zone.pp_value;
             } else {
-                this->lf_date_time.dts_default_zone = nullptr;
+                sbc.sbc_time_scanner.dts_default_zone = nullptr;
             }
         }
 
@@ -1941,8 +1947,8 @@ public:
                                      &tm,
                                      tv))
                         {
-                            this->lf_date_time.set_base_time(tv.tv_sec,
-                                                             tm.et_tm);
+                            sbc.sbc_time_scanner.set_base_time(tv.tv_sec,
+                                                               tm.et_tm);
                             this->wlf_time_scanner.set_base_time(tv.tv_sec,
                                                                  tm.et_tm);
                         }
@@ -1958,7 +1964,7 @@ public:
             if (F_DATE == fd.fd_name || F_DATE_LOCAL == fd.fd_name
                 || F_DATE_UTC == fd.fd_name)
             {
-                if (this->lf_date_time.scan(
+                if (sbc.sbc_time_scanner.scan(
                         sf.data(), sf.length(), nullptr, &date_tm, date_tv))
                 {
                     this->lf_timestamp_flags |= date_tm.et_flags;
@@ -2032,6 +2038,8 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
+        sbc.seed_time_scanner_for(this);
+
         static const auto* W3C_LOG_NAME = intern_string::lookup("w3c_log");
         static const auto* X_FIELDS_NAME = intern_string::lookup("x_fields");
         static const auto& KNOWN_FIELDS = get_known_fields();
@@ -2046,10 +2054,10 @@ public:
             auto file_options = lf.get_file_options();
 
             if (file_options) {
-                this->lf_date_time.dts_default_zone
+                sbc.sbc_time_scanner.dts_default_zone
                     = file_options->second.fo_default_zone.pp_value;
             } else {
-                this->lf_date_time.dts_default_zone = nullptr;
+                sbc.sbc_time_scanner.dts_default_zone = nullptr;
             }
         }
 
@@ -2101,7 +2109,7 @@ public:
                              &tm,
                              tv))
                 {
-                    this->lf_date_time.set_base_time(tv.tv_sec, tm.et_tm);
+                    sbc.sbc_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
                     this->wlf_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
                 }
             } else if (directive == "#Fields:" && this->wlf_field_defs.empty())
@@ -2485,19 +2493,21 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
+        sbc.seed_time_scanner_for(this);
+
         auto p = logfmt::parser(sbr.to_string_fragment());
         scan_result_t retval = scan_no_match{};
         bool done = false;
-        logfmt_pair_handler lph(this->lf_date_time);
+        logfmt_pair_handler lph(sbc.sbc_time_scanner);
 
         if (dst.size() == 1) {
             auto file_options = lf.get_file_options();
 
             if (file_options) {
-                this->lf_date_time.dts_default_zone
+                sbc.sbc_time_scanner.dts_default_zone
                     = file_options->second.fo_default_zone.pp_value;
             } else {
-                this->lf_date_time.dts_default_zone = nullptr;
+                sbc.sbc_time_scanner.dts_default_zone = nullptr;
             }
         }
 
