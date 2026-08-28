@@ -302,10 +302,11 @@ to use for these types of files using the
 
 
 To get more details about a log message, move to the starting line of the
-message and press :kbd:`p` to open an overlay with information about the
-timestamp and individual fields.  You then can focus into the overlay panel
-by pressing :kbd:`Ctrl` + :kbd:`]` to operate on individual fields in the
-message.  Inside the overlay, the following hotkeys are supported:
+message and press :kbd:`p` to open the details overlay and focus it.  The
+overlay shows information about the timestamp and individual fields.
+Press :kbd:`Esc` to close the overlay (whether or not it is focused).
+Press :kbd:`Ctrl` + :kbd:`]` to focus the overlay if it is open but not
+focused.  Inside the overlay, the following hotkeys are supported:
 
 * :kbd:`SPC` to toggle field visibility
 * :kbd:`c` to copy the value of a field

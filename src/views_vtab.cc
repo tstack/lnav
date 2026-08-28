@@ -38,6 +38,7 @@
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "config.h"
+#include "field_overlay_source.hh"
 #include "lnav.hh"
 #include "sql_util.hh"
 #include "vtab_module_json.hh"
@@ -227,12 +228,18 @@ enum class word_wrap_t {
     normal,
 };
 
+enum class json_fields_t {
+    flat,
+    tree,
+};
+
 struct view_options {
     std::optional<row_details_t> vo_row_details;
     std::optional<row_details_t> vo_row_time_offset;
     std::optional<int32_t> vo_overlay_focus;
     std::optional<word_wrap_t> vo_word_wrap;
     std::optional<row_details_t> vo_hidden_fields;
+    std::optional<json_fields_t> vo_json_fields;
 
     bool empty() const
     {
@@ -240,7 +247,8 @@ struct view_options {
             && !this->vo_row_time_offset.has_value()
             && !this->vo_overlay_focus.has_value()
             && !this->vo_word_wrap.has_value()
-            && !this->vo_hidden_fields.has_value();
+            && !this->vo_hidden_fields.has_value()
+            && !this->vo_json_fields.has_value();
     }
 };
 
@@ -257,6 +265,13 @@ get_view_options_handlers()
     static constexpr json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
         {"none"_frag, word_wrap_t::none},
         {"normal"_frag, word_wrap_t::normal},
+
+        json_path_handler_base::ENUM_TERMINATOR,
+    };
+
+    static constexpr json_path_handler_base::enum_value_t JSON_FIELDS_ENUM[] = {
+        {"flat"_frag, json_fields_t::flat},
+        {"tree"_frag, json_fields_t::tree},
 
         json_path_handler_base::ENUM_TERMINATOR,
     };
@@ -284,6 +299,12 @@ get_view_options_handlers()
             .with_enum_values(WORD_WRAP_ENUM)
             .with_description("How to break long lines")
             .for_field(&view_options::vo_word_wrap),
+        yajlpp::property_handler("json-fields")
+            .with_enum_values(JSON_FIELDS_ENUM)
+            .with_description(
+                "How to display JSON fields in the details overlay: "
+                "'flat' for jget() paths or 'tree' for an indented tree")
+            .for_field(&view_options::vo_json_fields),
     };
 
     return retval;
@@ -500,6 +521,16 @@ CREATE TABLE lnav_db.lnav_views (
                         : row_details_t::hide;
                     if (ov_sel) {
                         vo.vo_overlay_focus = ov_sel.value();
+                    }
+                    if (auto* fos = dynamic_cast<field_overlay_source*>(
+                            tc.get_overlay_source());
+                        fos != nullptr)
+                    {
+                        vo.vo_json_fields
+                            = fos->fos_json_fields
+                                == field_overlay_source::json_fields_t::tree
+                            ? json_fields_t::tree
+                            : json_fields_t::flat;
                     }
                 }
                 if (text_accel_p != nullptr) {
@@ -754,6 +785,18 @@ CREATE TABLE lnav_db.lnav_views (
             auto enable = vo.vo_row_details.value() == row_details_t::show;
             tc.set_show_details_in_overlay(enable);
             tc.set_needs_update();
+        }
+        if (vo.vo_json_fields && tc.get_overlay_source()) {
+            if (auto* fos = dynamic_cast<field_overlay_source*>(
+                    tc.get_overlay_source());
+                fos != nullptr)
+            {
+                fos->fos_json_fields
+                    = vo.vo_json_fields.value() == json_fields_t::tree
+                    ? field_overlay_source::json_fields_t::tree
+                    : field_overlay_source::json_fields_t::flat;
+                tc.set_needs_update();
+            }
         }
         if (vo.vo_overlay_focus && tc.get_overlay_source()) {
             tc.set_overlay_selection(vis_line_t(vo.vo_overlay_focus.value()));

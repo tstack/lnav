@@ -41,6 +41,11 @@ enum class time_column_feature_t {
     Default,
 };
 
+enum class json_fields_t {
+    flat,
+    tree,
+};
+
 struct watch_expression {
     std::string we_expr;
     bool we_enabled{true};
@@ -49,6 +54,7 @@ struct watch_expression {
 struct config {
     std::map<std::string, watch_expression> c_watch_exprs;
     time_column_feature_t c_time_column{time_column_feature_t::Disabled};
+    json_fields_t c_json_fields{json_fields_t::flat};
 };
 
 }  // namespace logfile_sub_source_ns
