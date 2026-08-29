@@ -49,6 +49,11 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM all_logs WHERE log_line <= 20" \
     ${test_dir}/logfile_access_log.*
 
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT count(*) FROM access_log WHERE cs_uri_stem = '/vmw/cgi/tramp'" \
+    -c ";SELECT count(*) FROM access_log WHERE cs_uri_stem = '/vmw/cgi/tramp'" \
+    ${test_dir}/logfile_access_log.0
+
 rm -f sql_index.err
 run_cap_test ${lnav_test} -d sql_index.err -n \
     -c ":goto -1" \

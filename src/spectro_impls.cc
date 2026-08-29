@@ -155,8 +155,7 @@ log_spectro_value_source::update_stats()
         }
 
         this->lsvs_found = true;
-        auto stats_cp = *stats;
-        this->lsvs_stats.merge(stats_cp);
+        this->lsvs_stats.merge(*stats);
     }
 
     if (this->lsvs_begin_time > std::chrono::microseconds::zero()) {
@@ -194,7 +193,11 @@ log_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
     sb_out.sb_mark_generation = lnav_data.ld_views[LNV_LOG]
                                     .get_bookmarks()[&textview_curses::BM_USER]
                                     .bv_generation;
-    sb_out.sb_tdigest = this->lsvs_stats.lvs_tdigest;
+    if (this->lsvs_stats.lvs_tdigest) {
+        // A source with no numbers in it never built one, and sb_tdigest is
+        // already empty in that case.
+        sb_out.sb_tdigest = this->lsvs_stats.lvs_tdigest.value();
+    }
 }
 
 void
@@ -532,7 +535,9 @@ db_spectro_value_source::spectro_bounds(spectrogram_bounds& sb_out)
     sb_out.sb_min_value_out = this->dsvs_stats.lvs_min_value;
     sb_out.sb_max_value_out = this->dsvs_stats.lvs_max_value;
     sb_out.sb_count = this->dsvs_stats.lvs_count;
-    sb_out.sb_tdigest = this->dsvs_stats.lvs_tdigest;
+    if (this->dsvs_stats.lvs_tdigest) {
+        sb_out.sb_tdigest = this->dsvs_stats.lvs_tdigest.value();
+    }
 }
 
 void

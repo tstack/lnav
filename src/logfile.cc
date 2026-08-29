@@ -2013,13 +2013,15 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         for (auto& lvs : this->lf_value_stats) {
-            {
-                lvs.lvs_tdigest.merge();
-                auto p25 = lvs.lvs_tdigest.quantile(25);
-                auto p50 = lvs.lvs_tdigest.quantile(50);
-                auto p75 = lvs.lvs_tdigest.quantile(75);
-                log_debug("stats[] p25=%f p50=%f p75=%f", p25, p50, p75);
+            if (!lvs.lvs_tdigest) {
+                continue;
             }
+
+            lvs.lvs_tdigest->merge();
+            auto p25 = lvs.lvs_tdigest->quantile(25);
+            auto p50 = lvs.lvs_tdigest->quantile(50);
+            auto p75 = lvs.lvs_tdigest->quantile(75);
+            log_debug("stats[] p25=%f p50=%f p75=%f", p25, p50, p75);
         }
     } else {
         this->lf_stat = st;

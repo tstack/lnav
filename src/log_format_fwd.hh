@@ -177,6 +177,9 @@ struct log_thread_id_state {
 };
 
 struct logline_value_stats {
+    /** The compression factor for the t-digest. */
+    static constexpr size_t TDIGEST_SIZE = 200;
+
     void merge(const logline_value_stats& other);
 
     void add_value(double value);
@@ -186,7 +189,14 @@ struct logline_value_stats {
     double lvs_total{0};
     double lvs_min_value{std::numeric_limits<double>::max()};
     double lvs_max_value{-std::numeric_limits<double>::max()};
-    digestible::tdigest<double> lvs_tdigest{200};
+    /**
+     * Built on the first value that goes in, which only happens for numeric
+     * fields.  Constructing one reserves a few thousand centroids, and a stats
+     * object is made for every value of every format that is tried while a
+     * file's format is being worked out, so the ones that will never hold a
+     * number must not pay for it.
+     */
+    std::optional<digestible::tdigest<double>> lvs_tdigest;
 };
 
 struct pattern_for_lines {
