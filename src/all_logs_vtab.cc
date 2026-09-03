@@ -69,29 +69,29 @@ void
 all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 {
     cols.emplace_back(
-        vtab_column(this->alv_msg_meta.lvm_name.get())
+        vtab_column(this->alv_msg_meta.lvm_name)
             .with_comment(
-                "The message format with variables replaced by hash marks"));
-    cols.emplace_back(this->alv_schema_meta.lvm_name.get(),
+                "The message format with variables replaced by hash marks"_frag));
+    cols.emplace_back(this->alv_schema_meta.lvm_name,
                       SQLITE3_TEXT,
-                      "",
+                      intern_string_t{},
                       true,
-                      "The ID for the message schema");
-    cols.emplace_back(this->alv_values_meta.lvm_name.get(),
+                      "The ID for the message schema"_frag);
+    cols.emplace_back(this->alv_values_meta.lvm_name,
                       SQLITE3_TEXT,
-                      "",
+                      intern_string_t{},
                       false,
-                      "The values extracted from the message");
-    cols.emplace_back(this->alv_src_meta.lvm_name.get(),
+                      "The values extracted from the message"_frag);
+    cols.emplace_back(this->alv_src_meta.lvm_name,
                       SQLITE3_TEXT,
-                      "",
+                      intern_string_t{},
                       false,
-                      "The source code that generated this message");
-    cols.emplace_back(this->alv_stacktrace_meta.lvm_name.get(),
+                      "The source code that generated this message"_frag);
+    cols.emplace_back(this->alv_stacktrace_meta.lvm_name,
                       SQLITE3_TEXT,
-                      "",
+                      intern_string_t{},
                       false,
-                      "If found, the stack trace details");
+                      "If found, the stack trace details"_frag);
 }
 
 void

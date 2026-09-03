@@ -273,29 +273,33 @@ public:
     };
 
     struct vtab_column {
-        vtab_column(const std::string name = "",
+        vtab_column(intern_string_t name = intern_string_t{},
                     int type = SQLITE3_TEXT,
-                    const std::string collator = "",
+                    intern_string_t collator = intern_string_t{},
                     bool hidden = false,
-                    const std::string comment = "",
+                    string_fragment comment = string_fragment{},
                     unsigned int subtype = 0)
-            : vc_name(name), vc_type(type), vc_collator(collator),
-              vc_hidden(hidden), vc_comment(comment), vc_subtype(subtype)
+            : vc_name(name), vc_collator(collator), vc_comment(comment),
+              vc_type(type), vc_subtype(subtype), vc_hidden(hidden)
         {
         }
 
-        vtab_column& with_comment(const std::string comment)
+        vtab_column& with_comment(string_fragment comment)
         {
             this->vc_comment = comment;
             return *this;
         }
 
-        std::string vc_name;
+        intern_string_t vc_name;
+        intern_string_t vc_collator;
+        /**
+         * Points at a string literal or at text owned by the format, both of
+         * which outlive any column built from them.
+         */
+        string_fragment vc_comment;
         int vc_type;
-        std::string vc_collator;
-        bool vc_hidden;
-        std::string vc_comment;
         int vc_subtype;
+        bool vc_hidden;
     };
 
     static std::pair<int, unsigned int> logline_value_to_sqlite_type(
@@ -318,7 +322,7 @@ public:
         return std::nullopt;
     }
 
-    const std::string& get_table_statement();
+    std::string get_table_statement();
 
     virtual bool is_valid(log_cursor& lc, logfile_sub_source& lss);
 
@@ -369,7 +373,6 @@ public:
 protected:
     const intern_string_t vi_name;
     const intern_string_t vi_tags_name;
-    std::string vi_table_statement;
 };
 
 class log_format_vtab_impl : public log_vtab_impl {

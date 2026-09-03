@@ -34,6 +34,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -46,6 +47,7 @@
 #include "base/date_time_scanner.hh"
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
+#include "base/lazy_vector.hh"
 #include "base/log_level_enum.hh"
 #include "base/map_util.hh"
 #include "base/small_string_map.hh"
@@ -77,7 +79,15 @@ struct log_level_stats {
 };
 
 struct log_op_description {
-    std::optional<size_t> lod_index;
+    /**
+     * Which of the format's description blocks matched.
+     *
+     * An index into log_format::lf_opid_description_def_vec, so it is bounded
+     * by the number of blocks a format declares -- eight is the most any
+     * shipped format has.  Narrow because one of these is held per operation,
+     * and a big file has hundreds of thousands of them.
+     */
+    std::optional<uint16_t> lod_index;
     lnav::map::small<size_t, std::string> lod_elements;
 
     log_op_description& operator|=(const log_op_description& rhs);
@@ -100,7 +110,13 @@ struct opid_time_range {
     time_range otr_range;
     log_level_stats otr_level_stats;
     log_op_description otr_description;
-    std::vector<opid_sub_time_range> otr_sub_ops;
+    /**
+     * Empty unless the format declares an opid/subid, which only vmw_log and
+     * esx_syslog_log do.  Lazy because one of these is held per operation and
+     * a big file has hundreds of thousands of them, so the common case should
+     * not carry a vector's worth of pointers to hold nothing.
+     */
+    lnav::lazy_vector<opid_sub_time_range> otr_sub_ops;
 
     void clear();
 
@@ -249,6 +265,22 @@ struct pattern_locks {
     }
 };
 
+/**
+ * Scratch a format subclass discovers from the file it is reading -- header
+ * column names, field definitions, and the like.
+ *
+ * A format only needs one of these while it is a *candidate*.  Detection runs
+ * every open file against the same shared root format objects, so a root must
+ * not be written to on behalf of one particular file; it writes here instead.
+ * A specialized copy is already private to its file and writes to itself.
+ *
+ * When a candidate wins, log_format::adopt_scan_state() moves what was
+ * discovered here onto the specialized copy that ends up doing the reading.
+ */
+struct format_scan_state {
+    virtual ~format_scan_state() = default;
+};
+
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     pattern_locks& sbc_pattern_locks;
@@ -260,12 +292,14 @@ struct scan_batch_context {
      */
     date_time_scanner& sbc_time_scanner;
     /**
-     * The format sbc_time_scanner is currently configured for.  A format
-     * reseeds the scanner when it sees this is not itself, which is what keeps
-     * the candidates in a detection pass from inheriting each other's settings
-     * or format lock.
+     * The format this context is currently set up for.  A format reseeds when
+     * it sees this is not itself, which is what keeps the candidates in a
+     * detection pass from inheriting each other's settings, format lock, or
+     * discovered state.
      */
-    const log_format* sbc_time_scanner_format{nullptr};
+    const log_format* sbc_format_owner{nullptr};
+    /** @see format_scan_state -- null for formats that discover nothing. */
+    std::unique_ptr<format_scan_state> sbc_format_state;
     /**
      * The base time the file's timestamps are relative to, for the formats
      * whose timestamps leave out the date.  It is carried here rather than set
@@ -274,17 +308,30 @@ struct scan_batch_context {
      */
     std::optional<time_t> sbc_base_time;
     tm sbc_base_tm{};
+    /**
+     * The timestamp flags a candidate accumulates while it is being tried
+     * out.  A specialized format keeps its own; a root cannot, since every
+     * file is probed against the same one.
+     */
+    uint32_t sbc_timestamp_flags{0};
     std::vector<logline_value_stats> sbc_value_stats;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
     lnav::small_string_map sbc_level_cache;
 
     /**
-     * Configure sbc_time_scanner for the given format, if it is not already.
+     * Configure this context for the given format, if it is not already.
      * Call at the top of scan(); the reseed is what keeps a scratch context
      * usable for one candidate format after another.
      */
-    void seed_time_scanner_for(const log_format* format);
+    void seed_for(const log_format* format);
+
+    /** The scratch the given format made, which it is on the format to know. */
+    template<typename T>
+    T& format_state()
+    {
+        return *static_cast<T*>(this->sbc_format_state.get());
+    }
 };
 
 struct log_format_file_state {

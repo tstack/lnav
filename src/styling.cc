@@ -34,6 +34,7 @@
 
 #include "ansi-palette-json.h"
 #include "base/from_trait.hh"
+#include "base/string_util.hh"
 #include "config.h"
 #include "css-color-names-json.h"
 #include "fmt/format.h"
@@ -138,11 +139,11 @@ static const typed_json_path_container<css_color_names> css_color_names_handlers
 static const css_color_names&
 get_css_color_names()
 {
-    static const intern_string_t iname
-        = intern_string::lookup(css_color_names_json.get_name());
-    static auto sfp = css_color_names_json.to_string_fragment_producer();
     static const auto INSTANCE
-        = css_color_names_handlers.parser_for(iname).of(*sfp).unwrap();
+        = css_color_names_handlers
+              .parser_for(intern_string::lookup(css_color_names_json.get_name()))
+              .of(*css_color_names_json.to_string_fragment_producer())
+              .unwrap();
 
     return INSTANCE;
 }
@@ -177,7 +178,12 @@ from(string_fragment sf)
 
     if (sf[0] != '#') {
         const auto& css_colors = get_css_color_names();
-        const auto& iter = css_colors.ccn_name_to_color.find(sf.to_string());
+        // The names in the table are all lower-case.  Matched without regard
+        // to case because the xterm palette lookup that runs ahead of this
+        // one is, and the error below sends the reader to a list of names
+        // that are capitalized.
+        const auto& iter
+            = css_colors.ccn_name_to_color.find(tolower(sf.to_string()));
 
         if (iter != css_colors.ccn_name_to_color.end()) {
             sf = string_fragment::from_str(iter->second);

@@ -721,7 +721,7 @@ view_colors::wchar_for_icon(ui_icon_t ic) const
 
 bool view_colors::initialized = false;
 
-static const std::string COLOR_NAMES[] = {
+static constexpr const char* COLOR_NAMES[] = {
     "black",
     "red",
     "green",

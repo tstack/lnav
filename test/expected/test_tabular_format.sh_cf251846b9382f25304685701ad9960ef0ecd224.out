@@ -1,0 +1,3 @@
+log_line,user,log_body
+0,alice,spaced   out   message
+1,bob,plain message

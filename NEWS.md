@@ -139,6 +139,11 @@ Interface Changes:
     move to the adjacent field as captured by the
     log format.
 
+Performance:
+* Individual files are now indexed in parallel, which
+  should speed up opening multiple files at the same
+  time.  The file content is still indexed serially.
+
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.
   The marks now include a reference to the nearest

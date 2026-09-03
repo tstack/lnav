@@ -1071,8 +1071,6 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
 Result<void, std::string>
 md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 {
-    static const auto& entity_map = md4cpp::get_xml_entity_map();
-
     auto& last_block = this->ml_blocks.back();
 
     switch (tt) {
@@ -1087,6 +1085,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             break;
         }
         case MD_TEXT_ENTITY: {
+            static const auto& entity_map = md4cpp::get_xml_entity_map();
+
             auto xe_iter = entity_map.xem_entities.find(sf.to_string());
 
             if (xe_iter != entity_map.xem_entities.end()) {
@@ -1212,7 +1212,6 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
         default: {
             static const auto REPL_RE = lnav::pcre2pp::code::from_const(
                 R"(-{2,3}|:[^:\s]*(?:::[^:\s]*)*:)");
-            static const auto& emojis = md4cpp::get_emoji_map();
 
             if (this->ml_code_depth > 0) {
                 last_block.append(sf);
@@ -1231,6 +1230,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                     } else if (matched == "---") {
                         span_text.append("\u2014");
                     } else if (matched.startswith(":")) {
+                        static const auto& emojis = md4cpp::get_emoji_map();
                         auto em_iter = emojis.em_shortname2emoji.find(
                             matched.to_string());
                         if (em_iter == emojis.em_shortname2emoji.end()) {

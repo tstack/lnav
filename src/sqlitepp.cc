@@ -29,8 +29,51 @@
 
 #include "sqlitepp.hh"
 
+#include "base/lnav_log.hh"
+#include "sqlite-extension-func.hh"
+
 namespace sqlitepp {
 
 const char* ERROR_PREFIX = "lnav-error:";
 
 }
+
+namespace lnav::sql {
+
+sqlite3*
+thread_local_db()
+{
+    struct holder {
+        auto_sqlite3 h_db;
+        bool h_tried{false};
+    };
+
+    thread_local holder tl_holder;
+
+    if (tl_holder.h_tried) {
+        return tl_holder.h_db.in();
+    }
+    tl_holder.h_tried = true;
+
+    // Separate connections on separate threads need at least multi-thread
+    // mode; 0 means SQLite was built with threading compiled out.
+    if (sqlite3_threadsafe() == 0) {
+        log_warning("sqlite3 is not thread-safe, no thread-local DB");
+        return nullptr;
+    }
+
+    if (sqlite3_open(":memory:", tl_holder.h_db.out()) != SQLITE_OK) {
+        log_error("unable to open a thread-local DB -- %s",
+                  sqlite3_errmsg(tl_holder.h_db.in()));
+        tl_holder.h_db.reset();
+        return nullptr;
+    }
+
+    register_sqlite_funcs(tl_holder.h_db.in(),
+                          sqlite_thread_safe_registration_funcs);
+    register_collation_functions(tl_holder.h_db.in());
+
+    return tl_holder.h_db.in();
+}
+
+}  // namespace lnav::sql

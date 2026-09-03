@@ -3,6 +3,14 @@
 export YES_COLOR=1
 export TZ=UTC
 
+# The stdin captures this test makes get demuxed into per-container files.
+# lnav's work directory is keyed on the uid alone, so without a private one
+# those show up in another test that happens to be reading stdin at the same
+# time -- the suite runs its test files in parallel.
+export LNAV_WORK_DIR="${PWD}/demux-work"
+rm -rf "${LNAV_WORK_DIR}"
+mkdir -p "${LNAV_WORK_DIR}"
+
 cat ${test_dir}/logfile_docker_compose.0 | run_cap_test env TEST_COMMENT="docker-demux-no-ts" \
      ${lnav_test} -n
 

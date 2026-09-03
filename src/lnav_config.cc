@@ -1496,6 +1496,15 @@ static const struct json_path_container logfile_handlers = {
         .with_min_value(1)
         .for_field(&_lnav_config::lc_logfile,
                    &lnav::logfile::config::lc_max_unrecognized_lines),
+    yajlpp::property_handler("indexing-threads")
+        .with_synopsis("<threads>")
+        .with_description(
+            "The number of threads to use when indexing files.  A value of 1 "
+            "indexes one file at a time and 0 selects a value based on the "
+            "machine")
+        .with_min_value(0)
+        .for_field(&_lnav_config::lc_logfile,
+                   &lnav::logfile::config::lc_indexing_threads),
 };
 
 static const struct json_path_container ssh_config_handlers = {

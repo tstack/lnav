@@ -70,6 +70,16 @@ public:
 
 #    include "base/auto_mem.hh"
 #    include "base/lnav_log.hh"
+
+/**
+ * Initialize libcurl, if it has not been already.
+ *
+ * The global initialization pulls in the TLS library and its algorithm
+ * tables, which is the bulk of what loading libcurl costs.  Doing it on the
+ * way to the first handle keeps a session that never goes over the network
+ * from paying for it.
+ */
+void ensure_curl_global_init();
 #    include "base/time_util.hh"
 
 class curl_request {
@@ -142,6 +152,9 @@ protected:
     void loop_body() override;
 
 private:
+    /** Create the multi handle on first use, see ensure_curl_global_init(). */
+    CURLM* get_multi();
+
     void perform_io();
     void check_for_new_requests();
     void check_for_finished_requests();

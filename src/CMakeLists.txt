@@ -573,7 +573,7 @@ add_library(
         lnav.management_cli.cc
         lnav.prompt.cc
         lnav.script.parser.cc
-        lnav_commands.cc
+        cmds.std.cc
         lnav_config.cc
         lnav_util.cc
         log.annotate.cc
@@ -747,7 +747,7 @@ add_library(
         pugixml/pugiconfig.hpp
         pugixml/pugixml.hpp
         readline_callbacks.hh
-        readline_context.hh
+        lnav.commands.hh
         readline_possibilities.hh
         regex101.client.hh
         regex101.import.hh

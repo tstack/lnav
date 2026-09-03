@@ -23,6 +23,7 @@ add_library(
         lnav.tz.cc
         lnav_log.cc
         network.tcp.cc
+        parallel_for.cc
         paths.cc
         piper.file.cc
         progress.cc
@@ -74,9 +75,11 @@ add_library(
         lnav.tz.hh
         log_level_enum.hh
         lrucache.hpp
+        lazy_vector.hh
         map_util.hh
         math_util.hh
         network.tcp.hh
+        parallel_for.hh
         paths.hh
         piper.file.hh
         progress.hh
@@ -127,6 +130,7 @@ add_executable(
         small_string_map.tests.cc
         sparse_cursor_container.tests.cc
         string_util.tests.cc
+        parallel_for.tests.cc
         network.tcp.tests.cc
         test_base.cc)
 target_include_directories(test_base PUBLIC ../third-party/doctest-root)

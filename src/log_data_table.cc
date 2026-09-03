@@ -108,7 +108,8 @@ log_data_table::get_columns_int()
                            kind,
                            logline_value_meta::table_column{cols.size()},
                            format.get());
-        cols.emplace_back(colname, sql_type, collator);
+        cols.emplace_back(
+            intern_string::lookup(colname), sql_type, intern_string::lookup(collator));
     }
     this->ldt_schema_id = dp.dp_schema_id;
     this->ldt_bloom_bits = 1UL << (dp.dp_schema_id.in()[0] % 56);

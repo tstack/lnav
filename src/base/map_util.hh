@@ -34,6 +34,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -119,28 +120,56 @@ from_vec(const std::vector<std::pair<K, V>>& container)
     return retval;
 }
 
+/**
+ * A map for a handful of entries, kept as a single vector of pairs.
+ *
+ * Lookup is a linear scan, which beats a tree or a hash at these sizes.  One
+ * vector rather than parallel key and value vectors because these are held
+ * per-operation in log_op_description, where a big file has hundreds of
+ * thousands of them and a second empty vector costs 24 bytes apiece.
+ */
 template<typename K, typename V, typename KeyCmp = std::less<K>>
-class small : public lnav::set::small<K, KeyCmp> {
+class small {
 public:
-    using value_type = V;
+    using value_type = std::pair<K, V>;
     using key_type = K;
     using mapped_type = V;
+    using key_compare = KeyCmp;
     using size_type = size_t;
     using reference = V&;
     using const_reference = const V&;
     using difference_type = ptrdiff_t;
+    using container_type = std::vector<value_type>;
+    using iterator = typename container_type::iterator;
+    using const_iterator = typename container_type::const_iterator;
 
-    void insert(const K&) = delete;
+    small() = default;
+
+    std::optional<size_t> index_of(const K& key) const
+    {
+        for (size_t index = 0; index < this->s_entries.size(); ++index) {
+            const auto& elem_key = this->s_entries[index].first;
+            if (!key_compare{}(elem_key, key) && !key_compare{}(key, elem_key))
+            {
+                return index;
+            }
+        }
+        return std::nullopt;
+    }
+
+    bool contains(const K& key) const
+    {
+        return this->index_of(key).has_value();
+    }
 
     template<typename U = V>
     void insert(const K& key, U&& value)
     {
         auto index_opt = this->index_of(key);
         if (index_opt) {
-            this->s_values[index_opt.value()] = std::forward<U>(value);
+            this->s_entries[index_opt.value()].second = std::forward<U>(value);
         } else {
-            this->s_keys.emplace_back(key);
-            this->s_values.emplace_back(std::forward<U>(value));
+            this->s_entries.emplace_back(key, std::forward<U>(value));
         }
     }
 
@@ -148,7 +177,7 @@ public:
     {
         auto index_opt = this->index_of(key);
         if (index_opt) {
-            return &this->s_values[index_opt.value()];
+            return &this->s_entries[index_opt.value()].second;
         }
         return std::nullopt;
     }
@@ -157,7 +186,7 @@ public:
     {
         auto index_opt = this->index_of(key);
         if (index_opt) {
-            return &this->s_values[index_opt.value()];
+            return &this->s_entries[index_opt.value()].second;
         }
         return std::nullopt;
     }
@@ -166,93 +195,34 @@ public:
     {
         auto index_opt = this->index_of(key);
         if (index_opt) {
-            return this->s_values[index_opt.value()];
+            return this->s_entries[index_opt.value()].second;
         }
-        this->s_keys.emplace_back(key);
-        this->s_values.resize(this->s_values.size() + 1);
-        return this->s_values.back();
+        // Built in place so a value that cannot be copied or moved still
+        // works here.
+        this->s_entries.emplace_back(std::piecewise_construct,
+                                     std::forward_as_tuple(key),
+                                     std::forward_as_tuple());
+        return this->s_entries.back().second;
     }
 
     V& operator[](const K& key) { return this->value_for_key_or_default(key); }
 
-    void clear()
-    {
-        this->s_keys.clear();
-        this->s_values.clear();
-    }
+    void clear() { this->s_entries.clear(); }
 
-    const std::vector<V>& values() const { return this->s_values; }
+    size_t size() const { return this->s_entries.size(); }
 
-    template<typename T>
-    class iterator_T {
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = std::pair<const K&, const V&>;
-        using difference_type = ptrdiff_t;
-        using pointer = value_type*;
-        using reference = value_type&;
+    bool empty() const { return this->s_entries.empty(); }
 
-        friend class small;
-        const K& key() const { return this->i_parent.s_keys[this->i_index]; }
+    const container_type& entries() const { return this->s_entries; }
 
-        const V& value() const
-        {
-            return this->i_parent.s_values[this->i_index];
-        }
+    iterator begin() { return this->s_entries.begin(); }
+    iterator end() { return this->s_entries.end(); }
 
-        std::conditional_t<std::is_const_v<T>, const V&, V&> value()
-        {
-            return this->i_parent.s_values[this->i_index];
-        }
-
-        bool operator==(const iterator_T& other) const
-        {
-            return &this->i_parent == &other.i_parent
-                && this->i_index == other.i_index;
-        }
-
-        bool operator!=(const iterator_T& other) const
-        {
-            return !(*this == other);
-        }
-
-        iterator_T& operator++()
-        {
-            this->i_index += 1;
-            return *this;
-        }
-
-        template<typename U = T>
-        std::enable_if_t<!std::is_const_v<U>, std::pair<const K&, V&>>
-        operator*()
-        {
-            return {this->key(), this->value()};
-        }
-
-        value_type operator*() const { return {this->key(), this->value()}; }
-
-    private:
-        iterator_T(T& parent, size_t index) : i_parent(parent), i_index(index)
-        {
-        }
-        T& i_parent;
-        size_t i_index;
-    };
-
-    using iterator = iterator_T<small>;
-    using const_iterator = iterator_T<const small>;
-
-    iterator begin() { return iterator(*this, 0); }
-    iterator end() { return iterator(*this, this->s_keys.size()); }
-
-    const_iterator begin() const { return const_iterator(*this, 0); }
-    const_iterator end() const
-    {
-        return const_iterator(*this, this->s_keys.size());
-    }
+    const_iterator begin() const { return this->s_entries.begin(); }
+    const_iterator end() const { return this->s_entries.end(); }
 
 private:
-    std::vector<V> s_values;
+    container_type s_entries;
 };
 
 }  // namespace lnav::map

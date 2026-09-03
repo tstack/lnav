@@ -13,6 +13,8 @@
 #    include <stdio.h>
 #endif
 
+#include <atomic>
+
 #include <stdint.h>
 
 namespace ArenaAlloc {
@@ -76,7 +78,10 @@ struct _memblock {
 template<typename AllocatorImpl, typename Derived>
 struct _memblockimplbase {
     AllocatorImpl m_alloc;
-    std::size_t m_refCount;  // when refs -> 0 delete this
+    // Atomic because the arena a format was cloned from is reached by
+    // whichever thread is scanning with that format, and format detection
+    // runs on a worker.
+    std::atomic<std::size_t> m_refCount;  // when refs -> 0 delete this
     std::size_t m_defaultSize;
 
     std::size_t m_numAllocate;  // number of times allocate called
@@ -214,31 +219,37 @@ struct _memblockimplbase {
         }
     }
 
-    // The ref counting model does not permit the sharing of
-    // this object across multiple threads unless an external locking mechanism
-    // is applied to ensure the atomicity of the reference count.
+    // The reference count is atomic, so sharing this object across threads
+    // is safe.  The arena *contents* are not: only one thread may allocate
+    // from a given arena at a time.
     void incrementRefCount()
     {
-        ++m_refCount;
+        auto newCount
+            = m_refCount.fetch_add(1, std::memory_order_relaxed) + 1;
+        (void) newCount;
 #ifdef ARENA_ALLOC_DEBUG
         fprintf(stdout,
                 "ref count on _memblockimplbase=%p incremented to %ld\n",
                 this,
-                m_refCount);
+                newCount);
 #endif
     }
 
     void decrementRefCount()
     {
-        --m_refCount;
+        // Release so that everything this thread wrote through the arena
+        // happens-before the destroy below; the acquire fence on the last
+        // reference pairs with it.
+        auto prevCount = m_refCount.fetch_sub(1, std::memory_order_release);
 #ifdef ARENA_ALLOC_DEBUG
         fprintf(stdout,
                 "ref count on _memblockimplbase=%p decremented to %ld\n",
                 this,
-                m_refCount);
+                prevCount - 1);
 #endif
 
-        if (m_refCount == 0) {
+        if (prevCount == 1) {
+            std::atomic_thread_fence(std::memory_order_acquire);
             Derived::destroy(static_cast<Derived*>(this));
         }
     }

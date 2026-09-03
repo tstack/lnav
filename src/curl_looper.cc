@@ -30,6 +30,7 @@
  */
 
 #include <algorithm>
+#include <mutex>
 
 #include "config.h"
 
@@ -178,6 +179,7 @@ curl_request::
 curl_request(std::string name)
     : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
 {
+    ensure_curl_global_init();
     this->cr_handle.reset(curl_easy_init());
     curl_easy_setopt(this->cr_handle, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(
@@ -234,11 +236,32 @@ curl_request::perform() const
     return Err(rc);
 }
 
+void
+ensure_curl_global_init()
+{
+    static std::once_flag flag;
+
+    std::call_once(flag, []() {
+        log_info("initializing libcurl");
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+    });
+}
+
 curl_looper::
 curl_looper()
     : cl_curl_multi(curl_multi_cleanup)
 {
-    this->cl_curl_multi.reset(curl_multi_init());
+}
+
+CURLM*
+curl_looper::get_multi()
+{
+    if (this->cl_curl_multi == nullptr) {
+        ensure_curl_global_init();
+        this->cl_curl_multi.reset(curl_multi_init());
+    }
+
+    return this->cl_curl_multi;
 }
 
 void
@@ -285,7 +308,7 @@ curl_looper::requeue_requests(mstime_t up_to_time)
                   cr->get_name().c_str(),
                   cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
-        curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
+        curl_multi_add_handle(this->get_multi(), cr->get_handle());
         this->cl_poll_queue.erase(this->cl_poll_queue.begin());
     }
 }
@@ -298,7 +321,7 @@ curl_looper::check_for_new_requests()
 
         log_info("%s:new curl request %p", cr->get_name().c_str(), cr.get());
         this->cl_handle_to_request[cr->get_handle()] = cr;
-        curl_multi_add_handle(this->cl_curl_multi, cr->get_handle());
+        curl_multi_add_handle(this->get_multi(), cr->get_handle());
         this->cl_new_requests.pop_back();
     }
     while (!this->cl_close_requests.empty()) {
@@ -340,6 +363,10 @@ curl_looper::check_for_finished_requests()
 {
     CURLMsg* msg;
     int msgs_left;
+
+    if (this->cl_curl_multi == nullptr) {
+        return;
+    }
 
     while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left))
            != nullptr)

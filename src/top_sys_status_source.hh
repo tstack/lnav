@@ -47,10 +47,12 @@ public:
 
     top_sys_status_source()
     {
-        static std::string names[TSF__MAX] = {
-            "#CPU",
-            "#Mem",
-            "#Traf",
+        // string_fragment rather than const char*, which would bind to the
+        // printf-style set_value() overload instead.
+        static constexpr string_fragment names[TSF__MAX] = {
+            "#CPU"_frag,
+            "#Mem"_frag,
+            "#Traf"_frag,
         };
 
         int lpc;

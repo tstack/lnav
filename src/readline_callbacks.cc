@@ -557,7 +557,7 @@ static void
 rl_sql_change(textinput_curses& rc, bool is_req)
 {
     static const auto* sql_cmd_map
-        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+        = injector::get<lnav::commands::command_map_t*, sql_cmd_map_tag>();
     static auto& prompt = lnav::prompt::get();
 
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
@@ -650,7 +650,7 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                 auto poss_str
                     = (*sql_cmd_map)
                     | lnav::itertools::filter_in(
-                          [](const readline_context::command_map_t::value_type&
+                          [](const lnav::commands::command_map_t::value_type&
                                  p) {
                               return !p.second->c_dependencies.empty();
                           })
@@ -1815,11 +1815,11 @@ rl_blur(textinput_curses& rc)
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
-readline_context::split_result_t
+lnav::commands::split_result_t
 prql_splitter(const attr_line_t& stmt)
 {
-    readline_context::split_result_t retval;
-    readline_context::stage st;
+    lnav::commands::split_result_t retval;
+    lnav::commands::stage st;
 
     for (const auto& attr : stmt.get_attrs()) {
         if (attr.sa_type == &lnav::sql::PRQL_STAGE_ATTR) {

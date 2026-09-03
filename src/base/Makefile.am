@@ -65,9 +65,11 @@ noinst_HEADERS = \
     lnav.tz.hh \
     log_level_enum.hh \
     lrucache.hpp \
+    lazy_vector.hh \
     map_util.hh \
     math_util.hh \
     network.tcp.hh \
+    parallel_for.hh \
     opt_util.hh \
     paths.hh \
     piper.file.hh \
@@ -109,6 +111,7 @@ libbase_a_SOURCES = \
     lnav.tz.cc \
     lnav_log.cc \
     network.tcp.cc \
+    parallel_for.cc \
     paths.cc \
     piper.file.cc \
     progress.cc \
@@ -140,6 +143,7 @@ test_base_SOURCES = \
     separated_string.tests.cc \
     small_string_map.tests.cc \
     sparse_cursor_container.tests.cc \
+    parallel_for.tests.cc \
     string_util.tests.cc \
     test_base.cc
 

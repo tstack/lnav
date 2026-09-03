@@ -148,7 +148,7 @@ execute_command(exec_context& ec, const std::string& cmdline)
     split_ws(cmdline, args);
 
     if (!args.empty()) {
-        readline_context::command_map_t::iterator iter;
+        lnav::commands::command_map_t::iterator iter;
 
         if ((iter = lnav_commands.find(args[0])) == lnav_commands.end()) {
             auto cmd_names
@@ -370,7 +370,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         split_ws(stmt_str, args);
 
         const auto* sql_cmd_map
-            = injector::get<readline_context::command_map_t*,
+            = injector::get<lnav::commands::command_map_t*,
                             sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 

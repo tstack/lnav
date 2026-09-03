@@ -52,7 +52,7 @@
 #include "fmt/chrono.h"
 #include "lnav.hh"
 #include "lnav_util.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "safe/safe.h"
 #include "service_tags.hh"
 #include "shlex.hh"
@@ -489,7 +489,7 @@ prql_cmd_from(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 prql_cmd_from_prompt(exec_context& ec, const std::string& cmdline)
 {
     if (!endswith(cmdline, "from ")) {
@@ -663,7 +663,7 @@ prql_cmd_take(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::command_t sql_commands[] = {
+static lnav::commands::command_t sql_commands[] = {
     {
         ".dump",
         sql_cmd_dump,
@@ -776,7 +776,6 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         prql_cmd_from_prompt,
-        "prql-source",
     },
     {
         "let",
@@ -808,8 +807,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "append",
@@ -820,8 +818,7 @@ static readline_context::command_t sql_commands[] = {
             .with_summary("PRQL transform to concatenate tables together")
             .with_parameter({"table", "The table to use as a source"}),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "derive",
@@ -838,8 +835,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "filter",
@@ -856,8 +852,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "group",
@@ -879,8 +874,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "join",
@@ -904,8 +898,7 @@ static readline_context::command_t sql_commands[] = {
                 help_text{"condition", "The condition used to join rows"}
                     .with_grouping("(", ")")),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "select",
@@ -928,8 +921,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.average_of",
@@ -944,8 +936,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.count_by",
@@ -964,8 +955,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.hist",
@@ -992,8 +982,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.sum_of",
@@ -1008,8 +997,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.timeseries",
@@ -1029,8 +1017,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "stats.by",
@@ -1047,8 +1034,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "sort",
@@ -1066,8 +1052,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "take",
@@ -1088,8 +1073,7 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
     {
         "utils.distinct",
@@ -1105,15 +1089,14 @@ static readline_context::command_t sql_commands[] = {
                 help_example::language::prql,
             }),
         nullptr,
-        "prql-source",
-        {"prql-source"},
+        "prql-source"_frag,
     },
 };
 
-static readline_context::command_map_t sql_cmd_map;
+static lnav::commands::command_map_t sql_cmd_map;
 
 static auto bound_sql_cmd_map
-    = injector::bind<readline_context::command_map_t,
+    = injector::bind<lnav::commands::command_map_t,
                      sql_cmd_map_tag>::to_instance(+[]() {
           for (auto& cmd : sql_commands) {
               sql_cmd_map[cmd.c_name] = &cmd;

@@ -116,8 +116,9 @@ CREATE TABLE lnav_db.all_opids (
                                     om.otr_description.lod_elements);
                         } else if (!om.otr_description.lod_elements.empty()) {
                             gather_iter->second.otp_description
-                                = om.otr_description.lod_elements.values()
-                                      .front();
+                                = om.otr_description.lod_elements.entries()
+                                      .front()
+                                      .second;
                         }
                     }
                 }

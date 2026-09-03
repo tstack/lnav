@@ -44,12 +44,14 @@
 #include "base/itertools.hh"
 #include "base/map_util.hh"
 #include "base/math_util.hh"
+#include "base/parallel_for.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "data_scanner.hh"
 #include "file_collection.hh"
 #include "lnav.events.hh"
+#include "log.watch.hh"
 #include "md2attr_line.hh"
 #include "msg.text.hh"
 #include "pretty_printer.hh"
@@ -60,6 +62,7 @@
 #include "textfile_sub_source.cfg.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
 static bool
@@ -479,8 +482,7 @@ textfile_sub_source::text_mark(const bookmark_type_t* bm,
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (lfo == nullptr
-        || line < 0_vl
+    if (lfo == nullptr || line < 0_vl
         || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
     {
         return;
@@ -597,7 +599,8 @@ textfile_sub_source::text_filters_changed()
 
     for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
         if (this->tss_apply_filters) {
-            auto dominated = lfo->excluded(filter_in_mask, filter_out_mask, lpc);
+            auto dominated
+                = lfo->excluded(filter_in_mask, filter_out_mask, lpc);
             if (!dominated && lf->has_line_metadata()) {
                 auto ll = lf->begin() + lpc;
                 if (ll->get_timeval() < this->ttt_min_row_time) {
@@ -624,6 +627,9 @@ textfile_sub_source::text_filters_changed()
         lfo->lfo_filter_state.tfs_index.push_back(lpc);
         after_remaining = context_after;
     }
+    // Every line has just been folded in, so that is the resume point --
+    // not zero, which would push them all a second time.
+    (*this->current_file_state())->fvs_lines_indexed = lf->size();
 
     this->tss_view->reload_data();
     this->tss_view->redo_search();
@@ -920,6 +926,193 @@ textfile_sub_source::text_crumbs_for_line(
     }
 }
 
+textfile_sub_source::prescan_map
+textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
+                                   bool last_aborted,
+                                   std::optional<ui_clock::time_point> deadline)
+{
+    prescan_map retval;
+
+    std::vector<std::shared_ptr<file_view_state>> work;
+    for (const auto& fvs : this->tss_files) {
+        const auto& lf = fvs->fvs_file;
+
+        // The same two rules the rescan loop applies before it scans
+        // anything, so this never indexes a file the loop would skip.
+        if (lf->is_closed() || (last_aborted && lf->size() > 0)) {
+            continue;
+        }
+        work.emplace_back(fvs);
+    }
+
+    if (work.empty()) {
+        return retval;
+    }
+
+    // Not gated on the width: one file goes through the same fan-out as
+    // eight, so progress is reported the same way either way.  A width of 1
+    // still means a worker, because the tick has to run somewhere.
+    const auto width = lnav::logfile_indexing_width(work.size());
+
+    log_info(
+        "pre-scanning %zu text files over %zu threads", work.size(), width);
+
+    // Reused across ticks so the UI poll allocates nothing.
+    std::vector<index_progress_report> in_flight;
+    std::vector<prescan_result> results(work.size());
+
+    for (const auto& fvs : work) {
+        fvs->fvs_file->begin_indexing_progress();
+    }
+
+    bool ticked = false;
+    lnav::parallel_for_each(
+        work.size(),
+        width,
+        [&](size_t index) {
+            auto& lf = work[index]->fvs_file;
+            auto& res = results[index];
+
+            try {
+                res.psr_result = lf->rebuild_index(deadline);
+            } catch (const line_buffer::error&) {
+                res.psr_failed = true;
+            }
+            lf->finish_indexing_progress();
+        },
+        [&]() {
+            file_off_t off = 0;
+            file_ssize_t total = 0;
+
+            ticked = true;
+            in_flight.clear();
+            for (const auto& fvs : work) {
+                auto* lf = fvs->fvs_file.get();
+                const auto& prog = lf->indexing_progress();
+                // Read each field once.  The scan publishes the offset and
+                // the total as two separate stores, so the pair seen here can
+                // be a fresh offset next to a stale total; the sum is clamped
+                // because running past the denominator would trip the
+                // require() in update_loading().
+                const auto file_total
+                    = prog.ip_total.load(std::memory_order_relaxed);
+                const auto file_off
+                    = prog.ip_offset.load(std::memory_order_relaxed);
+
+                off += std::min(file_off, file_total);
+                total += file_total;
+                if (!prog.ip_done.load(std::memory_order_relaxed)) {
+                    // A total of zero is a file that cannot say how big it
+                    // is.  The row still gets the offset, so it can show the
+                    // bytes read so far beside a "working" icon instead of a
+                    // bar drawn against a denominator that does not exist.
+                    in_flight.emplace_back(
+                        index_progress_report{lf->get_serial(),
+                                              file_off,
+                                              file_total,
+                                              file_total > 0});
+                }
+            }
+            if (callback.scan_progress(off, total, in_flight)
+                == lnav::progress_result_t::interrupt)
+            {
+                for (const auto& fvs : work) {
+                    fvs->fvs_file->abort_indexing();
+                }
+            }
+        },
+        // Match the cadence the UI refreshes at everywhere else
+        // (ui_periodic_timer::INTERVAL); a full redraw every 30ms would just
+        // take CPU away from the workers.
+        100ms);
+
+    if (ticked) {
+        // parallel_for_each stops ticking the moment the last worker
+        // finishes, so the bar is left showing whatever the final tick gave
+        // it -- and both of update_loading()'s non-empty branches turn the
+        // cylon on.  The serial observer clears the field when a file is
+        // done; this is the equivalent for a pass.
+        callback.scan_progress(0, 0, {});
+    }
+
+    for (size_t lpc = 0; lpc < work.size(); lpc++) {
+        retval[work[lpc]->fvs_file.get()] = results[lpc];
+    }
+
+    return retval;
+}
+
+textfile_sub_source::md_prescan_map
+textfile_sub_source::prescan_markdown()
+{
+    md_prescan_map retval;
+
+    std::vector<std::shared_ptr<file_view_state>> work;
+    for (const auto& fvs : this->tss_files) {
+        const auto& lf = fvs->fvs_file;
+
+        if (lf->is_closed() || fvs->fvs_text_source != nullptr
+            || lf->get_text_format() != text_format_t::TF_MARKDOWN)
+        {
+            continue;
+        }
+        work.emplace_back(fvs);
+    }
+
+    const auto width = lnav::logfile_indexing_width(work.size());
+    if (width <= 1) {
+        return retval;
+    }
+
+    log_info("pre-rendering %zu markdown files over %zu threads",
+             work.size(),
+             width);
+
+    std::vector<md_prescan_result> results(work.size());
+    // Read once here rather than from each worker; the view belongs to the
+    // calling thread.
+    const auto interactive = this->tss_view->tc_interactive;
+
+    lnav::parallel_for_each(work.size(), width, [&](size_t index) {
+        auto& lf = work[index]->fvs_file;
+        auto& res = results[index];
+
+        auto read_res = lf->read_file(logfile::read_format_t::plain);
+        if (read_res.isErr()) {
+            res.mpr_read_error = read_res.unwrapErr();
+            return;
+        }
+
+        res.mpr_content = read_res.unwrap().rfr_content;
+
+        auto md_file = md4cpp::parse_file(lf->get_filename(), res.mpr_content);
+        // Copied out because the fragments point into mpr_content, and the
+        // caller has no reason to care where they came from.
+        res.mpr_frontmatter = md_file.f_frontmatter.to_string();
+        res.mpr_frontmatter_format = md_file.f_frontmatter_format;
+
+        md2attr_line mdal;
+
+        mdal.with_source_path(lf->get_actual_path());
+        if (interactive) {
+            mdal.add_lnav_script_icons();
+        }
+
+        auto parse_res = md4cpp::parse(md_file.f_body, mdal);
+        if (parse_res.isOk()) {
+            res.mpr_rendered = parse_res.unwrap();
+        } else {
+            res.mpr_parse_error = parse_res.unwrapErr();
+        }
+    });
+
+    for (size_t lpc = 0; lpc < work.size(); lpc++) {
+        retval[work[lpc]->fvs_file.get()] = std::move(results[lpc]);
+    }
+
+    return retval;
+}
+
 textfile_sub_source::rescan_result_t
 textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                   std::optional<ui_clock::time_point> deadline)
@@ -935,6 +1128,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
     }
 
     auto last_aborted = std::exchange(this->tss_last_scan_aborted, false);
+    const auto prescan = this->prescan_files(callback, last_aborted, deadline);
+    // After the scan, since it needs the files indexed and their text format
+    // worked out.
+    auto md_prescan = this->prescan_markdown();
 
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
@@ -963,10 +1160,28 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
         }
         files_scanned += 1;
 
+        const auto pre_iter = prescan.find(lf.get());
+        if (pre_iter != prescan.end() && pre_iter->second.psr_failed) {
+            // The pre-scan hit the error an inline scan would have thrown;
+            // take the same path the catch below does.
+            iter = this->tss_files.erase(iter);
+            lf->close();
+            this->detach_observer(lf);
+            closed_files.emplace_back(lf);
+            continue;
+        }
+
         try {
             const auto& st = lf->get_stat();
-            uint32_t old_size = lf->size();
-            auto new_text_data = lf->rebuild_index(deadline);
+            const auto old_size = (*iter)->fvs_lines_indexed;
+            logfile::rebuild_result_t new_text_data;
+
+            if (pre_iter == prescan.end()) {
+                new_text_data = lf->rebuild_index(deadline);
+            } else {
+                // Already indexed above, alongside the other files.
+                new_text_data = pre_iter->second.psr_result;
+            }
 
             if (lf->get_format() != nullptr) {
                 iter = this->tss_files.erase(iter);
@@ -1097,6 +1312,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 }
                 lfo->lfo_filter_state.tfs_index.push_back(lpc);
             }
+            (*iter)->fvs_lines_indexed = lf->size();
 
             if (lf->get_text_format() == text_format_t::TF_MARKDOWN) {
                 if ((*iter)->fvs_text_source) {
@@ -1113,21 +1329,48 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     (*iter)->fvs_text_source = nullptr;
                 }
 
-                auto read_res = lf->read_file(logfile::read_format_t::plain);
-                if (read_res.isOk()) {
-                    auto read_file_res = read_res.unwrap();
-                    auto md_file = md4cpp::parse_file(
-                        lf->get_filename(), read_file_res.rfr_content);
+                // Either rendered up front alongside the other markdown
+                // files, or right here when there was no pre-pass.
+                md_prescan_result md_res;
+                auto md_iter = md_prescan.find(lf.get());
+
+                if (md_iter != md_prescan.end()) {
+                    md_res = std::move(md_iter->second);
+                    md_prescan.erase(md_iter);
+                } else {
+                    auto read_res
+                        = lf->read_file(logfile::read_format_t::plain);
+                    if (read_res.isErr()) {
+                        md_res.mpr_read_error = read_res.unwrapErr();
+                    } else {
+                        md_res.mpr_content = read_res.unwrap().rfr_content;
+
+                        auto md_file = md4cpp::parse_file(lf->get_filename(),
+                                                          md_res.mpr_content);
+                        md_res.mpr_frontmatter
+                            = md_file.f_frontmatter.to_string();
+                        md_res.mpr_frontmatter_format
+                            = md_file.f_frontmatter_format;
+
+                        md2attr_line mdal;
+
+                        mdal.with_source_path(lf->get_actual_path());
+                        if (this->tss_view->tc_interactive) {
+                            mdal.add_lnav_script_icons();
+                        }
+                        auto parse_res = md4cpp::parse(md_file.f_body, mdal);
+                        if (parse_res.isOk()) {
+                            md_res.mpr_rendered = parse_res.unwrap();
+                        } else {
+                            md_res.mpr_parse_error = parse_res.unwrapErr();
+                        }
+                    }
+                }
+
+                if (md_res.mpr_read_error.empty()) {
                     log_info("%s: rendering markdown content of size %zu",
                              lf->get_basename().c_str(),
-                             read_file_res.rfr_content.size());
-                    md2attr_line mdal;
-
-                    mdal.with_source_path(lf->get_actual_path());
-                    if (this->tss_view->tc_interactive) {
-                        mdal.add_lnav_script_icons();
-                    }
-                    auto parse_res = md4cpp::parse(md_file.f_body, mdal);
+                             md_res.mpr_content.size());
 
                     (*iter)->fvs_mtime = st.st_mtime;
                     (*iter)->fvs_file_indexed_size = lf->get_index_size();
@@ -1136,16 +1379,16 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         = std::make_unique<plain_text_source>();
                     (*iter)->fvs_text_source->set_text_format(
                         lf->get_text_format());
-                    if (parse_res.isOk()) {
+                    if (md_res.mpr_rendered) {
                         auto& lf_meta = lf->get_embedded_metadata();
 
                         (*iter)->fvs_text_source->replace_with(
-                            parse_res.unwrap());
-                        if (!md_file.f_frontmatter.empty()) {
+                            md_res.mpr_rendered.value());
+                        if (!md_res.mpr_frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
                                 = {
-                                    md_file.f_frontmatter_format,
-                                    md_file.f_frontmatter.to_string(),
+                                    md_res.mpr_frontmatter_format,
+                                    md_res.mpr_frontmatter,
                                 };
                         }
 
@@ -1160,11 +1403,11 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         auto view_content
                             = lnav::console::user_message::error(
                                   "unable to parse markdown file")
-                                  .with_reason(parse_res.unwrapErr())
+                                  .with_reason(md_res.mpr_parse_error)
                                   .to_attr_line();
                         view_content.append("\n").append(
                             attr_line_t::from_ansi_str(
-                                read_file_res.rfr_content.c_str()));
+                                md_res.mpr_content.c_str()));
 
                         (*iter)->fvs_text_source->replace_with(view_content);
                     }
@@ -1172,7 +1415,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 } else {
                     log_error("unable to read markdown file: %s -- %s",
                               lf->get_path_for_key().c_str(),
-                              read_res.unwrapErr().c_str());
+                              md_res.mpr_read_error.c_str());
                 }
             } else if (file_needs_reformatting(lf) && !new_data) {
                 if ((*iter)->fvs_file_size == st.st_size
@@ -1674,7 +1917,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
 
 std::optional<std::string>
 textfile_sub_source::file_view_state::anchor_for_row(view_mode mode,
-                                                    vis_line_t vl)
+                                                     vis_line_t vl)
 {
     if (mode == view_mode::rendered && this->fvs_text_source) {
         return this->fvs_text_source->anchor_for_row(vl);
@@ -1880,9 +2123,9 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             }
         } else if (!curr_file->get_notes().empty()) {
             this->tho_static_lines = curr_file->get_notes()
-                                         .values()
+                                         .entries()
                                          .front()
-                                         .to_attr_line()
+                                         .second.to_attr_line()
                                          .split_lines();
             lines = &this->tho_static_lines;
         } else if (curr_file->size() == 0) {

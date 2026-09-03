@@ -62,7 +62,7 @@
 #include "hasher.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log.annotate.hh"
@@ -536,7 +536,7 @@ com_set_file_timezone(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -601,7 +601,7 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
     return {};
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
     std::string retval;
@@ -1126,7 +1126,12 @@ com_mark_expr(exec_context& ec,
 
     auto& lss = lnav_data.ld_log_source;
     if (ec.ec_dry_run) {
-        auto set_res = lss.set_preview_sql_filter(stmt.release());
+        // Markers are re-evaluated over every message by set_sql_marker(), so
+        // there is nothing here for an impure expression to invalidate and
+        // the preview must not reject what the command itself accepts.
+        auto set_res = lss.set_preview_sql_filter(
+            stmt.release(),
+            logfile_sub_source::expr_purity::not_required);
 
         if (set_res.isErr()) {
             return Err(set_res.unwrapErr());
@@ -1146,7 +1151,7 @@ com_mark_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_mark_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
@@ -1588,7 +1593,7 @@ com_filter_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_filter_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -3213,7 +3218,7 @@ com_prompt(exec_context& ec,
     return Ok(std::string());
 }
 
-readline_context::command_t STD_COMMANDS[] = {
+lnav::commands::command_t STD_COMMANDS[] = {
     {
         "prompt",
         com_prompt,
@@ -3873,7 +3878,7 @@ com_crash(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 void
-init_lnav_commands(readline_context::command_map_t& cmd_map)
+init_lnav_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : STD_COMMANDS) {
         cmd.c_help.index_tags();
@@ -3882,12 +3887,12 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
     cmd_map["q"_frag] = cmd_map["q!"_frag] = cmd_map["quit"_frag];
 
     if (getenv("LNAV_SRC") != nullptr) {
-        static readline_context::command_t add_test(com_add_test);
+        static lnav::commands::command_t add_test(com_add_test);
 
         cmd_map["add-test"_frag] = &add_test;
     }
     if (getenv("lnav_test") != nullptr) {
-        static readline_context::command_t shexec(com_shexec),
+        static lnav::commands::command_t shexec(com_shexec),
             poll_now(com_poll_now), test_comment(com_test_comment),
             crasher(com_crash);
 

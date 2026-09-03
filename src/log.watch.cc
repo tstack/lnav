@@ -29,16 +29,21 @@
 
 #include "log.watch.hh"
 
+#include <atomic>
+#include <vector>
+
 #include <sqlite3.h>
 
 #include "base/injector.hh"
 #include "base/map_util.hh"
 #include "bound_tags.hh"
 #include "lnav.events.hh"
+#include "lnav.hh"
 #include "lnav_config_fwd.hh"
 #include "log_format.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "readline_highlighters.hh"
+#include "service_tags.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
 #include "sqlitepp.hh"
@@ -50,6 +55,14 @@ struct compiled_watch_expr {
     auto_mem<sqlite3_stmt> cwe_stmt{sqlite3_finalize};
     bool cwe_enabled{true};
 };
+
+/**
+ * Bumped every time the expressions are (re)compiled.  The per-thread copies
+ * below carry the generation they were built from, which is how a thread that
+ * outlives a config reload -- the main one does -- finds out that what it has
+ * is for an expression that no longer exists.
+ */
+static std::atomic<uint64_t> watch_generation{1};
 
 struct expressions : public lnav_config_listener {
     expressions() : lnav_config_listener(__FILE__) {}
@@ -103,26 +116,186 @@ struct expressions : public lnav_config_listener {
 
             this->e_watch_exprs.insert(pair.first, std::move(cwe));
         }
+        watch_generation.fetch_add(1, std::memory_order_release);
     }
 
-    void unload_config() override { this->e_watch_exprs.clear(); }
+    void unload_config() override
+    {
+        this->e_watch_exprs.clear();
+        watch_generation.fetch_add(1, std::memory_order_release);
+    }
 
     lnav::map::small<std::string, compiled_watch_expr> e_watch_exprs;
 };
 
 static expressions exprs;
 
-void
-eval_with(logfile& lf, logfile::iterator ll)
+bool
+any_enabled()
 {
-    if (std::none_of(exprs.e_watch_exprs.begin(),
-                     exprs.e_watch_exprs.end(),
-                     [](const auto& elem) { return elem.second.cwe_enabled; }))
-    {
+    return std::any_of(exprs.e_watch_exprs.begin(),
+                       exprs.e_watch_exprs.end(),
+                       [](const auto& elem) { return elem.second.cwe_enabled; });
+}
+
+namespace {
+
+enum class eval_mode {
+    main_thread,
+    worker,
+};
+
+enum class worker_result {
+    /** Nothing matched and everything was evaluated; the line is done. */
+    no_match,
+    /**
+     * Either something matched, or an expression could not be evaluated off
+     * the main thread.  Either way the main loop has to look at the line.
+     */
+    needs_main_thread,
+};
+
+/**
+ * This thread's copies of the statements, prepared against its own
+ * connection.  Rebuilt whenever the generation they were compiled from is no
+ * longer the current one: a worker's copies die with the thread, but eval_for()
+ * also runs on the main thread, which lives for the whole process and would
+ * otherwise keep evaluating an expression that has since been edited.
+ *
+ * An expression missing from the map is one that would not prepare there,
+ * which means it calls a function the thread-safe set leaves out.
+ */
+struct worker_stmts {
+    lnav::map::small<std::string, auto_mem<sqlite3_stmt>> ws_stmts;
+    uint64_t ws_generation{0};
+    bool ws_all_prepared{false};
+};
+
+worker_stmts&
+get_worker_stmts()
+{
+    thread_local worker_stmts retval;
+
+    const auto generation = watch_generation.load(std::memory_order_acquire);
+    if (retval.ws_generation == generation) {
+        return retval;
+    }
+    retval.ws_stmts.clear();
+    retval.ws_all_prepared = false;
+    retval.ws_generation = generation;
+
+    auto* db = lnav::sql::thread_local_db();
+    if (db == nullptr) {
+        return retval;
+    }
+
+    const auto& cfg = injector::get<const logfile_sub_source_ns::config&>();
+    auto all_prepared = true;
+    for (const auto& pair : cfg.c_watch_exprs) {
+        auto stmt_str
+            = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), pair.second.we_expr);
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+
+        if (sqlite3_prepare_v2(
+                db, stmt_str.c_str(), stmt_str.size(), stmt.out(), nullptr)
+            != SQLITE_OK)
+        {
+            // Not worth reporting: the main connection validated this at
+            // config load, so it only means the expression needs something
+            // this connection deliberately does not have.
+            all_prepared = false;
+            continue;
+        }
+        retval.ws_stmts.insert(pair.first, std::move(stmt));
+    }
+    retval.ws_all_prepared = all_prepared;
+
+    return retval;
+}
+
+/**
+ * Lines this thread has handed back for the main loop to evaluate.
+ *
+ * Batched rather than a message apiece: when an expression will not prepare
+ * on a worker connection every line comes down this path, and one ISC message
+ * per line is unbounded and strictly more work than evaluating them inline
+ * used to be.
+ */
+struct pending_eval {
+    const logfile* pe_key{nullptr};
+    std::weak_ptr<logfile> pe_file;
+    std::vector<uint32_t> pe_lines;
+};
+
+pending_eval&
+get_pending()
+{
+    thread_local pending_eval retval;
+
+    return retval;
+}
+
+/** Short enough to keep the queue small, long enough to be a batch. */
+constexpr size_t PENDING_FLUSH_AT = 1024;
+
+void
+send_pending()
+{
+    auto& pending = get_pending();
+
+    if (pending.pe_lines.empty()) {
+        return;
+    }
+
+    auto weak_lf = pending.pe_file;
+    auto lines = std::move(pending.pe_lines);
+
+    pending.pe_lines.clear();
+    pending.pe_file.reset();
+    pending.pe_key = nullptr;
+
+    isc::to<main_looper&, services::main_t>().send(
+        [weak_lf, lines = std::move(lines)](auto&) {
+            auto lf = weak_lf.lock();
+
+            if (lf == nullptr) {
+                // The file was closed between the match and the loop getting
+                // here.
+                return;
+            }
+            for (const auto line_number : lines) {
+                // ... or it was rolled back past this line.
+                if (line_number < lf->size()) {
+                    eval_with(*lf, lf->begin() + line_number);
+                }
+            }
+        });
+}
+
+}  // namespace
+
+static void
+eval_impl(logfile& lf,
+          logfile::iterator ll,
+          eval_mode mode,
+          worker_result* wresult)
+{
+    if (!any_enabled()) {
         return;
     }
 
     static auto& lnav_db = injector::get<auto_sqlite3&>();
+
+    worker_stmts* wstmts = nullptr;
+    if (mode == eval_mode::worker) {
+        wstmts = &get_worker_stmts();
+        if (!wstmts->ws_all_prepared) {
+            // Nothing here is cheaper than letting the main thread do the
+            // whole line.
+            *wresult = worker_result::needs_main_thread;
+            return;
+        }
+    }
 
     char timestamp_buffer[64] = "";
     shared_buffer_ref raw_sbr;
@@ -135,12 +308,22 @@ eval_with(logfile& lf, logfile::iterator ll)
     format->annotate(&lf, line_number, sa, values);
     auto lffs = lf.get_format_file_state();
 
-    for (auto watch_pair : exprs.e_watch_exprs) {
+    for (auto& watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {
             continue;
         }
 
-        auto* stmt = watch_pair.second.cwe_stmt.in();
+        sqlite3_stmt* stmt = nullptr;
+        if (mode == eval_mode::worker) {
+            auto stmt_opt = wstmts->ws_stmts.value_for(watch_pair.first);
+            if (!stmt_opt) {
+                *wresult = worker_result::needs_main_thread;
+                return;
+            }
+            stmt = stmt_opt.value()->in();
+        } else {
+            stmt = watch_pair.second.cwe_stmt.in();
+        }
         sqlite3_reset(stmt);
 
         auto count = sqlite3_bind_parameter_count(stmt);
@@ -356,12 +539,25 @@ eval_with(logfile& lf, logfile::iterator ll)
             case SQLITE_ROW:
                 break;
             default: {
+                if (mode == eval_mode::worker) {
+                    // Disabling the expression, and reporting why, belong to
+                    // the thread with the main connection.
+                    *wresult = worker_result::needs_main_thread;
+                    return;
+                }
                 log_error("failed to execute watch expression: %s -- %s",
                           watch_pair.first.c_str(),
                           sqlite3_errmsg(lnav_db));
                 watch_pair.second.cwe_enabled = false;
                 continue;
             }
+        }
+
+        if (mode == eval_mode::worker) {
+            // Publishing needs the main connection, so hand the line back.
+            // Only matches pay for it being evaluated twice.
+            *wresult = worker_result::needs_main_thread;
+            return;
         }
 
         if (!timestamp_buffer[0]) {
@@ -403,6 +599,52 @@ eval_with(logfile& lf, logfile::iterator ll)
         }
         lnav::events::publish(lnav_db, lmd);
     }
+}
+
+void
+eval_with(logfile& lf, logfile::iterator ll)
+{
+    eval_impl(lf, ll, eval_mode::main_thread, nullptr);
+}
+
+void
+eval_for(logfile& lf, logfile::iterator ll)
+{
+    auto res = worker_result::no_match;
+
+    eval_impl(lf, ll, eval_mode::worker, &res);
+    if (res == worker_result::no_match) {
+        return;
+    }
+
+    auto weak_lf = lf.weak_from_this();
+    if (weak_lf.expired()) {
+        // Nothing shares ownership of this file, so it cannot be one an
+        // indexing pass is working on and there is no other thread to
+        // collide with.
+        eval_with(lf, ll);
+        return;
+    }
+
+    auto& pending = get_pending();
+    if (pending.pe_key != &lf) {
+        // A thread scans one file at a time, so a different file means the
+        // last one is done with.
+        send_pending();
+        pending.pe_key = &lf;
+        pending.pe_file = weak_lf;
+    }
+    pending.pe_lines.emplace_back(
+        static_cast<uint32_t>(std::distance(lf.begin(), ll)));
+    if (pending.pe_lines.size() >= PENDING_FLUSH_AT) {
+        send_pending();
+    }
+}
+
+void
+flush_pending()
+{
+    send_pending();
 }
 
 }  // namespace lnav::log::watch

@@ -321,7 +321,7 @@ noinst_HEADERS = \
 	lnav.management_cli.hh \
     lnav.prompt.hh \
     lnav.script.parser.hh \
-	lnav_commands.hh \
+	cmds.hh \
 	lnav_config.hh \
 	lnav_config_fwd.hh \
 	lnav_util.hh \
@@ -367,7 +367,7 @@ noinst_HEADERS = \
 	ptimec.hh \
 	ptimec_spec.hh \
 	readline_callbacks.hh \
-	readline_context.hh \
+	lnav.commands.hh \
 	readline_highlighters.hh \
 	readline_possibilities.hh \
 	regex101.client.hh \
@@ -539,7 +539,7 @@ libdiag_a_SOURCES = \
 	lnav.exec-phase.cc \
 	lnav.prompt.cc \
 	lnav.script.parser.cc \
-	lnav_commands.cc \
+	cmds.std.cc \
 	lnav_config.cc \
 	lnav_util.cc \
 	log.annotate.cc \

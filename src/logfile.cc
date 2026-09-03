@@ -53,6 +53,7 @@
 #include "base/injector.hh"
 #include "base/intern_string.hh"
 #include "base/is_utf8.hh"
+#include "base/parallel_for.hh"
 #include "base/result.h"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
@@ -815,6 +816,35 @@ logfile::reset_state() -> void
     this->lf_indexing = this->lf_options.loo_is_visible;
 }
 
+size_t
+lnav::logfile_indexing_width(size_t file_count)
+{
+    static const auto PREWARMED = []() {
+        // The scan path reaches these through function-local statics.  The
+        // magic-static guard makes the initialization itself safe, but
+        // building an injected singleton for the first time from several
+        // workers at once is not something to rely on, so build them here,
+        // where the UI thread is still the only one running.
+        injector::get<const date_time_scanner_ns::config&>();
+        injector::get<lnav::safe_file_options_hier&>();
+        injector::get<const lnav::logfile::config&>();
+        return true;
+    }();
+    (void) PREWARMED;
+
+    const auto configured
+        = injector::get<const lnav::logfile::config&>().lc_indexing_threads;
+
+    if (configured == 1 || file_count <= 1) {
+        return 1;
+    }
+    if (configured == 0) {
+        return lnav::default_worker_count(file_count);
+    }
+
+    return std::min(static_cast<size_t>(configured), file_count);
+}
+
 void
 logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
 {
@@ -834,7 +864,7 @@ logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
         localtime_r(&file_time, &new_base_tm);
         this->lf_cached_base_tm = new_base_tm;
     }
-    // Stash it for seed_time_scanner_for(), which re-applies it after copying
+    // Stash it for seed_for(), which re-applies it after copying
     // a format's settings, and set it on the scanner directly for the case
     // where the format is already settled and so is not reseeded.
     sbc.sbc_base_time = this->lf_cached_base_time.value();
@@ -912,6 +942,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         const auto& root_formats = log_format::get_root_formats();
         std::optional<std::pair<log_format*, log_format::scan_match>>
             best_match;
+        // What the best candidate so far discovered about the file.  Held
+        // here rather than left in sbc_tmp because the loop keeps going and
+        // later candidates would scribble over it.
+        std::unique_ptr<format_scan_state> best_format_state;
+        std::optional<uint32_t> best_timestamp_flags;
         size_t scan_count = 0;
 
         if (prescan_size > 0) {
@@ -1085,8 +1120,21 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             // the timestamp, so the file keeps the format lock
                             // instead of rediscovering it on the next line.
                             sbc.sbc_time_scanner = sbc_tmp.sbc_time_scanner;
-                            sbc.sbc_time_scanner_format
-                                = sbc_tmp.sbc_time_scanner_format;
+                            sbc.sbc_format_owner = sbc_tmp.sbc_format_owner;
+                            // Take the scratch away from sbc_tmp so the next
+                            // candidate is handed a fresh one by seed_for().
+                            best_format_state
+                                = std::move(sbc_tmp.sbc_format_state);
+                            // Only meaningful if this candidate actually
+                            // seeded the batch; a format that parses no
+                            // timestamps (piper) never does, and sets its
+                            // own flags in specialized().
+                            best_timestamp_flags
+                                = sbc_tmp.sbc_format_owner == curr.get()
+                                ? std::make_optional(
+                                      sbc_tmp.sbc_timestamp_flags)
+                                : std::nullopt;
+                            sbc_tmp.sbc_format_owner = nullptr;
                         }
                         auto match_um
                             = lnav::console::user_message::info(
@@ -1208,6 +1256,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             this->lf_format_match_messages.emplace_back(match_um);
             this->lf_text_format = text_format_t::TF_LOG;
             this->lf_format = curr->specialized();
+            if (best_format_state != nullptr) {
+                this->lf_format->adopt_scan_state(*best_format_state);
+            }
+            if (best_timestamp_flags) {
+                // specialized() copied the root's pristine flags; what the
+                // candidate worked out about this file's timestamps is in
+                // the batch.
+                this->lf_format->lf_timestamp_flags
+                    = best_timestamp_flags.value();
+            }
             this->lf_level_stats = {};
             for (const auto& ll : this->lf_index) {
                 if (!ll.is_message()) {
@@ -1301,7 +1359,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         // Point it at the format that will actually be scanning from here on
         // so the next line does not reseed the scanner and throw away the
         // format lock and the default zone.
-        sbc.sbc_time_scanner_format = this->lf_format.get();
+        sbc.sbc_format_owner = this->lf_format.get();
     } else if (this->lf_format.get() != nullptr) {
         if (prescan_size > 0) {
             prescan_time = this->lf_index[prescan_size - 1].get_time<>();
@@ -1667,7 +1725,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             // and already holds what earlier batches worked out.  Say which
             // format it is set up for so that it is not seeded over again and
             // handed back its format lock and base time.
-            sbc.sbc_time_scanner_format = this->lf_format.get();
+            sbc.sbc_format_owner = this->lf_format.get();
         }
         if (this->lf_cached_base_time) {
             sbc.sbc_base_time = this->lf_cached_base_time;
@@ -1740,9 +1798,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           .move();
                 this->lf_notes.writeAccess()->insert(note_type::not_utf,
                                                      note_um);
-                if (this->lf_logfile_observer != nullptr) {
-                    this->lf_logfile_observer->logfile_indexing(this, 0, 0);
-                }
+                // Equal values are what the UI treats as "nothing to
+                // report", which clears the loading bar.
+                this->lf_index_progress.ip_offset.store(
+                    0, std::memory_order_relaxed);
+                this->lf_index_progress.ip_total.store(
+                    0, std::memory_order_relaxed);
                 break;
             }
             size_t old_size = this->lf_index.size();
@@ -1864,14 +1925,33 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
             }
 
-            if (this->lf_logfile_observer != nullptr) {
-                auto indexing_res = this->lf_logfile_observer->logfile_indexing(
-                    this,
-                    this->lf_line_buffer.get_read_offset(
-                        li.li_file_range.next_offset()),
-                    this->get_content_size());
+            {
+                // A single coordinate space; the old pairing put a compressed
+                // offset against get_content_size(), which reports the
+                // compressed size until the stream hits EOF and the
+                // decompressed one after.
+                auto prog = this->get_index_progress();
+                // Some streams cannot say how much is left -- a multi-member
+                // gzip, whose ISIZE trailer describes only its last member,
+                // is the one to reach for.  A total of 0 is what the file
+                // list reads as "no denominator" and draws a "working" icon
+                // for; the offset still says how far the read has got, so the
+                // size column keeps counting up.  Reporting the two as equal
+                // instead would claim the file was finished on every tick.
+                const auto done = prog ? prog->first : this->lf_index_size;
+                const auto total = prog ? prog->second : 0;
 
-                if (indexing_res == lnav::progress_result_t::interrupt) {
+                // The total goes first so a reader that catches the pair
+                // mid-update sees a denominator at least as large as the
+                // numerator.
+                this->lf_index_progress.ip_total.store(
+                    total, std::memory_order_relaxed);
+                this->lf_index_progress.ip_offset.store(
+                    done, std::memory_order_relaxed);
+
+                if (this->lf_index_progress.ip_abort.load(
+                        std::memory_order_relaxed))
+                {
                     log_debug("indexing interrupted");
                     break;
                 }
@@ -1959,7 +2039,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
 
                 if (!this->back().is_continued()) {
-                    lnav::log::watch::eval_with(*this, this->end() - 1);
+                    lnav::log::watch::eval_for(*this, this->end() - 1);
                 }
             }
 
@@ -1993,9 +2073,10 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                       .move();
             this->lf_notes.writeAccess()->insert(note_type::indexing_disabled,
                                                  note_um);
-            if (this->lf_logfile_observer != nullptr) {
-                this->lf_logfile_observer->logfile_indexing(this, 0, 0);
-            }
+            this->lf_index_progress.ip_offset.store(0,
+                                                    std::memory_order_relaxed);
+            this->lf_index_progress.ip_total.store(0,
+                                                   std::memory_order_relaxed);
         }
 
         if (this->lf_logline_observer != nullptr) {
@@ -2138,6 +2219,10 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     this->lf_activity.la_line_buffer_memory_bytes
         = this->lf_line_buffer.get_byte_size();
 
+    // Whatever eval_for() batched during the loop above is this file's, and
+    // this is the last chance to send it before the caller moves on.
+    lnav::log::watch::flush_pending();
+
     return retval;
 }
 
@@ -2198,10 +2283,7 @@ logfile::read_line(iterator ll, subline_options opts)
 
                 if (this->lf_format != nullptr) {
                     this->lf_format->get_subline(
-                        this->get_format_file_state(),
-                        *ll,
-                        sbr,
-                        opts);
+                        this->get_format_file_state(), *ll, sbr, opts);
                 }
                 return sbr;
             });
@@ -2343,10 +2425,7 @@ logfile::read_full_message(const_iterator ll,
         }
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(
-                this->get_format_file_state(),
-                *ll,
-                msg_out,
-                {true});
+                this->get_format_file_state(), *ll, msg_out, {true});
         }
     } catch (const line_buffer::error& e) {
         log_error("failed to read line");
@@ -2365,6 +2444,19 @@ logfile::set_logline_observer(logline_observer* llo)
 void
 logfile::reobserve_from(iterator iter)
 {
+    if (this->lf_logline_observer == nullptr) {
+        // Every line below is read only so the observer can be told about it,
+        // so with no observer there is nothing to do.
+        return;
+    }
+
+    // This is work starting, so it owns the flag from here.  An interrupted
+    // indexing pass leaves it set, and only begin_indexing_progress() clears
+    // it -- which runs from the pre-scan, not from here -- so without this a
+    // filter change between the interrupt and the next pre-scan would break
+    // out on the first line and leave the filter state unbuilt.
+    this->lf_index_progress.ip_abort.store(false, std::memory_order_relaxed);
+
     for (; iter != this->end(); ++iter) {
         off_t offset = std::distance(this->begin(), iter);
 
@@ -2372,12 +2464,12 @@ logfile::reobserve_from(iterator iter)
             continue;
         }
 
-        if (this->lf_logfile_observer != nullptr) {
-            auto indexing_res = this->lf_logfile_observer->logfile_indexing(
-                this, offset, this->size());
-            if (indexing_res == lnav::progress_result_t::interrupt) {
-                break;
-            }
+        this->lf_index_progress.ip_total.store(this->size(),
+                                               std::memory_order_relaxed);
+        this->lf_index_progress.ip_offset.store(offset,
+                                                std::memory_order_relaxed);
+        if (this->lf_index_progress.ip_abort.load(std::memory_order_relaxed)) {
+            break;
         }
 
         this->read_line(iter).then([this, iter](auto sbr) {
@@ -2390,11 +2482,11 @@ logfile::reobserve_from(iterator iter)
                 *this, iter, iter_end, sbr);
         });
     }
-    if (this->lf_logfile_observer != nullptr) {
-        this->lf_logfile_observer->logfile_indexing(
-            this, this->size(), this->size());
-        this->lf_logline_observer->logline_eof(*this);
-    }
+    this->lf_index_progress.ip_total.store(this->size(),
+                                           std::memory_order_relaxed);
+    this->lf_index_progress.ip_offset.store(this->size(),
+                                            std::memory_order_relaxed);
+    this->lf_logline_observer->logline_eof(*this);
 }
 
 std::filesystem::path
@@ -2649,6 +2741,29 @@ logfile::original_line_time(iterator ll)
     }
 
     return ll->get_timeval();
+}
+
+std::optional<std::pair<file_off_t, file_ssize_t>>
+logfile::get_index_progress() const
+{
+    const auto lb_size = this->lf_line_buffer.get_file_size();
+    if (lb_size != -1) {
+        return std::make_pair(this->lf_index_size, lb_size);
+    }
+
+    if (this->is_compressed()) {
+        const auto isize_opt = this->lf_line_buffer.uncompressed_size();
+
+        if (isize_opt && isize_opt.value() > 0
+            && this->lf_index_size <= isize_opt.value())
+        {
+            return std::make_pair(this->lf_index_size, isize_opt.value());
+        }
+        return std::nullopt;
+    }
+
+    return std::make_pair(this->lf_index_size,
+                          static_cast<file_ssize_t>(this->lf_stat.st_size));
 }
 
 std::optional<logfile::const_iterator>

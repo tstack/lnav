@@ -36,6 +36,11 @@ namespace lnav::logfile {
 
 struct config {
     uint64_t lc_max_unrecognized_lines{1000};
+    /**
+     * Workers to index files with.  0, the default, picks a count from the
+     * machine; 1 indexes them one at a time, the way lnav always has.
+     */
+    uint64_t lc_indexing_threads{0};
 };
 
 }  // namespace lnav::logfile

@@ -251,7 +251,9 @@ read_format_field(yajlpp_parse_context* ypc,
     auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-format") {
-        elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
+        /* an empty format interns to the null entry */
+        const auto ts_format = intern_string_t{intern_string::lookup(value)};
+        elf->lf_timestamp_format.push_back(ts_format.get());
     }
 
     return 1;

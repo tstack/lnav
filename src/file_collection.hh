@@ -201,6 +201,22 @@ struct file_collection {
 
     file_collection copy();
 
+    /**
+     * @return Whether the rescan that returned this collection turned
+     *         anything up -- a name to expand, or a file it opened.
+     *
+     * This is the drain signal for a caller looping over rescan_files().
+     * Having opened files is not proof that there is nothing left, because
+     * that stops after 100 new ones and a name it had no room for leaves no
+     * trace: fc_file_names only carries names the pass discovered, which a
+     * file named directly never does.  watch_logfile() skips a file that is
+     * already open, so a pass that turns up nothing had nothing left to find.
+     */
+    bool found_anything() const
+    {
+        return !this->fc_file_names.empty() || !this->fc_files.empty();
+    }
+
     bool empty() const
     {
         return this->fc_name_to_stubs->readAccess()->empty()

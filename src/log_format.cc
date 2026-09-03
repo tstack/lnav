@@ -207,9 +207,9 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
 }
 
 void
-scan_batch_context::seed_time_scanner_for(const log_format* format)
+scan_batch_context::seed_for(const log_format* format)
 {
-    if (this->sbc_time_scanner_format == format) {
+    if (this->sbc_format_owner == format) {
         return;
     }
 
@@ -223,7 +223,9 @@ scan_batch_context::seed_time_scanner_for(const log_format* format)
         this->sbc_time_scanner.set_base_time(this->sbc_base_time.value(),
                                              this->sbc_base_tm);
     }
-    this->sbc_time_scanner_format = format;
+    this->sbc_format_state = format->make_scan_state();
+    this->sbc_timestamp_flags = format->lf_timestamp_flags;
+    this->sbc_format_owner = format;
 }
 
 log_thread_id_map::iterator
@@ -924,7 +926,8 @@ external_log_format::update_op_description(
 void
 external_log_format::update_op_description(
     const std::vector<opid_descriptors*>& desc_defs_vec,
-    log_op_description& lod)
+    log_op_description& lod,
+    const desc_cap_map& desc_caps)
 {
     std::optional<std::string> desc_elem_str;
     if (!lod.lod_index) {
@@ -934,9 +937,9 @@ external_log_format::update_op_description(
             }
             for (const auto& desc_def : *desc_defs->od_descriptors) {
                 auto desc_cap_iter
-                    = this->lf_desc_captures.find(desc_def.od_field.pp_value);
+                    = desc_caps.find(desc_def.od_field.pp_value);
 
-                if (desc_cap_iter == this->lf_desc_captures.end()) {
+                if (desc_cap_iter == desc_caps.end()) {
                     continue;
                 }
                 desc_elem_str = desc_def.matches(desc_cap_iter->second);
@@ -963,8 +966,8 @@ external_log_format::update_op_description(
             const auto& desc_def = desc_def_v[desc_def_index];
             auto found_desc = desc_v.value_for(desc_def_index);
             auto desc_cap_iter
-                = this->lf_desc_captures.find(desc_def.od_field.pp_value);
-            if (desc_cap_iter == this->lf_desc_captures.end()) {
+                = desc_caps.find(desc_def.od_field.pp_value);
+            if (desc_cap_iter == desc_caps.end()) {
                 continue;
             }
 
@@ -1064,7 +1067,8 @@ log_format::log_scanf(scan_batch_context& sbc,
                     ts->data(), ts->length(), nullptr, tm_out, *tv_out);
                 if (retval != nullptr) {
                     auto old_flags
-                        = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+                        = this->timestamp_flags_for(sbc)
+                        & DATE_TIME_SET_FLAGS;
                     auto new_flags = tm_out->et_flags & DATE_TIME_SET_FLAGS;
 
                     // It is unlikely a valid timestamp would lose much
@@ -1107,7 +1111,7 @@ log_format::log_scanf(scan_batch_context& sbc,
                     sbc.sbc_pattern_locks.pl_lines.back().pfl_timestamp_flags
                         = tm_out->et_flags;
                 }
-                this->lf_timestamp_flags = tm_out->et_flags;
+                this->timestamp_flags_for(sbc) = tm_out->et_flags;
                 done = true;
             }
         }
@@ -1203,8 +1207,18 @@ log_format::check_for_new_year(std::vector<logline>& dst,
 struct json_log_userdata {
     json_log_userdata(shared_buffer_ref& sbr,
                       scan_batch_context* sbc,
-                      date_time_scanner& dts)
-        : jlu_shared_buffer(sbr), jlu_batch_context(sbc), jlu_time_scanner(dts)
+                      date_time_scanner& dts,
+                      logline_value_vector& lvv,
+                      log_format::desc_cap_map& desc_caps,
+                      ArenaAlloc::Alloc<char>& desc_alloc,
+                      std::vector<std::pair<string_fragment,
+                                            external_log_format::value_def*>>&
+                          read_order,
+                      ArenaAlloc::Alloc<char>& field_alloc)
+        : jlu_shared_buffer(sbr), jlu_batch_context(sbc),
+          jlu_time_scanner(dts), jlu_line_values(lvv),
+          jlu_desc_captures(desc_caps), jlu_desc_allocator(desc_alloc),
+          jlu_read_order(read_order), jlu_field_allocator(field_alloc)
     {
     }
 
@@ -1213,15 +1227,12 @@ struct json_log_userdata {
     {
         const auto field_frag = ypc->get_path_as_string_fragment();
         auto* format = this->jlu_format;
+        auto& read_order = this->jlu_read_order;
 
-        if (this->jlu_read_order_index < format->elf_value_def_read_order.size()
-            && format->elf_value_def_read_order[this->jlu_read_order_index]
-                    .first
-                == field_frag)
+        if (this->jlu_read_order_index < read_order.size()
+            && read_order[this->jlu_read_order_index].first == field_frag)
         {
-            auto retval
-                = format->elf_value_def_read_order[this->jlu_read_order_index]
-                      .second;
+            auto retval = read_order[this->jlu_read_order_index].second;
             if (retval != nullptr) {
                 this->jlu_precision += 1;
             }
@@ -1229,11 +1240,10 @@ struct json_log_userdata {
             return retval;
         }
 
-        format->elf_value_def_read_order.resize(this->jlu_read_order_index);
+        read_order.resize(this->jlu_read_order_index);
         auto vd_iter = format->elf_value_def_frag_map.find(field_frag);
         if (vd_iter != format->elf_value_def_frag_map.end()) {
-            format->elf_value_def_read_order.emplace_back(vd_iter->first,
-                                                          vd_iter->second);
+            read_order.emplace_back(vd_iter->first, vd_iter->second);
             this->jlu_read_order_index += 1;
             if (vd_iter->second != nullptr) {
                 this->jlu_precision += 1;
@@ -1241,9 +1251,16 @@ struct json_log_userdata {
             return vd_iter->second;
         }
 
-        auto owned_frag = field_frag.to_owned(format->elf_allocator);
-        format->elf_value_def_frag_map[owned_frag] = nullptr;
-        format->elf_value_def_read_order.emplace_back(owned_frag, nullptr);
+        // A field the format does not declare.  A specialized copy memoizes
+        // it so the map lookup above catches it next time; a candidate root
+        // cannot -- the map and the arena behind it are shared with every
+        // other file being probed -- so it just records the name, which
+        // read_order memoizes positionally anyway.
+        auto owned_frag = field_frag.to_owned(this->jlu_field_allocator);
+        if (format->lf_specialized) {
+            format->elf_value_def_frag_map[owned_frag] = nullptr;
+        }
+        read_order.emplace_back(owned_frag, nullptr);
         this->jlu_read_order_index += 1;
         return nullptr;
     }
@@ -1289,6 +1306,20 @@ struct json_log_userdata {
      * subline pass have one, unlike jlu_batch_context.
      */
     date_time_scanner& jlu_time_scanner;
+    /**
+     * Where the values pulled out of the line go.  On the subline pass this
+     * is the format's own buffer, which annotate() reads back afterwards.
+     * On the scan pass a candidate root cannot use that -- every file is
+     * probed against the same root -- so it gets a throwaway.
+     */
+    logline_value_vector& jlu_line_values;
+    /** @see jlu_line_values -- same split, for the opid-description captures. */
+    log_format::desc_cap_map& jlu_desc_captures;
+    ArenaAlloc::Alloc<char>& jlu_desc_allocator;
+    /** @see jlu_line_values -- same split, for the field read order. */
+    std::vector<std::pair<string_fragment, external_log_format::value_def*>>&
+        jlu_read_order;
+    ArenaAlloc::Alloc<char>& jlu_field_allocator;
     std::optional<string_fragment> jlu_opid_frag;
     std::optional<string_fragment> jlu_opid_desc_frag;
     std::optional<string_fragment> jlu_tid_frag;
@@ -1552,7 +1583,7 @@ json_array_end(void* ctx)
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
         auto json_frag = string_fragment::from_byte_range(
             jlu->jlu_shared_buffer.get_data(), sub_start, sub_end);
-        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+        jlu->jlu_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_JSON),
             json_frag);
@@ -1615,7 +1646,7 @@ rewrite_json_null(yajlpp_parse_context* ypc)
     if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+    jlu->jlu_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_NULL));
 
     return 1;
@@ -1630,7 +1661,7 @@ rewrite_json_bool(yajlpp_parse_context* ypc, int val)
     if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+    jlu->jlu_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_BOOLEAN),
         (bool) val);
     return 1;
@@ -1702,7 +1733,7 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
     {
         jlu->jlu_tid_number = val;
     }
-    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+    jlu->jlu_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_INTEGER),
         (int64_t) val);
     return 1;
@@ -1769,7 +1800,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
     if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
-    jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+    jlu->jlu_line_values.lvv_values.emplace_back(
         jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_FLOAT),
         val);
 
@@ -1842,9 +1873,48 @@ external_log_format::scan_json(std::vector<logline>& dst,
         return scan_match{0};
     }
 
-    auto& ypc = *(this->jlf_parse_context);
-    yajl_handle handle = this->jlf_yajl_handle.get();
-    json_log_userdata jlu(sbr, &sbc, sbc.sbc_time_scanner);
+    // A specialized copy belongs to one file and parks the values it parses
+    // for the render pass to pick up.  A root is shared by every file being
+    // probed against it, so a candidate parses into a per-thread throwaway
+    // that nothing reads back.
+    thread_local json_scan_scratch probe_scratch;
+
+    const auto is_probe = !this->lf_specialized;
+    if (is_probe) {
+        probe_scratch.ensure_parser();
+        probe_scratch.jss_line_values.clear();
+        probe_scratch.jss_line_values.lvv_allocator.reset();
+        // The read order is a positional memo keyed on nothing but the field
+        // name, and two formats routinely share names ("ts", "msg"), so it
+        // cannot be carried from one candidate to the next -- doing so hands
+        // back the other format's value_def.  Detection is a few hundred
+        // lines, so rebuilding it per probed line costs little.
+        probe_scratch.jss_read_order.clear();
+        probe_scratch.jss_field_allocator.reset();
+    }
+    auto& line_values = is_probe ? probe_scratch.jss_line_values
+                                 : this->jlf_line_values;
+    auto& desc_captures = is_probe ? probe_scratch.jss_desc_captures
+                                   : this->lf_desc_captures;
+    auto& desc_allocator = is_probe ? probe_scratch.jss_desc_allocator
+                                    : this->lf_desc_allocator;
+
+    auto& ypc = is_probe ? *probe_scratch.jss_parse_context
+                         : *this->jlf_parse_context;
+    yajl_handle handle = is_probe ? probe_scratch.jss_yajl_handle.get()
+                                  : this->jlf_yajl_handle.get();
+    auto& read_order = is_probe ? probe_scratch.jss_read_order
+                                : this->elf_value_def_read_order;
+    auto& field_allocator = is_probe ? probe_scratch.jss_field_allocator
+                                     : this->elf_allocator;
+    json_log_userdata jlu(sbr,
+                          &sbc,
+                          sbc.sbc_time_scanner,
+                          line_values,
+                          desc_captures,
+                          desc_allocator,
+                          read_order,
+                          field_allocator);
 
     if (li.li_partial) {
         log_debug("skipping partial line at offset %lld",
@@ -1857,8 +1927,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
     const auto* line_data = (const unsigned char*) sbr.get_data();
 
-    this->lf_desc_captures.clear();
-    this->lf_desc_allocator.reset();
+    desc_captures.clear();
+    desc_allocator.reset();
 
     ll.set_time(0us);
     yajl_reset(handle);
@@ -1896,9 +1966,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (jlu.jlu_tid_frag) {
-            this->jlf_line_values.lvv_thread_id_value
+            line_values.lvv_thread_id_value
                 = jlu.jlu_tid_frag->to_owned(
-                    this->jlf_line_values.lvv_allocator);
+                    line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
@@ -1927,8 +1997,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
             const auto& od = this->lf_opid_description_def->begin()->second;
             for (const auto& desc : *od.od_descriptors) {
                 auto desc_iter
-                    = this->lf_desc_captures.find(desc.od_field.pp_value);
-                if (desc_iter == this->lf_desc_captures.end()) {
+                    = desc_captures.find(desc.od_field.pp_value);
+                if (desc_iter == desc_captures.end()) {
                     continue;
                 }
                 jlu.jlu_opid_hasher.update(desc_iter->second);
@@ -1957,9 +2027,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_opid_frag) {
             ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
-            this->jlf_line_values.lvv_opid_value
+            line_values.lvv_opid_value
                 = jlu.jlu_opid_frag->to_string();
-            this->jlf_line_values.lvv_opid_provenance
+            line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
                                                jlu.jlu_duration.value_or(1us),
@@ -1985,7 +2055,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 if (ostr != nullptr && ostr->ostr_description.empty()) {
                     log_op_description sub_desc;
                     this->update_op_description(
-                        *this->lf_subid_description_def_vec, sub_desc);
+                        *this->lf_subid_description_def_vec,
+                        sub_desc,
+                        desc_captures);
                     if (!sub_desc.lod_elements.empty()) {
                         auto& sub_desc_def
                             = this->lf_subid_description_def_vec->at(
@@ -1998,9 +2070,10 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
             auto& otr = opid_iter->second;
             this->update_op_description(*this->lf_opid_description_def_vec,
-                                        otr.otr_description);
+                                        otr.otr_description,
+                                        desc_captures);
         } else {
-            this->jlf_line_values.lvv_opid_value = std::nullopt;
+            line_values.lvv_opid_value = std::nullopt;
         }
 
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -2012,7 +2085,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             sub_ll.set_sub_offset(lpc);
             dst.emplace_back(std::move(sub_ll));
         }
-        this->lf_timestamp_flags = jlu.jlu_exttm.et_flags;
+        this->timestamp_flags_for(sbc) = jlu.jlu_exttm.et_flags;
 
         if (!this->lf_specialized) {
             static const intern_string_t ts_field
@@ -2146,13 +2219,9 @@ external_log_format::finalize_line(logline& new_line,
     const auto level = new_line.get_msg_level();
 
     if (!in.lfi_opid_cap && this->elf_opid_field.empty()
-        && !in.lfi_opid_desc_frags.empty())
+        && in.lfi_has_opid_desc)
     {
-        hasher h;
-        for (const auto& frag : in.lfi_opid_desc_frags) {
-            h.update(frag);
-        }
-        h.to_string(in.lfi_synth_opid_buf);
+        in.lfi_opid_desc_hash.to_string(in.lfi_synth_opid_buf);
         in.lfi_opid_cap = string_fragment::from_bytes(
             in.lfi_synth_opid_buf, sizeof(in.lfi_synth_opid_buf) - 1);
     }
@@ -2246,7 +2315,8 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
             sbc.sbc_time_scanner.relock(ls);
             return timestamp_outcome::no_parse;
         }
-        auto old_flags = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+        auto old_flags
+            = this->timestamp_flags_for(sbc) & DATE_TIME_SET_FLAGS;
         auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
         if (new_flags != old_flags) {
             return timestamp_outcome::relock_mismatch;
@@ -2259,13 +2329,13 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
         }
     }
 
-    this->lf_timestamp_flags = log_time_tm.et_flags;
+    this->timestamp_flags_for(sbc) = log_time_tm.et_flags;
     if (!sbc.sbc_pattern_locks.pl_lines.empty()) {
         sbc.sbc_pattern_locks.pl_lines.back().pfl_timestamp_flags
             = log_time_tm.et_flags;
     }
 
-    if (!(this->lf_timestamp_flags
+    if (!(this->timestamp_flags_for(sbc)
           & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
         && !dst.empty()
         && dst.back().get_time<std::chrono::seconds>().count() == log_tv.tv_sec
@@ -2338,16 +2408,9 @@ external_log_format::scan_tabular(logfile& lf,
         ss.ss_expected_count = this->elf_value_def_read_order.size();
         line_finalize_inputs lfi;
         lfi.lfi_line_sf = sf;
-        // Gather the column-name set used for opid synthesis when the format
-        // declares no explicit opid field but does declare an opid description.
-        std::set<intern_string_t> opid_desc_field_names;
-        if (!this->lf_opid_description_def->empty()) {
-            const auto& opid_def
-                = this->lf_opid_description_def->begin()->second;
-            for (const auto& desc : *opid_def.od_descriptors) {
-                opid_desc_field_names.insert(desc.od_field.pp_value);
-            }
-        }
+        // Reused across rows, the way scan_json() reuses it, so the map
+        // keeps its buckets instead of reallocating per line.
+        this->lf_desc_captures.clear();
         size_t last_value_index = 0;
         for (auto ss_iter = ss.begin(); ss_iter != ss.end(); ++ss_iter) {
             auto field_sf = *ss_iter;
@@ -2420,10 +2483,15 @@ external_log_format::scan_tabular(logfile& lf,
             } else {
                 ingest_numeric_value(*vd, canon_sf, std::nullopt, sbc);
             }
-            if (!canon_sf.empty()
-                && opid_desc_field_names.count(vd->vd_meta.lvm_name) > 0)
-            {
-                lfi.lfi_opid_desc_frags.push_back(canon_sf);
+            if (!canon_sf.empty() && vd->vd_is_opid_desc_field) {
+                lfi.lfi_opid_desc_hash.update(canon_sf);
+                lfi.lfi_has_opid_desc = true;
+            }
+            if (vd->vd_is_desc_field) {
+                // No copy: canon_sf points either into the line's buffer or
+                // into the batch arena, and the description is built from it
+                // below, before this row is done with.
+                this->lf_desc_captures.emplace(vd->vd_meta.lvm_name, canon_sf);
             }
         }
         if (this->tlf_suspended_state) {
@@ -2434,7 +2502,16 @@ external_log_format::scan_tabular(logfile& lf,
         if (last_value_index >= this->elf_value_def_read_order.size()
             || this->tlf_suspended_state.has_value())
         {
-            this->finalize_line(dst.back(), lfi, sbc);
+            auto opid_iter_opt = this->finalize_line(dst.back(), lfi, sbc);
+
+            if (opid_iter_opt) {
+                // What log_opid_definition reads back, and what names the op
+                // in the all_opids view.
+                this->update_op_description(*this->lf_opid_description_def_vec,
+                                            opid_iter_opt.value()
+                                                ->second.otr_description,
+                                            this->lf_desc_captures);
+            }
         } else if (sf.startswith("#")) {
             ll.set_ignore(true);
         } else {
@@ -2530,26 +2607,32 @@ external_log_format::scan_tabular(logfile& lf,
                 ss.ss_separator = sep.value();
                 uint32_t hits = 0, misses = 0;
 
-                this->elf_value_def_read_order.clear();
+                // The header is this file's, not the format's, so it is
+                // worked out into the batch and the names are owned by the
+                // batch's arena.  adopt_scan_state() re-owns them into the
+                // specialized copy that ends up reading the file.
+                auto& st = sbc.format_state<external_scan_state>();
+
+                st.ess_value_def_read_order.clear();
                 for (auto hdr_name : ss) {
                     // Header cells may be CSV-quoted (e.g. an export
                     // wrapping a name that contains the separator or
                     // doubled quotes); collapse `""` back to `"` so the
                     // lookup matches what the format declares.
                     auto canon_hdr
-                        = unescape_csv_cell(hdr_name, this->elf_allocator);
+                        = unescape_csv_cell(hdr_name, sbc.sbc_allocator);
                     auto value_iter
                         = this->elf_value_def_frag_map.find(canon_hdr);
                     if (value_iter != this->elf_value_def_frag_map.end()) {
                         hits += 1;
-                        this->elf_value_def_read_order.emplace_back(
+                        st.ess_value_def_read_order.emplace_back(
                             value_iter->first, value_iter->second);
                     } else {
                         misses += 1;
                         auto owned_name
-                            = canon_hdr.to_owned(this->elf_allocator);
-                        this->elf_value_def_read_order.emplace_back(owned_name,
-                                                                    nullptr);
+                            = canon_hdr.to_owned(sbc.sbc_allocator);
+                        st.ess_value_def_read_order.emplace_back(owned_name,
+                                                                 nullptr);
                     }
                 }
                 if (hits <= 2) {
@@ -2572,10 +2655,9 @@ external_log_format::scan_tabular(logfile& lf,
                 header_state = tabular_header_state::have_column_header;
                 ll_iter->set_ignore(true);
                 ll_iter->set_level(LEVEL_INVALID);
-                this->tlf_separator = sep.value();
-                this->tlf_header_end = li.li_file_range.next_offset();
-                this->tlf_extra_count = misses;
-                this->tlf_suspended_state = std::nullopt;
+                st.ess_separator = sep.value();
+                st.ess_header_end = li.li_file_range.next_offset();
+                st.ess_extra_count = misses;
                 return scan_match{1000, misses, hits};
             }
         }
@@ -2591,7 +2673,7 @@ external_log_format::scan(logfile& lf,
                           shared_buffer_ref& sbr,
                           scan_batch_context& sbc)
 {
-    sbc.seed_time_scanner_for(this);
+    sbc.seed_for(this);
 
     if (dst.size() == 1) {
         auto file_options = lf.get_file_options();
@@ -2743,7 +2825,8 @@ external_log_format::scan(logfile& lf,
         for (const auto& fidx : fpat->p_opid_description_field_indexes) {
             auto desc_cap = md[fidx];
             if (desc_cap) {
-                lfi.lfi_opid_desc_frags.push_back(desc_cap.value());
+                lfi.lfi_opid_desc_hash.update(desc_cap.value());
+                lfi.lfi_has_opid_desc = true;
             }
         }
         auto opid_iter_opt = this->finalize_line(new_line, lfi, sbc);
@@ -2815,12 +2898,20 @@ external_log_format::annotate(logfile* lf,
         auto sf = line.to_string_fragment();
         auto ss = separated_string(sf);
         ss.ss_separator = this->tlf_separator;
+        // Same column count the scan locked in, because a space separator
+        // needs it to know which cell is the last one: every earlier cell
+        // ends at a run of spaces, the last one absorbs them.  Without it
+        // the last column comes back cut at its first double space, and the
+        // opid synthesized below no longer matches the one keying all_opids.
+        ss.ss_expected_count = this->elf_value_def_read_order.size();
+        opid_desc_accum opid_desc;
         for (auto it = ss.begin(); it != ss.end(); ++it) {
             if (it.index() >= this->elf_value_def_read_order.size()) {
                 break;
             }
-            this->process_csv_cell(values, &sa, it, line);
+            this->process_csv_cell(values, &sa, it, line, &opid_desc);
         }
+        this->synthesize_tabular_opid(values, opid_desc, sf);
 
         return;
     }
@@ -3199,7 +3290,9 @@ read_json_field(yajlpp_parse_context* ypc,
             }
             if (last != nullptr) {
                 auto old_flags
-                    = jlu->jlu_format->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+                    = jlu->jlu_format->timestamp_flags_for(
+                          *jlu->jlu_batch_context)
+                    & DATE_TIME_SET_FLAGS;
                 auto new_flags = jlu->jlu_exttm.et_flags & DATE_TIME_SET_FLAGS;
 
                 // It is unlikely a valid timestamp would lose much
@@ -3210,7 +3303,8 @@ read_json_field(yajlpp_parse_context* ypc,
             }
         }
         if (last != nullptr) {
-            jlu->jlu_format->lf_timestamp_flags = jlu->jlu_exttm.et_flags;
+            jlu->jlu_format->timestamp_flags_for(*jlu->jlu_batch_context)
+                = jlu->jlu_exttm.et_flags;
             jlu->jlu_base_line->set_time(tv_out);
         } else {
             jlu->jlu_scan_error = log_format::scan_error{fmt::format(
@@ -3289,9 +3383,9 @@ read_json_field(yajlpp_parse_context* ypc,
     }
 
     if (vd != nullptr && vd->vd_is_desc_field) {
-        auto frag_copy = frag.to_owned(jlu->jlu_format->lf_desc_allocator);
+        auto frag_copy = frag.to_owned(jlu->jlu_desc_allocator);
 
-        jlu->jlu_format->lf_desc_captures.emplace(field_name, frag_copy);
+        jlu->jlu_desc_captures.emplace(field_name, frag_copy);
     }
 
     jlu->add_sub_lines_for(vd, ypc->is_level(1), std::nullopt, str, len, props);
@@ -3328,13 +3422,13 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     }
 
     if (jlu->jlu_format->elf_opid_field == field_name) {
-        jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
-        jlu->jlu_format->jlf_line_values.lvv_opid_provenance
+        jlu->jlu_line_values.lvv_opid_value = frag.to_string();
+        jlu->jlu_line_values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
     }
     if (jlu->jlu_format->elf_thread_id_field == field_name) {
-        jlu->jlu_format->jlf_line_values.lvv_thread_id_value
-            = frag.to_owned(jlu->jlu_format->jlf_line_values.lvv_allocator);
+        jlu->jlu_line_values.lvv_thread_id_value
+            = frag.to_owned(jlu->jlu_line_values.lvv_allocator);
     }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
@@ -3389,8 +3483,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             sql_strftime(
                 time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval(), 'T');
         }
-        jlu->jlu_format->jlf_line_values.lvv_time_value = frag;
-        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+        jlu->jlu_line_values.lvv_time_value = frag;
+        jlu->jlu_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),
             std::string{time_buf});
@@ -3428,12 +3522,12 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             auto tslen = dts.ftime(
                 ts, sizeof(ts), jlu->jlu_format->get_timestamp_formats(), tm);
             ts[tslen] = '\0';
-            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+            jlu->jlu_line_values.lvv_values.emplace_back(
                 jlu->jlu_format->get_value_meta(
                     ypc, vd, value_kind_t::VALUE_TIMESTAMP),
                 std::string{(const char*) ts, tslen});
         } else {
-            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+            jlu->jlu_line_values.lvv_values.emplace_back(
                 jlu->jlu_format->get_value_meta(
                     ypc, vd, value_kind_t::VALUE_TEXT),
                 std::string{(const char*) str, len});
@@ -3441,7 +3535,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     } else if (jlu->jlu_shared_buffer.contains((const char*) str)) {
         auto str_offset = (int) ((const char*) str - jlu->jlu_line_value);
         if (field_name == jlu->jlu_format->elf_body_field) {
-            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+            jlu->jlu_line_values.lvv_values.emplace_back(
                 logline_value_meta(body_name,
                                    value_kind_t::VALUE_TEXT,
                                    logline_value_meta::internal_column{},
@@ -3452,14 +3546,14 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                     str_offset + len));
         }
 
-        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+        jlu->jlu_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_TEXT),
             string_fragment::from_byte_range(jlu->jlu_shared_buffer.get_data(),
                                              str_offset,
                                              str_offset + len));
     } else {
         if (field_name == jlu->jlu_format->elf_body_field) {
-            jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+            jlu->jlu_line_values.lvv_values.emplace_back(
                 logline_value_meta(body_name,
                                    value_kind_t::VALUE_TEXT,
                                    logline_value_meta::internal_column{},
@@ -3467,16 +3561,16 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                 std::string{(const char*) str, len});
         }
 
-        jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
+        jlu->jlu_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_TEXT),
             std::string{(const char*) str, len});
     }
     if (vd != nullptr && vd->vd_is_desc_field
         && jlu->jlu_format->elf_opid_field.empty())
     {
-        auto frag_copy = frag.to_owned(jlu->jlu_format->lf_desc_allocator);
+        auto frag_copy = frag.to_owned(jlu->jlu_desc_allocator);
 
-        jlu->jlu_format->lf_desc_captures.emplace(field_name, frag_copy);
+        jlu->jlu_desc_captures.emplace(field_name, frag_copy);
     }
 
     return 1;
@@ -3503,7 +3597,8 @@ void
 external_log_format::process_csv_cell(logline_value_vector& values,
                                       string_attrs_t* sa,
                                       const separated_string::iterator& it,
-                                      shared_buffer_ref& sbr) const
+                                      shared_buffer_ref& sbr,
+                                      opid_desc_accum* opid_desc) const
 {
     const auto& [col_name, vd] = this->elf_value_def_read_order[it.index()];
     auto field_sf = *it;
@@ -3592,6 +3687,55 @@ external_log_format::process_csv_cell(logline_value_vector& values,
             }
         }
     }
+
+    if (opid_desc != nullptr) {
+        // Gathered outside the chain above, and on canon_sf, because that is
+        // how scan_tabular() feeds the same cells to line_finalize_inputs.
+        // The two ids have to match byte for byte.
+        if (!canon_sf.empty() && vd->vd_is_opid_desc_field) {
+            opid_desc->oda_hash.update(canon_sf);
+            opid_desc->oda_any = true;
+        }
+        if (!canon_sf.empty() && name == this->elf_duration_field) {
+            opid_desc->oda_has_duration = true;
+        }
+        if (!canon_sf.empty() && name == this->lf_start_timestamp_field) {
+            opid_desc->oda_has_start_ts = true;
+        }
+    }
+}
+
+void
+external_log_format::synthesize_tabular_opid(logline_value_vector& values,
+                                             opid_desc_accum& opid_desc,
+                                             string_fragment row_sf) const
+{
+    char buf[hasher::STRING_SIZE];
+
+    // Both branches, and their order, mirror finalize_line() -- the scan side
+    // that keys all_opids.
+    if (!values.lvv_opid_value && this->elf_opid_field.empty()
+        && opid_desc.oda_any)
+    {
+        opid_desc.oda_hash.to_string(buf);
+        values.lvv_opid_value = std::string(buf, sizeof(buf) - 1);
+        values.lvv_opid_provenance
+            = logline_value_vector::opid_provenance::file;
+    }
+    if (!values.lvv_opid_value
+        && (opid_desc.oda_has_duration || opid_desc.oda_has_start_ts))
+    {
+        // Hashed over the ANSI-erased row, which is what finalize_line()
+        // hashes too: the scan erases the escapes before process_prefix()
+        // hands the line to scan_tabular().
+        hasher h;
+
+        h.update(row_sf);
+        h.to_string(buf);
+        values.lvv_opid_value = std::string(buf, sizeof(buf) - 1);
+        values.lvv_opid_provenance
+            = logline_value_vector::opid_provenance::file;
+    }
 }
 
 void
@@ -3613,11 +3757,13 @@ external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
     ss.ss_separator = this->tlf_separator;
     ss.ss_expected_count = this->elf_value_def_read_order.size();
 
+    opid_desc_accum opid_desc;
     for (auto it = ss.begin(); it != ss.end(); ++it) {
         if (it.index() >= this->elf_value_def_read_order.size()) {
             break;
         }
-        this->process_csv_cell(this->jlf_line_values, nullptr, it, sbr);
+        this->process_csv_cell(
+            this->jlf_line_values, nullptr, it, sbr, &opid_desc);
         // Hidden values' lv_origin would otherwise point at the
         // original CSV byte range, but lvv_sbr is about to be
         // re-pointed at the rewritten line where those offsets are
@@ -3630,6 +3776,8 @@ external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
             this->jlf_line_values.lvv_values.back().lv_origin.clear();
         }
     }
+    this->synthesize_tabular_opid(
+        this->jlf_line_values, opid_desc, line_frag);
 
     this->jlf_used_values.assign(this->jlf_line_values.lvv_values.size(),
                                  false);
@@ -4157,7 +4305,16 @@ external_log_format::get_subline(const log_format_file_state& lffs,
     {
         auto& ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.get();
-        json_log_userdata jlu(sbr, nullptr, lffs.lffs_time_scanner);
+        // The subline pass only ever runs on a specialized copy, which is
+        // this file's alone, so it parses into the format's own buffers.
+        json_log_userdata jlu(sbr,
+                              nullptr,
+                              lffs.lffs_time_scanner,
+                              this->jlf_line_values,
+                              this->lf_desc_captures,
+                              this->lf_desc_allocator,
+                              this->elf_value_def_read_order,
+                              this->elf_allocator);
 
         jlu.jlu_subline_opts = opts;
 
@@ -5029,13 +5186,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
     for (auto& od_pair : *this->lf_opid_description_def) {
         od_pair.second.od_name = od_pair.first;
-        od_pair.second.od_index = this->lf_opid_description_def_vec->size();
+        od_pair.second.od_index = static_cast<uint16_t>(
+            this->lf_opid_description_def_vec->size());
         this->lf_opid_description_def_vec->emplace_back(&od_pair.second);
     }
 
     for (auto& od_pair : *this->lf_subid_description_def) {
         od_pair.second.od_name = od_pair.first;
-        od_pair.second.od_index = this->lf_subid_description_def_vec->size();
+        od_pair.second.od_index = static_cast<uint16_t>(
+            this->lf_subid_description_def_vec->size());
         this->lf_subid_description_def_vec->emplace_back(&od_pair.second);
     }
 
@@ -5576,6 +5735,21 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
+    // Flag the fields the tabular scan hashes into a synthetic opid, so the
+    // per-cell check is a load instead of a lookup.  Only the first
+    // description, which is the one scan_tabular() reads.
+    if (!this->lf_opid_description_def->empty()) {
+        const auto& opid_def = this->lf_opid_description_def->begin()->second;
+
+        for (const auto& opid_desc : *opid_def.od_descriptors) {
+            auto iter = this->elf_value_defs.find(opid_desc.od_field.pp_value);
+
+            if (iter != this->elf_value_defs.end()) {
+                iter->second->vd_is_opid_desc_field = true;
+            }
+        }
+    }
+
     for (const auto& subid_desc_pair : *this->lf_subid_description_def) {
         for (const auto& subid_desc : *subid_desc_pair.second.od_descriptors) {
             auto iter = this->elf_value_defs.find(subid_desc.od_field.pp_value);
@@ -5913,11 +6087,13 @@ public:
                       .value;
             require(0 <= col && col < elf->elf_column_count);
 
-            cols[col].vc_name = vd->vd_meta.lvm_name.get();
+            cols[col].vc_name = vd->vd_meta.lvm_name;
             cols[col].vc_type = type_pair.first;
             cols[col].vc_subtype = type_pair.second;
-            cols[col].vc_collator = vd->vd_collate;
-            cols[col].vc_comment = vd->vd_description;
+            cols[col].vc_collator = intern_string::lookup(vd->vd_collate);
+            /* the value_def outlives the columns built from it */
+            cols[col].vc_comment
+                = string_fragment::from_str(vd->vd_description);
         }
     }
 
@@ -5961,12 +6137,16 @@ public:
                  logline_value_vector& values) override
     {
         auto format = lf->get_format();
+        // The extra-column count is worked out from this file's header, so
+        // it lives on the file's own copy of the format.  elt_format is the
+        // shared one every file of this format is registered against.
+        auto* file_elf = dynamic_cast<external_log_format*>(format.get());
 
         sa.clear();
         format->annotate(lf, line_number, sa, values);
         if (this->elt_format->elf_type
                 == external_log_format::elf_type_t::ELF_TYPE_TABULAR
-            && this->elt_format->tlf_extra_count > 0)
+            && file_elf != nullptr && file_elf->tlf_extra_count > 0)
         {
             auto iter = this->elt_format->elf_value_defs.find(
                 log_format::LOG_EXTRA_FIELDS_STR);
@@ -6016,6 +6196,46 @@ external_log_format::get_vtab_impl() const
     return std::make_shared<external_log_table>(this->shared_from_this());
 }
 
+void
+external_log_format::json_scan_scratch::ensure_parser()
+{
+    if (this->jss_parse_context != nullptr) {
+        return;
+    }
+
+    static const auto PROBE_SRC = intern_string::lookup("json-probe");
+
+    this->jss_parse_context = std::make_shared<yajlpp_parse_context>(PROBE_SRC);
+    this->jss_yajl_handle.reset(
+        yajl_alloc(&this->jss_parse_context->ypc_callbacks,
+                   nullptr,
+                   this->jss_parse_context.get()),
+        yajl_handle_deleter());
+    yajl_config(this->jss_yajl_handle.get(), yajl_dont_validate_strings, 1);
+}
+
+void
+external_log_format::adopt_scan_state(format_scan_state& fss)
+{
+    auto& st = static_cast<external_scan_state&>(fss);
+
+    this->tlf_separator = st.ess_separator;
+    this->tlf_header_end = st.ess_header_end;
+    this->tlf_extra_count = st.ess_extra_count;
+    this->tlf_suspended_state = std::nullopt;
+
+    // The names were interned in the batch's arena, which belongs to the
+    // file's indexing pass; re-own them here so they live as long as this
+    // format does.
+    this->elf_value_def_read_order.clear();
+    this->elf_value_def_read_order.reserve(
+        st.ess_value_def_read_order.size());
+    for (const auto& [name, vd] : st.ess_value_def_read_order) {
+        this->elf_value_def_read_order.emplace_back(
+            vd == nullptr ? name.to_owned(this->elf_allocator) : name, vd);
+    }
+}
+
 std::shared_ptr<log_format>
 external_log_format::specialized(int fmt_lock)
 {
@@ -6047,10 +6267,14 @@ external_log_format::specialized(int fmt_lock)
     retval->elf_specialized_value_defs_state = *retval->elf_value_defs_state;
 
     // ArenaAlloc's copy constructor shares the implementation by refcount, so
-    // the copy above left the clone allocating out of the root's arena.  Give
-    // it one of its own; the fragments interned at load time keep pointing
-    // into the root's, which outlives every clone in lf_root_formats.
+    // the copy above left the clone allocating out of the root's arenas.
+    // Give it its own; the fragments interned at load time keep pointing into
+    // the root's, which outlives every clone in lf_root_formats.
     retval->elf_allocator = ArenaAlloc::Alloc<char>{4096};
+    // scan_json() reset()s this one at the top of every line, which frees the
+    // whole arena.  Sharing it between clones means two files being scanned
+    // at once free each other's blocks.
+    retval->lf_desc_allocator = ArenaAlloc::Alloc<char>{2 * 1024};
 
     return retval;
 }

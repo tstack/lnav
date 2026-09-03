@@ -22,8 +22,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_tabular.csv
 
 # Opid + thread parse with `-` placeholder: rows 2 and 4 use `-` for
-# opid/thread respectively and should have NULL log_opid / no thread
-# entry, while rows with real values show through.
+# opid/thread respectively, so neither binds from its column.  The
+# thread stays unset, but the format declares a duration-field, which
+# sends row 2 down finalize_line's fallback branch: the whole row is
+# hashed into a synthetic id.  Rows with real values show through
+# as-is.
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ";SELECT log_time, log_opid FROM all_logs ORDER BY log_time" \
@@ -55,6 +58,36 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ";SELECT total, errors, warnings FROM all_opids ORDER BY total DESC, errors" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_synth.csv
+
+# The synthesized opid value itself.  With no opid-field, finalize_line
+# hashes the description fields (client_ip + user) together, so the id is
+# a content hash: pinning it catches a change in which cells are fed to
+# the hasher, or the order they go in, neither of which moves the counts
+# above.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT opid, total, errors, warnings FROM all_opids ORDER BY opid" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_synth.csv
+
+# The same id has to reach the rows, not just the all_opids view: the
+# log view finds an op's messages with `WHERE log_opid = $opid`, so a
+# per-row id that does not match the key leaves the op unreachable.
+# Every row here must carry one of the two ids above.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_opid FROM all_logs ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_synth.csv
+
+# The op's label and the block it came from: the `description` block
+# named `request` lists client_ip + user, so each op is described by
+# that pair and log_opid_definition names the block that matched.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT o.opid, o.description, a.log_opid_definition FROM all_opids o JOIN all_logs a ON a.log_opid = o.opid GROUP BY o.opid ORDER BY o.opid" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_tabular_synth.csv
 
@@ -245,3 +278,22 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_extra_fields FROM windows_event_log ORDER BY log_line" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_win_events_quoted_hdr.csv
+
+# Space-separated columns: annotate() has to be told the column count the
+# scan locked in, since that is what decides which cell absorbs a run of
+# spaces instead of ending at one.  Without it the last column comes back
+# cut at its first double space.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, user, log_body FROM tabular_space_log ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_space.0
+
+# ... and because that last column feeds the opid description, a cut cell
+# also gives the row an opid that is not the one keying all_opids.  Every
+# row must join.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT t.log_line, t.log_opid FROM tabular_space_log t JOIN all_opids o ON t.log_opid = o.opid ORDER BY t.log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_tabular_space.0

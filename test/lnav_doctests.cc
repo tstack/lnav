@@ -41,12 +41,45 @@
 #include "hasher.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
+#include "logfile.hh"
+#include "md4cpp.hh"
 #include "ptimec.hh"
 #include "shlex.hh"
+#include "sqlite-extension-func.hh"
+#include "sqlitepp.hh"
 #include "terminfo/terminfo.h"
 #include "unique_path.hh"
 
+#include <thread>
+
 using namespace std;
+
+TEST_CASE("lnav::logfile_indexing_width")
+{
+    auto& threads = lnav_config.lc_logfile.lc_indexing_threads;
+    const auto saved = threads;
+
+    // One file at a time, the way lnav always has.
+    threads = 1;
+    CHECK(1 == lnav::logfile_indexing_width(0));
+    CHECK(1 == lnav::logfile_indexing_width(1));
+    CHECK(1 == lnav::logfile_indexing_width(100));
+
+    // A fixed width, never more workers than there are files.
+    threads = 4;
+    CHECK(1 == lnav::logfile_indexing_width(1));
+    CHECK(2 == lnav::logfile_indexing_width(2));
+    CHECK(4 == lnav::logfile_indexing_width(4));
+    CHECK(4 == lnav::logfile_indexing_width(100));
+
+    // 0 asks the machine; the answer is bounded the same way.
+    threads = 0;
+    CHECK(1 == lnav::logfile_indexing_width(1));
+    CHECK(lnav::logfile_indexing_width(100) >= 1);
+    CHECK(lnav::logfile_indexing_width(100) <= 8);
+
+    threads = saved;
+}
 
 #if 0
 TEST_CASE("overwritten-logfile") {
@@ -403,4 +436,104 @@ TEST_CASE("hasher to_string")
     h.update("hello");
     h.to_string(buf);
     CHECK(string(buf) == "cae682d36a82683743e01ac7d11e945c");
+}
+
+TEST_CASE("lnav::sql::thread_local_db")
+{
+    static constexpr size_t THREAD_COUNT = 8;
+
+    std::vector<sqlite3*> dbs(THREAD_COUNT, nullptr);
+    std::vector<int> matched(THREAD_COUNT, -1);
+    std::vector<int> same_twice(THREAD_COUNT, 0);
+    std::vector<int> state_func_prepared(THREAD_COUNT, -1);
+    std::vector<std::thread> threads;
+
+    for (size_t lpc = 0; lpc < THREAD_COUNT; lpc++) {
+        threads.emplace_back([lpc, &dbs, &matched, &same_twice,
+                              &state_func_prepared]() {
+            auto* db = lnav::sql::thread_local_db();
+
+            dbs[lpc] = db;
+            if (db == nullptr) {
+                return;
+            }
+            // The same thread asking again gets the same connection.
+            same_twice[lpc] = (lnav::sql::thread_local_db() == db) ? 1 : 0;
+
+            // A function from one of the thread-safe groups is registered and
+            // works.  Running this from every thread at once is what catches
+            // unguarded global state in register_sqlite_funcs().
+            {
+                auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+                const char* sql = "SELECT 1 WHERE startswith('abc', 'a')";
+
+                if (sqlite3_prepare_v2(db, sql, -1, stmt.out(), nullptr)
+                    == SQLITE_OK)
+                {
+                    matched[lpc] = (sqlite3_step(stmt) == SQLITE_ROW) ? 1 : 0;
+                }
+            }
+
+            // One that reads lnav's view state is not, so it cannot even be
+            // prepared here.  Callers rely on that to spot the statements
+            // they have to run on the main thread.
+            {
+                auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+                const char* sql = "SELECT 1 WHERE log_top_line() > 0";
+
+                state_func_prepared[lpc]
+                    = (sqlite3_prepare_v2(db, sql, -1, stmt.out(), nullptr)
+                       == SQLITE_OK)
+                    ? 1
+                    : 0;
+            }
+        });
+    }
+    for (auto& th : threads) {
+        th.join();
+    }
+
+    std::set<sqlite3*> distinct;
+    for (size_t lpc = 0; lpc < THREAD_COUNT; lpc++) {
+        CHECK(dbs[lpc] != nullptr);
+        CHECK(same_twice[lpc] == 1);
+        CHECK(matched[lpc] == 1);
+        CHECK(state_func_prepared[lpc] == 0);
+        distinct.insert(dbs[lpc]);
+    }
+    // One connection per thread, not one shared between them.
+    CHECK(distinct.size() == THREAD_COUNT);
+
+    // The same statement prepares fine against a connection carrying the
+    // full set, so the failure above is the missing group and not a typo.
+    {
+        auto_sqlite3 full_db;
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+
+        REQUIRE(sqlite3_open(":memory:", full_db.out()) == SQLITE_OK);
+        register_sqlite_funcs(full_db.in(), sqlite_registration_funcs);
+        CHECK(sqlite3_prepare_v2(full_db.in(),
+                                 "SELECT 1 WHERE log_top_line() > 0",
+                                 -1,
+                                 stmt.out(),
+                                 nullptr)
+              == SQLITE_OK);
+    }
+}
+
+TEST_CASE("md4cpp::KNOWN_EMOJIS")
+{
+    const auto& em = md4cpp::get_emoji_map();
+
+    // The hardcoded table is what the _emoji literal resolves against, and
+    // half of these glyphs never reach a golden file, so this is the only
+    // thing standing between a typo and a wrong symbol on screen.
+    for (const auto& lit : md4cpp::literals::KNOWN_EMOJIS) {
+        const auto shortname = lit.el_shortname.to_string();
+        const auto iter = em.em_shortname2emoji.find(shortname);
+
+        INFO("shortcode: " << shortname);
+        REQUIRE(iter != em.em_shortname2emoji.end());
+        CHECK(iter->second.get().e_value == lit.el_value.to_string());
+    }
 }

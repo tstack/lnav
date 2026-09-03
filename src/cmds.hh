@@ -26,37 +26,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file lnav_commands.hh
+ * @file cmds.hh
  */
 
-#ifndef lnav_commands_hh
-#define lnav_commands_hh
+#ifndef lnav_cmds_hh
+#define lnav_cmds_hh
 
 #include <optional>
 #include <string>
 
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 
 /**
  * Initialize the given map with the builtin lnav commands.
  */
-void init_lnav_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_breakpoint_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_breakpoint_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_display_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_io_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_metadata_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_metadata_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_scripting_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_scripting_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_filtering_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_filtering_commands(lnav::commands::command_map_t& cmd_map);
 
-void init_lnav_search_commands(readline_context::command_map_t& cmd_map);
+void init_lnav_search_commands(lnav::commands::command_map_t& cmd_map);
 
 std::string remaining_args(const std::string& cmdline,
                            const std::vector<std::string>& args,

@@ -30,6 +30,7 @@
  */
 
 #include <mutex>
+#include <new>
 
 #include "intern_string.hh"
 
@@ -44,7 +45,14 @@
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
 
-const static int TABLE_SIZE = 4095;
+/**
+ * Must be a power of two: the bucket is masked out of the hash rather than
+ * taken modulo.  Sized so the built-in formats, which intern about 4800
+ * strings before any file is opened, stay well under a full load.
+ */
+constexpr size_t TABLE_SIZE = 8192;
+static_assert((TABLE_SIZE & (TABLE_SIZE - 1)) == 0,
+              "TABLE_SIZE must be a power of two for the mask below");
 
 struct intern_string::intern_table {
     ~intern_table()
@@ -55,13 +63,14 @@ struct intern_string::intern_table {
             while (curr != nullptr) {
                 auto next = curr->is_next;
 
-                delete curr;
+                intern_string::destroy(curr);
                 curr = next;
             }
         }
     }
 
-    intern_string* it_table[TABLE_SIZE];
+    /** Chain heads, null until something hashes to the bucket. */
+    intern_string* it_table[TABLE_SIZE]{};
 };
 
 intern_table_lifetime
@@ -78,6 +87,27 @@ hash_str(const char* str, size_t len)
     return XXH3_64bits(str, len);
 }
 
+intern_string*
+intern_string::create(const char* str, size_t len)
+{
+    // is_data already accounts for one byte, so this covers the characters
+    // and the terminator.
+    auto* mem = ::operator new(sizeof(intern_string) + len);
+    auto* retval = new (mem) intern_string(len);
+
+    memcpy(retval->is_data, str, len);
+    retval->is_data[len] = '\0';
+
+    return retval;
+}
+
+void
+intern_string::destroy(intern_string* is)
+{
+    is->~intern_string();
+    ::operator delete(is);
+}
+
 const intern_string*
 intern_string::lookup(const char* str, ssize_t len) noexcept
 {
@@ -87,7 +117,13 @@ intern_string::lookup(const char* str, ssize_t len) noexcept
     if (len == -1) {
         len = strlen(str);
     }
-    h = hash_str(str, len) % TABLE_SIZE;
+    if (len == 0) {
+        /* Interning this would produce a node that intern_string_t::empty()
+         * reports as non-empty, since that tests for the null node.
+         */
+        return nullptr;
+    }
+    h = hash_str(str, len) & (TABLE_SIZE - 1);
 
     {
         static std::mutex table_mutex;
@@ -97,15 +133,15 @@ intern_string::lookup(const char* str, ssize_t len) noexcept
 
         curr = tab->it_table[h];
         while (curr != nullptr) {
-            if (static_cast<ssize_t>(curr->is_str.size()) == len
-                && strncmp(curr->is_str.c_str(), str, len) == 0)
+            if (static_cast<ssize_t>(curr->is_len) == len
+                && memcmp(curr->is_data, str, len) == 0)
             {
                 return curr;
             }
             curr = curr->is_next;
         }
 
-        curr = new intern_string(str, len);
+        curr = intern_string::create(str, len);
         curr->is_next = tab->it_table[h];
         tab->it_table[h] = curr;
 
@@ -128,7 +164,7 @@ intern_string::lookup(const std::string& str) noexcept
 bool
 intern_string::startswith(const char* prefix) const
 {
-    const char* curr = this->is_str.data();
+    const char* curr = this->is_data;
 
     while (*prefix != '\0' && *prefix == *curr) {
         prefix += 1;

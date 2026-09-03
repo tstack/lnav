@@ -54,6 +54,7 @@
 #endif
 
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include <sstream>
@@ -117,14 +118,15 @@ CRASH_LIST()
 }
 
 struct thid {
-    static uint32_t COUNTER;
+    // Bumped once by every thread that logs, so it has to be atomic.
+    static std::atomic<uint32_t> COUNTER;
 
-    thid() noexcept : t_id(COUNTER++) {}
+    thid() noexcept : t_id(COUNTER.fetch_add(1, std::memory_order_relaxed)) {}
 
     uint32_t t_id;
 };
 
-uint32_t thid::COUNTER = 0;
+std::atomic<uint32_t> thid::COUNTER{0};
 
 template<size_t SIZE = 256>
 struct fixed_string {

@@ -77,6 +77,7 @@
 /tuning/external-opener/impls/MacOS/test -> root-config.json:134
 /tuning/external-opener/impls/XDG/command -> root-config.json:139
 /tuning/external-opener/impls/XDG/test -> root-config.json:138
+/tuning/logfile/indexing-threads -> root-config.json:185
 /tuning/piper/max-size -> root-config.json:78
 /tuning/piper/rotations -> root-config.json:79
 /tuning/piper/ttl -> root-config.json:80
@@ -86,13 +87,13 @@
 /tuning/remote/ssh/start-command -> root-config.json:73
 /tuning/remote/ssh/transfer-command -> root-config.json:74
 /tuning/textfile/max-unformatted-line-length -> root-config.json:182
-/tuning/url-scheme/docker-compose/handler -> root-config.json:189
-/tuning/url-scheme/docker/handler -> root-config.json:186
+/tuning/url-scheme/docker-compose/handler -> root-config.json:192
+/tuning/url-scheme/docker/handler -> root-config.json:189
 /tuning/url-scheme/hw/handler -> {test_dir}/configs/installed/hw-url-handler.json:6
-/tuning/url-scheme/journald/handler -> root-config.json:192
-/tuning/url-scheme/piper/handler -> root-config.json:195
-/tuning/url-scheme/podman/handler -> root-config.json:198
-/tuning/url-scheme/strace/handler -> root-config.json:201
+/tuning/url-scheme/journald/handler -> root-config.json:195
+/tuning/url-scheme/piper/handler -> root-config.json:198
+/tuning/url-scheme/podman/handler -> root-config.json:201
+/tuning/url-scheme/strace/handler -> root-config.json:204
 /ui/clock-format -> root-config.json:11
 /ui/default-colors -> root-config.json:13
 /ui/dim-text -> root-config.json:12

@@ -32,6 +32,8 @@
 #ifndef lnav_big_array_hh
 #define lnav_big_array_hh
 
+#include <algorithm>
+
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -52,8 +54,16 @@ struct big_array {
             munmap(this->ba_ptr,
                    roundup_size(this->ba_capacity * sizeof(T), getpagesize()));
         }
+        this->ba_size = 0;
 
-        this->ba_capacity = size + DEFAULT_INCREMENT;
+        // Growing by a flat increment costs a remap and a rebuild for every
+        // DEFAULT_INCREMENT elements an index gains, which a file being
+        // appended to reaches over and over.  Half again as much, once that
+        // beats the flat step, bounds that to O(log n) remaps.  The extra is
+        // address space rather than memory -- the pages past ba_size are
+        // never touched, so they are never faulted in.
+        this->ba_capacity
+            = std::max(size + DEFAULT_INCREMENT, size + size / 2);
         void* result
             = mmap(nullptr,
                    roundup_size(this->ba_capacity * sizeof(T), getpagesize()),

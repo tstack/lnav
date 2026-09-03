@@ -33,7 +33,10 @@
 #define logfile_sub_source_hh
 
 #include <array>
+#include <atomic>
+#include <functional>
 #include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -96,13 +99,32 @@ public:
         this->sf_filter_stmt = stmt;
     }
 
+    /**
+     * Handed out in creation order and never reused, so a filter allocated
+     * where a freed one used to live is still told apart from it.
+     */
+    static uint64_t next_serial()
+    {
+        static std::atomic<uint64_t> counter{0};
+
+        return counter.fetch_add(1, std::memory_order_relaxed) + 1;
+    }
+
     bool matches(std::optional<line_source> ls,
                  const shared_buffer_ref& line) override;
 
     std::string to_command() const override;
 
+    /**
+     * @return This thread's copy of the statement, prepared on first use, or
+     * null if it could not be prepared.
+     */
+    sqlite3_stmt* stmt_for_this_thread();
+
+
     auto_mem<sqlite3_stmt> sf_filter_stmt{sqlite3_finalize};
     logfile_sub_source& sf_log_source;
+    const uint64_t sf_serial{next_serial()};
 };
 
 class log_location_history : public location_history {
@@ -333,8 +355,19 @@ public:
     Result<void, lnav::console::user_message> set_sql_marker(
         std::string stmt_str, sqlite3_stmt* stmt);
 
+    /**
+     * Whether the expression has to be one that depends only on the message.
+     * Required of a filter, whose result is evaluated once at index time and
+     * then remembered; not of a marker, which is re-evaluated over every
+     * message each time it is set.
+     */
+    enum class expr_purity {
+        required,
+        not_required,
+    };
+
     Result<void, lnav::console::user_message> set_preview_sql_filter(
-        sqlite3_stmt* stmt);
+        sqlite3_stmt* stmt, expr_purity purity = expr_purity::required);
 
     std::string get_sql_filter_text()
     {
@@ -608,6 +641,28 @@ public:
         return content_line_t(index * MAX_LINES_PER_FILE);
     }
 
+    /**
+     * Called on the calling thread while a parallel scan is in flight so the
+     * UI keeps moving.  `off` and `total` are summed over the files being
+     * scanned.
+     *
+     * The workers are writing those files while this runs, so an
+     * implementation must not read them -- the numbers handed in here are all
+     * it gets.  `in_flight` carries a per-file breakdown of the same reading
+     * for the files that have not finished, so the file list can be drawn
+     * without touching them either.  Returning interrupt stops the scan as
+     * soon as the workers notice.
+     */
+    using scan_progress_fn = std::function<lnav::progress_result_t(
+        file_off_t,
+        file_ssize_t,
+        const std::vector<index_progress_report>&)>;
+
+    void set_scan_progress(scan_progress_fn fn)
+    {
+        this->lss_scan_progress = std::move(fn);
+    }
+
     void set_index_delegate(index_delegate* id)
     {
         if (id != this->lss_index_delegate) {
@@ -775,6 +830,32 @@ protected:
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
 
+    /** What a parallel pre-scan worked out about one file. */
+    struct prescan_result {
+        logfile::rebuild_result_t psr_result{
+            logfile::rebuild_result_t::NO_NEW_LINES};
+        /**
+         * The format's timestamp flags as they stood *before* the scan.  The
+         * loop OR's these in ahead of the file's own scan, so caching them
+         * here is what keeps lss_all_timestamp_flags exactly one pass behind,
+         * as it has always been.
+         */
+        uint32_t psr_timestamp_flags{0};
+    };
+
+    using prescan_map = std::unordered_map<const logfile*, prescan_result>;
+
+    /**
+     * Index this round's files up front and across several threads.
+     *
+     * rebuild_index() writes only its own logfile, so the files are
+     * independent; the merge, the sort, and everything else the loop does
+     * with the results stays on the calling thread and in file_order.
+     * Returns an empty map when there is nothing to gain, or when part of
+     * the scan has to run on this thread -- see the two gates inside.
+     */
+    prescan_map prescan_files(std::optional<ui_clock::time_point> deadline);
+
     void clear_line_size_cache()
     {
         this->lss_line_size_cache.fill(std::make_pair(0, 0));
@@ -828,6 +909,7 @@ private:
         lss_line_size_cache;
     bool lss_marked_only{false};
     index_delegate* lss_index_delegate{nullptr};
+    scan_progress_fn lss_scan_progress;
     size_t lss_longest_line{0};
     meta_grepper lss_meta_grepper;
     log_location_history lss_location_history;

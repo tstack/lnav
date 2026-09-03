@@ -32,7 +32,7 @@
 
 #include "base/lnav.console.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_create_named_search(exec_context& ec,
@@ -158,7 +158,7 @@ com_set_named_search_enabled(exec_context& ec,
                           name));
 }
 
-static readline_context::command_t SEARCH_COMMANDS[] = {
+static lnav::commands::command_t SEARCH_COMMANDS[] = {
     {
         "create-named-search",
         com_create_named_search,
@@ -227,7 +227,7 @@ static readline_context::command_t SEARCH_COMMANDS[] = {
 };
 
 void
-init_lnav_search_commands(readline_context::command_map_t& cmd_map)
+init_lnav_search_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : SEARCH_COMMANDS) {
         cmd.c_help.index_tags();

@@ -30,8 +30,8 @@
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
-#include "readline_context.hh"
+#include "cmds.hh"
+#include "lnav.commands.hh"
 #include "readline_highlighters.hh"
 #include "timeline_source.hh"
 
@@ -441,7 +441,7 @@ com_clear_timeline_metric(exec_context& ec,
                           args[1]));
 }
 
-static readline_context::command_t DISPLAY_COMMANDS[] = {
+static lnav::commands::command_t DISPLAY_COMMANDS[] = {
     {
         "set-text-view-mode",
         com_set_text_view_mode,
@@ -611,7 +611,7 @@ static readline_context::command_t DISPLAY_COMMANDS[] = {
 };
 
 void
-init_lnav_display_commands(readline_context::command_map_t& cmd_map)
+init_lnav_display_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : DISPLAY_COMMANDS) {
         cmd.c_help.index_tags();

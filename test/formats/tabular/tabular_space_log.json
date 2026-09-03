@@ -1,0 +1,38 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "tabular_space_log": {
+        "title": "Space-separated tabular log",
+        "description": "Columns are aligned with runs of spaces rather than a comma, so the last column is the one that absorbs the runs instead of ending at them.  The opid description ends on that column, which ties the synthesized opid to parsing it whole.",
+        "file-type": "tabular",
+        "file-pattern": "logfile_tabular_space\\.0",
+        "timestamp-field": "ts",
+        "body-field": "msg",
+        "opid": {
+            "description": {
+                "request": {
+                    "format": [
+                        {
+                            "field": "user"
+                        },
+                        {
+                            "field": "msg"
+                        }
+                    ]
+                }
+            }
+        },
+        "value": {
+            "ts": {
+                "kind": "string",
+                "hidden": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "msg": {
+                "kind": "string"
+            }
+        }
+    }
+}

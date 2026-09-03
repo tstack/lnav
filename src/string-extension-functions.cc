@@ -36,6 +36,7 @@
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
 #include "view_curses.hh"
+#include "curl_looper.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajl/api/yajl_gen.h"
@@ -507,7 +508,11 @@ static CURL*
 get_curl_easy()
 {
     static struct curl_wrapper {
-        curl_wrapper() { this->cw_value = curl_easy_init(); }
+        curl_wrapper()
+        {
+            ensure_curl_global_init();
+            this->cw_value = curl_easy_init();
+        }
 
         auto_mem<CURL> cw_value{curl_easy_cleanup};
     } retval;

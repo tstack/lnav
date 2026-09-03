@@ -34,7 +34,7 @@
 #include "base/result.h"
 #include "command_executor.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
@@ -218,9 +218,9 @@ com_goto_mark(exec_context& ec,
 }
 
 void
-init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map)
+init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
 {
-    static readline_context::command_t BOOKMARK_COMMANDS[] = {
+    static lnav::commands::command_t BOOKMARK_COMMANDS[] = {
 
         {
             "mark",

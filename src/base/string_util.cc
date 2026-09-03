@@ -165,7 +165,7 @@ unquote_w3c(char* dst, const char* str, size_t len)
 void
 truncate_to(std::string& str, size_t max_char_len)
 {
-    static const std::string ELLIPSIS = "\u22ef";
+    static constexpr const char ELLIPSIS[] = "\u22ef";
 
     if (str.length() < max_char_len) {
         return;

@@ -232,6 +232,34 @@ public:
 
     virtual std::shared_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
+    /**
+     * @return Scratch for this format to discover into while it is a
+     * candidate, or null if it discovers nothing from the file.
+     * @see format_scan_state
+     */
+    virtual std::unique_ptr<format_scan_state> make_scan_state() const
+    {
+        return nullptr;
+    }
+
+    /**
+     * Take over what was discovered while this format's root was the winning
+     * candidate.  Called on the specialized copy, just after specialized().
+     */
+    virtual void adopt_scan_state(format_scan_state& fss) {}
+
+    /**
+     * The timestamp flags this scan should accumulate into.  A specialized
+     * copy belongs to one file and keeps its own; a root is shared by every
+     * file being probed against it, so a candidate accumulates into the
+     * batch and process_prefix hands the winner's flags to the copy.
+     */
+    uint32_t& timestamp_flags_for(scan_batch_context& sbc)
+    {
+        return this->lf_specialized ? this->lf_timestamp_flags
+                                    : sbc.sbc_timestamp_flags;
+    }
+
     virtual std::shared_ptr<log_vtab_impl> get_vtab_impl() const
     {
         return nullptr;
@@ -405,7 +433,7 @@ public:
     struct opid_descriptors {
         intern_string_t od_name;
         std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
-        size_t od_index{0};
+        uint16_t od_index{0};
 
         std::string to_string(
             const lnav::map::small<size_t, std::string>& lod) const;

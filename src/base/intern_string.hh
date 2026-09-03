@@ -896,23 +896,32 @@ public:
 
 class intern_string {
 public:
+    /**
+     * Find or create the entry for the given string.
+     *
+     * An empty string is not interned, the null entry is returned for it so
+     * that the intern_string_t built from it reports itself as empty.
+     */
     static const intern_string* lookup(const char* str, ssize_t len) noexcept;
 
     static const intern_string* lookup(const string_fragment& sf) noexcept;
 
     static const intern_string* lookup(const std::string& str) noexcept;
 
-    const char* get() const { return this->is_str.c_str(); };
+    const char* get() const { return this->is_data; };
 
-    const char* data() const { return this->is_str.c_str(); };
+    const char* data() const { return this->is_data; };
 
-    size_t size() const { return this->is_str.size(); }
+    size_t size() const { return this->is_len; }
 
-    std::string to_string() const { return this->is_str; }
+    std::string to_string() const
+    {
+        return std::string(this->is_data, this->is_len);
+    }
 
     string_fragment to_string_fragment() const
     {
-        return string_fragment{this->is_str};
+        return string_fragment::from_bytes(this->is_data, this->is_len);
     }
 
     bool startswith(const char* prefix) const;
@@ -920,16 +929,35 @@ public:
     struct intern_table;
     static std::shared_ptr<intern_table> get_table_lifetime();
 
+    intern_string(const intern_string&) = delete;
+    intern_string& operator=(const intern_string&) = delete;
+
 private:
     friend intern_table;
 
-    intern_string(const char* str, ssize_t len)
-        : is_next(nullptr), is_str(str, (size_t) len)
+    /**
+     * Allocate one block holding the node and its characters, which are
+     * NUL-terminated so get() can be handed to anything wanting a C string.
+     *
+     * The characters never change and are freed with the node, so there is
+     * nothing for a separate string to buy here -- most interned strings run
+     * past the small-string limit, and each would otherwise carry a second
+     * allocation.
+     */
+    static intern_string* create(const char* str, size_t len);
+
+    /** Undoes create(); the table owns every node until it is destroyed. */
+    static void destroy(intern_string* is);
+
+    explicit intern_string(size_t len)
+        : is_next(nullptr), is_len(static_cast<uint32_t>(len))
     {
     }
 
     intern_string* is_next;
-    std::string is_str;
+    uint32_t is_len;
+    /** Over-allocated by create() to hold is_len characters and a NUL. */
+    char is_data[1];
 };
 
 using intern_table_lifetime = std::shared_ptr<intern_string::intern_table>;

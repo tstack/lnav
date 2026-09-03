@@ -45,6 +45,28 @@ void sqlite_close_wrapper(void* mem);
 
 using auto_sqlite3 = auto_mem<sqlite3, sqlite_close_wrapper>;
 
+namespace lnav::sql {
+
+/**
+ * @return A connection private to the calling thread, carrying only the
+ * functions that depend on nothing but their arguments, or null if the
+ * calling thread cannot have one.
+ *
+ * Work that would otherwise have to run on the thread owning the main
+ * connection -- stepping a watch expression or a SQL filter for a line --
+ * can run against this instead.  It is a bare in-memory database: none of
+ * lnav's tables are attached and none of the functions that read lnav's
+ * state are registered, so a statement needing either fails to prepare
+ * rather than racing.
+ *
+ * Opened on first use and closed when the thread exits.  Null means SQLite
+ * was built without threading, or the open failed; a caller that gets null
+ * has to do the work on the main thread.
+ */
+sqlite3* thread_local_db();
+
+}  // namespace lnav::sql
+
 namespace sqlitepp {
 
 inline auto_mem<char>

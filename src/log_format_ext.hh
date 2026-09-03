@@ -81,6 +81,13 @@ public:
         intern_string_t vd_rewrite_src_name;
         std::optional<size_t> vd_line_format_index;
         bool vd_is_desc_field{false};
+        /**
+         * Whether this value names one of the fields the opid description
+         * hashes together, which is what the tabular scan checks per cell.
+         * Narrower than `vd_is_desc_field`, which also covers the subid
+         * description fields.
+         */
+        bool vd_is_opid_desc_field{false};
         std::map<const intern_string_t, highlighter_def>
             vd_highlighter_patterns;
     };
@@ -450,7 +457,13 @@ public:
         std::optional<string_fragment> lfi_start_ts_cap;
         std::optional<string_fragment> lfi_src_file_cap;
         std::optional<string_fragment> lfi_src_line_cap;
-        std::vector<string_fragment> lfi_opid_desc_frags;
+        /**
+         * The opid description fields, hashed as the scan walks them, so that
+         * no container is needed to hold them.  Only meaningful when
+         * `lfi_has_opid_desc` is set.
+         */
+        hasher lfi_opid_desc_hash;
+        bool lfi_has_opid_desc{false};
         string_fragment lfi_line_sf;
         // Scratch buffer for a synthesized opid; `lfi_opid_cap` is pointed
         // at this when `finalize_line` synthesizes one.  Caller's struct
@@ -476,7 +489,8 @@ public:
                                const lnav::pcre2pp::match_data& md);
 
     void update_op_description(const std::vector<opid_descriptors*>& desc_def,
-                               log_op_description& lod);
+                               log_op_description& lod,
+                               const desc_cap_map& desc_caps);
 
     void json_append_to_cache(const char* value, ssize_t len)
     {
@@ -529,6 +543,60 @@ public:
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
     shared_buffer jlf_share_manager;
 
+    /**
+     * Scratch a JSON scan parses into.  A specialized copy belongs to one
+     * file and parks its values on the format for the render pass to read
+     * back; a root is shared by every file being probed against it, so a
+     * candidate parses into a per-thread instance of this instead, which
+     * nothing reads back.
+     */
+    struct json_scan_scratch {
+        logline_value_vector jss_line_values;
+        desc_cap_map jss_desc_captures;
+        ArenaAlloc::Alloc<char> jss_desc_allocator{2 * 1024};
+        std::shared_ptr<yajlpp_parse_context> jss_parse_context;
+        std::shared_ptr<yajl_handle_t> jss_yajl_handle{
+            nullptr, yajl_handle_deleter()};
+        /**
+         * The column order a probed line presents, and the names it points
+         * at.  Reset at the top of every probe: the memo is positional and
+         * keyed only on the field name, so carrying it from one candidate
+         * format to the next would hand back the wrong value_def.
+         */
+        std::vector<std::pair<string_fragment, value_def*>> jss_read_order;
+        ArenaAlloc::Alloc<char> jss_field_allocator{4096};
+
+        /**
+         * Build the parser on first use.  Nothing in it survives a line --
+         * scan_json() resets the handle and rebinds the handler and the
+         * userdata every call -- so one serves every candidate format, and
+         * building it once per thread rather than once per probed line is
+         * what keeps detection cheap.
+         */
+        void ensure_parser();
+    };
+
+    /**
+     * What an external format works out from the file it is reading: the
+     * shape of a tabular header, and the column order it presents.  Held
+     * here while the format is only a candidate, because detection runs
+     * every file against the same shared root.  @see format_scan_state
+     */
+    struct external_scan_state : format_scan_state {
+        std::vector<std::pair<string_fragment, value_def*>>
+            ess_value_def_read_order;
+        file_ssize_t ess_header_end{0};
+        char ess_separator{','};
+        size_t ess_extra_count{0};
+    };
+
+    std::unique_ptr<format_scan_state> make_scan_state() const override
+    {
+        return std::make_unique<external_scan_state>();
+    }
+
+    void adopt_scan_state(format_scan_state& fss) override;
+
     file_ssize_t tlf_header_end{0};
     char tlf_separator{','};
     size_t tlf_extra_count{0};
@@ -567,10 +635,36 @@ private:
                             std::vector<bool>& used_values,
                             int& sub_offset);
 
+    /**
+     * Where the annotation side accumulates the opid description fields for a
+     * row.  The scan side hashes the same cells through line_finalize_inputs;
+     * the two ids have to come out equal, since the log view finds an op's
+     * lines by matching log_opid against the all_opids key.
+     */
+    struct opid_desc_accum {
+        hasher oda_hash;
+        bool oda_any{false};
+        bool oda_has_duration{false};
+        bool oda_has_start_ts{false};
+    };
+
     void process_csv_cell(logline_value_vector& values,
                           string_attrs_t* sa,
                           const separated_string::iterator& it,
-                          shared_buffer_ref& sbr) const;
+                          shared_buffer_ref& sbr,
+                          opid_desc_accum* opid_desc = nullptr) const;
+
+    /**
+     * Set the synthesized opid on a tabular row, from the description fields
+     * process_csv_cell() just gathered, or from the whole row when the format
+     * synthesizes off a duration instead.  Mirrors finalize_line().
+     *
+     * @param row_sf The row with ANSI escapes erased -- the same bytes
+     *               finalize_line() hashes.
+     */
+    void synthesize_tabular_opid(logline_value_vector& values,
+                                 opid_desc_accum& opid_desc,
+                                 string_fragment row_sf) const;
 };
 
 #endif

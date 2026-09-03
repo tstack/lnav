@@ -39,6 +39,7 @@
 
 #include <sys/stat.h>
 
+#include "base/file_range.hh"
 #include "base/fs_util.hh"
 #include "base/lnav.console.hh"
 #include "base/text_format_enum.hh"
@@ -54,6 +55,33 @@ class logline_observer;
 class child_poller;
 
 using logfile_const_iterator = std::vector<logline>::const_iterator;
+
+/**
+ * One file's worth of a parallel indexing tick's reading of the progress
+ * atomics (see index_progress in logfile.hh), handed to the UI thread so
+ * it can draw the file list without going back to the logfile for the
+ * numbers.  A worker owns that logfile for the length of the pass, so
+ * everything the UI needs about a file still in flight has to come through
+ * here.
+ */
+struct index_progress_report {
+    /**
+     * logfile::get_serial() for the file this reading is about.
+     *
+     * An id rather than the logfile, because this is only ever compared:
+     * nothing here needs to reach the file, and an id cannot dangle or be
+     * mistaken for a later file that reused the address.
+     */
+    uint64_t ipr_file_id{0};
+    file_off_t ipr_offset{0};
+    file_ssize_t ipr_total{0};
+    /**
+     * False for a file that cannot say where it is in the stream (bzip2), so
+     * the UI draws "working" rather than a bar built from a made-up
+     * denominator.
+     */
+    bool ipr_has_progress{false};
+};
 
 enum class logfile_name_source : uint8_t {
     USER,

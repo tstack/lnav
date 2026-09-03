@@ -63,7 +63,7 @@
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
 #include "progress_source.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
@@ -249,7 +249,7 @@ enum class verbosity_t : int {
 extern struct lnav_data_t lnav_data;
 extern verbosity_t verbosity;
 
-extern readline_context::command_map_t lnav_commands;
+extern lnav::commands::command_map_t lnav_commands;
 
 #define HELP_MSG_CTRL(x, msg) "Press '" ANSI_BOLD("CTRL-" #x) "' " msg
 

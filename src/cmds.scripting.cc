@@ -50,11 +50,11 @@
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "md4c/md4c-html.h"
 #include "md4cpp.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session.export.hh"
@@ -1010,7 +1010,7 @@ com_external_access_login(exec_context& ec,
 #endif
 }
 
-static readline_context::command_t SCRIPTING_COMMANDS[] = {
+static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
     {
         "export-session-to",
         com_export_session_to,
@@ -1132,7 +1132,7 @@ static readline_context::command_t SCRIPTING_COMMANDS[] = {
 };
 
 void
-init_lnav_scripting_commands(readline_context::command_map_t& cmd_map)
+init_lnav_scripting_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : SCRIPTING_COMMANDS) {
         cmd.c_help.index_tags();

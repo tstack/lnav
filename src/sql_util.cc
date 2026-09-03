@@ -49,7 +49,7 @@
 #include "lnav_util.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "prql-modules.h"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "readline_highlighters.hh"
 #include "sql_execute.hh"
 #include "sql_help.hh"
@@ -1856,7 +1856,7 @@ std::vector<const help_text*>
 find_sql_help_for_line(const attr_line_t& al, size_t x)
 {
     static const auto* sql_cmd_map
-        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+        = injector::get<lnav::commands::command_map_t*, sql_cmd_map_tag>();
 
     std::vector<const help_text*> retval;
     const auto& sa = al.get_attrs();

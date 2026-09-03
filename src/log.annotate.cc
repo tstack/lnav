@@ -133,7 +133,7 @@ applicable(vis_line_t vl)
     log_data_helper ldh(lss);
 
     ldh.load_line(vl, true);
-    for (auto expr : exprs.e_cond_exprs) {
+    for (auto& expr : exprs.e_cond_exprs) {
         if (!expr.second.cce_enabled) {
             continue;
         }

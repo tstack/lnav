@@ -74,7 +74,7 @@ wait_for_pipers(std::optional<ui_clock::time_point>)
 {
 }
 
-readline_context::command_map_t lnav_commands;
+lnav::commands::command_map_t lnav_commands;
 
 namespace injector {
 

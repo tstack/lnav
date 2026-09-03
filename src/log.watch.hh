@@ -34,7 +34,41 @@
 
 namespace lnav::log::watch {
 
+/**
+ * Evaluate the watch expressions for a line and publish an event for each one
+ * that matches.  Steps statements on, and writes to, the main database, so
+ * only the thread that owns that connection may call this.
+ */
 void eval_with(logfile& lf, logfile::iterator ll);
+
+/**
+ * Evaluate the watch expressions for a line, from any thread.
+ *
+ * The expressions run against lnav::sql::thread_local_db(), so no connection
+ * is shared.  A match is then handed to the main loop to publish, because
+ * lnav_events lives on the main connection and a user trigger on it can run
+ * anything -- which also means the event appears once the loop gets to it
+ * rather than at the moment of the match.
+ *
+ * Hand-offs are batched, so a caller has to end a scan with flush_pending().
+ */
+void eval_for(logfile& lf, logfile::iterator ll);
+
+/**
+ * Send whatever eval_for() has batched on this thread.
+ *
+ * Called at the end of a file's scan.  Not required for correctness on its
+ * own -- a batch for one file is also sent when the thread starts on the next
+ * -- but without it the last file's matches would sit unpublished.
+ */
+void flush_pending();
+
+/**
+ * @return Whether any watch expression is enabled.
+ *
+ * An indexing pass has to know up front whether evaluation happens at all.
+ */
+bool any_enabled();
 
 }
 

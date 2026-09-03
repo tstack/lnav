@@ -44,54 +44,104 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
-/**
- * Observer for loading progress that updates the bottom status bar.
- */
-class loading_observer : public logfile_observer {
-public:
-    lnav::progress_result_t logfile_indexing(const logfile* lf,
-                                             file_off_t off,
-                                             file_ssize_t total) override
+lnav::progress_result_t
+indexing_scan_progress(file_off_t off,
+                       file_ssize_t total,
+                       const std::vector<index_progress_report>& in_flight)
+{
+    if (lnav_data.ld_window == nullptr) {
+        return lnav::progress_result_t::ok;
+    }
+    // The closing tick, which clears the loading indicator, is the one with
+    // nothing left in flight.  Tested ahead of the interrupt checks so that an
+    // interrupted pass still gets the indicator cleared.  The total alone will
+    // not do: a file that cannot say how big it is reports zero for the whole
+    // time it is being indexed -- a bzip2 file before its first line, a pipe,
+    // the branches of rebuild_index() that store 0/0 -- and a pass made up of
+    // those would then never look at the interrupt.
+    const auto finished = (total == 0 && in_flight.empty());
+
+    auto& fss = lnav_data.ld_files_source;
+    const auto was_in_flight = fss.is_index_pass_in_flight();
+
+    // Published before anything below draws, and before the interrupt is
+    // acted on.  For the length of a pass these entries are the only place
+    // the file list may get these files' numbers from -- the workers own the
+    // logfiles themselves -- and once an interrupt is signalled every later
+    // tick returns early, so leaving this until after would freeze the list
+    // on its last pre-interrupt reading for the rest of the pass.
+    fss.fss_index_progress = in_flight;
+
+    if (!finished
+        && (lnav_data.ld_sigint_count.load() > 0 || !lnav_data.ld_looping))
     {
-        static sig_atomic_t index_counter = 0;
-
-        if (lnav_data.ld_window == nullptr) {
-            return lnav::progress_result_t::ok;
-        }
-
-        if (lnav_data.ld_sigint_count.load() > 0) {
-            return lnav::progress_result_t::interrupt;
-        }
-
-        /* XXX require(off <= total); */
-        if (off > (off_t) total) {
-            off = total;
-        }
-
-        auto retval = lnav::progress_result_t::ok;
-        if (((off == total) && (this->lo_last_offset != off))
-            || ui_periodic_timer::singleton().time_to_update(index_counter))
-        {
-            if (off == total) {
-                lnav_data.ld_bottom_source.update_loading(0, 0);
-            } else {
-                lnav_data.ld_bottom_source.update_loading(off, total);
-            }
-            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-            if (do_observer_update(lf) == lnav::progress_result_t::interrupt) {
-                retval = lnav::progress_result_t::interrupt;
-            }
-            this->lo_last_offset = off;
-        }
-
-        if (!lnav_data.ld_looping) {
-            retval = lnav::progress_result_t::interrupt;
-        }
-        return retval;
+        return lnav::progress_result_t::interrupt;
     }
 
-    off_t lo_last_offset{0};
-};
+    // update_loading() require()s that the offset not run past the total, and
+    // an aggregate can do exactly that: a file that grows after the fstat
+    // that seeded its denominator indexes right past it.  The serial observer
+    // above clamps for the same reason; this is the entry point that would
+    // abort the process, so it does not trust its callers either.
+    if (off > total) {
+        off = total;
+    }
+
+    lnav_data.ld_bottom_source.update_loading(off, total);
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+    if (lnav_data.ld_mode == ln_mode_t::FILES) {
+        static auto& exec_phase = injector::get<lnav::exec_phase&>();
+
+        // Point at the first file in the list that is still being indexed,
+        // the way do_observer_update() points at the one file a serial scan
+        // is working on.  As each finishes the selection walks down the list.
+        // Only while spinning up, on the same reasoning as there: once the
+        // session is going, the selection belongs to the user.
+        if (exec_phase.spinning_up()) {
+            const auto& fc = lnav_data.ld_active_files;
+            size_t index = 0;
+
+            for (const auto& curr_file : fc.fc_files) {
+                if (fss.find_index_progress(curr_file->get_serial())
+                    != nullptr)
+                {
+                    const auto row = fc.fc_other_files.size() + index;
+
+                    lnav_data.ld_files_view.set_selection(vis_line_t(row));
+                    // Second from the top rather than wherever the scroll
+                    // happens to leave it, which is the bottom: the files
+                    // behind this one are the ones with progress left to
+                    // watch, so they are what the rest of the view should be
+                    // showing.
+                    lnav_data.ld_files_view.set_top(
+                        vis_line_t(row > 0 ? row - 1 : 0));
+                    break;
+                }
+                index += 1;
+            }
+        }
+
+        // The per-file sparklines come from each file's indexed size, which
+        // the workers are advancing the whole time.  listview_curses only
+        // redraws while vc_needs_update is set, and the serial path sets it
+        // by way of the reload_data() in do_observer_update() -- without the
+        // equivalent here the file list sits frozen for the whole pass.
+        lnav_data.ld_files_view.reload_data();
+        lnav_data.ld_file_details_view.set_needs_update();
+    }
+    if (finished && was_in_flight && fss.fss_details_stale) {
+        // The workers have joined by the time the closing tick is sent, so
+        // the details pane can finally be built from the file the selection
+        // landed on.  text_selection_changed() skipped every move the pass
+        // made, since that pane reads the format match messages and the
+        // invalid-line info of a file a worker was still writing.
+        fss.text_selection_changed(lnav_data.ld_files_view);
+        lnav_data.ld_file_details_view.reload_data();
+    }
+    lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
+
+    return lnav::progress_result_t::ok;
+}
 
 lnav::progress_result_t
 do_observer_update(const logfile* lf)
@@ -109,8 +159,12 @@ do_observer_update(const logfile* lf)
                 index++;
                 continue;
             }
-            lnav_data.ld_files_view.set_selection(
-                vis_line_t(fc.fc_other_files.size() + index));
+            const auto row = fc.fc_other_files.size() + index;
+
+            lnav_data.ld_files_view.set_selection(vis_line_t(row));
+            // Keep the files behind this one on screen, as the parallel
+            // path does.
+            lnav_data.ld_files_view.set_top(vis_line_t(row > 0 ? row - 1 : 0));
             lnav_data.ld_files_view.reload_data();
             lnav_data.ld_files_view.do_update();
         }
@@ -182,6 +236,14 @@ public:
         } else {
             this->closed_files({lf});
         }
+    }
+
+    lnav::progress_result_t scan_progress(
+        file_off_t off,
+        file_ssize_t total,
+        const std::vector<index_progress_report>& in_flight) override
+    {
+        return indexing_scan_progress(off, total, in_flight);
     }
 
     void scanned_file(const std::shared_ptr<logfile>& lf) override
@@ -567,13 +629,17 @@ rebuild_indexes_repeatedly()
         }
         log_info("continuing to rebuild indexes...");
     }
+
+    // A watch that matched during the scan handed the line to the main loop
+    // to publish, and headless runs never reach looper(), which is where that
+    // queue is normally drained.  This is the equivalent for them.
+    auto& mlooper = injector::get<main_looper&, services::main_t>();
+    mlooper.get_port().process_for(0s);
 }
 
 bool
 update_active_files(file_collection& new_files)
 {
-    static loading_observer obs;
-
     if (lnav_data.ld_active_files.fc_invalidate_merge) {
         lnav_data.ld_active_files.fc_invalidate_merge = false;
 
@@ -584,7 +650,6 @@ update_active_files(file_collection& new_files)
         = lnav_data.ld_active_files.is_below_open_file_limit();
 
     for (const auto& lf : new_files.fc_files) {
-        lf->set_logfile_observer(&obs);
         lnav_data.ld_text_source.push_back(lf);
     }
     for (const auto& other_pair : new_files.fc_other_files) {
@@ -672,7 +737,7 @@ rescan_files(bool req)
         if (!all_synced) {
             delay = 30ms;
         }
-        done = fc.fc_file_names.empty() && all_synced;
+        done = !fc.found_anything() && all_synced;
         if (!done && !lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
             lnav_data.ld_files_view.set_needs_update();
             lnav_data.ld_files_view.do_update();

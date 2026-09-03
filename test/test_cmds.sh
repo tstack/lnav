@@ -153,6 +153,17 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":goto 0" \
     ${test_dir}/logfile_access_log.0
 
+# Each expression must replace the one before it.  Three of them, because a
+# filter is built before the one it replaces is released, so only the third
+# can be handed the address the first had; the last two are the same so that
+# the only way to get the first one's rows is to still be running it.
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :log_body LIKE '%lookup%'" \
+    -c ":filter-expr :log_body LIKE '%attempting%'" \
+    -c ":filter-expr :log_body LIKE '%attempting%'" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_syslog.0
+
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr :sc_bytes # ff" \
     "${test_dir}/logfile_access_log.*"

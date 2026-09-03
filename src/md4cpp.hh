@@ -167,16 +167,59 @@ file parse_file(const std::filesystem::path& src, const string_fragment& sf);
 
 namespace literals {
 
-inline std::string
+struct emoji_literal {
+    string_fragment el_shortname;
+    string_fragment el_value;
+};
+
+/**
+ * The shortcodes lnav itself writes.  Kept here so that using one costs
+ * nothing: get_emoji_map() parses the emoji blob and builds a reverse index
+ * over every emoji there is, which is a lot of work to spell a dozen glyphs
+ * that are known when the code is written.  That map is still what a
+ * shortcode in someone's markdown goes through.
+ *
+ * A test checks these against the map, so a typo here cannot go unnoticed.
+ */
+inline constexpr emoji_literal KNOWN_EMOJIS[] = {
+    {":bar_chart:"_frag, "\U0001F4CA"_frag},
+    {":bulb:"_frag, "\U0001F4A1"_frag},
+    {":clipboard:"_frag, "\U0001F4CB"_frag},
+    {":compass:"_frag, "\U0001F9ED"_frag},
+    {":floppy_disk:"_frag, "\U0001F4BE"_frag},
+    {":framed_picture:"_frag, "\U0001F5BC"_frag},  // NB: emojis.json lists this shortcode twice
+    {":globe_with_meridians:"_frag, "\U0001F310"_frag},
+    {":mag_right:"_frag, "\U0001F50E"_frag},
+    {":mailbox:"_frag, "\U0001F4EB"_frag},
+    {":memo:"_frag, "\U0001F4DD"_frag},
+    {":open_file_folder:"_frag, "\U0001F4C2"_frag},
+    {":play_button:"_frag, "\u25B6"_frag},
+    {":small_red_triangle:"_frag, "\U0001F53A"_frag},
+    {":speech_balloon:"_frag, "\U0001F4AC"_frag},
+    {":star2:"_frag, "\U0001F31F"_frag},
+    {":warning:"_frag, "\u26A0\uFE0F"_frag},  // NB: emojis.json lists this shortcode twice
+};
+
+/**
+ * @return The glyph for one of the shortcodes in KNOWN_EMOJIS.
+ *
+ * The fragment is over a string literal, so it outlives any caller.  A
+ * shortcode that is not in the table yields an empty fragment, which the
+ * test above catches -- and is a hard error when this is evaluated as a
+ * constant expression.
+ */
+constexpr string_fragment
 operator""_emoji(const char* str, std::size_t len)
 {
-    const auto& em = get_emoji_map();
-    const auto key = std::string(str, len);
+    for (const auto& lit : KNOWN_EMOJIS) {
+        if (lit.el_shortname.length() == static_cast<int>(len)
+            && __builtin_memcmp(lit.el_shortname.data(), str, len) == 0)
+        {
+            return lit.el_value;
+        }
+    }
 
-    const auto iter = em.em_shortname2emoji.find(key);
-    assert(iter != em.em_shortname2emoji.end());
-
-    return iter->second.get().e_value;
+    return string_fragment{};
 }
 
 }  // namespace literals

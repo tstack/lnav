@@ -47,7 +47,7 @@ void
 dump_internals(const char* internals_dir)
 {
     static const auto* sql_cmd_map
-        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+        = injector::get<lnav::commands::command_map_t*, sql_cmd_map_tag>();
 
     for (const auto* handlers :
          std::initializer_list<const json_path_container*>{
@@ -67,7 +67,7 @@ dump_internals(const char* internals_dir)
         fopen(cmd_ref_path.c_str(), "w+"), fclose);
 
     if (cmd_file != nullptr) {
-        std::set<readline_context::command_t*> unique_cmds;
+        std::set<lnav::commands::command_t*> unique_cmds;
 
         for (auto& cmd : lnav_commands) {
             if (unique_cmds.find(cmd.second) != unique_cmds.end()) {

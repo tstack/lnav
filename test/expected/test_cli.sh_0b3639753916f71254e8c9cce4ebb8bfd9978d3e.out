@@ -22,7 +22,8 @@
             "max-content-size": 33554432
         },
         "logfile": {
-            "max-unrecognized-lines": 1000
+            "max-unrecognized-lines": 1000,
+            "indexing-threads": 0
         },
         "remote": {
             "cache-ttl": "2d",

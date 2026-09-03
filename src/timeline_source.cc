@@ -1168,7 +1168,9 @@ timeline_source::rebuild_indexes()
                 }
             } else if (!otr.otr_description.lod_elements.empty()) {
                 auto desc_sf = string_fragment::from_str(
-                    otr.otr_description.lod_elements.values().front());
+                    otr.otr_description.lod_elements.entries()
+                        .front()
+                        .second);
                 row.or_description = desc_sf.to_owned(this->ts_allocator);
             }
             row.or_value.otr_description.lod_elements.clear();

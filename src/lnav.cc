@@ -103,7 +103,7 @@
 #include "lnav.indexing.hh"
 #include "lnav.management_cli.hh"
 #include "lnav.prompt.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_data_helper.hh"
@@ -117,7 +117,7 @@
 #include "logline_window.hh"
 #include "md4cpp.hh"
 #include "piper.looper.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
 #include "scn/scan.h"
@@ -422,7 +422,7 @@ handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
     }
 }
 
-readline_context::command_map_t lnav_commands;
+lnav::commands::command_map_t lnav_commands;
 
 static attr_line_t
 command_arg_help()
@@ -1064,8 +1064,14 @@ struct refresh_status_bars {
             lnav_data.ld_progress_view.reload_data();
             lnav_data.ld_progress_view.do_update();
         }
-        if (!lnav_data.ld_log_source.is_indexing_in_progress()
-            || lnav_data.ld_log_source.lss_index_generation == 0)
+        // A parallel pass has workers driving the line_buffers of the files
+        // the top view would read from, and is_indexing_in_progress() does
+        // not cover the textfile prescan, which is exactly when the TEXT view
+        // would call read_range() on one of them.  The refresh that follows
+        // the join draws it.
+        if (!lnav_data.ld_files_source.is_index_pass_in_flight()
+            && (!lnav_data.ld_log_source.is_indexing_in_progress()
+                || lnav_data.ld_log_source.lss_index_generation == 0))
         {
             if (lnav_data.ld_log_source.lss_index_generation == 0
                 && !lnav_data.ld_view_stack.empty())
@@ -1087,11 +1093,18 @@ struct refresh_status_bars {
         for (auto& sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        breadcrumb_view->do_update();
+        if (!lnav_data.ld_files_source.is_index_pass_in_flight()) {
+            // Same reasoning as the view stack above: the crumbs that
+            // describe the current message are built by reading it back out
+            // of the file, through the line buffer a worker is filling.
+            breadcrumb_view->do_update();
+        }
         lnav::prompt::get().p_editor.do_update();
         if (handle_winch(this->rsb_screen)) {
             layout_views();
-            lnav_data.ld_view_stack.do_update();
+            if (!lnav_data.ld_files_source.is_index_pass_in_flight()) {
+                lnav_data.ld_view_stack.do_update();
+            }
         }
 
         notcurses_render(this->rsb_screen->get_notcurses());
@@ -3126,11 +3139,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         log_info("cleanup finished");
     });
 
-#ifdef HAVE_LIBCURL
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-#endif
-
-    static const std::string DEFAULT_DEBUG_LOG = "/dev/null";
+    static constexpr const char DEFAULT_DEBUG_LOG[] = "/dev/null";
 
     // lnav_data.ld_debug_log_name = DEFAULT_DEBUG_LOG;
 
@@ -3720,6 +3729,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         lnav_data.ld_log_source.set_index_delegate(new hist_index_delegate(
             lnav_data.ld_hist_source2, lnav_data.ld_views[LNV_HISTOGRAM]));
+        lnav_data.ld_log_source.set_scan_progress(indexing_scan_progress);
         hs.init();
     }
 
@@ -4110,7 +4120,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)
     {
-        static const std::string STDIN_NAME = "stdin";
+        static constexpr const char STDIN_NAME[] = "stdin";
         struct stat stdin_st;
 
         if (fstat(STDIN_FILENO, &stdin_st) == -1) {

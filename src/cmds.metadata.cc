@@ -32,11 +32,11 @@
 
 #include "command_executor.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "log.annotate.hh"
 #include "logfile_sub_source.hh"
 #include "md2attr_line.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_annotate(exec_context& ec,
@@ -134,7 +134,7 @@ com_comment(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_comment_prompt(exec_context& ec, const std::string& cmdline)
 {
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -446,7 +446,7 @@ com_clear_partition(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::command_t METADATA_COMMANDS[] = {
+static lnav::commands::command_t METADATA_COMMANDS[] = {
 
     {
         "annotate",
@@ -560,7 +560,7 @@ static readline_context::command_t METADATA_COMMANDS[] = {
 };
 
 void
-init_lnav_metadata_commands(readline_context::command_map_t& cmd_map)
+init_lnav_metadata_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : METADATA_COMMANDS) {
         cmd.c_help.index_tags();

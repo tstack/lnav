@@ -181,6 +181,9 @@
         "textfile": {
             "max-unformatted-line-length": 2048
         },
+        "logfile": {
+            "indexing-threads": 0
+        },
         "url-scheme": {
             "docker": {
                 "handler": "docker-url-handler"

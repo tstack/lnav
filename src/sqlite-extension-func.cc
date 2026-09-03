@@ -30,6 +30,7 @@
  */
 
 #include <map>
+#include <mutex>
 #include <string>
 
 #include "sqlite-extension-func.hh"
@@ -67,6 +68,19 @@ std::multimap<std::string, const help_text*> prql_functions;
 sqlite_registration_func_t sqlite_registration_funcs[] = {
     common_extension_functions,
     state_extension_functions,
+    string_extension_functions,
+    network_extension_functions,
+    fs_extension_functions,
+    json_extension_functions,
+    yaml_extension_functions,
+    time_extension_functions,
+
+    nullptr,
+};
+
+sqlite_registration_func_t sqlite_thread_safe_registration_funcs[] = {
+    common_extension_functions,
+    // state_extension_functions is not thread-safe and is left out
     string_extension_functions,
     network_extension_functions,
     fs_extension_functions,
@@ -170,7 +184,18 @@ insert_sql_help(help_text& root, const help_text& curr)
 int
 register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 {
-    static bool help_registration_done = false;
+    // The per-connection registration below is safe to run from several
+    // threads at once, but the help and PRQL tables it fills in are
+    // process-global and only ever want filling once.  Elect a single caller
+    // to do that part, and only ever from the full set -- electing a caller
+    // that passed a subset would leave the groups it omits out of the help
+    // for the life of the process.
+    static std::once_flag help_once;
+    bool help_registration_done = true;
+    if (reg_funcs == sqlite_registration_funcs) {
+        std::call_once(help_once, [&]() { help_registration_done = false; });
+    }
+
     prql_hier phier;
     int lpc;
 
@@ -1729,12 +1754,12 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         for (auto& ht : idents) {
             insert_sql_help(ht, ht);
         }
-    }
-
-    help_registration_done = true;
 
 #ifdef HAVE_RUST_DEPS
-    if (sqlite_extension_prql.empty()) {
+        // Under the same election as the help tables: phier is only filled
+        // in by the branches above, so a caller that skipped them has
+        // nothing to contribute here either.
+        require(sqlite_extension_prql.empty());
         require(phier.ph_declarations.empty());
         for (const auto& mod_pair : phier.ph_modules) {
             std::string content;
@@ -1745,8 +1770,8 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 content,
             });
         }
-    }
 #endif
+    }
 
     return 0;
 }

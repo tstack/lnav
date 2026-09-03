@@ -363,23 +363,43 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     }
     al.append(" ");
     al.appendf(FMT_STRING("{:<{}}"), fn, filename_width);
+    // While a parallel pass is running, a worker owns this file: its size,
+    // its stat and its decompress error are all being written from another
+    // thread.  Everything drawn for such a file has to come from the tick's
+    // reading of the progress slots instead.
+    const auto* ipr = this->find_index_progress(lf->get_serial());
+
     al.append("  ");
     {
         auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
 
         al.appendf(FMT_STRING("{:>8}"),
-                   humanize::file_size(lf->get_index_size(),
-                                       humanize::alignment::columnar));
+                   humanize::file_size(
+                       ipr == nullptr ? lf->get_index_size() : ipr->ipr_offset,
+                       humanize::alignment::columnar));
     }
     al.append(" ");
-    auto indexed_size = lf->get_index_size();
-    auto total_size = lf->get_content_size();
-    if (!lf->get_decompress_error().empty()) {
+    if (ipr != nullptr) {
+        if (ipr->ipr_has_progress) {
+            al.append(humanize::sparkline(ipr->ipr_offset, ipr->ipr_total));
+        } else {
+            // bzip2 gives no position in the archive, so there is no honest
+            // bar to draw -- say "working" rather than make one up.
+            al.append(" ", VC_ICON.value(ui_icon_t::busy));
+        }
+    } else if (!lf->get_decompress_error().empty()) {
         al.append(" ", VC_ICON.value(ui_icon_t::error));
     } else if (!lf->get_notes().empty()) {
         al.append(" ", VC_ICON.value(ui_icon_t::warning));
-    } else if (indexed_size < total_size) {
-        al.append(humanize::sparkline(indexed_size, total_size));
+    } else if (!lf->is_fully_indexed()) {
+        auto prog = lf->get_index_progress();
+
+        if (prog) {
+            al.append(humanize::sparkline(prog->first, prog->second));
+        } else {
+            // No honest bar to draw, as above.
+            al.append(" ", VC_ICON.value(ui_icon_t::busy));
+        }
     } else if ((loo.loo_child_poller && loo.loo_child_poller->is_alive())
                || (loo.loo_piper && !loo.loo_piper->is_finished()))
     {
@@ -535,6 +555,17 @@ files_sub_source::text_update_marks(vis_bookmarks& bm)
 void
 files_sub_source::text_selection_changed(textview_curses& tc)
 {
+    if (this->is_index_pass_in_flight()) {
+        // The tick of a parallel pass moves the selection to follow the file
+        // being indexed, and the details below are built from that file's
+        // format match messages, invalid-line info and embedded metadata --
+        // all of which a worker is writing.  The closing tick calls back here
+        // once the pass has joined.
+        this->fss_details_stale = true;
+        return;
+    }
+    this->fss_details_stale = false;
+
     auto sel = files_model::from_selection(tc.get_selection());
     std::vector<attr_line_t> details;
 
@@ -592,7 +623,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             if (!notes.empty()) {
                 details.emplace_back(
                     attr_line_t("  ").append("Notes"_h2).append(":"));
-                for (const auto& note_um : notes.values()) {
+                for (const auto& [note_kind, note_um] : notes.entries()) {
                     for (const auto& note_line :
                          note_um.to_attr_line().split_lines())
                     {

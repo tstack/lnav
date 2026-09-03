@@ -63,6 +63,9 @@
 
 using namespace std::chrono_literals;
 
+/* A gzip member is a 10-byte header, at least a 2-byte deflate block, and an
+ * 8-byte trailer; anything smaller cannot carry a usable ISIZE. */
+static const ssize_t GZ_MIN_MEMBER_SIZE = 18;
 static const ssize_t INITIAL_REQUEST_SIZE = 16 * 1024;
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
 static const ssize_t INITIAL_COMPRESSED_BUFFER_SIZE = 5 * 1024 * 1024;
@@ -163,6 +166,7 @@ line_buffer::gz_indexed::init_stream()
     // initialize inflate struct
     int rc = inflateInit2(&this->strm, GZ_HEADER_MODE);
     this->strm.avail_in = 0;
+    this->raw_stream = false;
     if (rc != Z_OK) {
         throw(rc);  // FIXME: exception wrapper
     }
@@ -282,6 +286,14 @@ line_buffer::gz_indexed::stream_data(void* buf, size_t size)
             int flush = last > this->strm.total_in ? Z_SYNC_FLUSH : Z_BLOCK;
             auto err = inflate(&this->strm, flush);
             if (err == Z_STREAM_END) {
+                if (this->raw_stream) {
+                    // A raw stream stops on the last byte of the deflate
+                    // data, so the member's trailer is still waiting to be
+                    // read.  Step over it, or the next read starts on the
+                    // trailer and tries to take it for the header of another
+                    // member.
+                    this->strm.total_in += GZ_TRAILER_SIZE;
+                }
                 // Reached end of stream; re-init for a possible subsequent
                 // stream
                 continue_stream();
@@ -342,6 +354,7 @@ line_buffer::gz_indexed::seek(off_t offset)
         inflateEnd(&this->strm);
         if (dict) {
             dict->apply(&this->strm);
+            this->raw_stream = true;
         } else {
             init_stream();
         }
@@ -371,6 +384,39 @@ line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
     int bytes = stream_data(buf, size);
 
     return bytes;
+}
+
+/**
+ * @return The uncompressed size recorded in a gzip file's trailer, or nullopt
+ * if it cannot be trusted.
+ *
+ * The last four bytes of a gzip member are ISIZE: the uncompressed size
+ * modulo 2^32.  For anything under 4GB that is exact and it is available
+ * before a single byte is decompressed, which is the only way to give a
+ * meaningful progress bar -- the decompressor's own position races ahead of
+ * indexing in multi-megabyte jumps and is useless as a proxy.
+ *
+ * Two cases make it a lie, and both are caught by the caller noticing that
+ * indexing has passed it: a file of 4GB or more, where the value wraps, and
+ * concatenated members, where only the last member's size is recorded.
+ */
+static std::optional<file_ssize_t>
+read_gz_isize(int fd)
+{
+    unsigned char trailer[4];
+    struct stat st;
+
+    if (fstat(fd, &st) == -1 || st.st_size < GZ_MIN_MEMBER_SIZE) {
+        return std::nullopt;
+    }
+
+    auto rc = pread(fd, trailer, sizeof(trailer), st.st_size - sizeof(trailer));
+    if (rc != (ssize_t) sizeof(trailer)) {
+        return std::nullopt;
+    }
+
+    return (file_ssize_t) trailer[0] | ((file_ssize_t) trailer[1] << 8)
+        | ((file_ssize_t) trailer[2] << 16) | ((file_ssize_t) trailer[3] << 24);
 }
 
 line_buffer::line_buffer()
@@ -469,11 +515,13 @@ line_buffer::set_fd(auto_fd& fd)
                         this->lb_file_time = 0;
                     }
                     this->lb_compressed_offset = 0;
+                    this->lb_uncompressed_size = read_gz_isize(fd);
                     if (!hdr.empty()) {
                         this->lb_header = std::move(hdr);
                     }
                     if (this->lb_decompress_extra) {
-                        this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
+                        this->resize_buffer(this->buffer_size_for(
+                            INITIAL_COMPRESSED_BUFFER_SIZE));
                     }
                 }
 #ifdef HAVE_BZLIB_H
@@ -580,7 +628,7 @@ line_buffer::ensure_available(file_off_t start,
                 > this->lb_file_size)
             {
                 this->lb_file_offset = this->lb_file_size
-                    - std::min(this->lb_file_size,
+                    - std::min(this->lb_file_size.load(),
                                (file_ssize_t) this->lb_buffer.capacity());
             } else {
                 this->lb_file_offset = start;
@@ -662,7 +710,7 @@ line_buffer::load_next_buffer()
                     = (start + this->lb_alt_buffer.value().size() + rc);
                 log_info("fd(%d): set file size to %llu",
                          this->lb_fd.get(),
-                         this->lb_file_size);
+                         this->lb_file_size.load());
             }
 #if 0
             log_debug("async decomp end  %d+%d:%d",
@@ -733,7 +781,7 @@ line_buffer::load_next_buffer()
                     = (start + this->lb_alt_buffer.value().size() + rc);
                 log_info("fd(%d): set file size to %llu",
                          this->lb_fd.get(),
-                         this->lb_file_size);
+                         this->lb_file_size.load());
             }
         }
     }
@@ -784,7 +832,7 @@ line_buffer::load_next_buffer()
             break;
     }
 
-    if (start > this->lb_last_line_offset) {
+    if (start > this->lb_last_line_offset.load(std::memory_order_relaxed)) {
         const auto* line_start = this->lb_alt_buffer.value().begin();
         if (this->lb_line_metadata && start == 0
             && this->lb_alt_buffer->size() > this->lb_piper_header_size)
@@ -931,9 +979,14 @@ line_buffer::fill_range(file_off_t start,
                 rc = 0;
             } else {
                 this->lb_stats.s_decompressions += 1;
-                if (false && this->lb_last_line_offset > 0) {
+                if (false
+                    && this->lb_last_line_offset.load(
+                           std::memory_order_relaxed)
+                        > 0)
+                {
                     this->lb_stats.s_hist[(this->lb_file_offset * 10)
-                                          / this->lb_last_line_offset] += 1;
+                                          / this->lb_last_line_offset.load(
+                                          std::memory_order_relaxed)] += 1;
                 }
                 rc = gi->read(this->lb_buffer.end(),
                               this->lb_file_offset + this->lb_buffer.size(),
@@ -946,7 +999,7 @@ line_buffer::fill_range(file_off_t start,
                     log_info("fd(%d): rc (%zd) -- set file size to %llu",
                              this->lb_fd.get(),
                              rc,
-                             this->lb_file_size);
+                             this->lb_file_size.load());
                 }
             }
 #if 0
@@ -1014,7 +1067,7 @@ line_buffer::fill_range(file_off_t start,
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
                     log_info("fd(%d): set file size to %llu",
                              this->lb_fd.get(),
-                             this->lb_file_size);
+                             this->lb_file_size.load());
                 }
             }
         }
@@ -1022,9 +1075,14 @@ line_buffer::fill_range(file_off_t start,
         else if (this->lb_seekable)
         {
             this->lb_stats.s_preads += 1;
-            if (false && this->lb_last_line_offset > 0) {
+            if (false
+                    && this->lb_last_line_offset.load(
+                           std::memory_order_relaxed)
+                        > 0)
+                {
                 this->lb_stats.s_hist[(this->lb_file_offset * 10)
-                                      / this->lb_last_line_offset] += 1;
+                                      / this->lb_last_line_offset.load(
+                                          std::memory_order_relaxed)] += 1;
             }
 #if 0
             log_debug("%d: pread %lld",
@@ -1068,7 +1126,8 @@ line_buffer::fill_range(file_off_t start,
                      * don't have to spend as much time uncompressing the data.
                      */
                     if (this->lb_decompress_extra) {
-                        this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+                        this->resize_buffer(
+                            this->buffer_size_for(MAX_COMPRESSED_BUFFER_SIZE));
                     }
                 }
                 break;
@@ -1318,9 +1377,13 @@ line_buffer::load_next_line(file_range prev_line)
                 retval.li_file_range.fr_size = lf - line_start;
                 // delim
                 retval.li_file_range.fr_size += 1;
-                if (offset >= this->lb_last_line_offset) {
-                    this->lb_last_line_offset
-                        = offset + retval.li_file_range.fr_size;
+                if (offset
+                    >= this->lb_last_line_offset.load(
+                        std::memory_order_relaxed))
+                {
+                    this->lb_last_line_offset.store(
+                        offset + retval.li_file_range.fr_size,
+                        std::memory_order_relaxed);
                 }
             } else {
                 if (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) {
@@ -1345,10 +1408,15 @@ line_buffer::load_next_line(file_range prev_line)
                      *   2. file is written
                      *   3. read_line() - returns the middle of partial line.
                      */
-                    this->lb_last_line_offset = offset;
-                } else if (offset >= this->lb_last_line_offset) {
-                    this->lb_last_line_offset
-                        = offset + retval.li_file_range.fr_size;
+                    this->lb_last_line_offset.store(
+                        offset, std::memory_order_relaxed);
+                } else if (offset
+                           >= this->lb_last_line_offset.load(
+                               std::memory_order_relaxed))
+                {
+                    this->lb_last_line_offset.store(
+                        offset + retval.li_file_range.fr_size,
+                        std::memory_order_relaxed);
                 }
             }
 
@@ -1416,8 +1484,9 @@ line_buffer::read_range(file_range fr, scan_direction dir)
     file_ssize_t avail;
 
 #if 0
-    if (this->lb_last_line_offset != -1
-        && fr.fr_offset > this->lb_last_line_offset)
+    if (this->lb_last_line_offset.load(std::memory_order_relaxed) != -1
+        && fr.fr_offset
+            > this->lb_last_line_offset.load(std::memory_order_relaxed))
     {
         /*
          * Don't return anything past the last known line.  The caller needs
@@ -1427,7 +1496,8 @@ line_buffer::read_range(file_range fr, scan_direction dir)
             fmt::format(FMT_STRING("attempt to read past the known end of the "
                                    "file: read-offset={}; last_line_offset={}"),
                         fr.fr_offset,
-                        this->lb_last_line_offset));
+                        this->lb_last_line_offset.load(
+                            std::memory_order_relaxed)));
     }
 #endif
 
@@ -1500,7 +1570,7 @@ line_buffer::peek_range(file_range fr,
                 this->lb_file_size = gi->strm.total_out;
                 log_info("fd(%d): set file size to %llu",
                          this->lb_fd.get(),
-                         this->lb_file_size);
+                         this->lb_file_size.load());
                 if (!options.is_set<peek_options::allow_short_read>()) {
                     return Err(SHORT_READ_MSG);
                 }
@@ -1558,7 +1628,7 @@ line_buffer::peek_range(file_range fr,
                     this->lb_file_size = fr.fr_offset + fr.fr_size;
                     log_info("fd(%d): set file size to %llu",
                              this->lb_fd.get(),
-                             this->lb_file_size);
+                             this->lb_file_size.load());
                 } else {
                     return Err(SHORT_READ_MSG);
                 }

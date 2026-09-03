@@ -806,7 +806,7 @@ prompt::get_db_completion_text(const std::string& pattern,
                                int width) const
 {
     static const auto* sql_cmd_map
-        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+        = injector::get<lnav::commands::command_map_t*, sql_cmd_map_tag>();
     const auto iter = sql_cmd_map->find(str);
     const char* summary = "";
     if (iter->second->c_help.ht_summary != nullptr) {

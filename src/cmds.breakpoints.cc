@@ -39,12 +39,12 @@
 #include "command_executor.hh"
 #include "fmt/format.h"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
 #include "logline_window.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "shlex.hh"
 
 static Result<std::string, lnav::console::user_message>
@@ -498,7 +498,7 @@ com_enable_breakpoint(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::command_t BREAKPOINT_COMMANDS[] = {
+static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
     {
         "breakpoint",
         com_breakpoint,
@@ -570,7 +570,7 @@ static readline_context::command_t BREAKPOINT_COMMANDS[] = {
 };
 
 void
-init_lnav_breakpoint_commands(readline_context::command_map_t& cmd_map)
+init_lnav_breakpoint_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : BREAKPOINT_COMMANDS) {
         cmd.c_help.index_tags();

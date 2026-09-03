@@ -47,7 +47,7 @@
 #include "fmt/color.h"
 #include "fmt/printf.h"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "lnav_util.hh"
 #include "logline_window.hh"
 #include "scn/scan.h"
@@ -2180,7 +2180,7 @@ com_redirect_to(exec_context& ec,
     return Ok("info: redirecting output to file -- " + split_args[0]);
 }
 
-static readline_context::command_t IO_COMMANDS[] = {
+static lnav::commands::command_t IO_COMMANDS[] = {
     {
         "append-to",
         com_save_to,
@@ -2460,7 +2460,7 @@ static readline_context::command_t IO_COMMANDS[] = {
 };
 
 void
-init_lnav_io_commands(readline_context::command_map_t& cmd_map)
+init_lnav_io_commands(lnav::commands::command_map_t& cmd_map)
 {
     static auto WRITE_COLS_FRAG = "write-cols-to"_frag;
     static auto WRITE_TABLE_FRAG = "write-table-to"_frag;

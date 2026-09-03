@@ -33,7 +33,7 @@
 #include "base/lnav.console.hh"
 #include "base/relative_time.hh"
 #include "lnav.hh"
-#include "lnav_commands.hh"
+#include "cmds.hh"
 #include "scn/scan.h"
 #include "sql_util.hh"
 
@@ -287,7 +287,7 @@ com_filter(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::prompt_result_t
+static lnav::commands::prompt_result_t
 com_filter_prompt(exec_context& ec, const std::string& cmdline)
 {
     const auto* tc = lnav_data.ld_view_stack.top().value();
@@ -457,7 +457,7 @@ com_filter_context(exec_context& ec,
     return Ok(retval);
 }
 
-static readline_context::command_t FILTERING_COMMANDS[] = {
+static lnav::commands::command_t FILTERING_COMMANDS[] = {
     {
         "hide-lines-before",
         com_hide_line,
@@ -613,7 +613,7 @@ static readline_context::command_t FILTERING_COMMANDS[] = {
 };
 
 void
-init_lnav_filtering_commands(readline_context::command_map_t& cmd_map)
+init_lnav_filtering_commands(lnav::commands::command_map_t& cmd_map)
 {
     for (auto& cmd : FILTERING_COMMANDS) {
         cmd.c_help.index_tags();

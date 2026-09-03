@@ -131,6 +131,16 @@ dotlnav()
 std::filesystem::path
 workdir()
 {
+    // Honored so a caller can put the piper captures, archives and
+    // conversions somewhere of its own choosing.  lnav exports this for the
+    // processes it spawns, and scripts like piper-url-handler.lnav read it,
+    // so a child works out of the same directory as its parent.
+    if (auto workdir_env = getenv_opt("LNAV_WORK_DIR")) {
+        if (workdir_env.value()[0] != '\0') {
+            return std::filesystem::path(workdir_env.value());
+        }
+    }
+
     auto subdir_name = fmt::format(FMT_STRING("lnav-user-{}-work"), getuid());
     auto tmp_path = std::filesystem::temp_directory_path();
 

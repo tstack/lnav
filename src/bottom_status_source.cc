@@ -32,6 +32,8 @@
 #include "base/snippet_highlighters.hh"
 #include "config.h"
 
+using namespace lnav::roles::literals;
+
 bottom_status_source::bottom_status_source()
 {
     this->bss_fields[BSF_LINE_NUMBER].set_min_width(10);
@@ -45,7 +47,8 @@ bottom_status_source::bottom_status_source()
     this->bss_fields[BSF_LOADING].set_width(13);
     this->bss_fields[BSF_LOADING].right_justify(true);
     this->bss_fields[BSF_HELP].set_width(14);
-    this->bss_fields[BSF_HELP].set_value("?:View Help "_frag);
+    auto help_al = attr_line_t(" ").append("?"_hotkey).append(":View Help ");
+    this->bss_fields[BSF_HELP].set_value(help_al);
     this->bss_fields[BSF_HELP].right_justify(true);
     this->bss_prompt.set_left_pad(1);
     this->bss_prompt.set_min_width(35);

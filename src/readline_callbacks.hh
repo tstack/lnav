@@ -30,7 +30,7 @@
 #ifndef LNAV_READLINE_CALLBACKS_HH
 #define LNAV_READLINE_CALLBACKS_HH
 
-#include "readline_context.hh"
+#include "lnav.commands.hh"
 #include "textinput_curses.hh"
 
 void rl_set_help();
@@ -44,7 +44,7 @@ void rl_completion_request(textinput_curses& ti);
 void rl_focus(textinput_curses& ti);
 void rl_blur(textinput_curses& ti);
 
-readline_context::split_result_t prql_splitter(const attr_line_t& stmt);
+lnav::commands::split_result_t prql_splitter(const attr_line_t& stmt);
 
 extern const char* const RE_HELP;
 extern const char* const RE_EXAMPLE;

@@ -38,10 +38,10 @@
 #include "logfile_sub_source.hh"
 #include "sql_util.hh"
 
-static const std::string MATCH_INDEX = "match_index";
+static constexpr const char MATCH_INDEX[] = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
 
-static const std::string MATCH_ROWID = "match_rowid";
+static constexpr const char MATCH_ROWID[] = "match_rowid";
 static auto match_rowid_name = intern_string::lookup("match_rowid");
 
 log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
@@ -80,7 +80,7 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
             auto col
                 = meta.lvm_column.get<logline_value_meta::table_column>().value;
             auto type_pair = logline_value_to_sqlite_type(meta.lvm_kind);
-            cols[col].vc_name = meta.lvm_name.to_string();
+            cols[col].vc_name = meta.lvm_name;
             cols[col].vc_type = type_pair.first;
             cols[col].vc_subtype = type_pair.second;
 
@@ -92,14 +92,16 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         match_rowid_name,
         value_kind_t::VALUE_INTEGER,
         logline_value_meta::table_column{cols.size()});
-    cols.emplace_back(MATCH_ROWID, SQLITE_INTEGER);
-    cols.back().vc_comment = "The row number of the log message that matched";
+    cols.emplace_back(intern_string::lookup(MATCH_ROWID), SQLITE_INTEGER);
+    cols.back().vc_comment
+        = "The row number of the log message that matched"_frag;
     this->lst_column_metas.emplace_back(
         match_index_name,
         value_kind_t::VALUE_INTEGER,
         logline_value_meta::table_column{cols.size()});
-    cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
-    cols.back().vc_comment = "The index of the match within a log message";
+    cols.emplace_back(intern_string::lookup(MATCH_INDEX), SQLITE_INTEGER);
+    cols.back().vc_comment
+        = "The index of the match within a log message"_frag;
     cn.add_column("__all__"_frag);
     auto captures = this->lst_regex->get_captures();
     for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
@@ -134,7 +136,9 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
                     break;
             }
         }
-        cols.emplace_back(colname, sqlite_type, collator);
+        cols.emplace_back(intern_string::lookup(colname),
+                          sqlite_type,
+                          intern_string::lookup(collator));
     }
 }
 

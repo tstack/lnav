@@ -45,6 +45,7 @@
 #include "base/distributed_slice.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/parallel_for.hh"
 #include "base/string_util.hh"
 #include "bookmarks.hh"
 #include "bookmarks.json.hh"
@@ -55,6 +56,7 @@
 #include "hasher.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
+#include "log.watch.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "logline_window.hh"
@@ -659,11 +661,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 len = ftime_fmt(
                     buffer, sizeof(buffer), fmt, adjusted_tm.value());
             } else {
-                len = file_dts.ftime(
-                    buffer,
-                    sizeof(buffer),
-                    format->get_timestamp_formats(),
-                    adjusted_tm.value());
+                len = file_dts.ftime(buffer,
+                                     sizeof(buffer),
+                                     format->get_timestamp_formats(),
+                                     adjusted_tm.value());
             }
 
             value_out.replace(
@@ -1289,6 +1290,130 @@ struct logline_cmp {
     logfile_sub_source& llss_controller;
 };
 
+logfile_sub_source::prescan_map
+logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
+{
+    prescan_map retval;
+
+    if (this->tss_view == nullptr || this->tss_view->is_paused()) {
+        return retval;
+    }
+
+    std::vector<logfile*> work;
+    for (const auto& ld : this->lss_files) {
+        auto* lf = ld->get_file_ptr();
+
+        if (lf == nullptr) {
+            continue;
+        }
+        work.emplace_back(lf);
+    }
+
+    if (work.empty()) {
+        return retval;
+    }
+
+    // Not gated on the width: one file goes through the same fan-out as
+    // eight, so progress is reported the same way either way.  A width of 1
+    // still means a worker, because the tick has to run somewhere.
+    const auto width = lnav::logfile_indexing_width(work.size());
+
+    log_info("pre-scanning %zu log files over %zu threads", work.size(), width);
+
+    // Reused across ticks so the UI poll allocates nothing.
+    std::vector<index_progress_report> in_flight;
+    std::vector<prescan_result> results(work.size());
+    // Not vector<bool>: it packs bits, so workers writing different indices
+    // would be writing the same word.
+    std::vector<char> ok(work.size(), 0);
+
+    for (size_t lpc = 0; lpc < work.size(); lpc++) {
+        work[lpc]->begin_indexing_progress();
+    }
+
+    bool ticked = false;
+    lnav::parallel_for_each(
+        work.size(),
+        width,
+        [&](size_t index) {
+            auto* lf = work[index];
+            auto& res = results[index];
+
+            // Read before the scan, because that is where the loop reads it.
+            res.psr_timestamp_flags = lf->get_format_ptr()->lf_timestamp_flags;
+            res.psr_result = lf->rebuild_index(deadline);
+            ok[index] = 1;
+            lf->finish_indexing_progress();
+        },
+        [&]() {
+            file_off_t off = 0;
+            file_ssize_t total = 0;
+
+            ticked = true;
+            in_flight.clear();
+            for (auto* lf : work) {
+                const auto& prog = lf->indexing_progress();
+                // Read each field once.  The scan publishes the offset and
+                // the total as two separate stores, so the pair seen here can
+                // be a fresh offset next to a stale total; the sum is clamped
+                // because running past the denominator would trip the
+                // require() in update_loading().
+                const auto file_total
+                    = prog.ip_total.load(std::memory_order_relaxed);
+                const auto file_off
+                    = prog.ip_offset.load(std::memory_order_relaxed);
+
+                off += std::min(file_off, file_total);
+                total += file_total;
+                if (!prog.ip_done.load(std::memory_order_relaxed)) {
+                    // A total of zero is a file that cannot say how big it
+                    // is.  The row still gets the offset, so it can show the
+                    // bytes read so far beside a "working" icon instead of a
+                    // bar drawn against a denominator that does not exist.
+                    in_flight.emplace_back(
+                        index_progress_report{lf->get_serial(),
+                                              file_off,
+                                              file_total,
+                                              file_total > 0});
+                }
+            }
+            if (this->lss_scan_progress
+                && this->lss_scan_progress(off, total, in_flight)
+                    == lnav::progress_result_t::interrupt)
+            {
+                for (auto* lf : work) {
+                    lf->abort_indexing();
+                }
+            }
+        },
+        // Match the cadence the UI refreshes at everywhere else
+        // (ui_periodic_timer::INTERVAL); a full redraw every 30ms would just
+        // take CPU away from the workers.
+        100ms);
+
+    if (ticked) {
+        // parallel_for_each stops ticking the moment the last worker
+        // finishes, so the bar is left showing whatever the final tick gave
+        // it -- and both of update_loading()'s non-empty branches turn the
+        // cylon on.  The serial observer clears the field when a file is
+        // done; this is the equivalent for a pass.
+        if (this->lss_scan_progress) {
+            this->lss_scan_progress(0, 0, {});
+        }
+    }
+
+    for (size_t lpc = 0; lpc < work.size(); lpc++) {
+        // A file whose scan threw gets no entry, so the loop calls
+        // rebuild_index() for it inline and the exception propagates from
+        // exactly where it always did.
+        if (ok[lpc]) {
+            retval[work[lpc]] = results[lpc];
+        }
+    }
+
+    return retval;
+}
+
 logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
@@ -1303,7 +1428,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     size_t total_lines = 0;
     size_t est_remaining_lines = 0;
     auto all_time_ordered_formats = true;
-    auto full_sort = this->lss_index.empty();
+    auto full_sort = false;
+    // Set when a file's own lf_index can no longer be assumed sorted,
+    // which is the one thing that rules out the k-way merge below.
+    auto order_changed = false;
     int file_count = 0;
     auto force = std::exchange(this->lss_force_rebuild, false);
     auto retval = rebuild_result::rr_no_change;
@@ -1356,6 +1484,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             });
     }
 
+    // Index the files up front and in parallel; the loop below then works
+    // through the results in file_order, exactly as it always has.
+    const auto prescan = this->prescan_files(deadline);
+
     bool time_left = true;
     this->lss_all_timestamp_flags = 0;
     for (const auto file_index : file_order) {
@@ -1379,11 +1511,16 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           lf->get_filename_as_string().c_str());
                 time_left = false;
             }
-            this->lss_all_timestamp_flags
-                |= lf->get_format_ptr()->lf_timestamp_flags;
+            const auto pre_iter = prescan.find(lf);
+
+            this->lss_all_timestamp_flags |= pre_iter == prescan.end()
+                ? lf->get_format_ptr()->lf_timestamp_flags
+                : pre_iter->second.psr_timestamp_flags;
 
             if (!this->tss_view->is_paused() && time_left) {
-                auto log_rebuild_res = lf->rebuild_index(deadline);
+                auto log_rebuild_res = pre_iter == prescan.end()
+                    ? lf->rebuild_index(deadline)
+                    : pre_iter->second.psr_result;
 
                 if (ld.ld_lines_indexed < lf->size()
                     && log_rebuild_res
@@ -1445,6 +1582,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                         "full_sort as well");
                                     force = true;
                                     full_sort = true;
+                                    order_changed = true;
                                 }
                             }
                         }
@@ -1456,6 +1594,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         retval = rebuild_result::rr_full_rebuild;
                         force = true;
                         full_sort = true;
+                        order_changed = true;
                         break;
                 }
             }
@@ -1633,6 +1772,29 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lss_longest_line
             = std::max(this->lss_longest_line, metric_total_width + 1);
 
+        if (this->lss_index.empty()) {
+            // Building from nothing.  Each file's lf_index is already in time
+            // order when its format is time-ordered -- an out-of-order
+            // timestamp is rewritten to its predecessor's during the scan --
+            // so the k-way merge below arrives at the same order for
+            // N*log2(file_count) comparisons and sequential per-file reads,
+            // where the sort needs N*log2(N) that chase two pointers each.
+            //
+            // The merge only consumes [ld_lines_indexed, end) of each file,
+            // so the counters have to be at zero for it to see every line.
+            // They are on a first build and after the force block above; the
+            // check means any other way of arriving here with an empty index
+            // falls back to the sort rather than dropping lines.
+            const auto merge_from_scratch = !order_changed
+                && all_time_ordered_formats
+                && std::all_of(
+                    this->lss_files.begin(),
+                    this->lss_files.end(),
+                    [](const auto& ld) { return ld->ld_lines_indexed == 0; });
+
+            full_sort = !merge_from_scratch;
+        }
+
         if (full_sort) {
             log_trace("rebuild_index full sort");
             for (auto& ld : this->lss_files) {
@@ -1685,8 +1847,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
             }
 
-            // XXX get rid of this full sort on the initial run, it's not
-            // needed unless the file is not in time-order
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(*this, 0, this->lss_index.size());
             }
@@ -2356,9 +2516,62 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
     return true;
 }
 
+/**
+ * A filter expression is evaluated once per message as it is indexed, and the
+ * answer is stored in a bitmask that is not recomputed.  So the expression has
+ * to be a pure function of the message: anything that reads state outside it
+ * would give a different answer depending on when it ran, and the mask would
+ * no longer mean anything.
+ *
+ * lnav::sql::thread_local_db() has exactly the functions that qualify
+ * registered, so preparing against it is the test.
+ */
+static Result<void, lnav::console::user_message>
+check_filter_expr_is_pure(sqlite3_stmt* stmt)
+{
+    auto* db = lnav::sql::thread_local_db();
+
+    if (db == nullptr) {
+        // Nothing to check against; better to accept the filter than to
+        // reject every one of them.
+        return Ok();
+    }
+
+    const auto* sql = sqlite3_sql(stmt);
+    if (sql == nullptr) {
+        return Ok();
+    }
+
+    auto_mem<sqlite3_stmt> probe(sqlite3_finalize);
+    if (sqlite3_prepare_v2(db, sql, -1, probe.out(), nullptr) == SQLITE_OK) {
+        return Ok();
+    }
+
+    return Err(
+        lnav::console::user_message::error(
+            "filter expression must depend only on the log message")
+            .with_reason(sqlite3_errmsg(db))
+            .with_help(
+                "The expression is evaluated as each message is indexed and "
+                "the result is remembered, so a function that reads anything "
+                "else -- the state of a view, say -- would give a different "
+                "answer every time it ran and leave the filter meaning "
+                "nothing.  Those functions are not available here; refer to "
+                "the message's own fields instead.")
+            .move());
+}
+
 Result<void, lnav::console::user_message>
 logfile_sub_source::set_sql_filter(std::string stmt_str, sqlite3_stmt* stmt)
 {
+    if (stmt != nullptr) {
+        auto pure_res = check_filter_expr_is_pure(stmt);
+
+        if (pure_res.isErr()) {
+            sqlite3_finalize(stmt);
+            return Err(pure_res.unwrapErr());
+        }
+    }
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
@@ -2468,8 +2681,18 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
 }
 
 Result<void, lnav::console::user_message>
-logfile_sub_source::set_preview_sql_filter(sqlite3_stmt* stmt)
+logfile_sub_source::set_preview_sql_filter(sqlite3_stmt* stmt,
+                                           expr_purity purity)
 {
+    if (stmt != nullptr && purity == expr_purity::required) {
+        auto pure_res = check_filter_expr_is_pure(stmt);
+
+        if (pure_res.isErr()) {
+            sqlite3_finalize(stmt);
+            return Err(pure_res.unwrapErr());
+        }
+    }
+
     if (stmt != nullptr && !this->lss_filtered_index.empty()) {
         auto top_cl = this->at(0_vl);
         auto ld = this->find_data(top_cl);
@@ -3061,6 +3284,49 @@ log_location_history::loc_history_forward(vis_line_t current_top)
     return std::nullopt;
 }
 
+sqlite3_stmt*
+sql_filter::stmt_for_this_thread()
+{
+    // Every thread steps its own copy, prepared the same way the filter was
+    // created.  Thread local because a statement cannot be stepped from two
+    // threads at once, and keyed by serial rather than by address: a filter
+    // is replaced wholesale on every change, so a new one can be handed the
+    // address a freed one had, and would then step the old expression.
+    // set_sql_filter() rejects an expression that will not prepare here, so
+    // reaching the null below means the filter changed under a pass.
+    thread_local std::map<uint64_t, auto_mem<sqlite3_stmt>> tl_stmts;
+
+    auto iter = tl_stmts.find(this->sf_serial);
+    if (iter != tl_stmts.end()) {
+        return iter->second.in();
+    }
+
+    // Filter slot 0 is the only SQL filter, so exactly one is live at a time
+    // and a miss means the one this cache was holding is gone.  Dropping it
+    // finalizes its statement and keeps the map from growing by one entry per
+    // edit for the lifetime of a thread that never exits, like the main one.
+    tl_stmts.clear();
+
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    auto* db = lnav::sql::thread_local_db();
+    if (db != nullptr) {
+        auto full_sql
+            = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), this->lf_id);
+
+        if (sqlite3_prepare_v2(
+                db, full_sql.c_str(), full_sql.size(), stmt.out(), nullptr)
+            != SQLITE_OK)
+        {
+            log_error("unable to prepare filter for this thread -- %s",
+                      sqlite3_errmsg(db));
+            stmt.reset();
+        }
+    }
+
+    return tl_stmts.emplace(this->sf_serial, std::move(stmt))
+        .first->second.in();
+}
+
 bool
 sql_filter::matches(std::optional<line_source> ls_opt,
                     const shared_buffer_ref& line)
@@ -3078,14 +3344,18 @@ sql_filter::matches(std::optional<line_source> ls_opt,
         return false;
     }
 
+    auto* stmt = this->stmt_for_this_thread();
+    if (stmt == nullptr) {
+        return false;
+    }
+
     auto lfp = ls->ls_file.shared_from_this();
     auto ld = this->sf_log_source.find_data_i(lfp);
     if (ld == this->sf_log_source.end()) {
         return false;
     }
 
-    auto eval_res = this->sf_log_source.eval_sql_filter(
-        this->sf_filter_stmt, ld, ls->ls_line);
+    auto eval_res = this->sf_log_source.eval_sql_filter(stmt, ld, ls->ls_line);
     if (eval_res.unwrapOr(true)) {
         return false;
     }
@@ -3430,7 +3700,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 'The corresponding log messages might have been filtered out')))
           WHERE name = 'log'
         )";
-        static const auto ELLIPSIS = "\u22ef"_frag;
+        static constexpr auto ELLIPSIS = "\u22ef"_frag;
 
         auto tid_display = values.lvv_thread_id_value.has_value()
             ? lnav::roles::identifier(values.lvv_thread_id_value.value())
@@ -3486,6 +3756,9 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 'The corresponding log messages might have been filtered out')))
           WHERE name = 'log'
         )";
+        // std::string, not a fragment: lvv_opid_value is an
+        // optional<std::string>, and a conditional with mismatched branches
+        // converts that one to a fragment over a temporary.
         static const std::string ELLIPSIS = "\u22ef";
 
         auto opid_display = values.lvv_opid_value.has_value()

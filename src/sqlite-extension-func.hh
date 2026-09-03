@@ -99,7 +99,17 @@ int yaml_extension_functions(struct FuncDef** basic_funcs,
 
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
+/**
+ * The subset of the above whose functions depend on nothing but their
+ * arguments.  Register these on a connection a worker thread will use; see
+ * lnav::sql::thread_local_db().
+ */
+extern sqlite_registration_func_t sqlite_thread_safe_registration_funcs[];
+
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
+
+/** Defined in collation-functions.cc; depends only on its arguments. */
+int register_collation_functions(sqlite3* db);
 
 extern "C"
 {

@@ -32,6 +32,7 @@
 #ifndef logfile_hh
 #define logfile_hh
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <string>
@@ -61,24 +62,37 @@
 #include "unique_path.hh"
 
 /**
- * Observer interface for logfile indexing progress.
+ * How far rebuild_index() has gotten with a file.
  *
- * @see logfile
+ * Every field is atomic because the UI thread reads them while a worker is
+ * writing them.  That is also why the numbers live here rather than being
+ * derived from lf_index on demand: reading lf_index.size() while a worker is
+ * appending to it races against a vector that may be reallocating.  A tick's
+ * reading of these is handed to the UI as a vector of index_progress_report
+ * (logfile_fwd.hh), which is where the drawing code gets its numbers from.
  */
-class logfile_observer {
-public:
-    virtual ~logfile_observer() = default;
-
-    /**
-     * @param lf The logfile object that is doing the indexing.
-     * @param off The current offset in the file being processed.
-     * @param total The total size of the file.
-     * @return false
-     */
-    virtual lnav::progress_result_t logfile_indexing(const logfile* lf,
-                                                     file_off_t off,
-                                                     file_ssize_t total) = 0;
+struct index_progress {
+    std::atomic<file_off_t> ip_offset{0};
+    std::atomic<file_ssize_t> ip_total{0};
+    std::atomic<bool> ip_done{false};
+    /** Raised by the UI thread when the user interrupts the pass. */
+    std::atomic<bool> ip_abort{false};
 };
+
+namespace lnav {
+
+/**
+ * @return How many workers to index `file_count` files across, from
+ * /tuning/logfile/indexing-threads.  0 asks the machine for a count and 1
+ * means index them one at a time.
+ *
+ * Also warms the injected singletons the scan path reaches through
+ * function-local statics, while the UI thread is still the only one running.
+ * Call it on the UI thread ahead of every fan-out.
+ */
+size_t logfile_indexing_width(size_t file_count);
+
+}  // namespace lnav
 
 struct logfile_activity {
     // Stats for the indexing pipeline — wall/cpu time accumulate
@@ -165,7 +179,24 @@ public:
     /** @param filename The new filename for this log file. */
     void set_filename(const std::string& filename);
 
+    static uint64_t next_serial()
+    {
+        static std::atomic<uint64_t> counter{0};
+
+        return counter.fetch_add(1, std::memory_order_relaxed) + 1;
+    }
+
     const std::string& get_content_id() const { return this->lf_content_id; }
+
+    /**
+     * @return An id for this file, handed out in creation order and never
+     * reused.
+     *
+     * For code that needs to say "the same file" without holding the file
+     * alive.  The address will not do: a new logfile can be allocated where a
+     * freed one used to live, and would then compare equal to it.
+     */
+    uint64_t get_serial() const { return this->lf_serial; }
 
     /** @return The inode for this log file. */
     const struct stat& get_stat() const { return this->lf_stat; }
@@ -203,6 +234,43 @@ public:
             return lb_size;
         }
         return this->lf_stat.st_size;
+    }
+
+    /**
+     * @return How far indexing has gotten, as (done, total), or nullopt when
+     * the total cannot be established.
+     *
+     * The numerator is always lf_index_size -- decompressed bytes indexed --
+     * because that is the thing that actually advances smoothly.  Only the
+     * denominator is in question, and it is taken from, in order:
+     *
+     *   - the line buffer, once it knows the real size.  That covers plain
+     *     files, pipes that have hit EOF, and any compressed file that has
+     *     been read to the end.
+     *   - a gzip trailer's ISIZE, which is exact below 4GB and, unlike the
+     *     decompressor's own position, is known before any of the file has
+     *     been read.  Discarded the moment indexing passes it, which is what
+     *     catches a wrapped value or a concatenated file.
+     *   - the on-disk size, for an uncompressed file whose size the line
+     *     buffer has not settled yet.
+     *
+     * Anything left over -- bzip2, or a gzip whose trailer proved wrong --
+     * has no honest denominator and reports nothing.
+     */
+    std::optional<std::pair<file_off_t, file_ssize_t>> get_index_progress()
+        const;
+
+    /**
+     * @return Whether the whole file has been read and indexed.
+     *
+     * Deliberately not a comparison of the two numbers above:
+     * is_data_available() already knows that a compressed file's size is
+     * only settled once decompression reaches EOF.
+     */
+    bool is_fully_indexed() const
+    {
+        return !this->lf_line_buffer.is_data_available(this->lf_index_size,
+                                                       this->lf_stat.st_size);
     }
 
     std::optional<const_iterator> line_for_offset(file_off_t off) const;
@@ -419,9 +487,49 @@ public:
 
     void reobserve_from(iterator iter);
 
-    void set_logfile_observer(logfile_observer* lo)
+    /**
+     * Zero the progress and seed the denominator, on the thread that is about
+     * to hand this file to a worker.
+     *
+     * The total is seeded here rather than left to the worker so that the
+     * aggregate the UI shows is complete from the first tick and only moves
+     * forward; filled in as files were picked up, the bar would slide
+     * backwards.  It comes from get_index_progress() so the numerator and
+     * denominator stay in one coordinate space -- get_content_size() reports
+     * a compressed file's on-disk size until the stream hits EOF and its
+     * decompressed size after, which made the total jump mid-pass.
+     */
+    void begin_indexing_progress()
     {
-        this->lf_logfile_observer = lo;
+        auto prog = this->get_index_progress();
+
+        this->lf_index_progress.ip_offset.store(0, std::memory_order_relaxed);
+        this->lf_index_progress.ip_total.store(prog ? prog->second : 0,
+                                               std::memory_order_relaxed);
+        this->lf_index_progress.ip_done.store(false,
+                                              std::memory_order_relaxed);
+        this->lf_index_progress.ip_abort.store(false,
+                                               std::memory_order_relaxed);
+    }
+
+    /** @see index_progress -- safe to read while a worker is scanning. */
+    const index_progress& indexing_progress() const
+    {
+        return this->lf_index_progress;
+    }
+
+    /** Ask the scan of this file to stop as soon as it notices. */
+    void abort_indexing()
+    {
+        this->lf_index_progress.ip_abort.store(true,
+                                               std::memory_order_relaxed);
+    }
+
+    /** Called by the scanning thread when it is done with this file. */
+    void finish_indexing_progress()
+    {
+        this->lf_index_progress.ip_done.store(true,
+                                              std::memory_order_relaxed);
     }
 
     void set_logline_observer(logline_observer* llo);
@@ -607,6 +715,7 @@ private:
     std::optional<std::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
+    const uint64_t lf_serial{next_serial()};
     struct stat lf_stat{};
     std::shared_ptr<log_format> lf_format;
     log_format_scan_match lf_format_match;
@@ -628,7 +737,7 @@ private:
                               std::equal_to<string_fragment>>
         lf_invalidated_opids;
     logline_observer* lf_logline_observer{nullptr};
-    logfile_observer* lf_logfile_observer{nullptr};
+    index_progress lf_index_progress;
     size_t lf_longest_line{0};
     std::optional<text_format_t> lf_text_format;
     uint32_t lf_out_of_time_order_count{0};

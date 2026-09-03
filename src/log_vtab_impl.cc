@@ -163,73 +163,70 @@ enum class log_footer_columns : uint32_t {
     named_searches,
 };
 
-const std::string&
+std::string
 log_vtab_impl::get_table_statement()
 {
-    if (this->vi_table_statement.empty()) {
-        std::vector<vtab_column> cols;
-        std::ostringstream oss;
-        size_t max_name_len = 15;
+    std::vector<vtab_column> cols;
+    std::ostringstream oss;
+    size_t max_name_len = 15;
 
-        oss << "CREATE TABLE lnav_db." << this->get_name().to_string()
-            << LOG_COLUMNS;
-        this->get_columns(cols);
-        this->vi_column_count = cols.size();
-        for (const auto& col : cols) {
-            max_name_len = std::max(max_name_len, col.vc_name.length());
+    oss << "CREATE TABLE lnav_db." << this->get_name().to_string()
+        << LOG_COLUMNS;
+    this->get_columns(cols);
+    this->vi_column_count = cols.size();
+    for (const auto& col : cols) {
+        max_name_len = std::max(max_name_len, col.vc_name.size());
+    }
+    for (const auto& col : cols) {
+        std::string comment;
+
+        require(!col.vc_name.empty());
+
+        if (!col.vc_comment.empty()) {
+            comment.append(" -- ").append(col.vc_comment.data(),
+                                          col.vc_comment.length());
         }
-        for (const auto& col : cols) {
-            std::string comment;
 
-            require(!col.vc_name.empty());
+        auto colname = sql_quote_ident(col.vc_name.get());
+        auto coldecl = lnav::sql::mprintf(
+            "  %-*s %-7s %s COLLATE %-15Q,%s\n",
+            max_name_len,
+            colname.in(),
+            sqlite3_type_to_string(col.vc_type),
+            col.vc_hidden ? "hidden" : "",
+            col.vc_collator.empty() ? "BINARY" : col.vc_collator.get(),
+            comment.c_str());
+        oss << coldecl;
+    }
+    oss << LOG_FOOTER_COLUMNS;
 
-            if (!col.vc_comment.empty()) {
-                comment.append(" -- ").append(col.vc_comment);
-            }
+    {
+        std::vector<std::string> primary_keys;
 
-            auto colname = sql_quote_ident(col.vc_name.c_str());
-            auto coldecl = lnav::sql::mprintf(
-                "  %-*s %-7s %s COLLATE %-15Q,%s\n",
-                max_name_len,
-                colname.in(),
-                sqlite3_type_to_string(col.vc_type),
-                col.vc_hidden ? "hidden" : "",
-                col.vc_collator.empty() ? "BINARY" : col.vc_collator.c_str(),
-                comment.c_str());
-            oss << coldecl;
-        }
-        oss << LOG_FOOTER_COLUMNS;
+        this->get_primary_keys(primary_keys);
+        if (!primary_keys.empty()) {
+            auto first = true;
 
-        {
-            std::vector<std::string> primary_keys;
-
-            this->get_primary_keys(primary_keys);
-            if (!primary_keys.empty()) {
-                auto first = true;
-
-                oss << ", PRIMARY KEY (";
-                for (const auto& pkey : primary_keys) {
-                    if (!first) {
-                        oss << ", ";
-                    }
-                    oss << pkey;
-                    first = false;
+            oss << ", PRIMARY KEY (";
+            for (const auto& pkey : primary_keys) {
+                if (!first) {
+                    oss << ", ";
                 }
-                oss << ")\n";
-            } else {
-                oss << ", PRIMARY KEY (log_line)\n";
+                oss << pkey;
+                first = false;
             }
+            oss << ")\n";
+        } else {
+            oss << ", PRIMARY KEY (log_line)\n";
         }
-
-        oss << ");\n";
-
-        log_trace("log_vtab_impl.get_table_statement() -> %s",
-                  oss.str().c_str());
-
-        this->vi_table_statement = oss.str();
     }
 
-    return this->vi_table_statement;
+    oss << ");\n";
+
+    log_trace("log_vtab_impl.get_table_statement() -> %s",
+              oss.str().c_str());
+
+    return oss.str();
 }
 
 std::pair<int, unsigned int>

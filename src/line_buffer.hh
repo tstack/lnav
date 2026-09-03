@@ -33,6 +33,7 @@
 #define line_buffer_hh
 
 #include <array>
+#include <atomic>
 #include <exception>
 #include <future>
 #include <vector>
@@ -86,6 +87,7 @@ public:
 #define GZ_WINSIZE           32768U /*> gzip's max supported dictionary is 15-bits */
 #define GZ_RAW_MODE          (-15) /*> Raw inflate data mode */
 #define GZ_HEADER_MODE       (15 + 32) /*> Automatic zstd or gzip decoding */
+#define GZ_TRAILER_SIZE      8 /*> Size of a gzip member's CRC32 + ISIZE */
 #define GZ_BORROW_BITS_MASK  7 /*> Bits (0-7) consumed in previous block */
 #define GZ_END_OF_BLOCK_MASK 128 /*> Stopped because reached end-of-block */
 #define GZ_END_OF_FILE_MASK  64 /*> Stopped because reached end-of-file */
@@ -110,6 +112,14 @@ public:
         void close();
         void init_stream();
         void continue_stream();
+
+        /**
+         * Set while the stream is a raw one, which is what resuming from a
+         * syncpoint gives.  A raw stream ends at the end of the deflate data
+         * and leaves the member's gzip trailer unread, where a header-mode
+         * stream consumes and checks it before reporting the end.
+         */
+        bool raw_stream{false};
         void open(int fd, lnav::gzip::header& hd);
         int stream_data(void* buf, size_t size);
         void seek(off_t offset);
@@ -177,6 +187,19 @@ public:
 
     bool is_compressed() const { return this->lb_compressed; }
 
+    /**
+     * @return The size of the decompressed stream when the format can say it
+     * before the stream has been read, or nullopt when it cannot.
+     *
+     * Only a hint.  It comes from the gzip trailer today, which records the
+     * size modulo 2^32 and covers only the last member of a concatenated
+     * file, so a caller must treat being overrun as proof it was wrong.
+     */
+    std::optional<file_ssize_t> uncompressed_size() const
+    {
+        return this->lb_uncompressed_size;
+    }
+
     bool is_header_utf8() const { return this->lb_is_utf8; }
 
     bool has_line_metadata() const { return this->lb_line_metadata; }
@@ -242,7 +265,7 @@ public:
         this->lb_file_offset = 0;
         this->lb_file_size = (ssize_t) -1;
         this->lb_buffer.resize(0);
-        this->lb_last_line_offset = -1;
+        this->lb_last_line_offset.store(-1, std::memory_order_relaxed);
     }
 
     /** Check the invariants for this object. */
@@ -293,17 +316,23 @@ public:
     size_t get_byte_size() const
     {
         size_t total = this->lb_buffer.capacity();
-        if (this->lb_alt_buffer) {
-            total += this->lb_alt_buffer->capacity();
-        }
         total += this->lb_line_starts.capacity() * sizeof(uint32_t);
-        total += this->lb_alt_line_starts.capacity() * sizeof(uint32_t);
         total += this->lb_line_col_widths.capacity() * sizeof(size_t);
-        total += this->lb_alt_line_col_widths.capacity() * sizeof(size_t);
         total += (this->lb_line_is_utf.capacity() + 7) / 8;
-        total += (this->lb_alt_line_is_utf.capacity() + 7) / 8;
         total += (this->lb_line_has_ansi.capacity() + 7) / 8;
-        total += (this->lb_alt_line_has_ansi.capacity() + 7) / 8;
+        // The alt buffers belong to the preload thread until the future is
+        // consumed, so while one is in flight they are left out of the total
+        // rather than measured out from under it.  This is a statistic; a
+        // sample that misses one buffer is better than a race.
+        if (!this->lb_loader_future.valid()) {
+            if (this->lb_alt_buffer) {
+                total += this->lb_alt_buffer->capacity();
+            }
+            total += this->lb_alt_line_starts.capacity() * sizeof(uint32_t);
+            total += this->lb_alt_line_col_widths.capacity() * sizeof(size_t);
+            total += (this->lb_alt_line_is_utf.capacity() + 7) / 8;
+            total += (this->lb_alt_line_has_ansi.capacity() + 7) / 8;
+        }
         return total;
     }
 
@@ -329,6 +358,24 @@ private:
     }
 
     void resize_buffer(size_t new_max);
+
+    /**
+     * @return `want`, less whatever of it the file cannot fill.
+     *
+     * The extra buffer a compressed file gets is there to save decompressing
+     * the same bytes twice, so there is nothing to gain from making it larger
+     * than the whole stream.  Falls back to `want` when the size is not known
+     * -- see uncompressed_size().
+     */
+    file_ssize_t buffer_size_for(file_ssize_t want) const
+    {
+        if (this->lb_uncompressed_size
+            && this->lb_uncompressed_size.value() < want)
+        {
+            return this->lb_uncompressed_size.value();
+        }
+        return want;
+    }
 
     /**
      * Ensure there is enough room in the buffer to cache a range of data from
@@ -405,12 +452,22 @@ private:
 
     file_off_t lb_compressed_offset{
         0}; /*< The offset into the compressed file. */
-    file_ssize_t lb_file_size{
-        -1}; /*<
-              * The size of the file.  When lb_fd refers to
-              * a pipe, this is set to the amount of data
-              * read from the pipe when EOF is reached.
-              */
+    /**
+     * The decompressed size, when the format can say it ahead of the read.
+     * @see uncompressed_size()
+     */
+    std::optional<file_ssize_t> lb_uncompressed_size;
+    /**
+     * The size of the file.  When lb_fd refers to a pipe, this is set to the
+     * amount of data read from the pipe when EOF is reached.
+     *
+     * Atomic because the preload running on the io_looper thread grows it as
+     * it decompresses, while the owning thread is reading it to decide
+     * whether there is more data to index.  Both sides only ever revise it
+     * upward as more of the file is seen, so a lost update just gets
+     * rediscovered on the next read.
+     */
+    std::atomic<file_ssize_t> lb_file_size{-1};
     file_off_t lb_file_offset{0}; /*<
                                    * Data cached in the buffer comes from this
                                    * offset in the file.
@@ -421,7 +478,14 @@ private:
     bool lb_decompress_extra{false};
     bool lb_is_utf8{true};
     bool lb_do_preloading{false};
-    file_off_t lb_last_line_offset{-1}; /*< */
+    /**
+     * Read by the preload running on the io_looper thread while the owning
+     * thread is still advancing it, so it has to be atomic.  Relaxed
+     * throughout: the preload only uses it to decide whether to scan line
+     * starts, and the value can go stale the instant after it is read
+     * either way.
+     */
+    std::atomic<file_off_t> lb_last_line_offset{-1}; /*< */
 
     std::vector<uint32_t> lb_line_starts;
     file_off_t lb_next_buffer_offset{0};

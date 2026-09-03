@@ -79,10 +79,40 @@ public:
 
     void text_selection_changed(textview_curses& tc) override;
 
+    /**
+     * @return The last tick's reading for the file with this
+     *         logfile::get_serial(), or null if it is not in a pass.
+     */
+    const index_progress_report* find_index_progress(uint64_t file_id) const
+    {
+        for (const auto& ipr : this->fss_index_progress) {
+            if (ipr.ipr_file_id == file_id) {
+                return &ipr;
+            }
+        }
+
+        return nullptr;
+    }
+
+    bool is_index_pass_in_flight() const
+    {
+        return !this->fss_index_progress.empty();
+    }
+
     size_t fss_last_line_len{0};
     attr_line_t fss_curr_line;
     std::chrono::microseconds fss_details_mtime;
     plain_text_source* fss_details_source{nullptr};
+    /**
+     * What the last tick of a parallel indexing pass saw for the files that
+     * had not finished yet.  A non-empty vector means a pass is in flight,
+     * and these entries are the only safe source for those files' progress:
+     * the workers own the logfiles for the length of the pass.  The closing
+     * tick clears it.
+     */
+    std::vector<index_progress_report> fss_index_progress;
+    /** Set when a selection change was skipped because a pass was running. */
+    bool fss_details_stale{false};
 };
 
 struct files_overlay_source : list_overlay_source {

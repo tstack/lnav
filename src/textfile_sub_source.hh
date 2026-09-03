@@ -32,6 +32,7 @@
 
 #include <deque>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -109,6 +110,28 @@ public:
         virtual void promote_file(const std::shared_ptr<logfile>& lf) = 0;
         virtual void scanned_file(const std::shared_ptr<logfile>& lf) = 0;
         virtual void renamed_file(const std::shared_ptr<logfile>& lf) = 0;
+
+        /**
+         * Called on the calling thread while a parallel scan is in flight so
+         * the UI keeps moving.  `off` and `total` are summed over the files
+         * being scanned.
+         *
+         * The workers are writing those files while this runs, so an
+         * implementation must not read them -- the numbers handed in here
+         * are all it gets.  `in_flight` carries a per-file breakdown of the
+         * same reading for the files that have not finished, so the file
+         * list can be drawn without touching them either.
+         *
+         * @return interrupt to have the scan stop as soon as the workers
+         * notice.
+         */
+        virtual lnav::progress_result_t scan_progress(
+            file_off_t off,
+            file_ssize_t total,
+            const std::vector<index_progress_report>& in_flight)
+        {
+            return lnav::progress_result_t::ok;
+        }
     };
 
     struct rescan_result_t {
@@ -235,6 +258,15 @@ public:
         time_t fvs_mtime{0};
         file_ssize_t fvs_file_size{0};
         file_off_t fvs_file_indexed_size{0};
+        /**
+         * How many of this file's lines have been folded into
+         * `tfs_index` -- the analogue of logfile_sub_source's
+         * ld_lines_indexed.  Not the file's size: the pre-scan advances
+         * that for files a deadline-shortened pass never gets to, and
+         * deriving the resume point from it would skip their lines
+         * forever.
+         */
+        uint32_t fvs_lines_indexed{0};
         std::string fvs_error;
         std::unique_ptr<plain_text_source> fvs_text_source;
         lnav::document::metadata fvs_metadata;
@@ -264,6 +296,58 @@ public:
 
 private:
     friend textfile_header_overlay;
+
+    /** What a parallel pre-scan worked out about one file. */
+    struct prescan_result {
+        logfile::rebuild_result_t psr_result{
+            logfile::rebuild_result_t::NO_NEW_LINES};
+        /** The scan threw; the caller closes the file, as an inline one would. */
+        bool psr_failed{false};
+    };
+
+    using prescan_map = std::unordered_map<const logfile*, prescan_result>;
+
+    /**
+     * Index the files this round is going to touch, up front and across
+     * several threads.
+     *
+     * rebuild_index() writes only its own logfile, so the files are
+     * independent of each other; everything the rescan loop then does with
+     * the results -- the promotion, the callbacks, the view -- stays on the
+     * calling thread.  Returns an empty map when there is nothing to gain,
+     * in which case the loop scans inline exactly as it always has.
+     */
+    prescan_map prescan_files(scan_callback& callback,
+                              bool last_aborted,
+                              std::optional<ui_clock::time_point> deadline);
+
+    /** A markdown rendering done up front.  @see prescan_markdown() */
+    struct md_prescan_result {
+        std::string mpr_read_error;
+        std::string mpr_content;
+        std::string mpr_frontmatter;
+        text_format_t mpr_frontmatter_format{text_format_t::TF_PLAINTEXT};
+        std::optional<attr_line_t> mpr_rendered;
+        std::string mpr_parse_error;
+    };
+
+    using md_prescan_map
+        = std::unordered_map<const logfile*, md_prescan_result>;
+
+    /**
+     * Render the markdown files that are about to be shown for the first
+     * time, up front and across several threads.
+     *
+     * Reading and rendering are pure functions of the file's bytes, so they
+     * parallelize; installing the result -- the text source, the view, the
+     * event -- stays on the calling thread.
+     *
+     * Only a file with no rendering yet is done here.  One that already has
+     * a rendering either does not need a new one, or needs one the loop
+     * decides on from stamps the metadata step may rewrite first, so
+     * speculating on it would mostly throw the work away.
+     */
+    md_prescan_map prescan_markdown();
 
     void detach_observer(std::shared_ptr<logfile> lf)
     {
