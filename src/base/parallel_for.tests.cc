@@ -32,6 +32,7 @@
 #include <atomic>
 #include <chrono>
 #include <numeric>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
