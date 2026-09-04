@@ -155,7 +155,7 @@
   Clear all sticky header bookmarks in the current view
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`, :ref:`toggle_sticky_header`
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -412,7 +412,7 @@
       :create-logline-table task_durations
 
   **See Also**
-    :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -436,7 +436,7 @@
       :create-named-search req
 
   **See Also**
-    :ref:`delete_named_search`
+    :ref:`delete_named_search`, :ref:`focus_search`
 
 ----
 
@@ -460,7 +460,7 @@
       :create-search-table task_durations duration=(?<duration>\d+)
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`delete_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -517,7 +517,7 @@
       :delete-logline-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -540,7 +540,7 @@
       :delete-named-search req
 
   **See Also**
-    :ref:`create_named_search`
+    :ref:`create_named_search`, :ref:`focus_search`
 
 ----
 
@@ -563,7 +563,7 @@
       :delete-search-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -646,7 +646,7 @@
       :disable-named-search req
 
   **See Also**
-    :ref:`enable_named_search`
+    :ref:`enable_named_search`, :ref:`focus_search`
 
 ----
 
@@ -683,7 +683,7 @@
       :echo Hello, World!
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -743,7 +743,7 @@
       :enable-named-search req
 
   **See Also**
-    :ref:`disable_named_search`
+    :ref:`disable_named_search`, :ref:`focus_search`
 
 ----
 
@@ -795,7 +795,7 @@
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -938,6 +938,55 @@
 ----
 
 
+.. _focus_next_search:
+
+:focus-next-search
+^^^^^^^^^^^^^^^^^^
+
+  Focus the search after the one that is focused now, wrapping around to all of them
+
+  **See Also**
+    :ref:`focus_prev_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+
+----
+
+
+.. _focus_prev_search:
+
+:focus-prev-search
+^^^^^^^^^^^^^^^^^^
+
+  Focus the search before the one that is focused now, wrapping around to all of them
+
+  **See Also**
+    :ref:`focus_next_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+
+----
+
+
+.. _focus_search:
+
+:focus-search *\[name\]*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Narrow the search hotkeys to a single search so that only its hits are moved through
+
+  **Parameters**
+    * **name** --- The name of the search to focus.  If not given, the hotkeys move through the hits of all of the searches again.
+
+  **Examples**
+    To move through the hits of 'req' alone:
+
+    .. code-block::  lnav
+
+      :focus-search req
+
+  **See Also**
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+
+----
+
+
 .. _goto:
 
 :goto *line#|N%|timestamp|#anchor*
@@ -974,7 +1023,7 @@
       :goto #screenshots
 
   **See Also**
-    :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`focus_search`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1235,7 +1284,7 @@
   Move to the next position in the location history
 
   **See Also**
-    :ref:`goto`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1258,7 +1307,30 @@
       :next-mark error
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+
+----
+
+
+.. _next_search_hit:
+
+:next-search-hit *\[name\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Move to the next hit of the focused search, or of all of the searches when none is focused
+
+  **Parameters**
+    * **name** --- The name of the search to move through instead of the focused one
+
+  **Examples**
+    To move to the next hit of 'req':
+
+    .. code-block::  lnav
+
+      :next-search-hit req
+
+  **See Also**
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_search_hit`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1271,7 +1343,7 @@
   Move to the next section in the document
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1384,7 +1456,7 @@
   Move to the previous position in the location history
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1407,7 +1479,30 @@
       :prev-mark error
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+
+----
+
+
+.. _prev_search_hit:
+
+:prev-search-hit *\[name\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Move to the previous hit of the focused search, or of all of the searches when none is focused
+
+  **Parameters**
+    * **name** --- The name of the search to move through instead of the focused one
+
+  **Examples**
+    To move to the previous hit of 'req':
+
+    .. code-block::  lnav
+
+      :prev-search-hit req
+
+  **See Also**
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_search_hit`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1420,7 +1515,7 @@
   Move to the previous section in the document
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
 
@@ -1497,7 +1592,7 @@
       :redirect-to /tmp/script-output.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1537,7 +1632,7 @@
       :relative-goto -10%
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`
+    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`
 
 ----
 
@@ -1807,7 +1902,7 @@
   Show lines that have not been bookmarked
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1977,7 +2072,7 @@
   Toggle the sticky header state for the focused line in the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`
 
 ----
 
@@ -2066,7 +2161,7 @@
       :write-table-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2090,7 +2185,7 @@
       :write-csv-to /tmp/table.csv
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2128,7 +2223,7 @@
       :write-json-cols-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2152,7 +2247,7 @@
       :write-json-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2177,7 +2272,7 @@
       :write-jsonlines-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2202,7 +2297,7 @@
       :write-raw-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2226,7 +2321,7 @@
       :write-screen-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2250,7 +2345,7 @@
       :write-to /tmp/interesting-lines.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_view_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2274,7 +2369,7 @@
       :write-view-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`xopen`
 
 ----
 

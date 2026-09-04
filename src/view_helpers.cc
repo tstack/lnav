@@ -1368,7 +1368,17 @@ next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
 {
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     auto& bm = tc->get_bookmarks();
-    auto& bv = bm[bt];
+
+    return next_cluster(f, bm[bt], top);
+}
+
+std::optional<vis_line_t>
+next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                 vis_line_t) const,
+             const bookmark_vector<vis_line_t>& bv,
+             const vis_line_t top)
+{
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     bool top_is_marked = bv.bv_tree.exists(top);
     vis_line_t last_top(top), tc_height;
     std::optional<vis_line_t> new_top = top;

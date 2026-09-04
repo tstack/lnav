@@ -257,6 +257,15 @@ extern lnav::commands::command_map_t lnav_commands;
 
 #define HELP_MSG_2(x, y, msg) "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
+/**
+ * Shown after a named search is created, from the command or from the filter
+ * panel.  The keys cannot go through HELP_MSG_2 because a comma cannot be
+ * passed as a macro argument.
+ */
+#define HELP_MSG_FOCUS_SEARCH                                                  \
+    "Press " ANSI_BOLD(".") "/" ANSI_BOLD(                                     \
+        ",") " to move through the hits of one search at a time"
+
 bool setup_logline_table(exec_context& ec);
 void wait_for_children();
 void wait_for_pipers(std::optional<ui_clock::time_point> deadline

@@ -301,6 +301,14 @@ public:
         ensure(false);
     }
 
+    /**
+     * The row for a particular filter.  The rows for the named searches come
+     * after the ones for the filters, so a filter that was just added is not
+     * necessarily the last row.
+     */
+    std::pair<vis_line_t, std::unique_ptr<filter_row>> find_row(
+        textview_curses* tc, const std::shared_ptr<text_filter>& tf);
+
     std::shared_ptr<textinput_curses> fss_editor;
     std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;

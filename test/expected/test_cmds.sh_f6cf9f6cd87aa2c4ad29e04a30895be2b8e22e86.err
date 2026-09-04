@@ -1,0 +1,5 @@
+[1m[31m✘[0m [1m[31merror[0m: cannot focus “arr”
+ [1m[31mreason[0m: the search is disabled
+[36m --> [0m[1mcommand-option[0m:3
+[36m | [0m[37m[40m:[0m[1m[36m[40mfocus-search[0m[37m[40m arr                       [0m
+[36m =[0m [36mhelp[0m: use :enable-named-search to turn it back on

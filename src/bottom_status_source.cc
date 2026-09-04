@@ -87,13 +87,62 @@ bottom_status_source::update_line_number(listview_curses* lc)
           }).value_or(""));
 }
 
+bottom_status_source::search_report_t
+bottom_status_source::search_report_for(textview_curses& tc)
+{
+    if (tc.get_focused_search_slot()) {
+        return search_report_t::focused;
+    }
+    // With no named search in play, n/N covers the interactive search and
+    // nothing else, so there is no distinction to draw.
+    if (tc.get_named_searches().empty()) {
+        return search_report_t::interactive;
+    }
+
+    return search_report_t::all;
+}
+
 void
 bottom_status_source::update_search_term(textview_curses& tc)
 {
     auto& sf = this->bss_fields[BSF_SEARCH_TERM];
     auto search_term = tc.get_current_search();
 
+    this->bss_focused_search_slot = tc.get_focused_search_slot();
+    this->bss_search_report = search_report_for(tc);
     sf.clear();
+    switch (this->bss_search_report) {
+        case search_report_t::all: {
+            // n/N is moving through more than one pattern, so there is no
+            // single term to put here.
+            sf.get_value().append("all searches"_variable);
+            search_term.clear();
+            break;
+        }
+        case search_report_t::focused: {
+            auto focused_name = tc.get_focused_search_name();
+
+            if (focused_name) {
+                const auto* ns = tc.find_named_search(focused_name.value());
+                // The name wears the background that its matches wear in the
+                // view, so the field and the highlighting read as the same
+                // search.
+                auto name_attrs = text_attrs{};
+
+                name_attrs.ta_bg_color
+                    = view_colors::singleton().color_for_ident(
+                        string_fragment::from_str(focused_name.value()));
+                sf.get_value()
+                    .append(" ")
+                    .append(focused_name.value(), VC_STYLE.value(name_attrs))
+                    .append(" ");
+                search_term = ns == nullptr ? std::string() : ns->ns_pattern;
+            }
+            break;
+        }
+        case search_report_t::interactive:
+            break;
+    }
     if (!search_term.empty()) {
         auto search_term_al = attr_line_t(search_term);
 
@@ -135,23 +184,46 @@ bottom_status_source::update_marks(listview_curses* lc)
     status_field& sf = this->bss_fields[BSF_HITS];
     auto retval = false;
 
-    // The field is labelled with the interactive search's pattern, so it
-    // counts that search alone.  Named searches contribute to BM_SEARCH -- and
-    // so to n/N -- but including them here would report a total that does not
-    // belong to the pattern shown beside it.
-    const auto& bv = tc->get_interactive_matches();
+    // The count has to cover the same hits that n/N moves through, since the
+    // term it is labelled with names them.
+    auto focused_slot = tc->get_focused_search_slot();
 
-    if (!bv.empty() || !tc->get_current_search().empty()) {
+    if (focused_slot != this->bss_focused_search_slot
+        || search_report_for(*tc) != this->bss_search_report)
+    {
+        this->update_search_term(*tc);
+    }
+
+
+    auto report = search_report_for(*tc);
+    using bv_t = bookmark_vector<vis_line_t>;
+    const auto& bv = [tc, report, focused_slot]() -> const bv_t& {
+        switch (report) {
+            case search_report_t::focused:
+                return tc->search_matches_for_slot(focused_slot.value());
+            case search_report_t::all:
+                return tc->get_bookmarks()[&textview_curses::BM_SEARCH];
+            case search_report_t::interactive:
+                break;
+        }
+        return tc->get_interactive_matches();
+    }();
+
+    // A focused search and the "all searches" label always name something, so
+    // they get a count even when it is zero.  The interactive search on its
+    // own leaves the field empty until there is a pattern to count.
+    if (!bv.empty() || report != search_report_t::interactive
+        || !tc->get_current_search().empty())
+    {
         auto vl = tc->get_selection();
         if (vl) {
             auto lb = bv.bv_tree.find(vl.value());
             if (lb != bv.bv_tree.end()) {
                 retval = sf.set_value("  Hit %'d of %'d for ",
                                       (lb - bv.bv_tree.begin()) + 1,
-                                      tc->get_interactive_match_count());
+                                      bv.size());
             } else {
-                retval = sf.set_value("  %'d hits for ",
-                                      tc->get_interactive_match_count());
+                retval = sf.set_value("  %'d hits for ", bv.size());
             }
         }
     } else if (tc->is_searching()) {

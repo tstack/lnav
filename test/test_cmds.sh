@@ -1023,3 +1023,162 @@ run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":next-mark search" \
     ${test_dir}/logfile_access_log.0
+
+# logfile_glog.0 has 'log_if' on line 3 and 'array' on lines 4 and 5, so the
+# two searches can be told apart by where a jump lands.  A focused search
+# narrows the jump to its own hits, passing over the other search's line.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search arr" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# ... and with nothing focused the same jump stops on the nearer line,
+# whichever search found it.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# A name given to the jump narrows it without touching the focus.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":goto 0" \
+    -c ":next-search-hit arr" \
+    ${test_dir}/logfile_glog.0
+
+# Going backwards is narrowed the same way.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search warn" \
+    -c ":goto 6" \
+    -c ":prev-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# The focused search is named when there are no more of its hits that way.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search warn" \
+    -c ":goto 4" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# :focus-search with no name goes back to moving through all of the searches.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search arr" \
+    -c ":focus-search" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# From the last line no search has a hit ahead, so the message names whichever
+# search the cycle has landed on.  The first stop is the first named search,
+# since there is no active search to come before it.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-next-search" \
+    -c ":goto 6" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-next-search" \
+    -c ":focus-next-search" \
+    -c ":goto 6" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# ... and the cycle comes back around to all of them, which have no name.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-next-search" \
+    -c ":focus-next-search" \
+    -c ":focus-next-search" \
+    -c ":goto 6" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# An active search is a stop of its own, ahead of the named searches, so the
+# jump follows it rather than the named search's earlier line.
+run_cap_test ${lnav_test} -n \
+    -c "/array" \
+    -c ":create-named-search warn log_if" \
+    -c ":focus-next-search" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# Cycling backwards from nothing focused lands on the last search.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-prev-search" \
+    -c ":goto 6" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# A disabled search is not a stop in the cycle, so the first stop is the one
+# that is still enabled.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":disable-named-search warn" \
+    -c ":focus-next-search" \
+    -c ":goto 6" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# Disabling the focused search drops the focus, so the jump moves through what
+# is left instead of a slot that is no longer highlighted.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search arr" \
+    -c ":disable-named-search arr" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+# Deleting the focused search drops the focus as well; its slot can be handed
+# to another search.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search warn log_if" \
+    -c ":create-named-search arr array" \
+    -c ":focus-search arr" \
+    -c ":delete-named-search arr" \
+    -c ":goto 0" \
+    -c ":next-search-hit" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":focus-search nonexistent" \
+    ${test_dir}/logfile_glog.0
+
+# A disabled search cannot be focused, since it is not being highlighted.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search arr array" \
+    -c ":disable-named-search arr" \
+    -c ":focus-search arr" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":next-search-hit nonexistent" \
+    ${test_dir}/logfile_glog.0
+
+# With nothing to focus, the cycle stays where it is.
+run_cap_test ${lnav_test} -n \
+    -c ":focus-next-search" \
+    ${test_dir}/logfile_glog.0

@@ -52,6 +52,7 @@ static constexpr auto ENABLE_HELP = ANSI_HOTKEY("SPC") ": ";
 static constexpr auto EDIT_HELP = ANSI_HOTKEY("ENTER") ": Edit";
 static constexpr auto TOGGLE_HELP = ANSI_HOTKEY("t") ": To ";
 static constexpr auto DELETE_HELP = ANSI_HOTKEY("D") ": Delete";
+static constexpr auto FOCUS_SEARCH_HELP = ANSI_HOTKEY(".") ": ";
 static constexpr auto FILTERING_HELP = ANSI_HOTKEY("f") ": ";
 static constexpr auto JUMP_HELP = ANSI_HOTKEY("ENTER") ": Jump To";
 static constexpr auto CLOSE_HELP = ANSI_HOTKEY("X") ": Close";
@@ -388,7 +389,7 @@ filter_help_status_source::statusview_fields()
                 } else if (nsr != nullptr) {
                     const auto* ns = tc->find_named_search(nsr->nsr_name);
                     this->fss_help.set_value(
-                        "  %s%s%s%s%s  %s%s  %s  %s",
+                        "  %s%s%s%s%s  %s%s  %s%s  %s  %s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
@@ -396,6 +397,11 @@ filter_help_status_source::statusview_fields()
                         CREATE_SEARCH_HELP,
                         ENABLE_HELP,
                         ns != nullptr && ns->ns_enabled ? "Disable" : "Enable ",
+                        FOCUS_SEARCH_HELP,
+                        ns != nullptr
+                                && tc->get_focused_search_slot() == ns->ns_slot
+                            ? "Unfocus"
+                            : "Focus  ",
                         EDIT_HELP,
                         DELETE_HELP);
                 } else {

@@ -33,6 +33,7 @@
 #include "base/lnav.console.hh"
 #include "lnav.hh"
 #include "cmds.hh"
+#include "lnav.prompt.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_create_named_search(exec_context& ec,
@@ -95,6 +96,7 @@ com_create_named_search(exec_context& ec,
 
     TRY(tc->create_named_search(name, pattern, adoption));
     tc->reload_data();
+    lnav::prompt::get().p_editor.set_alt_value(HELP_MSG_FOCUS_SEARCH);
 
     return Ok("info: created named search -- " + name);
 }
@@ -156,6 +158,139 @@ com_set_named_search_enabled(exec_context& ec,
     return Ok(fmt::format(FMT_STRING("info: {} named search -- {}"),
                           enable ? "enabled" : "disabled",
                           name));
+}
+
+/**
+ * The search term field is otherwise only refreshed when the search itself
+ * changes, so a change of focus has to ask for it.
+ */
+static void
+refresh_search_status(textview_curses* tc)
+{
+    lnav_data.ld_bottom_source.update_search_term(*tc);
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+    tc->set_needs_update();
+}
+
+static Result<std::string, lnav::console::user_message>
+com_focus_search(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    auto* tc = *lnav_data.ld_view_stack.top();
+
+    if (args.size() < 2) {
+        if (!ec.ec_dry_run) {
+            tc->clear_search_focus();
+            refresh_search_status(tc);
+        }
+        return Ok(std::string("info: searching all of the searches again"));
+    }
+
+    const auto& name = args[1];
+    const auto* ns = tc->find_named_search(name);
+
+    if (ns == nullptr) {
+        return ec.make_error("unknown named search -- {}", name);
+    }
+    if (!ns->ns_enabled) {
+        return Err(
+            lnav::console::user_message::error(
+                attr_line_t("cannot focus ").append_quoted(name))
+                .with_reason("the search is disabled")
+                .with_help(attr_line_t("use :enable-named-search to turn it "
+                                       "back on")));
+    }
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    tc->focus_named_search(name);
+    refresh_search_status(tc);
+
+    return Ok("info: focused named search -- " + name);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_cycle_search_focus(exec_context& ec,
+                       std::string cmdline,
+                       std::vector<std::string>& args)
+{
+    const auto dir = args[0] == "focus-next-search" ? 1 : -1;
+    auto* tc = *lnav_data.ld_view_stack.top();
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    auto slot = tc->cycle_search_focus(dir);
+
+    refresh_search_status(tc);
+    if (!slot) {
+        return Ok(std::string("info: searching all of the searches"));
+    }
+
+    return Ok(fmt::format(
+        FMT_STRING("info: focused search -- {}"),
+        tc->get_focused_search_name().value_or("the current search")));
+}
+
+static Result<std::string, lnav::console::user_message>
+com_goto_search_hit(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
+{
+    const auto forward = args[0] == "next-search-hit";
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    // An explicit name moves through that search without disturbing the
+    // focus, which is what a script or a one-off keystroke wants.
+    auto slot = tc->get_focused_search_slot();
+    auto slot_name = tc->get_focused_search_name();
+
+    if (args.size() > 1) {
+        const auto& name = args[1];
+        const auto* ns = tc->find_named_search(name);
+
+        if (ns == nullptr) {
+            return ec.make_error("unknown named search -- {}", name);
+        }
+        slot = ns->ns_slot;
+        slot_name = name;
+    }
+
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    auto func = forward ? &bookmark_vector<vis_line_t>::next
+                        : &bookmark_vector<vis_line_t>::prev;
+    auto from = forward ? search_forward_from(tc) : tc->get_selection();
+
+    if (!from) {
+        return Ok(std::string());
+    }
+
+    // With nothing focused, the BM_SEARCH union is walked, which is the same
+    // set of hits that :next-mark search moves through.
+    auto new_top = slot
+        ? next_cluster(func, tc->search_matches_for_slot(slot.value()),
+                       from.value())
+        : next_cluster(func, &textview_curses::BM_SEARCH, from.value());
+
+    if (!new_top) {
+        return Err(lnav::console::user_message::info(fmt::format(
+            FMT_STRING("no more {}hits {} here"),
+            slot_name ? fmt::format(FMT_STRING("{} "), slot_name.value()) : "",
+            forward ? "after" : "before")));
+    }
+
+    tc->get_sub_source()->get_location_history() |
+        [new_top](auto lh) { lh->loc_history_append(new_top.value()); };
+    tc->set_selection(new_top.value());
+    lnav_data.ld_bottom_source.grep_error("");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+
+    return Ok(std::string());
 }
 
 static lnav::commands::command_t SEARCH_COMMANDS[] = {
@@ -223,6 +358,80 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
             .with_tags({"search"})
             .with_opposites({"enable-named-search"})
             .with_example({"To disable the named search 'req'", "req"}),
+    },
+    {
+        "focus-search",
+        com_focus_search,
+
+        help_text(":focus-search")
+            .with_summary("Narrow the search hotkeys to a single search so "
+                          "that only its hits are moved through")
+            .with_parameter(
+                help_text("name",
+                          "The name of the search to focus.  If not given, "
+                          "the hotkeys move through the hits of all of the "
+                          "searches again.")
+                    .with_format(
+                        help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES)
+                    .optional())
+            .with_tags({"search", "navigation"})
+            .with_example({"To move through the hits of 'req' alone", "req"}),
+    },
+    {
+        "focus-next-search",
+        com_cycle_search_focus,
+
+        help_text(":focus-next-search")
+            .with_summary("Focus the search after the one that is focused "
+                          "now, wrapping around to all of them")
+            .with_tags({"search", "navigation"})
+            .with_opposites({"focus-prev-search"}),
+    },
+    {
+        "focus-prev-search",
+        com_cycle_search_focus,
+
+        help_text(":focus-prev-search")
+            .with_summary("Focus the search before the one that is focused "
+                          "now, wrapping around to all of them")
+            .with_tags({"search", "navigation"})
+            .with_opposites({"focus-next-search"}),
+    },
+    {
+        "next-search-hit",
+        com_goto_search_hit,
+
+        help_text(":next-search-hit")
+            .with_summary("Move to the next hit of the focused search, or of "
+                          "all of the searches when none is focused")
+            .with_parameter(
+                help_text("name",
+                          "The name of the search to move through instead of "
+                          "the focused one")
+                    .with_format(
+                        help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES)
+                    .optional())
+            .with_tags({"search", "navigation"})
+            .with_opposites({"prev-search-hit"})
+            .with_example({"To move to the next hit of 'req'", "req"}),
+    },
+    {
+        "prev-search-hit",
+        com_goto_search_hit,
+
+        help_text(":prev-search-hit")
+            .with_summary("Move to the previous hit of the focused search, or "
+                          "of all of the searches when none is focused")
+            .with_parameter(
+                help_text("name",
+                          "The name of the search to move through instead of "
+                          "the focused one")
+                    .with_format(
+                        help_parameter_format_t::HPF_ENABLED_NAMED_SEARCHES)
+                    .optional())
+            .with_tags({"search", "navigation"})
+            .with_opposites({"next-search-hit"})
+            .with_example({"To move to the previous hit of 'req'", "req"}),
     },
 };
 

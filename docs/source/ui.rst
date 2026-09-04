@@ -176,7 +176,10 @@ and delete filters easily.
 The view's :ref:`named searches<named_searches>` are listed below its filters,
 with the number of lines each one matches.  They are created by pressing
 :kbd:`s` and respond to the same keys as the filters, so a search can be
-enabled, disabled, edited, and deleted from here as well.
+enabled, disabled, edited, and deleted from here as well.  Pressing :kbd:`.`
+focuses the selected search, which narrows the search hotkeys to its hits
+alone; the focused search is marked with a :code:`▸` and pressing :kbd:`.` on
+it again gives the focus up.
 
 Bottom Status Bar
 -----------------

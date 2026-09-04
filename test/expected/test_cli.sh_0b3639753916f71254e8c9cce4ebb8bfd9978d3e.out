@@ -9424,6 +9424,16 @@
                     "command": ":goto last 50 minutes after the hour",
                     "alt-msg": ""
                 },
+                "x2c": {
+                    "id": "",
+                    "command": ":focus-prev-search",
+                    "alt-msg": "${keymap_def_scroll_horiz}"
+                },
+                "x2e": {
+                    "id": "",
+                    "command": ":focus-next-search",
+                    "alt-msg": "${keymap_def_scroll_horiz}"
+                },
                 "x2f": {
                     "id": "",
                     "command": ":prompt search",
@@ -9506,8 +9516,8 @@
                 },
                 "x4e": {
                     "id": "",
-                    "command": ":prev-mark search",
-                    "alt-msg": "${keymap_def_scroll_horiz}"
+                    "command": ":prev-search-hit",
+                    "alt-msg": "${keymap_def_focus_search}"
                 },
                 "x50": {
                     "id": "",
@@ -9571,8 +9581,8 @@
                 },
                 "x6e": {
                     "id": "",
-                    "command": ":next-mark search",
-                    "alt-msg": "${keymap_def_scroll_horiz}"
+                    "command": ":next-search-hit",
+                    "alt-msg": "${keymap_def_focus_search}"
                 },
                 "x70": {
                     "id": "",
@@ -9876,6 +9886,7 @@
         "keymap_def_breakpoint": "Press ${ansi_bold}F7${ansi_norm}/${ansi_bold}F8${ansi_norm} to move to the previous/next breakpoint",
         "keymap_def_clear": "Press ${ansi_bold}C${ansi_norm} to clear marked messages",
         "keymap_def_db_view": "Press ${ansi_bold}v${ansi_norm}/${ansi_bold}V${ansi_norm} to switch to the SQL result view",
+        "keymap_def_focus_search": "Press \\'${ansi_bold}.${ansi_norm}\\'/\\'${ansi_bold},${ansi_norm}\\' to move through the hits of one search at a time",
         "keymap_def_hist_view": "Press ${ansi_bold}i${ansi_norm}/${ansi_bold}I${ansi_norm} to switch to the histogram view",
         "keymap_def_next_mark": "Press ${ansi_bold}c${ansi_norm} to copy marked lines to the clipboard; press ${ansi_bold}C${ansi_norm} to clear marked lines",
         "keymap_def_next_section": "Press ${ansi_bold}}${ansi_norm} to move to the next section in the view",

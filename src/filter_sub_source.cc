@@ -104,6 +104,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             break;
         }
         case ' ':
+        case '.':
         case 't':
         case 'D': {
             auto* top_view = *lnav_data.ld_view_stack.top();
@@ -132,31 +133,23 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                     auto ef = std::make_shared<empty_filter>(
                         text_filter::EXCLUDE, filter_lang_t::SQL, 0);
                     fs.add_filter(ef);
+                    curr_filter = ef;
                 }
 
-                auto rows = this->rows_for(top_view);
-                auto row_iter = std::find_if(
-                    rows.begin(), rows.end(), [](const auto& fr) {
-                        auto* tfr = dynamic_cast<text_filter_row*>(fr.get());
-                        if (tfr == nullptr) {
-                            return false;
-                        }
-                        return tfr->tfr_filter->get_index() == 0;
-                    });
-                auto row_idx = std::distance(rows.begin(), row_iter);
-                lv.set_selection(vis_line_t(row_idx));
+                const auto& [index, row]
+                    = this->find_row(top_view, curr_filter.value());
+                lv.set_selection(index);
                 lv.reload_data();
 
                 this->fss_editing = true;
+                this->fss_filter_state = true;
                 this->tss_view->set_enabled(false);
                 this->fss_view_text_possibilities
                     = view_text_possibilities(*top_view);
-                (*row_iter)->prime_text_input(
-                    top_view, *this->fss_editor, *this);
+                row->prime_text_input(top_view, *this->fss_editor, *this);
                 this->fss_editor->set_y(lv.get_y_for_selection());
                 this->fss_editor->set_visible(true);
                 this->fss_editor->focus();
-                this->fss_filter_state = true;
             } else {
             }
             return true;
@@ -286,12 +279,12 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 filter_type, filter_lang_t::REGEX, *filter_index);
             fs.add_filter(ef);
 
-            auto rows = this->rows_for(top_view);
-            lv.set_selection(vis_line_t(rows.size()) - 1_vl);
-            auto& row = rows.back();
+            const auto& [index, row] = this->find_row(top_view, ef);
+            lv.set_selection(index);
             lv.reload_data();
 
             this->fss_editing = true;
+            this->fss_filter_state = true;
             this->tss_view->set_enabled(false);
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
@@ -299,7 +292,6 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->fss_editor->set_y(lv.get_y_for_selection());
             this->fss_editor->set_visible(true);
             this->fss_editor->focus();
-            this->fss_filter_state = true;
             return true;
         }
         case 's': {
@@ -1356,8 +1348,16 @@ filter_sub_source::named_search_row::value_for(const render_state& rs,
         al.append("\u25c7"_comment);
     }
     // The label is as wide as the IN/OUT field of a filter row so that the
-    // hit counts in the two kinds of row line up.
-    al.append(" ").append("SRCH"_table_header).append("   ");
+    // hit counts in the two kinds of row line up, and the focus marker sits
+    // in that padding so that focusing does not shift the columns.
+    al.append(" ").append("SRCH"_table_header);
+    if (ns != nullptr
+        && rs.rs_top_view->get_focused_search_slot() == ns->ns_slot)
+    {
+        al.append(" ").append("▸"_ok).append(" ");
+    } else {
+        al.append("   ");
+    }
 
     {
         auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
@@ -1402,6 +1402,16 @@ filter_sub_source::named_search_row::handle_key(textview_curses* top_view,
         case ' ': {
             top_view->set_named_search_enabled(this->nsr_name,
                                                !ns->ns_enabled);
+            return true;
+        }
+        case '.': {
+            // Focusing again is how the focus is given up, since there is no
+            // "all searches" row to move to.
+            if (top_view->get_focused_search_slot() == ns->ns_slot) {
+                top_view->clear_search_focus();
+            } else {
+                top_view->focus_named_search(this->nsr_name);
+            }
             return true;
         }
         case 'D': {
@@ -1638,9 +1648,12 @@ filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
         = top_view->create_named_search(name, pattern, adoption);
     if (create_res.isErr()) {
         report_error(create_res.unwrapErr());
-    } else if (!parent.fss_filter_state) {
-        // A search that was disabled before the edit stays that way.
-        top_view->set_named_search_enabled(name, false);
+    } else {
+        if (!parent.fss_filter_state) {
+            // A search that was disabled before the edit stays that way.
+            top_view->set_named_search_enabled(name, false);
+        }
+        lnav::prompt::get().p_editor.set_alt_value(HELP_MSG_FOCUS_SEARCH);
     }
 
     top_view->reload_data();
@@ -1709,4 +1722,21 @@ filter_sub_source::rows_for(textview_curses* tc) const
     }
 
     return retval;
+}
+
+std::pair<vis_line_t, std::unique_ptr<filter_sub_source::filter_row>>
+filter_sub_source::find_row(textview_curses* tc,
+                            const std::shared_ptr<text_filter>& tf)
+{
+    auto rows = this->rows_for(tc);
+    auto index = 0_vl;
+    for (auto& row : rows) {
+        auto* tfr = dynamic_cast<text_filter_row*>(row.get());
+
+        if (tfr != nullptr && tfr->tfr_filter == tf) {
+            return {index, std::move(row)};
+        }
+        index += 1_vl;
+    }
+    ensure(false);
 }

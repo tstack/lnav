@@ -281,11 +281,25 @@ from the name, so each search reads as its own block.  The :kbd:`n` /
 :kbd:`Shift` + :kbd:`n` and :kbd:`<` / :kbd:`>` keys move through the hits of
 the named searches as well as the current search.
 
+When several searches are active, one of them can be *focused* so that those
+keys move through its hits alone.  The :kbd:`.` and :kbd:`,` keys move the
+focus to the next and previous search, running from nothing focused, through
+the current search, then the named searches, and back to nothing, so there is
+always a way back to moving through all of them.  A search can also be focused
+by name with the :ref:`:focus-search<focus_search>` command, which clears the
+focus when it is given no name.
+
+The status bar says which hits the keys are moving through.  A focused named
+search is given by name, wearing the same background color that its matches
+wear in the view; the focused current search is given by its pattern; and with
+nothing focused the field reads :code:`all searches` and the count covers every
+enabled search at once.
+
 Named searches also show up in the following places:
 
 * The :ref:`filter editor<ui_filters>`, where they are listed below the view's
   filters with their hit counts and can be created, edited, enabled/disabled,
-  and deleted.
+  focused, and deleted.
 * The :ref:`timeline<timeline>` view, where each search is a row that spans
   its first to its last hit.  The
   :ref:`:hide-in-timeline<hide_in_timeline>` :code:`search` command will hide

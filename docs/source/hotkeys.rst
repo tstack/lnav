@@ -108,11 +108,17 @@ The majority of these hotkeys should be available in all views.
    * - :kbd:`n`
      - :kbd:`Shift` + :kbd:`n`
      -
-     - Next/previous search hit
+     - Next/previous hit of the focused search, or of every search when
+       none is focused
    * - :kbd:`>`
      - :kbd:`<`
      -
-     - Next/previous search hit (horizontal)
+     - Next/previous search hit (horizontal), narrowed the same way
+   * - :kbd:`.`
+     - :kbd:`,`
+     -
+     - Focus the next/previous :ref:`named search<named_searches>` so that the
+       keys above move through its hits alone
    * - :kbd:`f`
      - :kbd:`Shift` + :kbd:`f`
      -

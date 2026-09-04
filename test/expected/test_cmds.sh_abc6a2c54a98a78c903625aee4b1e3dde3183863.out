@@ -1,0 +1,4 @@
+[33mW[0m[33m0517 15:04:22.619751[0m[33m    [0m[33m2452992[0m[33m [0m[4m[33ml[0m[33mogging_unittest.cc[0m[33m:[0m[33m263[0m[33m] [0m[33mlog_if[0m[33m this[0m
+I0517 15:04:22.619760     452992 [4ml[0mogging_unittest.cc:267] array
+I0517 15:04:22.619768      52992 [4ml[0mogging_unittest.cc:269] const array
+[31mE[0m[31m0517 15:04:22.619776[0m[31m       [0m[31m2992[0m[31m [0m[4m[31ml[0m[31mogging_unittest.cc[0m[31m:[0m[31m271[0m[31m] [0m[31mfoo 1000 0000001000 3e8[0m

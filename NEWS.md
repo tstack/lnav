@@ -104,11 +104,22 @@ Features:
   with the foreground adjusted to stay readable against
   it.  The `n` / `N` and `<` / `>` keys move through the
   hits of named searches as well as the current search.
+  One search can be focused with the `.` and `,` keys,
+  or by name with `:focus-search <name>`, so that those
+  keys move through its hits alone.  The cycle runs from
+  nothing focused, through the current search, then the
+  named searches, and back, so there is always a way
+  back to moving through all of them.  The status bar
+  says which hits the keys are moving through: the name
+  of the focused search, its pattern for the current
+  search, or `all searches` with a count that covers
+  every enabled search when none is focused.
   Named searches are also surfaced in:
   - The Text Filters panel, where they are listed
     below the view's filters with their hit counts.
-    Pressing `s` creates a new one and the same keys
-    used for filters work on these as well.
+    Pressing `s` creates a new one, `.` focuses the
+    selected one, and the same keys used for filters
+    work on these as well.
   - The TIMELINE view where each search is a row that
     shows the span of hits.  The
     `:hide-in-timeline search` command hides these rows.

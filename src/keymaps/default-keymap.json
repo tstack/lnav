@@ -4,6 +4,7 @@
         "keymap_def_alt_warning": "Press ${ansi_bold}w${ansi_norm}/${ansi_bold}W${ansi_norm} to move forward/backward through ${ansi_yellow}warning${ansi_norm} messages",
         "keymap_def_alt_hour_boundary": "Press ${ansi_bold}6${ansi_bold}/${ansi_bold}^${ansi_norm} to move to the next/previous hour boundary",
         "keymap_def_scroll_horiz": "Press \\'${ansi_bold}>${ansi_norm}\\' or \\'${ansi_bold}<${ansi_norm}\\' to scroll horizontally to a search result",
+        "keymap_def_focus_search": "Press \\'${ansi_bold}.${ansi_norm}\\'/\\'${ansi_bold},${ansi_norm}\\' to move through the hits of one search at a time",
         "keymap_def_next_user_mark": "Press ${ansi_bold}u${ansi_norm}/${ansi_bold}U${ansi_norm} to move forward/backward through user bookmarks",
         "keymap_def_db_view": "Press ${ansi_bold}v${ansi_norm}/${ansi_bold}V${ansi_norm} to switch to the SQL result view",
         "keymap_def_hist_view": "Press ${ansi_bold}i${ansi_norm}/${ansi_bold}I${ansi_norm} to switch to the histogram view",
@@ -152,11 +153,19 @@
                     "alt-msg": "${keymap_def_next_user_mark}"
                 },
                 "x4e": {
-                    "command": ":prev-mark search",
-                    "alt-msg": "${keymap_def_scroll_horiz}"
+                    "command": ":prev-search-hit",
+                    "alt-msg": "${keymap_def_focus_search}"
                 },
                 "x6e": {
-                    "command": ":next-mark search",
+                    "command": ":next-search-hit",
+                    "alt-msg": "${keymap_def_focus_search}"
+                },
+                "x2c": {
+                    "command": ":focus-prev-search",
+                    "alt-msg": "${keymap_def_scroll_horiz}"
+                },
+                "x2e": {
+                    "command": ":focus-next-search",
                     "alt-msg": "${keymap_def_scroll_horiz}"
                 },
                 "x54": {

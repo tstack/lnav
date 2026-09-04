@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: unknown named search -- nonexistent
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mnext-search-hit[0m[37m[40m nonexistent            [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mnext-search-hit[0m[4m [[0m[4mname[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Move to the next hit of the focused search, or of all of the
+           searches when none is focused

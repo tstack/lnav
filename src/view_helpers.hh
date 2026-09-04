@@ -101,6 +101,12 @@ std::optional<vis_line_t> next_cluster(
         const,
     const bookmark_type_t* bt,
     vis_line_t top);
+/** As above, for hits that are not kept in a bookmark type of their own. */
+std::optional<vis_line_t> next_cluster(
+    std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
+        const,
+    const bookmark_vector<vis_line_t>& bv,
+    vis_line_t top);
 bool moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                         vis_line_t) const,
                     const bookmark_type_t* bt,

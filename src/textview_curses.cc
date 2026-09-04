@@ -494,6 +494,11 @@ textview_curses::free_search_slot(size_t slot)
     require(slot < GREP_MAX_PATTERNS);
 
     this->tc_search_slots_used.reset(slot);
+    if (this->tc_focused_search_slot == slot) {
+        // The slot is about to be handed to another search, so the focus
+        // cannot follow it.
+        this->tc_focused_search_slot = std::nullopt;
+    }
     // clear_pattern() only takes effect on the next fork, so a run that is
     // already in flight has to be cancelled as well.  Otherwise it keeps
     // reporting this slot, refilling it after the caller has dropped its
@@ -722,6 +727,11 @@ textview_curses::set_named_search_enabled(const std::string& name, bool enabled)
         }
     } else {
         this->tc_disabled_search_slots |= grep_pattern_bit(iter->ns_slot);
+        if (this->tc_focused_search_slot == iter->ns_slot) {
+            // A search that is not being highlighted should not be the one
+            // that n/N is walking either.
+            this->tc_focused_search_slot = std::nullopt;
+        }
         this->tc_highlights.erase({highlight_source_t::NAMED_SEARCH, name});
         // Rebuilding the union drops the marks that only this search was
         // holding, while lines that another search matched keep theirs.
@@ -776,6 +786,66 @@ textview_curses::clear_named_searches()
         this->match_reset(patterns);
         this->set_needs_update();
     }
+}
+
+bool
+textview_curses::focus_named_search(const std::string& name)
+{
+    const auto* ns = this->find_named_search(name);
+
+    if (ns == nullptr || !ns->ns_enabled) {
+        return false;
+    }
+
+    this->tc_focused_search_slot = ns->ns_slot;
+    this->set_needs_update();
+
+    return true;
+}
+
+std::optional<size_t>
+textview_curses::cycle_search_focus(int dir)
+{
+    // The stops of the cycle, in order, with "nothing focused" as the first.
+    std::vector<std::optional<size_t>> stops{std::nullopt};
+
+    if (!this->tc_current_search.empty()) {
+        stops.emplace_back(SEARCH_SLOT_INTERACTIVE);
+    }
+    for (const auto& ns : this->tc_named_searches) {
+        if (ns.ns_enabled) {
+            stops.emplace_back(ns.ns_slot);
+        }
+    }
+
+    auto iter = std::find(stops.begin(), stops.end(),
+                          this->tc_focused_search_slot);
+    // A focus that is no longer a stop -- the interactive search was cleared,
+    // say -- restarts the cycle rather than sticking.
+    auto index = iter == stops.end() ? 0 : std::distance(stops.begin(), iter);
+    auto count = static_cast<ssize_t>(stops.size());
+
+    index = ((index + dir) % count + count) % count;
+    this->tc_focused_search_slot = stops[index];
+    this->set_needs_update();
+
+    return this->tc_focused_search_slot;
+}
+
+std::optional<std::string>
+textview_curses::get_focused_search_name() const
+{
+    if (!this->tc_focused_search_slot) {
+        return std::nullopt;
+    }
+
+    for (const auto& ns : this->tc_named_searches) {
+        if (ns.ns_slot == this->tc_focused_search_slot.value()) {
+            return ns.ns_name;
+        }
+    }
+
+    return std::nullopt;
 }
 
 void
@@ -1575,8 +1645,10 @@ std::optional<std::pair<int, int>>
 textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
 {
     // Collect the interactive search along with any named searches so that
-    // '<' and '>' step through every kind of search hit.
+    // '<' and '>' step through every kind of search hit.  A focused search
+    // narrows this the same way it narrows n/N.
     std::vector<const lnav::pcre2pp::code*> regexes;
+    auto focused_name = this->get_focused_search_name();
 
     for (const auto& hl_pair : this->tc_highlights) {
         auto is_search
@@ -1584,6 +1656,14 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
                && hl_pair.first.second == "search")
             || hl_pair.first.first == highlight_source_t::NAMED_SEARCH;
 
+        if (focused_name) {
+            is_search = hl_pair.first.first == highlight_source_t::NAMED_SEARCH
+                && hl_pair.first.second == focused_name.value();
+        } else if (this->tc_focused_search_slot) {
+            // The interactive search is focused, so only its highlight counts.
+            is_search = hl_pair.first.first == highlight_source_t::PREVIEW
+                && hl_pair.first.second == "search";
+        }
         if (is_search && hl_pair.second.h_regex != nullptr) {
             regexes.push_back(hl_pair.second.h_regex.get());
         }
@@ -2052,6 +2132,12 @@ text_sub_source::add_commands_for_session(
                                  ns.ns_name));
         }
     }
+
+    // A focus on the interactive search is not saved, since that search is
+    // not restored by name.
+    this->tss_view->get_focused_search_name() | [&receiver](const auto& name) {
+        receiver(fmt::format(FMT_STRING("focus-search {}"), name));
+    };
 }
 
 void

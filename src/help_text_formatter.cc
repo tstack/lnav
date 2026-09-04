@@ -72,6 +72,14 @@ get_related(const help_text& ht)
                 continue;
             }
 
+            // Two commands that share more than one tag are reached once per
+            // tag, but they are only related the once.
+            if (std::find(retval.begin(), retval.end(), &related)
+                != retval.end())
+            {
+                continue;
+            }
+
             retval.push_back(&related);
         }
     }

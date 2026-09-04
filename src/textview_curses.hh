@@ -1005,6 +1005,37 @@ public:
     void clear_named_searches();
 
     /**
+     * The slot that next_search_hit() and the horizontal shift are narrowed
+     * to, if any.  An empty value means every enabled search is in play, which
+     * is how the view behaves when nothing has been focused.
+     */
+    std::optional<size_t> get_focused_search_slot() const
+    {
+        return this->tc_focused_search_slot;
+    }
+
+    /** @return false if there is no enabled search with the given name. */
+    bool focus_named_search(const std::string& name);
+
+    void clear_search_focus() { this->tc_focused_search_slot = std::nullopt; }
+
+    /**
+     * Move the focus to the next (dir > 0) or previous (dir < 0) search.  The
+     * cycle runs from nothing focused, through the interactive search when
+     * there is one, then the enabled named searches in slot order, and back to
+     * nothing, so there is always a way back to searching all of them.
+     *
+     * @return The slot that is now focused, or an empty value for "all".
+     */
+    std::optional<size_t> cycle_search_focus(int dir);
+
+    /**
+     * The name to show for a focused slot: the named search that holds it, or
+     * an empty value for the interactive search, which has no name.
+     */
+    std::optional<std::string> get_focused_search_name() const;
+
+    /**
      * Hold off the scan for searches created while this is alive and do a
      * single pass for all of them at the end.  Creating searches one at a
      * time, as a session restore does, would otherwise read the log once per
@@ -1283,6 +1314,8 @@ protected:
     /** The slots of the searches that are waiting for the deferred pass. */
     grep_pattern_mask_t tc_deferred_search_slots{0};
     std::vector<named_search> tc_named_searches;
+    /** The slot that n/N and the horizontal shift are narrowed to, if any. */
+    std::optional<size_t> tc_focused_search_slot;
 
     /** Lazily construct the search procs.  @return tc_search_proc. */
     grep_proc<vis_line_t>* ensure_search_procs();

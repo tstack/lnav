@@ -812,8 +812,7 @@ For support questions, email:
   Clear all sticky header bookmarks in the current view
 [4mSee Also[0m
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -965,9 +964,9 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name for the new table
 [4mSee Also[0m
-  [1m:create-search-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
+  [1m:create-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To create a logline-style table named 'task_durations':
    [37m[40m:[0m[1m[36m[40mcreate-logline-table[0m[37m[40m task_durations              [0m
@@ -984,7 +983,7 @@ For support questions, email:
             given, the currently active search is used and then
             cleared.
 [4mSee Also[0m
-  [1m:delete-named-search[0m
+  [1m:delete-named-search[0m, [1m:focus-search[0m
 [4mExample[0m
 #1 To name the currently active search 'req':
    [37m[40m:[0m[1m[36m[40mcreate-named-search[0m[37m[40m req                          [0m
@@ -1000,10 +999,9 @@ For support questions, email:
                the table columns.  If not given, the current search
                pattern is used.
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:create-logline-table[0m, [1m:delete-search-table[0m, 
-  [1m:delete-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-view-to[0m
+  [1m:create-logline-table[0m, [1m:delete-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To create a table named 'task_durations' that matches log messages with the pattern
    'duration=(?<duration>\d+)':
@@ -1037,10 +1035,9 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name of the table to delete
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:create-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-view-to[0m
+  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To delete the logline-style table named 'task_durations':
    [37m[40m:[0m[1m[36m[40mdelete-logline-table[0m[37m[40m task_durations              [0m
@@ -1053,7 +1050,7 @@ For support questions, email:
 [4mParameter[0m
   [4mname[0m   The name of the search to delete
 [4mSee Also[0m
-  [1m:create-named-search[0m
+  [1m:create-named-search[0m, [1m:focus-search[0m
 [4mExample[0m
 #1 To delete the named search 'req':
    [37m[40m:[0m[1m[36m[40mdelete-named-search[0m[37m[40m req                          [0m
@@ -1066,10 +1063,9 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name of the table to delete
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:create-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-view-to[0m
+  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To delete the search table named 'task_durations':
    [37m[40m:[0m[1m[36m[40mdelete-search-table[0m[37m[40m task_durations               [0m
@@ -1119,7 +1115,7 @@ For support questions, email:
 [4mParameter[0m
   [4mname[0m   The name of the search to disable
 [4mSee Also[0m
-  [1m:enable-named-search[0m
+  [1m:enable-named-search[0m, [1m:focus-search[0m
 [4mExample[0m
 #1 To disable the named search 'req':
    [37m[40m:[0m[1m[36m[40mdisable-named-search[0m[37m[40m req                         [0m
@@ -1144,13 +1140,10 @@ For support questions, email:
   [4mmsg[0m   The message to display
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, 
-  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
-  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
@@ -1187,7 +1180,7 @@ For support questions, email:
 [4mParameter[0m
   [4mname[0m   The name of the search to enable
 [4mSee Also[0m
-  [1m:disable-named-search[0m
+  [1m:disable-named-search[0m, [1m:focus-search[0m
 [4mExample[0m
 #1 To enable the named search 'req':
    [37m[40m:[0m[1m[36m[40menable-named-search[0m[37m[40m req                          [0m
@@ -1227,14 +1220,12 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1m[4mexternal-access[0m[4m [0m[4mport[0m[4m [0m[4mapi-key[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1337,6 +1328,40 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mfocus-next-search[0m
+══════════════════════════════════════════════════════════════════════
+  Focus the search after the one that is focused now, wrapping
+  around to all of them
+[4mSee Also[0m
+  [1m:focus-prev-search[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
+
+[4m:[0m[1m[4mfocus-prev-search[0m
+══════════════════════════════════════════════════════════════════════
+  Focus the search before the one that is focused now, wrapping
+  around to all of them
+[4mSee Also[0m
+  [1m:focus-next-search[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
+
+[4m:[0m[1m[4mfocus-search[0m[4m [[0m[4mname[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Narrow the search hotkeys to a single search so that only its hits
+  are moved through
+[4mParameter[0m
+  [4mname[0m   The name of the search to focus.  If not given, the
+         hotkeys move through the hits of all of the searches again.
+[4mSee Also[0m
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+[4mExample[0m
+#1 To move through the hits of 'req' alone:
+   [37m[40m:[0m[1m[36m[40mfocus-search[0m[37m[40m req                                 [0m
+   
+
+
 [4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp|#anchor[0m
 ══════════════════════════════════════════════════════════════════════
   Go to the given location in the top view
@@ -1345,8 +1370,8 @@ For support questions, email:
                                number, percent into the file,
                                timestamp, or an anchor in a text file
 [4mSee Also[0m
-  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:focus-search[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 [4mExamples[0m
 #1 To go to line 22:
    [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 22                                          [0m
@@ -1527,8 +1552,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the next position in the location history
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mnext-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1538,8 +1563,8 @@ For support questions, email:
          user, file, meta
          [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-location[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-mark[0m, 
+  [1m:clear-all-sticky-headers[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
   [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the next error:
@@ -1547,12 +1572,29 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mnext-search-hit[0m[4m [[0m[4mname[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Move to the next hit of the focused search, or of all of the
+  searches when none is focused
+[4mParameter[0m
+  [4mname[0m   The name of the search to move through instead of
+         the focused one
+[4mSee Also[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-search-hit[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
+[4mExample[0m
+#1 To move to the next hit of 'req':
+   [37m[40m:[0m[1m[36m[40mnext-search-hit[0m[37m[40m req                              [0m
+   
+
+
 [4m:[0m[1m[4mnext-section[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the next section in the document
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mopen[0m[4m [[0m[4m--since[0m[4m] [[0m[4m--until[0m[4m] [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1630,8 +1672,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the previous position in the location history
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-mark[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1642,8 +1684,8 @@ For support questions, email:
          user, file, meta
          [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:clear-all-sticky-headers[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
   [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the previous error:
@@ -1651,12 +1693,29 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mprev-search-hit[0m[4m [[0m[4mname[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Move to the previous hit of the focused search, or of all of the
+  searches when none is focused
+[4mParameter[0m
+  [4mname[0m   The name of the search to move through instead of
+         the focused one
+[4mSee Also[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-search-hit[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
+[4mExample[0m
+#1 To move to the previous hit of 'req':
+   [37m[40m:[0m[1m[36m[40mprev-search-hit[0m[37m[40m req                              [0m
+   
+
+
 [4m:[0m[1m[4mprev-section[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous section in the document
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mprompt[0m[4m [0m[4mtype[0m[4m [[0m[4m--alt[0m[4m] [[0m[4mprompt[0m[4m] [[0m[4minitial-value[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1703,14 +1762,12 @@ For support questions, email:
   [4mpath[0m   The path to the file to write.  If not specified,
          the current redirect will be cleared
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
-  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file {TMPDIR}script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m {TMPDIR}script-output.txt               [0m
@@ -1728,8 +1785,8 @@ For support questions, email:
 [4mParameter[0m
   [4mline-count|N%[0m   The amount to move the view by.
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:prev-section[0m
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m
 [4mExamples[0m
 #1 To move 22 lines down in the view:
    [37m[40m:[0m[1m[36m[40mrelative-goto[0m[37m[40m +22                                [0m
@@ -1904,9 +1961,8 @@ For support questions, email:
   Show lines that have not been bookmarked
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
-  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2011,9 +2067,9 @@ For support questions, email:
   Toggle the sticky header state for the focused line in the current
   view
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:clear-all-sticky-headers[0m, 
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
+  [1m:set-text-view-mode[0m
 
 [4m:[0m[1m[4mtoggle-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2064,16 +2120,11 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
-  [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as CSV to {TMPDIR}table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m {TMPDIR}table.csv                      [0m
@@ -2101,16 +2152,11 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
-  [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-cols-to[0m[37m[40m {TMPDIR}table.json               [0m
@@ -2125,15 +2171,11 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to {TMPDIR}table.json:
@@ -2152,16 +2194,11 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
-  [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON Lines to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m {TMPDIR}table.json               [0m
@@ -2180,16 +2217,12 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
+  [1mecholn()[0m
 [4mExample[0m
 #1 To write the marked lines in the log view to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m {TMPDIR}table.txt                      [0m
@@ -2205,16 +2238,12 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:xopen[0m, [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
+  [1mecholn()[0m
 [4mExample[0m
 #1 To write only the displayed text to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m {TMPDIR}table.txt                   [0m
@@ -2229,16 +2258,12 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:xopen[0m, [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
+  [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as text to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m {TMPDIR}table.txt                    [0m
@@ -2252,14 +2277,11 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
-  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
-  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
   [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to the file {TMPDIR}interesting-lines.txt:
@@ -2276,16 +2298,12 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:xopen[0m, 
+  [1mecholn()[0m
 [4mExample[0m
 #1 To write the top view to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m {TMPDIR}table.txt                     [0m
@@ -3257,8 +3275,8 @@ For support questions, email:
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, 
-  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To format a duration:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m15[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m60[0m[37m[40m)                 [0m
@@ -4377,7 +4395,7 @@ For support questions, email:
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
-  [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To parse the URL 'https://example.com/search?q=hello%20world':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mparse_url[0m[37m[40m([0m[35m[40m'https://example.com/search?q=hello%20world'[0m[37m[40m)[0m
@@ -4701,10 +4719,10 @@ For support questions, email:
   [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
   [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
-  [1mregexp_capture_into_json()[0m, [1mregexp_replace()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
-  [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mregexp_capture_into_json()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, 
+  [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To capture the digits from the string '123':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_match[0m[37m[40m([0m[35m[40m'(\d+)'[0m[37m[40m, [0m[35m[40m'123'[0m[37m[40m)               [0m
@@ -4737,10 +4755,10 @@ For support questions, email:
   [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
   [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
-  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_match()[0m, [1mreplace()[0m, 
-  [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
-  [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mreplace()[0m, [1mreplicate()[0m, 
+  [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
+  [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mregexp_replace[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m, [0m[35m[40m'^(\w+)'[0m[37m[40m, [0m[35m[40m'Goodbye'[0m[37m[40m)[0m
@@ -5332,15 +5350,14 @@ For support questions, email:
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdate()[0m, 
   [1mdatetime()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, 
-  [1mhumanize_id()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
-  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, 
+  [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mpretty_print()[0m, [1mprintf()[0m, 
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To convert a time to America/Los_Angeles:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimezone[0m[37m[40m([0m[35m[40m'America/Los_Angeles'[0m[37m[40m, [0m[35m[40m'2022-03-02T10:00'[0m[37m[40m)[0m
@@ -5481,7 +5498,7 @@ For support questions, email:
   [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
   [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
   [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mparse_url()[0m, [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
