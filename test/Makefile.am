@@ -416,6 +416,7 @@ dist_noinst_DATA = \
 	logfile_tabular_crlf.csv \
 	logfile_tabular_multiline.csv \
 	logfile_tabular_num_multiline.csv \
+	logfile_tabular_space.0 \
 	logfile_tabular_synth.csv \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
