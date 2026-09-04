@@ -49,6 +49,7 @@
 #include "sqlitepp.hh"
 #include "terminfo/terminfo.h"
 #include "unique_path.hh"
+#include "vtab_module.hh"
 
 #include <condition_variable>
 #include <mutex>
@@ -438,6 +439,43 @@ TEST_CASE("hasher to_string")
     h.update("hello");
     h.to_string(buf);
     CHECK(string(buf) == "cae682d36a82683743e01ac7d11e945c");
+}
+
+TEST_CASE("from_column")
+{
+    auto_sqlite3 db;
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    const char* sql = R"(
+SELECT 1 AS b, 'abc' AS s, 2.5 AS d, NULL AS n, 42 AS i, '' AS e
+)";
+
+    REQUIRE(sqlite3_open(":memory:", db.out()) == SQLITE_OK);
+    REQUIRE(sqlite3_prepare_v2(db.in(), sql, -1, stmt.out(), nullptr)
+            == SQLITE_OK);
+    REQUIRE(sqlite3_step(stmt.in()) == SQLITE_ROW);
+
+    CHECK(from_column<bool>()(stmt.in(), 0) == true);
+    CHECK(from_column<int>()(stmt.in(), 0) == 1);
+    CHECK(from_column<std::string>()(stmt.in(), 1) == "abc");
+    CHECK(from_column<string_fragment>()(stmt.in(), 1) == "abc");
+    CHECK(from_column<double>()(stmt.in(), 2) == 2.5);
+    CHECK(from_column<int64_t>()(stmt.in(), 4) == 42);
+
+    // An empty string is not a null.
+    CHECK(from_column<std::string>()(stmt.in(), 5).empty());
+    CHECK(from_column<std::optional<std::string>>()(stmt.in(), 5).has_value());
+
+    // A null column and a column that is not in the row both read as an
+    // empty optional.
+    CHECK(!from_column<std::optional<int64_t>>()(stmt.in(), 3).has_value());
+    CHECK(!from_column<std::optional<int64_t>>()(stmt.in(), 6).has_value());
+    CHECK(from_column<std::optional<std::string>>()(stmt.in(), 1).value()
+          == "abc");
+
+    // Unlike from_sqlite<>, which applies numeric affinity first, a column
+    // that is not stored as an integer is refused rather than coerced.
+    CHECK_THROWS_AS(from_column<int64_t>()(stmt.in(), 1),
+                    from_sqlite_conversion_error);
 }
 
 TEST_CASE("lnav::sql::thread_local_db")

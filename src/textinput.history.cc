@@ -43,45 +43,43 @@
 int register_collation_functions(sqlite3* db);
 
 template<>
-struct from_sqlite<lnav::textinput::history::timestamp_t> {
-    lnav::textinput::history::timestamp_t operator()(int argc,
-                                                     sqlite3_value** val,
+struct from_column<lnav::textinput::history::timestamp_t> {
+    lnav::textinput::history::timestamp_t operator()(sqlite3_stmt* stmt,
                                                      int argi) const
     {
-        if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
+        if (sqlite3_column_type(stmt, argi) != SQLITE_INTEGER) {
             throw from_sqlite_conversion_error("integer", argi);
         }
 
-        auto us = sqlite3_value_int64(val[argi]);
+        auto us = sqlite3_column_int64(stmt, argi);
         auto duration = std::chrono::microseconds{us};
         return lnav::textinput::history::timestamp_t{duration};
     }
 };
 
 template<>
-struct from_sqlite<log_level_t> {
-    log_level_t operator()(int argc, sqlite3_value** val, int argi) const
+struct from_column<log_level_t> {
+    log_level_t operator()(sqlite3_stmt* stmt, int argi) const
     {
-        const auto* level_text = (const char*) sqlite3_value_text(val[argi]);
+        const auto* level_text = (const char*) sqlite3_column_text(stmt, argi);
 
         return string2level(level_text);
     }
 };
 
 template<>
-struct from_sqlite<lnav::textinput::history::entry> {
-    lnav::textinput::history::entry operator()(int argc,
-                                               sqlite3_value** argv,
-                                               int argi)
+struct from_column<lnav::textinput::history::entry> {
+    lnav::textinput::history::entry operator()(sqlite3_stmt* stmt,
+                                               int argi) const
     {
         return {
-            from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<lnav::textinput::history::timestamp_t>()(
-                argc, argv, argi + 1),
-            from_sqlite<std::optional<lnav::textinput::history::timestamp_t>>()(
-                argc, argv, argi + 2),
-            from_sqlite<std::string>()(argc, argv, argi + 3),
-            from_sqlite<log_level_t>()(argc, argv, argi + 4),
+            from_column<std::string>()(stmt, argi + 0),
+            from_column<lnav::textinput::history::timestamp_t>()(stmt,
+                                                                 argi + 1),
+            from_column<std::optional<lnav::textinput::history::timestamp_t>>()(
+                stmt, argi + 2),
+            from_column<std::string>()(stmt, argi + 3),
+            from_column<log_level_t>()(stmt, argi + 4),
         };
     }
 };

@@ -50,20 +50,18 @@ struct log_message_session_state {
 };
 
 template<>
-struct from_sqlite<log_message_session_state> {
-    log_message_session_state operator()(int argc,
-                                         sqlite3_value** argv,
-                                         int argi)
+struct from_column<log_message_session_state> {
+    log_message_session_state operator()(sqlite3_stmt* stmt, int argi) const
     {
         return {
-            from_sqlite<int64_t>()(argc, argv, argi + 0),
-            from_sqlite<std::string>()(argc, argv, argi + 1),
-            from_sqlite<bool>()(argc, argv, argi + 2),
-            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 3),
-            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 4),
-            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 5),
-            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 6),
-            from_sqlite<std::string>()(argc, argv, argi + 7),
+            from_column<int64_t>()(stmt, argi + 0),
+            from_column<std::string>()(stmt, argi + 1),
+            from_column<bool>()(stmt, argi + 2),
+            from_column<std::optional<std::string>>()(stmt, argi + 3),
+            from_column<std::optional<std::string>>()(stmt, argi + 4),
+            from_column<std::optional<std::string>>()(stmt, argi + 5),
+            from_column<std::optional<std::string>>()(stmt, argi + 6),
+            from_column<std::string>()(stmt, argi + 7),
         };
     }
 };
@@ -77,17 +75,15 @@ struct log_filter_session_state {
 };
 
 template<>
-struct from_sqlite<log_filter_session_state> {
-    log_filter_session_state operator()(int argc,
-                                        sqlite3_value** argv,
-                                        int argi)
+struct from_column<log_filter_session_state> {
+    log_filter_session_state operator()(sqlite3_stmt* stmt, int argi) const
     {
         return {
-            from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<bool>()(argc, argv, argi + 1),
-            from_sqlite<std::string>()(argc, argv, argi + 2),
-            from_sqlite<std::string>()(argc, argv, argi + 3),
-            from_sqlite<std::string>()(argc, argv, argi + 4),
+            from_column<std::string>()(stmt, argi + 0),
+            from_column<bool>()(stmt, argi + 1),
+            from_column<std::string>()(stmt, argi + 2),
+            from_column<std::string>()(stmt, argi + 3),
+            from_column<std::string>()(stmt, argi + 4),
         };
     }
 };
@@ -100,16 +96,14 @@ struct named_search_session_state {
 };
 
 template<>
-struct from_sqlite<named_search_session_state> {
-    named_search_session_state operator()(int argc,
-                                          sqlite3_value** argv,
-                                          int argi)
+struct from_column<named_search_session_state> {
+    named_search_session_state operator()(sqlite3_stmt* stmt, int argi) const
     {
         return {
-            from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<bool>()(argc, argv, argi + 1),
-            from_sqlite<std::string>()(argc, argv, argi + 2),
-            from_sqlite<std::string>()(argc, argv, argi + 3),
+            from_column<std::string>()(stmt, argi + 0),
+            from_column<bool>()(stmt, argi + 1),
+            from_column<std::string>()(stmt, argi + 2),
+            from_column<std::string>()(stmt, argi + 3),
         };
     }
 };
@@ -121,13 +115,13 @@ struct log_file_session_state {
 };
 
 template<>
-struct from_sqlite<log_file_session_state> {
-    log_file_session_state operator()(int argc, sqlite3_value** argv, int argi)
+struct from_column<log_file_session_state> {
+    log_file_session_state operator()(sqlite3_stmt* stmt, int argi) const
     {
         return {
-            from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<std::string>()(argc, argv, argi + 1),
-            from_sqlite<int64_t>()(argc, argv, argi + 2),
+            from_column<std::string>()(stmt, argi + 0),
+            from_column<std::string>()(stmt, argi + 1),
+            from_column<int64_t>()(stmt, argi + 2),
         };
     }
 };

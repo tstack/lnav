@@ -2721,16 +2721,15 @@ lnav::session::regex101::insert_entry(const lnav::session::regex101::entry& ei)
 }
 
 template<>
-struct from_sqlite<lnav::session::regex101::entry> {
-    lnav::session::regex101::entry operator()(int argc,
-                                              sqlite3_value** argv,
-                                              int argi)
+struct from_column<lnav::session::regex101::entry> {
+    lnav::session::regex101::entry operator()(sqlite3_stmt* stmt,
+                                              int argi) const
     {
         return {
-            from_sqlite<std::string>()(argc, argv, argi + 0),
-            from_sqlite<std::string>()(argc, argv, argi + 1),
-            from_sqlite<std::string>()(argc, argv, argi + 2),
-            from_sqlite<std::string>()(argc, argv, argi + 3),
+            from_column<std::string>()(stmt, argi + 0),
+            from_column<std::string>()(stmt, argi + 1),
+            from_column<std::string>()(stmt, argi + 2),
+            from_column<std::string>()(stmt, argi + 3),
         };
     }
 };

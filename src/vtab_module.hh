@@ -227,6 +227,123 @@ struct from_sqlite<vtab_types::nullable<T>> {
     }
 };
 
+/**
+ * Reads a column out of the current row of a statement, the counterpart to
+ * from_sqlite<T> for result rows instead of function arguments.
+ *
+ * The sqlite3_value objects handed to a function or vtab implementation are
+ * "protected": SQLite holds the connection mutex for as long as the callback
+ * runs, so the sqlite3_value_XXX() readers are safe to use on them.  The
+ * values behind a stepped statement are not.  sqlite3_column_value() borrows
+ * the mutex only for the length of its own call and hands back an
+ * "unprotected" value, which SQLite documents as usable for nothing but
+ * sqlite3_bind_value(), sqlite3_result_value(), and sqlite3_value_dup().
+ * Reading a row goes through the sqlite3_column_XXX() accessors instead,
+ * since those take the mutex themselves.
+ *
+ * There is deliberately no primary definition: a type that has no reader
+ * fails to compile here instead of quietly returning a default-constructed
+ * value the way from_sqlite<T> does.
+ */
+template<typename T>
+struct from_column;
+
+template<>
+struct from_column<bool> {
+    bool operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        if (sqlite3_column_type(stmt, argi) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
+        return sqlite3_column_int64(stmt, argi);
+    }
+};
+
+template<>
+struct from_column<int> {
+    int operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        if (sqlite3_column_type(stmt, argi) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
+        return sqlite3_column_int(stmt, argi);
+    }
+};
+
+template<>
+struct from_column<int64_t> {
+    int64_t operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        if (sqlite3_column_type(stmt, argi) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
+        return sqlite3_column_int64(stmt, argi);
+    }
+};
+
+template<>
+struct from_column<double> {
+    double operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        return sqlite3_column_double(stmt, argi);
+    }
+};
+
+template<>
+struct from_column<std::string> {
+    std::string operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        const auto len = sqlite3_column_bytes(stmt, argi);
+        if (len == 0) {
+            return std::string();
+        }
+        return {
+            (const char*) sqlite3_column_blob(stmt, argi),
+            (size_t) len,
+        };
+    }
+};
+
+/**
+ * The fragment points into the statement's own storage, so it is only good
+ * until the next step or reset, the same as the pointer from
+ * sqlite3_column_text().
+ */
+template<>
+struct from_column<string_fragment> {
+    string_fragment operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        const auto len = sqlite3_column_bytes(stmt, argi);
+        if (len == 0) {
+            return string_fragment::from_const("");
+        }
+
+        const auto* ptr = (const char*) sqlite3_column_blob(stmt, argi);
+
+        if (ptr == nullptr) {
+            return string_fragment::invalid();
+        }
+        return string_fragment::from_bytes(ptr, len);
+    }
+};
+
+template<typename T>
+struct from_column<std::optional<T>> {
+    std::optional<T> operator()(sqlite3_stmt* stmt, int argi) const
+    {
+        if (argi >= sqlite3_column_count(stmt)
+            || sqlite3_column_type(stmt, argi) == SQLITE_NULL)
+        {
+            return std::nullopt;
+        }
+
+        return std::optional<T>(from_column<T>()(stmt, argi));
+    }
+};
+
 template<typename T>
 T from_stmt(sqlite3_stmt* stmt, int index)
 {
@@ -235,10 +352,7 @@ T from_stmt(sqlite3_stmt* stmt, int index)
         throw std::out_of_range("column index out of range");
     }
 
-    sqlite3_value* argv[1];
-    argv[0] = sqlite3_column_value(stmt, index);
-
-    return from_sqlite<T>()(1, argv, 0);
+    return from_column<T>()(stmt, index);
 }
 
 void to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um);
