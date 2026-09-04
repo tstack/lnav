@@ -50,6 +50,8 @@
 #include "terminfo/terminfo.h"
 #include "unique_path.hh"
 
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 
 using namespace std;
@@ -447,13 +449,30 @@ TEST_CASE("lnav::sql::thread_local_db")
     std::vector<int> same_twice(THREAD_COUNT, 0);
     std::vector<int> state_func_prepared(THREAD_COUNT, -1);
     std::vector<std::thread> threads;
+    std::mutex open_lock;
+    std::condition_variable open_cond;
+    size_t open_count = 0;
 
     for (size_t lpc = 0; lpc < THREAD_COUNT; lpc++) {
         threads.emplace_back([lpc, &dbs, &matched, &same_twice,
-                              &state_func_prepared]() {
+                              &state_func_prepared, &open_lock, &open_cond,
+                              &open_count]() {
             auto* db = lnav::sql::thread_local_db();
 
             dbs[lpc] = db;
+            // Every thread waits here so that all of the connections are
+            // alive at the same time.  A thread that returned early would
+            // free its connection and the allocator could hand the same
+            // address to a thread that started later, making the
+            // distinctness check below pass or fail at random.
+            {
+                std::unique_lock<std::mutex> lk(open_lock);
+
+                open_count += 1;
+                open_cond.notify_all();
+                open_cond.wait(
+                    lk, [&open_count]() { return open_count == THREAD_COUNT; });
+            }
             if (db == nullptr) {
                 return;
             }

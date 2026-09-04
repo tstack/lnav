@@ -576,11 +576,15 @@ run_cap_test ${lnav_test} -n \
     support-bookmarks/small_edit.txt
 
 # Named searches are exported as INSERTs into lnav_view_searches.
+# The file is opened out of support-dump so that the exported LOG_DIR
+# is the readme-bearing directory in the build tree instead of whatever
+# ancestor of the source tree happens to have a readme in it.
+cp ${test_dir}/logfile_syslog.0 support-dump/
 run_cap_test ${lnav_test} -nq \
     -c ":create-named-search am automount" \
     -c ":create-named-search sud sudo" \
     -c ":export-session-to -" \
-    ${test_dir}/logfile_syslog.0
+    support-dump/logfile_syslog.0
 
 # ... and a saved session restores them, matching lines again rather
 # than coming back registered but empty.
