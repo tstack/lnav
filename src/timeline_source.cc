@@ -1193,20 +1193,17 @@ timeline_source::rebuild_indexes()
         this->ts_index_progress(std::nullopt);
     }
 
-    // Each named search on the log view becomes a single row spanning its
-    // first to its last match.  The matches are keyed by the log view's line
-    // numbers, so walking them is proportional to the number of hits rather
-    // than the size of the log.
-    for (const auto& ns : this->ts_log_view.get_named_searches()) {
-        if (!ns.ns_enabled) {
-            continue;
-        }
-
-        const auto& matches
-            = this->ts_log_view.search_matches_for_slot(ns.ns_slot);
+    // Each search on the log view becomes a single row spanning its first to
+    // its last match.  The matches are keyed by the log view's line numbers,
+    // so walking them is proportional to the number of hits rather than the
+    // size of the log.
+    auto add_search_row = [this](size_t slot,
+                                 const std::string& name,
+                                 const std::string& key) {
+        const auto& matches = this->ts_log_view.search_matches_for_slot(slot);
 
         if (matches.empty()) {
-            continue;
+            return;
         }
 
         auto search_otr = opid_time_range{};
@@ -1239,23 +1236,45 @@ timeline_source::rebuild_indexes()
         }
         if (first) {
             // Every match resolved to a line that is no longer around.
-            continue;
+            return;
         }
 
-        auto search_key
-            = fmt::format(FMT_STRING("search:{}"), ns.ns_name);
-        auto search_key_sf = string_fragment::from_str(search_key).to_owned(
-            this->ts_allocator);
-        auto search_name_sf = string_fragment::from_str(ns.ns_name).to_owned(
-            this->ts_allocator);
+        auto search_key_sf
+            = string_fragment::from_str(key).to_owned(this->ts_allocator);
+        auto search_name_sf
+            = string_fragment::from_str(name).to_owned(this->ts_allocator);
         auto search_row = opid_row{
             row_type::search,
             search_name_sf,
             search_otr,
             string_fragment::invalid(),
         };
-        search_row.or_search_slot = ns.ns_slot;
+        search_row.or_search_slot = slot;
         this->ts_active_opids.emplace(search_key_sf, search_row);
+    };
+
+    for (const auto& ns : this->ts_log_view.get_named_searches()) {
+        if (!ns.ns_enabled) {
+            continue;
+        }
+
+        add_search_row(ns.ns_slot,
+                       ns.ns_name,
+                       fmt::format(FMT_STRING("search:{}"), ns.ns_name));
+    }
+    // The current search has no name to label a row with, so its pattern
+    // stands in, quoted so that it cannot be taken for a name.  A search name
+    // can hold neither whitespace nor quotes, so neither the label nor the
+    // key can be mistaken for a named search.
+    //
+    // The quotes are the ASCII ones rather than the curly pair the status bar
+    // uses: the row name is run through the ANSI scrubber, which mangles the
+    // 0x9c byte of an opening curly quote into an escape.
+    const auto& current_search = this->ts_log_view.get_current_search();
+    if (!current_search.empty()) {
+        add_search_row(textview_curses::SEARCH_SLOT_INTERACTIVE,
+                       fmt::format(FMT_STRING("\"{}\""), current_search),
+                       "search: current");
     }
 
     std::set<string_fragment> consumed_tag_keys;

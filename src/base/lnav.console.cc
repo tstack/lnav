@@ -550,6 +550,33 @@ wchar_for_icon(ui_icon_t ic)
     ensure(false);
 }
 
+namespace detail {
+
+line_range
+to_byte_range(const std::string& str, const line_range& lr)
+{
+    // Rendering works in bytes, indexing into str directly, so a range that is
+    // measured in code points has to be converted first.
+    if (lr.lr_unit == line_range::unit::bytes) {
+        return lr;
+    }
+
+    const auto sf = string_fragment::from_str(str);
+    // A range can reach past the line it was built for -- the timeline's chart
+    // range is sized from the view width -- so an index that runs off the end
+    // sticks to the end instead.
+    const auto to_byte = [&sf](int cp_index) {
+        return (int) sf.codepoint_to_byte_index(cp_index).unwrapOr(sf.length());
+    };
+
+    return line_range{
+        to_byte(lr.lr_start),
+        lr.lr_end < 0 ? lr.lr_end : to_byte(lr.lr_end),
+    };
+}
+
+}  // namespace detail
+
 void
 println(FILE* file, const attr_line_t& al)
 {
@@ -569,15 +596,26 @@ println(FILE* file, const attr_line_t& al)
         return;
     }
 
-    auto points = std::set<size_t>{0, static_cast<size_t>(al.length())};
-
+    auto attr_ranges = std::vector<std::pair<line_range, const string_attr*>>{};
     for (const auto& attr : al.get_attrs()) {
         if (!attr.sa_range.is_valid()) {
             continue;
         }
-        points.insert(attr.sa_range.lr_start);
-        if (attr.sa_range.lr_end > 0) {
-            points.insert(attr.sa_range.lr_end);
+        attr_ranges.emplace_back(detail::to_byte_range(str, attr.sa_range),
+                                 &attr);
+    }
+
+    // A boundary that fell inside a character would split it in two, leaving
+    // the tail to be read as an invalid sequence and printed as an escape, so
+    // each one is moved back to the start of the character it lands in.  That
+    // leaves a bad range mis-styling the line instead of corrupting it.
+    const auto str_sf = string_fragment::from_str(str);
+    auto points = std::set<size_t>{0, static_cast<size_t>(al.length())};
+
+    for (const auto& ar : attr_ranges) {
+        points.insert(str_sf.start_of_codepoint(ar.first.lr_start));
+        if (ar.first.lr_end > 0) {
+            points.insert(str_sf.start_of_codepoint(ar.first.lr_end));
         }
     }
 
@@ -595,9 +633,10 @@ println(FILE* file, const attr_line_t& al)
         std::optional<std::string> href;
         auto replaced = false;
 
-        for (const auto& attr : al.get_attrs()) {
-            if (!attr.sa_range.contains(start)
-                && !attr.sa_range.contains(point - 1))
+        for (const auto& [attr_range, attr_ptr] : attr_ranges) {
+            const auto& attr = *attr_ptr;
+
+            if (!attr_range.contains(start) && !attr_range.contains(point - 1))
             {
                 continue;
             }
@@ -743,8 +782,13 @@ println(FILE* file, const attr_line_t& al)
 
             for (auto lpc = start; lpc < actual_end;) {
                 auto cp_start = lpc;
-                auto read_res = ww898::utf::utf8::read(
-                    [&str, &lpc] { return str[lpc++]; });
+                // Bounded at the end of this run so that a character which
+                // straddles the boundary is reported as invalid here instead
+                // of being read out of the run and then again by the next one.
+                auto read_res
+                    = ww898::utf::utf8::read([&str, &lpc, actual_end] {
+                          return lpc < actual_end ? str[lpc++] : '\0';
+                      });
 
                 if (read_res.isErr()) {
                     fmt::print(file, line_style, FMT_STRING("{}"), sub);

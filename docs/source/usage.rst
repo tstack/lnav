@@ -301,9 +301,10 @@ Named searches also show up in the following places:
   filters with their hit counts and can be created, edited, enabled/disabled,
   focused, and deleted.
 * The :ref:`timeline<timeline>` view, where each search is a row that spans
-  its first to its last hit.  The
+  its first to its last hit.  The current search gets a row of its own,
+  labelled with its pattern in quotes since it has no name.  The
   :ref:`:hide-in-timeline<hide_in_timeline>` :code:`search` command will hide
-  these rows.
+  all of these rows.
 * The :code:`log_named_searches` column on the log tables, which contains a
   JSON list of the searches that matched a message.
 * The :ref:`lnav_view_searches<table_lnav_view_searches>` table, which supports

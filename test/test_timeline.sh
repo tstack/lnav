@@ -424,3 +424,65 @@ run_cap_test ${lnav_test} -n -I ${test_dir} \
     -c ':switch-to-view timeline' \
     -c ':goto 0' \
     ${test_dir}/logfile_json.json
+
+# The current search gets a row of its own, labelled with its pattern since it
+# has no name to go by.
+run_cap_test ${lnav_test} -n \
+    -c "/automount" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# It sits alongside the named searches rather than replacing them, and the
+# quoting keeps it apart from a named search that happens to use the same
+# word, which is a name a search can actually have.
+run_cap_test ${lnav_test} -n \
+    -c "/automount" \
+    -c ":create-named-search automount automount" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# Clearing the search takes its row away.
+run_cap_test ${lnav_test} -n \
+    -c "/automount" \
+    -c ":create-named-search sud sudo" \
+    -c "/" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# Naming the current search hands it over, so the row it had is replaced by
+# the named one rather than being shown twice.
+run_cap_test ${lnav_test} -n \
+    -c "/automount" \
+    -c ":create-named-search am" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# A search that matches nothing does not get a row, the same as a named one.
+run_cap_test ${lnav_test} -n \
+    -c "/does-not-appear-anywhere" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# ':hide-in-timeline search' covers the current search too.
+run_cap_test ${lnav_test} -n \
+    -c "/automount" \
+    -c ":create-named-search sud sudo" \
+    -c ':switch-to-view timeline' \
+    -c ':hide-in-timeline search' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0
+
+# A row name that begins with a multi-byte character must survive rendering.
+# The console printer segments a line at attribute boundaries, and a boundary
+# that landed inside the character used to split it, printing the tail as
+# "\x80" escapes.
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search “quoted automount" \
+    -c ':switch-to-view timeline' \
+    -c ':goto 0' \
+    ${test_dir}/logfile_syslog.0

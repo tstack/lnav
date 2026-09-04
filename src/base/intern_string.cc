@@ -487,6 +487,27 @@ string_fragment::codepoint_to_byte_index(ssize_t cp_index) const
     return Ok(retval);
 }
 
+size_t
+string_fragment::start_of_codepoint(size_t byte_index) const
+{
+    // A sequence is at most four bytes, so a lead byte is at most three steps
+    // back.  Anything longer is a malformed run that no walk can repair.
+    static constexpr size_t MAX_CONTINUATIONS = 3;
+
+    auto retval = byte_index;
+    for (size_t attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
+        if (retval == 0 || retval >= (size_t) this->length()) {
+            return retval;
+        }
+        if ((((unsigned char) this->data()[retval]) & 0xc0) != 0x80) {
+            return retval;
+        }
+        retval -= 1;
+    }
+
+    return byte_index;
+}
+
 string_fragment
 string_fragment::sub_cell_range(int cell_start, int cell_end) const
 {

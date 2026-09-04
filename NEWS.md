@@ -121,8 +121,10 @@ Features:
     selected one, and the same keys used for filters
     work on these as well.
   - The TIMELINE view where each search is a row that
-    shows the span of hits.  The
-    `:hide-in-timeline search` command hides these rows.
+    shows the span of hits.  The current search gets a
+    row as well, labelled with its pattern in quotes
+    since it has no name.  The `:hide-in-timeline
+    search` command hides all of these rows.
   - The `log_named_searches` column on the log tables.
     It contains a JSON list of the searches that
     matched a message.

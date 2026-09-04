@@ -484,3 +484,49 @@ TEST_CASE("string_fragment::cursor")
         CHECK_FALSE(cursor.lookahead().has_value());
     }
 }
+
+TEST_CASE("string_fragment::start_of_codepoint")
+{
+    // "“ab" -- bytes 1 and 2 are continuations of the quote at byte 0.
+    const auto sf = string_fragment::from_const("“ab");
+
+    CHECK(sf.length() == 5);
+
+    SUBCASE("an index already on a character is left alone")
+    {
+        CHECK(sf.start_of_codepoint(0) == 0);
+        CHECK(sf.start_of_codepoint(3) == 3);
+        CHECK(sf.start_of_codepoint(4) == 4);
+    }
+
+    SUBCASE("an index inside a character moves back to its start")
+    {
+        // Splitting here is what produced a doubled character followed by
+        // "\x80" "\x9c" escapes in a rendered line.
+        CHECK(sf.start_of_codepoint(1) == 0);
+        CHECK(sf.start_of_codepoint(2) == 0);
+    }
+
+    SUBCASE("the end of the fragment is left alone")
+    {
+        CHECK(sf.start_of_codepoint(sf.length()) == (size_t) sf.length());
+    }
+
+    SUBCASE("an ascii-only fragment never moves")
+    {
+        const auto ascii = string_fragment::from_const("hello");
+
+        for (size_t lpc = 0; lpc <= (size_t) ascii.length(); lpc++) {
+            CHECK(ascii.start_of_codepoint(lpc) == lpc);
+        }
+    }
+
+    SUBCASE("a run of continuation bytes is left where it is")
+    {
+        // Four continuation bytes in a row cannot be one character, so the
+        // index stays put rather than sliding an unbounded distance.
+        const auto junk = string_fragment::from_const("\x80\x80\x80\x80\x80");
+
+        CHECK(junk.start_of_codepoint(4) == 4);
+    }
+}

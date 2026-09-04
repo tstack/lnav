@@ -526,6 +526,7 @@ dist_noinst_DATA = \
 	formats/scripts/nested-redirecting.lnav \
 	formats/sqldir/init.sql \
 	formats/tabular/tabular_test_log.json \
+	formats/tabular/tabular_space_log.json \
 	formats/tabular/tabular_synth_opid_log.json \
 	formats/timestamp/format.json \
 	formats/timestamp_value/format.json \

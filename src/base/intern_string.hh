@@ -213,6 +213,20 @@ struct string_fragment {
     Result<ssize_t, const char*> codepoint_to_byte_index(
         ssize_t cp_index) const;
 
+    /**
+     * Move a byte index back to the start of the code point that contains it.
+     *
+     * Unlike the other UTF-8 helpers here, this repairs an index rather than
+     * asking a question of the content, so it cannot fail.  An index that
+     * lands on a continuation byte walks back to the lead byte; one that is
+     * already at a boundary is returned as-is.  Since a sequence is at most
+     * four bytes, the walk gives up after three: a longer run of continuation
+     * bytes is malformed, and leaving the index where it was lets the caller
+     * treat those bytes as the garbage they are instead of sliding an offset
+     * an unbounded distance.
+     */
+    size_t start_of_codepoint(size_t byte_index) const;
+
     string_fragment sub_cell_range(int cell_start, int cell_end) const;
 
     constexpr const char& operator[](size_t index) const

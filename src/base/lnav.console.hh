@@ -44,6 +44,17 @@ void get_command_line_args(int* argc, char*** argv);
 
 void println(FILE* file, const attr_line_t& al);
 
+namespace detail {
+
+/**
+ * Resolve an attribute range to byte offsets into str.  Rendering to a
+ * terminal works in bytes, so a range that was measured in code points has to
+ * be converted first.  An open-ended (-1) end is passed through.
+ */
+line_range to_byte_range(const std::string& str, const line_range& lr);
+
+}  // namespace detail
+
 struct snippet {
     static snippet from_content_with_offset(intern_string_t src,
                                             const attr_line_t& content,
