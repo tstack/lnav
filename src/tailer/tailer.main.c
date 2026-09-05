@@ -67,6 +67,23 @@ int is_glob(const char *fn)
             strchr(fn, '[') != NULL);
 }
 
+/* glob() only sets errno for GLOB_ABORTED, so strerror() cannot be used to
+ * describe the other failures.
+ */
+const char *glob_strerror(int rc)
+{
+    switch (rc) {
+        case GLOB_NOMATCH:
+            return "no matches found";
+        case GLOB_NOSPACE:
+            return "out of memory";
+        case GLOB_ABORTED:
+            return strerror(errno);
+        default:
+            return "unknown error";
+    }
+}
+
 void list_init(struct list *l)
 {
     l->l_head = (struct node *) &l->l_tail;
@@ -164,7 +181,6 @@ void delete_client_path_list(struct list *l)
     struct client_path_state *child_cps;
 
     while ((child_cps = (struct client_path_state *) list_remove_head(l)) != NULL) {
-        list_remove(&child_cps->cps_node);
         delete_client_path_state(child_cps);
     }
 }
@@ -212,17 +228,29 @@ void send_error(struct client_path_state *cps, char *msg, ...)
                 TPPT_DONE);
 }
 
-void set_client_path_state_error(struct client_path_state *cps, const char *op)
+void set_client_path_state_error_reason(struct client_path_state *cps,
+                                        const char *op,
+                                        const char *reason)
 {
     if (cps->cps_last_path_state != PS_ERROR) {
         // tell client of the problem
-        send_error(cps, "unable to %s -- %s", op, strerror(errno));
+        send_error(cps, "unable to %s -- %s", op, reason);
     }
     cps->cps_last_path_state = PS_ERROR;
     cps->cps_client_file_offset = -1;
     cps->cps_client_state = CS_INIT;
     delete_client_path_list(&cps->cps_children);
 }
+
+void set_client_path_state_error(struct client_path_state *cps, const char *op)
+{
+    set_client_path_state_error_reason(cps, op, strerror(errno));
+}
+
+/* An upper bound on the size of a string payload, to keep a corrupt length
+ * off the wire from turning into a huge allocation.
+ */
+#define MAX_PAYLOAD_LENGTH (16 * 1024 * 1024)
 
 typedef enum {
     RS_ERROR,
@@ -309,6 +337,12 @@ static char *readstr(recv_state_t *state, int sock)
         return NULL;
     }
 
+    if (length < 0 || length > MAX_PAYLOAD_LENGTH) {
+        fprintf(stderr, "error: invalid string length: %d\n", length);
+        *state = RS_ERROR;
+        return NULL;
+    }
+
     char *retval = malloc(length + 1);
     if (retval == NULL) {
         return NULL;
@@ -336,7 +370,7 @@ static int readint64(recv_state_t *state, int sock, int64_t *i)
 
     *state = RS_PAYLOAD_CONTENT;
     *state = readall(*state, sock, i, sizeof(*i));
-    if (*state == -1) {
+    if (*state == RS_ERROR) {
         fprintf(stderr, "error: unable to read int64\n");
         return -1;
     }
@@ -404,8 +438,11 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
             glob_t gl;
 
             memset(&gl, 0, sizeof(gl));
-            if (glob(curr->cps_path, 0, NULL, &gl) != 0) {
-                set_client_path_state_error(curr, "glob");
+            int glob_rc = glob(curr->cps_path, 0, NULL, &gl);
+
+            if (glob_rc != 0) {
+                set_client_path_state_error_reason(curr, "glob",
+                                                   glob_strerror(glob_rc));
             } else {
                 struct list prev_children;
 
@@ -458,18 +495,19 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
             memset(&st, 0, sizeof(st));
             set_client_path_state_error(curr, "lstat");
         } else if (curr->cps_client_file_offset >= 0 &&
-                   ((curr->cps_last_stat.st_dev != st.st_dev &&
-                     curr->cps_last_stat.st_ino != st.st_ino) ||
-                    (st.st_size < curr->cps_last_stat.st_size))) {
-            send_error(curr, "replaced");
-            set_client_path_state_error(curr, "replace");
+                   (curr->cps_last_stat.st_dev != st.st_dev ||
+                    curr->cps_last_stat.st_ino != st.st_ino ||
+                    st.st_size < curr->cps_last_stat.st_size)) {
+            set_client_path_state_error_reason(curr, "replace",
+                                               "file was replaced");
         } else if (S_ISLNK(st.st_mode)) {
             switch (curr->cps_client_state) {
                 case CS_INIT: {
                     char buffer[PATH_MAX];
                     ssize_t link_len;
 
-                    link_len = readlink(curr->cps_path, buffer, sizeof(buffer));
+                    link_len = readlink(curr->cps_path, buffer,
+                                       sizeof(buffer) - 1);
                     if (link_len < 0) {
                         set_client_path_state_error(curr, "readlink");
                     } else {
@@ -662,7 +700,8 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                     }
 
                     if (entry->d_type != DT_REG &&
-                        entry->d_type != DT_LNK) {
+                        entry->d_type != DT_LNK &&
+                        entry->d_type != DT_UNKNOWN) {
                         continue;
                     }
 
@@ -671,6 +710,20 @@ int poll_paths(struct list *path_list, struct client_path_state *root_cps)
                     snprintf(full_path, sizeof(full_path),
                              "%s/%s",
                              curr->cps_path, entry->d_name);
+
+                    if (entry->d_type == DT_UNKNOWN) {
+                        // Some filesystems don't fill in d_type, so fall back
+                        // to an lstat() to find out what this is.
+                        struct stat child_st;
+
+                        if (lstat(full_path, &child_st) == -1) {
+                            continue;
+                        }
+                        if (!S_ISREG(child_st.st_mode) &&
+                            !S_ISLNK(child_st.st_mode)) {
+                            continue;
+                        }
+                    }
 
                     struct client_path_state *child = find_client_path_state(&prev_children, full_path);
 
@@ -764,13 +817,15 @@ void handle_load_preview_request(const char *path, int64_t preview_id)
         glob_t gl;
 
         memset(&gl, 0, sizeof(gl));
-        if (glob(path, 0, NULL, &gl) != 0) {
+        int glob_rc = glob(path, 0, NULL, &gl);
+
+        if (glob_rc != 0) {
             char msg[1024];
 
             snprintf(msg, sizeof(msg),
                      "error: cannot glob %s -- %s",
                      path,
-                     strerror(errno));
+                     glob_strerror(glob_rc));
             send_preview_error(preview_id, path, msg);
         } else {
             char *bits = malloc(1024 * 1024);
@@ -790,9 +845,9 @@ void handle_load_preview_request(const char *path, int64_t preview_id)
 
             send_preview_data(preview_id, path, strlen(bits), bits);
 
-            globfree(&gl);
             free(bits);
         }
+        globfree(&gl);
     }
     else if (stat(path, &st) == -1) {
         char msg[1024];
@@ -925,12 +980,15 @@ int main(int argc, char *argv[])
         if (unameFile != NULL) {
             char buffer[1024];
 
-            fgets(buffer, sizeof(buffer), unameFile);
-            char *bufend = buffer + strlen(buffer) - 1;
-            while (isspace(*bufend)) {
-                bufend -= 1;
+            buffer[0] = '\0';
+            if (fgets(buffer, sizeof(buffer), unameFile) != NULL) {
+                char *bufend = buffer + strlen(buffer);
+
+                while (bufend > buffer && isspace((unsigned char) bufend[-1])) {
+                    bufend -= 1;
+                }
+                *bufend = '\0';
             }
-            *bufend = '\0';
             send_packet(STDOUT_FILENO,
                         TPT_ANNOUNCE,
                         TPPT_STRING, buffer,
@@ -948,7 +1006,7 @@ int main(int argc, char *argv[])
 
         int ready_count = poll(pfds, 1, timeout);
 
-        if (ready_count) {
+        if (ready_count > 0) {
             tailer_packet_type_t type;
 
             assert(rstate == RS_PACKET_TYPE);
@@ -967,6 +1025,7 @@ int main(int argc, char *argv[])
 
                         if (type == TPT_LOAD_PREVIEW) {
                             if (readint64(&rstate, STDIN_FILENO, &preview_id) == -1) {
+                                free(path);
                                 done = 1;
                                 break;
                             }
@@ -1016,6 +1075,7 @@ int main(int argc, char *argv[])
                             (readint64(&rstate, STDIN_FILENO, &ack_offset) == -1 ||
                              readint64(&rstate, STDIN_FILENO, &ack_len) == -1 ||
                              readint64(&rstate, STDIN_FILENO, &client_size) == -1)) {
+                            free(path);
                             done = 1;
                             break;
                         }
@@ -1048,12 +1108,16 @@ int main(int argc, char *argv[])
                                     cps->cps_client_file_size = client_size;
                                 }
                             }
-                            free(path);
                         }
+                        free(path);
                         break;
                     }
                     default: {
-                        assert(0);
+                        fprintf(stderr,
+                                "error: unexpected packet type: %d\n",
+                                type);
+                        done = 1;
+                        break;
                     }
                 }
             }

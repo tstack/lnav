@@ -40,8 +40,11 @@
 #include "base/isc.hh"
 #include "base/network.tcp.hh"
 #include "mapbox/variant.hpp"
+#include "safe/safe.h"
 
 namespace tailer {
+
+using safe_error_queue = safe::Safe<std::vector<std::string>>;
 
 class looper : public isc::service<looper> {
 public:
@@ -86,6 +89,8 @@ private:
 
         void load_preview(int64_t id, const std::string& path);
 
+        void report_preview_disconnect(int64_t id) const;
+
         void complete_path(const std::string& path);
 
         bool is_synced() const { return this->ht_state.is<synced>(); }
@@ -127,7 +132,7 @@ private:
         std::string ht_uname;
         const std::filesystem::path ht_local_path;
         std::set<std::filesystem::path> ht_active_files;
-        std::vector<std::string> ht_error_queue;
+        safe_error_queue ht_error_queue;
         std::thread ht_error_reader;
         state_v ht_state{disconnected()};
         uint64_t ht_cycle_count{0};

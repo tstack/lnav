@@ -138,8 +138,9 @@ read_packet(int fd)
             return Ok(packet{ppp});
         }
         default:
-            assert(0);
-            break;
+            return Err(
+                fmt::format(FMT_STRING("unexpected packet type on the wire: {}"),
+                            (int) type));
     }
 }
 

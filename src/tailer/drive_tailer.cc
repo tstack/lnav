@@ -140,7 +140,7 @@ main(int argc, char* const* argv)
         exit(EXIT_FAILURE);
     }
 
-    close(to_child.get());
+    to_child.reset();
 
     bool done = false;
     while (!done) {

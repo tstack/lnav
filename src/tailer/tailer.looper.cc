@@ -67,7 +67,7 @@ static const auto HOST_RETRY_DELAY = 1min;
 static void
 read_err_pipe(const std::string& netloc,
               auto_fd& err,
-              std::vector<std::string>& eq)
+              tailer::safe_error_queue& eq)
 {
     line_buffer lb;
     file_range pipe_range;
@@ -91,8 +91,13 @@ read_err_pipe(const std::string& netloc,
                     auto line_str
                         = string_fragment(sbr.get_data(), 0, sbr.length())
                               .trim("\n");
-                    if (eq.size() < 10) {
-                        eq.emplace_back(line_str.to_string());
+                    {
+                        safe::WriteAccess<tailer::safe_error_queue>
+                            writable_eq(eq);
+
+                        if (writable_eq->size() < 10) {
+                            writable_eq->emplace_back(line_str.to_string());
+                        }
                     }
 
                     auto level = line_str.startswith("error:")
@@ -369,7 +374,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             _exit(EXIT_FAILURE);
         }
 
-        std::vector<std::string> error_queue;
+        safe_error_queue error_queue;
         log_debug("tailer(%s): starting err reader", netloc.c_str());
         std::thread err_reader([netloc,
                                 err = std::move(err_pipe.read_end()),
@@ -381,6 +386,7 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
 
         log_debug("tailer(%s): writing to child", netloc.c_str());
         bool write_failed = false;
+        std::string producer_err;
 
         auto sfp = tailer_impl.to_string_fragment_producer();
         while (true) {
@@ -390,8 +396,12 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             }
 
             if (next_res.is<string_fragment_producer::error>()) {
-                return Err(
-                    next_res.get<string_fragment_producer::error>().what);
+                // Cannot return from here, the err_reader thread still needs
+                // to be joined and the child reaped.
+                producer_err
+                    = next_res.get<string_fragment_producer::error>().what;
+                write_failed = true;
+                break;
             }
 
             auto sf = next_res.get<string_fragment>();
@@ -427,11 +437,15 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         auto finished_child = std::move(child).wait_for_child();
 
         err_reader.join();
+        if (!producer_err.empty()) {
+            return Err(producer_err);
+        }
         if (!finished_child.was_normal_exit()
             || finished_child.exit_status() != EXIT_SUCCESS)
         {
-            auto error_msg = error_queue.empty() ? "unknown"
-                                                 : error_queue.back();
+            auto readable_eq = error_queue.readAccess();
+            auto error_msg = readable_eq->empty() ? "unknown"
+                                                  : readable_eq->back();
             log_warning("tailer transfer failed: %s", error_msg.c_str());
             cp_err = fmt::format(FMT_STRING("failed to ssh to host: {}"),
                                  error_msg);
@@ -551,6 +565,26 @@ tailer::looper::host_tailer::open_remote_path(const std::string& path,
 }
 
 void
+tailer::looper::host_tailer::report_preview_disconnect(int64_t id) const
+{
+    log_warning("no connection to host, cannot preview: %s",
+                this->ht_netloc.c_str());
+
+    auto msg = fmt::format(FMT_STRING("error: disconnected from {}"),
+                           this->ht_netloc);
+    isc::to<main_looper&, services::main_t>().send([id, msg](auto& mlooper) {
+        if (lnav_data.ld_preview_generation != id) {
+            return;
+        }
+        lnav_data.ld_preview_status_source[0]
+            .get_description()
+            .set_cylon(false)
+            .set_value(msg);
+        lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
+    });
+}
+
+void
 tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
 {
     this->ht_state.match(
@@ -563,24 +597,8 @@ tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
                         id,
                         TPPT_DONE);
         },
-        [&](const disconnected& d) {
-            log_warning("disconnected from host, cannot preview: %s",
-                        path.c_str());
-
-            auto msg = fmt::format(FMT_STRING("error: disconnected from {}"),
-                                   this->ht_netloc);
-            isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
-                if (lnav_data.ld_preview_generation != id) {
-                    return;
-                }
-                lnav_data.ld_preview_status_source[0]
-                    .get_description()
-                    .set_cylon(false)
-                    .set_value(msg);
-                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
-            });
-        },
-        [&](const synced& s) { require(false); });
+        [&](const disconnected& d) { this->report_preview_disconnect(id); },
+        [&](const synced& s) { this->report_preview_disconnect(id); });
 }
 
 void
@@ -595,10 +613,12 @@ tailer::looper::host_tailer::complete_path(const std::string& path)
                         TPPT_DONE);
         },
         [&](const disconnected& d) {
-            log_warning("disconnected from host, cannot preview: %s",
+            log_warning("disconnected from host, cannot complete: %s",
                         path.c_str());
         },
-        [&](const synced& s) { require(false); });
+        [&](const synced& s) {
+            log_warning("synced with host, cannot complete: %s", path.c_str());
+        });
 }
 
 void
@@ -613,7 +633,11 @@ tailer::looper::host_tailer::loop_body()
     this->ht_cycle_count += 1;
     if (this->ht_cycle_count % TOUCH_FREQ == 0) {
         auto now = std::filesystem::file_time_type::clock::now();
-        std::filesystem::last_write_time(this->ht_local_path, now);
+        std::error_code ec;
+
+        // The local path is only created once a file has been transferred,
+        // so this can legitimately fail.
+        std::filesystem::last_write_time(this->ht_local_path, now, ec);
     }
 
     auto& conn = this->ht_state.get<connected>();
@@ -629,7 +653,20 @@ tailer::looper::host_tailer::loop_body()
         auto read_res = tailer::read_packet(conn.ht_from_child);
 
         if (read_res.isErr()) {
-            log_error("read error: %s", read_res.unwrapErr().c_str());
+            auto errmsg = read_res.unwrapErr();
+
+            // The stream is out of sync at this point, there is no way to
+            // recover, so shut the connection down.
+            log_error("tailer(%s): read error: %s",
+                      this->ht_netloc.c_str(),
+                      errmsg.c_str());
+            report_error(this->ht_netloc, errmsg);
+            auto finished_child = std::move(conn).close();
+            log_debug("tailer(%s): exit status %d",
+                      this->ht_netloc.c_str(),
+                      finished_child.exit_status());
+            this->ht_state = disconnected();
+            this->s_looping = false;
             return;
         }
 
@@ -639,10 +676,10 @@ tailer::looper::host_tailer::loop_body()
                 log_debug("all done!");
 
                 auto finished_child = std::move(conn).close();
-                if (finished_child.exit_status() != 0
-                    && !this->ht_error_queue.empty())
+                auto readable_eq = this->ht_error_queue.readAccess();
+                if (finished_child.exit_status() != 0 && !readable_eq->empty())
                 {
-                    report_error(this->ht_netloc, this->ht_error_queue.back());
+                    report_error(this->ht_netloc, readable_eq->back());
                 }
 
                 return state_v{disconnected()};
@@ -728,12 +765,13 @@ tailer::looper::host_tailer::loop_body()
                             return std::move(this->ht_state);
                         }
 
-                        conn.c_child_paths[pob.pob_path]
-                            = std::move(root_iter->second);
+                        // Copy, the root still owns its options and other
+                        // children will need them as well.
+                        conn.c_child_paths[pob.pob_path] = root_iter->second;
                         child_iter = conn.c_child_paths.find(pob.pob_path);
                     }
 
-                    loo = std::move(child_iter->second);
+                    loo = child_iter->second;
                 }
 
                 update_tailer_description(

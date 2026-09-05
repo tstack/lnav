@@ -217,6 +217,23 @@ class Tailer:
     def create_client_path_state(self, path: str) -> ClientPathState:
         return ClientPathState(path)
 
+    def remove_client_path_state(self, path_list: List[ClientPathState],
+                                 cps: ClientPathState) -> bool:
+        """Remove cps from the tree rooted at path_list.
+
+        find_client_path_state() searches recursively, so the node to remove
+        is not necessarily a top-level one.
+        """
+        if cps in path_list:
+            path_list.remove(cps)
+            return True
+
+        for curr in path_list:
+            if self.remove_client_path_state(curr.cps_children, cps):
+                return True
+
+        return False
+
     def poll_paths(self, path_list: List[ClientPathState],
                    root_cps: Optional[ClientPathState] = None) -> int:
         retval = 0
@@ -474,12 +491,17 @@ class Tailer:
     def send_possible_paths(self, glob_path: str, depth: int):
         try:
             for child_path in glob.glob(glob_path):
+                is_dir = os.path.isdir(child_path)
+                if is_dir and not child_path.endswith('/'):
+                    # Match the GLOB_MARK behavior of the C implementation.
+                    child_path += '/'
+
                 send_packet(sys.stdout.fileno(),
                             TailerPacketType.TPT_POSSIBLE_PATH,
                             (TailerPacketPayloadType.TPPT_STRING, child_path))
 
-                if depth == 0 and os.path.isdir(child_path):
-                    self.send_possible_paths(child_path + "/*", depth + 1)
+                if depth == 0 and is_dir:
+                    self.send_possible_paths(child_path + "*", depth + 1)
         except Exception:
             pass
 
@@ -689,7 +711,8 @@ class Tailer:
                             if not cps:
                                 sys.stderr.write(f"warning: path is not open: {path}\n")
                             else:
-                                self.client_path_list.remove(cps)
+                                self.remove_client_path_state(
+                                    self.client_path_list, cps)
 
                         elif ptype == TailerPacketType.TPT_LOAD_PREVIEW:
                             self.handle_load_preview_request(path, preview_id)
@@ -735,6 +758,14 @@ class Tailer:
                                 cps.cps_client_file_offset = ack_offset + ack_len
                                 cps.cps_client_state = ClientState.CS_INIT
                                 cps.cps_client_file_size = client_size
+
+                else:
+                    # The payload is unknown, so there is no way to skip past
+                    # it and stay in sync with the client.
+                    sys.stderr.write(
+                        f"error: unexpected packet type: {ptype}\n")
+                    self.running = False
+                    break
 
             if self.running:
                 if self.poll_paths(self.client_path_list):

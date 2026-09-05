@@ -125,6 +125,13 @@ struct recv_payload_type {};
 struct recv_payload_length {};
 struct recv_payload_content {};
 
+/**
+ * An upper bound on the size of a length-prefixed payload, to keep a corrupt
+ * length off the wire from turning into a huge allocation.  Must match
+ * MAX_PAYLOAD_LENGTH in tailer.main.c.
+ */
+constexpr int32_t MAX_PAYLOAD_LENGTH = 16 * 1024 * 1024;
+
 int readall(int sock, void* buf, size_t len);
 
 namespace details {
@@ -206,6 +213,11 @@ struct protocol_recv {
             return Err(
                 fmt::format(FMT_STRING("unable to read content length: {}"),
                             strerror(errno)));
+        }
+
+        if (this->pr_length < 0 || this->pr_length > MAX_PAYLOAD_LENGTH) {
+            return Err(fmt::format(FMT_STRING("invalid content length: {}"),
+                                   this->pr_length));
         }
 
         try {
