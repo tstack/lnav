@@ -422,14 +422,16 @@ listview_curses::handle_key(const ncinput& ch)
 
             if (this->is_selectable()) {
                 auto sel = this->get_selection();
-                if (sel && sel.value() == last_line
-                    && this->get_top() != last_line)
-                {
+                if (sel && sel.value() != last_line) {
+                    this->set_selection(last_line);
+                } else if (this->get_top() > tail_bottom) {
+                    // The last line has been scrolled up, so bring the
+                    // preceding lines back into view.
+                    this->set_top(tail_bottom);
+                } else {
                     // Already on the last line, so scroll it up to the top,
                     // matching the behavior in non-cursor mode.
                     this->set_top(last_line);
-                } else {
-                    this->set_selection(last_line);
                 }
             } else if (this->get_top() == last_line) {
                 this->set_top(tail_bottom);
