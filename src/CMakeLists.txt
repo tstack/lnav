@@ -282,6 +282,7 @@ set(CONFIG_FILES
         themes/dracula.json
         themes/eldar.json
         themes/grayscale.json
+        themes/modus-operandi.json
         themes/monocai.json
         themes/night-owl.json
         themes/solarized-dark.json

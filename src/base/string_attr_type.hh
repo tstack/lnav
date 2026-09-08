@@ -96,8 +96,6 @@ enum class role_t : int32_t {
     VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
     VCR_CONTEXT_LINE,
     VCR_HIDDEN,
-    VCR_CURSOR_LINE,
-    VCR_DISABLED_CURSOR_LINE,
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,
@@ -132,8 +130,6 @@ enum class role_t : int32_t {
     VCR_SCROLLBAR,
     VCR_SCROLLBAR_ERROR,
     VCR_SCROLLBAR_WARNING,
-    VCR_FOCUSED,
-    VCR_DISABLED_FOCUSED,
     VCR_POPUP,
     VCR_POPUP_BORDER,
     VCR_COLOR_HINT,
@@ -201,6 +197,17 @@ enum class role_t : int32_t {
     VCR_SPECTRO_THRESHOLD6,
 
     VCR_TIMELINE_BAR,
+
+    /*
+     * The roles that mark the current line come last so that they paint over
+     * any other role that covers the same range, like the full-line diff
+     * roles.  See string_attr::operator<() in attr_line.hh.  Keep new roles
+     * above these.
+     */
+    VCR_CURSOR_LINE,
+    VCR_DISABLED_CURSOR_LINE,
+    VCR_FOCUSED,
+    VCR_DISABLED_FOCUSED,
 
     VCR__MAX
 };

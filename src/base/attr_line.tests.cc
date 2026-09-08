@@ -45,6 +45,24 @@ TEST_CASE("line_range")
     CHECK(!(lr1 < lr2));
 }
 
+TEST_CASE("string_attr::cursor-line-paint-order")
+{
+    string_attr cursor{line_range{0, -1},
+                       VC_ROLE.value(role_t::VCR_CURSOR_LINE)};
+    string_attr diff{line_range{0, -1},
+                     VC_ROLE.value(role_t::VCR_DIFF_ADD)};
+
+    CHECK(diff < cursor);
+    CHECK(!(cursor < diff));
+
+    // the role tie-break only applies to attrs with the same range
+    string_attr time_col{line_range{0, 12},
+                         VC_ROLE.value(role_t::VCR_TIME_COLUMN)};
+
+    CHECK(cursor < time_col);
+    CHECK(!(time_col < cursor));
+}
+
 TEST_CASE("attr_line_t::basic-wrapping")
 {
     text_wrap_settings tws = {3, 21};
