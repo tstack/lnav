@@ -271,21 +271,21 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_patch.0
 
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ";SELECT view_name, name, pattern FROM lnav_view_searches" \
     ${test_dir}/logfile_access_log.0
 
 # A line matched by more than one search lists every name.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ";SELECT log_line, log_named_searches FROM access_log" \
     ${test_dir}/logfile_access_log.0
 
 # Deleting one search drops only its own name from the column.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ":delete-named-search one" \
     -c ";SELECT log_line, log_named_searches FROM access_log" \
@@ -312,20 +312,20 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ";DELETE FROM lnav_view_searches WHERE name = 'one'" \
     -c ";SELECT name FROM lnav_view_searches" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
-    -c ";UPDATE lnav_view_searches SET pattern = 'cgi' WHERE name = 'all'" \
+    -c ":create-named-search every vmw" \
+    -c ";UPDATE lnav_view_searches SET pattern = 'cgi' WHERE name = 'every'" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
-    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'all', 'cgi')" \
+    -c ":create-named-search every vmw" \
+    -c ";INSERT INTO lnav_view_searches (view_name, name, pattern) VALUES ('log', 'every', 'cgi')" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \

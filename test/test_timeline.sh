@@ -480,9 +480,11 @@ run_cap_test ${lnav_test} -n \
 # A row name that begins with a multi-byte character must survive rendering.
 # The console printer segments a line at attribute boundaries, and a boundary
 # that landed inside the character used to split it, printing the tail as
-# "\x80" escapes.
+# "\x80" escapes.  The name comes from the file here since a search name has
+# to work as an SQL table name.
+cp ${test_dir}/logfile_syslog.0 “quoted.0
+
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search “quoted automount" \
     -c ':switch-to-view timeline' \
     -c ':goto 0' \
-    ${test_dir}/logfile_syslog.0
+    “quoted.0

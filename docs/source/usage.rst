@@ -264,11 +264,26 @@ can be tracked at the same time.
 A named search can be created with the
 :ref:`:create-named-search<create_named_search>` command, either by giving it a
 pattern directly or by leaving the pattern off to adopt the search that is
-currently active.  In the latter case, the active search is cleared, so a
+currently active.  The name must be a valid SQL identifier, since it is also
+the name of the search's table (see below).  In the latter case, the active search is cleared, so a
 search can be promoted once it turns out to be interesting.  Searches can be
 deleted with the :ref:`:delete-named-search<delete_named_search>` command or by
 doing a :code:`DELETE` on the
 :ref:`lnav_view_searches<table_lnav_view_searches>` table.
+
+In the LOG view, each named search also gets a
+:ref:`search table<search_tables>` of the same name that contains the messages
+it matched, with a column for each capture in the pattern.  So the hits can be
+examined with SQL without writing the pattern again::
+
+    :create-named-search gpxe gPXE/(?<ver>[\d\.]+)
+    ;SELECT DISTINCT ver FROM gpxe
+
+The messages the search already found are used during queries of the table, so
+it costs about as much as the number of hits.  The table is removed when the
+search is deleted, but is left in place when the search is only disabled.
+Searches in the other views do not get a table, since a search table is
+built out of log messages.
 
 A search that is not interesting at the moment can be turned off with the
 :ref:`:disable-named-search<disable_named_search>` command instead of being
@@ -455,6 +470,11 @@ from log files with that format and the tables will include log message
 columns defined in that format.  Whereas a table created with the command
 will search messages from all different formats and no format-specific
 columns will be included in the table.
+
+A search table is also created for every :ref:`named search<named_searches>`
+in the LOG view, so the hits for a search can be queried from SQL without
+having to write the pattern a second time.  Such a table is named after the
+search and is removed when the search is deleted.
 
 .. _taking_notes:
 

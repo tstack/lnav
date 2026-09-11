@@ -132,12 +132,23 @@ Features:
     `INSERT`ed and `DELETE`d to create and remove them
     from SQL and the `enabled` column can be `UPDATE`d
     to turn them on and off.
+  In the LOG view, a named search also creates a search
+  table of the same name that contains the messages it
+  matched, with a column for each capture in the
+  pattern, so the hits can be queried without writing
+  the pattern a second time.  The table is dropped when
+  the search is deleted and kept when it is only
+  disabled.  Since the name is used for the table, it
+  must be a valid SQL identifier.
   Named searches are saved in the session and included
   in the output of `:export-session-to`.
 * Added the `:show-only-in-timeline` command to show
   only the given row type(s) in the timeline view and
   hide all the others.  If no arguments are given,
   only the type of the focused row is shown.
+* Installing files with the `-i` option will now
+  validate log format, configuration files, and SQL
+  files before installation.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

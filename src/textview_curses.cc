@@ -47,6 +47,7 @@
 #include "log_format_fwd.hh"
 #include "logfile.hh"
 #include "shlex.hh"
+#include "sql_util.hh"
 #include "view_curses.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -537,6 +538,36 @@ textview_curses::validate_search_name(const std::string& name)
         }
     }
 
+    static const auto NOT_AN_IDENT_HELP = attr_line_t(
+        "the name is also used for the SQL table that contains the hits for "
+        "this search, so it must start with a letter or underscore, contain "
+        "only letters, numbers, and underscores, and not be an SQL keyword");
+
+    if (sql_ident_needs_quote(name.c_str()) || isdigit((unsigned char) name[0]))
+    {
+        return Err(lnav::console::user_message::error(
+                       attr_line_t()
+                           .append_quoted(name)
+                           .append(" is not a valid name for a search"))
+                       .with_reason("a name must be a valid SQL identifier")
+                       .with_help(NOT_AN_IDENT_HELP));
+    }
+
+    auto upper_name = toupper(name);
+    if (std::binary_search(std::begin(sqlite_keywords),
+                           std::end(sqlite_keywords),
+                           upper_name))
+    {
+        return Err(lnav::console::user_message::error(
+                       attr_line_t()
+                           .append_quoted(name)
+                           .append(" is not a valid name for a search"))
+                       .with_reason(attr_line_t()
+                                        .append_quoted(upper_name)
+                                        .append(" is an SQL keyword"))
+                       .with_help(NOT_AN_IDENT_HELP));
+    }
+
     return Ok();
 }
 
@@ -594,6 +625,17 @@ textview_curses::create_named_search(const std::string& name,
                                                 "active at a time")));
     }
     auto slot = slot_opt.value();
+
+    if (this->tc_on_named_search_created) {
+        auto hook_res = this->tc_on_named_search_created(*this, name, code);
+
+        if (hook_res.isErr()) {
+            // Nothing has been added to the view yet, so giving the slot
+            // back is all it takes to leave things as they were.
+            this->free_search_slot(slot);
+            return Err(hook_res.unwrapErr());
+        }
+    }
 
     auto* gp = this->ensure_search_procs();
     gp->set_pattern(slot, code);
@@ -755,6 +797,9 @@ textview_curses::delete_named_search(const std::string& name)
         return false;
     }
 
+    if (this->tc_on_named_search_deleted) {
+        this->tc_on_named_search_deleted(*this, name);
+    }
     this->tc_highlights.erase({highlight_source_t::NAMED_SEARCH, name});
     this->free_search_slot(iter->ns_slot);
     this->tc_disabled_search_slots &= ~grep_pattern_bit(iter->ns_slot);
@@ -773,6 +818,9 @@ textview_curses::clear_named_searches()
     grep_pattern_mask_t patterns = 0;
 
     for (const auto& ns : this->tc_named_searches) {
+        if (this->tc_on_named_search_deleted) {
+            this->tc_on_named_search_deleted(*this, ns.ns_name);
+        }
         this->tc_highlights.erase(
             {highlight_source_t::NAMED_SEARCH, ns.ns_name});
         this->free_search_slot(ns.ns_slot);

@@ -270,6 +270,8 @@ public:
     enum class provenance_t {
         format,
         user,
+        /** Created alongside a named search and owned by it. */
+        named_search,
     };
 
     struct vtab_column {

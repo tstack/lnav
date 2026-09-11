@@ -1242,6 +1242,18 @@ public:
     std::function<bool(
         textview_curses&, const attr_line_t&, int x, const mouse_event&)>
         tc_on_click;
+    /**
+     * Called when a named search is created or deleted.  The LOG view uses
+     * these to keep a search table in step with the search.  Returning an
+     * error from the create hook cancels the creation.
+     */
+    std::function<Result<void, lnav::console::user_message>(
+        textview_curses&,
+        const std::string&,
+        std::shared_ptr<lnav::pcre2pp::code>)>
+        tc_on_named_search_created;
+    std::function<void(textview_curses&, const std::string&)>
+        tc_on_named_search_deleted;
     std::optional<string_attr_pair> tc_mark_style{
         VC_STYLE.value(text_attrs::with_reverse())};
 

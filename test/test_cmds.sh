@@ -836,14 +836,14 @@ run_cap_test ${lnav_test} -n \
 
 # Two named searches are active at once and get distinct colors.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     ${test_dir}/logfile_access_log.0
 
 # Deleting one search must not unmark a line that the other one still
 # matches -- line 0 matches both 'vmw' and 'cgi'.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ":delete-named-search one" \
     -c ":goto 1" \
@@ -861,7 +861,7 @@ run_cap_test ${lnav_test} -n \
 # Resetting the session deletes the named searches, so their marks go with
 # them.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ":reset-session" \
     -c ":goto 0" \
@@ -870,17 +870,17 @@ run_cap_test ${lnav_test} -n \
 
 # ... and the names and slots are free to be used again.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":reset-session" \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ";SELECT view_name, name, pattern FROM lnav_view_searches" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0
 
 # The details panel names the searches that matched the message.  Line 0
-# matches both 'all' and 'one'...
+# matches both 'every' and 'one'...
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
     -c ":goto 0" \
@@ -935,7 +935,7 @@ run_cap_test ${lnav_test} -n \
 # A disabled search stops highlighting and gives up its marks, but line 0 is
 # still marked by the search that is left enabled.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ":disable-named-search one" \
     -c ":goto 1" \
@@ -961,7 +961,7 @@ run_cap_test ${lnav_test} -n \
 
 # A disabled search is left out of the log_named_searches column.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":create-named-search one cgi" \
     -c ":disable-named-search one" \
     -c ";SELECT log_line, log_named_searches FROM access_log" \
@@ -970,7 +970,7 @@ run_cap_test ${lnav_test} -n \
 # Marking a line rescans it for the metadata searches, which must not cost it
 # the hits that were already found in its text.
 run_cap_test ${lnav_test} -n \
-    -c ":create-named-search all vmw" \
+    -c ":create-named-search every vmw" \
     -c ":goto 0" \
     -c ":mark" \
     -c ";SELECT log_line, log_named_searches FROM access_log" \

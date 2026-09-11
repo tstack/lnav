@@ -2862,6 +2862,11 @@ log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
         rc = sqlite3_exec(this->vm_db, sql, nullptr, nullptr, errmsg.out());
         if (rc != SQLITE_OK) {
             retval = errmsg;
+            // The impl was added before the CREATE so that the module could
+            // find it.  Since the table was not made, take it back out again
+            // or a retry will report that the name is taken instead of what
+            // actually went wrong.
+            this->vm_impls.erase(vi->get_name().to_string_fragment());
         }
     } else {
         retval = "a table with the given name already exists";

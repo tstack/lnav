@@ -110,6 +110,7 @@
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_format_loader.hh"
+#include "log_search_table.hh"
 #include "log_gutter_source.hh"
 #include "log_stmt_vtab.hh"
 #include "log_vtab_impl.hh"
@@ -3769,6 +3770,47 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_HELP]
         .set_sub_source(&lnav_data.ld_help_source)
         .set_word_wrap(false);
+    // Every named search in the LOG view gets a search table of the same
+    // name so that its hits can be queried from SQL.  The table uses the
+    // search's own compiled pattern so that the rows match what is
+    // highlighted.  The other views have no log messages to build a table
+    // from, so they are left alone.
+    lnav_data.ld_views[LNV_LOG].tc_on_named_search_created
+        = [](textview_curses& tc,
+             const std::string& name,
+             std::shared_ptr<lnav::pcre2pp::code> code)
+        -> Result<void, lnav::console::user_message> {
+        auto* vtab_manager = injector::get<log_vtab_manager*>();
+
+        if (vtab_manager->lookup_impl(name) != nullptr) {
+            return Err(lnav::console::user_message::error(
+                           attr_line_t("unable to create the search table for ")
+                               .append_quoted(name))
+                           .with_reason(attr_line_t("a table with the name ")
+                                            .append_quoted(name)
+                                            .append(" already exists")));
+        }
+
+        auto lst = std::make_shared<log_search_table>(
+            std::move(code), intern_string::lookup(name));
+        lst->vi_provenance = log_vtab_impl::provenance_t::named_search;
+
+        auto errmsg = vtab_manager->register_vtab(lst);
+        if (!errmsg.empty()) {
+            return Err(lnav::console::user_message::error(
+                           attr_line_t("unable to create the search table for ")
+                               .append_quoted(name))
+                           .with_reason(errmsg));
+        }
+
+        return Ok();
+    };
+    lnav_data.ld_views[LNV_LOG].tc_on_named_search_deleted
+        = [](textview_curses& tc, const std::string& name) {
+        injector::get<log_vtab_manager*>()->unregister_vtab(
+            string_fragment::from_str(name));
+    };
+
     log_fos->fos_contexts.emplace("", false, true, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)

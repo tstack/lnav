@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <optional>
 #include <vector>
 
@@ -36,6 +37,7 @@
 #include "column_namer.hh"
 #include "config.h"
 #include "logfile_sub_source.hh"
+#include "textview_curses.hh"
 #include "sql_util.hh"
 
 static constexpr const char MATCH_INDEX[] = "match_index";
@@ -316,10 +318,78 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
                   this->lst_mismatch_bitmap.capacity());
 #endif
     }
+    this->drive_from_named_search(lc, lss);
+
     if (!lc.lc_indexed_lines.empty()
         && lc.lc_indexed_lines_range.contains(lc.lc_curr_line))
     {
         lc.lc_curr_line = lc.lc_indexed_lines.back();
         lc.lc_indexed_lines.pop_back();
     }
+}
+
+void
+log_search_table::drive_from_named_search(log_cursor& lc,
+                                          logfile_sub_source& lss)
+{
+    if (this->vi_provenance != provenance_t::named_search
+        // A query with an indexed column has its own set of lines to look
+        // at, and that one is the more selective of the two.
+        || !lc.lc_indexed_lines.empty() || lc.lc_direction <= 0)
+    {
+        return;
+    }
+
+    auto* tc = lss.get_view();
+    if (tc == nullptr || tc->is_searching()) {
+        // The hits are still being collected, so falling back to the scan is
+        // the only way to get a complete answer.
+        return;
+    }
+
+    const auto* ns = tc->find_named_search(this->vi_name.to_string());
+    if (ns == nullptr) {
+        return;
+    }
+
+    // The hits are kept in a tree, so seek to the first one in the range
+    // rather than walking past the ones before it.
+    const auto& matches = tc->search_matches_for_slot(ns->ns_slot);
+    const auto hit_range = matches.equal_range(lc.lc_curr_line, lc.lc_end_line);
+
+    std::vector<vis_line_t> msg_lines;
+    for (auto iter = hit_range.first; iter != hit_range.second; ++iter) {
+        const auto vl = *iter;
+
+        // The hit can be on a continuation line, so walk back to the start
+        // of the message that owns it.  next() only does its work on the
+        // first line of a message.
+        auto msg_line = vl;
+        while (msg_line > 0_vl) {
+            auto cl = lss.at(msg_line);
+            auto* lf = lss.find_file_ptr(cl);
+
+            if (lf == nullptr || !(lf->begin() + cl)->is_continued()) {
+                break;
+            }
+            msg_line -= 1_vl;
+        }
+        msg_lines.push_back(msg_line);
+    }
+
+    // The set is popped from the back, so the first line to visit has to be
+    // last.  The end of the scan goes in as a sentinel: once it is popped the
+    // set is empty and the cursor is at the end, which is how is_eof() knows
+    // to stop instead of walking the rest of the file.
+    msg_lines.push_back(lc.lc_end_line);
+    std::sort(msg_lines.begin(), msg_lines.end(), std::greater<>());
+    msg_lines.erase(std::unique(msg_lines.begin(), msg_lines.end()),
+                    msg_lines.end());
+
+    auto range = msg_range::empty();
+    range.expand_to(lc.lc_curr_line);
+    range.expand_to(lc.lc_end_line);
+
+    lc.lc_indexed_lines = std::move(msg_lines);
+    lc.lc_indexed_lines_range = range;
 }

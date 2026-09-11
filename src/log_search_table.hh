@@ -53,6 +53,14 @@ public:
 
     void get_primary_keys(std::vector<std::string>& keys_out) const override;
 
+    /**
+     * Point the cursor at the messages that the named search behind this
+     * table already found, so that the scan does not have to look at
+     * anything else.  Does nothing for tables that did not come from a
+     * named search.
+     */
+    void drive_from_named_search(log_cursor& lc, logfile_sub_source& lss);
+
     void get_columns_int(std::vector<vtab_column>& cols) const;
 
     void get_columns(std::vector<vtab_column>& cols) const override

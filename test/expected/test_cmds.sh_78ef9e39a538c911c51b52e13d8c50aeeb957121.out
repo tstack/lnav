@@ -30,5 +30,6 @@
    col_0 = [1mHello[0m
    col_1 = [1mWorld!
   How are you today?[0m
+[32m The following SQL table contains this line: [0m[4mgreeting[0m
   How are you today?
 [31m2009-07-20 22:59:30,221[0m[31m:[0m[31mERROR[0m[31m:[0m[31mGoodbye, World![0m
