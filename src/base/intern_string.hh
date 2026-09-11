@@ -163,8 +163,17 @@ struct string_fragment {
 
     size_t column_to_byte_index(size_t col) const;
 
+    /**
+     * Get the display column that the given byte is rendered at.  The column
+     * is relative to the start of the row that the byte falls on, so an
+     * embedded line feed resets it back to zero.
+     */
     size_t byte_to_column_index(size_t byte_index) const;
 
+    /**
+     * Note that the returned pair is only meaningful when both bytes are on
+     * the same row, since a line feed between them restarts the count.
+     */
     std::tuple<int, int> byte_to_column_index(size_t byte_start,
                                               size_t byte_end) const
     {

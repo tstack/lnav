@@ -700,8 +700,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             adjusted_tm->et_flags |= this->lss_all_timestamp_flags
                 & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET);
             char buffer[128];
-            this->lss_time_column_size
+            const auto time_len
                 = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm.value());
+            this->lss_time_column_size = time_len;
             if (this->tss_view->is_selectable()
                 && this->tss_view->get_selection() == row)
             {
@@ -721,6 +722,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             } else {
                 this->lss_time_column_padding = 0;
             }
+            // the separator is two columns wide whether it was drawn as the
+            // pair of spaces or as the block, even though the two differ in
+            // byte length.
+            this->lss_time_column_width
+                = time_len + 2 + this->lss_time_column_padding;
             value_out.insert(1, buffer, this->lss_time_column_size);
             this->lss_token_al.al_attrs.emplace_back(time_attr->sa_range,
                                                      SA_REPLACED.value());
@@ -1166,20 +1172,32 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
     std::optional<int> ts_left_opt;
     std::optional<int> level_left_opt;
     std::optional<int> body_left_opt;
+    // a rendered row is "[marker][time column][message]" and the horizontal
+    // offset counts from the marker, so every column below is shifted by the
+    // part that precedes the message.  note that the filename/basename
+    // prefixes are not accounted for here.
+    const auto row_indent = 1
+        + ((this->lss_line_context == line_context_t::time_column)
+               ? (int) this->lss_time_column_width
+               : 0);
     for (const auto& msg : *win) {
         const auto& values = msg.get_values();
         auto line_sf = values.lvv_sbr.to_string_fragment();
+        // the buffer holds the entire message, so anything at or past the
+        // first line feed is on a continuation row.  those rows are free-form
+        // text with no columns to snap to and none of the adjustments below
+        // apply to them, so they are skipped.
+        const auto first_row_end = line_sf.find('\n').value_or(line_sf.length());
         std::optional<line_range> ts_range;
         std::optional<line_range> level_range;
-        auto time_col_size = this->lss_time_column_size;
-        if (time_col_size > 0) {
-            time_col_size -= 1;
-        }
         for (const auto& sa : msg.get_attrs()) {
             if (sa.sa_type != &L_TIMESTAMP && sa.sa_type != &L_LEVEL) {
                 continue;
             }
             if (!sa.sa_range.is_valid()) {
+                continue;
+            }
+            if (sa.sa_range.lr_start >= first_row_end) {
                 continue;
             }
             if (this->lss_line_context == line_context_t::time_column) {
@@ -1190,7 +1208,8 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
                 }
             } else {
                 auto sa_left
-                    = (int) line_sf.byte_to_column_index(sa.sa_range.lr_start);
+                    = (int) line_sf.byte_to_column_index(sa.sa_range.lr_start)
+                    + row_indent;
                 if (sa.sa_type == &L_TIMESTAMP) {
                     if (!ts_left_opt || sa_left < ts_left_opt.value()) {
                         ts_left_opt = sa_left;
@@ -1209,6 +1228,9 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
             if (!sa.sa_range.is_valid()) {
                 continue;
             }
+            if (sa.sa_range.lr_start >= first_row_end) {
+                continue;
+            }
             auto curr_range = sa.sa_range;
             if (ts_range && ts_range.value() < sa.sa_range) {
                 curr_range.lr_start -= ts_range->length();
@@ -1216,9 +1238,9 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
             if (level_range && level_range.value() < sa.sa_range) {
                 curr_range.lr_start -= level_range->length();
             }
-            curr_range.lr_start += time_col_size;
             auto body_left
-                = (int) line_sf.byte_to_column_index(curr_range.lr_start);
+                = (int) line_sf.byte_to_column_index(curr_range.lr_start)
+                + row_indent;
             if (!body_left_opt || body_left < body_left_opt.value()) {
                 body_left_opt = body_left;
             }
@@ -1231,6 +1253,9 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
             {
                 continue;
             }
+            if (lv.lv_origin.lr_start >= first_row_end) {
+                continue;
+            }
             auto curr_range = lv.lv_origin;
             if (ts_range && ts_range.value() < lv.lv_origin) {
                 curr_range.lr_start -= ts_range->length();
@@ -1238,10 +1263,10 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
             if (level_range && level_range.value() < lv.lv_origin) {
                 curr_range.lr_start -= level_range->length();
             }
-            curr_range.lr_start += time_col_size;
 
             auto left_for_value
-                = (int) line_sf.byte_to_column_index(curr_range.lr_start);
+                = (int) line_sf.byte_to_column_index(curr_range.lr_start)
+                + row_indent;
             auto iter = field2left.find(lv.lv_meta.lvm_name);
             if (iter == field2left.end()) {
                 field2left.emplace(lv.lv_meta.lvm_name, left_for_value);
@@ -1252,7 +1277,6 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
     }
 
     for (const auto& [name, left] : field2left) {
-        log_debug("inserting %d for %s", left, name.c_str());
         columns_out.insert(left);
     }
     if (body_left_opt) {

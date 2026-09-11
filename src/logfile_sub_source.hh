@@ -899,8 +899,15 @@ private:
     lnav::document::metadata lss_token_meta;
     int lss_token_meta_line{-1};
     int lss_token_meta_size{0};
+    // the byte length of the time column that was prepended to the row that
+    // was rendered last.  it is zeroed at the start of every render and only
+    // refilled for a row that carries a timestamp.
     size_t lss_time_column_size{0};
     size_t lss_time_column_padding{0};
+    // the display width of the time column.  unlike lss_time_column_size,
+    // this is kept across renders so that callers outside of the render path
+    // can find the indent without depending on which row came last.
+    size_t lss_time_column_width{0};
     logline_value_vector lss_token_values;
     std::vector<std::pair<int, int>> lss_token_shifts;
     shared_buffer lss_share_manager;

@@ -618,6 +618,11 @@ string_fragment::byte_to_column_index(const size_t byte_index) const
                         curr_col += 1;
                     } while (curr_col % 8);
                     break;
+                case '\n':
+                    // a column is relative to the start of the row that the
+                    // byte is rendered on
+                    curr_col = 0;
+                    break;
                 default: {
                     auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
                     if (wcw_res < 0) {

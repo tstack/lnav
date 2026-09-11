@@ -530,3 +530,60 @@ TEST_CASE("string_fragment::start_of_codepoint")
         CHECK(junk.start_of_codepoint(4) == 4);
     }
 }
+
+TEST_CASE("string_fragment::byte_to_column_index")
+{
+    SUBCASE("ascii runs one column per byte")
+    {
+        const auto sf = string_fragment::from_const("abcdef");
+
+        CHECK(sf.byte_to_column_index(0) == 0);
+        CHECK(sf.byte_to_column_index(3) == 3);
+        CHECK(sf.byte_to_column_index(6) == 6);
+    }
+
+    SUBCASE("a tab advances to the next multiple of eight")
+    {
+        const auto sf = string_fragment::from_const("ab\tc");
+
+        CHECK(sf.byte_to_column_index(2) == 2);
+        CHECK(sf.byte_to_column_index(3) == 8);
+        CHECK(sf.byte_to_column_index(4) == 9);
+    }
+
+    SUBCASE("a wide character takes two columns")
+    {
+        const auto sf = string_fragment::from_const("a中b");
+
+        CHECK(sf.byte_to_column_index(1) == 1);
+        // the wide char is three bytes and two columns
+        CHECK(sf.byte_to_column_index(4) == 3);
+    }
+
+    SUBCASE("a line feed restarts the count")
+    {
+        // a column is relative to the row the byte is rendered on, so the
+        // width of the earlier rows must not leak into the result.
+        const auto sf = string_fragment::from_const("hello\nworld");
+
+        CHECK(sf.byte_to_column_index(5) == 5);
+        CHECK(sf.byte_to_column_index(6) == 0);
+        CHECK(sf.byte_to_column_index(9) == 3);
+    }
+
+    SUBCASE("every row of a multi-line fragment starts at zero")
+    {
+        const auto sf = string_fragment::from_const("#+1162490366\n./drive");
+
+        CHECK(sf.byte_to_column_index(13) == 0);
+        CHECK(sf.byte_to_column_index(sf.length()) == 7);
+    }
+
+    SUBCASE("a tab stop is measured from the start of its own row")
+    {
+        const auto sf = string_fragment::from_const("abcdefghij\na\tb");
+
+        CHECK(sf.byte_to_column_index(11) == 0);
+        CHECK(sf.byte_to_column_index(13) == 8);
+    }
+}
