@@ -387,7 +387,6 @@ public:
 
     std::string lf_description;
     log_format* lf_root_format{this};
-    uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     bool lf_structured{false};
     bool lf_formatted_lines{false};

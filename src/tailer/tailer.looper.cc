@@ -818,7 +818,6 @@ tailer::looper::host_tailer::loop_body()
                                 .with_filename(custom_name)
                                 .with_source(logfile_name_source::REMOTE)
                                 .with_follow(loo.loo_follow)
-                                .with_non_utf_visibility(false)
                                 .with_visible_size_limit(256 * 1024);
                             update_active_files(fc);
                         });

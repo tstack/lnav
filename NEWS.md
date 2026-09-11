@@ -151,6 +151,9 @@ Interface Changes:
   - In the LOG view, pressing the arrow keys will
     move to the adjacent field as captured by the
     log format.
+* Pressing `G` will now cycle through putting the
+  end of the content at the top and bottom of the
+  screen in cursor mode.
 
 Performance:
 * Individual files are now indexed in parallel, which

@@ -120,6 +120,17 @@ check_output "could not download remote file?" <<EOF
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \
+    localhost:${test_dir}/textfile_invalid_utf8.0
+
+check_output "remote file with invalid UTF-8 was not fully indexed?" <<EOF
+<tiptop>
+	<sample>
+		<node>???????????í¹¤??</node>
+	</sample>
+</tiptop>
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
     "localhost:${test_dir}/remote-log-dir"
 
 check_output "could not download remote file?" <<EOF
