@@ -122,6 +122,8 @@ date_time_scanner::scan(const char* time_dest,
         time_fmt = PTIMEC_FORMAT_STR;
     }
 
+    ptime_conversion_set failed_leading_conversions = 0;
+
     this->dts_zoned_to_local = cfg.c_zoned_to_local;
     while (next_format(time_fmt, curr_time_fmt, this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
@@ -160,15 +162,31 @@ date_time_scanner::scan(const char* time_dest,
                 }
             }
         } else if (time_fmt == PTIMEC_FORMAT_STR) {
-            ptime_func func = PTIMEC_FORMATS[curr_time_fmt].pf_func;
+            const auto& ptf = PTIMEC_FORMATS[curr_time_fmt];
+            ptime_func func = ptf.pf_func;
             off_t off = 0;
+            ptime_conversion_set conversion_flag = 0;
+
+            if (ptf.pf_leading_conversion != 0) {
+                conversion_flag
+                    = ptime_leading_conversion_flag(ptf.pf_leading_conversion);
+                if (failed_leading_conversions & conversion_flag) {
+                    continue;
+                }
+            }
 
 #ifdef HAVE_STRUCT_TM_TM_ZONE
             if (!this->dts_keep_base_tz) {
                 tm_out->et_tm.tm_zone = nullptr;
             }
 #endif
-            if (func(tm_out, time_dest, off, time_len)) {
+            auto matched = func(tm_out, time_dest, off, time_len);
+            if (matched == 0) {
+                // the leading conversion failed, so every other format with
+                // the same one will fail as well.  the flag is zero for a
+                // format with no leading conversion, making this a no-op.
+                failed_leading_conversions |= conversion_flag;
+            } else if (matched == PTIME_MATCHED) {
                 retval = &time_dest[off];
 
                 if (tm_out->et_tm.tm_year < 70) {

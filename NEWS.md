@@ -170,6 +170,7 @@ Performance:
 * Individual files are now indexed in parallel, which
   should speed up opening multiple files at the same
   time.  The file content is still indexed serially.
+* Date-time scanning has been sped up a bit.
 
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.

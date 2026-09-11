@@ -88,10 +88,22 @@ ptime_upto_end(const char* str, off_t& off_inout, ssize_t len)
     return true;
 }
 
+/**
+ * The most bytes a month name is allowed to occupy.  A Latin script month
+ * needs about a dozen, but a full month name in a multibyte locale can run
+ * well past twenty.
+ */
+static constexpr off_t PTIME_B_MAX_WIDTH = 32;
+
 bool ptime_b_slow(struct exttm* dst,
                   const char* str,
                   off_t& off_inout,
                   ssize_t len);
+
+bool ptime_b_bounded(struct exttm* dst,
+                     const char* str,
+                     off_t start,
+                     off_t end);
 
 inline bool
 ptime_b_int(struct exttm* dst, const char* str, off_t off)
@@ -152,14 +164,14 @@ ptime_b_int(struct exttm* dst, const char* str, off_t off)
     return false;
 }
 
-#define PTIME_CHECK_b(dst, str, off) \
+#define PTIME_CHECK_b(dst, str, off, fmt_index) \
     if (str[off + 3] == '.' || isalpha(str[off + 3]) \
         || !ptime_b_int(dst, str, off)) \
     { \
         off_t tmp_off = off; \
         if (!ptime_b_slow(dst, str, tmp_off, len)) { \
             off_inout = off; \
-            return false; \
+            return fmt_index; \
         } \
         auto diff = tmp_off - (off + 3); \
         off_inout += diff; \
@@ -189,6 +201,73 @@ ptime_b(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     return ptime_b_slow(dst, str, off_inout, len);
 }
+
+/**
+ * Find the extent of a "%b" that is followed by the literal `delim` in the
+ * format string.  On success, [b_start, b_end) covers the month name.
+ *
+ * A three byte name is decoded here, since that is only an integer compare,
+ * and b_start is set to -1 to record that there is nothing left to do.
+ * Anything longer is left to ptime_b_finish() to decode after the rest of the
+ * format has matched, which keeps the expensive strptime() call away from the
+ * lines that were never going to match.
+ */
+inline bool
+ptime_b_locate(struct exttm* dst,
+               const char* str,
+               off_t start,
+               ssize_t len,
+               char delim,
+               off_t& b_start,
+               off_t& b_end)
+{
+    auto limit = start + PTIME_B_MAX_WIDTH;
+
+    if (limit > len) {
+        limit = len;
+    }
+    for (auto scan = start + 3; scan < limit; scan++) {
+        if (str[scan] != delim) {
+            continue;
+        }
+
+        b_end = scan;
+        if (scan - start == 3 && ptime_b_int(dst, str, start)) {
+            b_start = -1;
+        } else {
+            b_start = start;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+inline bool
+ptime_b_finish(struct exttm* dst, const char* str, off_t b_start, off_t b_end)
+{
+    if (b_start < 0) {
+        return true;
+    }
+
+    return ptime_b_bounded(dst, str, b_start, b_end);
+}
+
+#define PTIME_LOCATE_b(dst, str, off, delim, b_start, b_end, fmt_index) \
+    { \
+        const off_t b_off = (off); \
+        if (!ptime_b_locate(dst, str, b_off, len, delim, b_start, b_end)) { \
+            off_inout = b_off; \
+            return fmt_index; \
+        } \
+        off_inout += (b_end - b_off) - 3; \
+    }
+
+#define PTIME_FINISH_b(dst, str, b_start, b_end, fmt_index) \
+    if (!ptime_b_finish(dst, str, b_start, b_end)) { \
+        off_inout = b_start; \
+        return fmt_index; \
+    }
 
 inline void
 ftime_a(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
@@ -309,18 +388,18 @@ ftime_b(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     }
 }
 
-#define PTIME_CHECK_S(dst, str, off) \
+#define PTIME_CHECK_S(dst, str, off, fmt_index) \
     dst->et_tm.tm_sec = (str[off] - '0') * 10 + (str[off + 1] - '0'); \
     if (dst->et_tm.tm_sec < 0 || dst->et_tm.tm_sec >= 60) { \
         off_inout = off; \
-        return false; \
+        return fmt_index; \
     } \
     dst->et_flags |= ETF_SECOND_SET;
 
 inline bool
 ptime_S(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, { PTIME_CHECK_S(dst, str, off_inout); });
+    PTIME_CONSUME(2, { PTIME_CHECK_S(dst, str, off_inout, false); });
 
     return true;
 }
@@ -482,18 +561,18 @@ ftime_L(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((millis / 1) % 10));
 }
 
-#define PTIME_CHECK_M(dst, str, off) \
+#define PTIME_CHECK_M(dst, str, off, fmt_index) \
     dst->et_tm.tm_min = (str[off] - '0') * 10 + (str[off + 1] - '0'); \
     if (dst->et_tm.tm_min < 0 || dst->et_tm.tm_min >= 60) { \
         off_inout = off; \
-        return false; \
+        return fmt_index; \
     } \
     dst->et_flags |= ETF_MINUTE_SET;
 
 inline bool
 ptime_M(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, { PTIME_CHECK_M(dst, str, off_inout); });
+    PTIME_CONSUME(2, { PTIME_CHECK_M(dst, str, off_inout, false); });
 
     return true;
 }
@@ -505,7 +584,7 @@ ftime_M(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((tm.et_tm.tm_min / 1) % 10));
 }
 
-#define PTIME_CHECK_H(dst, str, off) \
+#define PTIME_CHECK_H(dst, str, off, fmt_index) \
     if (str[off] == ' ') { \
         dst->et_tm.tm_hour = 0; \
     } else { \
@@ -514,14 +593,14 @@ ftime_M(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     dst->et_tm.tm_hour += (str[off + 1] - '0'); \
     if (dst->et_tm.tm_hour < 0 || dst->et_tm.tm_hour > 23) { \
         off_inout = off; \
-        return false; \
+        return fmt_index; \
     } \
     dst->et_flags |= ETF_HOUR_SET;
 
 inline bool
 ptime_H(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, { PTIME_CHECK_H(dst, str, off_inout); });
+    PTIME_CONSUME(2, { PTIME_CHECK_H(dst, str, off_inout, false); });
 
     return true;
 }
@@ -687,7 +766,7 @@ ftime_I(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((hour / 1) % 10));
 }
 
-#define PTIME_CHECK_d(dst, str, off) \
+#define PTIME_CHECK_d(dst, str, off, fmt_index) \
     dst->et_tm.tm_yday = -1; \
     if (str[off] == ' ') { \
         dst->et_tm.tm_mday = 0; \
@@ -699,13 +778,13 @@ ftime_I(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
         dst->et_flags |= ETF_DAY_SET; \
     } else { \
         off_inout = off; \
-        return false; \
+        return fmt_index; \
     }
 
 inline bool
 ptime_d(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, { PTIME_CHECK_d(dst, str, off_inout); });
+    PTIME_CONSUME(2, { PTIME_CHECK_d(dst, str, off_inout, false); });
 
     return true;
 }
@@ -979,21 +1058,21 @@ ftime_p(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('M');
 }
 
-#define PTIME_CHECK_Y(dst, str, off) \
+#define PTIME_CHECK_Y(dst, str, off, fmt_index) \
     dst->et_tm.tm_year \
         = ((str[off + 0] - '0') * 1000 + (str[off + 1] - '0') * 100 \
            + (str[off + 2] - '0') * 10 + (str[off + 3] - '0') * 1) \
         - 1900; \
     if (dst->et_tm.tm_year < 0 || dst->et_tm.tm_year > 1100) { \
         off_inout = off; \
-        return false; \
+        return fmt_index; \
     } \
     dst->et_flags |= ETF_YEAR_SET;
 
 inline bool
 ptime_Y(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(4, { PTIME_CHECK_Y(dst, str, off_inout); });
+    PTIME_CONSUME(4, { PTIME_CHECK_Y(dst, str, off_inout, false); });
 
     return true;
 }
@@ -1256,15 +1335,15 @@ ftime_N(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((nano / 1) % 10));
 }
 
-#define PTIME_CHECK_CHAR(expected, actual) \
+#define PTIME_CHECK_CHAR(expected, actual, fmt_index) \
     if (expected != actual) { \
-        return false; \
+        return fmt_index; \
     }
 
 inline bool
 ptime_char(char val, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(1, { PTIME_CHECK_CHAR(val, str[off_inout]); });
+    PTIME_CONSUME(1, { PTIME_CHECK_CHAR(val, str[off_inout], false); });
 
     return true;
 }
@@ -1345,8 +1424,30 @@ ftime_at(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
 }
 
-using ptime_func = bool (*)(struct exttm*, const char*, off_t&, ssize_t);
+constexpr int32_t PTIME_MATCHED = -1;
+constexpr int32_t PTIME_TOO_SHORT = -2;
+
+/**
+ * A ptime_func returns PTIME_MATCHED on success, PTIME_TOO_SHORT if the input
+ * is shorter than the minimum width of the format, and otherwise the index in
+ * the format string of the element that failed to match.
+ */
+using ptime_func = int32_t (*)(struct exttm*, const char*, off_t&, ssize_t);
 using ftime_func = void (*)(char*, off_t&, size_t, const struct exttm&);
+
+/**
+ * The set of leading conversions that have already failed for a given input.
+ * Conversion specifiers are limited to '@' and the ASCII letters, so the whole
+ * set fits in a single word.  ptimec checks that every pf_leading_conversion
+ * it emits falls in that range.
+ */
+using ptime_conversion_set = uint64_t;
+
+constexpr ptime_conversion_set
+ptime_leading_conversion_flag(char conv)
+{
+    return ptime_conversion_set{1} << (conv - '@');
+}
 
 bool ptime_fmt(const char* fmt,
                struct exttm* dst,
@@ -1362,6 +1463,7 @@ struct ptime_fmt {
     const char* pf_fmt;
     ptime_func pf_func;
     ftime_func pf_ffunc;
+    char pf_leading_conversion;
 };
 
 extern struct ptime_fmt PTIMEC_FORMATS[];

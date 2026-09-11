@@ -40,7 +40,6 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "config.h"
 #include "date/date.h"
 #include "date/tz.h"
 
@@ -112,18 +111,8 @@ tm* secs2tm(lnav::time64_t tim, tm* res);
 time_t tm2sec(const tm* t);
 void secs2wday(const timeval& tv, tm* res);
 
-inline time_t
-convert_log_time_to_local(time_t value)
-{
-    tm tm;
-
-    localtime_r(&value, &tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-    tm.tm_zone = NULL;
-#endif
-    tm.tm_isdst = 0;
-    return tm2sec(&tm);
-}
+time_t
+convert_log_time_to_local(time_t value);
 
 constexpr lnav::time64_t MAX_TIME_T = 4000000000LL;
 

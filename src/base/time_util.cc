@@ -334,6 +334,19 @@ secs2wday(const struct timeval& tv, struct tm* res)
     }
 }
 
+time_t
+convert_log_time_to_local(time_t value)
+{
+    tm tm;
+
+    localtime_r(&value, &tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm.tm_zone = NULL;
+#endif
+    tm.tm_isdst = 0;
+    return tm2sec(&tm);
+}
+
 struct tm*
 secs2tm(lnav::time64_t tim, struct tm* res)
 {

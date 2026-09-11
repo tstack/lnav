@@ -30,6 +30,7 @@
  */
 
 #include <optional>
+#include <vector>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -84,18 +85,74 @@ spec_fixed_width(char spec)
     }
 }
 
+static std::optional<size_t>
+spec_min_width(char spec)
+{
+    switch (spec) {
+        case 'j':
+        case 'm':
+        case 'z':
+            return 1;
+        case 'f':
+            return 0;
+        case 'd':
+        case 'H':
+        case 'M':
+        case 'S':
+        case 'y':
+            return 2;
+        case 'b':
+            return 3;
+        case 'Y':
+            return 4;
+        default:
+            return std::nullopt;
+    }
+}
+
+/**
+ * Check if a "%b" at the given index can have its decoding put off until the
+ * rest of the format has matched.  The literal that follows gives us the
+ * extent of the month name, so the name itself does not need to be looked at
+ * until we know the rest of the format matched.
+ */
+static bool
+can_defer_b(const char* fmt, int index)
+{
+    return fmt[index] == '%' && fmt[index + 1] == 'b'
+        && fmt[index + 2] != '\0' && fmt[index + 2] != '%';
+}
+
+static bool
+has_deferred_b(const char* fmt)
+{
+    for (int index = 0; fmt[index]; index++) {
+        if (fmt[index] != '%') {
+            continue;
+        }
+        if (can_defer_b(fmt, index)) {
+            return true;
+        }
+        index += 1;
+    }
+
+    return false;
+}
+
 int
 main(int argc, char* argv[])
 {
+    std::vector<char> leading_conversions;
     int retval = EXIT_SUCCESS;
 
     fputs(PRELUDE, stdout);
     for (int lpc = 1; lpc < argc; lpc++) {
         const char* arg = argv[lpc];
+        char leading_conversion = 0;
 
         printf(
             "// %s\n"
-            "bool ptime_f%d(struct exttm *dst, const char *str, off_t "
+            "int32_t ptime_f%d(struct exttm *dst, const char *str, off_t "
             "&off_inout, "
             "ssize_t len) {\n"
             "    dst->et_flags = 0;\n"
@@ -107,7 +164,7 @@ main(int argc, char* argv[])
         size_t min_width = 0;
         for (int index = 0; arg[index]; index++) {
             if (arg[index] == '%') {
-                auto fixed_width_opt = spec_fixed_width(arg[index + 1]);
+                auto fixed_width_opt = spec_min_width(arg[index + 1]);
                 if (fixed_width_opt.has_value()) {
                     min_width += fixed_width_opt.value();
                 } else {
@@ -122,17 +179,36 @@ main(int argc, char* argv[])
         if (min_width > 0) {
             printf(
                 "    if (len - off_inout < %lu) {\n"
-                "        return false;\n"
+                "        return PTIME_TOO_SHORT;\n"
                 "    }\n",
                 min_width);
+        }
+
+        auto deferred_b_index = std::optional<int>();
+        if (has_deferred_b(arg)) {
+            printf("    off_t b_start = 0, b_end = 0;\n");
         }
 
         auto checked_pos = std::optional<size_t>(0);
         for (int index = 0; arg[index]; index++) {
             if (startswith(&arg[index], "%Y-%m-%dT%H:%M")) {
                 printf(
-                    "    if (!ptime_YmdTHM(dst, str, off_inout, len)) return "
-                    "false;\n");
+                    "    {\n"
+                    "        auto rc = ptime_YmdTHM(dst, str, off_inout, "
+                    "len);\n"
+                    "        if (rc != PTIME_MATCHED) {\n");
+                if (index == 0) {
+                    leading_conversion = 'Y';
+                    printf("            return rc;\n");
+                } else {
+                    // the index reported by ptime_YmdTHM is relative to the
+                    // start of the prefix it matches
+                    printf("            return rc < 0 ? rc : rc + %d;\n",
+                           index);
+                }
+                printf(
+                    "        }\n"
+                    "    }\n");
                 index += 13;
                 checked_pos = std::nullopt;
             } else if (arg[index] == '%') {
@@ -145,20 +221,30 @@ main(int argc, char* argv[])
                     }
                 }
 
+                // "%b" is left out of the leading conversion cache.  A
+                // deferred "%b" reports a failure at index zero when the
+                // literal that delimits the month name is missing, which is a
+                // property of the format rather than of the input, so it is
+                // not something other formats can be skipped on.
+                if (index == 0 && arg[index + 1] != 'b') {
+                    leading_conversion = arg[index + 1];
+                }
                 switch (arg[index + 1]) {
                     case 'a':
                         if (arg[index + 2]) {
                             printf(
                                 "    if (!ptime_upto('%s', str, off_inout, "
                                 "len)) "
-                                "return false;\n",
-                                escape_char(arg[index + 2]));
+                                "return %d;\n",
+                                escape_char(arg[index + 2]),
+                                index);
                         } else {
                             printf(
                                 "    if (!ptime_upto_end(dst, str, "
                                 "off_inout, "
                                 "len)) "
-                                "return false;\n");
+                                "return %d;\n",
+                                index);
                         }
                         index += 1;
                         break;
@@ -168,37 +254,78 @@ main(int argc, char* argv[])
                                 "    if (!ptime_Z_upto(dst, str, off_inout, "
                                 "len, "
                                 "'%s')) "
-                                "return false;\n",
-                                escape_char(arg[index + 2]));
+                                "return %d;\n",
+                                escape_char(arg[index + 2]),
+                                index);
                         } else {
                             printf(
                                 "    if (!ptime_Z_upto_end(dst, str, "
                                 "off_inout, "
                                 "len)) "
-                                "return false;\n");
+                                "return %d;\n",
+                                index);
                         }
                         index += 1;
                         break;
                     case '@':
                         printf(
                             "    if (!ptime_at(dst, str, off_inout, len)) "
-                            "return "
-                            "false;\n");
+                            "return %d;\n",
+                            index);
                         index += 1;
                         break;
+                    case 'b':
+                        if (!deferred_b_index.has_value()
+                            && can_defer_b(arg, index))
+                        {
+                            // the literal after the "%b" delimits the month
+                            // name, so we can find the end of the name now and
+                            // decode it once the rest of the format matches.
+                            deferred_b_index = index;
+                            if (fixed_width_opt) {
+                                printf(
+                                    "    PTIME_LOCATE_b(dst, str, off_inout + "
+                                    "%lu, '%s', b_start, b_end, %d);\n",
+                                    checked_pos.value(),
+                                    escape_char(arg[index + 2]),
+                                    index);
+                                if (min_width > 0) {
+                                    // locating the name may have moved
+                                    // off_inout past the width that was
+                                    // checked on entry.
+                                    printf(
+                                        "    if (len - off_inout < %lu) {\n"
+                                        "        return PTIME_TOO_SHORT;\n"
+                                        "    }\n",
+                                        min_width);
+                                }
+                            } else {
+                                printf(
+                                    "    if (!ptime_b_locate(dst, str, "
+                                    "off_inout, len, '%s', b_start, b_end)) "
+                                    "return %d;\n"
+                                    "    off_inout = b_end;\n",
+                                    escape_char(arg[index + 2]),
+                                    index);
+                            }
+                            index += 1;
+                            break;
+                        }
+                        // FALLTHROUGH
                     default:
                         if (fixed_width_opt) {
                             printf(
                                 "    PTIME_CHECK_%c(dst, str, off_inout + "
-                                "%lu);\n",
+                                "%lu, %d);\n",
                                 arg[index + 1],
-                                checked_pos.value());
+                                checked_pos.value(),
+                                index);
                         } else {
                             printf(
                                 "    if (!ptime_%c(dst, str, off_inout, len)) "
-                                "return "
-                                "false;\n",
-                                arg[index + 1]);
+                                "return %d;\n",
+                                arg[index + 1],
+                                index);
                         }
                         index += 1;
                         break;
@@ -214,24 +341,41 @@ main(int argc, char* argv[])
             } else {
                 if (checked_pos) {
                     printf(
-                        "    PTIME_CHECK_CHAR('%s', str[off_inout + %lu]);\n",
+                        "    PTIME_CHECK_CHAR('%s', str[off_inout + %lu], %d);\n",
                         escape_char(arg[index]),
-                        checked_pos.value());
+                        checked_pos.value(),
+                        index);
                     checked_pos = checked_pos.value() + 1;
                 } else {
                     printf(
                         "    if (!ptime_char('%s', str, off_inout, len)) "
-                        "return "
-                        "false;\n",
-                        escape_char(arg[index]));
+                        "return %d;\n",
+                        escape_char(arg[index]),
+                        index);
                 }
             }
+        }
+        if (deferred_b_index.has_value()) {
+            printf("    PTIME_FINISH_b(dst, str, b_start, b_end, %d);\n",
+                   deferred_b_index.value());
         }
         if (checked_pos.has_value()) {
             printf("    off_inout += %lu;\n", min_width);
         }
-        printf("    return true;\n");
+        printf("    return PTIME_MATCHED;\n");
         printf("}\n\n");
+
+        if (leading_conversion != 0
+            && (leading_conversion < '@' || leading_conversion > 'z'))
+        {
+            fprintf(stderr,
+                    "error: leading conversion '%%%c' of '%s' is outside the "
+                    "range that ptime_leading_conversion_flag() can encode\n",
+                    leading_conversion,
+                    arg);
+            retval = EXIT_FAILURE;
+        }
+        leading_conversions.emplace_back(leading_conversion);
     }
     for (int lpc = 1; lpc < argc; lpc++) {
         const char* arg = argv[lpc];
@@ -268,10 +412,14 @@ main(int argc, char* argv[])
         if (strcmp(argv[lpc], "%Y-%m-%dT%H:%M:%S") == 0) {
             default_format_index = lpc - 1;
         }
-        printf("    { \"%s\", ptime_f%d, ftime_f%d },\n", argv[lpc], lpc, lpc);
+        printf("    { \"%s\", ptime_f%d, ftime_f%d, 0x%x },\n",
+               argv[lpc],
+               lpc,
+               lpc,
+               leading_conversions[lpc - 1]);
     }
     printf("\n");
-    printf("    { nullptr, nullptr, nullptr }\n");
+    printf("    { nullptr, nullptr, nullptr, 0 }\n");
     printf("};\n");
 
     printf("const char *PTIMEC_FORMAT_STR[] = {\n");

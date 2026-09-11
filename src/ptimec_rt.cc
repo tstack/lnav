@@ -29,6 +29,8 @@
  * @file ptimec_rt.cc
  */
 
+#include <optional>
+
 #include "ptimec.hh"
 
 #include <string.h>
@@ -36,57 +38,91 @@
 #include "base/short_alloc.h"
 #include "config.h"
 
-bool
-ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+/**
+ * Run strptime() with "%b" over a copy of the given input.  The copy is needed
+ * since strptime() wants a NUL-terminated string.  Returns the number of bytes
+ * of the input that were consumed.
+ */
+static std::optional<size_t>
+ptime_b_strptime(struct exttm* dst, const char* src, size_t src_len)
 {
-    size_t zone_len = len - off_inout;
     stack_buf allocator;
-    auto* zone = allocator.allocate(zone_len + 2);
+    auto* zone = allocator.allocate(src_len + 2);
     const char* end_of_date;
 
-    memcpy(zone, &str[off_inout], zone_len);
-    zone[zone_len] = '\0';
+    memcpy(zone, src, src_len);
+    zone[src_len] = '\0';
     if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != nullptr) {
-        off_inout += end_of_date - zone;
+        size_t consumed = end_of_date - zone;
+
         // Some formats append a dot, maybe to align a 3 letter abbrev with the
         // four letter ones?
-        if (off_inout + 1 < len && zone[off_inout] == '.') {
-            off_inout += 1;
+        if (consumed < src_len && zone[consumed] == '.') {
+            consumed += 1;
         }
-        dst->et_flags |= ETF_MONTH_SET;
-        return true;
+        return consumed;
     }
 
     // Some locales (e.g., es_ES on macOS) use abbreviated months with a
     // trailing dot ("ene.", "feb."). If the input lacks the dot, insert one
     // after the alphabetic prefix and retry.
-    {
-        off_t alpha_len = 0;
-        while (alpha_len < (off_t) zone_len && isalpha(zone[alpha_len])) {
-            alpha_len++;
-        }
-        if (alpha_len > 0 && (alpha_len >= (off_t) zone_len
-                              || zone[alpha_len] != '.'))
-        {
-            memmove(zone + alpha_len + 1, zone + alpha_len,
-                    zone_len - alpha_len + 1);
-            zone[alpha_len] = '.';
-            if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != nullptr) {
-                auto consumed = end_of_date - zone;
-                // Subtract the inserted dot from consumed length if strptime
-                // consumed past it
-                if (consumed > alpha_len) {
-                    off_inout += consumed - 1;
-                } else {
-                    off_inout += consumed;
-                }
-                dst->et_flags |= ETF_MONTH_SET;
-                return true;
+    size_t alpha_len = 0;
+    while (alpha_len < src_len && isalpha(zone[alpha_len])) {
+        alpha_len++;
+    }
+    if (alpha_len > 0 && (alpha_len >= src_len || zone[alpha_len] != '.')) {
+        memmove(zone + alpha_len + 1, zone + alpha_len, src_len - alpha_len + 1);
+        zone[alpha_len] = '.';
+        if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != nullptr) {
+            size_t consumed = end_of_date - zone;
+
+            // Subtract the inserted dot from consumed length if strptime
+            // consumed past it
+            if (consumed > alpha_len) {
+                consumed -= 1;
             }
+            return consumed;
         }
     }
 
-    return false;
+    return std::nullopt;
+}
+
+bool
+ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    auto avail = (size_t) (len - off_inout);
+
+    if (avail > (size_t) PTIME_B_MAX_WIDTH) {
+        avail = PTIME_B_MAX_WIDTH;
+    }
+
+    auto consumed = ptime_b_strptime(dst, &str[off_inout], avail);
+    if (!consumed) {
+        return false;
+    }
+
+    off_inout += consumed.value();
+    dst->et_flags |= ETF_MONTH_SET;
+
+    return true;
+}
+
+bool
+ptime_b_bounded(struct exttm* dst, const char* str, off_t start, off_t end)
+{
+    auto region_len = (size_t) (end - start);
+    auto consumed = ptime_b_strptime(dst, &str[start], region_len);
+
+    // the delimiter that follows "%b" in the format decides where the month
+    // name ends, so a partial match is not good enough here.
+    if (!consumed || consumed.value() != region_len) {
+        return false;
+    }
+
+    dst->et_flags |= ETF_MONTH_SET;
+
+    return true;
 }
 
 bool

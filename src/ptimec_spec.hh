@@ -33,14 +33,26 @@
 #include <sys/types.h>
 
 #include "base/time_util.hh"
+#include "ptimec.hh"
 
-inline bool
+/**
+ * Match the "%Y-%m-%dT%H:%M" prefix that most ISO-8601-ish formats share.
+ * Follows the ptime_func protocol: PTIME_MATCHED, PTIME_TOO_SHORT, or the
+ * index in the format string of the element that failed.  The year is checked
+ * on its own so that a bad year can be reported as a failure of the leading
+ * "%Y" while a bad separator or later field is not.
+ */
+inline int32_t
 ptime_YmdTHM(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     static constexpr auto WIDTH = 16;
+    // the index of the leading "%Y"
+    static constexpr int32_t YEAR_INDEX = 0;
+    // the index of the '-' that follows the leading "%Y"
+    static constexpr int32_t POST_YEAR_INDEX = 2;
 
     if (off_inout + WIDTH > len) {
-        return false;
+        return PTIME_TOO_SHORT;
     }
 
     auto sep_count = size_t{0};
@@ -67,10 +79,13 @@ ptime_YmdTHM(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     auto M = (str[off_inout + 14] - '0') * 10 + (str[off_inout + 15] - '0') * 1;
 
     auto Y = (Y_hundreds * 100 + Y_ones) - 1900;
-    if (sep_count != 4 || Y < 0 || Y > 1100 || m < 1 || m > 12 || d < 0
-        || d > 31 || H < 0 || H > 23 || M < 0 || M > 59)
+    if (Y < 0 || Y > 1100) {
+        return YEAR_INDEX;
+    }
+    if (sep_count != 4 || m < 1 || m > 12 || d < 0 || d > 31 || H < 0 || H > 23
+        || M < 0 || M > 59)
     {
-        return false;
+        return POST_YEAR_INDEX;
     }
 
     dst->et_tm.tm_year = Y;
@@ -84,7 +99,7 @@ ptime_YmdTHM(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     off_inout += WIDTH;
 
-    return true;
+    return PTIME_MATCHED;
 }
 
 #endif
