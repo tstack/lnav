@@ -224,6 +224,9 @@
                     "error": {
                         "value": "✘"
                     },
+                    "fatal": {
+                        "value": "💀"
+                    },
                     "log-level-trace": {
                         "value": "🅃"
                     },
@@ -1278,6 +1281,9 @@
                     "error": {
 
                     },
+                    "fatal": {
+
+                    },
                     "log-level-trace": {
 
                     },
@@ -2271,6 +2277,9 @@
                     "error": {
 
                     },
+                    "fatal": {
+
+                    },
                     "log-level-trace": {
 
                     },
@@ -3261,6 +3270,9 @@
 
                     },
                     "error": {
+
+                    },
+                    "fatal": {
 
                     },
                     "log-level-trace": {
@@ -4290,6 +4302,9 @@
                     "error": {
 
                     },
+                    "fatal": {
+
+                    },
                     "log-level-trace": {
 
                     },
@@ -5283,6 +5298,9 @@
                     "error": {
 
                     },
+                    "fatal": {
+
+                    },
                     "log-level-trace": {
 
                     },
@@ -6273,6 +6291,9 @@
 
                     },
                     "error": {
+
+                    },
+                    "fatal": {
 
                     },
                     "log-level-trace": {
@@ -7277,6 +7298,9 @@
                     "error": {
 
                     },
+                    "fatal": {
+
+                    },
                     "log-level-trace": {
 
                     },
@@ -8277,6 +8301,9 @@
 
                     },
                     "error": {
+
+                    },
+                    "fatal": {
 
                     },
                     "log-level-trace": {

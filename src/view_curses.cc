@@ -1049,6 +1049,7 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_info,
              lt.lt_icon_warning,
              lt.lt_icon_error,
+             lt.lt_icon_fatal,
 
              lt.lt_icon_log_level_trace,
              lt.lt_icon_log_level_debug,

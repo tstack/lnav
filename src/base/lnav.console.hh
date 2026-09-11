@@ -96,9 +96,12 @@ struct user_message {
         info,
         warning,
         error,
+        fatal,
     };
 
     static user_message raw(const attr_line_t& al);
+
+    static user_message fatal(const attr_line_t& al);
 
     static user_message error(const attr_line_t& al);
 

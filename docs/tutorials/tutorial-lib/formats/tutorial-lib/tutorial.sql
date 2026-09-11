@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS lnav_tutorial_lines
 
 -- Copy the tutorial data from the markdown frontmatter to
 -- the appropriate tables.
-CREATE TRIGGER IF NOT EXISTS add_tutorial_data
+CREATE TRIGGER IF NOT EXISTS lnav_db.add_tutorial_data
     AFTER INSERT
-    ON lnav_events
+    ON lnav_db.lnav_events
     WHEN jget(new.content, '/$schema') = 'https://lnav.org/event-file-format-detected-v1.schema.json' AND
          jget(new.content, '/format') = 'text/markdown'
 BEGIN
@@ -71,16 +71,16 @@ BEGIN
         FROM lnav_tutorial_log_notification;
 END;
 
-CREATE TRIGGER IF NOT EXISTS tutorial_move_log_after_load
+CREATE TRIGGER IF NOT EXISTS lnav_db.tutorial_move_log_after_load
     AFTER INSERT
-    ON lnav_events
+    ON lnav_db.lnav_events
     WHEN jget(new.content, '/$schema') = 'https://lnav.org/event-session-loaded-v1.schema.json'
 BEGIN
     UPDATE lnav_views SET selection = 0 WHERE name = 'log';
 END;
 
-CREATE TRIGGER IF NOT EXISTS lnav_tutorial_view_listener UPDATE OF selection
-    ON lnav_views_echo
+CREATE TRIGGER IF NOT EXISTS lnav_db.lnav_tutorial_view_listener UPDATE OF selection
+    ON lnav_db.lnav_views_echo
     WHEN new.name = 'log'
 BEGIN
     INSERT OR IGNORE INTO lnav_tutorial_progress

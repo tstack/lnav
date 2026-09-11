@@ -54,6 +54,7 @@ enum class ui_icon_t : int32_t {
     info,
     warning,
     error,
+    fatal,
 
     log_level_trace,
     log_level_debug,

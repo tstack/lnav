@@ -52,6 +52,7 @@
 #include "fmt/format.h"
 #include "format.scripts.hh"
 #include "lnav_config.hh"
+#include "lnav_util.hh"
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "log_format_loader.hh"
@@ -1427,6 +1428,32 @@ load_format_file(const std::filesystem::path& filename,
     return retval;
 }
 
+std::vector<intern_string_t>
+validate_format_file(const std::filesystem::path& filename,
+                     std::vector<lnav::console::user_message>& errors)
+{
+    // Parse into an empty registry so that a format that is already
+    // installed is not merged with the one being checked.  ensure_format()
+    // would otherwise hand back the loaded definition and build() would
+    // validate the two spliced together.
+    auto saved_formats = std::exchange(LOG_FORMATS, log_formats_map_t{});
+    auto restore = finally([&saved_formats]() {
+        LOG_FORMATS = std::move(saved_formats);
+    });
+
+    auto retval = load_format_file(filename, errors);
+    for (const auto& name : retval) {
+        auto iter = LOG_FORMATS.find(name);
+
+        if (iter == LOG_FORMATS.end()) {
+            continue;
+        }
+        iter->second->build(errors);
+    }
+
+    return retval;
+}
+
 static void
 load_from_path(const std::filesystem::path& path,
                std::vector<lnav::console::user_message>& errors)
@@ -1593,6 +1620,7 @@ static void
 exec_sql_in_path(sqlite3* db,
                  const std::map<std::string, scoped_value_t>& global_vars,
                  const std::filesystem::path& path,
+                 const std::set<std::filesystem::path>& skip_paths,
                  std::vector<lnav::console::user_message>& errors)
 {
     auto format_path = path / "formats/*/*.sql";
@@ -1602,6 +1630,13 @@ exec_sql_in_path(sqlite3* db,
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             auto filename = std::filesystem::path(gl->gl_pathv[lpc]);
+
+            if (skip_paths.count(filename) > 0) {
+                log_info("skipping SQL file that is being installed: %s",
+                         filename.c_str());
+                continue;
+            }
+
             auto read_res = lnav::filesystem::read_file(filename);
 
             if (read_res.isOk()) {
@@ -1625,10 +1660,11 @@ void
 load_format_extra(sqlite3* db,
                   const std::map<std::string, scoped_value_t>& global_vars,
                   const std::vector<std::filesystem::path>& extra_paths,
+                  const std::set<std::filesystem::path>& skip_paths,
                   std::vector<lnav::console::user_message>& errors)
 {
     for (const auto& extra_path : extra_paths) {
-        exec_sql_in_path(db, global_vars, extra_path, errors);
+        exec_sql_in_path(db, global_vars, extra_path, skip_paths, errors);
     }
 }
 

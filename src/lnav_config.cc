@@ -60,6 +60,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "default-config.h"
+#include "lnav_util.hh"
 #include "log_level.hh"
 #include "scn/scan.h"
 #include "styling.hh"
@@ -668,6 +669,10 @@ static const json_path_container theme_icons_handlers = {
     yajlpp::property_handler("error")
         .with_description("Icon for error messages")
         .for_child(&lnav_theme::lt_icon_error)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("fatal")
+        .with_description("Icon for fatal messages")
+        .for_child(&lnav_theme::lt_icon_fatal)
         .with_children(icon_config_handlers),
 
     yajlpp::property_handler("log-level-trace")
@@ -2317,6 +2322,24 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
     reload_config(errors);
 
     rollback_lnav_config = lnav_config;
+}
+
+void
+validate_config_file(const std::filesystem::path& path,
+                     std::vector<lnav::console::user_message>& errors)
+{
+    // Layer the file on top of a copy of the live configuration so that
+    // theme inheritance and the like resolve the way they would once the
+    // file is installed, and put the original back afterwards so nothing
+    // here reaches the rest of the process.
+    auto saved_config = lnav_config;
+    auto saved_locations = lnav_config_locations;
+    auto restore = finally([&saved_config, &saved_locations]() {
+        lnav_config = std::move(saved_config);
+        lnav_config_locations = std::move(saved_locations);
+    });
+
+    load_config_from(lnav_config, path, errors);
 }
 
 std::string

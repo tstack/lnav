@@ -86,6 +86,7 @@
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
 #include "CLI/CLI.hpp"
+#include "cmds.hh"
 #include "date/tz.h"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
@@ -97,13 +98,13 @@
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
+#include "lnav.commands.hh"
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.management_cli.hh"
 #include "lnav.prompt.hh"
-#include "cmds.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_data_helper.hh"
@@ -117,13 +118,13 @@
 #include "logline_window.hh"
 #include "md4cpp.hh"
 #include "piper.looper.hh"
-#include "lnav.commands.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "spectro_source.hh"
+#include "sql_execute.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
@@ -1604,7 +1605,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     attr_line_t("search completed in ")
                         .append(lnav::roles::number(
                             fmt::format(FMT_STRING("{:.3}"), secs)))
-                        .append(" seconds \u2014 convert to a named search with ")
+                        .append(
+                            " seconds \u2014 convert to a named search with ")
                         .append(":create-named-search"_symbol));
             }
         }
@@ -1772,8 +1774,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
               }
               auto full_height = (int) ncplane_dim_y(tc.tc_window);
               auto max_height = std::max(2, full_height - 16);
-              auto new_height
-                  = std::clamp(tc.tc_height + delta, 2, max_height);
+              auto new_height = std::clamp(tc.tc_height + delta, 2, max_height);
               tc.set_height(new_height);
           };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
@@ -2822,6 +2823,79 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
 
 verbosity_t verbosity = verbosity_t::standard;
 
+/**
+ * Load the formats and register the vtabs so that the log tables exist.
+ * Installing a SQL script or a config file needs them, since either one can
+ * refer to a table like "lnav_db.access_log".
+ *
+ * This mirrors the sequence run during normal startup, further down in
+ * main() -- keep the two in step.  The scripts that are already installed
+ * are executed as well, so that a script being checked sees the same
+ * schema it will see the next time lnav starts.  The one exception is
+ * skip_sql_paths: the installed copy of a script that is being installed
+ * again has to be passed over, since the copy being installed is executed
+ * too and the two would collide.
+ */
+static void
+ensure_log_format_tables(
+    std::vector<lnav::console::user_message>& setup_errors,
+    const std::set<std::filesystem::path>& skip_sql_paths = {})
+{
+    static auto prepared = false;
+
+    if (prepared) {
+        return;
+    }
+    prepared = true;
+
+    auto op_guard = lnav_opid_guard::once("register_vtab");
+    auto* vtab_manager = injector::get<log_vtab_manager*>();
+    auto& ec = lnav_data.ld_exec_context;
+
+    load_formats(lnav_data.ld_config_paths, setup_errors);
+
+    {
+        auto_mem<char, sqlite3_free> errmsg;
+        auto init_sql_str = init_sql.to_string_fragment_producer()->to_string();
+        if (sqlite3_exec(lnav_data.ld_db.in(),
+                         init_sql_str.data(),
+                         nullptr,
+                         nullptr,
+                         errmsg.out())
+            != SQLITE_OK)
+        {
+            fprintf(stderr,
+                    "error: unable to execute DB init -- %s\n",
+                    errmsg.in());
+        }
+    }
+
+    vtab_manager->register_vtab(std::make_shared<all_logs_vtab>());
+    vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
+        log_format::find_root_format("generic_log")));
+    vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
+        log_format::find_root_format("lnav_piper_log")));
+    for (const auto& iter : log_format::get_root_formats()) {
+        auto lvi = iter->get_vtab_impl();
+
+        if (lvi != nullptr) {
+            vtab_manager->register_vtab(lvi);
+        }
+    }
+
+    load_format_extra(lnav_data.ld_db.in(),
+                      ec.ec_global_vars,
+                      lnav_data.ld_config_paths,
+                      skip_sql_paths,
+                      setup_errors);
+    load_format_vtabs(vtab_manager, setup_errors);
+
+    for (const auto& um : setup_errors) {
+        log_warning("problem found while preparing the log tables: %s",
+                    um.um_message.get_string().c_str());
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -3381,6 +3455,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             = lnav::paths::dotlnav() / "formats/installed";
         auto configs_installed_path
             = lnav::paths::dotlnav() / "configs/installed";
+        // The user is acting on these files right now, so a warning about
+        // one of them is worth showing without having to ask for it.
+        auto install_flags = mode_flags;
+        install_flags.mf_print_warnings = true;
 
         if (argc == 0) {
             const auto install_reason
@@ -3388,16 +3466,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                       .append("-i"_symbol)
                       .append(
                           " option expects one or more log format "
-                          "definition "
-                          "files to install in your lnav "
-                          "configuration "
-                          "directory")
+                          "definition files to install in your lnav "
+                          "configuration directory")
                       .move();
             const auto install_help
                 = attr_line_t(
                       "log format definitions are JSON files that "
-                      "tell lnav "
-                      "how to understand log files\n")
+                      "tell lnav how to understand log files\n")
                       .append(
                           "See: "
                           "https://docs.lnav.org/en/latest/"
@@ -3411,6 +3486,20 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                      .with_help(install_help));
             return EXIT_FAILURE;
         }
+
+        // The copy of a script that is already installed must not be run
+        // here, since the copy being installed is executed to check it.
+        std::set<std::filesystem::path> installed_sql_paths;
+        for (const auto& file_path : file_args) {
+            if (endswith(file_path, ".sql")) {
+                installed_sql_paths.insert(
+                    formats_installed_path
+                    / std::filesystem::path(file_path).filename());
+            }
+        }
+
+        std::vector<lnav::console::user_message> existing_errors;
+        ensure_log_format_tables(existing_errors, installed_sql_paths);
 
         for (const auto& file_path : file_args) {
             if (endswith(file_path, ".git")) {
@@ -3467,9 +3556,36 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     return EXIT_FAILURE;
                 }
 
+                auto sql_content = read_res.unwrap();
+
+                ensure_log_format_tables(loader_errors);
+                sql_execute_script(lnav_data.ld_db.in(),
+                                   ec.ec_global_vars,
+                                   sql_path.string().c_str(),
+                                   sql_content.c_str(),
+                                   loader_errors);
+                if (!loader_errors.empty()) {
+                    loader_errors.emplace_back(
+                        lnav::console::user_message::fatal(
+                            attr_line_t("unable to install SQL file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason("the file is not valid SQL")
+                            .with_help(
+                                attr_line_t("Fix the errors or manually "
+                                            "install the file to ")
+                                    .append(lnav::roles::file(
+                                        formats_installed_path.string()))));
+                }
+                if (!loader_errors.empty()
+                    && print_user_msgs(loader_errors, install_flags)
+                        != EXIT_SUCCESS)
+                {
+                    return EXIT_FAILURE;
+                }
+
                 auto dst_path = formats_installed_path / sql_path.filename();
                 auto write_res
-                    = lnav::filesystem::write_file(dst_path, read_res.unwrap());
+                    = lnav::filesystem::write_file(dst_path, sql_content);
                 if (write_res.isErr()) {
                     lnav::console::print(
                         stderr,
@@ -3508,12 +3624,46 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             auto src_path = std::filesystem::path(file_path);
             std::filesystem::path dst_name;
             if (file_type == config_file_type::CONFIG) {
+                validate_config_file(src_path, loader_errors);
+                if (!loader_errors.empty()) {
+                    loader_errors.emplace_back(
+                        lnav::console::user_message::fatal(
+                            attr_line_t(
+                                "unable to install configuration file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason("the file is not valid")
+                            .with_help(
+                                attr_line_t("Fix the errors or manually "
+                                            "install the file to ")
+                                    .append(lnav::roles::file(
+                                        configs_installed_path.string()))));
+                }
+                if (!loader_errors.empty()
+                    && print_user_msgs(loader_errors, install_flags)
+                        != EXIT_SUCCESS)
+                {
+                    return EXIT_FAILURE;
+                }
+
                 dst_name = src_path.filename();
             } else {
-                auto format_list = load_format_file(src_path, loader_errors);
-
+                auto format_list
+                    = validate_format_file(src_path, loader_errors);
                 if (!loader_errors.empty()) {
-                    if (print_user_msgs(loader_errors, mode_flags)
+                    loader_errors.emplace_back(
+                        lnav::console::user_message::fatal(
+                            attr_line_t(
+                                "unable to install format file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason("the file is not valid")
+                            .with_help(
+                                attr_line_t("Fix the errors or manually "
+                                            "install the file to ")
+                                    .append(lnav::roles::file(
+                                        configs_installed_path.string()))));
+                }
+                if (!loader_errors.empty()) {
+                    if (print_user_msgs(loader_errors, install_flags)
                         != EXIT_SUCCESS)
                     {
                         return EXIT_FAILURE;
@@ -3614,8 +3764,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     setenv("TERMINFO_DIRS",
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
-
-    auto* vtab_manager = injector::get<log_vtab_manager*>();
 
     lnav_data.ld_log_source.set_exec_context(&lnav_data.ld_exec_context);
     lnav_data.ld_views[LNV_HELP]
@@ -3737,53 +3885,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         lnav_data.ld_views[lpc].set_title(lnav_view_titles[lpc]);
     }
 
-    load_formats(lnav_data.ld_config_paths, loader_errors);
+    ensure_log_format_tables(loader_errors);
 
-    {
-        auto_mem<char, sqlite3_free> errmsg;
-        auto init_sql_str = init_sql.to_string_fragment_producer()->to_string();
-
-        if (sqlite3_exec(lnav_data.ld_db.in(),
-                         init_sql_str.data(),
-                         nullptr,
-                         nullptr,
-                         errmsg.out())
-            != SQLITE_OK)
-        {
-            fprintf(stderr,
-                    "error: unable to execute DB init -- %s\n",
-                    errmsg.in());
-        }
-    }
-
-    {
-        auto op_guard = lnav_opid_guard::once("register_vtab");
-
-        vtab_manager->register_vtab(std::make_shared<all_logs_vtab>());
-        vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
-            log_format::find_root_format("generic_log")));
-        vtab_manager->register_vtab(std::make_shared<log_format_vtab_impl>(
-            log_format::find_root_format("lnav_piper_log")));
-
-        for (auto& iter : log_format::get_root_formats()) {
-            auto lvi = iter->get_vtab_impl();
-
-            if (lvi != nullptr) {
-                vtab_manager->register_vtab(lvi);
-            }
-        }
-
-        load_format_extra(lnav_data.ld_db.in(),
-                          ec.ec_global_vars,
-                          lnav_data.ld_config_paths,
-                          loader_errors);
-        load_format_vtabs(vtab_manager, loader_errors);
-
-        if (!loader_errors.empty()) {
-            if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
-                if (mmode_ops == nullptr) {
-                    return EXIT_FAILURE;
-                }
+    if (!loader_errors.empty()) {
+        if (print_user_msgs(loader_errors, mode_flags) != EXIT_SUCCESS) {
+            if (mmode_ops == nullptr) {
+                return EXIT_FAILURE;
             }
         }
     }

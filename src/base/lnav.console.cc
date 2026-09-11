@@ -100,6 +100,16 @@ user_message::raw(const attr_line_t& al)
 }
 
 user_message
+user_message::fatal(const attr_line_t& al)
+{
+    user_message retval;
+
+    retval.um_level = level::fatal;
+    retval.um_message.append(al);
+    return retval;
+}
+
+user_message
 user_message::error(const attr_line_t& al)
 {
     user_message retval;
@@ -188,6 +198,17 @@ user_message::to_attr_line(render_flags flags) const
                 retval.al_attrs.emplace_back(line_range{0, 1},
                                              VC_ICON.value(ui_icon_t::error));
                 break;
+            case level::fatal: {
+                auto label = attr_line_t()
+                                 .append("fatal"_error)
+                                 .with_attr_for_all(
+                                     VC_STYLE.value(text_attrs::with_underline()
+                                                    | text_attrs::style::bold));
+                retval.append("  ").append(label).append(": ");
+                retval.al_attrs.emplace_back(line_range{0, 1},
+                                             VC_ICON.value(ui_icon_t::fatal));
+                break;
+            }
         }
     }
 
@@ -504,6 +525,8 @@ wchar_for_icon(ui_icon_t ic)
             return {U'\u26a0', role_t::VCR_WARNING};
         case ui_icon_t::error:
             return {U'\u2718', role_t::VCR_ERROR};
+        case ui_icon_t::fatal:
+            return {U'\U0001f480', role_t::VCR_ERROR};
 
         case ui_icon_t::log_level_trace:
             return {U'\U0001F143', role_t::VCR_TEXT};

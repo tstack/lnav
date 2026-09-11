@@ -1,0 +1,9 @@
+[1m[31m✘[0m [1m[31merror[0m: failed to compile SQL statement
+ [1m[31mreason[0m: view web_status already exists
+[36m --> [0m[1m{test_dir}/formats/sqldir/init.sql[0m:2
+[36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mVIEW[0m[37m[40m [0m[37m[40mlnav_db[0m[37m[40m.[0m[37m[40mweb_status[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m                                                        [0m
+[36m | [0m[37m[40m                    [0m[36m[40m^ [0m[1m[31m[40mview web_status already exists[0m[37m[40m                                     [0m
+[36m | [0m[37m[40m  [0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mcs_uri_stem[0m[37m[40m), [0m[37m[40msc_status[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_db[0m[37m[40m.[0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mgroup[0m[37m[40m [0m[1m[36m[40mby[0m[37m[40m [0m[37m[40msc_status[0m[37m[40m;[0m
+[1m[31m💀[0m [1m[4m[31mfatal[0m: unable to install SQL file: [1m{test_dir}/formats/sqldir/init.sql[0m
+ [33mreason[0m: the file is not valid SQL
+[36m =[0m [36mhelp[0m: Fix the errors or manually install the file to [1m../installer-test-home/.lnav/formats/installed[0m

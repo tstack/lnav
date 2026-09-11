@@ -159,6 +159,13 @@ void reset_config(const std::string& path);
 
 void reload_config(std::vector<lnav::console::user_message>& errors);
 
+/**
+ * Check a configuration file for problems without changing the
+ * configuration this process is running with.
+ */
+void validate_config_file(const std::filesystem::path& path,
+                          std::vector<lnav::console::user_message>& errors);
+
 std::string save_config();
 
 std::string dump_config();

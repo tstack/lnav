@@ -120,6 +120,7 @@ struct lnav_theme {
     positioned_property<icon_config> lt_icon_info;
     positioned_property<icon_config> lt_icon_warning;
     positioned_property<icon_config> lt_icon_error;
+    positioned_property<icon_config> lt_icon_fatal;
 
     positioned_property<icon_config> lt_icon_log_level_trace;
     positioned_property<icon_config> lt_icon_log_level_debug;

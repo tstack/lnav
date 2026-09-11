@@ -1,0 +1,57 @@
+[1m[31m✘[0m [1m[31merror[0m: “foo” is not a valid value for option “[1m/bad_sample_log/value/pid/kind[0m”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:24
+[36m | [0m[37m[40m                "kind": "foo"           [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/bad_sample_log/value/pid/kind[0m [4m<data-type>[0m
+         [1mDescription[0m
+           The type of data in the field
+         [1mAllowed Values[0m
+           [1mstring[0m, [1minteger[0m, [1mfloat[0m, [1mboolean[0m, [1mjson[0m, [1mstruct[0m, [1mquoted[0m, [1mxml[0m, [1mtimestamp[0m, [1many[0m
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "abc: foo"
+ [1m[31mreason[0m: unrecognized timestamp -- abc
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:34
+[36m =[0m [36mnote[0m: the following custom formats were tried:
+           abc
+           [36m^ [0m“[1m%i[0m”[36m matched up to here[0m
+[36m =[0m [36mhelp[0m: If the timestamp format is not supported by default, you can add a custom format with the “[1mtimestamp-format[0m” property
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "1428634687123| debug hello"
+ [1m[31mreason[0m: “[1mdebug[0m” does not match the expected level of “[1minfo[0m”
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:37
+[36m =[0m [36mnote[0m: matched regex = [1mwith-level[0m
+         captured level = “debug”
+         level regular expression match results:
+           [1m/bad_sample_log/level/debug[0m = debug
+             debug
+             [36m^[0m[36m---[0m[36m^[0m
+           [1m/bad_sample_log/level/info[0m = info
+             [33mno match[0m
+[36m =[0m [36mhelp[0m: Level regexes are not anchored to the start/end of the string.  Prepend “[1m^[0m” to the expression to match from the start of the string and append “[1m$[0m” to match up to the end of the string.
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mwith-level[0m”
+ [1m[31mreason[0m: pattern does not match entire multiline sample message
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:41
+[36m =[0m [36mnote[0m: [1mwith-level[0m = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m
+[36m =[0m [36mhelp[0m: use “.*” to match new-lines
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "1428634687123; foo bar"
+ [1m[31mreason[0m: sample does not match any patterns
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:45
+[36m =[0m [36mnote[0m: the following shows how each pattern matched this sample:
+            [37m[40m1428634687123; foo bar[0m
+                         [36m^ [0m[1mbad-time[0m[36m matched up to here[0m
+                              [36m^ [0m[1msemi[0m[36m matched up to here[0m
+                         [36m^ [0m[1mstd[0m[36m matched up to here[0m
+                         [36m^ [0m[1mwith-level[0m[36m matched up to here[0m
+[36m =[0m [36mnote[0m: [1mbad-time  [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+         [1msemi      [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m; [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+         [1mstd       [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mpid[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m”
+         [1mwith-level[0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+[33m⚠[0m [33mwarning[0m: invalid pattern: “[1m/bad_sample_log/regex/semi[0m”
+   [33mreason[0m: pattern does not match any samples
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:10
+[36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
+[33m⚠[0m [33mwarning[0m: invalid pattern: “[1m/bad_sample_log/regex/std[0m”
+   [33mreason[0m: pattern does not match any samples
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:7
+[36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
+[1m[31m💀[0m [1m[4m[31mfatal[0m: unable to install format file: [1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m
+ [33mreason[0m: the file is not valid
+[36m =[0m [36mhelp[0m: Fix the errors or manually install the file to [1m../installer-test-home/.lnav/configs/installed[0m

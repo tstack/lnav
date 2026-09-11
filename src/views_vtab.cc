@@ -672,7 +672,6 @@ CREATE TABLE lnav_db.lnav_views (
             }
         }
         if (tc.get_selection() != selection) {
-
             tc.set_selection(vis_line_t(selection.value_or(-1_vl)));
         }
         if (top_meta != nullptr) {
@@ -1020,6 +1019,11 @@ CREATE TABLE lnav_db.lnav_view_filters (
         auto* mod_vt = (vtab_module<lnav_view_filters>::vtab*) tab;
         auto& tc = lnav_data.ld_views[view_index];
         auto* tss = tc.get_sub_source();
+        if (tss == nullptr) {
+            log_warning("ignoring INSERT on lnav_view_filters for %s",
+                        tc.get_title().c_str());
+            return SQLITE_OK;
+        }
         auto& fs = tss->get_filters();
         auto filter_index
             = lang.value_or(filter_lang_t::REGEX) == filter_lang_t::REGEX

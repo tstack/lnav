@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "gitea  | 2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-no-tscap/format.json[0m:24
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m💀[0m [1m[4m[31mfatal[0m: unable to install format file: [1m{test_dir}/bad-config/formats/invalid-no-tscap/format.json[0m
+ [33mreason[0m: the file is not valid
+[36m =[0m [36mhelp[0m: Fix the errors or manually install the file to [1m../installer-test-home/.lnav/configs/installed[0m

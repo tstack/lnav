@@ -19,6 +19,9 @@
                     "error": {
                         "value": "\u2718"
                     },
+                    "fatal": {
+                        "value": "\uD83D\uDC80"
+                    },
                     "log-level-trace": {
                         "value": "\uD83C\uDD43"
                     },
