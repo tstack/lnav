@@ -543,13 +543,15 @@ static const struct json_path_container key_command_handlers = {
 
 static const struct json_path_container keymap_def_handlers = {
     yajlpp::pattern_property_handler(
-        "(?<key_seq>(?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2})+)")
+        "(?<key_seq>(?:(?:cmd-)?x[0-9a-f]{2}|f[0-9]{1,2}|n[0-7]{4,7})+)")
         .with_synopsis("<utf8-key-code-in-hex>")
         .with_description(
             "Map of key codes to commands to execute.  The field names are "
             "the keys to be mapped using as a hexadecimal representation of "
             "the UTF-8 encoding.  Each byte of the UTF-8 should start with "
-            "an 'x' followed by the hexadecimal representation of the byte.")
+            "an 'x' followed by the hexadecimal representation of the byte. "
+            "Special keys are encoded as an 'n' followed by the octal key "
+            "identifier (for example, Enter is 'n4201761').")
         .with_obj_provider<key_command, key_map>(
             [](const yajlpp_provider_context& ypc, key_map* km) {
                 auto& retval = km->km_seq_to_cmd[ypc.get_substr("key_seq")];
@@ -1295,6 +1297,13 @@ static constexpr json_path_handler_base::enum_value_t _time_column_values[] = {
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
+static constexpr json_path_handler_base::enum_value_t _json_fields_values[] = {
+    {"flat"_frag, logfile_sub_source_ns::json_fields_t::flat},
+    {"tree"_frag, logfile_sub_source_ns::json_fields_t::tree},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const json_path_container log_view_handlers = {
     yajlpp::property_handler("time-column")
         .with_description(
@@ -1307,6 +1316,14 @@ static const json_path_container log_view_handlers = {
         .with_example("enabled"_frag)
         .for_field(&_lnav_config::lc_log_source,
                    &logfile_sub_source_ns::config::c_time_column),
+    yajlpp::property_handler("json-fields")
+        .with_description(
+            "How to display JSON fields in the details overlay: "
+            "'flat' for jget() paths or 'tree' for an indented tree")
+        .with_enum_values(_json_fields_values)
+        .with_example("tree"_frag)
+        .for_field(&_lnav_config::lc_log_source,
+                   &logfile_sub_source_ns::config::c_json_fields),
 };
 
 static const json_path_container views_handlers = {
@@ -1323,6 +1340,10 @@ static const json_path_container ui_handlers = {
         .with_example("%a %b %d %H:%M:%S %Z"_frag)
         .for_field(&_lnav_config::lc_top_status_cfg,
                    &top_status_source_cfg::tssc_clock_format),
+    yajlpp::property_handler("show-top-status")
+        .with_synopsis("bool")
+        .with_description("Show the top status bar")
+        .for_field(&_lnav_config::lc_ui_show_top_status),
     yajlpp::property_handler("dim-text")
         .with_synopsis("bool")
         .with_description("Reduce the brightness of text (useful for xterms). "

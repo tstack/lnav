@@ -109,6 +109,7 @@ enum class lnav_mouse_mode {
 
 struct _lnav_config {
     top_status_source_cfg lc_top_status_cfg;
+    bool lc_ui_show_top_status{true};
     bool lc_ui_dim_text;
     bool lc_ui_default_colors{true};
     std::string lc_ui_keymap;

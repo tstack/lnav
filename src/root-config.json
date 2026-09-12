@@ -9,6 +9,7 @@
     },
     "ui": {
         "clock-format": "%Y-%m-%dT%H:%M:%S %Z",
+        "show-top-status": true,
         "dim-text": false,
         "default-colors": true,
         "keymap": "default",
@@ -21,7 +22,8 @@
         },
         "views": {
             "log": {
-                "time-column": "disabled"
+                "time-column": "disabled",
+                "json-fields": "flat"
             }
         }
     },

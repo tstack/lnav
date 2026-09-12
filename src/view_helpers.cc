@@ -47,6 +47,7 @@
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
+#include "lnav_config.hh"
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "pretty_printer.hh"
@@ -852,7 +853,13 @@ layout_views()
     lnav_data.ld_user_message_view.set_y(bottom);
     lnav_data.ld_user_message_view.set_visible(vis);
 
+    auto show_top_status = lnav_config.lc_ui_show_top_status;
     lnav_data.ld_status[LNS_TOP].set_width(width);
+    lnav_data.ld_status[LNS_TOP].set_visible(show_top_status);
+    breadcrumb_view->set_y(show_top_status ? 1 : 0);
+    for (auto& tc : lnav_data.ld_views) {
+        tc.set_y(show_top_status ? 2 : 1);
+    }
 
     bottom -= 1;
     lnav_data.ld_status[LNS_BOTTOM].set_y(bottom);

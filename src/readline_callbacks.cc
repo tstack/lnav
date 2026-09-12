@@ -1105,16 +1105,24 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 
         case ln_mode_t::COMMAND: {
             auto& ec = lnav_data.ld_exec_context;
+            auto content = rc.get_content();
+
+            if (trim(content).empty()) {
+                lnav_data.ld_bottom_source.grep_error("");
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+                return;
+            }
+
             ec.ec_dry_run = true;
 
             lnav_data.ld_preview_generation += 1;
             clear_preview();
             auto src_guard = ec.enter_source(
-                SRC, 1, fmt::format(FMT_STRING(":{}"), rc.get_content()));
+                SRC, 1, fmt::format(FMT_STRING(":{}"), content));
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            auto result = execute_command(ec, rc.get_content());
+            auto result = execute_command(ec, content);
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
@@ -1519,27 +1527,31 @@ rl_callback(textinput_curses& rc)
         case ln_mode_t::COMMAND: {
             rc.clear_alt_value();
             auto cmdline = rc.get_content();
-            auto src_guard = lnav_data.ld_exec_context.enter_source(
-                SRC, 1, fmt::format(FMT_STRING(":{}"), cmdline));
-            readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
-            ec.ec_source.back().s_content.with_attr_for_all(
-                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            auto hist_guard = prompt.p_cmd_history.start_operation(cmdline);
-            auto exec_res = execute_command(ec, cmdline);
-            if (exec_res.isOk()) {
-                rc.set_inactive_value(exec_res.unwrap());
-            } else {
-                auto um = exec_res.unwrapErr();
+            if (!trim(cmdline).empty()) {
+                auto src_guard = lnav_data.ld_exec_context.enter_source(
+                    SRC, 1, fmt::format(FMT_STRING(":{}"), cmdline));
+                readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
+                ec.ec_source.back().s_content.with_attr_for_all(
+                    VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                auto hist_guard = prompt.p_cmd_history.start_operation(cmdline);
+                auto exec_res = execute_command(ec, cmdline);
+                if (exec_res.isOk()) {
+                    rc.set_inactive_value(exec_res.unwrap());
+                } else {
+                    auto um = exec_res.unwrapErr();
 
-                hist_guard.og_status = log_level_t::LEVEL_ERROR;
-                lnav_data.ld_user_message_source.replace_with(
-                    um.to_attr_line().rtrim());
-                lnav_data.ld_user_message_view.reload_data();
-                lnav_data.ld_user_message_expiration
-                    = std::chrono::steady_clock::now() + 20s;
+                    hist_guard.og_status = log_level_t::LEVEL_ERROR;
+                    lnav_data.ld_user_message_source.replace_with(
+                        um.to_attr_line().rtrim());
+                    lnav_data.ld_user_message_view.reload_data();
+                    lnav_data.ld_user_message_expiration
+                        = std::chrono::steady_clock::now() + 20s;
+                    rc.clear_inactive_value();
+                }
+                ec.ec_source.back().s_content.clear();
+            } else {
                 rc.clear_inactive_value();
             }
-            ec.ec_source.back().s_content.clear();
             break;
         }
 

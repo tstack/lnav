@@ -44,6 +44,11 @@
 
 class field_overlay_source : public text_overlay_menu {
 public:
+    enum class json_fields_t {
+        flat,
+        tree,
+    };
+
     explicit field_overlay_source(logfile_sub_source& lss, text_sub_source& tss)
         : fos_lss(lss), fos_tss(tss), fos_log_helper(lss)
     {
@@ -99,6 +104,7 @@ public:
     };
 
     std::stack<context> fos_contexts;
+    json_fields_t fos_json_fields{json_fields_t::flat};
     logfile_sub_source& fos_lss;
     text_sub_source& fos_tss;
     uint32_t fos_index_generation{0};

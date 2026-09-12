@@ -287,7 +287,12 @@ Display
      - Switch to/from the SQL result view and move to the corresponding in the
        log_line column
    * - :kbd:`p`
-     - Toggle the display of the log parser results
+     - Toggle the details overlay for the focused line and focus it when
+       shown
+   * - :kbd:`Escape`
+     - Close the details overlay when it is open
+   * - :kbd:`Ctrl` + :kbd:`]`
+     - Focus the details overlay when it is open
    * - :kbd:`Tab`
      - In the log/text views, focus on the configuration panel for editing
        filters and examining the list of loaded files.
