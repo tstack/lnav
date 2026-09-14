@@ -186,6 +186,10 @@ logfmt::parser::step()
         return error{remaining.sf_begin, "expecting key followed by '='"};
     }
 
+    if (before.startswith("<") && before.count(' ') > 0) {
+        return error{before.sf_begin, "xml node"};
+    }
+
     if (before.sf_end == remaining.sf_end) {
         this->p_next_input = after;
         return before;

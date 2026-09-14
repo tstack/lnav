@@ -4246,7 +4246,18 @@ external_log_format::emit_detail_block(const std::vector<bool>& used_values,
                 lv.lv_meta.lvm_name.to_string_fragment());
             this->json_append_to_cache(": ", 2);
             lr.lr_start = this->jlf_attr_line.al_string.size();
-            this->json_append_to_cache(utf_scan_res.usr_valid_frag);
+            // The valid prefix stops at the first bad byte, so on invalid
+            // input take the whole line instead of dropping the rest of it.
+            // Rendering scrubs the bad bytes further down.
+            this->json_append_to_cache(
+                utf_scan_res.is_valid()
+                    ? utf_scan_res.usr_valid_frag
+                    : frag.sub_range(
+                          0,
+                          utf_scan_res.usr_remaining
+                              ? utf_scan_res.usr_remaining->sf_begin
+                                  - frag.sf_begin - 1
+                              : frag.length()));
             lr.lr_end = this->jlf_attr_line.al_string.size();
             if (lv.lv_meta.lvm_name == this->elf_body_field) {
                 this->jlf_attr_line.al_attrs.emplace_back(lr, SA_BODY.value());

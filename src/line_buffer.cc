@@ -562,6 +562,11 @@ line_buffer::resize_buffer(size_t new_max)
          || (!this->lb_compressed && new_max <= MAX_LINE_BUFFER_SIZE))
         && !this->lb_buffer.has_capacity_for(new_max))
     {
+        log_info("fd(%d): increasing line buffer size from %zd to %zd at %lld",
+                 this->lb_fd.get(),
+                 this->lb_buffer.capacity(),
+                 new_max,
+                 this->lb_file_offset);
         /* Still need more space, try a realloc. */
         this->lb_share_manager.invalidate_refs();
         this->lb_buffer.expand_to(new_max);
@@ -980,13 +985,12 @@ line_buffer::fill_range(file_off_t start,
             } else {
                 this->lb_stats.s_decompressions += 1;
                 if (false
-                    && this->lb_last_line_offset.load(
-                           std::memory_order_relaxed)
+                    && this->lb_last_line_offset.load(std::memory_order_relaxed)
                         > 0)
                 {
                     this->lb_stats.s_hist[(this->lb_file_offset * 10)
                                           / this->lb_last_line_offset.load(
-                                          std::memory_order_relaxed)] += 1;
+                                              std::memory_order_relaxed)] += 1;
                 }
                 rc = gi->read(this->lb_buffer.end(),
                               this->lb_file_offset + this->lb_buffer.size(),
@@ -1076,10 +1080,9 @@ line_buffer::fill_range(file_off_t start,
         {
             this->lb_stats.s_preads += 1;
             if (false
-                    && this->lb_last_line_offset.load(
-                           std::memory_order_relaxed)
-                        > 0)
-                {
+                && this->lb_last_line_offset.load(std::memory_order_relaxed)
+                    > 0)
+            {
                 this->lb_stats.s_hist[(this->lb_file_offset * 10)
                                       / this->lb_last_line_offset.load(
                                           std::memory_order_relaxed)] += 1;
@@ -1243,8 +1246,7 @@ line_buffer::load_next_line(file_range prev_line)
         // three-byte marker into the first line.  The bytes stay in
         // lb_buffer but are rendered invisible by fast-forwarding the
         // first line's start offset (mirrors lb_piper_header_size).
-        if (this->lb_buffer.size() >= 3
-            && (uint8_t) this->lb_buffer[0] == 0xEF
+        if (this->lb_buffer.size() >= 3 && (uint8_t) this->lb_buffer[0] == 0xEF
             && (uint8_t) this->lb_buffer[1] == 0xBB
             && (uint8_t) this->lb_buffer[2] == 0xBF)
         {
@@ -1377,8 +1379,7 @@ line_buffer::load_next_line(file_range prev_line)
                 retval.li_file_range.fr_size = lf - line_start;
                 // delim
                 retval.li_file_range.fr_size += 1;
-                if (offset
-                    >= this->lb_last_line_offset.load(
+                if (offset >= this->lb_last_line_offset.load(
                         std::memory_order_relaxed))
                 {
                     this->lb_last_line_offset.store(
@@ -1408,10 +1409,9 @@ line_buffer::load_next_line(file_range prev_line)
                      *   2. file is written
                      *   3. read_line() - returns the middle of partial line.
                      */
-                    this->lb_last_line_offset.store(
-                        offset, std::memory_order_relaxed);
-                } else if (offset
-                           >= this->lb_last_line_offset.load(
+                    this->lb_last_line_offset.store(offset,
+                                                    std::memory_order_relaxed);
+                } else if (offset >= this->lb_last_line_offset.load(
                                std::memory_order_relaxed))
                 {
                     this->lb_last_line_offset.store(
@@ -1426,8 +1426,13 @@ line_buffer::load_next_line(file_range prev_line)
             if (!this->is_pipe() || !this->is_pipe_closed()) {
                 retval.li_partial = true;
             }
+            // Sized from the line, not from the buffer.  ensure_available()
+            // reclaims whatever sits in front of this line by shifting it
+            // down, so the only thing that warrants a realloc is a line that
+            // will not fit in the buffer at all.
             request_size
-                = std::min<ssize_t>(this->lb_buffer.size() + DEFAULT_INCREMENT,
+                = std::min<ssize_t>(retval.li_file_range.fr_size
+                                        + DEFAULT_INCREMENT,
                                     MAX_LINE_BUFFER_SIZE);
         }
 

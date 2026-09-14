@@ -1733,6 +1733,13 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
         sbc.sbc_opids.los_opid_ranges.reserve(32);
         sbc.sbc_tids.ltis_tid_ranges.reserve(8);
+        // Asked once for the pass rather than once per line: it is a virtual
+        // call that answers for the filter stack, which belongs to the UI
+        // thread and cannot change while this scan is running.  A filter
+        // added in the meantime re-reads the file through reobserve_from()
+        // anyway, so a stale answer here costs nothing.
+        const auto observer_wants_text = this->lf_logline_observer != nullptr
+            && this->lf_logline_observer->logline_wants_text();
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -1750,18 +1757,28 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
             prev_range = li.li_file_range;
 
-            auto read_result
-                = this->lf_line_buffer.read_range(li.li_file_range);
-            if (read_result.isErr()) {
-                log_error("%s:read failure -- %s",
-                          this->lf_filename_as_string.c_str(),
-                          read_result.unwrapErr().c_str());
-                this->close();
-                return rebuild_result_t::INVALID;
-            }
-
             this->lf_input_lines += 1;
-            auto sbr = read_result.unwrap();
+
+            // Nothing downstream looks at the bytes of a line in a file that
+            // has no format and is no longer being scanned for one, and
+            // getting a reference to them is not free: registering one walks
+            // the owning buffer's ref list, as does letting it go, and
+            // erase_ansi() below would copy the line to rewrite it.  Empty
+            // from here down in that case -- see needs_line_text() for who
+            // would have read it.
+            shared_buffer_ref sbr;
+            if (this->needs_line_text(li, observer_wants_text)) {
+                auto read_result
+                    = this->lf_line_buffer.read_range(li.li_file_range);
+                if (read_result.isErr()) {
+                    log_error("%s:read failure -- %s",
+                              this->lf_filename_as_string.c_str(),
+                              read_result.unwrapErr().c_str());
+                    this->close();
+                    return rebuild_result_t::INVALID;
+                }
+                sbr = read_result.unwrap();
+            }
 
             if (this->lf_format == nullptr
                 && !this->lf_options.loo_non_utf_is_visible

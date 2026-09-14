@@ -59,6 +59,13 @@ public:
                            logfile::const_iterator ll_end,
                            const shared_buffer_ref& sbr) override;
 
+    bool logline_wants_text() const override
+    {
+        // The same condition logline_new_lines() already early-outs on: with
+        // no filters, the text is never examined.
+        return !this->lfo_filter_stack.empty();
+    }
+
     void logline_eof(const logfile& lf) override;
 
     bool excluded(uint32_t filter_in_mask,

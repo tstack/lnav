@@ -697,6 +697,37 @@ protected:
                         const line_info& li,
                         scan_batch_context& sbc);
 
+    /**
+     * @return Whether anything in the indexing scan still needs this line's
+     * bytes.
+     *
+     * False once no format is going to be found for this file:
+     * process_prefix() builds the logline out of the line_info alone on that
+     * path, and every block in the scan that does read the line is gated on
+     * having a format, on the line being invalid UTF-8, or on a filter being
+     * configured.
+     *
+     * @param observer_wants_text What the logline observer said when the
+     * scan started.  Passed in rather than asked for here because the answer
+     * holds for the whole pass and this runs on every line.
+     */
+    bool needs_line_text(const line_info& li, bool observer_wants_text) const
+    {
+        // Both of these can change part-way through a pass -- a format may
+        // still be found, and detection may give up -- so they are read per
+        // line rather than hoisted with the observer's answer.
+        if (this->lf_format != nullptr || this->lf_options.loo_detect_format) {
+            return true;
+        }
+        if (!li.li_utf8_scan_result.is_valid()) {
+            // The not-utf note and the TRACE-level warning both hexdump the
+            // offending line.
+            return true;
+        }
+
+        return observer_wants_text;
+    }
+
     void set_base_time_for(scan_batch_context& sbc, const line_info& li);
 
 private:
@@ -821,6 +852,14 @@ public:
                                    logfile::const_iterator ll_begin,
                                    logfile::const_iterator ll_end,
                                    const shared_buffer_ref& sbr) = 0;
+
+    /**
+     * @return Whether logline_new_lines() will look at the line text.  Saying
+     * no lets the indexer skip reading the bytes and hand over an empty
+     * buffer; the observer is still called, since it may have per-line
+     * bookkeeping of its own.
+     */
+    virtual bool logline_wants_text() const { return true; }
 
     virtual void logline_eof(const logfile& lf) = 0;
 };

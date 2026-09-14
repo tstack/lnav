@@ -1,5 +1,5 @@
 [1m[31m✘[0m [1m[31merror[0m: unable to parse markdown file
- [1m[31mreason[0m: file has invalid UTF-8 at offset 22765: Null bytes are not allowed
+ [1m[31mreason[0m: file has invalid UTF-8 at offset 4135: Null bytes are not allowed
 
 UTF-8 decoder capability and stress test
 ----------------------------------------

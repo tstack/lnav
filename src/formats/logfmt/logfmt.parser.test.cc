@@ -313,3 +313,16 @@ TEST_CASE("empty")
 
     CHECK(pair1.is<logfmt::parser::end_of_input>());
 }
+
+TEST_CASE("xml")
+{
+    auto line
+        = "  <node id=\"31236558\" version=\"5\" timestamp=\"2020-06-27T07:40:04Z\" lat=\"35.635073\" lon=\"139.768101\"/>"_frag;
+
+    auto p = logfmt::parser{line};
+    auto pair1 = p.step();
+
+    CHECK(pair1.is<logfmt::parser::error>());
+    CHECK(pair1.get<logfmt::parser::error>().e_offset == 2);
+    CHECK(pair1.get<logfmt::parser::error>().e_msg == "xml node");
+}

@@ -76,3 +76,33 @@ run_test ./drive_line_buffer -i lb-3.index -n 10 lb-3.gz lb-3.dat
 check_output "Random gzipped reads don't match input" <<EOF
 All done
 EOF
+
+# A line that does not start at offset zero and is longer than the buffer.
+# The read request has to be sized from the line, not from the buffer: sizing
+# it from the buffer grew the buffer on every line that straddled the end of
+# it, and gating that growth on the line starting at the front of the buffer
+# stalls instead, since the request then never exceeds what is already cached
+# and fill_range() has nothing left to do.  A pipe cannot break out of that
+# state at all, which is why the same input is run through stdin as well.
+{
+    echo "short line before the long one"
+    ${lnav_test} -nN \
+        -c ";SELECT replicate('x', 1024 * 1024)" -c ':write-raw-to -'
+    echo "short line after the long one"
+} > lb-long.dat
+
+run_test ${lnav_test} -n \
+    -c ';SELECT lines FROM lnav_file' -c ':write-csv-to -' lb-long.dat
+
+check_output "long line in a file was not read back whole" <<LB_LONG_EOF
+lines
+3
+LB_LONG_EOF
+
+cat lb-long.dat | run_test ${lnav_test} -n \
+    -c ';SELECT lines FROM lnav_file' -c ':write-csv-to -'
+
+check_output "long line from a pipe was not read back whole" <<LB_LONG_EOF
+lines
+3
+LB_LONG_EOF

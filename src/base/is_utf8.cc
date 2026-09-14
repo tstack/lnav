@@ -67,25 +67,43 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
     utf8_scan_result retval;
     ssize_t i = 0, valid_end = 0;
     auto in_len = str.length();
-    auto aligned_len = in_len - (in_len % CHUNK_WIDTH);
+    // Reading the optional inside the chunk loop below splits it into basic
+    // blocks and costs the wide load, so it is read exactly once here.  A
+    // disengaged terminator stands in as NUL, which is safe because NUL is
+    // outside the printable range and so already fails the range test.
+    const unsigned char term = terminator.value_or('\0');
+    // How far the byte loop has to get before another chunk test can pay
+    // off.  A terminator `k` bytes into a chunk would otherwise cost `k + 1`
+    // chunk tests, since the byte loop advances one byte and the next test
+    // looks at a window that still holds it.  Only worth doing for the
+    // terminator: a multi-byte character also fails the test, but the byte
+    // loop steps over it in one go and the fast path can resume right after.
+    ssize_t dirty_until = 0;
 
-    while (i < str.length()) {
+    while (i < in_len) {
         // Scan for the common case of just ASCII characters
-        if (i + CHUNK_WIDTH <= aligned_len) {
+        if (i >= dirty_until && i + CHUNK_WIDTH <= in_len) {
             auto found_non_ascii = false;
             auto found_term = false;
-            // pray to the auto-vectorization gods...
             for (auto lpc = 0; lpc < CHUNK_WIDTH; lpc++) {
                 if (ustr[i + lpc] < ' ' || ustr[i + lpc] > '~') {
                     found_non_ascii = true;
                 }
-                if (terminator && ustr[i + lpc] == terminator.value()) {
+                if (ustr[i + lpc] == term) {
                     found_term = true;
                 }
             }
+            if (found_term) {
+                dirty_until = i + CHUNK_WIDTH;
+            }
             if (!found_term && !found_non_ascii) {
                 i += CHUNK_WIDTH;
-                valid_end = i;
+                if (retval.usr_message == nullptr) {
+                    // Past an error this loop is only still running to find
+                    // the terminator and finish the column count; the valid
+                    // prefix ended back at the offending byte.
+                    valid_end = i;
+                }
                 retval.usr_column_width_guess += CHUNK_WIDTH;
                 continue;
             }
@@ -116,7 +134,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
             }
             i += 1;
         } else if (ustr[i] >= 0xC2 && ustr[i] <= 0xDF) /* C2..DF 80..BF */ {
-            if (i + 1 < str.length()) /* Expect a 2nd byte */ {
+            if (i + 1 < in_len) /* Expect a 2nd byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte between C2 and DF, expecting a "
@@ -133,7 +151,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
             }
             i += 2;
         } else if (ustr[i] == 0xE0) /* E0 A0..BF 80..BF */ {
-            if (i + 2 < str.length()) /* Expect a 2nd and 3rd byte */ {
+            if (i + 2 < in_len) /* Expect a 2nd and 3rd byte */ {
                 if (ustr[i + 1] < 0xA0 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte of E0, expecting a 2nd byte "
@@ -159,7 +177,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
         } else if (ustr[i] >= 0xE1
                    && ustr[i] <= 0xEC) /* E1..EC 80..BF 80..BF */
         {
-            if (i + 2 < str.length()) /* Expect a 2nd and 3rd byte */ {
+            if (i + 2 < in_len) /* Expect a 2nd and 3rd byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte between E1 and EC, expecting the "
@@ -183,7 +201,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
             }
             i += 3;
         } else if (ustr[i] == 0xED) /* ED 80..9F 80..BF */ {
-            if (i + 2 < str.length()) /* Expect a 2nd and 3rd byte */ {
+            if (i + 2 < in_len) /* Expect a 2nd and 3rd byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0x9F) {
                     retval.usr_message
                         = "After a first byte of ED, expecting 2nd byte "
@@ -209,7 +227,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
         } else if (ustr[i] >= 0xEE
                    && ustr[i] <= 0xEF) /* EE..EF 80..BF 80..BF */
         {
-            if (i + 2 < str.length()) /* Expect a 2nd and 3rd byte */ {
+            if (i + 2 < in_len) /* Expect a 2nd and 3rd byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte between EE and EF, expecting 2nd "
@@ -233,7 +251,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
             }
             i += 3;
         } else if (ustr[i] == 0xF0) /* F0 90..BF 80..BF 80..BF */ {
-            if (i + 3 < str.length()) /* Expect a 2nd, 3rd 3th byte */ {
+            if (i + 3 < in_len) /* Expect a 2nd, 3rd 3th byte */ {
                 if (ustr[i + 1] < 0x90 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte of F0, expecting 2nd byte "
@@ -266,7 +284,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
         } else if (ustr[i] >= 0xF1
                    && ustr[i] <= 0xF3) /* F1..F3 80..BF 80..BF 80..BF */
         {
-            if (i + 3 < str.length()) /* Expect a 2nd, 3rd 3th byte */ {
+            if (i + 3 < in_len) /* Expect a 2nd, 3rd 3th byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0xBF) {
                     retval.usr_message
                         = "After a first byte of F1, F2, or F3, expecting a "
@@ -297,7 +315,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
             }
             i += 4;
         } else if (ustr[i] == 0xF4) /* F4 80..8F 80..BF 80..BF */ {
-            if (i + 3 < str.length()) /* Expect a 2nd, 3rd 3th byte */ {
+            if (i + 3 < in_len) /* Expect a 2nd, 3rd 3th byte */ {
                 if (ustr[i + 1] < 0x80 || ustr[i + 1] > 0x8F) {
                     retval.usr_message
                         = "After a first byte of F4, expecting 2nd byte "
