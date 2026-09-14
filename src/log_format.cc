@@ -1137,10 +1137,38 @@ log_format::annotate(logfile* lf,
     }
 }
 
+std::chrono::microseconds
+time_rollover::apply(std::chrono::microseconds t) const
+{
+    const auto ot = static_cast<time_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(t).count());
+    tm otm;
+
+    gmtime_r(&ot, &otm);
+    otm.tm_yday = -1;
+    if (otm.tm_year < this->tr_off_year) {
+        otm.tm_year = 0;
+    } else {
+        otm.tm_year -= this->tr_off_year;
+    }
+    otm.tm_mon -= this->tr_off_month;
+    if (otm.tm_mon < 0) {
+        otm.tm_mon += 12;
+    }
+    auto new_time = tm2sec(&otm);
+    if (new_time == -1) {
+        return t;
+    }
+    new_time -= (this->tr_off_day * 24 * 60 * 60) + (this->tr_off_hour * 60 * 60);
+
+    return std::chrono::seconds{new_time} + t % std::chrono::seconds{1};
+}
+
 void
 log_format::check_for_new_year(std::vector<logline>& dst,
                                exttm etm,
-                               timeval log_tv) const
+                               timeval log_tv,
+                               scan_batch_context& sbc) const
 {
     if (dst.empty()) {
         return;
@@ -1175,30 +1203,11 @@ log_format::check_for_new_year(std::vector<logline>& dst,
               off_month,
               off_day,
               off_hour);
+    const auto rollover = time_rollover{off_year, off_month, off_day, off_hour};
     for (auto& ll : dst) {
-        time_t ot = ll.get_time<std::chrono::seconds>().count();
-        tm otm;
-
-        gmtime_r(&ot, &otm);
-        otm.tm_yday = -1;
-        if (otm.tm_year < off_year) {
-            otm.tm_year = 0;
-        } else {
-            otm.tm_year -= off_year;
-        }
-        otm.tm_mon -= off_month;
-        if (otm.tm_mon < 0) {
-            otm.tm_mon += 12;
-        }
-        auto new_time = tm2sec(&otm);
-        if (new_time == -1) {
-            continue;
-        }
-        new_time -= (off_day * 24 * 60 * 60) + (off_hour * 60 * 60);
-        auto old_sub = ll.get_subsecond_time<std::chrono::microseconds>();
-        ll.set_time(std::chrono::seconds{new_time});
-        ll.set_subsecond_time(old_sub);
+        ll.set_time(rollover.apply(ll.get_time<>()));
     }
+    sbc.sbc_time_rollovers.emplace_back(rollover);
 }
 
 /*
@@ -2356,7 +2365,7 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
           && (log_time_tm.et_flags & ETF_MONTH_SET)
           && (log_time_tm.et_flags & ETF_YEAR_SET)))
     {
-        this->check_for_new_year(dst, log_time_tm, log_tv);
+        this->check_for_new_year(dst, log_time_tm, log_tv, sbc);
     }
 
     return timestamp_outcome::ok;

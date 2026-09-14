@@ -38,6 +38,7 @@
 #include "cmd.parser.hh"
 #include "data_scanner.hh"
 #include "doctest/doctest.h"
+#include "file_split.hh"
 #include "hasher.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -593,4 +594,120 @@ TEST_CASE("md4cpp::KNOWN_EMOJIS")
         REQUIRE(iter != em.em_shortname2emoji.end());
         CHECK(iter->second.get().e_value == lit.el_value.to_string());
     }
+}
+
+TEST_CASE("file_split::piece_path")
+{
+    using lnav::file_split::is_piece_name;
+    using lnav::file_split::piece_path;
+    using std::filesystem::path;
+
+    CHECK(piece_path("out", "/var/log/access.log.gz", 1)
+          == path("out/access.0001.log"));
+    CHECK(piece_path("out", "syslog.1", 12) == path("out/syslog.1.0012"));
+    CHECK(piece_path(".", "messages", 10000) == path("./messages.10000"));
+
+    CHECK(is_piece_name("access.0003.log", "access.log.gz"));
+    CHECK(is_piece_name("syslog.1.0002", "syslog.1"));
+    CHECK_FALSE(is_piece_name("access.log", "access.log.gz"));
+    CHECK_FALSE(is_piece_name("access.00a3.log", "access.log"));
+    CHECK_FALSE(is_piece_name("syslog.1", "syslog.1"));
+}
+
+TEST_CASE("file_split::policy")
+{
+    using namespace std::chrono_literals;
+    using lnav::file_split::limits;
+    using lnav::file_split::message_info;
+    using lnav::file_split::policy;
+
+    SUBCASE("lines")
+    {
+        limits lim;
+        lim.l_lines = 10;
+        policy pol(lim);
+        const message_info small{100, 4, 4, std::nullopt};
+
+        CHECK_FALSE(pol.should_cut_before(small));
+        pol.add(small);
+        CHECK_FALSE(pol.should_cut_before(small));
+        pol.add(small);
+        CHECK(pol.should_cut_before(small));
+
+        // A message larger than the limit still goes whole into a piece.
+        pol.start_piece();
+        const message_info huge{100, 50, 50, std::nullopt};
+        CHECK_FALSE(pol.should_cut_before(huge));
+        pol.add(huge);
+        CHECK(pol.should_cut_before(small));
+    }
+
+    SUBCASE("entries")
+    {
+        limits lim;
+        lim.l_max_entries = 10;
+        policy pol(lim);
+        const message_info json{100, 1, 6, std::nullopt};
+
+        CHECK_FALSE(pol.should_cut_before(json));
+        pol.add(json);
+        CHECK(pol.should_cut_before(json));
+    }
+
+    SUBCASE("bytes")
+    {
+        limits lim;
+        lim.l_bytes = 1000;
+        policy pol(lim);
+        const message_info msg{600, 1, 1, std::nullopt};
+
+        pol.add(msg);
+        CHECK(pol.should_cut_before(msg));
+    }
+
+    SUBCASE("time")
+    {
+        limits lim;
+        lim.l_duration = 1h;
+        policy pol(lim);
+        auto at = [](std::chrono::microseconds t) {
+            return message_info{10, 1, 1, t};
+        };
+
+        CHECK(pol.window_for(-1us) == -1h);
+        CHECK(pol.window_for(90min) == 1h);
+
+        pol.add(at(70min));
+        CHECK_FALSE(pol.should_cut_before(at(110min)));
+        pol.add(at(110min));
+        CHECK_FALSE(pol.should_cut_before(message_info{10, 1, 1, std::nullopt}));
+        CHECK(pol.should_cut_before(at(120min)));
+
+        pol.start_piece();
+        pol.add(at(120min));
+        // An earlier timestamp stays in the current piece.
+        CHECK_FALSE(pol.should_cut_before(at(90min)));
+        pol.add(at(90min));
+        CHECK_FALSE(pol.should_cut_before(at(179min)));
+        CHECK(pol.should_cut_before(at(180min)));
+    }
+}
+
+TEST_CASE("file_split::limits::defaults")
+{
+    using lnav::file_split::limits;
+    static constexpr uint64_t MiB = 1024ULL * 1024;
+    static constexpr uint64_t GiB = 1024ULL * MiB;
+    static constexpr uint64_t max_lines = 1ULL << 27;
+
+    auto lim = limits::defaults(10 * GiB, 8, max_lines);
+    CHECK(lim.l_max_entries == max_lines / 8);
+    CHECK(lim.l_bytes.value() == 10 * GiB / 8);
+
+    CHECK(limits::defaults(100 * MiB, 8, max_lines).l_bytes.value()
+          == 256 * MiB);
+    CHECK(limits::defaults(100 * GiB, 8, max_lines).l_bytes.value()
+          == 2 * GiB);
+    CHECK(limits::defaults(std::nullopt, 8, max_lines).l_bytes.value()
+          == 1 * GiB);
 }

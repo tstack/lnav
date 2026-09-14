@@ -1,0 +1,5 @@
+[1m[32m✔[0m split [1m{test_dir}/logfile_bunyan.0[0m into [1m4[0m files
+[36m =[0m [36mnote[0m: [1msplit-json/logfile_bunyan.0.0001[0m: [1m3[0m lines, [1m790B[0m, 2023-03-24 14:26:16 to 2023-03-24 14:26:16
+[36m =[0m [36mnote[0m: [1msplit-json/logfile_bunyan.0.0002[0m: [1m3[0m lines, [1m1.0KB[0m, 2023-03-24 14:26:16 to 2023-03-24 14:26:17
+[36m =[0m [36mnote[0m: [1msplit-json/logfile_bunyan.0.0003[0m: [1m3[0m lines, [1m870B[0m, 2023-03-24 14:26:17 to 2023-03-24 14:26:18
+[36m =[0m [36mnote[0m: [1msplit-json/logfile_bunyan.0.0004[0m: [1m1[0m lines, [1m299B[0m, 2023-03-24 14:26:18 to 2023-03-24 14:26:18

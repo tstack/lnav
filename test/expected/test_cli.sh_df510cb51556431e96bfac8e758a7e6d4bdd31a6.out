@@ -1,0 +1,4 @@
+[1m[32m✔[0m split [1m{test_dir}/logfile_win_events_csv.0[0m into [1m3[0m files
+[36m =[0m [36mnote[0m: [1msplit-csv/logfile_win_events_csv.0.0001[0m: [1m4[0m lines, [1m646B[0m, 2018-10-22 04:13:27 to 2018-10-22 04:13:27
+[36m =[0m [36mnote[0m: [1msplit-csv/logfile_win_events_csv.0.0002[0m: [1m4[0m lines, [1m372B[0m, 2018-10-22 04:13:27 to 2018-10-22 04:14:13
+[36m =[0m [36mnote[0m: [1msplit-csv/logfile_win_events_csv.0.0003[0m: [1m4[0m lines, [1m1.1KB[0m, 2018-10-22 04:14:13 to 2018-10-22 04:15:44

@@ -1,0 +1,4 @@
+[1m[32m✔[0m split [1m{test_dir}/logfile_syslog.0[0m into [1m2[0m files
+[36m =[0m [36mnote[0m: [1msplit-out/logfile_syslog.0.0001[0m: [1m2[0m lines, [1m160B[0m, 2007-11-03 09:23:38 to 2007-11-03 09:23:38
+[36m =[0m [36mnote[0m: [1msplit-out/logfile_syslog.0.0002[0m: [1m2[0m lines, [1m224B[0m, 2007-11-03 09:23:38 to 2007-11-03 09:47:02
+[36m =[0m [36mnote[0m: the timestamps in the file do not include the full date, so the modification time of each file was set to the time of its last message; preserve the modification times when copying or archiving the files so that lnav interprets the timestamps correctly

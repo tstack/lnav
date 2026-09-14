@@ -805,6 +805,20 @@ run_cap_test ${lnav_test} -n \
     -S "2023-03-24T14:26:17" \
     ${test_dir}/logfile_bunyan.0
 
+# The search for the start of the range reads blocks of the file that end in
+# the middle of a line, which should not be mistaken for an earlier message.
+awk 'BEGIN {
+    for (i = 0; i < 150000; i++) {
+        s = i % 60; m = int(i / 60) % 60; h = int(i / 3600) % 24;
+        printf "2018-10-%02d %02d:%02d:%02d,000 INFO msg %d\n",
+            22 + int(i / 86400), h, m, s, i;
+    }
+}' > since-partial-line.log
+run_cap_test env TZ=UTC ${lnav_test} -n \
+    -S "2018-10-23T09:20:00" \
+    -c ';SELECT count(*), min(log_time) FROM all_logs' \
+    since-partial-line.log
+
 run_cap_test env TZ=UTC ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_ts_value.0

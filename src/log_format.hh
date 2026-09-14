@@ -333,7 +333,8 @@ public:
 
     void check_for_new_year(std::vector<logline>& dst,
                             exttm log_tv,
-                            timeval timeval1) const;
+                            timeval timeval1,
+                            scan_batch_context& sbc) const;
 
     virtual std::string get_pattern_path(const pattern_locks& pl,
                                          uint64_t line_number) const;

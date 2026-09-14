@@ -1,0 +1,2 @@
+[1m[32m✔[0m no messages in the time range in [1m{test_dir}/logfile_bunyan.0[0m
+ [33mreason[0m: looked for messages from [1m2030-01-01 00:00:00[0m

@@ -77,7 +77,6 @@ static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static constexpr size_t INDEX_RESERVE_INCREMENT = 1024;
 
-static constexpr size_t RETRY_MATCH_SIZE = 250;
 
 static const typed_json_path_container<lnav::gzip::header>&
 get_file_header_handlers()
@@ -322,6 +321,7 @@ logfile::reset_internal_state_for_reindex()
 {
     log_debug("resetting internal state for reindex");
     this->lf_index.clear();
+    this->lf_index_base = 0;
     this->lf_input_lines = 0;
     this->lf_index_size = 0;
     this->lf_level_stats = {};
@@ -338,6 +338,55 @@ logfile::reset_internal_state_for_reindex()
     if (this->lf_logline_observer) {
         this->lf_logline_observer->logline_clear(*this);
     }
+}
+
+size_t
+logfile::discard_index_before(size_t index)
+{
+    require(this->lf_options.loo_streaming);
+
+    if (this->lf_index.size() <= RETRY_MATCH_SIZE) {
+        return 0;
+    }
+
+    // The next rebuild_index() rolls back the last message and re-reads the
+    // line before it, so neither can go.
+    auto last_msg = this->lf_index.size() - 1;
+    while (last_msg > 0
+           && (this->lf_index[last_msg].is_continued()
+               || this->lf_index[last_msg].get_sub_offset() != 0))
+    {
+        last_msg -= 1;
+    }
+    if (last_msg > 0) {
+        last_msg -= 1;
+    }
+
+    const auto count = std::min(
+        {index, last_msg, this->lf_index.size() - RETRY_MATCH_SIZE});
+    if (count == 0) {
+        return 0;
+    }
+
+    this->lf_index.erase(this->lf_index.begin(),
+                         this->lf_index.begin() + count);
+    this->lf_index_base += count;
+
+    // Everything below refers to lines by their position in the index or
+    // points into the arena, so it is reset the same way a reindex does.
+    this->lf_opids.writeAccess()->clear();
+    this->lf_thread_ids.writeAccess()->clear();
+    this->lf_invalidated_opids.clear();
+    this->lf_allocator.reset();
+    this->lf_invalid_lines = {};
+    if (!this->lf_pattern_locks.pl_lines.empty()) {
+        auto last_lock = this->lf_pattern_locks.pl_lines.back();
+        last_lock.pfl_line = 0;
+        this->lf_pattern_locks.pl_lines.clear();
+        this->lf_pattern_locks.pl_lines.emplace_back(last_lock);
+    }
+
+    return count;
 }
 
 logfile::map_entry_result
@@ -387,6 +436,16 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
                 return map_entry_not_found{};
             }
             peek_sf.pop_back();
+        } else if (end_range.next_offset() < full_size) {
+            // The peek can stop in the middle of a line and what is left of it
+            // can still scan as a message with a cut-off timestamp, so only
+            // whole lines are looked at.
+            const auto last_nl = peek_sf.rfind('\n');
+            if (last_nl) {
+                peek_sf.sf_end = last_nl.value();
+            } else {
+                peek_sf = string_fragment{};
+            }
         }
         auto found_line = false;
         while (!peek_sf.empty()) {
@@ -939,7 +998,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
     if (this->lf_options.loo_detect_format
         && (this->lf_format == nullptr
-            || this->lf_index.size() < RETRY_MATCH_SIZE))
+            || this->lf_index_base + this->lf_index.size() < RETRY_MATCH_SIZE))
     {
         const auto& root_formats = log_format::get_root_formats();
         std::optional<std::pair<log_format*, log_format::scan_match>>
@@ -1468,6 +1527,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     static auto op = lnav_operation{"rebuild_file_index"};
     auto op_guard = lnav_opid_guard::internal(op);
 
+    this->lf_time_rollovers.clear();
+
     if (!this->lf_invalidated_opids.empty()) {
         auto writeOpids = this->lf_opids.writeAccess();
 
@@ -1715,6 +1776,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 limit = 1000 * 1000;
             }
         }
+        if (this->lf_options.loo_streaming) {
+            limit = std::min(limit, this->lf_options.loo_stream_batch_lines);
+        }
         if (!has_format) {
             log_debug("loading file... %s:%zu",
                       this->lf_filename_as_string.c_str(),
@@ -1926,7 +1990,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
-            if (this->lf_index.size() > max_lines) {
+            // The limit comes from how the log view numbers lines, and a
+            // file being streamed never goes into the log view.
+            if (!this->lf_options.loo_streaming
+                && this->lf_index.size() > max_lines)
+            {
                 log_warning("%s: reached the maximum of %llu lines, "
                             "stopping indexing",
                             this->lf_filename_as_string.c_str(),
@@ -2028,7 +2096,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 break;
             }
 #endif
-            if (this->lf_format && li.li_utf8_scan_result.is_valid()) {
+            // Tags, partitions, and watch expressions are keyed by line number
+            // and have side effects, neither of which fits a streaming read.
+            if (this->lf_format && li.li_utf8_scan_result.is_valid()
+                && !this->lf_options.loo_streaming)
+            {
                 auto sf = sbr.to_string_fragment();
 
                 for (const auto& td : this->lf_applicable_taggers) {
@@ -2157,6 +2229,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
          */
         this->lf_index_size = prev_range.next_offset();
         this->lf_stat = st;
+        this->lf_time_rollovers = std::move(sbc.sbc_time_rollovers);
 
         this->lf_value_stats.resize(sbc.sbc_value_stats.size());
         for (size_t lpc = 0; lpc < sbc.sbc_value_stats.size(); lpc++) {
@@ -2220,7 +2293,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             retval = rebuild_result_t::NEW_LINES;
         }
 
-        {
+        if (!this->lf_options.loo_streaming) {
             auto est_rem = this->estimated_remaining_lines();
             if (est_rem > 0) {
                 this->lf_index.reserve(this->lf_index.size() + est_rem);

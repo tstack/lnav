@@ -575,6 +575,13 @@ public:
      */
     static constexpr uint64_t MAX_LINES = 1ULL << 27;
 
+    /**
+     * While fewer lines than this have been indexed, a better matching format
+     * can still replace the current one, which reindexes the file from the
+     * start.
+     */
+    static constexpr size_t RETRY_MATCH_SIZE = 250;
+
     enum class note_type {
         indexing_disabled,
         duplicate,
@@ -681,6 +688,41 @@ public:
 
     size_t estimated_remaining_lines() const;
 
+    /**
+     * Forget the index entries before the given index for a file opened with
+     * loo_streaming.  The last message and enough entries for format
+     * detection are always kept, so fewer entries than asked for may be
+     * dropped.  Line-number keyed state (opids, thread IDs, pattern locks) is
+     * cleared as well.
+     *
+     * @return The number of entries that were dropped.
+     */
+    size_t discard_index_before(size_t index);
+
+    /**
+     * @return The number of index entries dropped by discard_index_before().
+     */
+    size_t get_index_base() const { return this->lf_index_base; }
+
+    /**
+     * @return The offset of the first line past the end of the time range in
+     * the open options, once indexing has reached it.
+     */
+    std::optional<file_size_t> get_upper_bound_offset() const
+    {
+        return this->lf_upper_bound_size;
+    }
+
+    /**
+     * @return The corrections the last rebuild_index() made to the times of
+     * the lines before a date rollover, in the order they were made.  Lines
+     * that were already dropped with discard_index_before() did not get them.
+     */
+    const std::vector<time_rollover>& get_time_rollovers() const
+    {
+        return this->lf_time_rollovers;
+    }
+
     const std::string& get_decompress_error() const
     {
         return this->lf_line_buffer.get_decompress_error();
@@ -759,6 +801,7 @@ private:
     std::shared_ptr<log_format> lf_format;
     log_format_scan_match lf_format_match;
     std::vector<logline> lf_index;
+    size_t lf_index_base{0};
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};
     size_t lf_input_lines{0};
@@ -826,6 +869,7 @@ private:
     std::optional<content_map_entry> lf_lower_bound_entry;
     std::optional<content_map_entry> lf_upper_bound_entry;
     std::optional<file_size_t> lf_upper_bound_size;
+    std::vector<time_rollover> lf_time_rollovers;
 
     struct map_read_upper_bound {};
     struct map_read_lower_bound {

@@ -35,118 +35,27 @@ target_link_libraries(bin2c ZLIB::ZLIB)
 add_executable(ptimec ptimec.hh ptimec.cc)
 
 
-set(TIME_FORMATS
-        "@%@"
-        "%Y-%m-%d %H:%M:%S.%f%z"
-        "%Y-%m-%d %H:%M:%S,%f%z"
-        "%Y-%m-%d %H:%M:%S.%f %Z"
-        "%Y-%m-%d %H:%M:%S,%f %Z"
-        "%Y-%m-%d %H:%M:%S,%L%z"
-        "%Y-%m-%d %H:%M:%S,%L %z"
-        "%Y-%m-%d %H:%M:%S.%L%z"
-        "%Y-%m-%d %H:%M:%S.%L %z"
-        "%Y-%m-%d %H:%M:%S.%L %Z"
-        "%Y-%m-%d %H:%M:%S,%L"
-        "%Y-%m-%d %H:%M:%S.%L"
-        "%Y-%m-%d %H:%M:%S%z"
-        "%Y-%m-%d %H:%M:%S %Z"
-        "%Y-%m-%d %H:%M:%S %z"
-        "%Y-%m-%d %H:%M:%S:%L"
-        "%Y-%m-%d %H:%M:%S"
-        "%Y-%m-%d %H:%M"
-        "%Y-%jT%H:%M:%S %p %Z"
-        "%Y-%m-%dT%H:%M:%S %p %Z"
-        "%Y-%jT%H:%M:%S.%N%z"
-        "%Y-%m-%dT%H:%M:%S.%N%z"
-        "%y-%m-%dT%H:%M:%S.%N%z"
-        "%Y-%jT%H:%M:%S.%f%z"
-        "%Y-%m-%dT%H:%M:%S.%f%z"
-        "%y-%m-%dT%H:%M:%S.%f%z"
-        "%Y-%jT%H:%M:%S.%L%z"
-        "%Y-%m-%dT%H:%M:%S.%L%z"
-        "%y-%m-%dT%H:%M:%S.%L%z"
-        "%Y-%jT%H:%M:%S.%L%Z"
-        "%Y-%m-%dT%H:%M:%S.%L%Z"
-        "%y-%m-%dT%H:%M:%S.%L%Z"
-        "%Y-%m-%dT%H:%M:%S%z"
-        "%Y-%m-%dT%H:%M:%S%z"
-        "%Y-%m-%dT%H:%M:%S"
-        "%Y-%m-%dT%H:%M"
-        "%Y/%m/%d %H:%M:%S %z"
-        "%Y/%m/%d %H:%M:%S%z"
-        "%Y/%m/%d %H:%M:%S.%f%z"
-        "%Y/%m/%d %H:%M:%S.%f%Z"
-        "%Y/%m/%d %H:%M:%S.%f %z"
-        "%Y/%m/%d %H:%M:%S.%f %Z"
-        "%Y/%m/%d %H:%M:%S.%f"
-        "%Y/%m/%d %H:%M:%S.%L"
-        "%Y/%m/%d %H:%M:%S"
-        "%Y/%m/%d %H:%M"
-        "%Y %b %d %a %H:%M:%S.%L"
-        "%Y %b %d %H:%M:%S.%L"
-        "%Y %b %d %H:%M:%S"
-        "%a %b %e %H:%M:%S %Y"
-        "%a %b %e %H:%M:%S.%f %Y"
-        "%a %b %e %H:%M:%S:%f %Y"
-        "%a %b %e %H:%M:%S %Z %Y"
-        "%a %b %e %I:%M:%S %p %Z %Y"
-        "%a %b %e %H:%M:%S "
-        "%a %b %e %H:%M:%S.%L "
-        "%a %b %e %H:%M "
-        "%a %b %e %H:%M:%S %Z %Y"
-        "%d/%m/%y %H:%M:%S"
-        "%d/%b/%Y:%H:%M:%S %z"
-        "%d-%b-%Y %H:%M:%S %z"
-        "%d-%b-%Y %H:%M:%S %Z"
-        "%d %b %Y %H:%M:%S"
-        "%d %b %Y %H:%M:%S.%L%z"
-        "%d %b %Y %H:%M:%S,%L%z"
-        "%d %b %Y %H:%M:%S.%L"
-        "%d %b %Y %H:%M:%S,%L"
-        "%d %b %Y %H:%M"
-        "%b-%d %H:%M:%S"
-        "%b %d %H:%M:%S"
-        "%b %d %k:%M:%S"
-        "%b %d %l:%M:%S"
-        "%b %d %l:%M"
-        "%b %e, %Y %l:%M:%S %p"
-        "%b %d, %Y %l:%M:%S %p"
-        "%m/%d/%Y %I:%M:%S:%L %p %Z"
-        "%m/%d/%Y %I:%M:%S %p %Z"
-        "%m/%d/%Y %l:%M:%S %p %Z"
-        "%m/%d/%Y %I:%M:%S %p%z"
-        "%m/%d/%Y %l:%M:%S %p%z"
-        "%m/%e/%Y %l:%M:%S %p%z"
-        "%m/%e/%Y %l:%M:%S %p %z"
-        "%m/%e/%Y %I:%M:%S %p"
-        "%m/%e/%Y %l:%M:%S %p"
-        "%m/%e/%Y %l:%M:%S%p"
-        "%m/%d/%y %H:%M:%S"
-        "%m/%d/%Y %H:%M:%S"
-        "%d/%b/%Y %H:%M:%S"
-        "%d/%b/%y %H:%M:%S"
-        "%m.%d %H:%M:%S"
-        "%m%d %H:%M:%S"
-        "%y%m%d %H%M%S"
-        "%y%m%d %H:%M:%S"
-        "%Y%m%d %H:%M:%S"
-        "%Y%m%d.%H%M%S"
-        "%H:%M:%S"
-        "%H:%M:%S.%f"
-        "%M:%S"
-        "%m/%d %H:%M:%S"
-        "%Y-%m-%d"
-        "%Y-%m"
-        "%Y/%m/%d"
-        "%Y/%m"
-        "%b %d"
-)
+# The formats are listed once, in time_formats.am, which the autotools build
+# includes directly, so that both builds generate the same parsers in the same
+# order.
+set(TIME_FORMATS_FILE ${CMAKE_CURRENT_SOURCE_DIR}/time_formats.am)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        ${TIME_FORMATS_FILE})
+# Read as a whole since every line ends in a backslash, which would escape the
+# separators of a list of lines.
+file(READ ${TIME_FORMATS_FILE} TIME_FORMATS_CONTENT)
+string(REGEX MATCHALL "\"[^\"]*\"" TIME_FORMATS_QUOTED "${TIME_FORMATS_CONTENT}")
+set(TIME_FORMATS "")
+foreach (TIME_FORMAT IN LISTS TIME_FORMATS_QUOTED)
+    string(REGEX REPLACE "^\"(.*)\"$" "\\1" TIME_FORMAT "${TIME_FORMAT}")
+    list(APPEND TIME_FORMATS "${TIME_FORMAT}")
+endforeach ()
 
 set(GEN_SRCS "")
 
 add_custom_command(
         OUTPUT time_fmts.cc
-        DEPENDS ptimec
+        DEPENDS ptimec ${TIME_FORMATS_FILE}
         COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc)
 
 add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_spec.hh ptimec_rt.cc time_fmts.cc)
@@ -571,6 +480,7 @@ add_library(
         lnav.events.cc
         lnav.exec-phase.cc
         lnav.indexing.cc
+        file_split.cc
         lnav.management_cli.cc
         lnav.prompt.cc
         lnav.script.parser.cc
@@ -710,6 +620,7 @@ add_library(
         lnav.events.hh
         lnav.exec-phase.hh
         lnav.indexing.hh
+        file_split.hh
         lnav.management_cli.hh
         lnav.prompt.hh
         lnav.script.parser.hh

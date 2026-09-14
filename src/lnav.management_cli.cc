@@ -44,6 +44,7 @@
 #include "base/string_util.hh"
 #include "crashd.client.hh"
 #include "file_options.hh"
+#include "file_split.hh"
 #include "fmt/chrono.h"
 #include "fmt/format.h"
 #include "base/itertools.similar.hh"
@@ -1073,6 +1074,248 @@ struct subcmd_format_t {
     }
 };
 
+struct subcmd_file_t {
+    using action_t = std::function<perform_result_t(const subcmd_file_t&)>;
+
+    CLI::App* sfi_file_app{nullptr};
+    std::string sfi_path;
+    uint64_t sfi_lines{0};
+    std::string sfi_size;
+    std::string sfi_time;
+    std::string sfi_since;
+    std::string sfi_until;
+    std::string sfi_output_dir{"."};
+    action_t sfi_action;
+
+    subcmd_file_t& set_action(action_t act)
+    {
+        if (!this->sfi_action) {
+            this->sfi_action = std::move(act);
+        }
+        return *this;
+    }
+
+    static perform_result_t default_action(const subcmd_file_t& sf)
+    {
+        auto um = console::user_message::error(
+                      "expecting an operation to perform on a file")
+                      .with_help(sf.sfi_file_app->get_subcommands({})
+                                 | lnav::itertools::fold(
+                                     subcmd_reducer,
+                                     attr_line_t{"the available operations are:"}))
+                      .move();
+
+        return {std::move(um)};
+    }
+
+    static std::string format_time(std::chrono::microseconds us)
+    {
+        const auto secs
+            = std::chrono::duration_cast<std::chrono::seconds>(us).count();
+
+        return fmt::format(FMT_STRING("{:%Y-%m-%d %H:%M:%S}"),
+                           fmt::gmtime(static_cast<time_t>(secs)));
+    }
+
+    static perform_result_t split_action(const subcmd_file_t& sf)
+    {
+        if (sf.sfi_path.empty()) {
+            auto um = console::user_message::error(
+                "expecting the path of a file to split");
+
+            return {std::move(um)};
+        }
+
+        file_split::options opts;
+        opts.o_output_dir = sf.sfi_output_dir;
+        if (sf.sfi_lines > 0) {
+            opts.o_limits.l_lines = sf.sfi_lines;
+        }
+        if (!sf.sfi_size.empty()) {
+            auto size_res = humanize::try_from<double>(
+                string_fragment::from_str(sf.sfi_size));
+            if (!size_res
+                || !(size_res->unit_suffix.empty()
+                     || size_res->unit_suffix == "B")
+                || size_res->value < 1)
+            {
+                auto um = console::user_message::error(
+                              attr_line_t("invalid size: ")
+                                  .append_quoted(sf.sfi_size))
+                              .with_help("expecting a size like 512MB or 1GiB")
+                              .move();
+
+                return {std::move(um)};
+            }
+            opts.o_limits.l_bytes = static_cast<uint64_t>(size_res->value);
+        }
+        if (!sf.sfi_time.empty()) {
+            auto rt_res
+                = relative_time::from_str(string_fragment::from_str(sf.sfi_time));
+            if (rt_res.isErr()) {
+                auto um = console::user_message::error(
+                              attr_line_t("invalid time window: ")
+                                  .append_quoted(sf.sfi_time))
+                              .with_reason(rt_res.unwrapErr().pe_msg)
+                              .with_help("expecting a duration like 1h or 1d")
+                              .move();
+
+                return {std::move(um)};
+            }
+            auto rt = rt_res.unwrap();
+            if (rt.is_absolute() || rt.to_microseconds() <= 0) {
+                auto um = console::user_message::error(
+                              attr_line_t("invalid time window: ")
+                                  .append_quoted(sf.sfi_time))
+                              .with_reason("expecting a positive duration")
+                              .with_help("expecting a duration like 1h or 1d")
+                              .move();
+
+                return {std::move(um)};
+            }
+            opts.o_limits.l_duration
+                = std::chrono::microseconds(rt.to_microseconds());
+        }
+        if (!sf.sfi_since.empty() || !sf.sfi_until.empty()) {
+            auto range = time_range::unbounded();
+
+            if (!sf.sfi_since.empty()) {
+                auto from_res = humanize::time::point::from(sf.sfi_since);
+                if (from_res.isErr()) {
+                    auto um = from_res.unwrapErr();
+                    um.um_message = attr_line_t("invalid 'since' time ")
+                                        .append_quoted(sf.sfi_since);
+
+                    return {std::move(um)};
+                }
+                range.tr_begin = to_us(from_res.unwrap().get_point());
+            }
+            if (!sf.sfi_until.empty()) {
+                auto from_res = humanize::time::point::from(sf.sfi_until);
+                if (from_res.isErr()) {
+                    auto um = from_res.unwrapErr();
+                    um.um_message = attr_line_t("invalid 'until' time ")
+                                        .append_quoted(sf.sfi_until);
+
+                    return {std::move(um)};
+                }
+                range.tr_end = to_us(from_res.unwrap().get_point());
+            }
+            if (range.tr_end < range.tr_begin) {
+                auto um = console::user_message::error(
+                              attr_line_t("the 'since' time ")
+                                  .append_quoted(
+                                      lnav::roles::symbol(sf.sfi_since))
+                                  .append(" is not before the 'until' time ")
+                                  .append_quoted(
+                                      lnav::roles::symbol(sf.sfi_until)))
+                              .with_note(attr_line_t("the resolved 'since' "
+                                                     "time is ")
+                                             .append_quoted(lnav::roles::symbol(
+                                                 format_time(range.tr_begin))))
+                              .with_note(attr_line_t("the resolved 'until' "
+                                                     "time is ")
+                                             .append_quoted(lnav::roles::symbol(
+                                                 format_time(range.tr_end))))
+                              .with_help("ensure that the 'since' time is "
+                                         "before the 'until' time")
+                              .move();
+
+                return {std::move(um)};
+            }
+            opts.o_time_range = range;
+        }
+
+        const auto show_progress = isatty(STDERR_FILENO);
+        auto split_res = file_split::split(
+            sf.sfi_path, opts, [show_progress](file_off_t done) {
+                if (show_progress) {
+                    fmt::print(stderr,
+                               FMT_STRING("\rsplitting... {} read\x1b[K"),
+                               humanize::file_size(
+                                   done, humanize::alignment::none));
+                    fflush(stderr);
+                }
+            });
+        if (show_progress) {
+            fmt::print(stderr, FMT_STRING("\r\x1b[K"));
+        }
+        if (split_res.isErr()) {
+            return {split_res.unwrapErr()};
+        }
+
+        const auto sum = split_res.unwrap();
+        if (sum.s_pieces.empty() && opts.o_time_range) {
+            const auto& range = opts.o_time_range.value();
+            auto reason = attr_line_t("looked for messages");
+            if (range.has_lower_bound()) {
+                reason.append(" from ").append(
+                    lnav::roles::symbol(format_time(range.tr_begin)));
+            }
+            if (range.has_upper_bound()) {
+                reason.append(" until ").append(
+                    lnav::roles::symbol(format_time(range.tr_end)));
+            }
+            auto um = console::user_message::ok(
+                          attr_line_t("no messages in the time range in ")
+                              .append(lnav::roles::file(sf.sfi_path)))
+                          .with_reason(reason)
+                          .move();
+
+            return {std::move(um)};
+        }
+        if (sum.s_pieces.empty()) {
+            auto um
+                = console::user_message::ok(
+                      attr_line_t("no split needed for ")
+                          .append(lnav::roles::file(sf.sfi_path)))
+                      .with_reason(
+                          attr_line_t("the file's ")
+                              .append(lnav::roles::number(
+                                  fmt::to_string(sum.s_lines)))
+                              .append(" lines fit in a single piece"))
+                      .move();
+
+            return {std::move(um)};
+        }
+
+        auto um = console::user_message::ok(
+            attr_line_t("split ")
+                .append(lnav::roles::file(sf.sfi_path))
+                .append(" into ")
+                .append(lnav::roles::number(
+                    fmt::to_string(sum.s_pieces.size())))
+                .append(" files"));
+        for (const auto& piece : sum.s_pieces) {
+            auto note = attr_line_t()
+                            .append(lnav::roles::file(piece.ps_path.string()))
+                            .append(": ")
+                            .append(lnav::roles::number(
+                                fmt::to_string(piece.ps_lines)))
+                            .append(" lines, ")
+                            .append(lnav::roles::number(humanize::file_size(
+                                piece.ps_bytes, humanize::alignment::none)));
+            if (piece.ps_first_time && piece.ps_last_time) {
+                note.append(", ")
+                    .append(format_time(piece.ps_first_time.value()))
+                    .append(" to ")
+                    .append(format_time(piece.ps_last_time.value()));
+            }
+            um.with_note(note);
+        }
+        if (sum.s_mtimes_set) {
+            um.with_note(
+                "the timestamps in the file do not include the full date, so "
+                "the modification time of each file was set to the time of its "
+                "last message; preserve the modification times when copying or "
+                "archiving the files so that lnav interprets the timestamps "
+                "correctly");
+        }
+
+        return {std::move(um)};
+    }
+};
+
 struct subcmd_piper_t {
     using action_t = std::function<perform_result_t(const subcmd_piper_t&)>;
 
@@ -1541,6 +1784,7 @@ using operations_v = mapbox::util::variant<no_subcmd_t,
                                            subcmd_apps_t,
                                            subcmd_config_t,
                                            subcmd_format_t,
+                                           subcmd_file_t,
                                            subcmd_piper_t,
                                            subcmd_regex101_t,
                                            subcmd_crash_t>;
@@ -1564,6 +1808,7 @@ describe_cli(CLI::App& app, int argc, char* argv[])
     subcmd_apps_t apps_args;
     subcmd_config_t config_args;
     subcmd_format_t format_args;
+    subcmd_file_t file_args;
     subcmd_piper_t piper_args;
     subcmd_regex101_t regex101_args;
     subcmd_crash_t crash_args;
@@ -1582,6 +1827,44 @@ describe_cli(CLI::App& app, int argc, char* argv[])
                   });
         sub_create_options->add_option(
             "name", apps_args.sa_name, "name of the app");
+    }
+
+    {
+        auto* subcmd_file
+            = app.add_subcommand("file", "perform operations on log files")
+                  ->callback([&]() {
+                      file_args.set_action(subcmd_file_t::default_action);
+                      retval->o_ops = file_args;
+                  });
+        file_args.sfi_file_app = subcmd_file;
+
+        auto* sub_split = subcmd_file->add_subcommand(
+            "split", "split a file into smaller files that lnav can index");
+        sub_split->add_option(
+            "path", file_args.sfi_path, "the path to the file to split");
+        sub_split->add_option("--lines",
+                              file_args.sfi_lines,
+                              "the maximum number of lines in each file");
+        sub_split->add_option("--size",
+                              file_args.sfi_size,
+                              "the maximum size of each file (e.g. 1GB)");
+        sub_split->add_option(
+            "--time",
+            file_args.sfi_time,
+            "put the messages in each time window in their own file (e.g. 1h)");
+        sub_split->add_option(
+            "-S,--since",
+            file_args.sfi_since,
+            "only write messages at or after this time (e.g. '1h ago')");
+        sub_split->add_option(
+            "-U,--until",
+            file_args.sfi_until,
+            "only write messages at or before this time");
+        sub_split->add_option("-o,--output-dir",
+                              file_args.sfi_output_dir,
+                              "the directory to write the files to");
+        sub_split->callback(
+            [&]() { file_args.set_action(subcmd_file_t::split_action); });
     }
 
     {
@@ -1836,6 +2119,7 @@ perform(std::shared_ptr<operations> opts)
         [](const subcmd_apps_t& sa) { return sa.sa_action(sa); },
         [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },
+        [](const subcmd_file_t& sf) { return sf.sfi_action(sf); },
         [](const subcmd_piper_t& sp) { return sp.sp_action(sp); },
         [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); },
         [](const subcmd_crash_t& sc) { return sc.sc_action(sc); });

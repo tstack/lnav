@@ -1,0 +1,3 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid time window: “xyz”
+ [1m[31mreason[0m: Unrecognized input
+[36m =[0m [36mhelp[0m: expecting a duration like 1h or 1d

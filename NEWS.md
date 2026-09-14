@@ -149,6 +149,25 @@ Features:
 * Installing files with the `-i` option will now
   validate log format, configuration files, and SQL
   files before installation.
+* Added the `file split <path>` management command to
+  split a large log file into smaller files that lnav
+  can fully index.  Files are only split between log
+  messages, so multi-line messages are kept together.
+  The size of each piece can be limited with `--lines`,
+  `--size`, or `--time` (e.g. `--time 1h` puts each hour
+  of messages in its own file).  If no limits are given,
+  a size is picked based on the size of the file and
+  lnav's indexing limits.  Header lines that are needed
+  to recognize formats like CSV are copied into each
+  piece.  The pieces are written to the current
+  directory or the one given with `-o` and the command
+  checks that the directory has enough free space,
+  keeping the amount set by
+  `/tuning/archive-manager/min-free-space` free.
+  The `--since` and `--until` options can be used to
+  only write the messages in a time range.  They
+  accept the same kinds of times as the `-S` and `-U`
+  options.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the
@@ -177,6 +196,11 @@ Bug Fixes:
   The marks now include a reference to the nearest
   anchor (e.g. header in Markdown) and use it as a
   starting point of a search for the matching line.
+* Opening a file with more lines than lnav can index
+  (about 134 million) would crash.  Indexing now stops
+  at the limit and a warning is shown for the file.
+  The limit can be lowered with the
+  `/tuning/logfile/max-lines` configuration setting.
 
 
 ## lnav v0.14.1

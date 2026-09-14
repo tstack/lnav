@@ -281,6 +281,22 @@ struct format_scan_state {
     virtual ~format_scan_state() = default;
 };
 
+/**
+ * A correction to the times of the lines before one that shows the date
+ * rolled over, for timestamps that leave out part of the date.
+ *
+ * @see log_format::check_for_new_year()
+ */
+struct time_rollover {
+    int tr_off_year{0};
+    int tr_off_month{0};
+    int tr_off_day{0};
+    int tr_off_hour{0};
+
+    /** @return The given time with this correction applied. */
+    std::chrono::microseconds apply(std::chrono::microseconds t) const;
+};
+
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
     pattern_locks& sbc_pattern_locks;
@@ -315,6 +331,7 @@ struct scan_batch_context {
      */
     uint32_t sbc_timestamp_flags{0};
     std::vector<logline_value_stats> sbc_value_stats;
+    std::vector<time_rollover> sbc_time_rollovers;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
     lnav::small_string_map sbc_level_cache;
@@ -505,7 +522,11 @@ public:
         return level_names[this->ll_level];
     }
 
-    bool is_message() const { return !this->ll_ignore && !this->ll_continued; }
+    bool is_message() const
+    {
+        return !this->ll_ignore && !this->ll_continued
+            && this->ll_sub_offset == 0;
+    }
 
     logline& set_continued(bool val)
     {

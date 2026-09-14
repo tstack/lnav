@@ -129,6 +129,14 @@ struct logfile_open_options_base {
     file_location_t loo_init_location{default_for_text_format{}};
     std::vector<lnav::console::user_message> loo_match_details;
     time_range loo_time_range{time_range::unbounded()};
+    /**
+     * Read the file front to back without keeping the whole index: the
+     * caller drops entries it is done with using
+     * logfile::discard_index_before(), and each rebuild_index() call reads
+     * at most loo_stream_batch_lines lines.
+     */
+    bool loo_streaming{false};
+    size_t loo_stream_batch_lines{100 * 1000};
 };
 
 struct logfile_open_options : logfile_open_options_base {
@@ -241,6 +249,13 @@ struct logfile_open_options : logfile_open_options_base {
     logfile_open_options& with_time_range(time_range tr)
     {
         this->loo_time_range = tr;
+
+        return *this;
+    }
+
+    logfile_open_options& with_streaming(bool val)
+    {
+        this->loo_streaming = val;
 
         return *this;
     }

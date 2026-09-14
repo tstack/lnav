@@ -1,0 +1,3 @@
+[1m[32m✔[0m split [1m{test_dir}/logfile_java.0[0m into [1m2[0m files
+[36m =[0m [36mnote[0m: [1msplit-time/logfile_java.0.0001[0m: [1m19[0m lines, [1m2.6KB[0m, 2025-01-24 07:00:30 to 2025-01-24 07:00:43
+[36m =[0m [36mnote[0m: [1msplit-time/logfile_java.0.0002[0m: [1m1[0m lines, [1m136B[0m, 2025-01-24 07:05:38 to 2025-01-24 07:05:38

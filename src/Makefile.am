@@ -318,6 +318,7 @@ noinst_HEADERS = \
 	lnav.events.hh \
 	lnav.exec-phase.hh \
 	lnav.indexing.hh \
+	file_split.hh \
 	lnav.management_cli.hh \
     lnav.prompt.hh \
     lnav.script.parser.hh \
@@ -509,6 +510,7 @@ libdiag_a_SOURCES = \
 	db_sub_source.cc \
 	document.sections.cc \
 	dump_internals.cc \
+	file_split.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
 	ext.longpoll.cc \

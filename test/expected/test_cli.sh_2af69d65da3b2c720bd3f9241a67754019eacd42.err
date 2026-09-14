@@ -1,0 +1,2 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid size: “abc”
+[36m =[0m [36mhelp[0m: expecting a size like 512MB or 1GiB

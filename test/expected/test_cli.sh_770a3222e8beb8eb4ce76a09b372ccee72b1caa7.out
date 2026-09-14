@@ -1,0 +1,5 @@
+[1m[32m✔[0m split [1msplit-rollover.log[0m into [1m3[0m files
+[36m =[0m [36mnote[0m: [1msplit-rollover/split-rollover.0001.log[0m: [1m50000[0m lines, [1m1.9MB[0m, 2025-12-20 00:00:00 to 2025-12-24 15:06:32
+[36m =[0m [36mnote[0m: [1msplit-rollover/split-rollover.0002.log[0m: [1m50000[0m lines, [1m1.9MB[0m, 2025-12-24 15:06:40 to 2025-12-29 06:13:12
+[36m =[0m [36mnote[0m: [1msplit-rollover/split-rollover.0003.log[0m: [1m50000[0m lines, [1m2.0MB[0m, 2025-12-29 06:13:20 to 2026-01-03 18:39:52
+[36m =[0m [36mnote[0m: the timestamps in the file do not include the full date, so the modification time of each file was set to the time of its last message; preserve the modification times when copying or archiving the files so that lnav interprets the timestamps correctly
