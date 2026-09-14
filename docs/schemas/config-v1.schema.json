@@ -128,6 +128,13 @@
                             "type": "integer",
                             "minimum": 1.0
                         },
+                        "max-lines": {
+                            "title": "/tuning/logfile/max-lines",
+                            "description": "The maximum number of lines to index in a single file.  Indexing stops once a file reaches this many lines",
+                            "type": "integer",
+                            "minimum": 1.0,
+                            "maximum": 134217728.0
+                        },
                         "indexing-threads": {
                             "title": "/tuning/logfile/indexing-threads",
                             "description": "The number of threads to use when indexing files.  A value of 1 indexes one file at a time and 0 selects a value based on the machine",

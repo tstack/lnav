@@ -23,6 +23,7 @@
         },
         "logfile": {
             "max-unrecognized-lines": 1000,
+            "max-lines": 134217728,
             "indexing-threads": 0
         },
         "remote": {

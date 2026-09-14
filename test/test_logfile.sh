@@ -832,3 +832,16 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_win_events_csv.0
+
+# indexing stops at /tuning/logfile/max-lines, without keeping part of the
+# JSON message that crossed it
+${lnav_test} -nN -c ':config /tuning/logfile/max-lines 4'
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_bunyan.0
+
+${lnav_test} -nN -c ':reset-config /tuning/logfile/max-lines'
+
+# the limit cannot be raised above what the log view can address
+run_cap_test ${lnav_test} -nN \
+    -c ':config /tuning/logfile/max-lines 134217729'

@@ -204,6 +204,12 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    json_path_handler& with_max_value(double val)
+    {
+        this->jph_max_value = val;
+        return *this;
+    }
+
     // Strict-greater-than lower bound — used e.g. for divisor fields
     // where zero is invalid.  JSON Schema emits this as
     // `exclusiveMinimum`.
@@ -666,6 +672,10 @@ struct json_path_handler : public json_path_handler_base {
             if (val < jph->jph_min_value || val <= jph->jph_exclusive_min_value)
             {
                 jph->report_min_value_error(ypc, val);
+                return 1;
+            }
+            if (val > jph->jph_max_value) {
+                jph->report_max_value_error(ypc, val);
                 return 1;
             }
 
@@ -1374,6 +1384,10 @@ struct json_path_handler : public json_path_handler_base {
                 jph->report_min_value_error(ypc, val);
                 return 1;
             }
+            if (val > jph->jph_max_value) {
+                jph->report_max_value_error(ypc, val);
+                return 1;
+            }
 
             json_path_handler::get_field(obj, args...) = val;
 
@@ -1419,6 +1433,10 @@ struct json_path_handler : public json_path_handler_base {
             if (val < jph->jph_min_value || val <= jph->jph_exclusive_min_value)
             {
                 jph->report_min_value_error(ypc, val);
+                return 1;
+            }
+            if (val > jph->jph_max_value) {
+                jph->report_max_value_error(ypc, val);
                 return 1;
             }
 

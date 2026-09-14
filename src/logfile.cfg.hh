@@ -34,8 +34,17 @@
 
 namespace lnav::logfile {
 
+/**
+ * The most lines that will be indexed for a single file.  The log view
+ * addresses a line by its file's slot times this value plus the line's
+ * index, so going past it would land in the next file's slot.
+ */
+static constexpr uint64_t MAX_LINES = 1ULL << 27;
+
 struct config {
     uint64_t lc_max_unrecognized_lines{1000};
+    /** The most lines to index in a file, up to MAX_LINES. */
+    uint64_t lc_max_lines{MAX_LINES};
     /**
      * Workers to index files with.  0, the default, picks a count from the
      * machine; 1 indexes them one at a time, the way lnav always has.

@@ -315,6 +315,8 @@ logfile::file_options_have_changed()
     return tz_changed;
 }
 
+static_assert(logfile::MAX_LINES == lnav::logfile::MAX_LINES);
+
 void
 logfile::reset_internal_state_for_reindex()
 {
@@ -1690,6 +1692,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         bool sort_needed = std::exchange(this->lf_sort_needed, false);
         size_t limit = SIZE_MAX;
+        const auto max_lines = std::min(
+            MAX_LINES,
+            injector::get<const lnav::logfile::config&>().lc_max_lines);
 
         if (deadline) {
             if (ui_clock::now() > deadline.value()) {
@@ -1919,6 +1924,39 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
                 prev_range = file_range{0};
                 continue;
+            }
+
+            if (this->lf_index.size() > max_lines) {
+                log_warning("%s: reached the maximum of %llu lines, "
+                            "stopping indexing",
+                            this->lf_filename_as_string.c_str(),
+                            (unsigned long long) max_lines);
+                // A single line can add several entries, so drop all of
+                // them rather than keep part of the message.
+                while (this->lf_index.size() > old_size) {
+                    this->lf_index.pop_back();
+                }
+                prev_range = file_range{li.li_file_range.fr_offset};
+                this->lf_indexing = false;
+                auto note_um
+                    = lnav::console::user_message::warning(
+                          attr_line_t("stopped indexing ")
+                              .append_quoted(this->lf_filename))
+                          .with_reason(
+                              attr_line_t("file has more than ")
+                                  .append(lnav::roles::number(
+                                      fmt::to_string(max_lines)))
+                                  .append(" lines, the maximum that can be "
+                                          "indexed for a single file"))
+                          .with_help("split the file into smaller pieces")
+                          .move();
+                this->lf_notes.writeAccess()->insert(note_type::line_limit,
+                                                     note_um);
+                this->lf_index_progress.ip_offset.store(
+                    0, std::memory_order_relaxed);
+                this->lf_index_progress.ip_total.store(
+                    0, std::memory_order_relaxed);
+                break;
             }
 
             // Update this early so that line_length() works

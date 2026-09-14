@@ -2518,7 +2518,7 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
 {
     iterator existing;
 
-    require_lt(lf->size(), MAX_LINES_PER_FILE);
+    require(lf->size() <= MAX_LINES_PER_FILE);
 
     existing = std::find_if(this->lss_files.begin(),
                             this->lss_files.end(),

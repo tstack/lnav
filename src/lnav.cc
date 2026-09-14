@@ -4546,10 +4546,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 for (const auto& lf : lnav_data.ld_active_files.fc_files) {
                     auto lf_notes = lf->get_notes();
-                    auto utf_note_opt
-                        = lf_notes.value_for(logfile::note_type::not_utf);
-                    if (utf_note_opt.has_value()) {
-                        lnav::console::print(stderr, *utf_note_opt.value());
+                    for (const auto nt : {logfile::note_type::not_utf,
+                                          logfile::note_type::line_limit})
+                    {
+                        auto note_opt = lf_notes.value_for(nt);
+                        if (note_opt.has_value()) {
+                            lnav::console::print(stderr, *note_opt.value());
+                        }
                     }
                 }
 

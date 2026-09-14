@@ -741,8 +741,9 @@ public:
 
     exec_context* get_exec_context() const { return this->lss_exec_context; }
 
-    static constexpr uint64_t MAX_CONTENT_LINES = 1ULL << 40;
-    static constexpr uint64_t MAX_LINES_PER_FILE = 1ULL << 27;
+    static constexpr unsigned CONTENT_LINE_BITS = 38;
+    static constexpr uint64_t MAX_CONTENT_LINES = 1ULL << CONTENT_LINE_BITS;
+    static constexpr uint64_t MAX_LINES_PER_FILE = logfile::MAX_LINES;
     static constexpr uint64_t MAX_FILES
         = (MAX_CONTENT_LINES / MAX_LINES_PER_FILE);
 
@@ -789,7 +790,7 @@ public:
 
         level_t level() const { return static_cast<level_t>(this->ic_level); }
 
-        uint64_t ic_value : 38;
+        uint64_t ic_value : CONTENT_LINE_BITS;
         uint8_t ic_level : 2;
     };
 

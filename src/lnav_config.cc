@@ -1501,6 +1501,15 @@ static const struct json_path_container logfile_handlers = {
         .with_min_value(1)
         .for_field(&_lnav_config::lc_logfile,
                    &lnav::logfile::config::lc_max_unrecognized_lines),
+    yajlpp::property_handler("max-lines")
+        .with_synopsis("<lines>")
+        .with_description(
+            "The maximum number of lines to index in a single file.  Indexing "
+            "stops once a file reaches this many lines")
+        .with_min_value(1)
+        .with_max_value(lnav::logfile::MAX_LINES)
+        .for_field(&_lnav_config::lc_logfile,
+                   &lnav::logfile::config::lc_max_lines),
     yajlpp::property_handler("indexing-threads")
         .with_synopsis("<threads>")
         .with_description(

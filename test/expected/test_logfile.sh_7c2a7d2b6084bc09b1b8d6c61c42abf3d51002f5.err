@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: “134217729” is not a valid value for option “[1m/tuning/logfile/max-lines[0m”
+ [1m[31mreason[0m: value must be less than or equal to [1m134217728[0m
+[36m --> [0m[1minput[0m:1
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/tuning/logfile/max-lines[0m [4m<lines>[0m
+         [1mDescription[0m
+           The maximum number of lines to index in a single file.  Indexing stops once a file reaches this many lines

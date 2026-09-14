@@ -568,10 +568,18 @@ public:
 
     std::filesystem::path get_path() const override;
 
+    /**
+     * The most lines that will be indexed for a single file.  Kept equal to
+     * lnav::logfile::MAX_LINES in logfile.cfg.hh, which the configuration
+     * uses, without this header having to include that one.
+     */
+    static constexpr uint64_t MAX_LINES = 1ULL << 27;
+
     enum class note_type {
         indexing_disabled,
         duplicate,
         not_utf,
+        line_limit,
     };
 
     using note_map = lnav::map::small<note_type, lnav::console::user_message>;

@@ -452,6 +452,12 @@ json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
                     schema("exclusiveMinimum");
                     schema(this->jph_exclusive_min_value);
                 }
+                if (this->jph_max_value
+                    < std::numeric_limits<double>::infinity())
+                {
+                    schema("maximum");
+                    schema(this->jph_max_value);
+                }
                 break;
             default:
                 break;
@@ -1638,6 +1644,24 @@ json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
                 .append_quoted(
                     lnav::roles::symbol(ypc->get_full_path().to_string())))
             .with_reason(reason)
+            .with_snippet(ypc->get_snippet())
+            .with_help(this->get_help_text(ypc)));
+}
+
+void
+json_path_handler_base::report_max_value_error(yajlpp_parse_context* ypc,
+                                               double value) const
+{
+    ypc->report_error(
+        lnav::console::user_message::error(
+            attr_line_t()
+                .append_quoted(fmt::to_string(value))
+                .append(" is not a valid value for option ")
+                .append_quoted(
+                    lnav::roles::symbol(ypc->get_full_path().to_string())))
+            .with_reason(attr_line_t("value must be less than or equal to ")
+                             .append(lnav::roles::number(
+                                 fmt::to_string(this->jph_max_value))))
             .with_snippet(ypc->get_snippet())
             .with_help(this->get_help_text(ypc)));
 }

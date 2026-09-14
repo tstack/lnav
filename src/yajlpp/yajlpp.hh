@@ -305,6 +305,7 @@ struct json_path_handler_base {
     string_fragment jph_const_str;
     double jph_min_value{-std::numeric_limits<double>::infinity()};
     double jph_exclusive_min_value{-std::numeric_limits<double>::infinity()};
+    double jph_max_value{std::numeric_limits<double>::infinity()};
     bool jph_optional_wrapper{false};
     bool jph_is_array;
     bool jph_is_pattern_property{false};
@@ -323,6 +324,8 @@ struct json_path_handler_base {
     void report_pattern_error(yajlpp_parse_context* ypc,
                               const std::string& value_str) const;
     void report_min_value_error(yajlpp_parse_context* ypc,
+                                double value) const;
+    void report_max_value_error(yajlpp_parse_context* ypc,
                                 double value) const;
     void report_duration_error(yajlpp_parse_context* ypc,
                                const std::string& value_str,
