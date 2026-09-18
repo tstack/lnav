@@ -179,6 +179,7 @@ notcurses_stop_minimal(void* vnc){
       }
     }
       notcurses_bracketed_paste_disable(nc);
+      notcurses_focus_events_disable(nc);
   }
   logdebug("restored terminal, returning %d", ret);
   return ret;

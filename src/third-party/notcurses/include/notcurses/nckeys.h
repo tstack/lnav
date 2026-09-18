@@ -177,6 +177,10 @@ extern "C" {
 
 #define NCKEY_PASTE     preterunicode(300)
 
+// the terminal gained/lost focus (requires focus events to be enabled)
+#define NCKEY_FOCUS_IN  preterunicode(310)
+#define NCKEY_FOCUS_OUT preterunicode(311)
+
 // we received SIGCONT
 #define NCKEY_SIGNAL    preterunicode(400)
 

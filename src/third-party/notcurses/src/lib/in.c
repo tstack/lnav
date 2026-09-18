@@ -114,6 +114,7 @@ typedef struct inputctx {
     atomic_int looping;
     bool bracked_paste_enabled;
     bool in_bracketed_paste;
+    bool focus_events_enabled;
     fbuf paste_buffer;
 } inputctx;
 
@@ -1624,6 +1625,30 @@ bracket_end_cb(inputctx* ictx)
 }
 
 static int
+focus_in_cb(inputctx* ictx)
+{
+    ncinput fni = {
+        .id = NCKEY_FOCUS_IN,
+        .evtype = NCTYPE_PRESS,
+    };
+    load_ncinput(ictx, &fni);
+
+    return 2;
+}
+
+static int
+focus_out_cb(inputctx* ictx)
+{
+    ncinput fni = {
+        .id = NCKEY_FOCUS_OUT,
+        .evtype = NCTYPE_PRESS,
+    };
+    load_ncinput(ictx, &fni);
+
+    return 2;
+}
+
+static int
 extract_xtversion(inputctx* ictx, const char* str, char suffix){
   size_t slen = strlen(str);
   if(slen == 0){
@@ -1938,6 +1963,8 @@ build_cflow_automaton(inputctx* ictx){
     { "[1;\\N:\\NH", kitty_cb_home, },
     {"[200~", bracket_start_cb, },
     {"[201~", bracket_end_cb, },
+    { "[I", focus_in_cb, },
+    { "[O", focus_out_cb, },
     { "[?\\Nu", kitty_keyboard_cb, },
     { "[?1016;\\N$y", decrpm_pixelmice, },
     { "[?2026;\\N$y", decrpm_asu_cb, },
@@ -2965,6 +2992,34 @@ notcurses_bracketed_paste_enable(struct notcurses* nc)
             nc->tcache.ictx->bracked_paste_enabled = true;
             return 0;
         }
+    }
+
+    return -1;
+}
+
+int
+notcurses_focus_events_enable(struct notcurses* nc)
+{
+    if (!tty_emit("\x1b[?" SET_FOCUS_EVENT_MOUSE "h", nc->tcache.ttyfd)) {
+        loginfo("enabled focus events");
+        nc->tcache.ictx->focus_events_enabled = true;
+        return 0;
+    }
+
+    return -1;
+}
+
+int
+notcurses_focus_events_disable(struct notcurses* nc)
+{
+    if (!nc->tcache.ictx->focus_events_enabled) {
+        return 0;
+    }
+
+    if (!tty_emit("\x1b[?" SET_FOCUS_EVENT_MOUSE "l", nc->tcache.ttyfd)) {
+        loginfo("disabled focus events");
+        nc->tcache.ictx->focus_events_enabled = false;
+        return 0;
     }
 
     return -1;

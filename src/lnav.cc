@@ -1024,6 +1024,13 @@ struct refresh_status_bars {
             while (notcurses_get_nblock(this->rsb_screen->get_notcurses(), &ch)
                    > 0)
             {
+                if (ch.id == NCKEY_FOCUS_IN) {
+                    lnav_data.ld_winched = true;
+                    continue;
+                }
+                if (ch.id == NCKEY_FOCUS_OUT) {
+                    continue;
+                }
                 lnav_data.ld_user_message_source.clear();
                 if ((!exec_phase.interactive() && ch.id == 'q')
                     || (ncinput_ctrl_p(&ch) && ch.id == ']'))
@@ -1438,9 +1445,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
     auto& mouse_i = injector::get<xterm_mouse&>();
 
-    auto _paste = finally(
-        [&sc] { notcurses_bracketed_paste_disable(sc.get_notcurses()); });
+    auto _paste = finally([&sc] {
+        notcurses_focus_events_disable(sc.get_notcurses());
+        notcurses_bracketed_paste_disable(sc.get_notcurses());
+    });
     notcurses_bracketed_paste_enable(sc.get_notcurses());
+    notcurses_focus_events_enable(sc.get_notcurses());
 
     auto ui_cb_mouse = false;
     ec.ec_ui_callbacks.uc_pre_stdout_write = [&sc, &mouse_i, &ui_cb_mouse]() {
@@ -1448,6 +1458,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (ui_cb_mouse) {
             mouse_i.set_enabled(sc.get_notcurses(), false);
         }
+        notcurses_focus_events_disable(sc.get_notcurses());
         notcurses_leave_alternate_screen(sc.get_notcurses());
 
         // notcurses sets stdio to non-blocking, which can cause an
@@ -1467,6 +1478,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
                  || ncinput_modifier_p(&nci));
         notcurses_enter_alternate_screen(sc.get_notcurses());
+        notcurses_focus_events_enable(sc.get_notcurses());
 
         if (ui_cb_mouse) {
             mouse_i.set_enabled(sc.get_notcurses(), true);
@@ -2405,6 +2417,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 ncinput nci;
                 auto old_gen = lnav_data.ld_active_files.fc_files_generation;
                 while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
+                    if (nci.id == NCKEY_FOCUS_IN) {
+                        log_debug("terminal gained focus, redrawing");
+                        lnav_data.ld_winched = true;
+                        continue;
+                    }
+                    if (nci.id == NCKEY_FOCUS_OUT) {
+                        continue;
+                    }
                     if (nci.evtype != NCTYPE_RELEASE) {
                         lnav_data.ld_user_message_source.clear();
                     }

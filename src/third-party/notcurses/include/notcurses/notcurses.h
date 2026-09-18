@@ -3914,6 +3914,12 @@ API int notcurses_bracketed_paste_enable(struct notcurses *nc);
 
 API int notcurses_bracketed_paste_disable(struct notcurses *nc);
 
+// Enable/disable reporting of terminal focus changes as NCKEY_FOCUS_IN and
+// NCKEY_FOCUS_OUT events.
+API int notcurses_focus_events_enable(struct notcurses *nc);
+
+API int notcurses_focus_events_disable(struct notcurses *nc);
+
 // Convert the plane's content to greyscale.
 API void ncplane_greyscale(struct ncplane* n)
   __attribute__ ((nonnull (1)));
