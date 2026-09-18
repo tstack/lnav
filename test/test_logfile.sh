@@ -472,6 +472,15 @@ Apr 09 19:58:07 2015 -- 456
 EOF
 
 
+run_test ./drive_logfile -t -f sim_ps_log ${srcdir}/logfile_sim_ps.0
+
+check_output "sim_ps_log timestamp interpreted incorrectly?" <<EOF
+Jan 01 00:00:00 1970 -- 000
+Jan 01 00:00:12 1970 -- 345
+Jan 02 01:01:01 1970 -- 234
+EOF
+
+
 touch -t 201509130923 ${srcdir}/logfile_syslog_with_mixed_times.0
 run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog_with_mixed_times.0
 

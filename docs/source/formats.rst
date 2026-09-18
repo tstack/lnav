@@ -342,6 +342,20 @@ object with the following fields:
   :%i: Milliseconds from the epoch.
   :%6: Microseconds from the epoch.
   :%9: Nanoseconds from the epoch.
+  :%2: Picoseconds from the epoch.  Precision past nanoseconds is dropped.
+
+  A :code:`%f` right after :code:`%i` or :code:`%6` is read as a fraction
+  of a millisecond or microsecond, so :code:`12345.9` with the format
+  :code:`%i.%f` is 12.3459 seconds.
+
+  The conversions that count from the epoch also work for timestamps that
+  are relative to the start of a run, like in a simulation log.  A time
+  before 1979-07-05 (300,000,000 seconds) is displayed as-is instead of
+  being converted to local time.
+
+  The :code:`-` flag from glibc, for example :code:`%-d`, reads a number
+  without padding.  It can be used with :code:`%d`, :code:`%m`, :code:`%H`,
+  :code:`%I`, :code:`%M`, and :code:`%S`.
 
 :convert-to-local-time: If :code:`true`, timestamps are converted to the
   local time zone before being displayed.  This is useful for log formats

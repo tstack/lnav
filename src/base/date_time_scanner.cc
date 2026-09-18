@@ -438,8 +438,10 @@ date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
 void
 date_time_scanner::to_localtime(time_t t, exttm& tm_out)
 {
-    if (t < (24 * 60 * 60)) {
-        // Don't convert and risk going past the epoch.
+    if (t < MIN_LOCAL_TIME) {
+        // A time this close to the epoch is a count from the start of a run
+        // rather than a wall-clock time, so there is no zone to convert to.
+        // Converting would also risk going past the epoch.
         return;
     }
 

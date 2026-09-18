@@ -495,7 +495,7 @@ ptime_s(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
-    return (epoch > 0);
+    return off_inout > off_start;
 }
 
 inline void
@@ -553,7 +553,7 @@ ptime_q(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
-    return (epoch > 0);
+    return off_inout > off_start;
 }
 
 inline void
@@ -674,6 +674,7 @@ ftime_H(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_ms = 0;
     lnav::time64_t epoch;
 
@@ -696,13 +697,13 @@ ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
         | ETF_SUB_NOT_IN_FORMAT;
 
-    return (epoch_ms > 0);
+    return off_inout > off_start;
 }
 
 inline void
 ftime_i(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
-    int64_t t = tm2sec(&tm.et_tm);
+    int64_t t = tm2sec(&tm.et_tm) * 1000LL;
 
     t += tm.et_nsec / 1000000;
     snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
@@ -712,6 +713,7 @@ ftime_i(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_us = 0;
     lnav::time64_t epoch;
 
@@ -734,7 +736,7 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
         | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
-    return (epoch_us > 0);
+    return off_inout > off_start;
 }
 
 inline void
@@ -750,6 +752,7 @@ ftime_6(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    off_t off_start = off_inout;
     uint64_t epoch_ns = 0;
     lnav::time64_t epoch;
 
@@ -771,7 +774,7 @@ ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
-    return (epoch_ns > 0);
+    return off_inout > off_start;
 }
 
 inline void
@@ -781,6 +784,68 @@ ftime_9(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 
     t += tm.et_nsec;
     snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
+    off_inout = strlen(dst);
+}
+
+/**
+ * Picoseconds from the epoch.  The value can exceed what fits in 64 bits, so
+ * the last twelve digits are taken as the fraction of a second and the rest
+ * as the seconds.
+ */
+inline bool
+ptime_2(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    static constexpr int PS_DIGITS = 12;
+    const off_t off_start = off_inout;
+
+    while (off_inout < len && isdigit(str[off_inout])) {
+        off_inout += 1;
+    }
+
+    const auto digits = static_cast<int>(off_inout - off_start);
+    if (digits == 0) {
+        return false;
+    }
+
+    lnav::time64_t epoch = 0;
+    uint64_t sub_ps = 0;
+    for (int lpc = 0; lpc < digits; lpc++) {
+        const auto val = str[off_start + lpc] - '0';
+
+        if (lpc < digits - PS_DIGITS) {
+            epoch = epoch * 10 + val;
+            if (epoch >= MAX_TIME_T) {
+                return false;
+            }
+        } else {
+            sub_ps = sub_ps * 10 + val;
+        }
+    }
+
+    secs2tm(epoch, &dst->et_tm);
+    dst->et_nsec = sub_ps / 1000ULL;
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME | ETF_ZONE_SET | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
+
+    return true;
+}
+
+inline void
+ftime_2(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+{
+    const int64_t t = tm2sec(&tm.et_tm);
+    const int64_t sub_ps = static_cast<int64_t>(tm.et_nsec) * 1000LL;
+
+    if (t > 0) {
+        snprintf(&dst[off_inout],
+                 len - off_inout,
+                 "%" PRId64 "%012" PRId64,
+                 t,
+                 sub_ps);
+    } else {
+        snprintf(&dst[off_inout], len - off_inout, "%" PRId64, sub_ps);
+    }
     off_inout = strlen(dst);
 }
 
@@ -1321,6 +1386,31 @@ ptime_f(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
         nsec += (str[off_inout + index] - '0') * mult;
         mult /= 10;
+    }
+
+    // After "%i" or "%6", the digits are a fraction of a millisecond or a
+    // microsecond, so they add to what that conversion found.  After "%9"
+    // or "%2", they are below the nanosecond resolution and are dropped.
+    if (dst->et_flags & ETF_EPOCH_TIME
+        && dst->et_flags & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
+    {
+        auto unit_digits = size_t{9};
+        if (dst->et_flags & ETF_MILLIS_SET) {
+            unit_digits = 3;
+            dst->et_nsec += nsec / 1'000;
+        } else if (dst->et_flags & ETF_MICROS_SET) {
+            unit_digits = 6;
+            dst->et_nsec += nsec / 1'000'000;
+        }
+        dst->et_flags &= ~(ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET);
+        if (unit_digits + index <= 6) {
+            dst->et_flags |= ETF_MICROS_SET;
+        } else {
+            dst->et_flags |= ETF_NANOS_SET;
+        }
+        off_inout += index;
+
+        return true;
     }
 
     if (index < 4) {

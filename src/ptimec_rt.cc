@@ -248,6 +248,114 @@ ptime_Z_to_gmtoff(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     return true;
 }
 
+/**
+ * Parse a field written with the glibc "-" flag (e.g. "%-d"), which drops the
+ * padding, so the value is one or two digits.
+ */
+static bool
+ptime_unpadded(
+    char conv, exttm* dst, const char* str, off_t& off, ssize_t len)
+{
+    if (off >= len || !isdigit(str[off])) {
+        return false;
+    }
+
+    int val = str[off] - '0';
+    off += 1;
+    if (off < len && isdigit(str[off])) {
+        val = val * 10 + (str[off] - '0');
+        off += 1;
+    }
+
+    switch (conv) {
+        case 'd':
+            if (val < 1 || val > 31) {
+                return false;
+            }
+            dst->et_tm.tm_yday = -1;
+            dst->et_tm.tm_mday = val;
+            dst->et_flags |= ETF_DAY_SET;
+            break;
+        case 'm':
+            if (val < 1 || val > 12) {
+                return false;
+            }
+            dst->et_tm.tm_mon = val - 1;
+            dst->et_flags |= ETF_MONTH_SET;
+            break;
+        case 'H':
+            if (val > 23) {
+                return false;
+            }
+            dst->et_tm.tm_hour = val;
+            dst->et_flags |= ETF_HOUR_SET;
+            break;
+        case 'I':
+            if (val < 1 || val > 12) {
+                return false;
+            }
+            dst->et_tm.tm_hour = val;
+            dst->et_flags |= ETF_HOUR_SET;
+            break;
+        case 'M':
+            if (val > 59) {
+                return false;
+            }
+            dst->et_tm.tm_min = val;
+            dst->et_flags |= ETF_MINUTE_SET;
+            break;
+        case 'S':
+            if (val > 60) {
+                return false;
+            }
+            dst->et_tm.tm_sec = val;
+            dst->et_flags |= ETF_SECOND_SET;
+            break;
+        default:
+            return false;
+    }
+
+    return true;
+}
+
+static void
+ftime_unpadded(
+    char conv, char* dst, off_t& off_inout, ssize_t len, const exttm& tm)
+{
+    int val;
+
+    switch (conv) {
+        case 'd':
+            val = tm.et_tm.tm_mday;
+            break;
+        case 'm':
+            val = tm.et_tm.tm_mon + 1;
+            break;
+        case 'H':
+            val = tm.et_tm.tm_hour;
+            break;
+        case 'I':
+            val = tm.et_tm.tm_hour % 12;
+            if (val == 0) {
+                val = 12;
+            }
+            break;
+        case 'M':
+            val = tm.et_tm.tm_min;
+            break;
+        case 'S':
+            val = tm.et_tm.tm_sec;
+            break;
+        default:
+            return;
+    }
+
+    if (val >= 10) {
+        PTIME_APPEND('0' + ((val / 10) % 10));
+    }
+    PTIME_APPEND('0' + (val % 10));
+}
+
 #define FMT_CASE(ch, c) \
     case ch: \
         if (!ptime_##c(dst, str, off, len)) \
@@ -306,6 +414,7 @@ ptime_fmt(const char* fmt,
                     FMT_CASE('i', i);
                     FMT_CASE('6', 6);
                     FMT_CASE('9', 9);
+                    FMT_CASE('2', 2);
                     FMT_CASE('I', I);
                     FMT_CASE('d', d);
                     FMT_CASE('e', e);
@@ -321,6 +430,12 @@ ptime_fmt(const char* fmt,
                     FMT_CASE('y', y);
                     FMT_CASE('z', z);
                     FMT_CASE('@', at);
+                case '-':
+                    if (!ptime_unpadded(fmt[lpc + 2], dst, str, off, len)) {
+                        return false;
+                    }
+                    lpc += 2;
+                    break;
             }
         } else {
             if (!ptime_char(fmt[lpc], str, off, len)) {
@@ -359,6 +474,7 @@ ftime_fmt(char* dst, size_t len, const char* fmt, const struct exttm& tm)
                     FTIME_FMT_CASE('i', i);
                     FTIME_FMT_CASE('6', 6);
                     FTIME_FMT_CASE('9', 9);
+                    FTIME_FMT_CASE('2', 2);
                     FTIME_FMT_CASE('I', I);
                     FTIME_FMT_CASE('d', d);
                     FTIME_FMT_CASE('e', e);
@@ -373,6 +489,14 @@ ftime_fmt(char* dst, size_t len, const char* fmt, const struct exttm& tm)
                     FTIME_FMT_CASE('Y', Y);
                     FTIME_FMT_CASE('y', y);
                     FTIME_FMT_CASE('z', z);
+                case '-':
+                    if (fmt[lpc + 2]) {
+                        ftime_unpadded(fmt[lpc + 2], dst, off_inout, len, tm);
+                        lpc += 2;
+                    } else {
+                        lpc += 1;
+                    }
+                    break;
             }
         } else {
             ftime_char(dst, off_inout, len, fmt[lpc]);

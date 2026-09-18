@@ -362,6 +362,7 @@ dist_noinst_DATA = \
 	logfile_empty.0 \
 	logfile_epoch.0 \
 	logfile_epoch.1 \
+	logfile_sim_ps.0 \
 	logfile_filter.0 \
 	logfile_filter.1 \
 	logfile_for_join.0 \
@@ -531,6 +532,7 @@ dist_noinst_DATA = \
 	formats/tabular/tabular_space_log.json \
 	formats/tabular/tabular_synth_opid_log.json \
 	formats/timestamp/format.json \
+	formats/timestamp_ps/format.json \
 	formats/timestamp_value/format.json \
 	formats/xmlmsg/format.json \
     log-samples/sample-057d6c669632ef9d07b6adec605f6bdeae19af27.txt \

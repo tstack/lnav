@@ -354,4 +354,126 @@ TEST_CASE("date_time_scanner")
         assert(rc == 19);
         assert(strcmp(ts, buf) == 0);
     }
+
+    {
+        const auto* ts = "1428634687123";
+        const char* fmt[] = {
+            "%i",
+            nullptr,
+        };
+        char buf[64];
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        assert(dts.scan(ts, strlen(ts), fmt, &tm, tv) != nullptr);
+        auto rc = ftime_fmt(buf, sizeof(buf), fmt[0], tm);
+        assert(rc == 13);
+        assert(strcmp(ts, buf) == 0);
+    }
+
+    {
+        const auto* ts = "12345.9";
+        const char* fmt[] = {
+            "%i.%f",
+            nullptr,
+        };
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
+        assert(ts_end - ts == 7);
+        assert(tv.tv_sec == 12);
+        assert(tv.tv_usec == 345900);
+        assert(tm.et_flags & ETF_MICROS_SET);
+        assert(!(tm.et_flags & ETF_MILLIS_SET));
+    }
+
+    {
+        const auto* ts = "1428634687123456.789";
+        const char* fmt[] = {
+            "%6.%f",
+            nullptr,
+        };
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        assert(dts.scan(ts, strlen(ts), fmt, &tm, tv) != nullptr);
+        assert(tm.et_nsec == 123456789);
+        assert(tm.et_flags & ETF_NANOS_SET);
+    }
+
+    {
+        const auto* ts = "90061234567890123";
+        const char* fmt[] = {
+            "%2",
+            nullptr,
+        };
+        char buf[64];
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        // Relative times are not shifted into the local zone, even past the
+        // first day.
+        const auto* old_tz = getenv("TZ");
+        const auto saved_tz = std::string(old_tz ? old_tz : "");
+        setenv("TZ", "America/Los_Angeles", 1);
+        tzset();
+        const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
+        if (old_tz) {
+            setenv("TZ", saved_tz.c_str(), 1);
+        } else {
+            unsetenv("TZ");
+        }
+        tzset();
+
+        assert(ts_end - ts == 17);
+        assert(tv.tv_sec == 90061);
+        assert(tm.et_nsec == 234567890);
+        assert(tm.et_tm.tm_mday == 2);
+        assert(tm.et_tm.tm_hour == 1);
+        assert(tm.et_flags & ETF_NANOS_SET);
+
+        ftime_fmt(buf, sizeof(buf), fmt[0], tm);
+        assert(strcmp(buf, "90061234567890000") == 0);
+    }
+
+    {
+        const char* fmts[] = {"%s", "%i", "%6", "%9", "%2"};
+
+        for (const auto* fmt_str : fmts) {
+            const char* fmt[] = {
+                fmt_str,
+                nullptr,
+            };
+            date_time_scanner dts;
+            exttm tm;
+            timeval tv;
+
+            assert(dts.scan("0", 1, fmt, &tm, tv) != nullptr);
+            assert(tv.tv_sec == 0);
+            assert(dts.scan("x", 1, fmt, &tm, tv) == nullptr);
+        }
+    }
+
+    {
+        const auto* ts = "8-3-2021 7:01:28";
+        const char* fmt = "%-d-%-m-%Y %-H:%M:%S";
+        exttm tm;
+        off_t off = 0;
+
+        bool rc = ptime_fmt(fmt, &tm, ts, off, strlen(ts));
+        assert(rc);
+        assert(off == (off_t) strlen(ts));
+        assert(tm.et_tm.tm_mday == 8);
+        assert(tm.et_tm.tm_mon == 2);
+        assert(tm.et_tm.tm_hour == 7);
+
+        char buf[64];
+        ftime_fmt(buf, sizeof(buf), fmt, tm);
+        assert(strcmp(buf, ts) == 0);
+    }
 }
