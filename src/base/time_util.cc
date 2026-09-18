@@ -418,6 +418,40 @@ exttm::from_tv(const timeval& tv)
     return retval;
 }
 
+void
+exttm::fill_from_base(const exttm& base)
+{
+    const auto flags = this->et_flags;
+
+    if (!(flags & ETF_YEAR_SET)) {
+        this->et_tm.tm_year = base.et_tm.tm_year;
+    }
+    if (!(flags & ETF_MONTH_SET)) {
+        this->et_tm.tm_mon = base.et_tm.tm_mon;
+    }
+    if (!(flags & ETF_DAY_SET)) {
+        this->et_tm.tm_mday = base.et_tm.tm_mday;
+    }
+    if (!(flags & ETF_HOUR_SET)) {
+        this->et_tm.tm_hour = base.et_tm.tm_hour;
+    }
+    if (!(flags & ETF_MINUTE_SET)) {
+        this->et_tm.tm_min = base.et_tm.tm_min;
+    }
+    if (!(flags & ETF_SECOND_SET)) {
+        this->et_tm.tm_sec = 0;
+    }
+    if (!(flags & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))) {
+        this->et_nsec = 0;
+    }
+    if (!(flags & ETF_ZONE_SET)) {
+        this->et_tm.tm_gmtoff = base.et_tm.tm_gmtoff;
+        this->et_tm.tm_isdst = base.et_tm.tm_isdst;
+        this->et_gmtoff = base.et_gmtoff;
+    }
+    this->et_orig_gmtoff = base.et_orig_gmtoff;
+}
+
 timeval
 exttm::to_timeval() const
 {

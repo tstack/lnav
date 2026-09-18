@@ -275,7 +275,10 @@ com_goto_search_hit(exec_context& ec,
     auto new_top = slot
         ? next_cluster(func, tc->search_matches_for_slot(slot.value()),
                        from.value())
-        : next_cluster(func, &textview_curses::BM_SEARCH, from.value());
+        : next_cluster(forward ? text_anchors::direction::next
+                             : text_anchors::direction::prev,
+                       &textview_curses::BM_SEARCH,
+                       from.value());
 
     if (!new_top) {
         return Err(lnav::console::user_message::info(fmt::format(

@@ -196,7 +196,8 @@ public:
         return retval;
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock) override;
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock) override;
 
     std::optional<size_t> stats_index_for_value(
         const intern_string_t& name) const override;
@@ -315,7 +316,7 @@ public:
     std::string get_pattern_path(const pattern_locks& pl,
                                  uint64_t line_number) const override
     {
-        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+        if (this->lf_file_type != file_type_t::TEXT) {
             return "structured";
         }
         auto pat_index = pl.pattern_index_for_line(line_number);
@@ -410,14 +411,6 @@ public:
 
     std::map<intern_string_t, search_table_def> elf_search_tables;
     std::map<const intern_string_t, highlighter_def> elf_highlighter_patterns;
-
-    enum class elf_type_t {
-        ELF_TYPE_TEXT,
-        ELF_TYPE_JSON,
-        ELF_TYPE_TABULAR,
-    };
-
-    elf_type_t elf_type{elf_type_t::ELF_TYPE_TEXT};
 
     scan_result_t scan_json(std::vector<logline>& dst,
                             const line_info& li,

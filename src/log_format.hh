@@ -230,7 +230,8 @@ public:
         return std::nullopt;
     }
 
-    virtual std::shared_ptr<log_format> specialized(int fmt_lock = -1) = 0;
+    virtual std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                                    int fmt_lock = -1) = 0;
 
     /**
      * @return Scratch for this format to discover into while it is a
@@ -386,11 +387,29 @@ public:
         nano,
     };
 
+    /**
+     * The shape of the file that contains the log messages.
+     */
+    enum class file_type_t {
+        TEXT,
+        JSON,
+        TABULAR,
+    };
+
+    /**
+     * The bit for a file type, for use in a set of file types.
+     */
+    static constexpr uint8_t file_type_bit(file_type_t ft)
+    {
+        return 1 << static_cast<uint8_t>(ft);
+    }
+
     std::string lf_description;
     log_format* lf_root_format{this};
     bool lf_multiline{true};
     bool lf_structured{false};
     bool lf_formatted_lines{false};
+    file_type_t lf_file_type{file_type_t::TEXT};
     date_time_scanner lf_date_time;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
     intern_string_t lf_start_timestamp_field;
@@ -491,9 +510,9 @@ protected:
     struct pcre_format {
         template<typename T, std::size_t N>
         explicit pcre_format(const T (&regex)[N])
-            : name(regex),
-              pcre(lnav::pcre2pp::code::from_const(regex, PCRE2_CASELESS)
-                       .to_shared()),
+            : name(regex), pcre(lnav::pcre2pp::code::from_const(
+                                    regex, PCRE2_CASELESS | PCRE2_DOTALL)
+                                    .to_shared()),
               pf_timestamp_index(this->pcre->name_index("timestamp"))
         {
         }

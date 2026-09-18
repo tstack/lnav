@@ -553,10 +553,9 @@ timeline_header_overlay::list_value_for_overlay(
         auto& attrs = al.get_attrs();
         auto total_msgs = sub.ostr_level_stats.lls_total_count;
         auto duration = sub.ostr_range.tr_end - sub.ostr_range.tr_begin;
-        auto duration_str = fmt::format(
-            FMT_STRING(" {: >13}"),
-            humanize::time::duration::from(duration)
-                .to_string());
+        auto duration_str
+            = fmt::format(FMT_STRING(" {: >13}"),
+                          humanize::time::duration::from(duration).to_string());
         al.pad_to(14)
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append(" ")
@@ -795,10 +794,9 @@ timeline_source::text_value_for_line(textview_curses& tc,
         const auto& row = *this->ts_time_order[line];
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
-        auto duration_str = fmt::format(
-            FMT_STRING("{: >13}"),
-            humanize::time::duration::from(duration)
-                .to_string());
+        auto duration_str
+            = fmt::format(FMT_STRING("{: >13}"),
+                          humanize::time::duration::from(duration).to_string());
 
         this->ts_rendered_line.clear();
 
@@ -1002,18 +1000,9 @@ timeline_source::rebuild_indexes()
     this->ts_preview_rows.clear();
     this->ts_preview_status_source.get_description().clear();
 
-    auto min_log_time_tv_opt = this->get_min_row_time();
-    auto max_log_time_tv_opt = this->get_max_row_time();
-    std::optional<std::chrono::microseconds> min_log_time_opt;
-    std::optional<std::chrono::microseconds> max_log_time_opt;
+    auto min_log_time_opt = this->get_min_row_time();
+    auto max_log_time_opt = this->get_max_row_time();
     auto max_desc_width = size_t{0};
-
-    if (min_log_time_tv_opt) {
-        min_log_time_opt = to_us(min_log_time_tv_opt.value());
-    }
-    if (max_log_time_tv_opt) {
-        max_log_time_opt = to_us(max_log_time_tv_opt.value());
-    }
 
     log_info("building opid table");
     auto last_log_time = std::chrono::microseconds{};
@@ -1168,9 +1157,7 @@ timeline_source::rebuild_indexes()
                 }
             } else if (!otr.otr_description.lod_elements.empty()) {
                 auto desc_sf = string_fragment::from_str(
-                    otr.otr_description.lod_elements.entries()
-                        .front()
-                        .second);
+                    otr.otr_description.lod_elements.entries().front().second);
                 row.or_description = desc_sf.to_owned(this->ts_allocator);
             }
             row.or_value.otr_description.lod_elements.clear();
@@ -1765,30 +1752,28 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto msg_count = 0;
 
     // Add a message to the preview.  @return false when the preview is full.
-    auto emit_msg
-        = [this, &preview_content, &lines_remaining, &msg_count](
-              const logline_window::logmsg_info& msg_line) {
-              // A single message can be thousands of lines long in a JSON
-              // log, and the preview pane only shows a handful, so the
-              // budget is spent in lines rather than in whole messages.
-              auto line_count
-                  = std::min(msg_line.get_line_count(), lines_remaining);
+    auto emit_msg = [this, &preview_content, &lines_remaining, &msg_count](
+                        const logline_window::logmsg_info& msg_line) {
+        // A single message can be thousands of lines long in a JSON
+        // log, and the preview pane only shows a handful, so the
+        // budget is spent in lines rather than in whole messages.
+        auto line_count = std::min(msg_line.get_line_count(), lines_remaining);
 
-              for (size_t lpc = 0; lpc < line_count; lpc++) {
-                  auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
-                  auto cl = this->ts_lss.at(vl);
-                  auto row_al = attr_line_t();
-                  this->ts_log_view.textview_value_for_row(vl, row_al);
-                  preview_content.append(row_al).append("\n");
-                  this->ts_preview_rows.emplace_back(
-                      msg_line.get_logline().get_timeval(), cl);
-                  ++cl;
-              }
-              msg_count += 1;
-              lines_remaining -= line_count;
+        for (size_t lpc = 0; lpc < line_count; lpc++) {
+            auto vl = msg_line.get_vis_line() + vis_line_t(lpc);
+            auto cl = this->ts_lss.at(vl);
+            auto row_al = attr_line_t();
+            this->ts_log_view.textview_value_for_row(vl, row_al);
+            preview_content.append(row_al).append("\n");
+            this->ts_preview_rows.emplace_back(
+                msg_line.get_logline().get_timeval(), cl);
+            ++cl;
+        }
+        msg_count += 1;
+        lines_remaining -= line_count;
 
-              return lines_remaining > 0;
-          };
+        return lines_remaining > 0;
+    };
 
     // A search and a tag already know which lines they cover, so their
     // messages come from that index instead of from a scan of the span.  A
@@ -1805,8 +1790,8 @@ timeline_source::text_selection_changed(textview_curses& tc)
             // covers comments and annotations, so the tag check below still
             // has to run -- just over a handful of candidates rather than
             // every message in the span.
-            index = &this->ts_log_view
-                         .get_bookmarks()[&textview_curses::BM_META];
+            index
+                = &this->ts_log_view.get_bookmarks()[&textview_curses::BM_META];
             break;
         default:
             break;

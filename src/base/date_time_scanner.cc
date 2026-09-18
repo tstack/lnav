@@ -122,15 +122,18 @@ date_time_scanner::scan(const char* time_dest,
         time_fmt = PTIMEC_FORMAT_STR;
     }
 
-    ptime_conversion_set failed_leading_conversions = 0;
-
     this->dts_zoned_to_local = cfg.c_zoned_to_local;
-    while (next_format(time_fmt, curr_time_fmt, this->dts_fmt_lock)) {
+    // Whether the input is an epoch is decided by the input alone, so it does
+    // not depend on which format the loop is looking at.  The guard mirrors
+    // the loop's: with nothing to walk, the body would never run.
+    const auto is_epoch_input
+        = (this->dts_fmt_lock != -1 || time_fmt[0] != nullptr) && time_len > 1
+        && time_dest[0] == '+' && isdigit(time_dest[1]);
+    if (is_epoch_input) {
         *tm_out = this->dts_base_tm;
         tm_out->et_tm.tm_yday = -1;
         tm_out->et_flags = 0;
-        if (time_len > 1 && time_dest[0] == '+' && isdigit(time_dest[1])) {
-            retval = nullptr;
+        {
             auto sv = std::string_view{time_dest, time_len};
             auto epoch_scan_res = scn::scan_value<int64_t>(sv);
             if (epoch_scan_res) {
@@ -153,42 +156,50 @@ date_time_scanner::scan(const char* time_dest,
                         | ETF_YEAR_SET | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME
                         | ETF_ZONE_SET;
 
-                    this->dts_fmt_lock = curr_time_fmt;
+                    // Unlocked, the loop would have been on its first entry,
+                    // which is the epoch format.
+                    this->dts_fmt_lock
+                        = this->dts_fmt_lock == -1 ? 0 : this->dts_fmt_lock;
                     this->dts_fmt_len
                         = sv.length() - epoch_scan_res->range().size();
                     retval = time_dest + this->dts_fmt_len;
                     found = true;
-                    break;
                 }
             }
-        } else if (time_fmt == PTIMEC_FORMAT_STR) {
+        }
+    }
+    while (!is_epoch_input
+           && next_format(time_fmt, curr_time_fmt, this->dts_fmt_lock))
+    {
+        if (time_fmt == PTIMEC_FORMAT_STR) {
             const auto& ptf = PTIMEC_FORMATS[curr_time_fmt];
             ptime_func func = ptf.pf_func;
             off_t off = 0;
-            ptime_conversion_set conversion_flag = 0;
 
-            if (ptf.pf_leading_conversion != 0) {
-                conversion_flag
-                    = ptime_leading_conversion_flag(ptf.pf_leading_conversion);
-                if (failed_leading_conversions & conversion_flag) {
-                    continue;
-                }
-            }
-
+            tm_out->et_tm.tm_yday = -1;
+            tm_out->et_flags = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-            if (!this->dts_keep_base_tz) {
+            if (this->dts_keep_base_tz) {
+                tm_out->et_tm.tm_zone = this->dts_base_tm.et_tm.tm_zone;
+            } else {
                 tm_out->et_tm.tm_zone = nullptr;
             }
 #endif
             auto matched = func(tm_out, time_dest, off, time_len);
             if (matched == 0) {
-                // the leading conversion failed, so every other format with
-                // the same one will fail as well.  the flag is zero for a
-                // format with no leading conversion, making this a no-op.
-                failed_leading_conversions |= conversion_flag;
+                // The leading conversion failed, and the formats are grouped
+                // by that conversion, so the rest of this group cannot match
+                // either.  A format with no leading conversion has a group of
+                // one, which steps to the next format.  Only a scan that is
+                // still searching can move the index: next_format() stops a
+                // locked scan by finding the index where it left it.
+                if (this->dts_fmt_lock == -1) {
+                    curr_time_fmt = static_cast<int>(ptf.pf_next_group) - 1;
+                }
             } else if (matched == PTIME_MATCHED) {
                 retval = &time_dest[off];
 
+                tm_out->fill_from_base(this->dts_base_tm);
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
@@ -251,6 +262,8 @@ date_time_scanner::scan(const char* time_dest,
         } else {
             off_t off = 0;
 
+            tm_out->et_tm.tm_yday = -1;
+            tm_out->et_flags = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
             if (!this->dts_keep_base_tz) {
                 tm_out->et_tm.tm_zone = nullptr;
@@ -262,6 +275,7 @@ date_time_scanner::scan(const char* time_dest,
                     || off == (off_t) time_len))
             {
                 retval = &time_dest[off];
+                tm_out->fill_from_base(this->dts_base_tm);
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }

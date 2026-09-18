@@ -42,6 +42,16 @@
 #include "logfile_sub_source.hh"
 #include "text_overlay_menu.hh"
 
+/** What has been found while the files are still being discovered. */
+struct discovery_stats {
+    size_t ds_files{0};
+    size_t ds_log_files{0};
+    size_t ds_text_files{0};
+    size_t ds_errors{0};
+    /** The number of files for each detected format, largest first. */
+    std::vector<std::pair<std::string, size_t>> ds_formats;
+};
+
 class field_overlay_source : public text_overlay_menu {
 public:
     explicit field_overlay_source(logfile_sub_source& lss, text_sub_source& tss)
@@ -114,6 +124,8 @@ public:
     int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_static_lines;
     hasher::array_t fos_static_lines_state;
+    /** Shown in place of the log messages until all files have been found. */
+    std::function<discovery_stats()> fos_discovery_stats;
     std::vector<attr_line_t> fos_lines;
     std::vector<attr_line_t> fos_meta_lines;
     std::optional<content_line_t> fos_header_line;

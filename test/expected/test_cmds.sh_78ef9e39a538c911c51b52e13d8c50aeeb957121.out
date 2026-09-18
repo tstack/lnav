@@ -17,7 +17,8 @@
           [1m[32m[[0mA-Z[1m[32m][0m[1m[32m{[0m3,4[1m[32m}[0m                          # 3-4 uppercase letters [1m[32m([0me[1m[36m.[0mg[1m[36m.[0m month/tz abbrev[1m[32m)[0m
       [1m[32m)[0m[1m[36m+[0m
   [1m[32m)[0m
-  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m[1m[32m][0m[1m[36m?[0m                                     # optional separator
+  [1m[32m([0m[1m[32m?:[0m [1m\d[0m[1m[36m+[0m[1m[32m)[0m[1m[36m?[0m
+  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m\][1m[32m][0m[1m[36m?[0m                                     # optional separator
   [1m[32m([0mtrc[1m[36m|[0mtrace[1m[36m|[0mcritical[1m[36m|[0mfatal[1m[36m|[0mdbg[1m\d[0m[1m[36m?[0m[1m[36m|[0mdebug[1m\d[0m[1m[36m?[0m[1m[36m|[0minfo[1m[36m|[0mwarn[1m[32m([0m[1m[32m?:[0ming[1m[32m)[0m[1m[36m?[0m[1m[36m|[0merr[1m[32m([0m[1m[32m?:[0mor[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m   # log level
   [1m[32m[[0m:[1m[36m|[0m[1m\s[0m[1m[32m][0m                                      # separator
   [1m\s[0m[1m[36m*[0m

@@ -39,7 +39,7 @@
                             "display_value": "file-pattern"
                         },
                         {
-                            "display_value": "json"
+                            "display_value": "file-type"
                         },
                         {
                             "display_value": "level-field"

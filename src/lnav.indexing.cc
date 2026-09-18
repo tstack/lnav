@@ -52,6 +52,7 @@ indexing_scan_progress(file_off_t off,
     if (lnav_data.ld_window == nullptr) {
         return lnav::progress_result_t::ok;
     }
+    log_debug("progress here %lld %lld", off, total);
     // The closing tick, which clears the loading indicator, is the one with
     // nothing left in flight.  Tested ahead of the interrupt checks so that an
     // interrupted pass still gets the indicator cleared.  The total alone will
@@ -98,15 +99,16 @@ indexing_scan_progress(file_off_t off,
         // Only while spinning up, on the same reasoning as there: once the
         // session is going, the selection belongs to the user.
         if (exec_phase.spinning_up()) {
+            log_debug("still spinning up");
             const auto& fc = lnav_data.ld_active_files;
             size_t index = 0;
 
             for (const auto& curr_file : fc.fc_files) {
-                if (fss.find_index_progress(curr_file->get_serial())
-                    != nullptr)
+                if (fss.find_index_progress(curr_file->get_serial()) != nullptr)
                 {
                     const auto row = fc.fc_other_files.size() + index;
 
+                    log_debug("found row %lu", row);
                     lnav_data.ld_files_view.set_selection(vis_line_t(row));
                     // Second from the top rather than wherever the scroll
                     // happens to leave it, which is the bottom: the files
@@ -201,7 +203,7 @@ public:
                 || elem == lf->get_open_options().loo_filename;
         });
         if (lnav_data.ld_log_source.insert_file(lf)) {
-            this->did_promotion = true;
+            this->promotion_count += 1;
             log_info("promoting text file to log file: %s (%s)",
                      lf->get_filename().c_str(),
                      lf->get_content_id().c_str());
@@ -266,7 +268,7 @@ public:
     }
 
     std::shared_ptr<logfile> front_file;
-    bool did_promotion{false};
+    uint32_t promotion_count{0};
 };
 
 static bool
@@ -394,6 +396,11 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     rebuild_indexes_result_t retval;
     bool is_headless = lnav_data.ld_flags.is_set<lnav_flags::headless>();
 
+    if (exec_phase.spinning_up()) {
+        log_info("BEGIN rebuilding indexes of %zd files",
+                 lnav_data.ld_active_files.fc_files.size());
+    }
+
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
         auto* ttt = dynamic_cast<text_time_translator*>(view.get_sub_source());
@@ -441,12 +448,14 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                 tss->to_front(cb.front_file);
             }
         }
-        if (cb.did_promotion) {
+        if (cb.promotion_count > 0) {
             lnav_data.ld_view_stack.set_needs_update();
         }
-        if (cb.did_promotion && deadline) {
+        if (cb.promotion_count > 0 && deadline) {
             // If there's a new log file, extend the deadline so it can be
             // indexed quickly.
+            log_debug("extending indexing deadline for %u new log file(s)",
+                      cb.promotion_count);
             deadline = deadline.value() + 500ms;
         }
     }
@@ -598,6 +607,10 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         lnav_data.ld_files_view.reload_data();
     }
     // log_trace("done");
+
+    if (exec_phase.spinning_up()) {
+        log_info("END rebuilding indexes");
+    }
 
     return retval;
 }

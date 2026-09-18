@@ -37,6 +37,7 @@
 #include <string>
 #include <vector>
 
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "fmt/format.h"
 
@@ -58,13 +59,22 @@ struct external_file_format {
 struct detect_file_format_result {
     file_format_t dffr_file_format{file_format_t::UNKNOWN};
     std::vector<lnav::console::user_message> dffr_details;
+    /** The leading bytes of the file, if they were read. */
+    std::vector<uint8_t> dffr_header;
 };
 
 detect_file_format_result detect_file_format(
     const std::filesystem::path& filename);
 
+/**
+ * Detect the format of the file open on the given descriptor.  The
+ * descriptor is not closed and its offset is left at an unspecified position.
+ */
+detect_file_format_result detect_file_format(
+    const std::filesystem::path& filename, int fd);
+
 std::optional<external_file_format> detect_mime_type(
-    const std::filesystem::path& filename);
+    const std::filesystem::path& filename, string_fragment header);
 
 namespace fmt {
 template<>

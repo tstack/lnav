@@ -1360,26 +1360,22 @@ ensure_view(lnav_view_t expected)
     return ensure_view(&lnav_data.ld_views[expected]);
 }
 
-std::optional<vis_line_t>
-next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
-                 vis_line_t) const,
-             const bookmark_type_t* bt,
-             const vis_line_t top)
+/**
+ * Step to the next mark, collapsing a run of adjacent ones into a single stop
+ * so that moving through a block of errors does not pause on every line of it.
+ *
+ * The stepping and the "is this row marked" test are handed in because a mark
+ * type may be answered by a scan of the source's index rather than by a
+ * bookmark vector, and the collapsing has to come out the same either way.
+ */
+template<typename NextFn, typename MarkedFn>
+static std::optional<vis_line_t>
+next_cluster_impl(textview_curses* tc,
+                  NextFn next,
+                  MarkedFn marked,
+                  const vis_line_t top)
 {
-    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    auto& bm = tc->get_bookmarks();
-
-    return next_cluster(f, bm[bt], top);
-}
-
-std::optional<vis_line_t>
-next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
-                 vis_line_t) const,
-             const bookmark_vector<vis_line_t>& bv,
-             const vis_line_t top)
-{
-    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    bool top_is_marked = bv.bv_tree.exists(top);
+    bool top_is_marked = marked(top);
     vis_line_t last_top(top), tc_height;
     std::optional<vis_line_t> new_top = top;
     unsigned long tc_width;
@@ -1387,7 +1383,7 @@ next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
 
     tc->get_dimensions(tc_height, tc_width);
 
-    while ((new_top = (bv.*f)(new_top.value()))) {
+    while ((new_top = next(new_top.value()))) {
         int diff = new_top.value() - last_top;
 
         hit_count += 1;
@@ -1399,7 +1395,7 @@ next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         }
         if (diff < -1) {
             last_top = new_top.value();
-            while ((new_top = (bv.*f)(new_top.value()))) {
+            while ((new_top = next(new_top.value()))) {
                 if ((std::abs(last_top - new_top.value()) > 1)
                     || (hit_count > 1
                         && (std::abs(top - new_top.value()) >= tc_height)))
@@ -1420,37 +1416,35 @@ next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     return std::nullopt;
 }
 
-bool
-moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
-                   vis_line_t) const,
-               const bookmark_type_t* bt,
-               vis_line_t top)
+std::optional<vis_line_t>
+next_cluster(text_anchors::direction dir,
+             const bookmark_type_t* bt,
+             const vis_line_t top)
 {
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
-    auto sel = tc->get_selection();
-    if (!sel) {
-        return false;
-    }
-    auto new_top = next_cluster(f, bt, top);
 
-    if (!new_top) {
-        new_top = next_cluster(f, bt, sel.value());
-    }
-    if (new_top != -1) {
-        tc->get_sub_source()->get_location_history() |
-            [new_top](auto lh) { lh->loc_history_append(new_top.value()); };
+    return next_cluster_impl(
+        tc,
+        [tc, bt, dir](vis_line_t from) {
+            return tc->adjacent_mark(bt, from, dir);
+        },
+        [tc, bt](vis_line_t vl) { return tc->mark_at_row(bt, vl); },
+        top);
+}
 
-        if (tc->is_selectable()) {
-            tc->set_selection(new_top.value());
-        } else {
-            tc->set_top(new_top.value());
-        }
-        return true;
-    }
+std::optional<vis_line_t>
+next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                 vis_line_t) const,
+             const bookmark_vector<vis_line_t>& bv,
+             const vis_line_t top)
+{
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
-    alerter::singleton().chime("unable to find next bookmark");
-
-    return false;
+    return next_cluster_impl(
+        tc,
+        [&bv, f](vis_line_t from) { return (bv.*f)(from); },
+        [&bv](vis_line_t vl) { return bv.bv_tree.exists(vl); },
+        top);
 }
 
 vis_line_t

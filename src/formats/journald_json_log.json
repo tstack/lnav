@@ -4,7 +4,7 @@
         "title": "journalctl JSON log format",
         "description": "Logger format as created by systemd journalctl -o json",
         "url": "https://www.freedesktop.org/wiki/Software/systemd/json/",
-        "json": true,
+        "file-type": "json",
         "hide-extra": true,
         "convert-to-local-time": true,
         "line-format": [

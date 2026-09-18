@@ -78,9 +78,23 @@ enable_desired_archive_formats(archive* arc)
 Result<describe_result, std::string>
 describe(const fs::path& filename)
 {
+    auto fd = TRY(lnav::filesystem::open_file(filename, O_RDONLY | O_CLOEXEC));
+
+    return describe(filename, fd.get());
+}
+
+Result<describe_result, std::string>
+describe(const fs::path& filename, int fd)
+{
 #if HAVE_ARCHIVE_H
     static constexpr auto RAW_FORMAT_NAME = "raw"_frag;
     static constexpr auto GZ_FILTER_NAME = "gzip"_frag;
+
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+        return Err(fmt::format(FMT_STRING("unable to seek file: {} -- {}"),
+                               filename,
+                               strerror(errno)));
+    }
 
     auto_mem<archive> arc(archive_read_free);
 
@@ -90,7 +104,7 @@ describe(const fs::path& filename)
     enable_desired_archive_formats(arc);
     archive_read_support_format_raw(arc);
     log_debug("read open %s", filename.c_str());
-    auto r = archive_read_open_filename(arc, filename.c_str(), 128 * 1024);
+    auto r = archive_read_open_fd(arc, fd, 128 * 1024);
     if (r == ARCHIVE_OK) {
         archive_entry* entry = nullptr;
 

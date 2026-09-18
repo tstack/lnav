@@ -51,6 +51,7 @@
 #include "data_scanner.hh"
 #include "file_collection.hh"
 #include "lnav.events.hh"
+#include "lnav.exec-phase.hh"
 #include "log.watch.hh"
 #include "md2attr_line.hh"
 #include "msg.text.hh"
@@ -603,10 +604,10 @@ textfile_sub_source::text_filters_changed()
                 = lfo->excluded(filter_in_mask, filter_out_mask, lpc);
             if (!dominated && lf->has_line_metadata()) {
                 auto ll = lf->begin() + lpc;
-                if (ll->get_timeval() < this->ttt_min_row_time) {
+                if (ll->get_time() < this->ttt_min_row_time) {
                     dominated = true;
                 }
-                if (this->ttt_max_row_time < ll->get_timeval()) {
+                if (this->ttt_max_row_time < ll->get_time()) {
                     dominated = true;
                 }
             }
@@ -928,18 +929,36 @@ textfile_sub_source::text_crumbs_for_line(
 
 textfile_sub_source::prescan_map
 textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
-                                   bool last_aborted,
                                    std::optional<ui_clock::time_point> deadline)
 {
     prescan_map retval;
 
+    static auto& exec_phase = injector::get<lnav::exec_phase&>();
+
+    // Until the scan is done, a file that has been read to the end is left
+    // out of the fan-out entirely.  A pass costs as long as its slowest
+    // file, so carrying the finished files along makes every pass pay the
+    // straggler tail again for work that is already done.  It does mean a
+    // file that grows during startup is not picked up until the scan
+    // completes -- rebuild_index() is what re-stats a file, so skipping it
+    // leaves lf_stat behind -- which is the trade startup is willing to
+    // make.
+    const auto skip_indexed = !exec_phase.scan_completed();
     std::vector<std::shared_ptr<file_view_state>> work;
     for (const auto& fvs : this->tss_files) {
-        const auto& lf = fvs->fvs_file;
-
-        // The same two rules the rescan loop applies before it scans
-        // anything, so this never indexes a file the loop would skip.
-        if (lf->is_closed() || (last_aborted && lf->size() > 0)) {
+        if (fvs->fvs_file->is_closed()) {
+            log_debug("closed");
+            continue;
+        }
+        if (skip_indexed && fvs->fvs_file->is_fully_indexed()) {
+            log_debug("skipper %lld %lld %x",
+                      fvs->fvs_file->get_index_size(),
+                      fvs->fvs_file->get_stat().st_size,
+                      fvs->fvs_file->get_stat().st_mode);
+            // Still an entry, because the rescan loop require()s one for
+            // every file it walks, and NO_NEW_LINES is what an inline scan
+            // of a finished file would have returned anyway.
+            retval[fvs->fvs_file.get()] = prescan_result{};
             continue;
         }
         work.emplace_back(fvs);
@@ -954,8 +973,10 @@ textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
     // still means a worker, because the tick has to run somewhere.
     const auto width = lnav::logfile_indexing_width(work.size());
 
-    log_info(
-        "pre-scanning %zu text files over %zu threads", work.size(), width);
+    log_info("pre-scanning %zu text files over %zu threads (skipped %zu done)",
+             work.size(),
+             width,
+             retval.size());
 
     // Reused across ticks so the UI poll allocates nothing.
     std::vector<index_progress_report> in_flight;
@@ -965,11 +986,14 @@ textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
         fvs->fvs_file->begin_indexing_progress();
     }
 
+    auto curr_opid = lnav_current_opid();
+
     bool ticked = false;
     lnav::parallel_for_each(
         work.size(),
         width,
         [&](size_t index) {
+            auto op = lnav_opid_guard::resume(curr_opid);
             auto& lf = work[index]->fvs_file;
             auto& res = results[index];
 
@@ -1113,37 +1137,120 @@ textfile_sub_source::prescan_markdown()
     return retval;
 }
 
+textfile_sub_source::meta_prescan_map
+textfile_sub_source::prescan_metadata(
+    const std::vector<std::shared_ptr<file_view_state>>& work)
+{
+    meta_prescan_map retval;
+
+    if (work.empty()) {
+        return retval;
+    }
+
+    const auto width = lnav::logfile_indexing_width(work.size());
+
+    log_info("discovering metadata for %zu text files over %zu threads",
+             work.size(),
+             width);
+
+    std::vector<meta_prescan_result> results(work.size());
+
+    lnav::parallel_for_each(work.size(), width, [&](size_t index) {
+        const auto& lf = work[index]->fvs_file;
+        auto& res = results[index];
+
+        try {
+            auto read_res = lf->read_file(logfile::read_format_t::with_framing);
+            if (read_res.isErr()) {
+                res.mps_read_error = read_res.unwrapErr();
+                return;
+            }
+
+            auto read_file_res = read_res.unwrap();
+            const auto tf_opt = lf->get_text_format();
+            if (!read_file_res.rfr_range.fr_metadata.m_valid_utf || !tf_opt) {
+                return;
+            }
+
+            auto content = attr_line_t(read_file_res.rfr_content);
+
+            log_info("generating metadata for: %s (size=%zu)",
+                     lf->get_path_for_key().c_str(),
+                     content.length());
+            scrub_ansi_string(content.get_string(), &content.get_attrs());
+
+            res.mps_text_meta
+                = extract_text_meta(content.get_string(), tf_opt.value());
+            res.mps_metadata = lnav::document::discover(content)
+                                   .with_text_format(tf_opt.value())
+                                   .perform();
+        } catch (const line_buffer::error&) {
+            res.mps_failed = true;
+        }
+    });
+
+    for (size_t lpc = 0; lpc < work.size(); lpc++) {
+        retval[work[lpc]->fvs_file.get()] = std::move(results[lpc]);
+    }
+
+    return retval;
+}
+
 textfile_sub_source::rescan_result_t
 textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                   std::optional<ui_clock::time_point> deadline)
 {
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
-    file_iterator iter;
     rescan_result_t retval;
-    size_t files_scanned = 0;
 
     if (this->tss_view == nullptr || this->tss_view->is_paused()) {
         return retval;
     }
 
-    auto last_aborted = std::exchange(this->tss_last_scan_aborted, false);
-    const auto prescan = this->prescan_files(callback, last_aborted, deadline);
+    const auto prescan = this->prescan_files(callback, deadline);
     // After the scan, since it needs the files indexed and their text format
     // worked out.
     auto md_prescan = this->prescan_markdown();
 
-    std::vector<std::shared_ptr<logfile>> closed_files;
-    for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-        if (deadline && files_scanned > 0 && ui_clock::now() > deadline.value())
-        {
-            log_info("rescan_files() deadline reached, breaking...");
-            retval.rr_scan_completed = false;
-            this->tss_last_scan_aborted = true;
-            break;
-        }
+    // The scan is what can run long, so the check goes here.  A file that is
+    // still short of its end after the clock ran out is what makes the pass
+    // incomplete; finishing everything with time to spare, or running long
+    // with nothing left to read, is a complete pass.
+    const auto out_of_time
+        = deadline.has_value() && ui_clock::now() > deadline.value();
 
-        std::shared_ptr<logfile> lf = (*iter)->fvs_file;
+    const auto stamp = [](file_view_state& fvs) {
+        const auto& lf = fvs.fvs_file;
+        const auto& st = lf->get_stat();
+
+        fvs.fvs_mtime = st.st_mtime;
+        fvs.fvs_file_size = st.st_size;
+        fvs.fvs_file_indexed_size = lf->get_index_size();
+    };
+
+    struct pending_file {
+        std::shared_ptr<file_view_state> pf_fvs;
+        decltype(file_view_state::fvs_lines_indexed) pf_old_size;
+        bool pf_new_data;
+    };
+
+    std::vector<std::shared_ptr<logfile>> closed_files;
+    const auto drop_file
+        = [this, &closed_files](const std::shared_ptr<file_view_state>& fvs) {
+              auto fvs_iter = std::find(
+                  this->tss_files.begin(), this->tss_files.end(), fvs);
+              if (fvs_iter != this->tss_files.end()) {
+                  this->tss_files.erase(fvs_iter);
+              }
+              fvs->fvs_file->close();
+              this->detach_observer(fvs->fvs_file);
+              closed_files.emplace_back(fvs->fvs_file);
+          };
+    std::vector<pending_file> pending;
+    std::vector<std::shared_ptr<file_view_state>> meta_work;
+    for (auto iter = this->tss_files.begin(); iter != this->tss_files.end();) {
+        const auto lf = (*iter)->fvs_file;
 
         if (lf->is_closed()) {
             iter = this->tss_files.erase(iter);
@@ -1153,17 +1260,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             continue;
         }
 
-        if (last_aborted && lf->size() > 0) {
-            retval.rr_scan_completed = false;
-            ++iter;
-            continue;
-        }
-        files_scanned += 1;
-
         const auto pre_iter = prescan.find(lf.get());
-        if (pre_iter != prescan.end() && pre_iter->second.psr_failed) {
-            // The pre-scan hit the error an inline scan would have thrown;
-            // take the same path the catch below does.
+        require(pre_iter != prescan.end());
+        if (pre_iter->second.psr_failed) {
             iter = this->tss_files.erase(iter);
             lf->close();
             this->detach_observer(lf);
@@ -1171,131 +1270,125 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             continue;
         }
 
+        if (lf->get_format() != nullptr) {
+            iter = this->tss_files.erase(iter);
+            this->detach_observer(lf);
+            callback.promote_file(lf);
+            continue;
+        }
+
+        auto new_data = false;
+        switch (pre_iter->second.psr_result) {
+            case logfile::rebuild_result_t::NEW_LINES:
+            case logfile::rebuild_result_t::NEW_ORDER:
+                new_data = true;
+                retval.rr_new_data += 1;
+                break;
+            case logfile::rebuild_result_t::NO_NEW_LINES:
+                this->move_to_init_location(iter);
+                break;
+            default:
+                break;
+        }
+        callback.scanned_file(lf);
+
+        if (lf->is_indexing()
+            && lf->get_text_format() != text_format_t::TF_BINARY)
+        {
+            const auto& st = lf->get_stat();
+
+            if (!new_data) {
+                // Only invalidate the meta if the file is small, or we
+                // found some meta previously.
+                if ((st.st_mtime != (*iter)->fvs_mtime
+                     || st.st_size != (*iter)->fvs_file_size
+                     || lf->get_index_size() != (*iter)->fvs_file_indexed_size)
+                    && (st.st_size < 10 * 1024 || (*iter)->fvs_file_size == 0
+                        || !(*iter)->fvs_metadata.m_sections_tree.empty()))
+                {
+                    log_debug(
+                        "text file has changed, invalidating metadata.  "
+                        "old: {mtime: %ld size: %lld isize: %lld}, new: "
+                        "{mtime: %ld size: %lld isize: %lld}",
+                        (*iter)->fvs_mtime,
+                        (*iter)->fvs_file_size,
+                        (*iter)->fvs_file_indexed_size,
+                        st.st_mtime,
+                        st.st_size,
+                        lf->get_index_size());
+                    (*iter)->fvs_metadata = {};
+                    (*iter)->fvs_error.clear();
+                }
+            }
+
+            if (!(*iter)->fvs_metadata.m_sections_root
+                && (*iter)->fvs_error.empty())
+            {
+                meta_work.emplace_back(*iter);
+            }
+        }
+
+        if (out_of_time && !lf->is_fully_indexed()) {
+            retval.rr_scan_completed = false;
+        }
+
+        pending.emplace_back(
+            pending_file{*iter, (*iter)->fvs_lines_indexed, new_data});
+        ++iter;
+    }
+
+    // lnav::document::discover() cannot be interrupted part way, so a pass
+    // that is already out of time leaves the metadata to the next one rather
+    // than running further past the deadline.  meta_work is rebuilt from
+    // fvs_metadata on every pass, so the files come back around.
+    meta_prescan_map meta_prescan;
+    if (out_of_time && !meta_work.empty()) {
+        log_info(
+            "rescan_files() deadline reached, deferring metadata for "
+            "%zu files",
+            meta_work.size());
+        retval.rr_scan_completed = false;
+    } else {
+        meta_prescan = this->prescan_metadata(meta_work);
+    }
+
+    for (const auto& pf : pending) {
+        const auto& fvs = pf.pf_fvs;
+        const auto& lf = fvs->fvs_file;
+
         try {
             const auto& st = lf->get_stat();
-            const auto old_size = (*iter)->fvs_lines_indexed;
-            logfile::rebuild_result_t new_text_data;
+            const auto meta_iter = meta_prescan.find(lf.get());
 
-            if (pre_iter == prescan.end()) {
-                new_text_data = lf->rebuild_index(deadline);
-            } else {
-                // Already indexed above, alongside the other files.
-                new_text_data = pre_iter->second.psr_result;
-            }
+            if (meta_iter != meta_prescan.end()) {
+                auto& mps = meta_iter->second;
 
-            if (lf->get_format() != nullptr) {
-                iter = this->tss_files.erase(iter);
-                this->detach_observer(lf);
-                callback.promote_file(lf);
-                continue;
-            }
-
-            bool new_data = false;
-            switch (new_text_data) {
-                case logfile::rebuild_result_t::NEW_LINES:
-                case logfile::rebuild_result_t::NEW_ORDER:
-                    new_data = true;
-                    retval.rr_new_data += 1;
-                    break;
-                case logfile::rebuild_result_t::NO_NEW_LINES:
-                    this->move_to_init_location(iter);
-                    break;
-                default:
-                    break;
-            }
-            callback.scanned_file(lf);
-
-            if (lf->is_indexing()
-                && lf->get_text_format() != text_format_t::TF_BINARY)
-            {
-                if (!new_data) {
-                    // Only invalidate the meta if the file is small, or we
-                    // found some meta previously.
-                    if ((st.st_mtime != (*iter)->fvs_mtime
-                         || st.st_size != (*iter)->fvs_file_size
-                         || lf->get_index_size()
-                             != (*iter)->fvs_file_indexed_size)
-                        && (st.st_size < 10 * 1024
-                            || (*iter)->fvs_file_size == 0
-                            || !(*iter)->fvs_metadata.m_sections_tree.empty()))
-                    {
-                        log_debug(
-                            "text file has changed, invalidating metadata.  "
-                            "old: {mtime: %ld size: %lld isize: %lld}, new: "
-                            "{mtime: %ld size: %lld isize: %lld}",
-                            (*iter)->fvs_mtime,
-                            (*iter)->fvs_file_size,
-                            (*iter)->fvs_file_indexed_size,
-                            st.st_mtime,
-                            st.st_size,
-                            lf->get_index_size());
-                        (*iter)->fvs_metadata = {};
-                        (*iter)->fvs_error.clear();
-                    }
+                if (mps.mps_failed) {
+                    drop_file(fvs);
+                    continue;
                 }
-
-                if (!(*iter)->fvs_metadata.m_sections_root
-                    && (*iter)->fvs_error.empty())
-                {
-                    auto read_res
-                        = lf->read_file(logfile::read_format_t::with_framing);
-
-                    if (read_res.isOk()) {
-                        auto read_file_res = read_res.unwrap();
-                        auto tf_opt = lf->get_text_format();
-
-                        if (!read_file_res.rfr_range.fr_metadata.m_valid_utf
-                            || !tf_opt)
-                        {
-                            log_error(
-                                "%s: file has no text format, skipping meta "
-                                "discovery",
-                                lf->get_path_for_key().c_str());
-                            (*iter)->fvs_mtime = st.st_mtime;
-                            (*iter)->fvs_file_size = st.st_size;
-                            (*iter)->fvs_file_indexed_size
-                                = lf->get_index_size();
-                            (*iter)->fvs_error = "skipping meta discovery";
-                        } else {
-                            auto content
-                                = attr_line_t(read_file_res.rfr_content);
-
-                            log_info("generating metadata for: %s (size=%zu)",
-                                     lf->get_path_for_key().c_str(),
-                                     content.length());
-                            scrub_ansi_string(content.get_string(),
-                                              &content.get_attrs());
-
-                            auto text_meta = extract_text_meta(
-                                content.get_string(), tf_opt.value());
-                            if (text_meta) {
-                                lf->set_filename(text_meta->tfm_filename);
-                                lf->set_include_in_session(true);
-                                callback.renamed_file(lf);
-                            }
-
-                            (*iter)->fvs_mtime = st.st_mtime;
-                            (*iter)->fvs_file_size = st.st_size;
-                            (*iter)->fvs_file_indexed_size
-                                = lf->get_index_size();
-                            (*iter)->fvs_metadata
-                                = lnav::document::discover(content)
-                                      .with_text_format(tf_opt.value())
-                                      .perform();
-                            log_info("  metadata indents size: %zu",
-                                     (*iter)->fvs_metadata.m_indents.size());
-                        }
-                    } else {
-                        auto errmsg = read_res.unwrapErr();
-                        log_error(
-                            "%s: unable to read file for meta discover -- %s",
-                            lf->get_path_for_key().c_str(),
-                            errmsg.c_str());
-                        (*iter)->fvs_mtime = st.st_mtime;
-                        (*iter)->fvs_file_size = st.st_size;
-                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
-                        (*iter)->fvs_error = errmsg;
+                if (!mps.mps_read_error.empty()) {
+                    log_error("%s: unable to read file for meta discover -- %s",
+                              lf->get_path_for_key().c_str(),
+                              mps.mps_read_error.c_str());
+                    stamp(*fvs);
+                    fvs->fvs_error = mps.mps_read_error;
+                } else if (!mps.mps_metadata) {
+                    log_error(
+                        "%s: file has no text format, skipping meta discovery",
+                        lf->get_path_for_key().c_str());
+                    stamp(*fvs);
+                    fvs->fvs_error = "skipping meta discovery";
+                } else {
+                    if (mps.mps_text_meta) {
+                        lf->set_filename(mps.mps_text_meta->tfm_filename);
+                        lf->set_include_in_session(true);
+                        callback.renamed_file(lf);
                     }
+                    stamp(*fvs);
+                    fvs->fvs_metadata = std::move(mps.mps_metadata.value());
+                    log_info("  metadata indents size: %zu",
+                             fvs->fvs_metadata.m_indents.size());
                 }
             }
 
@@ -1304,7 +1397,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             this->get_filters().get_enabled_mask(filter_in_mask,
                                                  filter_out_mask);
             auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-            for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
+            for (uint32_t lpc = pf.pf_old_size; lpc < lf->size(); lpc++) {
                 if (this->tss_apply_filters
                     && lfo->excluded(filter_in_mask, filter_out_mask, lpc))
                 {
@@ -1312,21 +1405,19 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 }
                 lfo->lfo_filter_state.tfs_index.push_back(lpc);
             }
-            (*iter)->fvs_lines_indexed = lf->size();
+            fvs->fvs_lines_indexed = lf->size();
 
             if (lf->get_text_format() == text_format_t::TF_MARKDOWN) {
-                if ((*iter)->fvs_text_source) {
-                    if ((*iter)->fvs_file_size == st.st_size
-                        && (*iter)->fvs_file_indexed_size
-                            == lf->get_index_size()
-                        && (*iter)->fvs_mtime == st.st_mtime)
+                if (fvs->fvs_text_source) {
+                    if (fvs->fvs_file_size == st.st_size
+                        && fvs->fvs_file_indexed_size == lf->get_index_size()
+                        && fvs->fvs_mtime == st.st_mtime)
                     {
-                        ++iter;
                         continue;
                     }
                     log_info("markdown file has been updated, re-rendering: %s",
                              lf->get_path_for_key().c_str());
-                    (*iter)->fvs_text_source = nullptr;
+                    fvs->fvs_text_source = nullptr;
                 }
 
                 // Either rendered up front alongside the other markdown
@@ -1372,17 +1463,15 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                              lf->get_basename().c_str(),
                              md_res.mpr_content.size());
 
-                    (*iter)->fvs_mtime = st.st_mtime;
-                    (*iter)->fvs_file_indexed_size = lf->get_index_size();
-                    (*iter)->fvs_file_size = st.st_size;
-                    (*iter)->fvs_text_source
+                    stamp(*fvs);
+                    fvs->fvs_text_source
                         = std::make_unique<plain_text_source>();
-                    (*iter)->fvs_text_source->set_text_format(
+                    fvs->fvs_text_source->set_text_format(
                         lf->get_text_format());
                     if (md_res.mpr_rendered) {
                         auto& lf_meta = lf->get_embedded_metadata();
 
-                        (*iter)->fvs_text_source->replace_with(
+                        fvs->fvs_text_source->replace_with(
                             md_res.mpr_rendered.value());
                         if (!md_res.mpr_frontmatter.empty()) {
                             lf_meta["net.daringfireball.markdown.frontmatter"]
@@ -1409,28 +1498,27 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             attr_line_t::from_ansi_str(
                                 md_res.mpr_content.c_str()));
 
-                        (*iter)->fvs_text_source->replace_with(view_content);
+                        fvs->fvs_text_source->replace_with(view_content);
                     }
-                    (*iter)->fvs_text_source->register_view(this->tss_view);
+                    fvs->fvs_text_source->register_view(this->tss_view);
                 } else {
                     log_error("unable to read markdown file: %s -- %s",
                               lf->get_path_for_key().c_str(),
                               md_res.mpr_read_error.c_str());
                 }
-            } else if (file_needs_reformatting(lf) && !new_data) {
-                if ((*iter)->fvs_file_size == st.st_size
-                    && (*iter)->fvs_file_indexed_size == lf->get_index_size()
-                    && (*iter)->fvs_mtime == st.st_mtime
-                    && (!(*iter)->fvs_error.empty()
-                        || (*iter)->fvs_text_source != nullptr))
+            } else if (file_needs_reformatting(lf) && !pf.pf_new_data) {
+                if (fvs->fvs_file_size == st.st_size
+                    && fvs->fvs_file_indexed_size == lf->get_index_size()
+                    && fvs->fvs_mtime == st.st_mtime
+                    && (!fvs->fvs_error.empty()
+                        || fvs->fvs_text_source != nullptr))
                 {
-                    ++iter;
                     continue;
                 }
                 log_info("pretty file has been updated, re-rendering: %s",
                          lf->get_path_for_key().c_str());
-                (*iter)->fvs_text_source = nullptr;
-                (*iter)->fvs_error.clear();
+                fvs->fvs_text_source = nullptr;
+                fvs->fvs_error.clear();
 
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
                 if (read_res.isOk()) {
@@ -1443,46 +1531,34 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         attr_line_t pretty_al;
 
                         pp.append_to(pretty_al);
-                        (*iter)->fvs_mtime = st.st_mtime;
-                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
-                        (*iter)->fvs_file_size = st.st_size;
-                        (*iter)->fvs_text_source
+                        stamp(*fvs);
+                        fvs->fvs_text_source
                             = std::make_unique<plain_text_source>();
-                        (*iter)->fvs_text_source->set_text_format(
+                        fvs->fvs_text_source->set_text_format(
                             lf->get_text_format());
-                        (*iter)->fvs_text_source->register_view(this->tss_view);
-                        (*iter)->fvs_text_source->replace_with_mutable(
+                        fvs->fvs_text_source->register_view(this->tss_view);
+                        fvs->fvs_text_source->replace_with_mutable(
                             pretty_al, lf->get_text_format());
                     } else {
                         log_error(
                             "unable to read file to pretty-print: %s -- file "
                             "is not valid UTF-8",
                             lf->get_path_for_key().c_str());
-                        (*iter)->fvs_mtime = st.st_mtime;
-                        (*iter)->fvs_file_indexed_size = lf->get_index_size();
-                        (*iter)->fvs_file_size = st.st_size;
-                        (*iter)->fvs_error = "file is not valid UTF-8";
+                        stamp(*fvs);
+                        fvs->fvs_error = "file is not valid UTF-8";
                     }
                 } else {
                     auto errmsg = read_res.unwrapErr();
                     log_error("unable to read file to pretty-print: %s -- %s",
                               lf->get_path_for_key().c_str(),
                               errmsg.c_str());
-                    (*iter)->fvs_mtime = st.st_mtime;
-                    (*iter)->fvs_file_indexed_size = lf->get_index_size();
-                    (*iter)->fvs_file_size = st.st_size;
-                    (*iter)->fvs_error = errmsg;
+                    stamp(*fvs);
+                    fvs->fvs_error = errmsg;
                 }
             }
         } catch (const line_buffer::error& e) {
-            iter = this->tss_files.erase(iter);
-            lf->close();
-            this->detach_observer(lf);
-            closed_files.emplace_back(lf);
-            continue;
+            drop_file(fvs);
         }
-
-        ++iter;
     }
     if (!closed_files.empty()) {
         callback.closed_files(closed_files);

@@ -264,8 +264,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             diff = to_us(curr_tv) - to_us(actual_tv);
             time_str.append(";  Diff: ");
             time_lr.lr_start = time_str.length();
-            time_str.append(
-                humanize::time::duration::from(diff).to_string());
+            time_str.append(humanize::time::duration::from(diff).to_string());
             time_lr.lr_end = time_str.length();
             time_line.with_attr(
                 string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
@@ -1016,8 +1015,8 @@ field_overlay_source::build_search_lines(const listview_curses& lv,
 
     for (size_t lpc = 0; lpc < rows.size(); lpc++) {
         const auto& sr = rows[lpc];
-        const auto* graphic
-            = (lpc == rows.size() - 1) ? NCACS_LLCORNER : NCACS_LTEE;
+        const auto* graphic = (lpc == rows.size() - 1) ? NCACS_LLCORNER
+                                                       : NCACS_LTEE;
         // The prefix is all ASCII apart from the icon, which reserves two
         // spaces, so byte offsets and column widths agree here.
         auto al = attr_line_t(" ")
@@ -1035,10 +1034,10 @@ field_overlay_source::build_search_lines(const listview_curses& lv,
         // out there: the readable() pass that keeps highlighted text legible
         // only has something to work with when the text has a foreground of
         // its own, which these overlay rows do not.
-        al.with_attr(string_attr(
-            line_range{(int) name_start, (int) name_end},
-            VC_STYLE.value(view_colors::singleton().attrs_for_ident(
-                sr.sr_search->ns_name))));
+        al.with_attr(
+            string_attr(line_range{(int) name_start, (int) name_end},
+                        VC_STYLE.value(view_colors::singleton().attrs_for_ident(
+                            sr.sr_search->ns_name))));
 
         al.pad_to(name_start + name_size).append(" = ").append(sr.sr_value);
 
@@ -1354,7 +1353,46 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
     }
 
     const std::vector<attr_line_t>* lines = nullptr;
-    if (exec_phase.spinning_up()) {
+    if (!exec_phase.scan_completed() && this->fos_discovery_stats) {
+        if (y == 0) {
+            const auto stats = this->fos_discovery_stats();
+            auto msg = lnav::console::user_message::info(
+                attr_line_t("Discovering files... ")
+                    .append(lnav::roles::number(fmt::to_string(stats.ds_files)))
+                    .append(" found so far"));
+            auto counts = attr_line_t()
+                              .append(lnav::roles::number(
+                                  fmt::to_string(stats.ds_log_files)))
+                              .append(" log files, ")
+                              .append(lnav::roles::number(
+                                  fmt::to_string(stats.ds_text_files)))
+                              .append(" text files");
+            if (stats.ds_errors > 0) {
+                counts.append(", ")
+                    .append(
+                        lnav::roles::number(fmt::to_string(stats.ds_errors)))
+                    .append(" errors");
+            }
+            msg.with_note(counts);
+            if (!stats.ds_formats.empty()) {
+                auto formats = attr_line_t("formats: ");
+                for (size_t lpc = 0; lpc < stats.ds_formats.size(); lpc++) {
+                    const auto& [name, count] = stats.ds_formats[lpc];
+                    if (lpc > 0) {
+                        formats.append(", ");
+                    }
+                    formats.append(lnav::roles::symbol(name))
+                        .append(" ")
+                        .append(lnav::roles::number(fmt::to_string(count)));
+                }
+                msg.with_note(formats);
+            }
+            this->fos_static_lines = msg.to_attr_line().split_lines();
+            this->fos_static_lines_state.clear();
+            apply_status_attrs(this->fos_static_lines);
+        }
+        lines = &this->fos_static_lines;
+    } else if (exec_phase.spinning_up()) {
         auto msg
             = lnav::console::user_message::info("Files are being indexed...");
         this->fos_static_lines = msg.to_attr_line().split_lines();

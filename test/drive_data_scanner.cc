@@ -185,7 +185,7 @@ main(int argc, char* argv[])
                                 ->scan(*lf, index, li, sbr, sbc)
                                 .is<log_format::scan_match>())
                         {
-                            format = (*iter)->specialized();
+                            format = (*iter)->specialized(sbc);
                             found = true;
                         }
                     }

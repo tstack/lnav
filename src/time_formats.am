@@ -53,6 +53,13 @@ TIME_FORMATS = \
     "%Y %b %d %a %H:%M:%S.%L" \
     "%Y %b %d %H:%M:%S.%L" \
     "%Y %b %d %H:%M:%S" \
+    "%b-%d %H:%M:%S" \
+    "%b %d %H:%M:%S" \
+    "%b %d %k:%M:%S" \
+    "%b %d %l:%M:%S" \
+    "%b %d %l:%M" \
+    "%b %e, %Y %l:%M:%S %p" \
+    "%b %d, %Y %l:%M:%S %p" \
     "%a %b %e %H:%M:%S %Y" \
     "%a %b %e %H:%M:%S.%f %Y" \
     "%a %b %e %H:%M:%S:%f %Y" \
@@ -73,13 +80,6 @@ TIME_FORMATS = \
     "%d %b %Y %H:%M:%S.%L" \
     "%d %b %Y %H:%M:%S,%L" \
     "%d %b %Y %H:%M" \
-    "%b-%d %H:%M:%S" \
-    "%b %d %H:%M:%S" \
-    "%b %d %k:%M:%S" \
-    "%b %d %l:%M:%S" \
-    "%b %d %l:%M" \
-    "%b %e, %Y %l:%M:%S %p" \
-    "%b %d, %Y %l:%M:%S %p" \
     "%m/%d/%Y %I:%M:%S:%L %p %Z" \
     "%m/%d/%Y %I:%M:%S %p %Z" \
     "%m/%d/%Y %l:%M:%S %p %Z" \

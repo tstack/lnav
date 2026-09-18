@@ -184,6 +184,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party/cpp-HyperLogLog/include \
 	-I$(srcdir)/third-party/date/include \
 	-I$(srcdir)/third-party/digestible/include \
+	-I$(srcdir)/third-party/parallel_hashmap \
 	-I$(srcdir)/third-party/notcurses/include \
 	-I$(srcdir)/third-party/lnav-rs-ext \
 	-I$(srcdir)/third-party/rapidyaml \
@@ -311,7 +312,6 @@ noinst_HEADERS = \
 	hotkeys.hh \
 	init.sql \
 	input_dispatcher.hh \
-	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
@@ -468,6 +468,14 @@ THIRD_PARTY_SRCS = \
     third-party/md4c/entity.c \
     third-party/md4c/md4c.c \
     third-party/md4c/md4c-html.c \
+    third-party/parallel_hashmap/meminfo.h \
+    third-party/parallel_hashmap/phmap.h \
+    third-party/parallel_hashmap/phmap_base.h \
+    third-party/parallel_hashmap/phmap_bits.h \
+    third-party/parallel_hashmap/phmap_config.h \
+    third-party/parallel_hashmap/phmap_dump.h \
+    third-party/parallel_hashmap/phmap_fwd_decl.h \
+    third-party/parallel_hashmap/phmap_utils.h \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c \

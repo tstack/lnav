@@ -45,6 +45,22 @@
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
+    auto open_res
+        = lnav::filesystem::open_file(filename, O_RDONLY | O_CLOEXEC);
+    if (open_res.isErr()) {
+        log_error("unable to open file for format detection: %s -- %s",
+                  filename.c_str(),
+                  open_res.unwrapErr().c_str());
+        return {file_format_t::UNKNOWN};
+    }
+
+    auto fd = open_res.unwrap();
+    return detect_file_format(filename, fd.get());
+}
+
+detect_file_format_result
+detect_file_format(const std::filesystem::path& filename, int fd)
+{
     static const auto JAR_EXT = std::filesystem::path(".jar");
     static const auto WAR_EXT = std::filesystem::path(".war");
 
@@ -66,7 +82,7 @@ detect_file_format(const std::filesystem::path& filename)
         return {file_format_t::UNSUPPORTED, {WAR_MSG}};
     }
 
-    auto describe_res = archive_manager::describe(filename);
+    auto describe_res = archive_manager::describe(filename, fd);
     if (describe_res.isOk()) {
         auto describe_inner = describe_res.unwrap();
         if (describe_inner.is<archive_manager::archive_info>()) {
@@ -82,15 +98,9 @@ detect_file_format(const std::filesystem::path& filename)
         }
     }
 
-    auto open_res = lnav::filesystem::open_file(filename, O_RDONLY);
-    if (open_res.isErr()) {
-        log_error("unable to open file for format detection: %s -- %s",
-                  filename.c_str(),
-                  open_res.unwrapErr().c_str());
-    } else {
-        auto fd = open_res.unwrap();
-        uint8_t buffer[32];
-        auto rc = read(fd, buffer, sizeof(buffer));
+    {
+        uint8_t buffer[1024];
+        auto rc = pread(fd, buffer, sizeof(buffer), 0);
 
         if (rc < 0) {
             log_error("unable to read file for format detection: %s -- %s",
@@ -100,7 +110,9 @@ detect_file_format(const std::filesystem::path& filename)
             static const auto* SQLITE3_HEADER = "SQLite format 3";
             static const auto* JAVA_CLASS_HEADER = "\xca\xfe\xba\xbe";
 
-            auto header_frag = string_fragment::from_bytes(buffer, rc);
+            retval.dffr_header.assign(buffer, buffer + rc);
+            auto header_frag = string_fragment::from_bytes(
+                buffer, std::min(rc, static_cast<ssize_t>(32)));
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
                 static const auto DB_MSG
@@ -141,7 +153,15 @@ detect_file_format(const std::filesystem::path& filename)
                 lnav::piper::multiplex_matcher mm;
                 file_range next_range;
                 line_buffer lb;
-                lb.set_fd(fd);
+
+                if (lseek(fd, 0, SEEK_SET) == -1) {
+                    log_error("unable to seek file for demux matching: %s -- %s",
+                              filename.c_str(),
+                              strerror(errno));
+                    looping = false;
+                }
+                auto lb_fd = auto_fd::dup_of(fd);
+                lb.set_fd(lb_fd);
 
                 while (looping) {
                     auto load_res = lb.load_next_line(next_range);

@@ -40,6 +40,7 @@
 #include "fmt/ostream.h"
 #include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "phmap.h"
 #include "unictype.h"
 #include "uniwidth.h"
 #include "ww898/cp_utf8.hpp"
@@ -71,6 +72,9 @@ struct intern_string::intern_table {
 
     /** Chain heads, null until something hashes to the bucket. */
     intern_string* it_table[TABLE_SIZE]{};
+
+    phmap::parallel_flat_hash_map<string_fragment, intern_string*, frag_hasher>
+        it_para_map;
 };
 
 intern_table_lifetime
@@ -123,6 +127,7 @@ intern_string::lookup(const char* str, ssize_t len) noexcept
          */
         return nullptr;
     }
+#if 0
     h = hash_str(str, len) & (TABLE_SIZE - 1);
 
     {
@@ -147,6 +152,21 @@ intern_string::lookup(const char* str, ssize_t len) noexcept
 
         return curr;
     }
+#else
+    auto sf = string_fragment::from_bytes(str, len);
+
+    auto& it_para_map = get_table_lifetime()->it_para_map;
+    auto iter = it_para_map.find(sf);
+    if (iter != it_para_map.end()) {
+        return iter->second;
+    }
+
+    curr = create(str, len);
+    sf = string_fragment::from_bytes(curr->is_data, curr->is_len);
+    auto [inserted_iter, _inserted] = it_para_map.try_emplace(sf, curr);
+
+    return inserted_iter->second;
+#endif
 }
 
 const intern_string*

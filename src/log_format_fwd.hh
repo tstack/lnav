@@ -552,6 +552,11 @@ public:
         return this->ll_time < rhs;
     }
 
+    bool operator<=(const std::chrono::microseconds& rhs) const
+    {
+        return this->ll_time <= rhs;
+    }
+
     bool operator<(const timeval& rhs) const
     {
         return this->get_timeval() < rhs;

@@ -174,6 +174,13 @@ struct exttm {
         return memcmp(this, &other, sizeof(exttm)) == 0;
     }
 
+    /**
+     * Fill in the fields that a parse did not set from the given base time.
+     * A parse reports what it touched through et_flags, so only the gaps need
+     * to be filled and a fully-specified timestamp needs nothing.
+     */
+    void fill_from_base(const exttm& base);
+
     timeval to_timeval() const;
 };
 

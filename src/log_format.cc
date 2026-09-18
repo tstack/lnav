@@ -1830,7 +1830,7 @@ external_log_format::scan_for_partial(const log_format_file_state& lffs,
                                       shared_buffer_ref& sbr,
                                       size_t& len_out) const
 {
-    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type != file_type_t::TEXT) {
         return false;
     }
 
@@ -1881,6 +1881,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
         ll.set_level(LEVEL_INVALID);
         return scan_match{0};
     }
+
+    sbc.sbc_value_stats.resize(this->elf_value_defs.size());
 
     // A specialized copy belongs to one file and parks the values it parses
     // for the render pass to pick up.  A root is shared by every file being
@@ -2405,6 +2407,7 @@ external_log_format::scan_tabular(logfile& lf,
             return scan_match{1000};
         }
 
+        sbc.sbc_value_stats.resize(this->elf_value_defs.size());
         auto ss = separated_string(sf);
         ss.ss_resume = std::exchange(this->tlf_suspended_state, std::nullopt);
         if (ss.ss_resume.has_value()) {
@@ -2648,6 +2651,8 @@ external_log_format::scan_tabular(logfile& lf,
                     return scan_no_match{"not enough columns matched"};
                 }
 
+                sbc.sbc_value_stats.resize(this->elf_value_defs.size());
+
                 for (auto prev_iter = lf.begin(); prev_iter != ll_iter;
                      ++prev_iter)
                 {
@@ -2682,26 +2687,36 @@ external_log_format::scan(logfile& lf,
                           shared_buffer_ref& sbr,
                           scan_batch_context& sbc)
 {
-    sbc.seed_for(this);
+    // While probing, the batch context is shared with the other candidates
+    // and so is reseeded on nearly every line.  Only do that once this format
+    // has a chance of matching.
+    auto seed = [&]() {
+        sbc.seed_for(this);
 
-    if (dst.size() == 1) {
-        auto file_options = lf.get_file_options();
+        if (dst.size() == 1) {
+            auto file_options = lf.get_file_options();
 
-        if (file_options) {
-            sbc.sbc_time_scanner.dts_default_zone
-                = file_options->second.fo_default_zone.pp_value;
-        } else {
-            sbc.sbc_time_scanner.dts_default_zone = nullptr;
+            if (file_options) {
+                sbc.sbc_time_scanner.dts_default_zone
+                    = file_options->second.fo_default_zone.pp_value;
+            } else {
+                sbc.sbc_time_scanner.dts_default_zone = nullptr;
+            }
         }
-    }
+    };
 
-    sbc.sbc_value_stats.resize(this->elf_value_defs.size());
-
-    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+    if (this->lf_file_type == file_type_t::TABULAR) {
+        seed();
         return this->scan_tabular(lf, dst, li, sbr, sbc);
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+    if (this->lf_file_type == file_type_t::JSON) {
+        if (!this->lf_specialized
+            && !sbr.to_string_fragment().startswith("{"))
+        {
+            return scan_no_match{"line is not a JSON object"};
+        }
+        seed();
         return this->scan_json(dst, li, sbr, sbc);
     }
 
@@ -2723,6 +2738,9 @@ external_log_format::scan(logfile& lf,
             }
             continue;
         }
+
+        seed();
+        sbc.sbc_value_stats.resize(this->elf_value_defs.size());
 
         auto pushed_pattern_lock = false;
         if (orig_lock != curr_fmt) {
@@ -2893,7 +2911,7 @@ external_log_format::annotate(logfile* lf,
     auto& line = values.lvv_sbr;
 
     line.erase_ansi();
-    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR
+    if (this->lf_file_type == file_type_t::TABULAR
         && this->jlf_line_format.empty())
     {
         auto ll_iter = std::next(lf->begin(), line_number);
@@ -2925,7 +2943,7 @@ external_log_format::annotate(logfile* lf,
         return;
     }
 
-    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type != file_type_t::TEXT) {
         if (this->jlf_cached_opts.full_message) {
             values = this->jlf_line_values;
             sa = this->jlf_attr_line.al_attrs;
@@ -4298,11 +4316,11 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                                  shared_buffer_ref& sbr,
                                  subline_options opts)
 {
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type == file_type_t::TEXT) {
         return;
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+    if (this->lf_file_type == file_type_t::TABULAR) {
         // Without a line-format, leave the raw row in place — formats
         // that haven't opted into rewriting keep their pre-existing
         // display.
@@ -4520,25 +4538,10 @@ using safe_format_header_expressions = safe::Safe<format_header_expressions>;
 static safe_format_header_expressions format_header_exprs;
 
 std::optional<external_file_format>
-detect_mime_type(const std::filesystem::path& filename)
+detect_mime_type(const std::filesystem::path& filename, string_fragment header)
 {
-    uint8_t buffer[1024];
-    size_t buffer_size = 0;
-
-    {
-        auto_fd fd;
-
-        if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
-            return std::nullopt;
-        }
-
-        ssize_t rc;
-
-        if ((rc = read(fd, buffer, sizeof(buffer))) == -1) {
-            return std::nullopt;
-        }
-        buffer_size = rc;
-    }
+    const auto* buffer = header.udata();
+    const size_t buffer_size = header.length();
 
     auto hexbuf = auto_buffer::alloc(buffer_size * 2);
 
@@ -4657,7 +4660,7 @@ external_log_format::test_line(sample_t& sample,
     auto lines
         = string_fragment::from_str(sample.s_line.pp_value).split_lines();
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+    if (this->lf_file_type == file_type_t::JSON) {
         auto alloc = ArenaAlloc::Alloc<char>{};
         pattern_locks pats;
         date_time_scanner time_scanner;
@@ -5034,7 +5037,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
                 this);
-            if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+            if (this->lf_file_type == file_type_t::JSON) {
                 this->elf_value_def_order.emplace_back(vd);
             }
         }
@@ -5068,7 +5071,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     value_kind_t::VALUE_INTEGER,
                     logline_value_meta::internal_column{},
                     this);
-                if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+                if (this->lf_file_type == file_type_t::JSON) {
                     this->elf_value_def_order.emplace_back(vd);
                 }
             }
@@ -5092,7 +5095,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
                 this);
-            if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+            if (this->lf_file_type == file_type_t::JSON) {
                 this->elf_value_def_order.emplace_back(vd);
             }
             vd->vd_meta.lvm_name = this->elf_level_field;
@@ -5119,7 +5122,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                           value_kind_t::VALUE_TEXT,
                                           logline_value_meta::internal_column{},
                                           this);
-        if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+        if (this->lf_file_type == file_type_t::JSON) {
             this->elf_value_def_order.emplace_back(vd);
         }
         vd->vd_meta.lvm_name = LOG_OPID_STR;
@@ -5138,7 +5141,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
                 this);
-            if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+            if (this->lf_file_type == file_type_t::JSON) {
                 this->elf_value_def_order.emplace_back(vd);
             }
         }
@@ -5361,7 +5364,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
         this->elf_pattern_order.push_back(elf_pattern.second);
     }
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+    if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_src_file_field.empty() && src_file_found == 0)
     {
         errors.emplace_back(
@@ -5375,7 +5378,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                        "file capture named ")
                                .append_quoted(this->elf_src_file_field.get())));
     }
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+    if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_src_line_field.empty() && src_line_found == 0)
     {
         errors.emplace_back(
@@ -5389,7 +5392,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                        "line capture named ")
                                .append_quoted(this->elf_src_line_field.get())));
     }
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+    if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_thread_id_field.empty() && thread_id_found == 0)
     {
         errors.emplace_back(
@@ -5404,7 +5407,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         "at least one pattern needs a thread ID capture named ")
                         .append_quoted(this->elf_thread_id_field.get())));
     }
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+    if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_duration_field.empty() && duration_found == 0)
     {
         errors.emplace_back(
@@ -5420,7 +5423,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         .append_quoted(this->elf_duration_field.get())));
     }
 
-    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type != file_type_t::TEXT) {
         if (!this->elf_patterns.empty()) {
             errors.emplace_back(
                 lnav::console::user_message::error(
@@ -5431,7 +5434,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_reason("structured logs cannot have regexes")
                     .with_snippets(this->get_snippets()));
         }
-        if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+        if (this->lf_file_type == file_type_t::JSON) {
             this->lf_multiline = true;
             this->lf_structured = true;
             this->lf_formatted_lines = true;
@@ -5444,7 +5447,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 yajl_handle_deleter());
             yajl_config(
                 this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
-        } else if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+        } else if (this->lf_file_type == file_type_t::TABULAR) {
             this->lf_structured = true;
             if (!this->jlf_line_format.empty()) {
                 // The format owns its rendering via line-format.
@@ -5533,7 +5536,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_TABULAR) {
+    if (this->lf_file_type == file_type_t::TABULAR) {
         auto vd
             = std::make_shared<value_def>(LOG_EXTRA_FIELDS_STR,
                                           value_kind_t::VALUE_JSON,
@@ -5582,7 +5585,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
         }
 
-        if (this->elf_type == elf_type_t::ELF_TYPE_TEXT) {
+        if (this->lf_file_type == file_type_t::TEXT) {
             std::set<std::string> available_captures;
 
             bool found_in_pattern = false;
@@ -5692,8 +5695,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON
-        || this->elf_type == elf_type_t::ELF_TYPE_TABULAR)
+    if (this->lf_file_type == file_type_t::JSON
+        || this->lf_file_type == file_type_t::TABULAR)
     {
         for (const auto& vd : this->elf_value_def_order) {
             this->elf_value_def_frag_map[vd->vd_meta.lvm_name
@@ -5790,7 +5793,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    if (this->elf_type == elf_type_t::ELF_TYPE_TEXT
+    if (this->lf_file_type == file_type_t::TEXT
         && this->elf_samples.empty())
     {
         errors.emplace_back(
@@ -5805,7 +5808,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     for (const auto& pat : this->elf_pattern_order) {
-        if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+        if (this->lf_file_type != file_type_t::TEXT) {
             continue;
         }
         if (pat->p_pcre.pp_value->name_index(this->lf_timestamp_field.get())
@@ -6020,8 +6023,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    switch (this->elf_type) {
-        case elf_type_t::ELF_TYPE_JSON:
+    switch (this->lf_file_type) {
+        case file_type_t::JSON:
             this->lf_max_unrecognized_lines = 50;
             break;
         default:
@@ -6164,8 +6167,7 @@ public:
 
         sa.clear();
         format->annotate(lf, line_number, sa, values);
-        if (this->elt_format->elf_type
-                == external_log_format::elf_type_t::ELF_TYPE_TABULAR
+        if (this->elt_format->lf_file_type == log_format::file_type_t::TABULAR
             && file_elf != nullptr && file_elf->tlf_extra_count > 0)
         {
             auto iter = this->elt_format->elf_value_defs.find(
@@ -6257,16 +6259,17 @@ external_log_format::adopt_scan_state(format_scan_state& fss)
 }
 
 std::shared_ptr<log_format>
-external_log_format::specialized(int fmt_lock)
+external_log_format::specialized(scan_batch_context& sbc, int fmt_lock)
 {
     auto retval = std::make_shared<external_log_format>(*this);
 
+    sbc.sbc_value_stats.resize(this->elf_value_defs.size());
     retval->lf_specialized = true;
     // Everything below sets up the copy.  The root keeps what build() gave it,
     // which is what it uses when it scans as a candidate during format
     // detection, and is left alone here so that two files settling on the same
     // format do not have to take turns.
-    if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+    if (this->lf_file_type == file_type_t::JSON) {
         // The parse context and the handle that refers to it come across as
         // shared_ptr copies, so the clone needs its own pair rather than the
         // root's.
@@ -6511,7 +6514,7 @@ intern_string_t
 external_log_format::get_pattern_name(const pattern_locks& pl,
                                       uint64_t line_number) const
 {
-    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type != file_type_t::TEXT) {
         static auto structured = intern_string::lookup("structured");
 
         return structured;
@@ -6711,7 +6714,7 @@ std::string
 external_log_format::get_pattern_regex(const pattern_locks& pl,
                                        uint64_t line_number) const
 {
-    if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
+    if (this->lf_file_type != file_type_t::TEXT) {
         return "";
     }
     auto pat_index = pl.pattern_index_for_line(line_number);

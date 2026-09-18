@@ -133,7 +133,7 @@ TEST_CASE("cell_container-basic")
     }
 
     {
-        const size_t actual = 12 * 1024 * 1024 * 1024;
+        const size_t actual = 12 * 1024 * 1024 * 1024UL;
         auto gb = string_fragment::from_const("12GB");
         auto cont = lnav::cell_container();
         auto cell1 = cont.end_cursor();

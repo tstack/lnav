@@ -1,7 +1,7 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "pcap_log": {
-        "json": true,
+        "file-type": "json",
         "title": "Packet Capture",
         "description": "Internal format for pcap files",
         "convert-to-local-time": true,

@@ -303,6 +303,9 @@ files_sub_source::text_value_for_line(textview_curses& tc,
                 case lnav::console::user_message::level::error:
                     icon = ui_icon_t::error;
                     break;
+                case lnav::console::user_message::level::fatal:
+                    icon = ui_icon_t::fatal;
+                    break;
             }
             al.append(" ", VC_ICON.value(icon));
             if (selected) {

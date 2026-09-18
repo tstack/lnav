@@ -156,9 +156,8 @@ log_search_table::get_foreign_keys(
 bool
 log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 {
-    this->lst_attrs_cache.clear();
-    this->lst_line_values_cache.lvv_values.clear();
-
+    // Later matches in a message are rows for the same message, so they keep
+    // the attributes and values that were annotated for the first match.
     if (this->lst_match_index >= 0) {
         auto match_res = this->lst_regex->capture_from(this->lst_content)
                              .at(this->lst_remaining)
@@ -177,11 +176,15 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
         }
 
         // log_debug("done matching message");
+        this->lst_attrs_cache.clear();
+        this->lst_line_values_cache.lvv_values.clear();
         this->lst_remaining.clear();
         this->lst_match_index = -1;
         return false;
     }
 
+    this->lst_attrs_cache.clear();
+    this->lst_line_values_cache.lvv_values.clear();
     this->lst_match_index = -1;
 
     if (lc.is_eof()) {
@@ -210,10 +213,18 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     auto& sbr = this->lst_line_values_cache.lvv_sbr;
     lf->read_full_message(lf_iter, sbr);
     sbr.erase_ansi();
-    lf->get_format()->annotate(
-        lf, cl, this->lst_attrs_cache, this->lst_line_values_cache);
-    this->lst_content
-        = this->lst_line_values_cache.lvv_sbr.to_string_fragment();
+
+    // Annotating a structured message replaces the buffer with its rendered
+    // form, and that is the text the regex has to match.  A plain text
+    // message is left as-is, so the cost of annotating it is only paid for
+    // the messages that match.
+    auto* format = lf->get_format_ptr();
+    const auto annotate_first = format->lf_file_type != log_format::file_type_t::TEXT;
+    if (annotate_first) {
+        format->annotate(
+            lf, cl, this->lst_attrs_cache, this->lst_line_values_cache);
+    }
+    this->lst_content = sbr.to_string_fragment();
 
     auto match_res = this->lst_regex->capture_from(this->lst_content)
                          .into(this->lst_match_data)
@@ -223,6 +234,11 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     if (!match_res) {
         this->lst_mismatch_bitmap.set_bit(lc.lc_curr_line);
         return false;
+    }
+
+    if (!annotate_first) {
+        format->annotate(
+            lf, cl, this->lst_attrs_cache, this->lst_line_values_cache);
     }
 
     this->lst_rowid += 1;
@@ -332,23 +348,43 @@ void
 log_search_table::drive_from_named_search(log_cursor& lc,
                                           logfile_sub_source& lss)
 {
-    if (this->vi_provenance != provenance_t::named_search
+    if (this->vi_provenance != provenance_t::named_search) {
+        return;
+    }
+
+    if (!lc.lc_indexed_lines.empty()) {
         // A query with an indexed column has its own set of lines to look
         // at, and that one is the more selective of the two.
-        || !lc.lc_indexed_lines.empty() || lc.lc_direction <= 0)
-    {
+        log_debug("%s: not using named search hits, indexed lines present",
+                  this->vi_name.c_str());
+        return;
+    }
+
+    if (lc.lc_direction <= 0) {
+        log_debug("%s: not using named search hits, scan is in reverse",
+                  this->vi_name.c_str());
         return;
     }
 
     auto* tc = lss.get_view();
-    if (tc == nullptr || tc->is_searching()) {
+    if (tc == nullptr) {
+        log_debug("%s: not using named search hits, no view",
+                  this->vi_name.c_str());
+        return;
+    }
+
+    if (tc->is_searching()) {
         // The hits are still being collected, so falling back to the scan is
         // the only way to get a complete answer.
+        log_debug("%s: not using named search hits, search in progress",
+                  this->vi_name.c_str());
         return;
     }
 
     const auto* ns = tc->find_named_search(this->vi_name.to_string());
     if (ns == nullptr) {
+        log_debug("%s: not using named search hits, no search with that name",
+                  this->vi_name.c_str());
         return;
     }
 
@@ -358,14 +394,22 @@ log_search_table::drive_from_named_search(log_cursor& lc,
     const auto hit_range = matches.equal_range(lc.lc_curr_line, lc.lc_end_line);
 
     std::vector<vis_line_t> msg_lines;
+    std::optional<vis_line_t> prev_hit;
     for (auto iter = hit_range.first; iter != hit_range.second; ++iter) {
         const auto vl = *iter;
 
         // The hit can be on a continuation line, so walk back to the start
         // of the message that owns it.  next() only does its work on the
-        // first line of a message.
+        // first line of a message.  The hits are in ascending order, so
+        // reaching the previous hit means this one is in the same message
+        // and the walk for that hit already found where it starts.
         auto msg_line = vl;
         while (msg_line > 0_vl) {
+            if (prev_hit && msg_line == prev_hit.value()) {
+                msg_line = msg_lines.back();
+                break;
+            }
+
             auto cl = lss.at(msg_line);
             auto* lf = lss.find_file_ptr(cl);
 
@@ -374,7 +418,10 @@ log_search_table::drive_from_named_search(log_cursor& lc,
             }
             msg_line -= 1_vl;
         }
-        msg_lines.push_back(msg_line);
+        if (msg_lines.empty() || msg_lines.back() != msg_line) {
+            msg_lines.push_back(msg_line);
+        }
+        prev_hit = vl;
     }
 
     // The set is popped from the back, so the first line to visit has to be
@@ -382,14 +429,17 @@ log_search_table::drive_from_named_search(log_cursor& lc,
     // set is empty and the cursor is at the end, which is how is_eof() knows
     // to stop instead of walking the rest of the file.
     msg_lines.push_back(lc.lc_end_line);
-    std::sort(msg_lines.begin(), msg_lines.end(), std::greater<>());
-    msg_lines.erase(std::unique(msg_lines.begin(), msg_lines.end()),
-                    msg_lines.end());
+    std::reverse(msg_lines.begin(), msg_lines.end());
 
     auto range = msg_range::empty();
     range.expand_to(lc.lc_curr_line);
     range.expand_to(lc.lc_end_line);
 
+    log_debug("%s: using %zu named search hits in [%d:%d)",
+              this->vi_name.c_str(),
+              msg_lines.size() - 1,
+              (int) lc.lc_curr_line,
+              (int) lc.lc_end_line);
     lc.lc_indexed_lines = std::move(msg_lines);
     lc.lc_indexed_lines_range = range;
 }

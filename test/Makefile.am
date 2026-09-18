@@ -395,6 +395,7 @@ dist_noinst_DATA = \
 	logfile_postgres_json.json \
 	logfile_laravel.0 \
 	logfile_laravel.1 \
+	logfile_json_deprecated.json \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
 	logfile_metrics.csv \
@@ -512,6 +513,7 @@ dist_noinst_DATA = \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
 	formats/customlevel/format.json \
+	formats/jsondeprecated/format.json \
 	formats/jsonidtest/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest/lnav-logstash.json \

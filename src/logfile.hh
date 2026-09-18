@@ -133,17 +133,29 @@ public:
     };
 
     /**
+     * The relationship between a descriptor passed to open() and the path.
+     */
+    enum class fd_source {
+        /** The descriptor is not associated with the path, like stdin. */
+        detached,
+        /** The descriptor was opened from the path. */
+        of_path,
+    };
+
+    /**
      * Construct a logfile with the given arguments.
      *
      * @param filename The name of the log file.
      * @param fd The file descriptor for accessing the file or -1 if the
      * constructor should open the file specified by 'filename'.  The
      * descriptor needs to be seekable.
+     * @param src Whether 'fd' was opened from 'filename'.
      */
     static Result<std::shared_ptr<logfile>, std::string> open(
         std::filesystem::path filename,
         const logfile_open_options& loo,
-        auto_fd fd = auto_fd{});
+        auto_fd fd = auto_fd{},
+        fd_source src = fd_source::detached);
 
     logfile(const logfile&) = delete;
     logfile& operator=(const logfile&) = delete;
@@ -269,8 +281,10 @@ public:
      */
     bool is_fully_indexed() const
     {
-        return !this->lf_line_buffer.is_data_available(this->lf_index_size,
-                                                       this->lf_stat.st_size);
+        return !this->lf_indexing
+            || (this->lf_activity.la_polls > 0
+                && !this->lf_line_buffer.is_data_available(
+                    this->lf_index_size, this->lf_stat.st_size));
     }
 
     std::optional<const_iterator> line_for_offset(file_off_t off) const;
@@ -355,8 +369,7 @@ public:
     /** @return The number of lines in the index. */
     size_t size() const { return this->lf_index.size(); }
 
-    std::optional<const_iterator> find_from_time(
-        const struct timeval& tv) const;
+    const_iterator find_from_time(std::chrono::microseconds us) const;
 
     logline& operator[](int index) { return this->lf_index[index]; }
 
@@ -506,8 +519,7 @@ public:
         this->lf_index_progress.ip_offset.store(0, std::memory_order_relaxed);
         this->lf_index_progress.ip_total.store(prog ? prog->second : 0,
                                                std::memory_order_relaxed);
-        this->lf_index_progress.ip_done.store(false,
-                                              std::memory_order_relaxed);
+        this->lf_index_progress.ip_done.store(false, std::memory_order_relaxed);
         this->lf_index_progress.ip_abort.store(false,
                                                std::memory_order_relaxed);
     }
@@ -521,15 +533,13 @@ public:
     /** Ask the scan of this file to stop as soon as it notices. */
     void abort_indexing()
     {
-        this->lf_index_progress.ip_abort.store(true,
-                                               std::memory_order_relaxed);
+        this->lf_index_progress.ip_abort.store(true, std::memory_order_relaxed);
     }
 
     /** Called by the scanning thread when it is done with this file. */
     void finish_indexing_progress()
     {
-        this->lf_index_progress.ip_done.store(true,
-                                              std::memory_order_relaxed);
+        this->lf_index_progress.ip_done.store(true, std::memory_order_relaxed);
     }
 
     void set_logline_observer(logline_observer* llo);
@@ -581,6 +591,13 @@ public:
      * start.
      */
     static constexpr size_t RETRY_MATCH_SIZE = 250;
+
+    /**
+     * Formats that describe themselves with a header need to read this many
+     * lines before they can match, so candidates are not skipped based on
+     * their file type until the index has gone past this point.
+     */
+    static constexpr size_t FILE_TYPE_PRUNE_SIZE = 20;
 
     enum class note_type {
         indexing_disabled,
@@ -845,6 +862,13 @@ private:
     std::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
     robin_hood::unordered_set<intern_string_t, intern_hasher>
         lf_mismatched_formats;
+    /**
+     * The set of file types that a format has matched in this file.  Once a
+     * format has matched, formats whose file type is not in this set are
+     * skipped.
+     */
+    uint8_t lf_viable_file_types{0};
+    bool lf_pruned_formats_logged{false};
     robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
 
     std::vector<std::shared_ptr<format_tag_def>> lf_applicable_taggers;

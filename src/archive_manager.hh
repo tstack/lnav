@@ -76,6 +76,13 @@ using describe_result = mapbox::util::variant<archive_info, unknown_file>;
 Result<describe_result, std::string> describe(
     const std::filesystem::path& filename);
 
+/**
+ * Describe the file open on the given descriptor.  The descriptor is not
+ * closed and its offset is left at an unspecified position.
+ */
+Result<describe_result, std::string> describe(
+    const std::filesystem::path& filename, int fd);
+
 std::filesystem::path filename_to_tmp_path(const std::string& filename);
 
 using walk_result_t = Result<void, std::string>;

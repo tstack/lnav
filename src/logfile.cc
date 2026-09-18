@@ -77,7 +77,6 @@ static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static constexpr size_t INDEX_RESERVE_INCREMENT = 1024;
 
-
 static const typed_json_path_container<lnav::gzip::header>&
 get_file_header_handlers()
 {
@@ -95,7 +94,8 @@ get_file_header_handlers()
 Result<std::shared_ptr<logfile>, std::string>
 logfile::open(std::filesystem::path filename,
               const logfile_open_options& loo,
-              auto_fd fd)
+              auto_fd fd,
+              fd_source src)
 {
     require(!filename.empty());
 
@@ -126,8 +126,27 @@ logfile::open(std::filesystem::path filename,
     }
 
     auto_fd lf_fd;
-    if (fd.has_value()) {
+    if (fd.has_value() && src == fd_source::of_path) {
         lf_fd = std::move(fd);
+        if (fstat(lf_fd.get(), &lf->lf_stat) == -1) {
+            return Err(fmt::format(FMT_STRING("stat({}) failed with: {}"),
+                                   lf->lf_filename,
+                                   lnav::from_errno()));
+        }
+        if (!S_ISREG(lf->lf_stat.st_mode)) {
+            return Err(fmt::format(FMT_STRING("{} is not a regular file"),
+                                   lf->lf_filename));
+        }
+        if (lseek(lf_fd.get(), 0, SEEK_SET) == -1) {
+            return Err(fmt::format(FMT_STRING("lseek({}) failed with: {}"),
+                                   lf->lf_filename,
+                                   lnav::from_errno()));
+        }
+        lf->lf_actual_path = lf->lf_filename;
+        lf->lf_valid_filename = true;
+    } else if (fd.has_value()) {
+        lf_fd = std::move(fd);
+        fstat(lf_fd.get(), &lf->lf_stat);
     } else if ((lf_fd
                 = lnav::filesystem::openp(resolved_path, O_RDONLY | O_CLOEXEC))
                == -1)
@@ -362,8 +381,8 @@ logfile::discard_index_before(size_t index)
         last_msg -= 1;
     }
 
-    const auto count = std::min(
-        {index, last_msg, this->lf_index.size() - RETRY_MATCH_SIZE});
+    const auto count
+        = std::min({index, last_msg, this->lf_index.size() - RETRY_MATCH_SIZE});
     if (count == 0) {
         return 0;
     }
@@ -736,9 +755,8 @@ logfile::build_content_map()
         && this->lf_options.loo_time_range.tr_begin
             <= this->lf_index.back().get_time<>())
     {
-        auto ll_opt = this->find_from_time(
-            to_timeval(this->lf_options.loo_time_range.tr_begin));
-        auto ll = ll_opt.value();
+        auto ll
+            = this->find_from_time(this->lf_options.loo_time_range.tr_begin);
         auto first_line_offset = ll->get_offset();
         this->lf_lower_bound_entry = content_map_entry{
             file_range{first_line_offset, full_size - first_line_offset},
@@ -1009,6 +1027,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         std::unique_ptr<format_scan_state> best_format_state;
         std::optional<uint32_t> best_timestamp_flags;
         size_t scan_count = 0;
+        size_t pruned_count = 0;
 
         if (prescan_size > 0) {
             prescan_time = this->lf_index[prescan_size - 1].get_time();
@@ -1048,6 +1067,20 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             }
 
             if (this->lf_mismatched_formats.count(curr->get_name()) > 0) {
+                continue;
+            }
+
+            // A format that works on a different shape of file than the one
+            // that matched cannot be the right one.  The index has to be past
+            // the point where a format that describes itself with a header
+            // would have found it, since the lines before that can be matched
+            // by a text format.
+            if (this->lf_format != nullptr
+                && this->lf_index.size() > FILE_TYPE_PRUNE_SIZE
+                && !(this->lf_viable_file_types
+                     & log_format::file_type_bit(curr->lf_file_type)))
+            {
+                pruned_count += 1;
                 continue;
             }
 
@@ -1124,6 +1157,14 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc_tmp.sbc_tids.ltis_tid_ranges.clear();
                 sbc_tmp.sbc_level_cache = {};
                 scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc_tmp);
+            }
+            // A match is the only evidence that this shape of file is worth
+            // scanning for.  Formats that work out their columns from a
+            // header are covered by FILE_TYPE_PRUNE_SIZE, since they give up
+            // before the index reaches it.
+            if (scan_res.is<log_format::scan_match>()) {
+                this->lf_viable_file_types
+                    |= log_format::file_type_bit(curr->lf_file_type);
             }
             if (!scan_res.is<log_format::scan_match>()) {
                 while (this->lf_index.back().get_sub_offset() != 0) {
@@ -1286,6 +1327,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 });
         }
 
+        if (pruned_count > 0 && !this->lf_pruned_formats_logged) {
+            this->lf_pruned_formats_logged = true;
+            log_debug(
+                "%s: skipping %zu format(s) with a file type that is "
+                "not viable for this file (types: 0x%x)",
+                this->lf_filename_as_string.c_str(),
+                pruned_count,
+                this->lf_viable_file_types);
+        }
+
         if (!scan_count) {
             log_info("%s: no formats available to scan, no longer detecting",
                      this->lf_filename_as_string.c_str());
@@ -1316,7 +1367,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         fmt::to_string(starting_index_size))));
             this->lf_format_match_messages.emplace_back(match_um);
             this->lf_text_format = text_format_t::TF_LOG;
-            this->lf_format = curr->specialized();
+            this->lf_format = curr->specialized(sbc);
             if (best_format_state != nullptr) {
                 this->lf_format->adopt_scan_state(*best_format_state);
             }
@@ -1995,10 +2046,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (!this->lf_options.loo_streaming
                 && this->lf_index.size() > max_lines)
             {
-                log_warning("%s: reached the maximum of %llu lines, "
-                            "stopping indexing",
-                            this->lf_filename_as_string.c_str(),
-                            (unsigned long long) max_lines);
+                log_warning(
+                    "%s: reached the maximum of %llu lines, "
+                    "stopping indexing",
+                    this->lf_filename_as_string.c_str(),
+                    (unsigned long long) max_lines);
                 // A single line can add several entries, so drop all of
                 // them rather than keep part of the message.
                 while (this->lf_index.size() > old_size) {
@@ -2762,16 +2814,10 @@ logfile::get_format_name() const
     return {};
 }
 
-std::optional<logfile::const_iterator>
-logfile::find_from_time(const timeval& tv) const
+logfile::const_iterator
+logfile::find_from_time(const std::chrono::microseconds us) const
 {
-    auto retval
-        = std::lower_bound(this->lf_index.begin(), this->lf_index.end(), tv);
-    if (retval == this->lf_index.end()) {
-        return std::nullopt;
-    }
-
-    return retval;
+    return std::lower_bound(this->lf_index.begin(), this->lf_index.end(), us);
 }
 
 bool

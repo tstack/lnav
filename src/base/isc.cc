@@ -41,7 +41,9 @@ void
 service_base::start()
 {
     log_debug("starting service thread for: %s", this->s_name.c_str());
-    this->s_thread = std::thread(&service_base::run, this);
+    for (auto& worker : this->s_workers) {
+        worker = std::thread(&service_base::run, this);
+    }
     this->s_started = true;
 }
 
@@ -102,7 +104,11 @@ service_base::stop()
             this->s_port.send(empty_msg());
         }
         log_debug("waiting for service thread: %s", this->s_name.c_str());
-        this->s_thread.join();
+        for (auto& worker : this->s_workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
         log_debug("joined service thread: %s", this->s_name.c_str());
         this->s_started = false;
     }

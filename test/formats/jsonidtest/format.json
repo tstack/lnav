@@ -2,7 +2,7 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "test_jsonid_log": {
         "title": "Test JSON identifier Log",
-        "json": true,
+        "file-type": "json",
         "file-pattern": "logfile_jsonid\\.json",
         "description": "Regression format for issue #1712 -- identifiers on sub-lines after a newline in the line-format",
         "line-format": [

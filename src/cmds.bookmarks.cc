@@ -166,7 +166,7 @@ com_goto_mark(exec_context& ec,
 
             for (const auto& bt : mark_types.keys()) {
                 auto bt_top = next_cluster(
-                    &bookmark_vector<vis_line_t>::next, bt, search_from_top);
+                    text_anchors::direction::next, bt, search_from_top);
 
                 if (bt_top && (!new_top || bt_top < new_top.value())) {
                     new_top = bt_top;
@@ -186,7 +186,7 @@ com_goto_mark(exec_context& ec,
         } else if (sel) {
             for (const auto& bt : mark_types.keys()) {
                 auto bt_top = next_cluster(
-                    &bookmark_vector<vis_line_t>::prev, bt, sel.value());
+                    text_anchors::direction::prev, bt, sel.value());
 
                 if (bt_top && (!new_top || bt_top > new_top.value())) {
                     new_top = bt_top;

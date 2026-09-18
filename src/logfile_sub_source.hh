@@ -34,6 +34,7 @@
 
 #include <array>
 #include <atomic>
+#include <exception>
 #include <functional>
 #include <map>
 #include <unordered_map>
@@ -121,7 +122,6 @@ public:
      */
     sqlite3_stmt* stmt_for_this_thread();
 
-
     auto_mem<sqlite3_stmt> sf_filter_stmt{sqlite3_finalize};
     logfile_sub_source& sf_log_source;
     const uint64_t sf_serial{next_serial()};
@@ -162,6 +162,7 @@ class logfile_sub_source
     , public text_time_translator
     , public text_accel_source
     , public text_anchors
+    , public text_mark_scanner
     , public text_delegate
     , public text_detail_provider
     , public lnav_config_listener {
@@ -192,6 +193,14 @@ public:
     void set_force_rebuild() { this->lss_force_rebuild = true; }
 
     bool is_rebuild_forced() const { return this->lss_force_rebuild; }
+
+    /**
+     * While set, rebuild_index() indexes the files but does not merge their
+     * lines into the combined index.
+     */
+    void set_merge_deferred(bool val) { this->lss_merge_deferred = val; }
+
+    bool is_merge_deferred() const { return this->lss_merge_deferred; }
 
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch);
 
@@ -243,6 +252,7 @@ public:
     void remove_file(std::shared_ptr<logfile> lf);
 
     enum class rebuild_result {
+        rr_in_progress,
         rr_no_change,
         rr_appended_lines,
         rr_partial_rebuild,
@@ -641,6 +651,13 @@ public:
         return content_line_t(index * MAX_LINES_PER_FILE);
     }
 
+    // The file a content line came from, as an index into lss_files.  The
+    // inverse of get_file_base_content_line().
+    static size_t file_index_for(content_line_t cl)
+    {
+        return cl / MAX_LINES_PER_FILE;
+    }
+
     /**
      * Called on the calling thread while a parallel scan is in flight so the
      * UI keeps moving.  `off` and `total` are summed over the files being
@@ -654,9 +671,7 @@ public:
      * soon as the workers notice.
      */
     using scan_progress_fn = std::function<lnav::progress_result_t(
-        file_off_t,
-        file_ssize_t,
-        const std::vector<index_progress_report>&)>;
+        file_off_t, file_ssize_t, const std::vector<index_progress_report>&)>;
 
     void set_scan_progress(scan_progress_fn fn)
     {
@@ -761,7 +776,7 @@ public:
             error,
         };
 
-        static level_t level_from_log(const logfile::iterator iter)
+        static level_t level_from_log(const logfile::const_iterator iter)
         {
             if (!iter->is_message()) {
                 return level_t::normal;
@@ -780,7 +795,7 @@ public:
 
         indexed_content() = default;
 
-        indexed_content(content_line_t cl, const logfile::iterator iter)
+        indexed_content(content_line_t cl, const logfile::const_iterator iter)
             : ic_value(cl),
               ic_level(lnav::enums::to_underlying(level_from_log(iter)))
         {
@@ -795,6 +810,144 @@ public:
     };
 
     big_array<indexed_content> lss_index;
+
+    /**
+     * The marks that are a function of the index alone, and so can be counted
+     * once per region instead of being held per row.  The user marks are left
+     * out on purpose: they change without the index changing, which is the
+     * one thing this table cannot absorb.
+     */
+    enum class region_mark_t : uint8_t {
+        warning,
+        error,
+        file_start,
+
+        RM__MAX
+    };
+
+    static constexpr size_t REGION_MARK_MAX
+        = lnav::enums::to_underlying(region_mark_t::RM__MAX);
+
+    /**
+     * A running summary of a fixed-size window of rows.  Ruling a window out
+     * costs one comparison per SIZE rows, which is what lets a scan stand in
+     * for a set of marked rows that would otherwise have to be rebuilt in
+     * full every time the view reloads.
+     */
+    struct index_region {
+        // A power of two so the region for a row is a shift, and as large as
+        // a uint16_t count can describe, since the only scan whose length
+        // this bounds happens once per find_mark() call.
+        static constexpr size_t SIZE = 8192;
+
+        uint16_t ir_counts[REGION_MARK_MAX]{};
+
+        uint16_t& count_for(region_mark_t rm)
+        {
+            return this->ir_counts[lnav::enums::to_underlying(rm)];
+        }
+
+        uint16_t count_for(region_mark_t rm) const
+        {
+            return this->ir_counts[lnav::enums::to_underlying(rm)];
+        }
+    };
+
+    static_assert(index_region::SIZE <= UINT16_MAX,
+                  "a region's counts have to fit in ir_counts");
+
+    static size_t region_for_row(vis_line_t vl)
+    {
+        return static_cast<size_t>(vl) / index_region::SIZE;
+    }
+
+    size_t region_count() const { return this->lss_regions.size(); }
+
+    const index_region& region_at(size_t region_index) const
+    {
+        return this->lss_regions[region_index];
+    }
+
+    /**
+     * The number of marks of the given kind in the half-open row range
+     * [start, stop).  Whole regions are taken from the summary table, so only
+     * the rows at either end that fall inside a partially covered region are
+     * actually looked at.
+     */
+    size_t count_marks(vis_line_t start,
+                       vis_line_t stop,
+                       region_mark_t rm) const;
+
+    /**
+     * The nearest row carrying the given mark, searching strictly after (or
+     * before) `from` so that a caller can walk hit to hit the way
+     * bookmark_vector::next() does.
+     *
+     * Regions whose count for the mark is zero are skipped without looking at
+     * any of their rows.
+     */
+    std::optional<vis_line_t> find_mark(vis_line_t from,
+                                        direction dir,
+                                        region_mark_t rm) const;
+
+    indexed_content::level_t level_for_row(vis_line_t vl) const
+    {
+        return this->lss_index[this->lss_filtered_index[vl]].level();
+    }
+
+    /**
+     * Is this the first row that is displayed from its file?
+     *
+     * The file is the top bits of the row's content line, so this is two
+     * loads and a shift against the preceding row -- no summary table and no
+     * walk out to the logfile.  A row past the end of the view is not a
+     * start, which is what keeps the last row of the last file rendering
+     * without a bottom corner.
+     */
+    bool is_file_start(vis_line_t vl) const;
+
+    bool row_has_mark(vis_line_t vl, region_mark_t rm) const;
+
+    // Whether any row in the half-open range [start, stop) carries the mark.
+    // The regions wholly inside the range are checked by count first, so a
+    // wide range normally answers without looking at a single row -- which is
+    // what the gutter needs, since it asks about a range per visible row on
+    // every repaint.
+    bool any_mark_in_range(vis_line_t start,
+                           vis_line_t stop,
+                           region_mark_t rm) const;
+
+    // The mark types this source answers from `lss_regions` instead of from
+    // the view's bookmark vectors.
+    static std::optional<region_mark_t> region_mark_for(
+        const bookmark_type_t* bt);
+
+    bool text_scans_mark(const bookmark_type_t* bt) const
+    {
+        return region_mark_for(bt).has_value();
+    }
+
+    std::optional<vis_line_t> text_adjacent_mark(
+        const bookmark_type_t* bt,
+        vis_line_t from,
+        text_anchors::direction dir) const
+    {
+        return this->find_mark(from, dir, region_mark_for(bt).value());
+    }
+
+    bool text_mark_at_row(const bookmark_type_t* bt,
+                          vis_line_t vl) const
+    {
+        return this->row_has_mark(vl, region_mark_for(bt).value());
+    }
+
+    bool text_any_mark_in_range(const bookmark_type_t* bt,
+                                vis_line_t start,
+                                vis_line_t stop) const
+    {
+        return this->any_mark_in_range(
+            start, stop, region_mark_for(bt).value());
+    }
 
     std::optional<vis_line_t> row_for_anchor(const std::string& id);
 
@@ -842,6 +995,12 @@ private:
          * as it has always been.
          */
         uint32_t psr_timestamp_flags{0};
+        /**
+         * Set when the scan threw.  The loop rethrows this in place of the
+         * file's result, so the failure still comes out of the spot the scan
+         * runs in on this thread.
+         */
+        std::exception_ptr psr_exception;
     };
 
     using prescan_map = std::unordered_map<const logfile*, prescan_result>;
@@ -855,7 +1014,8 @@ private:
      * Returns an empty map when there is nothing to gain, or when part of
      * the scan has to run on this thread -- see the two gates inside.
      */
-    prescan_map prescan_files(std::optional<ui_clock::time_point> deadline);
+    prescan_map prescan_files(const std::vector<size_t>& file_order,
+                              std::optional<ui_clock::time_point> deadline);
 
     void clear_line_size_cache()
     {
@@ -869,10 +1029,31 @@ private:
     size_t lss_filename_width = 0;
     line_context_t lss_line_context{line_context_t::none};
     bool lss_force_rebuild{false};
+    bool lss_merge_deferred{false};
+    bool lss_deferred_order_changed{false};
     std::vector<std::unique_ptr<logfile_data>> lss_files;
     unsigned int lss_all_timestamp_flags{0};
 
     std::vector<uint32_t> lss_filtered_index;
+
+    // Summaries of fixed-size windows of `lss_filtered_index`, maintained by
+    // update_regions().
+    std::vector<index_region> lss_regions;
+    // How many rows the summary table accounts for.  The trailing region is
+    // usually partial, so its counts cannot be worked out from
+    // lss_regions.size().
+    size_t lss_regions_rows{0};
+
+    /**
+     * Bring `lss_regions` back into agreement with `lss_filtered_index`.
+     *
+     * @param valid_rows The number of rows at the front of the filtered index
+     * that have not moved since the last call.  Regions covering anything
+     * past that are dropped and recounted.
+     */
+    void update_regions(size_t valid_rows);
+
+    void validate_regions() const;
 
     // Persistent state for incremental context expansion in rebuild_index()
     struct ctx_msg_range {

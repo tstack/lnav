@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
+	-I$(top_srcdir)/src/third-party/parallel_hashmap \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
     $(LIBARCHIVE_CFLAGS) \
     $(SQLITE3_CFLAGS) \
@@ -67,6 +68,7 @@ noinst_HEADERS = \
     lrucache.hpp \
     lazy_vector.hh \
     map_util.hh \
+    gallop.hh \
     math_util.hh \
     network.tcp.hh \
     parallel_for.hh \
@@ -134,6 +136,7 @@ test_base_SOURCES = \
     cell_container.tests.cc \
     color_spaces.tests.cc \
     fs_util.tests.cc \
+    gallop.tests.cc \
     humanize.file_size.tests.cc \
     humanize.network.tests.cc \
     humanize.time.tests.cc \

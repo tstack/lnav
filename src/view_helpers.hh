@@ -38,10 +38,11 @@
 #include "bookmarks.hh"
 #include "listview_curses.hh"
 #include "logfile_fwd.hh"
+// for text_anchors::direction, which next_cluster() takes
+#include "textview_curses.hh"
 #include "vis_line.hh"
 #include "xterm_mouse.hh"
 
-class textview_curses;
 class hist_source2;
 class logfile_sub_source;
 
@@ -96,21 +97,15 @@ void update_hits(textview_curses* tc);
 void clear_preview();
 void set_view_mode(ln_mode_t mode);
 
-std::optional<vis_line_t> next_cluster(
-    std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
-        const,
-    const bookmark_type_t* bt,
-    vis_line_t top);
+std::optional<vis_line_t> next_cluster(text_anchors::direction dir,
+                                       const bookmark_type_t* bt,
+                                       vis_line_t top);
 /** As above, for hits that are not kept in a bookmark type of their own. */
 std::optional<vis_line_t> next_cluster(
     std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
         const,
     const bookmark_vector<vis_line_t>& bv,
     vis_line_t top);
-bool moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
-                        vis_line_t) const,
-                    const bookmark_type_t* bt,
-                    vis_line_t top);
 vis_line_t search_forward_from(textview_curses* tc);
 textview_curses* get_textview_for_mode(ln_mode_t mode);
 

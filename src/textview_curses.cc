@@ -374,6 +374,75 @@ textview_curses::invoke_scroll()
     listview_curses::invoke_scroll();
 }
 
+const text_mark_scanner*
+textview_curses::mark_scanner_for(const bookmark_type_t* bt) const
+{
+    const auto* retval = dynamic_cast<text_mark_scanner*>(this->tc_sub_source);
+
+    if (retval != nullptr && !retval->text_scans_mark(bt)) {
+        retval = nullptr;
+    }
+
+    return retval;
+}
+
+std::optional<vis_line_t>
+textview_curses::adjacent_mark(const bookmark_type_t* bt,
+                               vis_line_t from,
+                               text_anchors::direction dir) const
+{
+    const auto* scanner = this->mark_scanner_for(bt);
+
+    if (scanner != nullptr) {
+        return scanner->text_adjacent_mark(bt, from, dir);
+    }
+
+    const auto& bv = this->tc_bookmarks[bt];
+
+    switch (dir) {
+        case text_anchors::direction::next:
+            return bv.next(from);
+        case text_anchors::direction::prev:
+            return bv.prev(from);
+    }
+
+    return std::nullopt;
+}
+
+bool
+textview_curses::mark_at_row(const bookmark_type_t* bt, vis_line_t vl) const
+{
+    const auto* scanner = this->mark_scanner_for(bt);
+
+    if (scanner != nullptr) {
+        return scanner->text_mark_at_row(bt, vl);
+    }
+
+    return this->tc_bookmarks[bt].bv_tree.exists(vl);
+}
+
+bool
+textview_curses::any_mark_in_range(const bookmark_type_t* bt,
+                                   vis_line_t start,
+                                   vis_line_t stop) const
+{
+    if (start >= stop) {
+        return false;
+    }
+
+    const auto* scanner = this->mark_scanner_for(bt);
+
+    if (scanner != nullptr) {
+        return scanner->text_any_mark_in_range(bt, start, stop);
+    }
+
+    // next() is strictly-after, so the row before the range is what asks
+    // "anything at or after start".
+    auto next = this->tc_bookmarks[bt].next(start - 1_vl);
+
+    return next && next.value() < stop;
+}
+
 void
 textview_curses::reload_data()
 {
@@ -2459,16 +2528,14 @@ text_sub_source::update_filter_hash_state(hasher& h) const
     if (ttt != nullptr) {
         auto min_time = ttt->get_min_row_time();
         if (min_time) {
-            h.update(min_time->tv_sec);
-            h.update(min_time->tv_usec);
+            h.update(min_time->count());
         } else {
             h.update(0);
             h.update(0);
         }
         auto max_time = ttt->get_max_row_time();
         if (max_time) {
-            h.update(max_time->tv_sec);
-            h.update(max_time->tv_usec);
+            h.update(max_time->count());
         } else {
             h.update(0);
             h.update(0);

@@ -233,7 +233,7 @@ read_format_bool(yajlpp_parse_context* ypc, int val)
     auto field_name = ypc->get_path_fragment(1);
 
     if (field_name == "json" && val) {
-        elf->elf_type = external_log_format::elf_type_t::ELF_TYPE_JSON;
+        elf->lf_file_type = log_format::file_type_t::JSON;
     }
 
     return 1;
@@ -761,9 +761,9 @@ static const struct json_path_container sample_handlers = {
 };
 
 static constexpr json_path_handler_base::enum_value_t TYPE_ENUM[] = {
-    {"text"_frag, external_log_format::elf_type_t::ELF_TYPE_TEXT},
-    {"json"_frag, external_log_format::elf_type_t::ELF_TYPE_JSON},
-    {"tabular"_frag, external_log_format::elf_type_t::ELF_TYPE_TABULAR},
+    {"text"_frag, log_format::file_type_t::TEXT},
+    {"json"_frag, log_format::file_type_t::JSON},
+    {"tabular"_frag, log_format::file_type_t::TABULAR},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -1168,7 +1168,7 @@ const struct json_path_container format_handlers = {
         .with_synopsis("text|json|csv")
         .with_description("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
-        .for_field(&external_log_format::elf_type),
+        .for_field(&log_format::lf_file_type),
 
     yajlpp::property_handler("max-unrecognized-lines")
         .with_synopsis("<lines>")

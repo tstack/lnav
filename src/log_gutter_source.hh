@@ -59,16 +59,21 @@ public:
         } else {
              ch = search_hit ? NCACS_RTEE : NCACS_VLINE;
         }
-        next = bm[&textview_curses::BM_ERRORS].next(vis_line_t(start));
-        if (next && next.value() <= end) {
+        // `start` was stepped back above so that the bookmark probes read
+        // as "at or after the row the range began on"; the half-open range
+        // that covers the same rows is therefore [start + 1, end + 1).
+        if (tc->any_mark_in_range(&textview_curses::BM_ERRORS,
+                                  vis_line_t(start + 1),
+                                  vis_line_t(end + 1)))
+        {
             role_out = role_t::VCR_ERROR;
             bar_role_out = role_t::VCR_SCROLLBAR_ERROR;
-        } else {
-            next = bm[&textview_curses::BM_WARNINGS].next(vis_line_t(start));
-            if (next && next.value() <= end) {
-                role_out = role_t::VCR_WARNING;
-                bar_role_out = role_t::VCR_SCROLLBAR_WARNING;
-            }
+        } else if (tc->any_mark_in_range(&textview_curses::BM_WARNINGS,
+                                         vis_line_t(start + 1),
+                                         vis_line_t(end + 1)))
+        {
+            role_out = role_t::VCR_WARNING;
+            bar_role_out = role_t::VCR_SCROLLBAR_WARNING;
         }
     }
 };

@@ -135,6 +135,7 @@ filter_status_source::statusview_fields()
                 case lnav::console::user_message::level::warning:
                     break;
                 case lnav::console::user_message::level::error:
+                case lnav::console::user_message::level::fatal:
                     error_count += 1;
                     break;
             }

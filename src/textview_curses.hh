@@ -312,7 +312,7 @@ public:
 
     std::string format_zoom_level() const;
 
-    std::optional<timeval> get_min_row_time() const
+    std::optional<std::chrono::microseconds> get_min_row_time() const
     {
         if (this->ttt_min_row_time == min_time_init) {
             return std::nullopt;
@@ -321,7 +321,7 @@ public:
         return this->ttt_min_row_time;
     }
 
-    void set_min_row_time(const timeval& tv)
+    void set_min_row_time(const std::chrono::microseconds& tv)
     {
         if (this->ttt_min_row_time != tv) {
             this->ttt_min_row_time = tv;
@@ -329,7 +329,7 @@ public:
         }
     }
 
-    std::optional<timeval> get_max_row_time() const
+    std::optional<std::chrono::microseconds> get_max_row_time() const
     {
         if (this->ttt_max_row_time == max_time_init) {
             return std::nullopt;
@@ -338,7 +338,7 @@ public:
         return this->ttt_max_row_time;
     }
 
-    void set_max_row_time(const timeval& tv)
+    void set_max_row_time(const std::chrono::microseconds& tv)
     {
         if (this->ttt_max_row_time != tv) {
             this->ttt_max_row_time = tv;
@@ -357,9 +357,9 @@ public:
         }
     }
 
-    static constexpr auto min_time_init = timeval{0, 0};
+    static constexpr auto min_time_init = std::chrono::microseconds::zero();
     static constexpr auto max_time_init
-        = timeval{std::numeric_limits<time_t>::max(), 0};
+        = std::chrono::microseconds::max();
 
     void clear_preview_times()
     {
@@ -370,12 +370,14 @@ public:
     void add_time_commands_for_session(
         const std::function<void(const std::string&)>& receiver);
 
-    std::optional<timeval> ttt_preview_min_time;
-    std::optional<timeval> ttt_preview_max_time;
+    std::optional<std::chrono::microseconds> ttt_preview_min_time;
+    std::optional<std::chrono::microseconds> ttt_preview_max_time;
 
 protected:
-    timeval ttt_min_row_time = min_time_init;
-    timeval ttt_max_row_time = max_time_init;
+    std::chrono::microseconds ttt_min_row_time
+        = std::chrono::microseconds::zero();
+    std::chrono::microseconds ttt_max_row_time
+        = std::chrono::microseconds::max();
     uint32_t ttt_time_filter_generation{0};
     std::optional<row_info> ttt_top_row_info;
     std::chrono::microseconds ttt_zoom_level{ZOOM_LEVELS[3]};
@@ -440,6 +442,36 @@ public:
     virtual std::optional<std::string> anchor_for_row(vis_line_t vl) = 0;
 
     virtual std::unordered_set<std::string> get_anchors() = 0;
+};
+
+/**
+ * A source that knows where its marks of a given type are from its own index,
+ * so that the view does not have to hold a row per mark.
+ *
+ * The queries here are the whole surface that the mark readers use: stepping
+ * to the next or previous one, asking about a single row, and asking whether a
+ * range holds any.  A source that does not answer a given type leaves it to
+ * the view's bookmark vector, which is what keeps the sources that still store
+ * their marks working unchanged.
+ */
+class text_mark_scanner {
+public:
+    virtual ~text_mark_scanner() = default;
+
+    virtual bool text_scans_mark(const bookmark_type_t* bt) const = 0;
+
+    virtual std::optional<vis_line_t> text_adjacent_mark(
+        const bookmark_type_t* bt,
+        vis_line_t from,
+        text_anchors::direction dir) const = 0;
+
+    virtual bool text_mark_at_row(const bookmark_type_t* bt,
+                                  vis_line_t vl) const = 0;
+
+    // Whether any row in the half-open range [start, stop) carries the mark.
+    virtual bool text_any_mark_in_range(const bookmark_type_t* bt,
+                                        vis_line_t start,
+                                        vis_line_t stop) const = 0;
 };
 
 class location_history {
@@ -579,8 +611,7 @@ public:
     {
     }
 
-    bool list_input_handle_key(listview_curses& lv,
-                               const ncinput& ch) override;
+    bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
 
     /**
      * Update the bookmarks used by the text view based on the bookmarks
@@ -765,6 +796,29 @@ public:
 
     const vis_bookmarks& get_bookmarks() const { return this->tc_bookmarks; }
 
+    /**
+     * Where the marks of the given type are.
+     *
+     * A source that implements text_mark_scanner answers these from its own
+     * index; for everything else they come from the view's bookmark vector.
+     * Readers have to come through here rather than indexing the bookmarks
+     * directly, since a scanned type has no vector to look in.
+     */
+    std::optional<vis_line_t> adjacent_mark(const bookmark_type_t* bt,
+                                            vis_line_t from,
+                                            text_anchors::direction dir) const;
+
+    bool mark_at_row(const bookmark_type_t* bt, vis_line_t vl) const;
+
+    // Whether any row in the half-open range [start, stop) carries the mark.
+    bool any_mark_in_range(const bookmark_type_t* bt,
+                           vis_line_t start,
+                           vis_line_t stop) const;
+
+    // The source, when it answers this mark type by scanning; null otherwise,
+    // which is the signal to use the bookmark vector.
+    const text_mark_scanner* mark_scanner_for(const bookmark_type_t* bt) const;
+
     struct mark_toggle_result {
         int mtr_marked{0};
         int mtr_unmarked{0};
@@ -792,8 +846,7 @@ public:
      * get its address back for the new one and leave the view holding the
      * bookmarks and search hits of text that is gone.
      */
-    textview_curses& set_owned_sub_source(
-        std::unique_ptr<text_sub_source> src);
+    textview_curses& set_owned_sub_source(std::unique_ptr<text_sub_source> src);
 
     text_sub_source* get_sub_source() const { return this->tc_sub_source; }
 
@@ -1129,8 +1182,7 @@ public:
 
     void redo_search();
 
-    void search_range(vis_line_t start,
-                      vis_line_t stop);
+    void search_range(vis_line_t start, vis_line_t stop);
 
     /**
      * Scan a range again with both the content and the metadata search, and
@@ -1141,8 +1193,7 @@ public:
      * the results already recorded for it, and only the search that is run
      * again puts its hits back.
      */
-    void rescan_range(vis_line_t start,
-                      vis_line_t stop);
+    void rescan_range(vis_line_t start, vis_line_t stop);
 
     /** Scan the lines that have arrived since the last scan was queued. */
     void search_new_data();

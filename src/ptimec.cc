@@ -29,8 +29,12 @@
  * @file ptimec.c
  */
 
+#include <algorithm>
+#include <map>
 #include <optional>
 #include <vector>
+
+#include <limits.h>
 
 #include <ctype.h>
 #include <stdio.h>
@@ -142,13 +146,19 @@ has_deferred_b(const char* fmt)
 int
 main(int argc, char* argv[])
 {
-    std::vector<char> leading_conversions;
+    // The formats are grouped by what they lead with, so that a lead which
+    // fails rules out every format sharing it.  The key is the conversion
+    // character paired with the literal that follows it, since a conversion
+    // that scans up to a delimiter fails when that delimiter is missing, which
+    // says nothing about a format looking for a different one.  Zero means the
+    // format leads with something that cannot be grouped on.
+    std::vector<int> leading_conversions;
     int retval = EXIT_SUCCESS;
 
     fputs(PRELUDE, stdout);
     for (int lpc = 1; lpc < argc; lpc++) {
         const char* arg = argv[lpc];
-        char leading_conversion = 0;
+        int leading_conversion = 0;
 
         printf(
             "// %s\n"
@@ -190,7 +200,15 @@ main(int argc, char* argv[])
         }
 
         auto checked_pos = std::optional<size_t>(0);
+        // A leading "%a" scans up to a delimiter without looking at what it
+        // skipped, so the format does not start telling inputs apart until the
+        // element after it.  Reporting the failures in that shared prefix as
+        // index zero lets scan() drop the whole group of formats that start
+        // this way, since they all begin with the same thing.
+        auto fail_is_lead = arg[0] == '%' && arg[1] == 'a';
         for (int index = 0; arg[index]; index++) {
+            const auto fail_index = fail_is_lead ? 0 : index;
+
             if (startswith(&arg[index], "%Y-%m-%dT%H:%M")) {
                 printf(
                     "    {\n"
@@ -198,7 +216,7 @@ main(int argc, char* argv[])
                     "len);\n"
                     "        if (rc != PTIME_MATCHED) {\n");
                 if (index == 0) {
-                    leading_conversion = 'Y';
+                    leading_conversion = 'Y' << 8;
                     printf("            return rc;\n");
                 } else {
                     // the index reported by ptime_YmdTHM is relative to the
@@ -221,19 +239,25 @@ main(int argc, char* argv[])
                     }
                 }
 
-                // "%b" is left out of the leading conversion cache.  A
-                // deferred "%b" reports a failure at index zero when the
-                // literal that delimits the month name is missing, which is a
-                // property of the format rather than of the input, so it is
-                // not something other formats can be skipped on.
-                if (index == 0 && arg[index + 1] != 'b') {
-                    leading_conversion = arg[index + 1];
+                const auto conv_ch = arg[index + 1];
+
+                if (index == 0) {
+                    auto delim = 0;
+
+                    // These scan up to a literal instead of consuming a fixed
+                    // width, so the literal they are looking for is part of
+                    // what they lead with.
+                    if (conv_ch == 'a' || conv_ch == 'b' || conv_ch == 'Z') {
+                        delim = (unsigned char) arg[index + 2];
+                    }
+                    leading_conversion = (conv_ch << 8) | delim;
                 }
-                switch (arg[index + 1]) {
+
+                switch (conv_ch) {
                     case 'a':
                         if (arg[index + 2]) {
                             printf(
-                                "    if (!ptime_upto('%s', str, off_inout, "
+                                "    if (!ptime_a_upto('%s', str, off_inout, "
                                 "len)) "
                                 "return %d;\n",
                                 escape_char(arg[index + 2]),
@@ -281,14 +305,14 @@ main(int argc, char* argv[])
                             // the literal after the "%b" delimits the month
                             // name, so we can find the end of the name now and
                             // decode it once the rest of the format matches.
-                            deferred_b_index = index;
+                            deferred_b_index = fail_index;
                             if (fixed_width_opt) {
                                 printf(
                                     "    PTIME_LOCATE_b(dst, str, off_inout + "
                                     "%lu, '%s', b_start, b_end, %d);\n",
                                     checked_pos.value(),
                                     escape_char(arg[index + 2]),
-                                    index);
+                                    fail_index);
                                 if (min_width > 0) {
                                     // locating the name may have moved
                                     // off_inout past the width that was
@@ -306,7 +330,7 @@ main(int argc, char* argv[])
                                     "return %d;\n"
                                     "    off_inout = b_end;\n",
                                     escape_char(arg[index + 2]),
-                                    index);
+                                    fail_index);
                             }
                             index += 1;
                             break;
@@ -319,16 +343,19 @@ main(int argc, char* argv[])
                                 "%lu, %d);\n",
                                 arg[index + 1],
                                 checked_pos.value(),
-                                index);
+                                fail_index);
                         } else {
                             printf(
                                 "    if (!ptime_%c(dst, str, off_inout, len)) "
                                 "return %d;\n",
                                 arg[index + 1],
-                                index);
+                                fail_index);
                         }
                         index += 1;
                         break;
+                }
+                if (conv_ch != 'a') {
+                    fail_is_lead = false;
                 }
                 if (checked_pos) {
                     if (fixed_width_opt.has_value()) {
@@ -351,7 +378,7 @@ main(int argc, char* argv[])
                         "    if (!ptime_char('%s', str, off_inout, len)) "
                         "return %d;\n",
                         escape_char(arg[index]),
-                        index);
+                        fail_index);
                 }
             }
         }
@@ -366,12 +393,12 @@ main(int argc, char* argv[])
         printf("}\n\n");
 
         if (leading_conversion != 0
-            && (leading_conversion < '@' || leading_conversion > 'z'))
+            && ((leading_conversion >> 8) < '@' || (leading_conversion >> 8) > 'z'))
         {
             fprintf(stderr,
                     "error: leading conversion '%%%c' of '%s' is outside the "
-                    "range that ptime_leading_conversion_flag() can encode\n",
-                    leading_conversion,
+                    "range that pf_leading_conversion can hold\n",
+                    leading_conversion >> 8,
                     arg);
             retval = EXIT_FAILURE;
         }
@@ -406,25 +433,86 @@ main(int argc, char* argv[])
         printf("}\n\n");
     }
 
+    // Group the formats by their leading conversion so that a conversion
+    // appears in exactly one run.  scan() can then step over a whole run when
+    // that conversion fails, instead of looking at every format sharing it.
+    // The sort is stable, so formats with the same conversion keep the order
+    // they have in the list and a longer variant still comes before the prefix
+    // it extends.  A zero conversion sorts first, which leaves the epoch
+    // format at index 0, where scan() expects to find it.
+    std::vector<int> order;
+
+    for (int lpc = 1; lpc < argc; lpc++) {
+        order.emplace_back(lpc);
+    }
+
+    // A group takes the place of its first format, so the groups stay in the
+    // order the list puts them in.  Ordering by the conversion character
+    // instead would arrange them by ASCII value, which says nothing about the
+    // precedence the list was written with.
+    std::map<int, int> first_appearance;
+    for (int lpc = 1; lpc < argc; lpc++) {
+        const auto conv = leading_conversions[lpc - 1];
+
+        if (conv != 0) {
+            first_appearance.emplace(conv, lpc);
+        }
+    }
+
+    // A format with no leading conversion is never skipped, so gathering those
+    // together buys nothing and would only move them past formats they
+    // currently precede.  Leaving them where the list has them also keeps the
+    // epoch format at index 0, where scan() looks for it.
+    auto sort_key = [&leading_conversions, &first_appearance](int idx) {
+        const auto conv = leading_conversions[idx - 1];
+
+        return conv == 0 ? idx : first_appearance.find(conv)->second;
+    };
+    std::stable_sort(order.begin(),
+                     order.end(),
+                     [&sort_key](int lhs, int rhs) {
+                         return sort_key(lhs) < sort_key(rhs);
+                     });
+
+    std::vector<size_t> next_group(order.size());
+    for (size_t lpc = 0; lpc < order.size(); lpc++) {
+        const auto conv = leading_conversions[order[lpc] - 1];
+        auto next = lpc + 1;
+
+        // A format with no leading conversion is never skipped, so the group
+        // it is in is just itself.
+        if (conv != 0) {
+            while (next < order.size()
+                   && leading_conversions[order[next] - 1] == conv)
+            {
+                next += 1;
+            }
+        }
+        next_group[lpc] = next;
+    }
+
     size_t default_format_index = 0;
     printf("struct ptime_fmt PTIMEC_FORMATS[] = {\n");
-    for (int lpc = 1; lpc < argc; lpc++) {
-        if (strcmp(argv[lpc], "%Y-%m-%dT%H:%M:%S") == 0) {
-            default_format_index = lpc - 1;
+    for (size_t lpc = 0; lpc < order.size(); lpc++) {
+        const auto src = order[lpc];
+
+        if (strcmp(argv[src], "%Y-%m-%dT%H:%M:%S") == 0) {
+            default_format_index = lpc;
         }
-        printf("    { \"%s\", ptime_f%d, ftime_f%d, 0x%x },\n",
-               argv[lpc],
-               lpc,
-               lpc,
-               leading_conversions[lpc - 1]);
+        printf("    { \"%s\", ptime_f%d, ftime_f%d, 0x%x, %zu },\n",
+               argv[src],
+               src,
+               src,
+               leading_conversions[src - 1] >> 8,
+               next_group[lpc]);
     }
     printf("\n");
-    printf("    { nullptr, nullptr, nullptr, 0 }\n");
+    printf("    { nullptr, nullptr, nullptr, 0, 0 }\n");
     printf("};\n");
 
     printf("const char *PTIMEC_FORMAT_STR[] = {\n");
-    for (int lpc = 1; lpc < argc; lpc++) {
-        printf("    \"%s\",\n", argv[lpc]);
+    for (size_t lpc = 0; lpc < order.size(); lpc++) {
+        printf("    \"%s\",\n", argv[order[lpc]]);
     }
     printf("\n");
     printf("    nullptr\n");

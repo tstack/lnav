@@ -1,0 +1,29 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "json_deprecated_log": {
+        "title": "Test format for the deprecated \"json\" flag",
+        "description": "Every other format uses \"file-type\": \"json\".  This one keeps the deprecated spelling so that the flag, which is still accepted without a warning, does not stop working unnoticed.",
+        "json": true,
+        "file-pattern": "logfile_json_deprecated\\.json",
+        "line-format": [
+            {
+                "field": "ts"
+            },
+            " ",
+            {
+                "field": "lvl"
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "timestamp-field": "ts",
+        "level-field": "lvl",
+        "level": {
+            "info": "info",
+            "error": "error"
+        },
+        "body-field": "msg"
+    }
+}

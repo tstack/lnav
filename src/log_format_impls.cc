@@ -131,7 +131,8 @@ public:
                   this->plf_cached_line.size());
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock) override
     {
         auto retval = std::make_shared<piper_log_format>(*this);
 
@@ -166,7 +167,8 @@ public:
           [A-Z]{3,4}                          # 3-4 uppercase letters (e.g. month/tz abbrev)
       )+
   )
-  [:|\s]?                                     # optional separator
+  (?: \d+)?
+  [:|\s\]]?                                     # optional separator
   (trc|trace|critical|fatal|dbg\d?|debug\d?|info|warn(?:ing)?|err(?:or)?)   # log level
   [:|\s]                                      # separator
   \s*
@@ -174,26 +176,10 @@ public:
             pcre_format(
                 R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) \[(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)\]\s+)"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) -- (trace|debug\d?|info|warn(?:ing)?|error|critical|fatal) --\s+)"),
-
-            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+/\.-]+) \[\w\s+)"),
-            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+)\s+)"),
-            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+,/\.-]+) -\s+)"),
-            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+) -\s+)"),
-            pcre_format(
                 R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\] \[(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)\]\s+)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: "
-                        "\\.,/-]+)\\[[^\\]]+\\]\\s+"),
-            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,/-]+)\s+)"),
-
             pcre_format(
-                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\]\s*(\w+):?\s+)"),
-            pcre_format(
-                R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\]\s+)"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: "
-                        "\\.,+/-]+)\\] \\w+\\s+"),
-            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] "
-                        "\\(\\d+\\)\\s+"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) (?:-- )?(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)(?: --)?\s+)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>\w.*))"),
 
             pcre_format(),
         };
@@ -330,6 +316,11 @@ public:
         if (!level_cap) {
             lr.lr_end = prefix_len
                 = lr.lr_start + lf->get_time_scanner().dts_fmt_len;
+            auto rem_sf = line_sf.substr(prefix_len);
+            auto body_sf = rem_sf.consume(isspace);
+            if (body_sf) {
+                prefix_len = body_sf->sf_begin;
+            }
         }
         sa.emplace_back(lr, L_TIMESTAMP.value());
 
@@ -363,7 +354,8 @@ public:
         log_format::annotate(lf, line_number, sa, values);
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock) override
     {
         auto retval = std::make_shared<o1_generic_log_format>(*this);
 
@@ -470,6 +462,7 @@ public:
         this->lf_multiline = false;
         this->lf_is_metric = true;
         this->lf_time_ordered = false;
+        this->lf_file_type = file_type_t::TABULAR;
     }
 
     const intern_string_t get_name() const override
@@ -844,7 +837,8 @@ public:
         log_format::annotate(lf, line_number, sa, values);
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock) override
     {
         auto retval = std::make_shared<metrics_log_format>(*this);
 
@@ -1121,6 +1115,7 @@ public:
         this->lf_structured = true;
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
+        this->lf_file_type = file_type_t::TABULAR;
         this->lf_timestamp_point_of_reference
             = timestamp_point_of_reference_t::start;
 
@@ -1545,7 +1540,8 @@ public:
         return retval;
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock = -1) override
     {
         auto retval = std::make_shared<bro_log_format>(*this);
 
@@ -1936,13 +1932,16 @@ public:
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
         this->lf_structured = true;
+        this->lf_file_type = file_type_t::TABULAR;
     }
 
     const intern_string_t get_name() const override
     {
         static const intern_string_t name(intern_string::lookup("w3c_log"));
 
-        return this->wlf_state.wss_format_name.empty() ? name : this->wlf_state.wss_format_name;
+        return this->wlf_state.wss_format_name.empty()
+            ? name
+            : this->wlf_state.wss_format_name;
     }
 
     /** @see bro_log_format::root_meta_for() */
@@ -2047,7 +2046,7 @@ public:
                             sbc.sbc_time_scanner.set_base_time(tv.tv_sec,
                                                                tm.et_tm);
                             st.wss_time_scanner.set_base_time(tv.tv_sec,
-                                                                 tm.et_tm);
+                                                              tm.et_tm);
                         }
                     }
                 }
@@ -2211,8 +2210,7 @@ public:
                     sbc.sbc_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
                     st.wss_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
                 }
-            } else if (directive == "#Fields:" && st.wss_field_defs.empty())
-            {
+            } else if (directive == "#Fields:" && st.wss_field_defs.empty()) {
                 int numeric_count = 0;
 
                 do {
@@ -2410,7 +2408,8 @@ public:
         return retval;
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock = -1) override
     {
         auto retval = std::make_shared<w3c_log_format>(*this);
 
@@ -2822,7 +2821,8 @@ public:
         log_format::annotate(lf, line_number, sa, values);
     }
 
-    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
+                                            int fmt_lock) override
     {
         auto retval = std::make_shared<logfmt_format>(*this);
 

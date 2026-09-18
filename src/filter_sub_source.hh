@@ -166,7 +166,10 @@ public:
     };
 
     struct time_filter_row : filter_row {
-        explicit time_filter_row(const timeval& tv) : tfr_time(tv) {}
+        explicit time_filter_row(const std::chrono::microseconds& us)
+            : tfr_time(us)
+        {
+        }
         bool prime_text_input(textview_curses* top_view,
                               textinput_curses& ti,
                               filter_sub_source& parent) override;
@@ -174,14 +177,17 @@ public:
                                    textinput_curses& tc,
                                    completion_request_type_t crt) override;
 
-        Result<timeval, std::string> parse_time(textview_curses* top_view,
-                                                textinput_curses& tc);
+        Result<std::chrono::microseconds, std::string> parse_time(
+            textview_curses* top_view, textinput_curses& tc);
 
-        timeval tfr_time;
+        std::chrono::microseconds tfr_time;
     };
 
     struct min_time_filter_row : time_filter_row {
-        explicit min_time_filter_row(const timeval& tv) : time_filter_row(tv) {}
+        explicit min_time_filter_row(const std::chrono::microseconds& us)
+            : time_filter_row(us)
+        {
+        }
         bool prime_text_input(textview_curses* top_view,
                               textinput_curses& ti,
                               filter_sub_source& parent) override
@@ -202,7 +208,10 @@ public:
     };
 
     struct max_time_filter_row : time_filter_row {
-        explicit max_time_filter_row(const timeval& tv) : time_filter_row(tv) {}
+        explicit max_time_filter_row(const std::chrono::microseconds& us)
+            : time_filter_row(us)
+        {
+        }
         bool prime_text_input(textview_curses* top_view,
                               textinput_curses& ti,
                               filter_sub_source& parent) override
@@ -256,8 +265,7 @@ public:
      * still typing in.
      */
     struct named_search_row : filter_row {
-        explicit named_search_row(std::string name)
-            : nsr_name(std::move(name))
+        explicit named_search_row(std::string name) : nsr_name(std::move(name))
         {
         }
 
@@ -313,8 +321,8 @@ public:
     std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;
     log_level_t fss_curr_level;
-    std::optional<timeval> fss_min_time;
-    std::optional<timeval> fss_max_time;
+    std::optional<std::chrono::microseconds> fss_min_time;
+    std::optional<std::chrono::microseconds> fss_max_time;
 
     bool fss_editing{false};
     bool fss_filter_state{false};

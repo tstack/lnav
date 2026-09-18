@@ -324,8 +324,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if (tc == &lnav_data.ld_views[LNV_LOG]
                 || tc == &lnav_data.ld_views[LNV_TIMELINE])
             {
-                bm[&logfile_sub_source::BM_FILES].next(
-                    tc->get_selection().value_or(0_vl))
+                tc->adjacent_mark(&logfile_sub_source::BM_FILES,
+                                  tc->get_selection().value_or(0_vl),
+                                  text_anchors::direction::next)
                     | [&tc](auto vl) { tc->set_selection(vl); };
             } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 textfile_sub_source& tss = lnav_data.ld_text_source;
@@ -341,8 +342,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if (tc == &lnav_data.ld_views[LNV_LOG]
                 || tc == &lnav_data.ld_views[LNV_TIMELINE])
             {
-                bm[&logfile_sub_source::BM_FILES].prev(
-                    tc->get_selection().value_or(0_vl))
+                tc->adjacent_mark(&logfile_sub_source::BM_FILES,
+                                  tc->get_selection().value_or(0_vl),
+                                  text_anchors::direction::prev)
                     | [&tc](auto vl) {
                           // setting the selection for movement to previous file
                           // marker instead of the top will move the cursor,

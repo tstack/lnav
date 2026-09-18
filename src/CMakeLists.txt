@@ -616,7 +616,6 @@ add_library(
         highlighter.hh
         hotkeys.hh
         input_dispatcher.hh
-        k_merge_tree.h
         lnav.events.hh
         lnav.exec-phase.hh
         lnav.indexing.hh

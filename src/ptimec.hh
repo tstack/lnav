@@ -89,11 +89,65 @@ ptime_upto_end(const char* str, off_t& off_inout, ssize_t len)
 }
 
 /**
- * The most bytes a month name is allowed to occupy.  A Latin script month
- * needs about a dozen, but a full month name in a multibyte locale can run
- * well past twenty.
+ * The most bytes a weekday name is allowed to occupy.  Going by the system
+ * locales, an abbreviated name reaches sixteen bytes and a full one reaches
+ * twenty-four.
  */
-static constexpr off_t PTIME_B_MAX_WIDTH = 32;
+static constexpr off_t PTIME_A_MAX_WIDTH = 24;
+
+/**
+ * Scan up to the delimiter that follows a weekday name.  The name itself is
+ * thrown away, since ftime_a() writes one back from tm_wday, so this only has
+ * to be loose enough for every locale to get through: letters, the period that
+ * most abbreviations end with, and the hyphen a few full names use.  Anything
+ * else in front of the delimiter means this is not a weekday, which lets the
+ * scanner give up on the whole group of formats that start with one.
+ */
+inline bool
+ptime_a_upto(char ch, const char* str, off_t& off_inout, ssize_t len)
+{
+    auto limit = off_inout + PTIME_A_MAX_WIDTH;
+
+    if (limit > len) {
+        limit = len;
+    }
+    for (auto scan = off_inout; scan < limit; scan++) {
+        const auto name_ch = (unsigned char) str[scan];
+
+        if (name_ch == (unsigned char) ch) {
+            if (scan == off_inout) {
+                // the delimiter is the whole of the name
+                return false;
+            }
+            off_inout = scan;
+            return true;
+        }
+        // A byte at or above 0x80 is part of a multibyte name, so only the
+        // ASCII range says anything about what this is.
+        if (ch == ' ' && name_ch < 0x80
+            && !(name_ch >= 'A' && name_ch <= 'Z')
+            && !(name_ch >= 'a' && name_ch <= 'z') && name_ch != '.'
+            && name_ch != '-')
+        {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * The most bytes a month name is allowed to occupy.  Going by the system
+ * locales, an abbreviated name reaches twenty-three bytes and a full one
+ * reaches thirty-eight.
+ */
+static constexpr off_t PTIME_B_MAX_WIDTH = 40;
+
+/**
+ * The fewest bytes a month name can occupy.  The shortest the locales offer is
+ * a two byte abbreviation.
+ */
+static constexpr off_t PTIME_B_MIN_WIDTH = 2;
 
 bool ptime_b_slow(struct exttm* dst,
                   const char* str,
@@ -226,11 +280,16 @@ ptime_b_locate(struct exttm* dst,
     if (limit > len) {
         limit = len;
     }
-    for (auto scan = start + 3; scan < limit; scan++) {
+    for (auto scan = start; scan < limit; scan++) {
         if (str[scan] != delim) {
             continue;
         }
 
+        if (scan - start < PTIME_B_MIN_WIDTH) {
+            // the delimiter arrived before a name could fit, so starting the
+            // scan past it would only fold it into the name
+            return false;
+        }
         b_end = scan;
         if (scan - start == 3 && ptime_b_int(dst, str, start)) {
             b_start = -1;
@@ -1435,20 +1494,6 @@ constexpr int32_t PTIME_TOO_SHORT = -2;
 using ptime_func = int32_t (*)(struct exttm*, const char*, off_t&, ssize_t);
 using ftime_func = void (*)(char*, off_t&, size_t, const struct exttm&);
 
-/**
- * The set of leading conversions that have already failed for a given input.
- * Conversion specifiers are limited to '@' and the ASCII letters, so the whole
- * set fits in a single word.  ptimec checks that every pf_leading_conversion
- * it emits falls in that range.
- */
-using ptime_conversion_set = uint64_t;
-
-constexpr ptime_conversion_set
-ptime_leading_conversion_flag(char conv)
-{
-    return ptime_conversion_set{1} << (conv - '@');
-}
-
 bool ptime_fmt(const char* fmt,
                struct exttm* dst,
                const char* str,
@@ -1464,6 +1509,12 @@ struct ptime_fmt {
     ptime_func pf_func;
     ftime_func pf_ffunc;
     char pf_leading_conversion;
+    /**
+     * The index of the first format with a different leading conversion.  The
+     * formats are grouped by that conversion, so a conversion that fails at
+     * index zero rules out everything up to this point.
+     */
+    size_t pf_next_group;
 };
 
 extern struct ptime_fmt PTIMEC_FORMATS[];

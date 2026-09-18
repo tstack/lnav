@@ -162,6 +162,8 @@ private:
     std::string log_orig_opid;
 };
 
+std::string lnav_current_opid();
+
 extern std::optional<FILE*> lnav_log_file;
 extern const char* lnav_log_crash_dir;
 extern std::optional<const struct termios*> lnav_log_orig_termios;

@@ -75,7 +75,7 @@ const ssize_t line_buffer::DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
 const ssize_t line_buffer::MAX_LINE_BUFFER_SIZE
     = 4 * 4 * line_buffer::DEFAULT_LINE_BUFFER_SIZE;
 
-class io_looper : public isc::service<io_looper> {};
+class io_looper : public isc::service<io_looper, 4> {};
 
 struct io_looper_tag {};
 
@@ -961,7 +961,9 @@ line_buffer::fill_range(file_off_t start,
                 this->lb_loader_future = prom->get_future();
                 this->lb_stats.s_requested_preloads += 1;
                 isc::to<io_looper&, io_looper_tag>().send(
-                    [this, prom](auto& ioloop) mutable {
+                    [this, prom, curr_opid = lnav_current_opid()](
+                        auto& ioloop) mutable {
+                        auto op_guard = lnav_opid_guard::resume(curr_opid);
                         prom->set_value(this->load_next_buffer());
                     });
             }
@@ -1193,7 +1195,9 @@ line_buffer::fill_range(file_off_t start,
                 this->lb_loader_future = prom->get_future();
                 this->lb_stats.s_requested_preloads += 1;
                 isc::to<io_looper&, io_looper_tag>().send(
-                    [this, prom](auto& ioloop) mutable {
+                    [this, prom, curr_opid = lnav_current_opid()](
+                        auto& ioloop) mutable {
+                        auto op_guard = lnav_opid_guard::resume(curr_opid);
                         prom->set_value(this->load_next_buffer());
                     });
             }
@@ -1430,10 +1434,9 @@ line_buffer::load_next_line(file_range prev_line)
             // reclaims whatever sits in front of this line by shifting it
             // down, so the only thing that warrants a realloc is a line that
             // will not fit in the buffer at all.
-            request_size
-                = std::min<ssize_t>(retval.li_file_range.fr_size
-                                        + DEFAULT_INCREMENT,
-                                    MAX_LINE_BUFFER_SIZE);
+            request_size = std::min<ssize_t>(
+                retval.li_file_range.fr_size + DEFAULT_INCREMENT,
+                MAX_LINE_BUFFER_SIZE);
         }
 
         if (!done
@@ -1869,7 +1872,7 @@ line_buffer::send_initial_load()
         return;
     }
 
-    log_debug("sending initial load");
+    log_debug("fd(%d): sending initial load", this->lb_fd.get());
     if (!this->lb_alt_buffer) {
         // log_debug("allocating new buffer!");
         this->lb_alt_buffer = auto_buffer::alloc(this->lb_buffer.capacity());
@@ -1879,7 +1882,8 @@ line_buffer::send_initial_load()
     this->lb_loader_future = prom->get_future();
     this->lb_stats.s_requested_preloads += 1;
     isc::to<io_looper&, io_looper_tag>().send(
-        [this, prom](auto& ioloop) mutable {
+        [this, prom, curr_opid = lnav_current_opid()](auto& ioloop) mutable {
+            auto op_guard = lnav_opid_guard::resume(curr_opid);
             prom->set_value(this->load_next_buffer());
         });
 }

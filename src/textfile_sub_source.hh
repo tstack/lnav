@@ -308,17 +308,14 @@ private:
     using prescan_map = std::unordered_map<const logfile*, prescan_result>;
 
     /**
-     * Index the files this round is going to touch, up front and across
-     * several threads.
+     * Index every open file, up front and across several threads.
      *
      * rebuild_index() writes only its own logfile, so the files are
      * independent of each other; everything the rescan loop then does with
      * the results -- the promotion, the callbacks, the view -- stays on the
-     * calling thread.  Returns an empty map when there is nothing to gain,
-     * in which case the loop scans inline exactly as it always has.
+     * calling thread.
      */
     prescan_map prescan_files(scan_callback& callback,
-                              bool last_aborted,
                               std::optional<ui_clock::time_point> deadline);
 
     /** A markdown rendering done up front.  @see prescan_markdown() */
@@ -349,6 +346,30 @@ private:
      */
     md_prescan_map prescan_markdown();
 
+    /** Metadata discovered up front.  @see prescan_metadata() */
+    struct meta_prescan_result {
+        std::string mps_read_error;
+        /** The read threw; the caller closes the file. */
+        bool mps_failed{false};
+        /** Unset when the file has no text format to discover with. */
+        std::optional<lnav::document::metadata> mps_metadata;
+        std::optional<text_format_meta_t> mps_text_meta;
+    };
+
+    using meta_prescan_map
+        = std::unordered_map<const logfile*, meta_prescan_result>;
+
+    /**
+     * Read the given files and discover their metadata, across several
+     * threads.
+     *
+     * Reading and discovery depend only on the file's bytes, so they
+     * parallelize; installing the result -- the stamps, the new name, the
+     * callback -- stays on the calling thread.
+     */
+    meta_prescan_map prescan_metadata(
+        const std::vector<std::shared_ptr<file_view_state>>& work);
+
     void detach_observer(std::shared_ptr<logfile> lf)
     {
         auto* lfo = (line_filter_observer*) lf->get_logline_observer();
@@ -367,7 +388,6 @@ private:
 
     std::deque<std::shared_ptr<file_view_state>> tss_files;
     size_t tss_line_indent_size{0};
-    bool tss_last_scan_aborted{false};
     attr_line_t tss_hex_line;
     string_attrs_t tss_plain_line_attrs;
     int64_t tss_content_line{0};

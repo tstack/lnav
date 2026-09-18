@@ -98,10 +98,20 @@ add_library(
 
         ../third-party/xxHash/xxhash.h
         ../third-party/xxHash/xxhash.c
+
+        ../third-party/parallel_hashmap/meminfo.h
+        ../third-party/parallel_hashmap/phmap.h
+        ../third-party/parallel_hashmap/phmap_base.h
+        ../third-party/parallel_hashmap/phmap_bits.h
+        ../third-party/parallel_hashmap/phmap_config.h
+        ../third-party/parallel_hashmap/phmap_dump.h
+        ../third-party/parallel_hashmap/phmap_fwd_decl.h
+        ../third-party/parallel_hashmap/phmap_utils.h
 )
 
 target_include_directories(base PUBLIC . .. ../third-party
         ../third-party/date/include
+        ../third-party/parallel_hashmap
         ${CMAKE_CURRENT_BINARY_DIR}/..
 )
 target_link_libraries(base
@@ -120,6 +130,7 @@ add_executable(
         cell_container.tests.cc
         color_spaces.tests.cc
         fs_util.tests.cc
+        gallop.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc
         humanize.time.tests.cc

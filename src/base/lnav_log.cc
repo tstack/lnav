@@ -214,6 +214,12 @@ get_pid_str()
     return buffer;
 }
 
+std::string
+lnav_current_opid()
+{
+    return lnav_opid.to_string();
+}
+
 lnav_opid_guard::lnav_opid_guard() : log_opid_size(lnav_opid.size())
 {
     static const auto* PID_STR = get_pid_str();
@@ -508,7 +514,9 @@ log_msgv(lnav_log_level_t level,
         return;
     }
 
-    std::lock_guard<std::mutex> log_lock(*lnav_log_mutex());
+    gettimeofday(&curr_time, nullptr);
+    localtime_r(&curr_time.tv_sec, &localtm);
+    auto gmtoff = std::abs(localtm.tm_gmtoff) / 60;
 
     {
         // get the base name of the file.  NB: can't use basename() since it
@@ -524,10 +532,9 @@ log_msgv(lnav_log_level_t level,
         src_file = last_slash;
     }
 
-    gettimeofday(&curr_time, nullptr);
-    localtime_r(&curr_time.tv_sec, &localtm);
+    std::lock_guard<std::mutex> log_lock(*lnav_log_mutex());
+
     auto line = log_alloc();
-    auto gmtoff = std::abs(localtm.tm_gmtoff) / 60;
     prefix_size = snprintf(
         line,
         MAX_LOG_LINE_SIZE,

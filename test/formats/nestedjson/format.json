@@ -2,7 +2,7 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "ntest_log": {
         "title": "Test JSON Log",
-        "json": true,
+        "file-type": "json",
         "file-pattern": "logfile_(nested|invalid)_json\\d*\\.json",
         "description": "Test config",
         "line-format": [

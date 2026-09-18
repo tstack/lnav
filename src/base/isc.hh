@@ -128,8 +128,8 @@ protected:
 
 class service_base : public std::enable_shared_from_this<service_base> {
 public:
-    explicit service_base(std::string name)
-        : s_name(std::move(name)), s_children({}, this)
+    explicit service_base(std::string name, uint8_t workers = 1)
+        : s_name(std::move(name)), s_workers(workers), s_children({}, this)
     {
     }
 
@@ -163,17 +163,18 @@ protected:
 
     const std::string s_name;
     bool s_started{false};
-    std::thread s_thread;
+    std::vector<std::thread> s_workers;
     std::atomic<bool> s_looping{true};
     msg_port s_port;
     supervisor s_children;
 };
 
-template<typename T>
+template<typename T, uint8_t WORKERS = 1>
 class service : public service_base {
 public:
     explicit service(const std::string& sub_name = "")
-        : service_base(std::string(__PRETTY_FUNCTION__) + " " + sub_name)
+        : service_base(std::string(__PRETTY_FUNCTION__) + " " + sub_name,
+                       WORKERS)
     {
     }
 

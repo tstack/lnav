@@ -4,7 +4,7 @@
         "title": "Logstash Java JSON",
         "url": "https://github.com/logstash/logstash-logback-encoder",
         "description": "Log format for DAM Logstash JSON",
-        "json": true,
+        "file-type": "json",
         "hide-extra": false,
         "file-pattern": "\\.clog.*",
         "line-format": [

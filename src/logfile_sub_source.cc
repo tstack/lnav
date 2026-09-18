@@ -43,6 +43,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/distributed_slice.hh"
+#include "base/gallop.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/parallel_for.hh"
@@ -54,7 +55,7 @@
 #include "field_overlay_source.hh"
 #include "file_collection.hh"
 #include "hasher.hh"
-#include "k_merge_tree.h"
+#include "lnav.exec-phase.hh"
 #include "lnav_util.hh"
 #include "log.watch.hh"
 #include "log_accel.hh"
@@ -216,6 +217,18 @@ struct filtered_logline_cmp {
             return false;
         }
         return (*ll_lhs) < (*ll_rhs);
+    }
+
+    bool operator()(const uint32_t& lhs,
+                    const std::chrono::microseconds& rhs) const
+    {
+        const auto cl_lhs = llss_controller.lss_index[lhs].value();
+        const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
+
+        if (ll_lhs == nullptr) {
+            return true;
+        }
+        return (*ll_lhs) < rhs;
     }
 
     bool operator()(const uint32_t& lhs, const timeval& rhs) const
@@ -863,9 +876,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     lr.lr_end = 1;
     {
         auto& bm = lv.get_bookmarks();
-        const auto& bv = bm[&BM_FILES];
-        bool is_first_for_file = bv.bv_tree.exists(vis_line_t(row));
-        bool is_last_for_file = bv.bv_tree.exists(vis_line_t(row + 1));
+        bool is_first_for_file = this->is_file_start(vis_line_t(row));
+        bool is_last_for_file = this->is_file_start(vis_line_t(row + 1));
         auto graph = NCACS_VLINE;
         if (is_first_for_file) {
             if (is_last_for_file) {
@@ -1061,7 +1073,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                                  VC_BACKGROUND.value(color));
     }
     if (this->ttt_preview_min_time
-        && this->lss_token_line->get_timeval() < this->ttt_preview_min_time)
+        && this->lss_token_line->get_time() < this->ttt_preview_min_time)
     {
         auto color = styling::color_unit::from_palette(
             lnav::enums::to_underlying(ansi_color::red));
@@ -1069,7 +1081,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                                  VC_BACKGROUND.value(color));
     }
     if (this->ttt_preview_max_time
-        && this->ttt_preview_max_time < this->lss_token_line->get_timeval())
+        && this->ttt_preview_max_time < this->lss_token_line->get_time())
     {
         auto color = styling::color_unit::from_palette(
             lnav::enums::to_underlying(ansi_color::red));
@@ -1187,7 +1199,8 @@ logfile_sub_source::text_horiz_columns(textview_curses& tc,
         // first line feed is on a continuation row.  those rows are free-form
         // text with no columns to snap to and none of the adjustments below
         // apply to them, so they are skipped.
-        const auto first_row_end = line_sf.find('\n').value_or(line_sf.length());
+        const auto first_row_end
+            = line_sf.find('\n').value_or(line_sf.length());
         std::optional<line_range> ts_range;
         std::optional<line_range> level_range;
         for (const auto& sa : msg.get_attrs()) {
@@ -1303,7 +1316,7 @@ struct logline_cmp {
     }
 
     bool operator()(const logfile_sub_source::indexed_content& lhs,
-                    const timeval& rhs) const
+                    const std::chrono::microseconds& rhs) const
     {
         const auto* ll_lhs = this->llss_controller.find_line(lhs.value());
 
@@ -1314,7 +1327,8 @@ struct logline_cmp {
 };
 
 logfile_sub_source::prescan_map
-logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
+logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
+                                  std::optional<ui_clock::time_point> deadline)
 {
     prescan_map retval;
 
@@ -1322,11 +1336,25 @@ logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
         return retval;
     }
 
+    // Until the scan is done, a file that has been read to the end is left
+    // out of the fan-out entirely.  A pass costs as long as its slowest
+    // file, so carrying the finished files along makes every pass pay the
+    // straggler tail again for work that is already done.  It does mean a
+    // file that grows during startup is not picked up until the scan
+    // completes -- rebuild_index() is what re-stats a file, so skipping it
+    // leaves lf_stat behind -- which is the trade startup is willing to
+    // make.
     std::vector<logfile*> work;
-    for (const auto& ld : this->lss_files) {
+    for (const auto file_index : file_order) {
+        auto* ld = this->lss_files[file_index].get();
         auto* lf = ld->get_file_ptr();
 
         if (lf == nullptr) {
+            continue;
+        }
+        if (this->lss_merge_deferred && lf->is_fully_indexed()) {
+            auto& res = retval[lf];
+            res.psr_timestamp_flags = lf->get_format_ptr()->lf_timestamp_flags;
             continue;
         }
         work.emplace_back(lf);
@@ -1354,17 +1382,27 @@ logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
         work[lpc]->begin_indexing_progress();
     }
 
+    auto curr_opid = lnav_current_opid();
+
     bool ticked = false;
     lnav::parallel_for_each(
         work.size(),
         width,
         [&](size_t index) {
+            auto op = lnav_opid_guard::resume(curr_opid);
             auto* lf = work[index];
             auto& res = results[index];
 
             // Read before the scan, because that is where the loop reads it.
             res.psr_timestamp_flags = lf->get_format_ptr()->lf_timestamp_flags;
-            res.psr_result = lf->rebuild_index(deadline);
+            try {
+                res.psr_result = lf->rebuild_index(deadline);
+            } catch (...) {
+                // Carry the failure back to the loop instead of letting the
+                // fan-out drop it, which would leave the file to be scanned a
+                // second time just to reach the same throw.
+                res.psr_exception = std::current_exception();
+            }
             ok[index] = 1;
             lf->finish_indexing_progress();
         },
@@ -1388,7 +1426,8 @@ logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
 
                 off += std::min(file_off, file_total);
                 total += file_total;
-                if (!prog.ip_done.load(std::memory_order_relaxed)) {
+                if (file_off > 0
+                    && !prog.ip_done.load(std::memory_order_relaxed)) {
                     // A total of zero is a file that cannot say how big it
                     // is.  The row still gets the offset, so it can show the
                     // bytes read so far beside a "working" icon instead of a
@@ -1426,9 +1465,8 @@ logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
     }
 
     for (size_t lpc = 0; lpc < work.size(); lpc++) {
-        // A file whose scan threw gets no entry, so the loop calls
-        // rebuild_index() for it inline and the exception propagates from
-        // exactly where it always did.
+        // A worker that did not make it to the end of the body leaves no
+        // entry, so the loop scans that file itself.
         if (ok[lpc]) {
             retval[work[lpc]] = results[lpc];
         }
@@ -1436,6 +1474,60 @@ logfile_sub_source::prescan_files(std::optional<ui_clock::time_point> deadline)
 
     return retval;
 }
+
+struct sort_input {
+    logfile_sub_source::logfile_data* si_file_data;
+    logfile* si_file_ptr;
+
+    sort_input(logfile_sub_source::logfile_data* file_data, logfile* file_ptr)
+        : si_file_data(file_data), si_file_ptr(file_ptr)
+    {
+    }
+
+    logfile::const_iterator next() const
+    {
+        return this->si_file_ptr->begin()
+            + this->si_file_data->ld_lines_indexed;
+    }
+
+    /**
+     * Find the end of the run of lines that sort before the given line.  The
+     * search is bounded below by the next unmerged line since the lines
+     * before it are already in the index and a whole-file search could
+     * otherwise land behind it.
+     */
+    logfile::const_iterator find_run_end(const logline& limit) const
+    {
+        // Galloping rather than bisecting: the more the files overlap, the
+        // shorter each run is and the more often this is called, so the cost
+        // should scale with the length of the run and not with what is left
+        // of the file.
+        auto retval = lnav::gallop_lower_bound(
+            this->next(), this->end(), limit.get_time());
+
+        // The bound is by time alone, so walk over the lines that share the
+        // limit's timestamp but still sort before it.
+        while (retval != this->end() && *retval < limit) {
+            ++retval;
+        }
+        if (retval == this->next()) {
+            // The heads compare equal, so consume a single line to guarantee
+            // that the merge makes progress.
+            ++retval;
+        }
+        return retval;
+    }
+
+    logfile::const_iterator end() const { return this->si_file_ptr->end(); }
+
+    bool operator<(const sort_input& other) const
+    {
+        const auto l_iter = this->next();
+        const auto r_iter = other.next();
+
+        return *r_iter < *l_iter;
+    }
+};
 
 logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
@@ -1458,7 +1550,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     int file_count = 0;
     auto force = std::exchange(this->lss_force_rebuild, false);
     auto retval = rebuild_result::rr_no_change;
-    std::optional<timeval> lowest_tv = std::nullopt;
+    std::optional<std::chrono::microseconds> lowest_us = std::nullopt;
     auto search_start = 0_vl;
 
     if (force) {
@@ -1474,44 +1566,43 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     for (size_t lpc = 0; lpc < file_order.size(); lpc++) {
         file_order[lpc] = lpc;
     }
-    if (!this->lss_index.empty()) {
-        std::stable_sort(
-            file_order.begin(),
-            file_order.end(),
-            [this](const auto& left, const auto& right) {
-                const auto& left_ld = this->lss_files[left];
-                const auto& right_ld = this->lss_files[right];
+    std::stable_sort(
+        file_order.begin(),
+        file_order.end(),
+        [this](const auto& left, const auto& right) {
+            const auto& left_ld = this->lss_files[left];
+            const auto& right_ld = this->lss_files[right];
 
-                if (left_ld->get_file_ptr() == nullptr) {
-                    return true;
-                }
-                if (right_ld->get_file_ptr() == nullptr) {
-                    return false;
-                }
+            if (left_ld->get_file_ptr() == nullptr) {
+                return true;
+            }
+            if (right_ld->get_file_ptr() == nullptr) {
+                return false;
+            }
 
-                // Group metrics_log files together so the
-                // index-build dedup and render-side sibling
-                // walk don't get interrupted by a regular
-                // log message that happens to share a
-                // timestamp with a metric row.
-                const auto left_metric
-                    = left_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
-                const auto right_metric
-                    = right_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
-                if (left_metric != right_metric) {
-                    return left_metric;
-                }
+            // Group metrics_log files together so the
+            // index-build dedup and render-side sibling
+            // walk don't get interrupted by a regular
+            // log message that happens to share a
+            // timestamp with a metric row.
+            const auto left_metric
+                = left_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
+            const auto right_metric
+                = right_ld->get_file_ptr()->get_format_ptr()->lf_is_metric;
+            if (left_metric != right_metric) {
+                return left_metric;
+            }
 
-                return left_ld->get_file_ptr()->back()
-                    < right_ld->get_file_ptr()->back();
-            });
-    }
+            return left_ld->get_file_ptr()->back()
+                < right_ld->get_file_ptr()->back();
+        });
 
     // Index the files up front and in parallel; the loop below then works
     // through the results in file_order, exactly as it always has.
-    const auto prescan = this->prescan_files(deadline);
+    const auto prescan = this->prescan_files(file_order, deadline);
 
-    bool time_left = true;
+    auto needs_more_indexing = false;
+
     this->lss_all_timestamp_flags = 0;
     for (const auto file_index : file_order) {
         auto& ld = *(this->lss_files[file_index]);
@@ -1529,18 +1620,25 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (!lf->get_format_ptr()->lf_time_ordered) {
                 all_time_ordered_formats = false;
             }
-            if (time_left && deadline && ui_clock::now() > deadline.value()) {
-                log_debug("no time left, skipping %s",
-                          lf->get_filename_as_string().c_str());
-                time_left = false;
-            }
             const auto pre_iter = prescan.find(lf);
 
             this->lss_all_timestamp_flags |= pre_iter == prescan.end()
                 ? lf->get_format_ptr()->lf_timestamp_flags
                 : pre_iter->second.psr_timestamp_flags;
 
-            if (!this->tss_view->is_paused() && time_left) {
+            if (!lf->is_fully_indexed()) {
+                needs_more_indexing = true;
+            }
+
+            if (!this->tss_view->is_paused()) {
+                if (pre_iter != prescan.end()
+                    && pre_iter->second.psr_exception != nullptr)
+                {
+                    std::rethrow_exception(pre_iter->second.psr_exception);
+                }
+
+                // A worker that threw before finishing leaves no entry
+                // behind, so this file has not been scanned yet.
                 auto log_rebuild_res = pre_iter == prescan.end()
                     ? lf->rebuild_index(deadline)
                     : pre_iter->second.psr_result;
@@ -1593,11 +1691,11 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                     && all_time_ordered_formats)
                                 {
                                     retval = rebuild_result::rr_partial_rebuild;
-                                    if (!lowest_tv
-                                        || new_file_line.get_timeval()
-                                            < lowest_tv.value())
+                                    if (!lowest_us
+                                        || new_file_line.get_time()
+                                            < lowest_us.value())
                                     {
-                                        lowest_tv = new_file_line.get_timeval();
+                                        lowest_us = new_file_line.get_time();
                                     }
                                 } else {
                                     log_debug(
@@ -1636,6 +1734,20 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         retval = rebuild_result::rr_full_rebuild;
     }
 
+    if (this->lss_merge_deferred || needs_more_indexing) {
+        // The files have been indexed, but merging them waits until they
+        // have all been found.  A file only reports once that its lines are
+        // out of order, so that is kept for when the merge happens.
+        this->lss_deferred_order_changed = this->lss_deferred_order_changed
+            || order_changed;
+        this->lss_force_rebuild = this->lss_force_rebuild || force;
+        log_debug(
+            "merge deferred (files=%d; lines=%zu)", file_count, total_lines);
+        return rebuild_result::rr_in_progress;
+    }
+    order_changed = std::exchange(this->lss_deferred_order_changed, false)
+        || order_changed;
+
     if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
         // it's been cleared out.
@@ -1668,10 +1780,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     } else if (retval == rebuild_result::rr_partial_rebuild) {
         size_t remaining = 0;
 
-        log_debug("partial rebuild with lowest time: %ld",
-                  lowest_tv.value().tv_sec);
+        log_debug("partial rebuild with lowest time: %lld",
+                  lowest_us.value().count());
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-             iter++)
+             ++iter)
         {
             logfile_data& ld = *(*iter);
             auto* lf = ld.get_file_ptr();
@@ -1682,23 +1794,22 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             require(lf->get_format_ptr()->lf_time_ordered);
 
-            auto line_iter = lf->find_from_time(lowest_tv.value());
+            auto line_iter = lf->find_from_time(lowest_us.value());
 
-            if (line_iter) {
+            if (line_iter != lf->end()) {
                 log_debug("lowest line time %ld; line %ld; size %ld; path=%s",
-                          line_iter.value()->get_timeval().tv_sec,
-                          std::distance(lf->cbegin(), line_iter.value()),
+                          line_iter->get_timeval().tv_sec,
+                          std::distance(lf->cbegin(), line_iter),
                           lf->size(),
                           lf->get_filename_as_string().c_str());
             }
-            ld.ld_lines_indexed
-                = std::distance(lf->cbegin(), line_iter.value_or(lf->cend()));
+            ld.ld_lines_indexed = std::distance(lf->cbegin(), line_iter);
             remaining += lf->size() - ld.ld_lines_indexed;
         }
 
         auto* row_iter = std::lower_bound(this->lss_index.begin(),
                                           this->lss_index.end(),
-                                          lowest_tv.value(),
+                                          lowest_us.value(),
                                           logline_cmp(*this));
         this->lss_index.shrink_to(
             std::distance(this->lss_index.begin(), row_iter));
@@ -1708,7 +1819,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                   remaining);
         auto filt_row_iter = std::lower_bound(this->lss_filtered_index.begin(),
                                               this->lss_filtered_index.end(),
-                                              lowest_tv.value(),
+                                              lowest_us.value(),
                                               filtered_logline_cmp(*this));
         this->lss_filtered_index.resize(
             std::distance(this->lss_filtered_index.begin(), filt_row_iter));
@@ -1742,10 +1853,13 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
-    if (this->lss_index.empty() && !time_left) {
+    if (this->lss_index.empty() && deadline
+        && ui_clock::now() >= deadline.value())
+    {
         log_info("ran out of time, skipping rebuild");
         // need to make sure we rebuild in case no new data comes in
         this->lss_force_rebuild = true;
+        this->update_regions(this->lss_filtered_index.size());
         return rebuild_result::rr_appended_lines;
     }
 
@@ -1880,76 +1994,121 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     *this, this->lss_index.size(), this->lss_index.size());
             }
         } else {
-            kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
-                file_count);
+            std::vector<sort_input> sort_inputs;
 
-            for (iter = this->lss_files.begin(); iter != this->lss_files.end();
-                 iter++)
-            {
-                auto* ld = iter->get();
+            for (auto& ld : this->lss_files) {
                 auto* lf = ld->get_file_ptr();
                 if (lf == nullptr) {
                     continue;
                 }
-
-                merge.add(ld, lf->begin() + ld->ld_lines_indexed, lf->end());
                 index_size += lf->size();
+                if (ld->ld_lines_indexed >= lf->size()) {
+                    // Nothing left to merge, and an input with no next() line
+                    // cannot be compared.
+                    continue;
+                }
+                sort_inputs.emplace_back(ld.get(), lf);
+            }
+            std::stable_sort(sort_inputs.begin(), sort_inputs.end());
+            for (const auto& si : sort_inputs) {
+                log_debug("sort_input: %s:%zu",
+                          si.si_file_ptr->get_filename_as_string().c_str(),
+                          si.si_file_data->ld_lines_indexed);
             }
 
             file_off_t index_off = 0;
-            merge.execute();
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(*this, index_off, index_size);
             }
             log_trace("k-way merge");
-            for (;;) {
-                logfile::iterator lf_iter;
-                logfile_data* ld;
-
-                if (!merge.get_top(ld, lf_iter)) {
-                    break;
+            while (!sort_inputs.empty()) {
+                auto& next_si = sort_inputs.back();
+                auto* ld = next_si.si_file_data;
+                auto range_start_iter = next_si.next();
+                logfile::const_iterator range_end_iter;
+                if (sort_inputs.size() == 1) {
+                    range_end_iter = next_si.end();
+                } else {
+                    range_end_iter = next_si.find_run_end(
+                        *sort_inputs[sort_inputs.size() - 2].next());
                 }
 
-                if (!lf_iter->is_ignored()) {
-                    int file_index = ld->ld_file_index;
-                    int line_index = lf_iter - ld->get_file_ptr()->begin();
+                auto range_count
+                    = std::distance(range_start_iter, range_end_iter);
+                for (; range_start_iter != range_end_iter; ++range_start_iter) {
+                    auto lf_iter = range_start_iter;
+                    if (!lf_iter->is_ignored()) {
+                        int file_index = ld->ld_file_index;
+                        int line_index = lf_iter - ld->get_file_ptr()->begin();
 
-                    content_line_t con_line(file_index * MAX_LINES_PER_FILE
-                                            + line_index);
+                        content_line_t con_line(file_index * MAX_LINES_PER_FILE
+                                                + line_index);
 
-                    if (lf_iter->is_meta_marked()) {
-                        auto start_iter = lf_iter;
-                        while (start_iter->is_continued()) {
-                            --start_iter;
-                        }
-                        int start_index
-                            = start_iter - ld->get_file_ptr()->begin();
-                        content_line_t start_con_line(
-                            file_index * MAX_LINES_PER_FILE + start_index);
+                        if (lf_iter->is_meta_marked()) {
+                            auto start_iter = lf_iter;
+                            while (start_iter->is_continued()) {
+                                --start_iter;
+                            }
+                            int start_index
+                                = start_iter - ld->get_file_ptr()->begin();
+                            content_line_t start_con_line(
+                                file_index * MAX_LINES_PER_FILE + start_index);
 
-                        auto& line_meta
-                            = ld->get_file_ptr()
-                                  ->get_bookmark_metadata()[start_index];
-                        if (line_meta.has(bookmark_metadata::categories::notes))
-                        {
-                            this->lss_user_marks[&textview_curses::BM_META]
-                                .insert_once(start_con_line);
+                            auto& line_meta
+                                = ld->get_file_ptr()
+                                      ->get_bookmark_metadata()[start_index];
+                            if (line_meta.has(
+                                    bookmark_metadata::categories::notes))
+                            {
+                                this->lss_user_marks[&textview_curses::BM_META]
+                                    .insert_once(start_con_line);
+                            }
+                            if (line_meta.has(
+                                    bookmark_metadata::categories::partition))
+                            {
+                                this->lss_user_marks
+                                    [&textview_curses::BM_PARTITION]
+                                        .insert_once(start_con_line);
+                            }
                         }
-                        if (line_meta.has(
-                                bookmark_metadata::categories::partition))
-                        {
-                            this->lss_user_marks[&textview_curses::BM_PARTITION]
-                                .insert_once(start_con_line);
-                        }
+                        this->lss_index.push_back(
+                            indexed_content{con_line, lf_iter});
                     }
-                    this->lss_index.push_back(
-                        indexed_content{con_line, lf_iter});
-                }
 
-                merge.next();
-                index_off += 1;
-                if (index_off % 100000 == 0 && this->lss_sorting_observer) {
-                    this->lss_sorting_observer(*this, index_off, index_size);
+                    index_off += 1;
+                    if (index_off % (1024 * 1024) == 0
+                        && this->lss_sorting_observer)
+                    {
+                        this->lss_sorting_observer(
+                            *this, index_off, index_size);
+                    }
+                }
+                next_si.si_file_data->ld_lines_indexed += range_count;
+
+                if (range_end_iter == next_si.end()) {
+                    log_debug(
+                        "fully consumed %s",
+                        next_si.si_file_ptr->get_filename_as_string().c_str());
+                    sort_inputs.pop_back();
+                } else {
+                    for (auto si_iter = std::next(sort_inputs.rbegin());
+                         si_iter != sort_inputs.rend();
+                         ++si_iter)
+                    {
+                        auto prev_si_iter = std::prev(si_iter);
+                        if (*prev_si_iter->next() < *si_iter->next()) {
+                            break;
+                        }
+#if 0
+                        log_debug(
+                            "swapping %s %s",
+                            prev_si_iter->si_file_ptr->get_filename_as_string()
+                                .c_str(),
+                            si_iter->si_file_ptr->get_filename_as_string()
+                                .c_str());
+#endif
+                        std::swap(*si_iter, *prev_si_iter);
+                    }
                 }
             }
             if (this->lss_sorting_observer) {
@@ -1968,6 +2127,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             (*iter)->ld_lines_indexed = lf->size();
         }
+
+        // The rows the region table has already counted.  Everything the
+        // loop below appends lands past this point.
+        const auto filt_start_rows = this->lss_filtered_index.size();
 
         this->lss_filtered_index.reserve(this->lss_index.size());
 
@@ -1997,7 +2160,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             uint64_t line_number;
             auto ld = this->find_data(cl, line_number);
 
-            if (!(*ld)->is_visible()) {
+            if (!(*ld)->ld_visible) {
                 continue;
             }
 
@@ -2014,19 +2177,19 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     && this->check_extra_filters(ld, line_iter)))
             {
                 this->flush_context_before_msgs();
-                auto eval_res = this->eval_sql_filter(
-                    this->lss_marker_stmt.in(), ld, line_iter);
-                if (eval_res.isErr()) {
-                    line_iter->set_expr_mark(false);
-                } else {
-                    auto matched = eval_res.unwrap();
+                if (this->lss_marker_stmt != nullptr) {
+                    auto eval_res = this->eval_sql_filter(
+                        this->lss_marker_stmt.in(), ld, line_iter);
+                    if (eval_res.isOk()) {
+                        auto matched = eval_res.unwrap();
 
-                    line_iter->set_expr_mark(matched);
-                    if (matched) {
-                        vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
-                            vis_line_t(this->lss_filtered_index.size()));
-                        this->lss_user_marks[&textview_curses::BM_USER_EXPR]
-                            .insert_once(cl);
+                        if (matched) {
+                            line_iter->set_expr_mark(matched);
+                            vis_bm[&textview_curses::BM_USER_EXPR].insert_once(
+                                vis_line_t(this->lss_filtered_index.size()));
+                            this->lss_user_marks[&textview_curses::BM_USER_EXPR]
+                                .insert_once(cl);
+                        }
                     }
                 }
                 // Metric CSV rows from different files that share a
@@ -2093,6 +2256,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
         }
 
+        this->update_regions(filt_start_rows);
+
         this->lss_indexing_in_progress = false;
 
         if (this->lss_index_delegate != nullptr) {
@@ -2102,6 +2267,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     switch (retval) {
         case rebuild_result::rr_no_change:
+        case rebuild_result::rr_in_progress:
             break;
         case rebuild_result::rr_full_rebuild:
             log_debug("redoing search");
@@ -2124,20 +2290,356 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     return retval;
 }
 
+bool
+logfile_sub_source::is_file_start(vis_line_t vl) const
+{
+    if (vl < 0_vl || vl >= vis_line_t(this->lss_filtered_index.size())) {
+        return false;
+    }
+    if (vl == 0_vl) {
+        return true;
+    }
+
+    return file_index_for(this->at(vl)) != file_index_for(this->at(vl - 1_vl));
+}
+
+bool
+logfile_sub_source::row_has_mark(vis_line_t vl, region_mark_t rm) const
+{
+    switch (rm) {
+        case region_mark_t::warning:
+            return this->level_for_row(vl) == indexed_content::level_t::warning;
+        case region_mark_t::error:
+            return this->level_for_row(vl) == indexed_content::level_t::error;
+        case region_mark_t::file_start:
+            return this->is_file_start(vl);
+        case region_mark_t::RM__MAX:
+            break;
+    }
+
+    ensure(false);
+    return false;
+}
+
+void
+logfile_sub_source::update_regions(size_t valid_rows)
+{
+    static constexpr auto SIZE = index_region::SIZE;
+
+    // The table cannot be trusted past what it has actually counted, so a
+    // watermark from beyond that is pulled back rather than leaving a gap that
+    // would read as zeroes.
+    valid_rows = std::min(valid_rows, this->lss_regions_rows);
+
+    if (valid_rows < this->lss_regions_rows) {
+        // Rows that were counted have gone away, so fall back to a region
+        // boundary and recount from there.
+        const auto keep = valid_rows / SIZE;
+
+        this->lss_regions.resize(keep);
+        this->lss_regions_rows = this->lss_regions.size() * SIZE;
+    }
+
+    const auto row_count = this->lss_filtered_index.size();
+
+    // The file the row ahead of this span came from.  is_file_start() finds it
+    // by indexing back a row, which reads every row of the span twice over the
+    // loop; carrying it forward reads each one once.  MAX_FILES is not a file
+    // index any content line can hold, so seeding with it makes row 0 a file
+    // start, the way is_file_start() does.
+    auto prev_file = this->lss_regions_rows == 0
+        ? MAX_FILES
+        : file_index_for(this->at(vis_line_t(this->lss_regions_rows - 1)));
+
+    // Both predicates are local -- a level is the row's own, and a file start
+    // is a comparison with the row before it, which the truncation above has
+    // already made sure is present and unchanged.  That is what lets the count
+    // resume into a partial region instead of redoing the whole thing.
+    //
+    // The file comparison is spelled out here rather than going through
+    // is_file_start() so that the row's index entry is read once for both
+    // marks.  validate_regions() recounts through is_file_start(), so the two
+    // are held to the same answer.
+    for (auto row = this->lss_regions_rows; row < row_count; row++) {
+        if (row % SIZE == 0) {
+            this->lss_regions.emplace_back();
+        }
+        auto& region = this->lss_regions.back();
+        const auto& ic = this->lss_index[this->lss_filtered_index[row]];
+
+        switch (ic.level()) {
+            case indexed_content::level_t::warning:
+                region.count_for(region_mark_t::warning) += 1;
+                break;
+            case indexed_content::level_t::error:
+                region.count_for(region_mark_t::error) += 1;
+                break;
+            case indexed_content::level_t::normal:
+                break;
+        }
+
+        const auto file_index = file_index_for(ic.value());
+        if (file_index != prev_file) {
+            region.count_for(region_mark_t::file_start) += 1;
+        }
+        prev_file = file_index;
+    }
+    this->lss_regions_rows = row_count;
+
+    // roundup() is the ceiling; roundup_size() would step a size that is
+    // already a multiple up to the next one.
+    require(this->lss_regions.size()
+            == roundup(this->lss_regions_rows, SIZE) / SIZE);
+
+    this->validate_regions();
+}
+
+void
+logfile_sub_source::validate_regions() const
+{
+#ifdef DEBUG_REGIONS
+    static constexpr auto SIZE = index_region::SIZE;
+
+    auto failed = false;
+
+    for (size_t ri = 0; ri < this->lss_regions.size(); ri++) {
+        size_t expected[REGION_MARK_MAX] = {};
+        const auto stop
+            = std::min((ri + 1) * SIZE, this->lss_filtered_index.size());
+
+        for (auto row = ri * SIZE; row < stop; row++) {
+            for (size_t lpc = 0; lpc < REGION_MARK_MAX; lpc++) {
+                if (this->row_has_mark(vis_line_t(row),
+                                       static_cast<region_mark_t>(lpc)))
+                {
+                    expected[lpc] += 1;
+                }
+            }
+        }
+        for (size_t lpc = 0; lpc < REGION_MARK_MAX; lpc++) {
+            if (expected[lpc] != this->lss_regions[ri].ir_counts[lpc]) {
+                log_error("region %zu mark %zu: expected %zu, found %u",
+                          ri,
+                          lpc,
+                          expected[lpc],
+                          this->lss_regions[ri].ir_counts[lpc]);
+                failed = true;
+            }
+        }
+    }
+
+    ensure(!failed);
+#endif
+}
+
+std::optional<logfile_sub_source::region_mark_t>
+logfile_sub_source::region_mark_for(const bookmark_type_t* bt)
+{
+    if (bt == &textview_curses::BM_ERRORS) {
+        return region_mark_t::error;
+    }
+    if (bt == &textview_curses::BM_WARNINGS) {
+        return region_mark_t::warning;
+    }
+    if (bt == &BM_FILES) {
+        return region_mark_t::file_start;
+    }
+
+    return std::nullopt;
+}
+
+bool
+logfile_sub_source::any_mark_in_range(vis_line_t start,
+                                      vis_line_t stop,
+                                      region_mark_t rm) const
+{
+    static constexpr auto SIZE = index_region::SIZE;
+
+    require(rm != region_mark_t::RM__MAX);
+
+    const auto row_count = this->lss_filtered_index.size();
+    const auto first = static_cast<size_t>(std::max(0, (int) start));
+    const auto last
+        = std::min(static_cast<size_t>(std::max(0, (int) stop)), row_count);
+
+    if (first >= last) {
+        return false;
+    }
+
+    // Every region the range reaches into being empty rules the range out
+    // without looking at a row.  This is the reject that makes a wide range
+    // over a quiet stretch cheap.
+    auto empty_throughout = true;
+    for (auto ri = first / SIZE; ri <= (last - 1) / SIZE; ri++) {
+        if (this->lss_regions[ri].count_for(rm) > 0) {
+            empty_throughout = false;
+            break;
+        }
+    }
+    if (empty_throughout) {
+        return false;
+    }
+
+    // A wholly covered region with a non-zero count is an answer on its own.
+    const auto first_whole = roundup(first, SIZE) / SIZE;
+    const auto last_whole = last / SIZE;
+
+    for (auto ri = first_whole; ri < last_whole; ri++) {
+        if (this->lss_regions[ri].count_for(rm) > 0) {
+            return true;
+        }
+    }
+
+    // What is left is the rows before the first wholly covered region and
+    // after the last.  When no region was wholly covered the two spans meet
+    // and cover the whole range between them, which is why the head bound is
+    // clamped to `last` and the tail start to the end of the head.
+    const auto head_end = std::min(first_whole * SIZE, last);
+    const auto tail_start
+        = std::max(std::max(last_whole * SIZE, first), head_end);
+
+    for (auto row = first; row < head_end; row++) {
+        if (this->row_has_mark(vis_line_t(row), rm)) {
+            return true;
+        }
+    }
+    for (auto row = tail_start; row < last; row++) {
+        if (this->row_has_mark(vis_line_t(row), rm)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+size_t
+logfile_sub_source::count_marks(vis_line_t start,
+                                vis_line_t stop,
+                                region_mark_t rm) const
+{
+    static constexpr auto SIZE = index_region::SIZE;
+
+    require(rm != region_mark_t::RM__MAX);
+
+    const auto row_count = this->lss_filtered_index.size();
+    const auto first = static_cast<size_t>(std::max(0, (int) start));
+    const auto last
+        = std::min(static_cast<size_t>(std::max(0, (int) stop)), row_count);
+
+    if (first >= last) {
+        return 0;
+    }
+
+    size_t retval = 0;
+    // The regions the two ends land in are only partly inside the range, so
+    // their rows are looked at one at a time.  Everything between them is a
+    // whole region and comes from the table.
+    const auto first_whole = roundup(first, SIZE) / SIZE;
+    const auto last_whole = last / SIZE;
+
+    if (first_whole >= last_whole) {
+        for (auto row = first; row < last; row++) {
+            if (this->row_has_mark(vis_line_t(row), rm)) {
+                retval += 1;
+            }
+        }
+
+        return retval;
+    }
+
+    for (auto row = first; row < first_whole * SIZE; row++) {
+        if (this->row_has_mark(vis_line_t(row), rm)) {
+            retval += 1;
+        }
+    }
+    for (auto ri = first_whole; ri < last_whole; ri++) {
+        retval += this->lss_regions[ri].count_for(rm);
+    }
+    for (auto row = last_whole * SIZE; row < last; row++) {
+        if (this->row_has_mark(vis_line_t(row), rm)) {
+            retval += 1;
+        }
+    }
+
+    return retval;
+}
+
+std::optional<vis_line_t>
+logfile_sub_source::find_mark(vis_line_t from,
+                              direction dir,
+                              region_mark_t rm) const
+{
+    static constexpr auto SIZE = index_region::SIZE;
+
+    require(rm != region_mark_t::RM__MAX);
+
+    const auto row_count = this->lss_filtered_index.size();
+
+    if (row_count == 0) {
+        return std::nullopt;
+    }
+
+    // A zero count rules a region out whichever row the search enters it on,
+    // so every region is either stepped over or scanned.  Only the region the
+    // search starts in can hold a mark that is behind the starting row, which
+    // is why the scan there starts at that row rather than the boundary.
+    if (dir == direction::next) {
+        const auto after = static_cast<int64_t>(from) + 1;
+
+        if (after >= static_cast<int64_t>(row_count)) {
+            return std::nullopt;
+        }
+
+        const auto row = after < 0 ? size_t{0} : static_cast<size_t>(after);
+        const auto first_region = row / SIZE;
+
+        for (auto ri = first_region; ri < this->lss_regions.size(); ri++) {
+            if (this->lss_regions[ri].count_for(rm) == 0) {
+                continue;
+            }
+
+            const auto stop = std::min((ri + 1) * SIZE, row_count);
+            for (auto r = std::max(row, ri * SIZE); r < stop; r++) {
+                if (this->row_has_mark(vis_line_t(r), rm)) {
+                    return vis_line_t(r);
+                }
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    const auto before = static_cast<int64_t>(from) - 1;
+
+    if (before < 0) {
+        return std::nullopt;
+    }
+
+    const auto row = std::min(static_cast<size_t>(before), row_count - 1);
+    const auto first_region = row / SIZE;
+
+    for (auto ri = first_region + 1; ri > 0; ri--) {
+        const auto region = ri - 1;
+
+        if (this->lss_regions[region].count_for(rm) == 0) {
+            continue;
+        }
+
+        const auto top = region == first_region ? row : (region + 1) * SIZE - 1;
+        const auto bottom = region * SIZE;
+        for (auto r = top + 1; r > bottom; r--) {
+            if (this->row_has_mark(vis_line_t(r - 1), rm)) {
+                return vis_line_t(r - 1);
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 void
 logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
-    logfile* last_file = nullptr;
-    vis_line_t vl;
-
-    auto& bm_warnings = bm[&textview_curses::BM_WARNINGS];
-    auto& bm_errors = bm[&textview_curses::BM_ERRORS];
-    auto& bm_files = bm[&BM_FILES];
-
-    bm_warnings.clear();
-    bm_errors.clear();
-    bm_files.clear();
-
     std::vector<const bookmark_type_t*> used_marks;
     for (const auto* bmt :
          {
@@ -2154,36 +2656,25 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
         }
     }
 
-    for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
-        const auto& orig_ic = this->lss_index[this->lss_filtered_index[vl]];
-        auto cl = orig_ic.value();
-        auto* lf = this->find_file_ptr(cl);
+    // The error, warning, and file marks are answered out of `lss_regions` by
+    // find_mark() and row_has_mark(), so no row is held for them here.  The
+    // user marks are the only thing left that has to be translated from a
+    // content line to a row, and with none set there is nothing to walk --
+    // which is what keeps a reload off the whole filtered index.
+    if (used_marks.empty()) {
+        return;
+    }
 
-        for (const auto& bmt : used_marks) {
-            auto& user_mark = this->lss_user_marks[bmt];
-            if (user_mark.bv_tree.exists(orig_ic.value())) {
+    for (auto vl = 0_vl; vl < vis_line_t(this->lss_filtered_index.size());
+         vl += 1_vl)
+    {
+        const auto cl = this->at(vl);
+
+        for (const auto* bmt : used_marks) {
+            if (this->lss_user_marks[bmt].bv_tree.exists(cl)) {
                 bm[bmt].insert_once(vl);
             }
         }
-
-        if (lf != last_file) {
-            bm_files.insert_once(vl);
-        }
-
-        switch (orig_ic.level()) {
-            case indexed_content::level_t::warning:
-                bm_warnings.insert_once(vl);
-                break;
-
-            case indexed_content::level_t::error:
-                bm_errors.insert_once(vl);
-                break;
-
-            default:
-                break;
-        }
-
-        last_file = lf;
     }
 }
 
@@ -2338,6 +2829,8 @@ logfile_sub_source::text_filters_changed()
             }
         }
     }
+
+    this->update_regions(0);
 
     if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_complete(*this);

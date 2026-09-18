@@ -125,22 +125,23 @@ com_hide_line(exec_context& ec,
         if (tv_opt) {
             char time_text[256];
             std::string relation;
+            auto us = to_us(tv_opt.value());
 
-            sql_strftime(time_text, sizeof(time_text), tv_opt.value());
+            sql_strftime(time_text, sizeof(time_text), us);
             if (ec.ec_dry_run) {
                 if (args[0] == "hide-lines-before") {
-                    ttt->ttt_preview_min_time = tv_opt.value();
+                    ttt->ttt_preview_min_time = us;
                     relation = "before";
                 } else {
-                    ttt->ttt_preview_max_time = tv_opt.value();
+                    ttt->ttt_preview_max_time = us;
                     relation = "after";
                 }
             } else {
                 if (args[0] == "hide-lines-before") {
-                    ttt->set_min_row_time(tv_opt.value());
+                    ttt->set_min_row_time(us);
                     relation = "before";
                 } else {
-                    ttt->set_max_row_time(tv_opt.value());
+                    ttt->set_max_row_time(us);
                     relation = "after";
                 }
 

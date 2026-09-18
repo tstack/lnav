@@ -110,8 +110,8 @@
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_format_loader.hh"
-#include "log_search_table.hh"
 #include "log_gutter_source.hh"
+#include "log_search_table.hh"
 #include "log_stmt_vtab.hh"
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
@@ -1962,6 +1962,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
     int last_files_generation = lnav_data.ld_active_files.fc_files_generation;
     exec_phase.completed(lnav::phase_t::init);
+    // The files are indexed as they are found, but the log messages are not
+    // merged until all of the files have been found.
+    lnav_data.ld_log_source.set_merge_deferred(true);
     while (lnav_data.ld_looping) {
         auto loop_deadline
             = ui_clock::now() + (exec_phase.spinning_up() ? 3s : 50ms);
@@ -2004,6 +2007,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     opened_files = true;
                     set_view_mode(ln_mode_t::FILES);
                 }
+                lnav_data.ld_log_source.set_merge_deferred(false);
                 log_trace("%d: BEGIN initial rescan rebuild", loop_count);
                 auto rebuild_res = rebuild_indexes(loop_deadline);
                 log_trace("%d: END initial rescan rebuild", loop_count);
@@ -2027,7 +2031,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
 
                 lnav_data.ld_session_loaded = true;
-                loop_deadline = ui_now;
+                loop_deadline = ui_now + 100ms;
                 log_debug("initial rescan found %zu files",
                           lnav_data.ld_active_files.fc_files.size());
                 exec_phase.completed(lnav::phase_t::scan);
@@ -2109,7 +2113,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
             }
         } else {
+            if (ui_now >= next_rebuild_time) {
+                // Index the files found so far while the scan continues.  The
+                // deadline is short so that the scan results are not held up.
+                auto rebuild_res = rebuild_indexes(ui_now + 250ms);
+                if (!rebuild_res.rir_completed) {
+                    next_rebuild_time = ui_now;
+                } else {
+                    next_rebuild_time = ui_clock::now() + 333ms;
+                }
+            }
             lnav_data.ld_files_view.set_overlay_needs_update();
+            lnav_data.ld_views[LNV_LOG].set_overlay_needs_update();
         }
 
         if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS
@@ -2838,9 +2853,9 @@ verbosity_t verbosity = verbosity_t::standard;
  * too and the two would collide.
  */
 static void
-ensure_log_format_tables(
-    std::vector<lnav::console::user_message>& setup_errors,
-    const std::set<std::filesystem::path>& skip_sql_paths = {})
+ensure_log_format_tables(std::vector<lnav::console::user_message>& setup_errors,
+                         const std::set<std::filesystem::path>& skip_sql_paths
+                         = {})
 {
     static auto prepared = false;
 
@@ -3084,6 +3099,31 @@ main(int argc, char* argv[])
 
     auto log_fos = std::make_unique<field_overlay_source>(
         lnav_data.ld_log_source, lnav_data.ld_text_source);
+    log_fos->fos_discovery_stats = []() {
+        discovery_stats retval;
+        std::map<std::string, size_t> format_counts;
+
+        retval.ds_files = lnav_data.ld_active_files.fc_files.size();
+        retval.ds_log_files = lnav_data.ld_log_source.file_count();
+        retval.ds_text_files = lnav_data.ld_text_source.size();
+        retval.ds_errors
+            = lnav_data.ld_active_files.fc_name_to_stubs->readAccess()->size();
+        for (const auto& ld : lnav_data.ld_log_source) {
+            const auto* lf = ld->get_file_ptr();
+            if (lf == nullptr) {
+                continue;
+            }
+            format_counts[lf->get_format_name().to_string()] += 1;
+        }
+        retval.ds_formats.assign(format_counts.begin(), format_counts.end());
+        std::stable_sort(retval.ds_formats.begin(),
+                         retval.ds_formats.end(),
+                         [](const auto& lhs, const auto& rhs) {
+                             return lhs.second > rhs.second;
+                         });
+
+        return retval;
+    };
 
     auto vtab_man_life
         = injector::bind<log_vtab_manager>::to_scoped_singleton();
@@ -3653,8 +3693,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 if (!loader_errors.empty()) {
                     loader_errors.emplace_back(
                         lnav::console::user_message::fatal(
-                            attr_line_t(
-                                "unable to install format file: ")
+                            attr_line_t("unable to install format file: ")
                                 .append(lnav::roles::file(file_path)))
                             .with_reason("the file is not valid")
                             .with_help(
@@ -3807,9 +3846,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     };
     lnav_data.ld_views[LNV_LOG].tc_on_named_search_deleted
         = [](textview_curses& tc, const std::string& name) {
-        injector::get<log_vtab_manager*>()->unregister_vtab(
-            string_fragment::from_str(name));
-    };
+              injector::get<log_vtab_manager*>()->unregister_vtab(
+                  string_fragment::from_str(name));
+          };
 
     log_fos->fos_contexts.emplace("", false, true, true);
     lnav_data.ld_views[LNV_LOG]
@@ -4438,6 +4477,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
 
             if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
+                static auto& exec_phase = injector::get<lnav::exec_phase&>();
                 std::vector<
                     std::pair<Result<std::string, lnav::console::user_message>,
                               std::string>>
@@ -4461,9 +4501,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     = false;
 
                 view_colors::init(nullptr);
+                exec_phase.completed(lnav::phase_t::init);
                 rescan_files(true);
                 wait_for_pipers();
                 rescan_files(true);
+                exec_phase.completed(lnav::phase_t::scan);
                 rebuild_indexes_repeatedly();
                 {
                     safe::WriteAccess<safe_name_to_stubs> errs(
@@ -4527,6 +4569,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         [](auto& clooper) { clooper.process_all(); });
                 rebuild_indexes_repeatedly();
                 wait_for_children();
+                exec_phase.completed(lnav::phase_t::build);
                 {
                     safe::WriteAccess<safe_name_to_stubs> errs(
                         *lnav_data.ld_active_files.fc_name_to_stubs);

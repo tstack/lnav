@@ -1,0 +1,3 @@
+log_format,log_level,log_body
+json_deprecated_log,info,first message
+json_deprecated_log,error,second message

@@ -37,12 +37,12 @@
 #include "base/auto_mem.hh"
 #include "base/func_util.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/opt_util.hh"
 #include "base/relative_time.hh"
 #include "base/text_format_enum.hh"
 #include "cmd.parser.hh"
 #include "config.h"
-#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
@@ -192,11 +192,11 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                         if (ri_opt) {
                             auto ri = ri_opt.value();
 
-                            this->fss_min_time = ri.ri_time;
+                            this->fss_min_time = to_us(ri.ri_time);
                         }
                     }
                     if (!this->fss_min_time) {
-                        this->fss_min_time = current_timeval();
+                        this->fss_min_time = to_us(current_timeval());
                     }
                     ttt->ttt_preview_min_time = this->fss_min_time;
                 }
@@ -235,11 +235,11 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                         if (ri_opt) {
                             auto ri = ri_opt.value();
 
-                            this->fss_max_time = ri.ri_time;
+                            this->fss_max_time = to_us(ri.ri_time);
                         }
                     }
                     if (!this->fss_max_time) {
-                        this->fss_max_time = current_timeval();
+                        this->fss_max_time = to_us(current_timeval());
                     }
                     ttt->ttt_preview_max_time = this->fss_max_time;
                 }
@@ -600,7 +600,7 @@ filter_sub_source::min_time_filter_row::value_for(const render_state& rs,
     al.append(lnav::to_rfc3339_string(this->tfr_time, 'T'));
 }
 
-Result<timeval, std::string>
+Result<std::chrono::microseconds, std::string>
 filter_sub_source::time_filter_row::parse_time(textview_curses* top_view,
                                                textinput_curses& tc)
 {
@@ -634,7 +634,7 @@ filter_sub_source::time_filter_row::parse_time(textview_curses* top_view,
             tv = tv_opt.value().ri_time;
         }
         auto tm = rt.adjust(tv);
-        return Ok(tm.to_timeval());
+        return Ok(to_us(tm.to_timeval()));
     }
     auto time_str = tc.get_content();
     exttm tm;
@@ -644,7 +644,7 @@ filter_sub_source::time_filter_row::parse_time(textview_curses* top_view,
     if (scan_end != nullptr) {
         auto matched_size = scan_end - time_str.c_str();
         if (matched_size == time_str.size()) {
-            return Ok(tv);
+            return Ok(to_us(tv));
         }
 
         return Err(fmt::format(FMT_STRING("extraneous input '{}'"), scan_end));
@@ -1328,9 +1328,8 @@ filter_sub_source::text_filter_row::ti_abort(textview_curses* top_view,
 static std::pair<std::string, std::string>
 split_named_search_input(const std::string& content)
 {
-    auto [name, pattern]
-        = string_fragment::from_str(content).trim().split_when(
-            [](char ch) { return isspace((unsigned char) ch) != 0; });
+    auto [name, pattern] = string_fragment::from_str(content).trim().split_when(
+        [](char ch) { return isspace((unsigned char) ch) != 0; });
 
     return {name.to_string(), pattern.trim().to_string()};
 }
@@ -1400,8 +1399,7 @@ filter_sub_source::named_search_row::handle_key(textview_curses* top_view,
 
     switch (ch.eff_text[0]) {
         case ' ': {
-            top_view->set_named_search_enabled(this->nsr_name,
-                                               !ns->ns_enabled);
+            top_view->set_named_search_enabled(this->nsr_name, !ns->ns_enabled);
             return true;
         }
         case '.': {
@@ -1424,8 +1422,9 @@ filter_sub_source::named_search_row::handle_key(textview_curses* top_view,
 }
 
 bool
-filter_sub_source::named_search_row::prime_text_input(
-    textview_curses* top_view, textinput_curses& ti, filter_sub_source& parent)
+filter_sub_source::named_search_row::prime_text_input(textview_curses* top_view,
+                                                      textinput_curses& ti,
+                                                      filter_sub_source& parent)
 {
     static auto& prompt = lnav::prompt::get();
 
@@ -1467,9 +1466,8 @@ filter_sub_source::named_search_row::ti_change(textview_curses* top_view,
 
     auto name_res = textview_curses::validate_search_name(name);
     if (name_res.isErr()) {
-        err.set_value(
-            "error: %s",
-            name_res.unwrapErr().um_message.get_string().c_str());
+        err.set_value("error: %s",
+                      name_res.unwrapErr().um_message.get_string().c_str());
         return;
     }
 
@@ -1618,20 +1616,18 @@ filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
     // typo cannot take the original search with it.
     auto compile_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
     if (compile_res.isErr()) {
-        report_error(lnav::console::to_user_message(
-            INPUT_SRC, compile_res.unwrapErr()));
+        report_error(
+            lnav::console::to_user_message(INPUT_SRC, compile_res.unwrapErr()));
         this->ti_abort(top_view, ti, parent);
         return;
     }
 
-    if (name != this->nsr_name
-        && top_view->find_named_search(name) != nullptr)
+    if (name != this->nsr_name && top_view->find_named_search(name) != nullptr)
     {
         report_error(
             lnav::console::user_message::error(
-                attr_line_t()
-                    .append_quoted(name)
-                    .append(" is already a named search"))
+                attr_line_t().append_quoted(name).append(
+                    " is already a named search"))
                 .with_snippet(lnav::console::snippet::from(INPUT_SRC, name)));
         this->ti_abort(top_view, ti, parent);
         return;
@@ -1644,8 +1640,7 @@ filter_sub_source::named_search_row::ti_perform(textview_curses* top_view,
         top_view->delete_named_search(this->nsr_name);
     }
 
-    auto create_res
-        = top_view->create_named_search(name, pattern, adoption);
+    auto create_res = top_view->create_named_search(name, pattern, adoption);
     if (create_res.isErr()) {
         report_error(create_res.unwrapErr());
     } else {

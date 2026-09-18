@@ -2,7 +2,7 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "subsec_json_log": {
         "title": "JSON Log with subsecond field",
-        "json": true,
+        "file-type": "json",
         "file-pattern": "logfile_json_subsec\\.json",
         "line-format": [
             {

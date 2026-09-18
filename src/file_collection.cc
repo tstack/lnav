@@ -442,9 +442,12 @@ file_collection::watch_logfile(const std::string& user_req,
 
         require(this->fc_progress.get() != nullptr);
 
+        auto curr_opid = lnav_current_opid();
+
         auto func = [filename,
                      st,
                      loo,
+                     curr_opid,
                      prog = this->fc_progress,
                      errs = this->fc_name_to_stubs]() mutable {
             static auto inner_op = lnav_operation{"watch_new_file"};
@@ -460,11 +463,30 @@ file_collection::watch_logfile(const std::string& user_req,
                 }
             }
 
+            auto outer_op = lnav_opid_guard::resume(curr_opid);
+
             auto op_guard = lnav_opid_guard::internal(inner_op);
 
             log_debug("watching new file: %s", filename.c_str());
 
-            auto ff_res = detect_file_format(filename);
+            auto fd_res
+                = lnav::filesystem::open_file(filename, O_RDONLY | O_CLOEXEC);
+            if (fd_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("failed to open file ")
+                                  .append_quoted(lnav::roles::file(filename)))
+                              .with_reason(fd_res.unwrapErr());
+                retval.fc_name_to_stubs->writeAccess()->emplace(
+                    filename,
+                    file_stub_info{
+                        filename,
+                        st.st_mtime,
+                        um.move(),
+                    });
+                return retval;
+            }
+            auto fd = fd_res.unwrap();
+            auto ff_res = detect_file_format(filename, fd.get());
 
             loo.loo_file_format = ff_res.dffr_file_format;
             switch (ff_res.dffr_file_format) {
@@ -480,14 +502,16 @@ file_collection::watch_logfile(const std::string& user_req,
                     log_info("%s: file is multiplexed, creating piper",
                              filename.c_str());
 
-                    auto open_res
-                        = lnav::filesystem::open_file(filename, O_RDONLY);
-                    if (open_res.isOk()) {
+                    if (lseek(fd.get(), 0, SEEK_SET) == -1) {
+                        log_error("%s: unable to seek to start -- %s",
+                                  filename.c_str(),
+                                  strerror(errno));
+                    } else {
                         auto looper_options = lnav::piper::options{};
                         looper_options.with_follow(loo.loo_follow);
                         auto create_res
                             = lnav::piper::create_looper(filename,
-                                                         open_res.unwrap(),
+                                                         std::move(fd),
                                                          auto_fd{-1},
                                                          looper_options);
 
@@ -587,7 +611,10 @@ file_collection::watch_logfile(const std::string& user_req,
                     auto filename_to_open = filename;
 
                     loo.loo_match_details = ff_res.dffr_details;
-                    auto eff = detect_mime_type(filename);
+                    auto eff = detect_mime_type(
+                        filename,
+                        string_fragment::from_bytes(ff_res.dffr_header.data(),
+                                                    ff_res.dffr_header.size()));
 
                     if (eff) {
                         auto cr = file_converter_manager::convert(eff.value(),
@@ -655,7 +682,12 @@ file_collection::watch_logfile(const std::string& user_req,
 
                     log_info("loading new file: filename=%s", filename.c_str());
 
-                    auto open_res = logfile::open(filename_to_open, loo);
+                    auto open_res = eff
+                        ? logfile::open(filename_to_open, loo)
+                        : logfile::open(filename_to_open,
+                                        loo,
+                                        std::move(fd),
+                                        logfile::fd_source::of_path);
                     if (open_res.isOk()) {
                         retval.fc_files.push_back(open_res.unwrap());
                     } else {
@@ -870,6 +902,10 @@ file_collection::expand_filename(
 file_collection
 file_collection::rescan_files(bool required)
 {
+    static auto rescan_op = lnav_operation{"rescan_files"};
+
+    auto op_guard = lnav_opid_guard::internal(rescan_op);
+
     file_collection retval;
     lnav::futures::future_queue<file_collection> fq(
         [this, &retval](std::future<file_collection>& fc) {
