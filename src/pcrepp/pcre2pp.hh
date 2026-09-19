@@ -126,6 +126,25 @@ public:
     template<typename T, std::size_t N>
     std::optional<string_fragment> operator[](const T (&name)[N]) const;
 
+    /**
+     * Copy the offsets of capture "src" into capture "dst" if "dst" did
+     * not match and "src" did.  Used to make a group name that appears more
+     * than once (see PCRE2_DUPNAMES) resolve through a single index.  The
+     * "dst" index must be lower than "src".
+     */
+    void coalesce(size_t dst, size_t src)
+    {
+        if (src >= this->md_capture_end
+            || this->md_ovector[dst * 2] != PCRE2_UNSET
+            || this->md_ovector[src * 2] == PCRE2_UNSET)
+        {
+            return;
+        }
+
+        this->md_ovector[dst * 2] = this->md_ovector[src * 2];
+        this->md_ovector[dst * 2 + 1] = this->md_ovector[src * 2 + 1];
+    }
+
     size_t get_count() const { return this->md_capture_end; }
 
     uint32_t get_capacity() const { return this->md_ovector_count; }

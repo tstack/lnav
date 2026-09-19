@@ -460,8 +460,20 @@ code::from_const(string_fragment sf, int options)
 int
 code::name_index(const char* name) const
 {
-    return pcre2_substring_number_from_name(this->p_code.in(),
-                                            (PCRE2_SPTR) name);
+    auto retval = pcre2_substring_number_from_name(this->p_code.in(),
+                                                   (PCRE2_SPTR) name);
+    if (retval == PCRE2_ERROR_NOUNIQUESUBSTRING) {
+        // The name table lists groups with the same name in order, so the
+        // first entry has the lowest number.
+        const auto name_sf = string_fragment::from_c_str(name);
+        for (const auto cap : this->get_named_captures()) {
+            if (cap.get_name() == name_sf) {
+                return cap.get_index();
+            }
+        }
+    }
+
+    return retval;
 }
 
 size_t

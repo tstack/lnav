@@ -16,6 +16,14 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_leveltest.0
 
+# A name used by more than one group with "(?J)" takes its value from
+# whichever alternative matched.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";select log_level, comp, log_body from dupnames_log" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_dupnames.0
+
 # The "json" flag is deprecated in favor of "file-type": "json", but it is
 # still accepted and lnav does not warn about it, so nothing else would notice
 # if it stopped setting the file type.  Every other format has been converted;

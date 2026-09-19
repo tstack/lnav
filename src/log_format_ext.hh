@@ -134,6 +134,20 @@ public:
         int p_timestamp_end{-1};
         std::vector<int> p_opid_description_field_indexes;
         std::set<size_t> p_matched_samples;
+        /**
+         * For a name used by more than one group, the lowest group number
+         * paired with the other group numbers with that name.
+         */
+        std::vector<std::pair<int, std::vector<int>>> p_dup_captures;
+
+        void coalesce_dups(lnav::pcre2pp::match_data& md) const
+        {
+            for (const auto& [dst, srcs] : this->p_dup_captures) {
+                for (const auto src : srcs) {
+                    md.coalesce(dst, src);
+                }
+            }
+        }
     };
 
     struct level_pattern {

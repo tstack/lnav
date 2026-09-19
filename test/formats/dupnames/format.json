@@ -1,0 +1,33 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "dupnames_log": {
+        "title": "Duplicate Capture Names Test Log",
+        "description": "A pattern that uses (?J) to capture the same names in different alternatives.",
+        "regex": {
+            "std": {
+                "pattern": "^(?J)(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) dupnames (?:(?<level>[A-Z]+) (?<comp>\\w+): (?<body>.*)|(?<comp>\\w+)! (?<level>[A-Z]+) (?<body>.*))$"
+            }
+        },
+        "level": {
+            "error": "ERROR",
+            "warning": "WARN",
+            "info": "INFO"
+        },
+        "value": {
+            "comp": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "2024-01-01 00:00:00 dupnames WARN foo: hello",
+                "level": "warning"
+            },
+            {
+                "line": "2024-01-01 00:00:01 dupnames bar! ERROR world",
+                "level": "error"
+            }
+        ]
+    }
+}

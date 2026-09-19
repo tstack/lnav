@@ -358,6 +358,7 @@ dist_noinst_DATA = \
 	logfile_docker_compose_with_noise.0 \
 	logfile_docker_compose_with_ts.0 \
 	logfile_dst.0 \
+	logfile_dupnames.0 \
 	logfile_ecs_log.json \
 	logfile_empty.0 \
 	logfile_epoch.0 \
@@ -514,6 +515,7 @@ dist_noinst_DATA = \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
 	formats/customlevel/format.json \
+	formats/dupnames/format.json \
 	formats/jsondeprecated/format.json \
 	formats/jsonidtest/format.json \
 	formats/jsontest/format.json \

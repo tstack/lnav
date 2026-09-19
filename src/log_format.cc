@@ -2738,6 +2738,7 @@ external_log_format::scan(logfile& lf,
             }
             continue;
         }
+        fpat->coalesce_dups(md);
 
         seed();
         sbc.sbc_value_stats.resize(this->elf_value_defs.size());
@@ -3012,6 +3013,7 @@ external_log_format::annotate(logfile* lf,
         }
         return;
     }
+    pat.coalesce_dups(md);
 
     auto duration_cap = md[pat.p_duration_field_index];
 
@@ -4703,6 +4705,7 @@ external_log_format::test_line(sample_t& sample,
         if (!match_res) {
             continue;
         }
+        pat.coalesce_dups(md);
         retval = scan_match{1000};
         found = true;
 
@@ -5235,6 +5238,32 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             continue;
         }
 
+        // With "(?J)", a name can be used by more than one group.  The name
+        // table lists those groups in order, so the first one is used for
+        // the name and the others are copied into it after a match.
+        std::set<size_t> dup_indexes;
+        {
+            std::optional<string_fragment> last_name;
+            for (auto named_cap : pat.p_pcre.pp_value->get_named_captures()) {
+                const auto cap_name = named_cap.get_name();
+
+                if (last_name && last_name.value() == cap_name) {
+                    pat.p_dup_captures.back().second.emplace_back(
+                        named_cap.get_index());
+                    dup_indexes.insert(named_cap.get_index());
+                    continue;
+                }
+                last_name = cap_name;
+                pat.p_dup_captures.emplace_back(named_cap.get_index(),
+                                                std::vector<int>{});
+            }
+            pat.p_dup_captures.erase(
+                std::remove_if(pat.p_dup_captures.begin(),
+                               pat.p_dup_captures.end(),
+                               [](const auto& dup) { return dup.second.empty(); }),
+                pat.p_dup_captures.end());
+        }
+
         if (pat.p_opid_field_index == -1
             && this->lf_opid_source.value_or(opid_source_t::from_description)
                 == opid_source_t::from_description
@@ -5245,6 +5274,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             for (const auto& desc : *opid_def.od_descriptors) {
                 for (auto named_cap : pat.p_pcre.pp_value->get_named_captures())
                 {
+                    if (dup_indexes.count(named_cap.get_index()) > 0) {
+                        continue;
+                    }
+
                     const intern_string_t name
                         = intern_string::lookup(named_cap.get_name());
 
@@ -5257,6 +5290,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         for (auto named_cap : pat.p_pcre.pp_value->get_named_captures()) {
+            if (dup_indexes.count(named_cap.get_index()) > 0) {
+                continue;
+            }
+
             const intern_string_t name
                 = intern_string::lookup(named_cap.get_name());
 
