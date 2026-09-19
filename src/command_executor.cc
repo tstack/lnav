@@ -764,11 +764,6 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 
     std::vector<script_metadata> paths_to_exec;
 
-    auto scripts = find_format_scripts(lnav_data.ld_config_paths);
-    auto iter = scripts.as_scripts.find(script_name);
-    if (iter != scripts.as_scripts.end()) {
-        paths_to_exec = iter->second;
-    }
     if (lnav::filesystem::is_url(script_name)) {
         auto_mem<CURLU> cu(curl_url_cleanup);
         cu = curl_url();
@@ -818,6 +813,12 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         auto script_path = std::filesystem::path(script_name);
 
         if (!script_path.is_absolute()) {
+            auto scripts = find_format_scripts(lnav_data.ld_config_paths);
+            auto iter = scripts.as_scripts.find(script_name);
+            if (iter != scripts.as_scripts.end()) {
+                paths_to_exec = iter->second;
+            }
+
             script_path = ec.ec_path_stack.back() / script_path;
         }
 

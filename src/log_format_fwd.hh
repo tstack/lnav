@@ -186,12 +186,34 @@ using log_thread_id_map
 
 struct log_thread_id_state {
     log_thread_id_map ltis_tid_ranges;
+    /**
+     * The lines that have no thread ID.  They are counted here and moved into
+     * ltis_tid_ranges by flush_no_tid() so the map is not searched for every
+     * line.
+     */
+    std::optional<thread_id_time_range> ltis_no_tid;
 
     log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
                                            const string_fragment& tid,
                                            const std::chrono::microseconds& us);
 
-    void clear() { this->ltis_tid_ranges.clear(); }
+    void add_no_tid(std::chrono::microseconds us, log_level_t level)
+    {
+        if (this->ltis_no_tid) {
+            this->ltis_no_tid->titr_range.extend_to(us);
+        } else {
+            this->ltis_no_tid = thread_id_time_range{time_range{us, us}};
+        }
+        this->ltis_no_tid->titr_level_stats.update_msg_count(level);
+    }
+
+    void flush_no_tid(ArenaAlloc::Alloc<char>& alloc);
+
+    void clear()
+    {
+        this->ltis_tid_ranges.clear();
+        this->ltis_no_tid.reset();
+    }
 };
 
 struct logline_value_stats {

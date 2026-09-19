@@ -1154,7 +1154,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc_tmp.sbc_value_stats.clear();
                 sbc_tmp.sbc_opids.los_opid_ranges.clear();
                 sbc_tmp.sbc_opids.los_sub_in_use.clear();
-                sbc_tmp.sbc_tids.ltis_tid_ranges.clear();
+                sbc_tmp.sbc_tids.clear();
                 sbc_tmp.sbc_level_cache = {};
                 scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc_tmp);
             }
@@ -2317,6 +2317,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         {
             auto tids = this->lf_thread_ids.writeAccess();
 
+            sbc.sbc_tids.flush_no_tid(sbc.sbc_allocator);
             for (const auto& tid_pair : sbc.sbc_tids.ltis_tid_ranges) {
                 auto tid_iter = tids->ltis_tid_ranges.find(tid_pair.first);
                 if (tid_iter == tids->ltis_tid_ranges.end()) {

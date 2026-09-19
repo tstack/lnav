@@ -246,6 +246,19 @@ log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
     return retval;
 }
 
+void
+log_thread_id_state::flush_no_tid(ArenaAlloc::Alloc<char>& alloc)
+{
+    if (!this->ltis_no_tid) {
+        return;
+    }
+
+    auto tid_iter = this->insert_tid(
+        alloc, string_fragment{}, this->ltis_no_tid->titr_range.tr_begin);
+    tid_iter->second |= this->ltis_no_tid.value();
+    this->ltis_no_tid.reset();
+}
+
 log_opid_map::iterator
 log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
                           const string_fragment& opid,
@@ -1986,10 +1999,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 ll.get_msg_level());
             ll.merge_bloom_bits(jlu.jlu_tid_frag->bloom_bits());
         } else {
-            auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, ll.get_time<>());
-            tid_iter->second.titr_level_stats.update_msg_count(
-                ll.get_msg_level());
+            sbc.sbc_tids.add_no_tid(ll.get_time<>(), ll.get_msg_level());
         }
 
         if (jlu.jlu_start_time && jlu.jlu_end_time && !jlu.jlu_duration) {
@@ -2279,9 +2289,7 @@ external_log_format::finalize_line(logline& new_line,
 
     if (this->elf_thread_id_field.empty()) {
         if (in.lfi_terminated) {
-            auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, log_us);
-            tid_iter->second.titr_level_stats.update_msg_count(level);
+            sbc.sbc_tids.add_no_tid(log_us, level);
         }
     } else if (in.lfi_tid_cap) {
         auto tid_iter = sbc.sbc_tids.insert_tid(

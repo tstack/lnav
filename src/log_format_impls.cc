@@ -276,9 +276,7 @@ public:
             }
 
             auto log_us = to_us(log_tv);
-            auto tid_iter = sbc.sbc_tids.insert_tid(
-                sbc.sbc_allocator, string_fragment{}, log_us);
-            tid_iter->second.titr_level_stats.update_msg_count(level_val);
+            sbc.sbc_tids.add_no_tid(log_us, level_val);
             auto& ll = dst.back();
             ll.set_time(log_us);
             ll.set_level(level_val);
