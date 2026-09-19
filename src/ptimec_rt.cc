@@ -250,12 +250,20 @@ ptime_Z_to_gmtoff(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
 /**
  * Parse a field written with the glibc "-" flag (e.g. "%-d"), which drops the
- * padding, so the value is one or two digits.
+ * padding, so the value is one or two digits.  With the "_" flag (e.g. "%_d"),
+ * the padding is a space, which is skipped before the digits.
  */
 static bool
-ptime_unpadded(
-    char conv, exttm* dst, const char* str, off_t& off, ssize_t len)
+ptime_unpadded(char flag,
+               char conv,
+               exttm* dst,
+               const char* str,
+               off_t& off,
+               ssize_t len)
 {
+    if (flag == '_' && off < len && str[off] == ' ') {
+        off += 1;
+    }
     if (off >= len || !isdigit(str[off])) {
         return false;
     }
@@ -319,8 +327,12 @@ ptime_unpadded(
 }
 
 static void
-ftime_unpadded(
-    char conv, char* dst, off_t& off_inout, ssize_t len, const exttm& tm)
+ftime_unpadded(char flag,
+               char conv,
+               char* dst,
+               off_t& off_inout,
+               ssize_t len,
+               const exttm& tm)
 {
     int val;
 
@@ -352,6 +364,8 @@ ftime_unpadded(
 
     if (val >= 10) {
         PTIME_APPEND('0' + ((val / 10) % 10));
+    } else if (flag == '_') {
+        PTIME_APPEND(' ');
     }
     PTIME_APPEND('0' + (val % 10));
 }
@@ -431,7 +445,10 @@ ptime_fmt(const char* fmt,
                     FMT_CASE('z', z);
                     FMT_CASE('@', at);
                 case '-':
-                    if (!ptime_unpadded(fmt[lpc + 2], dst, str, off, len)) {
+                case '_':
+                    if (!ptime_unpadded(
+                            fmt[lpc + 1], fmt[lpc + 2], dst, str, off, len))
+                    {
                         return false;
                     }
                     lpc += 2;
@@ -490,8 +507,14 @@ ftime_fmt(char* dst, size_t len, const char* fmt, const struct exttm& tm)
                     FTIME_FMT_CASE('y', y);
                     FTIME_FMT_CASE('z', z);
                 case '-':
+                case '_':
                     if (fmt[lpc + 2]) {
-                        ftime_unpadded(fmt[lpc + 2], dst, off_inout, len, tm);
+                        ftime_unpadded(fmt[lpc + 1],
+                                       fmt[lpc + 2],
+                                       dst,
+                                       off_inout,
+                                       len,
+                                       tm);
                         lpc += 2;
                     } else {
                         lpc += 1;

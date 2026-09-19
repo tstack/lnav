@@ -1,0 +1,20 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "sim_ps_log": {
+        "title": "simulation picoseconds test",
+        "description": "Timestamps are picoseconds since the start of a simulation",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d+) ps (?<body>.*)$"
+            }
+        },
+        "timestamp-format": [
+            "%2"
+        ],
+        "sample": [
+            {
+                "line": "12345678901234 ps sim start"
+            }
+        ]
+    }
+}

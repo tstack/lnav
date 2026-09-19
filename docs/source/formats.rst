@@ -354,8 +354,9 @@ object with the following fields:
   being converted to local time.
 
   The :code:`-` flag from glibc, for example :code:`%-d`, reads a number
-  without padding.  It can be used with :code:`%d`, :code:`%m`, :code:`%H`,
-  :code:`%I`, :code:`%M`, and :code:`%S`.
+  without padding.  The :code:`_` flag, for example :code:`%_d`, reads a
+  number that is padded with a space.  These flags can be used with
+  :code:`%d`, :code:`%m`, :code:`%H`, :code:`%I`, :code:`%M`, and :code:`%S`.
 
 :convert-to-local-time: If :code:`true`, timestamps are converted to the
   local time zone before being displayed.  This is useful for log formats

@@ -476,4 +476,42 @@ TEST_CASE("date_time_scanner")
         ftime_fmt(buf, sizeof(buf), fmt, tm);
         assert(strcmp(buf, ts) == 0);
     }
+
+    {
+        const auto* ts = " 8/ 3/2021  7:01:28";
+        const char* fmt = "%_d/%_m/%Y %_H:%M:%S";
+        exttm tm;
+        off_t off = 0;
+
+        bool rc = ptime_fmt(fmt, &tm, ts, off, strlen(ts));
+        assert(rc);
+        assert(off == (off_t) strlen(ts));
+        assert(tm.et_tm.tm_mday == 8);
+        assert(tm.et_tm.tm_mon == 2);
+        assert(tm.et_tm.tm_hour == 7);
+        assert(tm.et_tm.tm_min == 1);
+        assert(tm.et_tm.tm_sec == 28);
+
+        char buf[64];
+        ftime_fmt(buf, sizeof(buf), fmt, tm);
+        assert(strcmp(buf, ts) == 0);
+    }
+
+    {
+        const auto* ts = "18/12/2021 17:01:28";
+        const char* fmt = "%_d/%_m/%Y %_H:%M:%S";
+        exttm tm;
+        off_t off = 0;
+
+        bool rc = ptime_fmt(fmt, &tm, ts, off, strlen(ts));
+        assert(rc);
+        assert(off == (off_t) strlen(ts));
+        assert(tm.et_tm.tm_mday == 18);
+        assert(tm.et_tm.tm_mon == 11);
+        assert(tm.et_tm.tm_hour == 17);
+
+        char buf[64];
+        ftime_fmt(buf, sizeof(buf), fmt, tm);
+        assert(strcmp(buf, ts) == 0);
+    }
 }
