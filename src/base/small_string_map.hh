@@ -37,13 +37,21 @@
 
 namespace lnav {
 
+/**
+ * A tiny cache from short strings to values.  Each key is packed into a
+ * zero-padded uint64_t so that a lookup compares against all of the slots at
+ * once.
+ */
 struct small_string_map {
     static constexpr auto MAP_SIZE = 8;
     static constexpr auto MAX_KEY_SIZE = 8;
-    char ssm_keys[MAP_SIZE * MAX_KEY_SIZE]{};
+    alignas(64) uint64_t ssm_keys[MAP_SIZE]{};
     uint32_t ssm_values[MAP_SIZE]{};
-    uint32_t ssm_start_index{0};
-    bool ssm_age[MAP_SIZE]{};
+    /** Bit N is set when slot N holds a key. */
+    uint8_t ssm_used{0};
+    /** Bit N is set when slot N was used recently. */
+    uint8_t ssm_age{0};
+    uint8_t ssm_start_index{0};
 
     std::optional<uint32_t> lookup(const string_fragment& in);
     void insert(const string_fragment& key, uint32_t value);

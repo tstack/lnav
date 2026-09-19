@@ -27,34 +27,80 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
+
 #include "small_string_map.hh"
 
 #include "lnav_log.hh"
 
 namespace lnav {
 
+namespace {
+
+/** Load four bytes with the first byte in the low bits. */
+uint64_t
+load_le32(const unsigned char* src)
+{
+    uint32_t retval;
+    memcpy(&retval, src, sizeof(retval));
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    retval = __builtin_bswap32(retval);
+#endif
+    return retval;
+}
+
+/**
+ * Pack a key of 1 to MAX_KEY_SIZE bytes into a uint64_t with byte N of the
+ * key in bits 8N to 8N+7 and zeros above the last byte.  The loads overlap
+ * as needed, so no bytes past the end of the key are read.
+ */
+uint64_t
+pack_key(const string_fragment& key)
+{
+    const auto* src = key.udata();
+    const auto len = static_cast<size_t>(key.length());
+
+    if (len >= 4) {
+        // The overlapping bytes are the same in both loads, so OR-ing them
+        // together is harmless.
+        return load_le32(src) | (load_le32(&src[len - 4]) << ((len - 4) * 8));
+    }
+
+    const auto mid = len / 2;
+    return uint64_t{src[0]} | (uint64_t{src[mid]} << (mid * 8))
+        | (uint64_t{src[len - 1]} << ((len - 1) * 8));
+}
+
+/** Return a mask with bit N set when slot N holds the given key. */
+uint8_t
+match_mask(const uint64_t (&keys)[small_string_map::MAP_SIZE], uint64_t key)
+{
+    uint8_t retval = 0;
+
+    for (int lpc = 0; lpc < small_string_map::MAP_SIZE; lpc++) {
+        retval |= static_cast<uint8_t>(keys[lpc] == key) << lpc;
+    }
+    return retval;
+}
+
+}  // namespace
+
 std::optional<uint32_t>
 small_string_map::lookup(const string_fragment& in)
 {
-    if (in.length() > MAX_KEY_SIZE) {
+    if (in.empty() || in.length() > MAX_KEY_SIZE) {
         return std::nullopt;
     }
 
-    auto index = this->ssm_start_index;
-    for (int lpc = 0; lpc < MAP_SIZE; ++lpc) {
-        if (memcmp(
-                &this->ssm_keys[index * MAX_KEY_SIZE], in.data(), in.length())
-                == 0
-            && (in.length() == MAX_KEY_SIZE
-                || this->ssm_keys[index * MAX_KEY_SIZE + in.length()] == '\0'))
-        {
-            this->ssm_start_index = index;
-            this->ssm_age[index] = true;
-            return this->ssm_values[index];
-        }
-        index = (index + 1) % MAP_SIZE;
+    const auto mask = match_mask(this->ssm_keys, pack_key(in)) & this->ssm_used;
+    if (mask == 0) {
+        return std::nullopt;
     }
-    return std::nullopt;
+
+    const auto index = __builtin_ctz(mask);
+    this->ssm_start_index = index;
+    this->ssm_age |= 1U << index;
+    return this->ssm_values[index];
 }
 
 void
@@ -64,21 +110,22 @@ small_string_map::insert(const string_fragment& key, uint32_t value)
         return;
     }
 
-    auto key_index = (this->ssm_start_index + 1) % MAP_SIZE;
-    for (auto lpc = 0; lpc < MAP_SIZE; lpc++) {
-        if (!this->ssm_age[lpc]) {
-            key_index = lpc;
-        } else {
-            this->ssm_age[lpc] = false;
-        }
+    // Fill an empty slot if there is one.  Otherwise, replace the highest
+    // slot that has not been used recently, then start aging over again.
+    const unsigned unused = static_cast<uint8_t>(~this->ssm_used);
+    const unsigned unaged = static_cast<uint8_t>(~this->ssm_age);
+    int key_index;
+    if (unused != 0) {
+        key_index = __builtin_ctz(unused);
+    } else if (unaged != 0) {
+        key_index = 31 - __builtin_clz(unaged);
+    } else {
+        key_index = (this->ssm_start_index + 1) % MAP_SIZE;
     }
-    this->ssm_age[this->ssm_start_index] = true;
-    this->ssm_age[key_index] = true;
 
-    memset(&this->ssm_keys[key_index * MAX_KEY_SIZE],
-           0,
-           MAX_KEY_SIZE * sizeof(char));
-    memcpy(&this->ssm_keys[key_index * MAX_KEY_SIZE], key.data(), key.length());
+    this->ssm_age = (1U << this->ssm_start_index) | (1U << key_index);
+    this->ssm_used |= 1U << key_index;
+    this->ssm_keys[key_index] = pack_key(key);
     this->ssm_values[key_index] = value;
     this->ssm_start_index = key_index;
 }

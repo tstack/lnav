@@ -1,0 +1,4 @@
+log_level,comp,log_body
+warning,foo,hello
+error,bar,world
+info,baz,again
