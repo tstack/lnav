@@ -1,0 +1,38 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_json_opid_dur_log": {
+        "title": "Test JSON opid and duration Log",
+        "file-type": "json",
+        "file-pattern": "logfile_json_opid_dur\\.json",
+        "description": "Regression format for a duration replacing the opid captured from the line",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "req"
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "timestamp-field": "ts",
+        "opid-field": "req",
+        "duration-field": "dur",
+        "body-field": "msg",
+        "value": {
+            "msg": {
+                "kind": "string"
+            },
+            "req": {
+                "kind": "string",
+                "identifier": true
+            },
+            "dur": {
+                "kind": "integer"
+            }
+        }
+    }
+}

@@ -42,7 +42,7 @@
 #include "logfile_sub_source.hh"
 #include "text_overlay_menu.hh"
 
-/** What has been found while the files are still being discovered. */
+/** What has been found while the files are being discovered and indexed. */
 struct discovery_stats {
     size_t ds_files{0};
     size_t ds_log_files{0};

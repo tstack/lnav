@@ -806,6 +806,12 @@ struct string_fragment {
 
     uint64_t bloom_bits() const;
 
+    /**
+     * The bloom bits for a fragment whose hash() is already known, so the
+     * data does not have to be hashed again.
+     */
+    static uint64_t bloom_bits_from_hash(uint64_t a);
+
     class cursor_impl {
     public:
         std::optional<uint32_t> lookbehind() const
@@ -1229,10 +1235,57 @@ to_owned(std::optional<string_fragment> sf, A allocator)
     return sf->to_owned(allocator);
 }
 
+/**
+ * A fragment along with its hash(), for a value that is used for more than
+ * one table lookup or for its bloom bits, so it is only hashed once.
+ */
+struct hashed_frag {
+    string_fragment hf_frag;
+    unsigned long hf_hash{0};
+
+    static hashed_frag from(const string_fragment& sf)
+    {
+        return {sf, sf.hash()};
+    }
+
+    uint64_t bloom_bits() const
+    {
+        return string_fragment::bloom_bits_from_hash(this->hf_hash);
+    }
+};
+
+/**
+ * Hashes fragments for unordered maps.  Together with frag_equal, a map
+ * can also be searched with a hashed_frag, which reuses its hash.
+ */
 struct frag_hasher {
+    using is_transparent = void;
+
     size_t operator()(const string_fragment& sf) const
     {
         return hash_str(sf.data(), sf.length());
+    }
+
+    size_t operator()(const hashed_frag& hf) const { return hf.hf_hash; }
+};
+
+struct frag_equal {
+    using is_transparent = void;
+
+    bool operator()(const string_fragment& lhs,
+                    const string_fragment& rhs) const
+    {
+        return lhs == rhs;
+    }
+
+    bool operator()(const hashed_frag& lhs, const string_fragment& rhs) const
+    {
+        return lhs.hf_frag == rhs;
+    }
+
+    bool operator()(const string_fragment& lhs, const hashed_frag& rhs) const
+    {
+        return lhs == rhs.hf_frag;
     }
 };
 

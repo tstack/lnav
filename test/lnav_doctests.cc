@@ -37,6 +37,7 @@
 #include "byte_array.hh"
 #include "cmd.parser.hh"
 #include "data_scanner.hh"
+#include "digestible/digestible.h"
 #include "doctest/doctest.h"
 #include "file_split.hh"
 #include "hasher.hh"
@@ -53,6 +54,7 @@
 #include "vtab_module.hh"
 
 #include <condition_variable>
+#include <random>
 #include <mutex>
 #include <thread>
 
@@ -711,3 +713,95 @@ TEST_CASE("file_split::limits::defaults")
     CHECK(limits::defaults(std::nullopt, 8, max_lines).l_bytes.value()
           == 1 * GiB);
 }
+
+TEST_CASE("tdigest max with only negative values")
+{
+    auto td = digestible::tdigest<double>(200);
+
+    for (int round = 0; round < 5; round++) {
+        for (int lpc = 0; lpc < 1000; lpc++) {
+            td.insert(-5.0 - (lpc % 3));
+        }
+        td.merge();
+    }
+
+    CHECK(td.min() == -7.0);
+    CHECK(td.max() == -5.0);
+    CHECK(td.quantile(100) == -5.0);
+}
+
+TEST_CASE("tdigest quantile near the top is not NaN")
+{
+    // Repeated values can leave the last centroid with a weight of 2 or 3,
+    // which has no room to interpolate between it and the maximum.
+    auto rng = std::mt19937(3);
+
+    for (int trial = 0; trial < 500; trial++) {
+        const auto count = 5 + static_cast<int>(rng() % 3000);
+        const auto compression = 10 + rng() % 200;
+        const auto cardinality = 1 + rng() % 50;
+        auto td = digestible::tdigest<double>(compression);
+
+        for (int lpc = 0; lpc < count; lpc++) {
+            td.insert(static_cast<double>(rng() % cardinality));
+        }
+        td.merge();
+        for (int k = 900; k <= 1000; k++) {
+            const auto q = td.quantile(k / 10.0);
+
+            REQUIRE_FALSE(std::isnan(q));
+            CHECK(q >= td.min());
+            CHECK(q <= td.max());
+        }
+    }
+}
+
+TEST_CASE("tdigest insert of an unmerged t-digest")
+{
+    auto src = digestible::tdigest<double>(200);
+    for (int lpc = 0; lpc < 100; lpc++) {
+        src.insert(lpc);
+    }
+
+    auto dst = digestible::tdigest<double>(200);
+    dst.insert(src);
+    CHECK(dst.size() == 100);
+    CHECK(dst.min() == 0.0);
+    CHECK(dst.max() == 99.0);
+
+    // Merged centroids plus values inserted after the merge.
+    src.merge();
+    for (int lpc = 100; lpc < 150; lpc++) {
+        src.insert(lpc);
+    }
+    auto dst2 = digestible::tdigest<double>(200);
+    dst2.insert(src);
+    CHECK(dst2.size() == 150);
+    CHECK(dst2.max() == 149.0);
+}
+
+TEST_CASE("tdigest copy keeps the compression")
+{
+    auto fresh = digestible::tdigest<double>(200);
+    for (int lpc = 0; lpc < 1000; lpc++) {
+        fresh.insert(lpc);
+    }
+    fresh.merge();
+
+    auto copy = fresh;
+    auto assigned = digestible::tdigest<double>(10);
+    assigned = fresh;
+    for (int lpc = 0; lpc < 200000; lpc++) {
+        fresh.insert(lpc % 997);
+        copy.insert(lpc % 997);
+        assigned.insert(lpc % 997);
+    }
+    fresh.merge();
+    copy.merge();
+    assigned.merge();
+
+    CHECK(copy.centroid_count() == fresh.centroid_count());
+    CHECK(assigned.centroid_count() == fresh.centroid_count());
+    CHECK(copy.quantile(99) == fresh.quantile(99));
+}
+

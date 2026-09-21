@@ -291,6 +291,7 @@ public:
         uint32_t s_requested_preloads{0};
         uint32_t s_used_preloads{0};
         std::array<uint32_t, 10> s_hist{};
+        std::chrono::microseconds s_preload_wait_time{};
     };
 
     struct stats consume_stats() { return std::exchange(this->lb_stats, {}); }

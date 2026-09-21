@@ -2285,12 +2285,6 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         this->lf_value_stats.resize(sbc.sbc_value_stats.size());
         for (size_t lpc = 0; lpc < sbc.sbc_value_stats.size(); lpc++) {
-            // Ensure the per-batch t-digest's pending buffer is
-            // compacted into ordered centroids before we fold it in:
-            // `tdigest::insert(other)` walks `other.active->values`,
-            // which is empty when the source still has data sitting
-            // in the buffer.
-            sbc.sbc_value_stats[lpc].finalize();
             this->lf_value_stats[lpc].merge(sbc.sbc_value_stats[lpc]);
         }
         {
@@ -3009,6 +3003,7 @@ logfile::dump_stats()
              buf_stats.s_hist[9]);
     log_info("  decompressions=%u", buf_stats.s_decompressions);
     log_info("  preads=%u", buf_stats.s_preads);
+    log_info("  preload_wait_time=%lld", buf_stats.s_preload_wait_time.count());
     log_info("  requested_preloads=%u", buf_stats.s_requested_preloads);
     log_info("  used_preloads=%u", buf_stats.s_used_preloads);
 }
@@ -3041,12 +3036,16 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 
     auto& ll = this->lf_index[line_number];
     auto log_us = ll.get_time<>();
-    auto opid_iter = write_opids->insert_op(
-        this->lf_allocator, opid, log_us, timestamp_point_of_reference_t::end);
+    const auto opid_hf = hashed_frag::from(opid);
+    auto opid_iter
+        = write_opids->insert_op(this->lf_allocator,
+                                 opid_hf,
+                                 log_us,
+                                 timestamp_point_of_reference_t::end);
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
-    ll.merge_bloom_bits(opid.bloom_bits());
+    ll.merge_bloom_bits(opid_hf.bloom_bits());
     this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
 }
 

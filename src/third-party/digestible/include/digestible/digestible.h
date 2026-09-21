@@ -111,6 +111,10 @@ class tdigest
 
     tdigest_impl *active;
 
+    // The size requested at construction.  Kept separately since a copied
+    // vector does not keep the capacity that was reserved for it.
+    size_t compression;
+
     Values min_val, max_val;
     bool run_forward;
 
@@ -262,6 +266,7 @@ tdigest<Values, Weight>::tdigest(size_t size)
     , two(size)
     , buffer(size * buffer_multiplier)
     , active(&one)
+    , compression(size)
     , min_val(std::numeric_limits<Values>::max())
     , max_val(std::numeric_limits<Values>::lowest())
     , run_forward(true)
@@ -269,14 +274,21 @@ tdigest<Values, Weight>::tdigest(size_t size)
 
 template <typename Values, typename Weight>
 tdigest<Values, Weight>::tdigest(const tdigest<Values, Weight>& other)
-    : one(other.one)
-    , two(other.two)
-    , buffer(other.buffer)
-    , active(other.active == &other.one ? &one : &two)
-    , min_val(other.min_val)
-    , max_val(other.max_val)
-    , run_forward(other.run_forward)
-{}
+    : tdigest(other.compression)
+{
+    // Assign into the vectors reserved by the delegated constructor so they
+    // keep their capacity, which insert() relies on to know when to merge.
+    one.values        = other.one.values;
+    one.total_weight  = other.one.total_weight;
+    two.values        = other.two.values;
+    two.total_weight  = other.two.total_weight;
+    buffer.values       = other.buffer.values;
+    buffer.total_weight = other.buffer.total_weight;
+    active      = other.active == &other.one ? &one : &two;
+    min_val     = other.min_val;
+    max_val     = other.max_val;
+    run_forward = other.run_forward;
+}
 
 template <typename Values, typename Weight>
 void tdigest<Values, Weight>::swap(tdigest<Values, Weight>& other)
@@ -286,6 +298,7 @@ void tdigest<Values, Weight>::swap(tdigest<Values, Weight>& other)
     std::swap(buffer, other.buffer);
     active = other.active == &other.one ? &one : &two;
     other.active = active == &one ? &other.one : &other.two;
+    std::swap(compression, other.compression);
     std::swap(min_val, other.min_val);
     std::swap(max_val, other.max_val);
     std::swap(run_forward, other.run_forward);
@@ -293,7 +306,7 @@ void tdigest<Values, Weight>::swap(tdigest<Values, Weight>& other)
 
 template <typename Values, typename Weight>
 tdigest<Values, Weight>::tdigest(tdigest<Values, Weight>&& other) noexcept
-    : tdigest(other.one.capacity())
+    : tdigest(other.compression)
 {
     swap(other);
 }
@@ -315,7 +328,11 @@ void tdigest<Values, Weight>::insert(const tdigest<Values, Weight> &src)
         if (buffer.insert(val) == tdigest_impl::insert_result::NEED_COMPRESS) { merge(); }
     };
 
-    std::for_each(src.active->values.begin(), src.active->values.end(), insert_fn);
+    // After a merge, the buffer is seeded with the merged centroids, so
+    // when it has anything in it, it holds everything in the t-digest.
+    // Otherwise, nothing was inserted since the last reset().
+    const auto &src_values = src.buffer.values.empty() ? src.active->values : src.buffer.values;
+    std::for_each(src_values.begin(), src_values.end(), insert_fn);
     // Explicitly merge any unmerged data for a consistent end state.
     merge();
 }
@@ -417,7 +434,7 @@ void tdigest<Values, Weight>::merge()
 
         max_val = std::max(max_val,
                            inputs.back().weight == 1 ? inputs.back().mean :
-                           std::numeric_limits<Values>::min());
+                           std::numeric_limits<Values>::lowest());
 
     } else {
         std::sort(inputs.begin(), inputs.end(), std::greater<centroid_t>());
@@ -429,11 +446,11 @@ void tdigest<Values, Weight>::merge()
 
         max_val = std::max(max_val,
                            inputs.front().weight == 1 ? inputs.front().mean
-                           : std::numeric_limits<Values>::min());
+                           : std::numeric_limits<Values>::lowest());
     }
 
     const Weight new_total_weight = buffer.total_weight + active->total_weight;
-    const double normalizer       = normalizer_fn(inactive.values.capacity(), new_total_weight);
+    const double normalizer       = normalizer_fn(compression, new_total_weight);
     double k1                     = k(0, normalizer);
     double next_q_limit_weight    = new_total_weight * q(k1 + 1, normalizer);
 
@@ -536,6 +553,9 @@ double tdigest<Values, Weight>::quantile(double p) const
     // centroid.
     const auto &last = active->values.back();
     if (last.weight > 1 && active->total_weight - index <= last.weight / 2) {
+        // A centroid with a weight of 2 or 3 leaves nothing to interpolate
+        // over, and index is then total_weight - 1, the top of the data.
+        if (last.weight / 2 <= 1) { return (max_val); }
         return (max_val
                 - static_cast<double>(active->total_weight - index - 1) /
                 (last.weight / 2 - 1)

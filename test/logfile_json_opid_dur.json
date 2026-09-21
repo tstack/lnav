@@ -1,0 +1,4 @@
+{"ts":"2024-01-01T00:00:00Z","req":"abc","dur":5,"msg":"one"}
+{"ts":"2024-01-01T00:00:01Z","req":"xyz","dur":7,"msg":"two"}
+{"ts":"2024-01-01T00:00:02Z","req":"abc","dur":9,"msg":"three"}
+{"ts":"2024-01-01T00:00:03Z","dur":11,"msg":"no opid of its own"}

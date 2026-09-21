@@ -901,9 +901,9 @@ line_buffer::fill_range(file_off_t start,
             wait_start = std::make_optional(std::chrono::system_clock::now());
         }
         retval = this->lb_loader_future.get();
-        if (false && wait_start) {
+        if (wait_start) {
             auto diff = std::chrono::system_clock::now() - wait_start.value();
-            log_debug("wait done! %lld", diff.count());
+            this->lb_stats.s_preload_wait_time += diff;
         }
         // log_debug("got preload");
         this->lb_loader_future = {};

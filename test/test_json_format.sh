@@ -219,3 +219,16 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ';select log_level, error_severity, pid, dbname, log_opid, log_body from postgres_json_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_postgres_json.json
+
+# A duration must not replace the opid that was captured from the line.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';select log_line, log_opid, req, log_duration from test_json_opid_dur_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_opid_dur.json
+
+# The opids recorded while indexing are what the timeline groups by.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':switch-to-view timeline' \
+    ${test_dir}/logfile_json_opid_dur.json

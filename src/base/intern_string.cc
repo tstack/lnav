@@ -407,7 +407,12 @@ string_fragment::to_string_with_case_style(case_style style) const
 uint64_t
 string_fragment::bloom_bits() const
 {
-    auto a = XXH3_64bits(this->data(), this->length());
+    return bloom_bits_from_hash(this->hash());
+}
+
+uint64_t
+string_fragment::bloom_bits_from_hash(uint64_t a)
+{
     auto b = a >> 8;
     if ((b & 0x3f) == (a & 0x3f)) {
         b = b >> 8;

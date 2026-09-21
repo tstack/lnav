@@ -230,12 +230,12 @@ scan_batch_context::seed_for(const log_format* format)
 
 log_thread_id_map::iterator
 log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
-                                const string_fragment& tid,
+                                const hashed_frag& tid,
                                 const std::chrono::microseconds& us)
 {
     auto retval = this->ltis_tid_ranges.find(tid);
     if (retval == this->ltis_tid_ranges.end()) {
-        auto tid_copy = tid.to_owned(alloc);
+        auto tid_copy = tid.hf_frag.to_owned(alloc);
         auto titr = thread_id_time_range{time_range{us, us}};
         auto emplace_res = this->ltis_tid_ranges.emplace(tid_copy, titr);
         retval = emplace_res.first;
@@ -253,22 +253,24 @@ log_thread_id_state::flush_no_tid(ArenaAlloc::Alloc<char>& alloc)
         return;
     }
 
-    auto tid_iter = this->insert_tid(
-        alloc, string_fragment{}, this->ltis_no_tid->titr_range.tr_begin);
+    auto tid_iter
+        = this->insert_tid(alloc,
+                           hashed_frag::from(string_fragment{}),
+                           this->ltis_no_tid->titr_range.tr_begin);
     tid_iter->second |= this->ltis_no_tid.value();
     this->ltis_no_tid.reset();
 }
 
 log_opid_map::iterator
 log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
-                          const string_fragment& opid,
+                          const hashed_frag& opid,
                           const std::chrono::microseconds& us,
                           timestamp_point_of_reference_t poref,
                           std::chrono::microseconds duration)
 {
     auto retval = this->los_opid_ranges.find(opid);
     if (retval == this->los_opid_ranges.end()) {
-        auto opid_copy = opid.to_owned(alloc);
+        auto opid_copy = opid.hf_frag.to_owned(alloc);
         auto otr = opid_time_range{time_range{us, us}};
         auto emplace_res = this->los_opid_ranges.emplace(opid_copy, otr);
         retval = emplace_res.first;
@@ -1342,9 +1344,9 @@ struct json_log_userdata {
     std::vector<std::pair<string_fragment, external_log_format::value_def*>>&
         jlu_read_order;
     ArenaAlloc::Alloc<char>& jlu_field_allocator;
-    std::optional<string_fragment> jlu_opid_frag;
+    std::optional<hashed_frag> jlu_opid_frag;
     std::optional<string_fragment> jlu_opid_desc_frag;
-    std::optional<string_fragment> jlu_tid_frag;
+    std::optional<hashed_frag> jlu_tid_frag;
     std::optional<int64_t> jlu_tid_number;
     std::optional<std::string> jlu_subid;
     std::optional<log_format::scan_error> jlu_scan_error;
@@ -1520,12 +1522,12 @@ read_json_number(yajlpp_parse_context* ypc,
     } else if (vd != nullptr) {
         if (jlu->jlu_format->elf_thread_id_field == field_name) {
             auto& sbc = *jlu->jlu_batch_context;
-            auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(number_frag);
-            if (tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()) {
-                jlu->jlu_tid_frag = number_frag.to_owned(sbc.sbc_allocator);
-            } else {
-                jlu->jlu_tid_frag = tid_iter->first;
-            }
+            auto tid_hf = hashed_frag::from(number_frag);
+            auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_hf);
+            tid_hf.hf_frag = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
+                ? number_frag.to_owned(sbc.sbc_allocator)
+                : tid_iter->first;
+            jlu->jlu_tid_frag = tid_hf;
         }
         if ((vd->vd_meta.lvm_kind == value_kind_t::VALUE_INTEGER
              || vd->vd_meta.lvm_kind == value_kind_t::VALUE_FLOAT)
@@ -1991,7 +1993,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_tid_frag) {
             line_values.lvv_thread_id_value
-                = jlu.jlu_tid_frag->to_owned(
+                = jlu.jlu_tid_frag->hf_frag.to_owned(
                     line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
@@ -2032,24 +2034,28 @@ external_log_format::scan_json(std::vector<logline>& dst,
             jlu.jlu_opid_hasher.update(sbr.to_string_fragment());
         }
 
-        if (jlu.jlu_opid_desc_frag || jlu.jlu_duration
-            || (found_opid_desc && this->lf_opid_description_def->size() == 1))
+        // Only synthesize an opid when the line did not have one of its
+        // own, the way the text path does in finalize_line().
+        if (!jlu.jlu_opid_frag
+            && (jlu.jlu_opid_desc_frag || jlu.jlu_duration
+                || (found_opid_desc
+                    && this->lf_opid_description_def->size() == 1)))
         {
             char buf[hasher::STRING_SIZE];
             jlu.jlu_opid_hasher.to_string(buf);
             auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
-            auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_frag);
-            if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                jlu.jlu_opid_frag = opid_frag.to_owned(sbc.sbc_allocator);
-            } else {
-                jlu.jlu_opid_frag = opid_iter->first;
-            }
+            auto opid_hf = hashed_frag::from(opid_frag);
+            auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_hf);
+            opid_hf.hf_frag = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
+                ? opid_frag.to_owned(sbc.sbc_allocator)
+                : opid_iter->first;
+            jlu.jlu_opid_frag = opid_hf;
         }
 
         if (jlu.jlu_opid_frag) {
             ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
             line_values.lvv_opid_value
-                = jlu.jlu_opid_frag->to_string();
+                = jlu.jlu_opid_frag->hf_frag.to_string();
             line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
@@ -2216,7 +2222,7 @@ ingest_numeric_value(const external_log_format::value_def& vd,
 }
 
 log_opid_map::iterator
-external_log_format::record_opid(string_fragment opid_cap,
+external_log_format::record_opid(const hashed_frag& opid_cap,
                                  std::chrono::microseconds duration,
                                  std::chrono::microseconds log_us,
                                  log_level_t level,
@@ -2282,9 +2288,9 @@ external_log_format::finalize_line(logline& new_line,
             }
         }
 
-        opid_iter = this->record_opid(
-            in.lfi_opid_cap.value(), duration, log_us, level, sbc);
-        new_line.merge_bloom_bits(in.lfi_opid_cap->bloom_bits());
+        const auto opid_hf = hashed_frag::from(in.lfi_opid_cap.value());
+        opid_iter = this->record_opid(opid_hf, duration, log_us, level, sbc);
+        new_line.merge_bloom_bits(opid_hf.bloom_bits());
     }
 
     if (this->elf_thread_id_field.empty()) {
@@ -2292,10 +2298,11 @@ external_log_format::finalize_line(logline& new_line,
             sbc.sbc_tids.add_no_tid(log_us, level);
         }
     } else if (in.lfi_tid_cap) {
-        auto tid_iter = sbc.sbc_tids.insert_tid(
-            sbc.sbc_allocator, in.lfi_tid_cap.value(), log_us);
+        const auto tid_hf = hashed_frag::from(in.lfi_tid_cap.value());
+        auto tid_iter
+            = sbc.sbc_tids.insert_tid(sbc.sbc_allocator, tid_hf, log_us);
         tid_iter->second.titr_level_stats.update_msg_count(level);
-        new_line.merge_bloom_bits(in.lfi_tid_cap->bloom_bits());
+        new_line.merge_bloom_bits(tid_hf.bloom_bits());
     }
 
     if (in.lfi_src_file_cap && in.lfi_src_line_cap) {
@@ -3379,26 +3386,27 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
     }
     if (!field_name.empty() && jlu->jlu_format->elf_opid_field == field_name) {
-        jlu->jlu_base_line->merge_bloom_bits(frag.bloom_bits());
-
         auto& sbc = *jlu->jlu_batch_context;
-        auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(frag);
-        if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-            jlu->jlu_opid_frag = frag.to_owned(sbc.sbc_allocator);
-        } else {
-            jlu->jlu_opid_frag = opid_iter->first;
-        }
+        auto opid_hf = hashed_frag::from(frag);
+        // Merged here as well as when the line is finished since a duration
+        // replaces this opid with a synthesized one before then.
+        jlu->jlu_base_line->merge_bloom_bits(opid_hf.bloom_bits());
+        auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_hf);
+        opid_hf.hf_frag = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
+            ? frag.to_owned(sbc.sbc_allocator)
+            : opid_iter->first;
+        jlu->jlu_opid_frag = opid_hf;
     }
     if (!field_name.empty()
         && jlu->jlu_format->elf_thread_id_field == field_name)
     {
         auto& sbc = *jlu->jlu_batch_context;
-        auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(frag);
-        if (tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()) {
-            jlu->jlu_tid_frag = frag.to_owned(sbc.sbc_allocator);
-        } else {
-            jlu->jlu_tid_frag = tid_iter->first;
-        }
+        auto tid_hf = hashed_frag::from(frag);
+        auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_hf);
+        tid_hf.hf_frag = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
+            ? frag.to_owned(sbc.sbc_allocator)
+            : tid_iter->first;
+        jlu->jlu_tid_frag = tid_hf;
     }
     if (!jlu->jlu_format->elf_subid_field.empty()
         && jlu->jlu_format->elf_subid_field == field_name)
@@ -4458,7 +4466,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         this->jlf_line_values.lvv_allocator);
             } else if (jlu.jlu_tid_frag) {
                 this->jlf_line_values.lvv_thread_id_value
-                    = jlu.jlu_tid_frag->to_owned(
+                    = jlu.jlu_tid_frag->hf_frag.to_owned(
                         this->jlf_line_values.lvv_allocator);
             }
 
@@ -4487,13 +4495,16 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                     use_opid_hasher = true;
                 }
             } else if (!jlu.jlu_opid_desc_frag && !jlu.jlu_opid_frag
+                       && !this->jlf_line_values.lvv_opid_value
                        && jlu.jlu_duration)
             {
+                // This pass does not fill in jlu_opid_frag, so the opid
+                // value from the line is the only sign of one.
                 jlu.jlu_opid_hasher.update(line_frag);
                 use_opid_hasher = true;
             } else if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
-                    = jlu.jlu_opid_frag->to_string();
+                    = jlu.jlu_opid_frag->hf_frag.to_string();
                 this->jlf_line_values.lvv_opid_provenance
                     = logline_value_vector::opid_provenance::file;
             } else if (jlu.jlu_opid_desc_frag) {

@@ -133,19 +133,19 @@ struct opid_time_range {
 using log_opid_map = robin_hood::unordered_map<string_fragment,
                                                opid_time_range,
                                                frag_hasher,
-                                               std::equal_to<string_fragment>>;
+                                               frag_equal>;
 
 using sub_opid_map = robin_hood::unordered_map<string_fragment,
                                                string_fragment,
                                                frag_hasher,
-                                               std::equal_to<string_fragment>>;
+                                               frag_equal>;
 
 struct log_opid_state {
     log_opid_map los_opid_ranges;
     sub_opid_map los_sub_in_use;
 
     log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
-                                     const string_fragment& opid,
+                                     const hashed_frag& opid,
                                      const std::chrono::microseconds& us,
                                      timestamp_point_of_reference_t poref,
                                      std::chrono::microseconds duration
@@ -182,7 +182,7 @@ using log_thread_id_map
     = robin_hood::unordered_map<string_fragment,
                                 thread_id_time_range,
                                 frag_hasher,
-                                std::equal_to<string_fragment>>;
+                                frag_equal>;
 
 struct log_thread_id_state {
     log_thread_id_map ltis_tid_ranges;
@@ -194,7 +194,7 @@ struct log_thread_id_state {
     std::optional<thread_id_time_range> ltis_no_tid;
 
     log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
-                                           const string_fragment& tid,
+                                           const hashed_frag& tid,
                                            const std::chrono::microseconds& us);
 
     void add_no_tid(std::chrono::microseconds us, log_level_t level)

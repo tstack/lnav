@@ -2586,9 +2586,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 {
                     log_info("%d: switching to paging!", loop_count);
                     set_view_mode(ln_mode_t::PAGING);
-                    lnav_data.ld_active_files.fc_files
-                        | lnav::itertools::for_each(&logfile::dump_stats);
-
                     check_for_file_zones();
                 } else {
                     lnav_data.ld_files_view.set_selection(0_vl);
@@ -2596,6 +2593,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
             lnav_data.ld_views[LNV_LOG].set_top_for_last_row();
             lnav::session::restore_view_states();
+            lnav_data.ld_active_files.fc_files
+                | lnav::itertools::for_each(&logfile::dump_stats);
             log_info("%d: going interactive", loop_count);
             auto log_sel_opt = lnav_data.ld_views[LNV_LOG].get_selection();
             if (!log_sel_opt.has_value()) {

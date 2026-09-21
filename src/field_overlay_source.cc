@@ -652,13 +652,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             std::string summary;
             if (stats->lvs_count > 0) {
                 summary
-                    = fmt::format(FMT_STRING("  {}..{} of {}"),
+                    = fmt::format(FMT_STRING("  {}..{} of {:L}"),
                                   meta.to_humanized_value(stats->lvs_min_value),
                                   meta.to_humanized_value(stats->lvs_max_value),
                                   stats->lvs_count);
             } else if (auto est = stats->distinct_estimate(); est) {
-                summary = fmt::format(FMT_STRING("  ~{:.0f} distinct of {}"),
-                                      est.value(),
+                summary = fmt::format(FMT_STRING("  ~{:L} distinct of {:L}"),
+                                      std::llround(est.value()),
                                       stats->lvs_text_count);
             }
             if (!summary.empty()) {
@@ -1353,13 +1353,16 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
     }
 
     const std::vector<attr_line_t>* lines = nullptr;
-    if (!exec_phase.scan_completed() && this->fos_discovery_stats) {
+    if (exec_phase.spinning_up() && this->fos_discovery_stats) {
         if (y == 0) {
+            const auto scanning = !exec_phase.scan_completed();
             const auto stats = this->fos_discovery_stats();
             auto msg = lnav::console::user_message::info(
-                attr_line_t("Discovering files... ")
-                    .append(lnav::roles::number(fmt::to_string(stats.ds_files)))
-                    .append(" found so far"));
+                scanning ? attr_line_t("Discovering files... ")
+                               .append(lnav::roles::number(
+                                   fmt::to_string(stats.ds_files)))
+                               .append(" found so far")
+                         : attr_line_t("Files are being indexed..."));
             auto counts = attr_line_t()
                               .append(lnav::roles::number(
                                   fmt::to_string(stats.ds_log_files)))
@@ -1391,13 +1394,6 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
             this->fos_static_lines_state.clear();
             apply_status_attrs(this->fos_static_lines);
         }
-        lines = &this->fos_static_lines;
-    } else if (exec_phase.spinning_up()) {
-        auto msg
-            = lnav::console::user_message::info("Files are being indexed...");
-        this->fos_static_lines = msg.to_attr_line().split_lines();
-        this->fos_static_lines_state.clear();
-        apply_status_attrs(this->fos_static_lines);
         lines = &this->fos_static_lines;
     } else if (this->fos_lss.text_line_count() == 0) {
         if (this->fos_lss.is_indexing_in_progress()

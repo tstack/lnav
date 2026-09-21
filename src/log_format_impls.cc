@@ -1162,6 +1162,7 @@ public:
         log_level_t level = LEVEL_INFO;
         uint64_t opid_bloom = 0;
         auto opid_cap = string_fragment::invalid();
+        hashed_frag opid_hf;
         auto host_cap = string_fragment::invalid();
         auto duration = std::chrono::microseconds{0};
 
@@ -1200,8 +1201,8 @@ public:
                 }
             } else if (UID == fd.fd_meta.lvm_name) {
                 opid_cap = *iter;
-
-                opid_bloom = opid_cap.bloom_bits();
+                opid_hf = hashed_frag::from(opid_cap);
+                opid_bloom = opid_hf.bloom_bits();
             } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
                 host_cap = *iter;
             } else if (DURATION == fd.fd_meta.lvm_name) {
@@ -1243,7 +1244,7 @@ public:
             if (opid_cap.is_valid()) {
                 auto opid_iter = sbc.sbc_opids.insert_op(
                     sbc.sbc_allocator,
-                    opid_cap,
+                    opid_hf,
                     log_us,
                     this->lf_timestamp_point_of_reference,
                     duration);
