@@ -488,10 +488,11 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             }
             auto stub_map
                 = lnav_data.ld_active_files.fc_name_to_stubs->writeAccess();
-            stub_map->emplace(lf->get_path_for_key().string(),
+            stub_map->emplace(lf->get_stub_key(),
                               file_stub_info{
                                   lf->get_filename_as_string(),
                                   lf->get_origin_mtime(),
+                                  std::nullopt,
                                   um,
                               });
             reason = "out-of-range";

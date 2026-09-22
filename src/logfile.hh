@@ -182,6 +182,14 @@ public:
 
     std::filesystem::path get_path_for_key() const;
 
+    /**
+     * @return The key to use when looking for this file in
+     *   file_collection::fc_name_to_stubs.  This is the path that the scan
+     *   was working with, which is not necessarily the name the file is
+     *   displayed under.
+     */
+    std::string get_stub_key() const;
+
     /** @return The filename as given in the constructor, excluding the path
      * prefix. */
     const std::string& get_basename() const { return this->lf_basename; }

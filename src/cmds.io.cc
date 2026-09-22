@@ -1223,6 +1223,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     std::vector<std::string> files_to_front;
     std::vector<std::string> closed_files;
+    /**
+     * Patterns that should un-close every file they match.  A glob or a
+     * directory does not name the files it will turn up, so the paths that
+     * were dismissed individually can only be found by matching.
+     */
+    std::vector<std::string> closed_patterns;
     logfile_open_options loo;
 
     auto prov = ec.get_provenance<exec_context::file_open>();
@@ -1421,6 +1427,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 retval = "info: watching -- " + fn;
             } else if (lnav::filesystem::is_glob(fn.c_str())) {
                 loo.with_init_location(file_loc);
+                closed_patterns.push_back(fn);
                 fc.fc_file_names.insert2(fn, loo);
                 files_to_front.emplace_back(
                     loo.loo_filename.empty() ? fn : loo.loo_filename);
@@ -1493,6 +1500,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
+                closed_patterns.push_back(dir_wild + "/*");
                 fc.fc_file_names.insert2(dir_wild + "/*", loo);
                 retval = "info: watching -- " + dir_wild;
             } else if (!S_ISREG(st.st_mode)) {
@@ -1753,6 +1761,36 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                            files_to_front.end());
         for (const auto& fn : closed_files) {
             lnav_data.ld_active_files.fc_closed_files.erase(fn);
+        }
+        for (const auto& pat : closed_patterns) {
+            auto& closed = lnav_data.ld_active_files.fc_closed_files;
+            // fc_closed_files holds resolved paths, while the pattern is
+            // however the user spelled it, so match against a version with
+            // the directory resolved as well.
+            auto resolved_pat = pat;
+            auto slash_index = pat.rfind('/');
+
+            if (slash_index != std::string::npos) {
+                auto_mem<char> abs_dir;
+
+                abs_dir = realpath(pat.substr(0, slash_index).c_str(), nullptr);
+                if (abs_dir != nullptr) {
+                    resolved_pat
+                        = fmt::format(FMT_STRING("{}{}"),
+                                      abs_dir.in(),
+                                      pat.substr(slash_index));
+                }
+            }
+
+            for (auto iter = closed.begin(); iter != closed.end();) {
+                if (fnmatch(pat.c_str(), iter->c_str(), 0) == 0
+                    || fnmatch(resolved_pat.c_str(), iter->c_str(), 0) == 0)
+                {
+                    iter = closed.erase(iter);
+                } else {
+                    ++iter;
+                }
+            }
         }
 
         lnav_data.ld_active_files.merge(fc);

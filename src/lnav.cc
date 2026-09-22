@@ -2578,9 +2578,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         if (exec_phase.loading_session()) {
             if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                if (lnav_data.ld_active_files.fc_other_files.empty()
-                    && lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
-                           ->empty()
+                if (lnav_data.ld_active_files.fc_name_to_stubs->readAccess()
+                        ->empty()
                     && lnav_data.ld_view_stack.top().value()->get_inner_height()
                         > 0)
                 {
@@ -4535,7 +4534,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 stderr,
                                 lnav::console::user_message::error(
                                     attr_line_t("unable to open file: ")
-                                        .append(lnav::roles::file(pair.first)))
+                                        .append(lnav::roles::file(
+                                            pair.second.fsi_display_name)))
                                     .with_reason(pair.second.fsi_description));
                         }
 
@@ -4598,7 +4598,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 stderr,
                                 lnav::console::user_message::error(
                                     attr_line_t("unable to open file: ")
-                                        .append(lnav::roles::file(pair.first)))
+                                        .append(lnav::roles::file(
+                                            pair.second.fsi_display_name)))
                                     .with_reason(pair.second.fsi_description));
                         }
 

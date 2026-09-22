@@ -1489,9 +1489,56 @@ ftime_N(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
         return fmt_index; \
     }
 
+/**
+ * The width of the space character that 'str' starts with, or zero if it does
+ * not start with one.  CLDR, which is where Apple and ICU get their date
+ * formats, separates the time from the AM/PM marker with a NARROW NO-BREAK
+ * SPACE rather than an ASCII one, and uses the other spaces here in the same
+ * kind of place, so a space in a format needs to accept them as well.
+ */
+inline ssize_t
+ptime_space_width(const char* str, off_t off, ssize_t len)
+{
+    if (off >= len) {
+        return 0;
+    }
+    if (str[off] == ' ') {
+        return 1;
+    }
+    // U+00A0 NO-BREAK SPACE
+    if ((off + 1) < len && (unsigned char) str[off] == 0xc2
+        && (unsigned char) str[off + 1] == 0xa0)
+    {
+        return 2;
+    }
+    if ((off + 2) < len && (unsigned char) str[off] == 0xe2
+        && (unsigned char) str[off + 1] == 0x80)
+    {
+        switch ((unsigned char) str[off + 2]) {
+            case 0x87:  // U+2007 FIGURE SPACE
+            case 0x89:  // U+2009 THIN SPACE
+            case 0xaf:  // U+202F NARROW NO-BREAK SPACE
+                return 3;
+            default:
+                break;
+        }
+    }
+    return 0;
+}
+
 inline bool
 ptime_char(char val, const char* str, off_t& off_inout, ssize_t len)
 {
+    if (val == ' ') {
+        auto width = ptime_space_width(str, off_inout, len);
+
+        if (width == 0) {
+            return false;
+        }
+        off_inout += width;
+        return true;
+    }
+
     PTIME_CONSUME(1, { PTIME_CHECK_CHAR(val, str[off_inout], false); });
 
     return true;

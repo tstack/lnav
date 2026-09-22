@@ -142,9 +142,19 @@ struct selection_base {
     }
 };
 
-struct stub_selection
-    : selection_base<stub_selection,
-                     std::pair<std::string, lnav::console::user_message>> {};
+/**
+ * A snapshot of a file_collection::fc_name_to_stubs entry.  The key is kept
+ * separate from the display name because the two are not always the same:
+ * the key is the path that was scanned, which is not necessarily the name
+ * the file is shown under.
+ */
+struct stub_details {
+    std::string sd_key;
+    std::string sd_display_name;
+    lnav::console::user_message sd_description;
+};
+
+struct stub_selection : selection_base<stub_selection, stub_details> {};
 
 struct other_selection
     : selection_base<other_selection,

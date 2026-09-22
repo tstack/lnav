@@ -86,9 +86,35 @@ struct other_file_descriptor {
 
 struct file_stub_info {
     const std::string fsi_display_name;
-    const time_t fsi_mtime;
+    /**
+     * The timestamps of the file when the stub was recorded, if it could be
+     * stat()'d at all.  An unset value means "unknown", which is treated as
+     * stale so that the file is retried.
+     */
+    const std::optional<time_t> fsi_mtime;
+    const std::optional<time_t> fsi_ctime;
     const lnav::console::user_message fsi_description;
 };
+
+/**
+ * @return True if the file has changed since the stub was recorded, meaning
+ *   it is worth trying to open it again.  A permission change moves ctime
+ *   and not mtime, so both are checked.
+ */
+inline bool
+is_stub_stale(const file_stub_info& fsi, const struct stat& st)
+{
+    if (!fsi.fsi_mtime && !fsi.fsi_ctime) {
+        return true;
+    }
+    if (fsi.fsi_mtime && fsi.fsi_mtime.value() != st.st_mtime) {
+        return true;
+    }
+    if (fsi.fsi_ctime && fsi.fsi_ctime.value() != st.st_ctime) {
+        return true;
+    }
+    return false;
+}
 
 using safe_name_to_stubs = safe::Safe<std::map<std::string, file_stub_info>>;
 

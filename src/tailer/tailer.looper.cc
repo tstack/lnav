@@ -1234,7 +1234,8 @@ tailer::looper::report_error(std::string path, std::string msg)
         fc.fc_name_to_stubs->writeAccess()->emplace(path,
                                                     file_stub_info{
                                                         path,
-                                                        {},
+                                                        std::nullopt,
+                                                        std::nullopt,
                                                         um.move(),
                                                     });
         update_active_files(fc);

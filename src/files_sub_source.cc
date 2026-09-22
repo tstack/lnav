@@ -69,10 +69,12 @@ from_selection(std::optional<vis_line_t> sel_vis)
             auto iter = errs->begin();
 
             std::advance(iter, sel);
-            return stub_selection::build(
-                sel,
-                std::make_pair(iter->second.fsi_display_name,
-                               iter->second.fsi_description));
+            return stub_selection::build(sel,
+                                         stub_details{
+                                             iter->first,
+                                             iter->second.fsi_display_name,
+                                             iter->second.fsi_description,
+                                         });
         }
 
         sel -= errs->size();
@@ -188,11 +190,17 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 [&](files_model::stub_selection& es) {
                     auto& fc = lnav_data.ld_active_files;
 
-                    fc.fc_file_names.erase(es.sb_iter.first);
+                    const auto& key = es.sb_iter.sd_key;
+                    const auto& display_name = es.sb_iter.sd_display_name;
+
+                    fc.fc_file_names.erase(key);
+                    fc.fc_file_names.erase(display_name);
 
                     auto name_iter = fc.fc_file_names.begin();
                     while (name_iter != fc.fc_file_names.end()) {
-                        if (name_iter->first == es.sb_iter.first) {
+                        if (name_iter->first == key
+                            || name_iter->first == display_name)
+                        {
                             fc.fc_file_names.erase(name_iter);
                             name_iter = fc.fc_file_names.begin();
                             continue;
@@ -204,7 +212,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                         if (rp_opt) {
                             auto rp = *rp_opt;
 
-                            if (fmt::to_string(rp.home()) == es.sb_iter.first) {
+                            if (fmt::to_string(rp.home()) == key) {
                                 fc.fc_other_files.erase(name_iter->first);
                                 fc.fc_file_names.erase(name_iter);
                                 name_iter = fc.fc_file_names.begin();
@@ -214,7 +222,11 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                         ++name_iter;
                     }
 
-                    fc.fc_name_to_stubs->writeAccess()->erase(es.sb_iter.first);
+                    // A file turned up by a glob has no fc_file_names entry
+                    // of its own, so erasing above is not enough to keep the
+                    // next scan from finding it again.
+                    fc.fc_closed_files.insert(key);
+                    fc.fc_name_to_stubs->writeAccess()->erase(key);
                     fc.fc_invalidate_merge = true;
                     lv.reload_data();
                 },
@@ -577,7 +589,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
         [](files_model::no_selection) {},
 
         [&details](const files_model::stub_selection& es) {
-            es.sb_iter.second.to_attr_line().split_lines(details);
+            es.sb_iter.sd_description.to_attr_line().split_lines(details);
         },
         [&details](const files_model::other_selection& os) {
             auto path = std::filesystem::path(os.sb_iter->first);

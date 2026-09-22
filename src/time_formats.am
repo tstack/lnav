@@ -60,6 +60,8 @@ TIME_FORMATS = \
     "%b %d %l:%M" \
     "%b %e, %Y %l:%M:%S %p" \
     "%b %d, %Y %l:%M:%S %p" \
+    "%b %e, %Y at %l:%M:%S %p" \
+    "%b %d, %Y at %I:%M:%S %p" \
     "%a %b %e %H:%M:%S %Y" \
     "%a %b %e %H:%M:%S.%f %Y" \
     "%a %b %e %H:%M:%S:%f %Y" \

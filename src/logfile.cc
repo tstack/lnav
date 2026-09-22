@@ -2874,6 +2874,16 @@ logfile::get_path_for_key() const
     return this->lf_filename;
 }
 
+std::string
+logfile::get_stub_key() const
+{
+    if (!this->lf_options.loo_scan_key.empty()) {
+        return this->lf_options.loo_scan_key;
+    }
+
+    return this->lf_actual_path.value_or(this->lf_filename).string();
+}
+
 void
 logfile::set_filename(const std::string& filename)
 {

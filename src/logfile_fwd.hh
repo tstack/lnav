@@ -112,6 +112,13 @@ struct fmt::formatter<logfile_name_source> : formatter<string_view> {
 
 struct logfile_open_options_base {
     std::string loo_filename;
+    /**
+     * The path that the file scan was working with when this file was found.
+     * This is the key that file_collection::fc_name_to_stubs uses, so that a
+     * stub recorded during the scan can be found again by the file that was
+     * eventually opened, whatever name that file ends up displaying.
+     */
+    std::string loo_scan_key;
     logfile_name_source loo_source{logfile_name_source::USER};
     dev_t loo_temp_dev{0};
     ino_t loo_temp_ino{0};
@@ -150,6 +157,13 @@ struct logfile_open_options : logfile_open_options_base {
     logfile_open_options& with_filename(const std::string& val)
     {
         this->loo_filename = val;
+
+        return *this;
+    }
+
+    logfile_open_options& with_scan_key(const std::string& val)
+    {
+        this->loo_scan_key = val;
 
         return *this;
     }

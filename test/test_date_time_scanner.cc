@@ -514,4 +514,122 @@ TEST_CASE("date_time_scanner")
         ftime_fmt(buf, sizeof(buf), fmt, tm);
         assert(strcmp(buf, ts) == 0);
     }
+
+    // A space in a format needs to match the no-break spaces that turn up in
+    // place of an ASCII one.  Apple separates the time from the AM/PM marker
+    // with a NARROW NO-BREAK SPACE, so the whole timestamp is missed without
+    // this and the log message gets the current time instead.
+    {
+        const char* fmt = "%b %e, %Y at %l:%M:%S %p";
+        struct {
+            const char* sv_name;
+            const char* sv_timestamp;
+        } variants[] = {
+            {"ASCII space", "Mar 10, 2026 at 11:51:40 AM"},
+            {"U+00A0 NO-BREAK SPACE", "Mar 10, 2026 at 11:51:40\xc2\xa0"
+                                      "AM"},
+            {"U+2007 FIGURE SPACE", "Mar 10, 2026 at 11:51:40\xe2\x80\x87"
+                                    "AM"},
+            {"U+2009 THIN SPACE", "Mar 10, 2026 at 11:51:40\xe2\x80\x89"
+                                  "AM"},
+            {"U+202F NARROW NO-BREAK SPACE",
+             "Mar 10, 2026 at 11:51:40\xe2\x80\xaf"
+             "AM"},
+        };
+
+        for (const auto& variant : variants) {
+            exttm tm;
+            off_t off = 0;
+            auto len = (ssize_t) strlen(variant.sv_timestamp);
+
+            printf("checking %s\n", variant.sv_name);
+            bool rc = ptime_fmt(fmt, &tm, variant.sv_timestamp, off, len);
+            CHECK(rc);
+            // The whole timestamp is consumed, so a wider space does not
+            // leave a stray byte behind.
+            CHECK(off == len);
+            CHECK(tm.et_tm.tm_mon == 2);
+            CHECK(tm.et_tm.tm_mday == 10);
+            CHECK(tm.et_tm.tm_year == 126);
+            CHECK(tm.et_tm.tm_hour == 11);
+            CHECK(tm.et_tm.tm_min == 51);
+            CHECK(tm.et_tm.tm_sec == 40);
+        }
+    }
+
+    // Only the spaces above were added, so some other character in that spot
+    // is still a mismatch.  U+200B sits next to U+2009 in the same block and
+    // has "SPACE" in its name, but it has no width and is not a separator.
+    {
+        const char* fmt = "%b %e, %Y at %l:%M:%S %p";
+        const char* bad_timestamps[] = {
+            "Mar 10, 2026 at 11:51:40_AM",
+            "Mar 10, 2026 at 11:51:40\xe2\x80\x8b"
+            "AM",  // U+200B ZERO WIDTH SPACE
+            "Mar 10, 2026 at 11:51:40\xe2\x80\x90"
+            "AM",  // U+2010 HYPHEN
+        };
+
+        for (const auto* ts : bad_timestamps) {
+            exttm tm;
+            off_t off = 0;
+
+            bool rc = ptime_fmt(fmt, &tm, ts, off, strlen(ts));
+            CHECK(!rc);
+        }
+    }
+
+    // The same timestamp, however it spells the space before the marker,
+    // scans with the built-in formats and lands on the same time.  The last
+    // one also leaves the day and hour unpadded, which is how Apple writes
+    // them.
+    {
+        struct {
+            const char* sc_timestamp;
+            int sc_mday;
+            int sc_hour;
+        } cases[] = {
+            {"Mar 10, 2026 at 11:51:40 AM", 10, 11},
+            {"Mar 10, 2026 at 11:51:40\xc2\xa0"
+             "AM",
+             10,
+             11},
+            {"Mar 10, 2026 at 11:51:40\xe2\x80\xaf"
+             "AM",
+             10,
+             11},
+            {"Mar 5, 2026 at 9:51:40\xe2\x80\xaf"
+             "PM",
+             5,
+             21},
+        };
+        time_t ascii_secs = 0;
+
+        for (const auto& sc : cases) {
+            date_time_scanner dts;
+            timeval tv;
+            exttm tm;
+
+            printf("scanning %s\n", sc.sc_timestamp);
+            const auto* rc
+                = dts.scan(sc.sc_timestamp, strlen(sc.sc_timestamp), nullptr,
+                           &tm, tv);
+            CHECK(rc != nullptr);
+            CHECK(tm.et_tm.tm_mon == 2);
+            CHECK(tm.et_tm.tm_year == 126);
+            CHECK(tm.et_tm.tm_mday == sc.sc_mday);
+            CHECK(tm.et_tm.tm_hour == sc.sc_hour);
+            CHECK(tm.et_tm.tm_min == 51);
+            CHECK(tm.et_tm.tm_sec == 40);
+
+            // the three spellings of the same instant agree
+            if (sc.sc_mday == 10) {
+                if (ascii_secs == 0) {
+                    ascii_secs = tv.tv_sec;
+                } else {
+                    CHECK(tv.tv_sec == ascii_secs);
+                }
+            }
+        }
+    }
 }
