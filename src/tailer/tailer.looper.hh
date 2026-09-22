@@ -33,12 +33,11 @@
 #include <filesystem>
 #include <set>
 
-#include <logfile_fwd.hh>
-
 #include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/isc.hh"
 #include "base/network.tcp.hh"
+#include "logfile_fwd.hh"
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
 
@@ -96,13 +95,13 @@ private:
         bool is_synced() const { return this->ht_state.is<synced>(); }
 
     protected:
-        void* run() override;
+        void* run(worker*) override;
 
         void loop_body() override;
 
         void stopped() override;
 
-        std::chrono::milliseconds compute_timeout(
+        std::optional<std::chrono::milliseconds> compute_timeout(
             mstime_t current_time) const override;
 
     private:

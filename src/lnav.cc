@@ -1379,7 +1379,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     (void) signal(SIGTERM, sigint);
     (void) signal(SIGWINCH, sigwinch);
     (void) signal(SIGCONT, sigwinch);
-    auto _ign_signal = finally([] {
+    auto _ign_signal = lnav::finally([] {
         signal(SIGWINCH, SIG_IGN);
         lnav_data.ld_winched = false;
         lnav_data.ld_window = nullptr;
@@ -1445,7 +1445,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
     auto& mouse_i = injector::get<xterm_mouse&>();
 
-    auto _paste = finally([&sc] {
+    auto _paste = lnav::finally([&sc] {
         notcurses_focus_events_disable(sc.get_notcurses());
         notcurses_bracketed_paste_disable(sc.get_notcurses());
     });
@@ -2084,7 +2084,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
 
-        mlooper.get_port().process_for(0s);
+        mlooper.process_for(0s);
         ui_now = ui_clock::now();
 
         if (last_files_generation
@@ -3145,7 +3145,7 @@ main(int argc, char* argv[])
 
     auto vtab_man_life
         = injector::bind<log_vtab_manager>::to_scoped_singleton();
-    auto _vtab_cleanup = finally([&] {
+    auto _vtab_cleanup = lnav::finally([&] {
         static const char* VIRT_TABLES = R"(
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
@@ -4646,7 +4646,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         = injector::get<main_looper&, services::main_t>();
                     mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
                     while (lnav_data.ld_looping) {
-                        mlooper.get_port().process_for(50ms);
+                        mlooper.process_for(50ms);
                         rescan_files();
                         auto deadline = ui_clock::now() + 1s;
                         wait_for_pipers(deadline);

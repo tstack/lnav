@@ -2343,7 +2343,7 @@ validate_config_file(const std::filesystem::path& path,
     // here reaches the rest of the process.
     auto saved_config = lnav_config;
     auto saved_locations = lnav_config_locations;
-    auto restore = finally([&saved_config, &saved_locations]() {
+    auto restore = lnav::finally([&saved_config, &saved_locations]() {
         lnav_config = std::move(saved_config);
         lnav_config_locations = std::move(saved_locations);
     });

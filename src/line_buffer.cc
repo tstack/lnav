@@ -75,7 +75,14 @@ const ssize_t line_buffer::DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
 const ssize_t line_buffer::MAX_LINE_BUFFER_SIZE
     = 4 * 4 * line_buffer::DEFAULT_LINE_BUFFER_SIZE;
 
-class io_looper : public isc::service<io_looper, 4> {};
+class io_looper : public isc::service<io_looper, 4> {
+protected:
+    std::optional<std::chrono::milliseconds> compute_timeout(
+        mstime_t current_time) const override
+    {
+        return std::nullopt;
+    }
+};
 
 struct io_looper_tag {};
 

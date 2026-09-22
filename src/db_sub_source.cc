@@ -466,8 +466,7 @@ db_label_source::push_column(const column_value_t& sv)
                     // downstream renderers (chart, stats) can format
                     // values against the same base unit.
                     if (hm.hm_unit_suffix.empty()) {
-                        hm.hm_unit_suffix
-                            = from_res->unit_suffix.to_string();
+                        hm.hm_unit_suffix = from_res->unit_suffix.to_string();
                     }
                     this->dls_cell_container.push_float_with_units_cell(
                         from_res.value().value, sf);
@@ -722,9 +721,8 @@ std::optional<vis_line_t>
 db_label_source::row_for_time(timeval time_bucket)
 {
     const auto target = to_us(time_bucket);
-    const auto iter = std::lower_bound(this->dls_time_column.begin(),
-                                       this->dls_time_column.end(),
-                                       target);
+    const auto iter = std::lower_bound(
+        this->dls_time_column.begin(), this->dls_time_column.end(), target);
     if (iter != this->dls_time_column.end()) {
         return vis_line_t(std::distance(this->dls_time_column.begin(), iter));
     }
@@ -888,14 +886,13 @@ db_label_source::text_reload_data(exec_context& ec)
     auto prev_vars = this->dls_user_query_vars;
     std::string alt_msg;
 
-    auto src_guard = ec.enter_source(
-        prev_loc, fmt::format(FMT_STRING(";{}"), prev_query));
+    auto src_guard
+        = ec.enter_source(prev_loc, fmt::format(FMT_STRING(";{}"), prev_query));
     auto db_guard = ec.enter_db_source(this);
     auto cb_guard = ec.push_callback(sql_callback);
 
     ec.ec_local_vars.emplace(std::move(prev_vars));
-    auto vars_guard
-        = finally([&ec]() { ec.ec_local_vars.pop(); });
+    auto vars_guard = lnav::finally([&ec]() { ec.ec_local_vars.pop(); });
 
     return execute_sql(ec, prev_query, alt_msg);
 }

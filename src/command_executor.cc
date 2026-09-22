@@ -272,10 +272,10 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                 } else {
                     auto zoom_level
                         = ec.ec_label_source_stack.back()->get_zoom_level();
-                    auto zoom_level_str = humanize::time::duration::from(
-                                              zoom_level)
-                                              .with_compact(false)
-                                              .to_string();
+                    auto zoom_level_str
+                        = humanize::time::duration::from(zoom_level)
+                              .with_compact(false)
+                              .to_string();
 
                     bind_to_sqlite(stmt, lpc + 1, zoom_level_str);
                     retval[name] = zoom_level_str;
@@ -361,7 +361,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     auto old_mode = lnav_data.ld_mode;
     lnav_data.ld_mode = ln_mode_t::BUSY;
-    auto mode_fin = finally([old_mode]() { lnav_data.ld_mode = old_mode; });
+    auto mode_fin
+        = lnav::finally([old_mode]() { lnav_data.ld_mode = old_mode; });
     lnav_data.ld_bottom_source.grep_error("");
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
@@ -370,8 +371,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         split_ws(stmt_str, args);
 
         const auto* sql_cmd_map
-            = injector::get<lnav::commands::command_map_t*,
-                            sql_cmd_map_tag>();
+            = injector::get<lnav::commands::command_map_t*, sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
@@ -931,7 +931,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
     }
 
     std::string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
-    auto _cleanup = finally([&ec] {
+    auto _cleanup = lnav::finally([&ec] {
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
             // block the UI.

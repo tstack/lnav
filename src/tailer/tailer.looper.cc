@@ -1122,7 +1122,7 @@ tailer::looper::host_tailer::loop_body()
     }
 }
 
-std::chrono::milliseconds
+std::optional<std::chrono::milliseconds>
 tailer::looper::host_tailer::compute_timeout(mstime_t current_time) const
 {
     return 0s;
@@ -1147,12 +1147,12 @@ tailer::looper::host_tailer::get_display_path(
 }
 
 void*
-tailer::looper::host_tailer::run()
+tailer::looper::host_tailer::run(worker* w)
 {
     log_set_thread_prefix(
         fmt::format(FMT_STRING("tailer({})"), this->ht_netloc));
 
-    return service_base::run();
+    return service_base::run(w);
 }
 
 auto_pid<process_state::finished>

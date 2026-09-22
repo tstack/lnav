@@ -81,20 +81,6 @@ to_string(const char* s)
 bool is_dev_null(const struct stat& st);
 bool is_dev_null(int fd);
 
-template<typename A>
-struct final_action {  // slightly simplified
-    A act;
-    final_action(A a) : act{a} {}
-    ~final_action() { act(); }
-};
-
-template<typename A>
-final_action<A>
-finally(A act)  // deduce action type
-{
-    return final_action<A>{act};
-}
-
 size_t write_line_to(FILE* outfile, const attr_line_t& al);
 
 namespace lnav {

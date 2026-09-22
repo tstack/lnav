@@ -159,7 +159,7 @@ private:
     void check_for_new_requests();
     void check_for_finished_requests();
     void requeue_requests(mstime_t up_to_time);
-    std::chrono::milliseconds compute_timeout(
+    std::optional<std::chrono::milliseconds> compute_timeout(
         mstime_t current_time) const override;
 
     auto_mem<CURLM> cl_curl_multi;

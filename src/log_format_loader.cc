@@ -1437,7 +1437,7 @@ validate_format_file(const std::filesystem::path& filename,
     // would otherwise hand back the loaded definition and build() would
     // validate the two spliced together.
     auto saved_formats = std::exchange(LOG_FORMATS, log_formats_map_t{});
-    auto restore = finally([&saved_formats]() {
+    auto restore = lnav::finally([&saved_formats]() {
         LOG_FORMATS = std::move(saved_formats);
     });
 

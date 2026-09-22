@@ -238,6 +238,10 @@ class main_looper
     : public isc::service<main_looper>
     , public static_service {
 public:
+    main_looper() {
+        this->s_ready_workers.emplace_back(&this->s_workers[0]);
+        this->s_workers[0].w_kicked = false;
+    }
 };
 
 enum class verbosity_t : int {

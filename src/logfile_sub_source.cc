@@ -1537,7 +1537,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     }
 
     this->lss_indexing_in_progress = true;
-    auto fin = finally([this]() { this->lss_indexing_in_progress = false; });
+    auto fin
+        = lnav::finally([this]() { this->lss_indexing_in_progress = false; });
 
     iterator iter;
     size_t total_lines = 0;

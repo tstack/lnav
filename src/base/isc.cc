@@ -42,32 +42,33 @@ service_base::start()
 {
     log_debug("starting service thread for: %s", this->s_name.c_str());
     for (auto& worker : this->s_workers) {
-        worker = std::thread(&service_base::run, this);
+        worker.w_thread = std::thread(&service_base::run, this, &worker);
     }
     this->s_started = true;
 }
 
 void*
-service_base::run()
+service_base::run(worker* w)
 {
     log_info("BEGIN isc thread: %s", this->s_name.c_str());
     while (this->s_looping) {
         mstime_t current_time = getmstime();
-        auto timeout = this->compute_timeout(current_time);
+        auto timeout_opt = this->compute_timeout(current_time);
+        std::optional<msg> msg_opt;
 
-        try {
-            this->s_port.process_for(timeout);
-        } catch (const std::exception& e) {
-            log_error("%s: message failed with -- %s",
-                      this->s_name.c_str(),
-                      e.what());
-            this->s_looping = false;
-            continue;
-        } catch (...) {
-            log_error("%s: message failed with non-standard exception",
-                      this->s_name.c_str());
-            this->s_looping = false;
-            continue;
+        {
+            std::unique_lock<std::mutex> guard(this->s_mutex);
+
+            this->worker_wait(w, guard, timeout_opt);
+
+            if (!this->s_port.mp_messages.empty()) {
+                msg_opt = std::move(this->s_port.mp_messages.front());
+                this->s_port.mp_messages.pop_front();
+            }
+        }
+
+        if (msg_opt) {
+            this->process_msg(*msg_opt);
         }
         this->s_children.cleanup_children();
 
@@ -99,14 +100,18 @@ service_base::stop()
 {
     if (this->s_started) {
         log_debug("stopping service thread: %s", this->s_name.c_str());
-        if (this->s_looping) {
-            this->s_looping = false;
-            this->s_port.send(empty_msg());
+        this->s_looping = false;
+
+        {
+            std::unique_lock<std::mutex> guard(this->s_mutex);
+            for (auto& worker : this->s_workers) {
+                worker.w_cond.notify_one();
+            }
         }
         log_debug("waiting for service thread: %s", this->s_name.c_str());
         for (auto& worker : this->s_workers) {
-            if (worker.joinable()) {
-                worker.join();
+            if (worker.w_thread.joinable()) {
+                worker.w_thread.join();
             }
         }
         log_debug("joined service thread: %s", this->s_name.c_str());

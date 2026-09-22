@@ -30,7 +30,29 @@
 #ifndef lnav_guard_util_hh
 #define lnav_guard_util_hh
 
+#include <utility>
+
 namespace lnav {
+
+template<typename A>
+struct final_action {
+    explicit final_action(A a) : act{std::move(a)} {}
+    final_action(const final_action&) = delete;
+    final_action& operator=(const final_action&) = delete;
+    final_action& operator=(final_action&&) = delete;
+    final_action(final_action&&) = delete;
+    ~final_action() { act(); }
+
+private:
+    A act;
+};
+
+template<typename A>
+final_action<A>
+finally(A act)  // deduce action type
+{
+    return final_action<A>{std::move(act)};
+}
 
 struct guard_helper {
     guard_helper() = default;

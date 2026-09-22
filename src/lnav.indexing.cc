@@ -648,7 +648,7 @@ rebuild_indexes_repeatedly()
     // to publish, and headless runs never reach looper(), which is where that
     // queue is normally drained.  This is the equivalent for them.
     auto& mlooper = injector::get<main_looper&, services::main_t>();
-    mlooper.get_port().process_for(0s);
+    mlooper.process_for(0s);
 }
 
 bool
@@ -726,7 +726,7 @@ rescan_files(bool req)
         bool all_synced = true;
 
         update_active_files(fc);
-        mlooper.get_port().process_for(delay);
+        mlooper.process_for(delay);
         for (const auto& pair : lnav_data.ld_active_files.fc_other_files) {
             if (pair.second.ofd_format != file_format_t::REMOTE) {
                 continue;

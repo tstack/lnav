@@ -112,7 +112,7 @@ curl_url_strerror(CURLUcode error)
 namespace {
 
 struct curl_request_eq {
-    explicit curl_request_eq(const std::string& name) : cre_name(name){};
+    explicit curl_request_eq(const std::string& name) : cre_name(name) {};
 
     bool operator()(const std::shared_ptr<curl_request>& cr) const
     {
@@ -175,8 +175,7 @@ curl_request::string_cb(void* data, size_t size, size_t nmemb, void* userp)
     return realsize;
 }
 
-curl_request::
-curl_request(std::string name)
+curl_request::curl_request(std::string name)
     : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
 {
     ensure_curl_global_init();
@@ -247,11 +246,7 @@ ensure_curl_global_init()
     });
 }
 
-curl_looper::
-curl_looper()
-    : cl_curl_multi(curl_multi_cleanup)
-{
-}
+curl_looper::curl_looper() : cl_curl_multi(curl_multi_cleanup) {}
 
 CURLM*
 curl_looper::get_multi()
@@ -289,10 +284,10 @@ curl_looper::perform_io()
     auto timeout = this->compute_timeout(current_time);
     int running_handles;
 
-    if (timeout < 1ms) {
+    if (!timeout || *timeout < 1ms) {
         timeout = 5ms;
     }
-    curl_multi_wait(this->cl_curl_multi, nullptr, 0, timeout.count(), nullptr);
+    curl_multi_wait(this->cl_curl_multi, nullptr, 0, timeout->count(), nullptr);
     curl_multi_perform(this->cl_curl_multi, &running_handles);
 }
 
@@ -405,7 +400,7 @@ curl_looper::check_for_finished_requests()
     }
 }
 
-std::chrono::milliseconds
+std::optional<std::chrono::milliseconds>
 curl_looper::compute_timeout(mstime_t current_time) const
 {
     std::chrono::milliseconds retval = 1s;
