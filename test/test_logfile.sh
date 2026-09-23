@@ -298,6 +298,44 @@ run_test ./drive_logfile ${srcdir}/logfile_empty.0
 
 on_error_fail_with "Didn't handle empty log?"
 
+run_test ./drive_logfile -o -f w3c_log ${srcdir}/logfile_w3c.0
+
+check_output "ordered w3c file needs a time order?" <<EOF
+identity
+EOF
+
+run_test ./drive_logfile -o -f bro_conn_log ${srcdir}/logfile_bro_conn.log.0
+
+cp ${test_file_base}_${test_num}.tmp logfile_bro_conn_order.full
+awk '$2 < prev { exit 1 } { prev = $2 }' logfile_bro_conn_order.full
+on_error_fail_with "bro time order is not sorted?"
+
+head -20 ${srcdir}/logfile_bro_conn.log.0 > logfile_bro_conn_append.0
+tail -n +21 ${srcdir}/logfile_bro_conn.log.0 > logfile_bro_conn_append.tail
+run_test ./drive_logfile -o -f bro_conn_log -a logfile_bro_conn_append.tail \
+    logfile_bro_conn_append.0
+
+cmp logfile_bro_conn_order.full ${test_file_base}_${test_num}.tmp
+on_error_fail_with "appended bro lines not merged into the time order?"
+
+cp ${srcdir}/logfile_w3c.0 logfile_w3c_append.0
+cat > logfile_w3c_append.tail <<EOF
+2002-05-02 17:40:00 172.22.255.255 - 172.30.255.255 80 GET /older.jpg - 200 x
+2002-05-02 17:50:00 172.22.255.255 - 172.30.255.255 80 GET /newer.jpg - 200 x
+EOF
+run_test ./drive_logfile -o -f w3c_log -a logfile_w3c_append.tail \
+    logfile_w3c_append.0
+
+check_output "older appended w3c line not put first in the time order?" <<EOF
+5 1020361200000000
+0 1020361335000000 ignored
+1 1020361335000000 ignored
+2 1020361335000000 ignored
+3 1020361335000000 ignored
+4 1020361335000000
+6 1020361800000000
+EOF
+
 
 run_test ./drive_logfile -t -f w3c_log ${srcdir}/logfile_w3c.2
 

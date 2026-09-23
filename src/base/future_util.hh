@@ -30,8 +30,12 @@
 #ifndef lnav_future_util_hh
 #define lnav_future_util_hh
 
+#include <condition_variable>
 #include <deque>
 #include <future>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "progress.hh"
 
@@ -56,6 +60,9 @@ make_ready_future(T&& t)
 
 /**
  * A queue used to limit the number of futures that are running concurrently.
+ * Work handed to submit() runs on at most max_queue_size threads that belong
+ * to the queue and are joined when it is destroyed, rather than on a new
+ * thread per item.
  *
  * @tparam T The result of the futures.
  */
@@ -77,7 +84,47 @@ public:
     future_queue(const future_queue&) = delete;
     future_queue& operator=(const future_queue&) = delete;
 
-    ~future_queue() { this->pop_to(); }
+    ~future_queue()
+    {
+        this->pop_to();
+
+        {
+            std::lock_guard<std::mutex> lk(this->fq_task_mutex);
+            this->fq_stopping = true;
+        }
+        this->fq_task_cond.notify_all();
+        for (auto& th : this->fq_workers) {
+            th.join();
+        }
+    }
+
+    /**
+     * Run a function on one of the queue's threads.  The caller is expected
+     * to push_back() the returned future, which is what bounds how much work
+     * is outstanding.
+     *
+     * @param func The function to run, it may be move-only.
+     * @return The future for the function's result.
+     */
+    template<typename F>
+    std::future<T> submit(F&& func)
+    {
+        std::packaged_task<T()> task(std::forward<F>(func));
+        auto retval = task.get_future();
+
+        {
+            std::lock_guard<std::mutex> lk(this->fq_task_mutex);
+            this->fq_tasks.emplace_back(std::move(task));
+            if (this->fq_workers.size() < this->fq_max_queue_size
+                && this->fq_tasks.size() > this->fq_idle_workers)
+            {
+                this->fq_workers.emplace_back([this]() { this->run_tasks(); });
+            }
+        }
+        this->fq_task_cond.notify_one();
+
+        return retval;
+    }
 
     /**
      * Add a future to the queue.  If the size of the queue is greater than the
@@ -116,6 +163,36 @@ public:
     std::function<lnav::progress_result_t(std::future<T>&)> fq_processor;
     std::deque<std::future<T>> fq_deque;
     size_t fq_max_queue_size;
+
+private:
+    void run_tasks()
+    {
+        std::unique_lock<std::mutex> lk(this->fq_task_mutex);
+
+        for (;;) {
+            this->fq_idle_workers += 1;
+            this->fq_task_cond.wait(lk, [this]() {
+                return this->fq_stopping || !this->fq_tasks.empty();
+            });
+            this->fq_idle_workers -= 1;
+            if (this->fq_tasks.empty()) {
+                return;
+            }
+
+            auto task = std::move(this->fq_tasks.front());
+            this->fq_tasks.pop_front();
+            lk.unlock();
+            task();
+            lk.lock();
+        }
+    }
+
+    std::mutex fq_task_mutex;
+    std::condition_variable fq_task_cond;
+    std::deque<std::packaged_task<T()>> fq_tasks;
+    std::vector<std::thread> fq_workers;
+    size_t fq_idle_workers{0};
+    bool fq_stopping{false};
 };
 
 }  // namespace lnav::futures

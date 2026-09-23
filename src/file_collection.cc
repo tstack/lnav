@@ -344,10 +344,12 @@ struct same_file {
  * @param required Specifies whether or not the file must exist and be valid.
  */
 std::optional<std::future<file_collection>>
-file_collection::watch_logfile(const std::string& user_req,
-                               const std::string& filename,
-                               logfile_open_options& loo,
-                               bool required)
+file_collection::watch_logfile(
+    lnav::futures::future_queue<file_collection>& fq,
+    const std::string& user_req,
+    const std::string& filename,
+    logfile_open_options& loo,
+    bool required)
 {
     static auto op = lnav_operation{__FUNCTION__};
 
@@ -738,7 +740,7 @@ file_collection::watch_logfile(const std::string& user_req,
             return retval;
         };
 
-        return std::async(std::launch::async, std::move(func));
+        return fq.submit(std::move(func));
     }
 
     auto lf = *file_iter;
@@ -943,7 +945,8 @@ file_collection::expand_filename(
 
             if (required || access(iter->second.c_str(), R_OK) == 0) {
                 auto future_opt
-                    = watch_logfile(filename_key, iter->second, loo, required);
+                    = watch_logfile(
+                        fq, filename_key, iter->second, loo, required);
                 if (future_opt) {
                     auto fut = std::move(future_opt.value());
                     if (fq.push_back(std::move(fut))

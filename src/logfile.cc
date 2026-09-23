@@ -29,9 +29,11 @@
  * @file logfile.cc
  */
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -340,6 +342,7 @@ logfile::reset_internal_state_for_reindex()
 {
     log_debug("resetting internal state for reindex");
     this->lf_index.clear();
+    this->reset_time_order();
     this->lf_index_base = 0;
     this->lf_input_lines = 0;
     this->lf_index_size = 0;
@@ -389,6 +392,7 @@ logfile::discard_index_before(size_t index)
 
     this->lf_index.erase(this->lf_index.begin(),
                          this->lf_index.begin() + count);
+    this->reset_time_order();
     this->lf_index_base += count;
 
     // Everything below refers to lines by their position in the index or
@@ -848,6 +852,7 @@ logfile::build_content_map()
         this->lf_pattern_locks.pl_lines.clear();
         this->lf_value_stats.clear();
         this->lf_index.clear();
+        this->reset_time_order();
         this->lf_upper_bound_size = std::nullopt;
     }
 
@@ -886,6 +891,117 @@ logfile::exists() const
     auto st = stat_res.unwrap();
     return this->lf_stat.st_dev == st.st_dev
         && this->lf_stat.st_ino == st.st_ino;
+}
+
+void
+logfile::reset_time_order()
+{
+    this->lf_time_order.clear();
+    this->lf_time_order_size = 0;
+}
+
+void
+logfile::truncate_time_order(size_t line_count)
+{
+    if (line_count >= this->lf_time_order_size) {
+        return;
+    }
+
+    this->lf_time_order.erase(
+        std::remove_if(this->lf_time_order.begin(),
+                       this->lf_time_order.end(),
+                       [line_count](auto index) { return index >= line_count; }),
+        this->lf_time_order.end());
+    this->lf_time_order_size = line_count;
+}
+
+void
+logfile::update_time_order(bool recheck)
+{
+    if (this->lf_format == nullptr) {
+        return;
+    }
+
+    if (recheck) {
+        // Lines that were already covered may have new times.
+        this->reset_time_order();
+    }
+
+    const auto line_count = this->lf_index.size();
+    this->truncate_time_order(line_count);
+
+    if (!recheck && this->lf_format->lf_time_ordered
+        && this->lf_time_order.empty())
+    {
+        // process_prefix() rewrites an out-of-order time to the time of the
+        // line before it, so new lines cannot break the order.
+        this->lf_time_order_size = line_count;
+        return;
+    }
+
+    const auto old_size = this->lf_time_order_size;
+    if (old_size == line_count) {
+        return;
+    }
+    this->lf_time_order_size = line_count;
+
+    if (this->lf_time_order.empty()) {
+        auto in_order = true;
+        for (auto index = std::max(old_size, size_t{1}); index < line_count;
+             index++)
+        {
+            if (this->lf_index[index] < this->lf_index[index - 1]) {
+                in_order = false;
+                break;
+            }
+        }
+        if (in_order) {
+            return;
+        }
+        this->lf_time_order.resize(old_size);
+        std::iota(this->lf_time_order.begin(), this->lf_time_order.end(), 0);
+    }
+
+    const auto cmp = [this](uint32_t lhs, uint32_t rhs) {
+        return this->lf_index[lhs] < this->lf_index[rhs];
+    };
+    const auto mid_off = this->lf_time_order.size();
+    this->lf_time_order.resize(line_count);
+    auto mid = this->lf_time_order.begin() + mid_off;
+    std::iota(mid, this->lf_time_order.end(), old_size);
+    std::sort(mid, this->lf_time_order.end(), cmp);
+    if (mid != this->lf_time_order.begin() && cmp(*mid, *std::prev(mid))) {
+        std::inplace_merge(
+            this->lf_time_order.begin(), mid, this->lf_time_order.end(), cmp);
+    }
+}
+
+const logline&
+logfile::earliest_line_from(size_t line) const
+{
+    if (this->lf_time_order.empty()) {
+        return this->lf_index[line];
+    }
+
+    return *std::min_element(this->lf_index.begin() + line,
+                             this->lf_index.end());
+}
+
+size_t
+logfile::time_order_lower_bound(std::chrono::microseconds us) const
+{
+    if (this->lf_time_order.empty()) {
+        return std::distance(this->lf_index.begin(), this->find_from_time(us));
+    }
+
+    const auto iter = std::lower_bound(
+        this->lf_time_order.begin(),
+        this->lf_time_order.end(),
+        us,
+        [this](uint32_t index, std::chrono::microseconds rhs) {
+            return this->lf_index[index] < rhs;
+        });
+    return std::distance(this->lf_time_order.begin(), iter);
 }
 
 auto
@@ -1525,8 +1641,6 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         line_to_update.set_time_skew(true);
                         line_to_update.set_time(second_to_last.get_time<>());
                     }
-                } else {
-                    retval = true;
                 }
             }
         }
@@ -1744,6 +1858,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_index.pop_back();
             rollback_index_start = this->lf_index.size();
             rollback_size += 1;
+            this->truncate_time_order(rollback_index_start);
 
             if (!this->lf_index.empty()) {
                 auto last_line = std::prev(this->lf_index.end());
@@ -2373,6 +2488,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
+    this->update_time_order(retval == rebuild_result_t::NEW_ORDER);
+
     this->lf_index_time
         = std::chrono::seconds{this->lf_line_buffer.get_file_time()};
     if (this->lf_index_time.count() == 0) {
@@ -2388,6 +2505,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     this->lf_activity.la_index.is_memory_bytes
         = (this->lf_index.capacity() * sizeof(logline))
+        + (this->lf_time_order.capacity() * sizeof(uint32_t))
         + (this->lf_value_stats.capacity() * sizeof(logline_value_stats))
         + this->lf_plain_msg_buffer.capacity()
         + this->lf_allocator.getNumBytesAllocated();
@@ -2859,6 +2977,7 @@ logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
         timeradd(&diff, &this->lf_time_offset, &new_time);
         iter.set_time(new_time);
     }
+    this->reset_time_order();
     this->lf_sort_needed = true;
     this->lf_index_generation += 1;
 }

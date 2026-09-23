@@ -379,6 +379,27 @@ public:
 
     const_iterator find_from_time(std::chrono::microseconds us) const;
 
+    /**
+     * @return The indexes of the lines in time order, or an empty vector
+     *   when the index is already in time order.
+     */
+    const std::vector<uint32_t>& get_time_order() const
+    {
+        return this->lf_time_order;
+    }
+
+    /**
+     * @return The line with the lowest time from the given line to the end
+     *   of the index.  The line must be less than size().
+     */
+    const logline& earliest_line_from(size_t line) const;
+
+    /**
+     * @return The position in the time order of the first line whose time
+     *   is not less than the given time.
+     */
+    size_t time_order_lower_bound(std::chrono::microseconds us) const;
+
     logline& operator[](int index) { return this->lf_index[index]; }
 
     std::optional<const_iterator> find_line(int line_number) const
@@ -812,6 +833,12 @@ private:
 
     void reset_internal_state_for_reindex();
 
+    void reset_time_order();
+
+    void truncate_time_order(size_t line_count);
+
+    void update_time_order(bool recheck);
+
     std::filesystem::path lf_filename;
     std::string lf_filename_as_string;
     logfile_open_options lf_options;
@@ -826,6 +853,8 @@ private:
     std::shared_ptr<log_format> lf_format;
     log_format_scan_match lf_format_match;
     std::vector<logline> lf_index;
+    std::vector<uint32_t> lf_time_order;
+    size_t lf_time_order_size{0};
     size_t lf_index_base{0};
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};

@@ -265,6 +265,7 @@ struct file_collection {
                          bool required);
 
     std::optional<std::future<file_collection>> watch_logfile(
+        lnav::futures::future_queue<file_collection>& fq,
         const std::string& user_req,
         const std::string& filename,
         logfile_open_options& loo,

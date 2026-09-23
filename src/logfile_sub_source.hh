@@ -1030,7 +1030,6 @@ private:
     line_context_t lss_line_context{line_context_t::none};
     bool lss_force_rebuild{false};
     bool lss_merge_deferred{false};
-    bool lss_deferred_order_changed{false};
     std::vector<std::unique_ptr<logfile_data>> lss_files;
     unsigned int lss_all_timestamp_flags{0};
 

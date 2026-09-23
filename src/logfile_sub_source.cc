@@ -1478,16 +1478,30 @@ logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
 struct sort_input {
     logfile_sub_source::logfile_data* si_file_data;
     logfile* si_file_ptr;
+    /**
+     * The file's lines in time order, or nullptr when the index is already in
+     * time order.  The merge works in positions of this order.
+     */
+    const uint32_t* si_order;
 
     sort_input(logfile_sub_source::logfile_data* file_data, logfile* file_ptr)
-        : si_file_data(file_data), si_file_ptr(file_ptr)
+        : si_file_data(file_data), si_file_ptr(file_ptr),
+          si_order(file_ptr->get_time_order().empty()
+                       ? nullptr
+                       : file_ptr->get_time_order().data())
     {
     }
 
-    logfile::const_iterator next() const
+    size_t next_pos() const { return this->si_file_data->ld_lines_indexed; }
+
+    size_t end_pos() const { return this->si_file_ptr->size(); }
+
+    const logline& next() const
     {
-        return this->si_file_ptr->begin()
-            + this->si_file_data->ld_lines_indexed;
+        const auto pos = this->next_pos();
+
+        return *(this->si_file_ptr->begin()
+                 + (this->si_order == nullptr ? pos : this->si_order[pos]));
     }
 
     /**
@@ -1496,36 +1510,51 @@ struct sort_input {
      * before it are already in the index and a whole-file search could
      * otherwise land behind it.
      */
-    logfile::const_iterator find_run_end(const logline& limit) const
+    size_t find_run_end(const logline& limit) const
     {
+        const auto begin = this->si_file_ptr->begin();
+        size_t retval;
+
         // Galloping rather than bisecting: the more the files overlap, the
         // shorter each run is and the more often this is called, so the cost
         // should scale with the length of the run and not with what is left
         // of the file.
-        auto retval = lnav::gallop_lower_bound(
-            this->next(), this->end(), limit.get_time());
-
+        //
         // The bound is by time alone, so walk over the lines that share the
         // limit's timestamp but still sort before it.
-        while (retval != this->end() && *retval < limit) {
-            ++retval;
+        if (this->si_order == nullptr) {
+            auto iter = lnav::gallop_lower_bound(
+                begin + this->next_pos(), this->si_file_ptr->end(),
+                limit.get_time());
+            while (iter != this->si_file_ptr->end() && *iter < limit) {
+                ++iter;
+            }
+            retval = std::distance(begin, iter);
+        } else {
+            const auto* order_end = this->si_order + this->end_pos();
+            const auto* iter = lnav::gallop_lower_bound(
+                this->si_order + this->next_pos(),
+                order_end,
+                limit.get_time(),
+                [begin](uint32_t index, std::chrono::microseconds rhs) {
+                    return begin[index] < rhs;
+                });
+            while (iter != order_end && begin[*iter] < limit) {
+                ++iter;
+            }
+            retval = std::distance(this->si_order, iter);
         }
-        if (retval == this->next()) {
+        if (retval == this->next_pos()) {
             // The heads compare equal, so consume a single line to guarantee
             // that the merge makes progress.
-            ++retval;
+            retval += 1;
         }
         return retval;
     }
 
-    logfile::const_iterator end() const { return this->si_file_ptr->end(); }
-
     bool operator<(const sort_input& other) const
     {
-        const auto l_iter = this->next();
-        const auto r_iter = other.next();
-
-        return *r_iter < *l_iter;
+        return other.next() < this->next();
     }
 };
 
@@ -1543,11 +1572,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     iterator iter;
     size_t total_lines = 0;
     size_t est_remaining_lines = 0;
-    auto all_time_ordered_formats = true;
-    auto full_sort = false;
-    // Set when a file's own lf_index can no longer be assumed sorted,
-    // which is the one thing that rules out the k-way merge below.
-    auto order_changed = false;
     int file_count = 0;
     auto force = std::exchange(this->lss_force_rebuild, false);
     auto retval = rebuild_result::rr_no_change;
@@ -1557,7 +1581,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     if (force) {
         log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
-        full_sort = true;
         this->tss_level_filtered_count = 0;
         this->lss_index.clear();
     }
@@ -1615,12 +1638,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           ld.ld_file_index);
                 force = true;
                 retval = rebuild_result::rr_full_rebuild;
-                full_sort = true;
             }
         } else {
-            if (!lf->get_format_ptr()->lf_time_ordered) {
-                all_time_ordered_formats = false;
-            }
             const auto pre_iter = prescan.find(lf);
 
             this->lss_all_timestamp_flags |= pre_iter == prescan.end()
@@ -1667,7 +1686,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         if (!this->lss_index.empty()
                             && lf->size() > ld.ld_lines_indexed)
                         {
-                            auto& new_file_line = (*lf)[ld.ld_lines_indexed];
+                            const auto& new_file_line
+                                = lf->earliest_line_from(ld.ld_lines_indexed);
                             auto cl = this->lss_index.back().value();
                             auto* last_indexed_line = this->find_line(cl);
 
@@ -1688,8 +1708,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                         ? (uint64_t) -1
                                         : last_indexed_line->get_time<>()
                                               .count());
-                                if (retval <= rebuild_result::rr_partial_rebuild
-                                    && all_time_ordered_formats)
+                                if (retval <= rebuild_result::rr_partial_rebuild)
                                 {
                                     retval = rebuild_result::rr_partial_rebuild;
                                     if (!lowest_us
@@ -1700,11 +1719,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                     }
                                 } else {
                                     log_debug(
-                                        "already doing full rebuild, doing "
-                                        "full_sort as well");
+                                        "already doing full rebuild, forcing");
                                     force = true;
-                                    full_sort = true;
-                                    order_changed = true;
                                 }
                             }
                         }
@@ -1715,8 +1731,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                   lf->get_filename().c_str());
                         retval = rebuild_result::rr_full_rebuild;
                         force = true;
-                        full_sort = true;
-                        order_changed = true;
                         break;
                 }
             }
@@ -1727,35 +1741,20 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
-    if (!all_time_ordered_formats
-        && retval == rebuild_result::rr_partial_rebuild)
-    {
-        force = true;
-        full_sort = true;
-        retval = rebuild_result::rr_full_rebuild;
-    }
-
     if (this->lss_merge_deferred || needs_more_indexing) {
         // The files have been indexed, but merging them waits until they
-        // have all been found.  A file only reports once that its lines are
-        // out of order, so that is kept for when the merge happens.
-        this->lss_deferred_order_changed = this->lss_deferred_order_changed
-            || order_changed;
+        // have all been found.
         this->lss_force_rebuild = this->lss_force_rebuild || force;
         log_debug(
             "merge deferred (files=%d; lines=%zu)", file_count, total_lines);
         return rebuild_result::rr_in_progress;
     }
-    order_changed = std::exchange(this->lss_deferred_order_changed, false)
-        || order_changed;
-
     if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
-        // The index array was reallocated, just do a full sort/rebuild since
-        // it's been cleared out.
+        // The index array was reallocated, just do a full rebuild since it's
+        // been cleared out.
         log_debug("expanding index capacity %zu", this->lss_index.ba_capacity);
         force = true;
         retval = rebuild_result::rr_full_rebuild;
-        full_sort = true;
         this->tss_level_filtered_count = 0;
     }
 
@@ -1793,18 +1792,11 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
-            require(lf->get_format_ptr()->lf_time_ordered);
-
-            auto line_iter = lf->find_from_time(lowest_us.value());
-
-            if (line_iter != lf->end()) {
-                log_debug("lowest line time %ld; line %ld; size %ld; path=%s",
-                          line_iter->get_timeval().tv_sec,
-                          std::distance(lf->cbegin(), line_iter),
-                          lf->size(),
-                          lf->get_filename_as_string().c_str());
-            }
-            ld.ld_lines_indexed = std::distance(lf->cbegin(), line_iter);
+            ld.ld_lines_indexed = lf->time_order_lower_bound(lowest_us.value());
+            log_debug("lowest line position %zu; size %zu; path=%s",
+                      ld.ld_lines_indexed,
+                      lf->size(),
+                      lf->get_filename_as_string().c_str());
             remaining += lf->size() - ld.ld_lines_indexed;
         }
 
@@ -1866,7 +1858,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     if (retval != rebuild_result::rr_no_change || force) {
         size_t index_size = 0, start_size = this->lss_index.size();
-        logline_cmp line_cmper(*this);
 
         // Metric files compose their LOG-view line at render time from
         // timestamp + ` name=value` pairs across every sibling metric
@@ -1911,63 +1902,75 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             = std::max(this->lss_longest_line, metric_total_width + 1);
 
         if (this->lss_index.empty()) {
-            // Building from nothing.  Each file's lf_index is already in time
-            // order when its format is time-ordered -- an out-of-order
-            // timestamp is rewritten to its predecessor's during the scan --
-            // so the k-way merge below arrives at the same order for
-            // N*log2(file_count) comparisons and sequential per-file reads,
-            // where the sort needs N*log2(N) that chase two pointers each.
-            //
             // The merge only consumes [ld_lines_indexed, end) of each file,
             // so the counters have to be at zero for it to see every line.
-            // They are on a first build and after the force block above; the
-            // check means any other way of arriving here with an empty index
-            // falls back to the sort rather than dropping lines.
-            const auto merge_from_scratch = !order_changed
-                && all_time_ordered_formats
-                && std::all_of(
-                    this->lss_files.begin(),
-                    this->lss_files.end(),
-                    [](const auto& ld) { return ld->ld_lines_indexed == 0; });
-
-            full_sort = !merge_from_scratch;
+            // They are on a first build and after the force block above, this
+            // covers any other way of arriving here with an empty index.
+            for (auto& ld : this->lss_files) {
+                ld->ld_lines_indexed = 0;
+            }
         }
 
-        if (full_sort) {
-            log_trace("rebuild_index full sort");
-            for (auto& ld : this->lss_files) {
-                auto* lf = ld->get_file_ptr();
+        // Every file is walked in time order, either through its lf_index
+        // directly or through its time order, so a k-way merge builds the
+        // index for N*log2(file_count) comparisons.
+        std::vector<sort_input> sort_inputs;
 
-                if (lf == nullptr) {
-                    continue;
-                }
+        for (auto& ld : this->lss_files) {
+            auto* lf = ld->get_file_ptr();
+            if (lf == nullptr) {
+                continue;
+            }
+            index_size += lf->size();
+            if (ld->ld_lines_indexed >= lf->size()) {
+                // Nothing left to merge, and an input with no next() line
+                // cannot be compared.
+                continue;
+            }
+            sort_inputs.emplace_back(ld.get(), lf);
+        }
+        std::stable_sort(sort_inputs.begin(), sort_inputs.end());
+        for (const auto& si : sort_inputs) {
+            log_debug("sort_input: %s:%zu%s",
+                      si.si_file_ptr->get_filename_as_string().c_str(),
+                      si.si_file_data->ld_lines_indexed,
+                      si.si_order == nullptr ? "" : " (time order)");
+        }
 
-                for (size_t line_index = 0; line_index < lf->size();
-                     line_index++)
-                {
-                    const auto lf_iter
-                        = ld->get_file_ptr()->begin() + line_index;
-                    if (lf_iter->is_ignored()) {
-                        continue;
-                    }
+        file_off_t index_off = 0;
+        if (this->lss_sorting_observer) {
+            this->lss_sorting_observer(*this, index_off, index_size);
+        }
 
-                    content_line_t con_line(
-                        ld->ld_file_index * MAX_LINES_PER_FILE + line_index);
+        // Appends the lines at merge positions [start, end) of a file.  The
+        // caller picks index_of once per run, so a file whose lf_index is
+        // already in time order does not pay for the lookup on every line.
+        auto append_run = [this, &index_off, index_size](
+                              logfile_data& ld,
+                              size_t start,
+                              size_t end,
+                              auto index_of) {
+            auto* lf = ld.get_file_ptr();
+            const auto lf_begin = lf->begin();
+            const auto file_base = ld.ld_file_index * MAX_LINES_PER_FILE;
+
+            for (auto pos = start; pos < end; ++pos) {
+                const auto line_index = index_of(pos);
+                const auto lf_iter = lf_begin + line_index;
+
+                if (!lf_iter->is_ignored()) {
+                    content_line_t con_line(file_base + line_index);
 
                     if (lf_iter->is_meta_marked()) {
                         auto start_iter = lf_iter;
                         while (start_iter->is_continued()) {
                             --start_iter;
                         }
-                        int start_index
-                            = start_iter - ld->get_file_ptr()->begin();
-                        content_line_t start_con_line(ld->ld_file_index
-                                                          * MAX_LINES_PER_FILE
-                                                      + start_index);
+                        int start_index = start_iter - lf_begin;
+                        content_line_t start_con_line(file_base + start_index);
 
                         auto& line_meta
-                            = ld->get_file_ptr()
-                                  ->get_bookmark_metadata()[start_index];
+                            = lf->get_bookmark_metadata()[start_index];
                         if (line_meta.has(bookmark_metadata::categories::notes))
                         {
                             this->lss_user_marks[&textview_curses::BM_META]
@@ -1983,138 +1986,56 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     this->lss_index.push_back(
                         indexed_content{con_line, lf_iter});
                 }
-            }
 
-            if (this->lss_sorting_observer) {
-                this->lss_sorting_observer(*this, 0, this->lss_index.size());
-            }
-            std::sort(
-                this->lss_index.begin(), this->lss_index.end(), line_cmper);
-            if (this->lss_sorting_observer) {
-                this->lss_sorting_observer(
-                    *this, this->lss_index.size(), this->lss_index.size());
-            }
-        } else {
-            std::vector<sort_input> sort_inputs;
-
-            for (auto& ld : this->lss_files) {
-                auto* lf = ld->get_file_ptr();
-                if (lf == nullptr) {
-                    continue;
+                index_off += 1;
+                if (index_off % (1024 * 1024) == 0
+                    && this->lss_sorting_observer)
+                {
+                    this->lss_sorting_observer(*this, index_off, index_size);
                 }
-                index_size += lf->size();
-                if (ld->ld_lines_indexed >= lf->size()) {
-                    // Nothing left to merge, and an input with no next() line
-                    // cannot be compared.
-                    continue;
-                }
-                sort_inputs.emplace_back(ld.get(), lf);
             }
-            std::stable_sort(sort_inputs.begin(), sort_inputs.end());
-            for (const auto& si : sort_inputs) {
-                log_debug("sort_input: %s:%zu",
-                          si.si_file_ptr->get_filename_as_string().c_str(),
-                          si.si_file_data->ld_lines_indexed);
+        };
+
+        log_trace("k-way merge");
+        while (!sort_inputs.empty()) {
+            auto& next_si = sort_inputs.back();
+            auto* ld = next_si.si_file_data;
+            const auto run_start = next_si.next_pos();
+            const auto run_end = sort_inputs.size() == 1
+                ? next_si.end_pos()
+                : next_si.find_run_end(
+                      sort_inputs[sort_inputs.size() - 2].next());
+
+            if (next_si.si_order == nullptr) {
+                append_run(
+                    *ld, run_start, run_end, [](size_t pos) { return pos; });
+            } else {
+                const auto* order = next_si.si_order;
+                append_run(*ld, run_start, run_end, [order](size_t pos) {
+                    return static_cast<size_t>(order[pos]);
+                });
             }
+            ld->ld_lines_indexed = run_end;
 
-            file_off_t index_off = 0;
-            if (this->lss_sorting_observer) {
-                this->lss_sorting_observer(*this, index_off, index_size);
-            }
-            log_trace("k-way merge");
-            while (!sort_inputs.empty()) {
-                auto& next_si = sort_inputs.back();
-                auto* ld = next_si.si_file_data;
-                auto range_start_iter = next_si.next();
-                logfile::const_iterator range_end_iter;
-                if (sort_inputs.size() == 1) {
-                    range_end_iter = next_si.end();
-                } else {
-                    range_end_iter = next_si.find_run_end(
-                        *sort_inputs[sort_inputs.size() - 2].next());
-                }
-
-                auto range_count
-                    = std::distance(range_start_iter, range_end_iter);
-                for (; range_start_iter != range_end_iter; ++range_start_iter) {
-                    auto lf_iter = range_start_iter;
-                    if (!lf_iter->is_ignored()) {
-                        int file_index = ld->ld_file_index;
-                        int line_index = lf_iter - ld->get_file_ptr()->begin();
-
-                        content_line_t con_line(file_index * MAX_LINES_PER_FILE
-                                                + line_index);
-
-                        if (lf_iter->is_meta_marked()) {
-                            auto start_iter = lf_iter;
-                            while (start_iter->is_continued()) {
-                                --start_iter;
-                            }
-                            int start_index
-                                = start_iter - ld->get_file_ptr()->begin();
-                            content_line_t start_con_line(
-                                file_index * MAX_LINES_PER_FILE + start_index);
-
-                            auto& line_meta
-                                = ld->get_file_ptr()
-                                      ->get_bookmark_metadata()[start_index];
-                            if (line_meta.has(
-                                    bookmark_metadata::categories::notes))
-                            {
-                                this->lss_user_marks[&textview_curses::BM_META]
-                                    .insert_once(start_con_line);
-                            }
-                            if (line_meta.has(
-                                    bookmark_metadata::categories::partition))
-                            {
-                                this->lss_user_marks
-                                    [&textview_curses::BM_PARTITION]
-                                        .insert_once(start_con_line);
-                            }
-                        }
-                        this->lss_index.push_back(
-                            indexed_content{con_line, lf_iter});
+            if (run_end == next_si.end_pos()) {
+                log_debug("fully consumed %s",
+                          next_si.si_file_ptr->get_filename_as_string().c_str());
+                sort_inputs.pop_back();
+            } else {
+                for (auto si_iter = std::next(sort_inputs.rbegin());
+                     si_iter != sort_inputs.rend();
+                     ++si_iter)
+                {
+                    auto prev_si_iter = std::prev(si_iter);
+                    if (prev_si_iter->next() < si_iter->next()) {
+                        break;
                     }
-
-                    index_off += 1;
-                    if (index_off % (1024 * 1024) == 0
-                        && this->lss_sorting_observer)
-                    {
-                        this->lss_sorting_observer(
-                            *this, index_off, index_size);
-                    }
-                }
-                next_si.si_file_data->ld_lines_indexed += range_count;
-
-                if (range_end_iter == next_si.end()) {
-                    log_debug(
-                        "fully consumed %s",
-                        next_si.si_file_ptr->get_filename_as_string().c_str());
-                    sort_inputs.pop_back();
-                } else {
-                    for (auto si_iter = std::next(sort_inputs.rbegin());
-                         si_iter != sort_inputs.rend();
-                         ++si_iter)
-                    {
-                        auto prev_si_iter = std::prev(si_iter);
-                        if (*prev_si_iter->next() < *si_iter->next()) {
-                            break;
-                        }
-#if 0
-                        log_debug(
-                            "swapping %s %s",
-                            prev_si_iter->si_file_ptr->get_filename_as_string()
-                                .c_str(),
-                            si_iter->si_file_ptr->get_filename_as_string()
-                                .c_str());
-#endif
-                        std::swap(*si_iter, *prev_si_iter);
-                    }
+                    std::swap(*si_iter, *prev_si_iter);
                 }
             }
-            if (this->lss_sorting_observer) {
-                this->lss_sorting_observer(*this, index_size, index_size);
-            }
+        }
+        if (this->lss_sorting_observer) {
+            this->lss_sorting_observer(*this, index_size, index_size);
         }
 
         for (iter = this->lss_files.begin(); iter != this->lss_files.end();

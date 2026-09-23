@@ -130,6 +130,7 @@ add_executable(
         cell_container.tests.cc
         color_spaces.tests.cc
         fs_util.tests.cc
+        future_util.tests.cc
         gallop.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc

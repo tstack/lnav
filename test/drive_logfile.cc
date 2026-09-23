@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <fstream>
 
 #include <assert.h>
 #include <stdio.h>
@@ -54,6 +55,7 @@ typedef enum {
     MODE_LINE_COUNT,
     MODE_TIMES,
     MODE_LEVELS,
+    MODE_TIME_ORDER,
 } dl_mode_t;
 
 static auto bound_file_options_hier
@@ -71,6 +73,7 @@ main(int argc, char* argv[])
     int c, retval = EXIT_SUCCESS;
     dl_mode_t mode = MODE_NONE;
     string expected_format;
+    string append_path;
 
     {
         static auto builtin_formats
@@ -92,8 +95,11 @@ main(int argc, char* argv[])
         load_formats(paths, errors);
     }
 
-    while ((c = getopt(argc, argv, "ef:ltv")) != -1) {
+    while ((c = getopt(argc, argv, "a:ef:lotv")) != -1) {
         switch (c) {
+            case 'a':
+                append_path = optarg;
+                break;
             case 'f':
                 expected_format = optarg;
                 break;
@@ -102,6 +108,9 @@ main(int argc, char* argv[])
                 break;
             case 'l':
                 mode = MODE_LINE_COUNT;
+                break;
+            case 'o':
+                mode = MODE_TIME_ORDER;
                 break;
             case 't':
                 mode = MODE_TIMES;
@@ -158,6 +167,16 @@ main(int argc, char* argv[])
                    == st.st_mtime);
         }
 
+        if (!append_path.empty()) {
+            std::ifstream append_in(append_path, std::ios::binary);
+            std::ofstream log_out(argv[0], std::ios::binary | std::ios::app);
+
+            log_out << append_in.rdbuf();
+            log_out.close();
+            lf->rebuild_index();
+            assert(!lf->is_closed());
+        }
+
         switch (mode) {
             case MODE_NONE:
                 break;
@@ -197,6 +216,23 @@ main(int argc, char* argv[])
                         "%.*s 0x%x\n", level_sf.length(), level_sf.data(), flags);
                 }
                 break;
+            case MODE_TIME_ORDER: {
+                const auto& order = lf->get_time_order();
+
+                if (order.empty()) {
+                    printf("identity\n");
+                    break;
+                }
+                for (const auto index : order) {
+                    const auto& ll = (*lf)[index];
+
+                    printf("%u %lld%s\n",
+                           index,
+                           (long long) ll.get_time<>().count(),
+                           ll.is_ignored() ? " ignored" : "");
+                }
+                break;
+            }
         }
     }
 
