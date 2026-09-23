@@ -674,6 +674,9 @@ DISTCLEANFILES = \
 	truncfile.0 \
 	ln.dbg \
 	logfile_append.0 \
+	logfile_bro_conn_append.0 \
+	logfile_bro_conn_append.tail \
+	logfile_bro_conn_order.full \
 	logfile_changed.0 \
 	logfile_rollover.1.live \
 	test.log \
@@ -683,9 +686,12 @@ DISTCLEANFILES = \
 	logfile_syslog_test.2 \
 	logfile_syslog_fr_test.0 \
 	logfile_syslog_with_mixed_times_test.0 \
+	logfile_w3c_append.0 \
+	logfile_w3c_append.tail \
 	textfile_long_lines.0 \
 	not:a:remote:file \
 	rollover_in.0 \
+	since-partial-line.log \
 	syslog_log.sql \
 	test-logs.tgz \
 	test-logs-trunc.tgz \
@@ -721,6 +727,9 @@ distclean-local:
 	$(RM_V)rm -rf tabular-sessions
 	$(RM_V)rm -rf tui-home
 	$(RM_V)rm -rf ../installer-test-home
+	$(RM_V)rm -rf demux-work
+	$(RM_V)rm -rf split-*
+	$(RM_V)rm -f “quoted.0
 
 expected:
 	$(top_srcdir)/update_expected_output.py $(srcdir) $(builddir)
