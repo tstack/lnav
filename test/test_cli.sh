@@ -103,14 +103,17 @@ run_cap_test ${lnav_test} -m file split --time xyz ${test_dir}/logfile_syslog.0
 
 run_cap_test ${lnav_test} -m file split ${test_dir}
 
-rm -rf split-out
-mkdir split-out
+# the year for these timestamps comes from the modification time
+rm -rf split-src split-out
+mkdir split-src split-out
+cat ${test_dir}/logfile_syslog.0 > split-src/logfile_syslog.0
+touch -t 200711030923 split-src/logfile_syslog.0
 
 run_cap_test ${lnav_test} -m file split -o split-out \
-    ${test_dir}/logfile_syslog.0
+    split-src/logfile_syslog.0
 
 run_cap_test ${lnav_test} -m file split --lines 2 -o split-out \
-    ${test_dir}/logfile_syslog.0
+    split-src/logfile_syslog.0
 
 cat split-out/logfile_syslog.0.* > split-out.syslog.cat
 run_cap_test cmp split-out.syslog.cat ${test_dir}/logfile_syslog.0
@@ -118,7 +121,7 @@ run_cap_test cmp split-out.syslog.cat ${test_dir}/logfile_syslog.0
 # refuses to overwrite the pieces from the previous run
 run_cap_test env TEST_COMMENT="split overwrite" ${lnav_test} -m file split \
     --lines 2 -o split-out \
-    ${test_dir}/logfile_syslog.0
+    split-src/logfile_syslog.0
 
 # timestamps without a year cannot be split by time
 run_cap_test ${lnav_test} -m file split --time 1m -o split-out \
@@ -153,7 +156,7 @@ rm -rf split-space
 mkdir split-space
 ${lnav_test} -nN -c ':config /tuning/archive-manager/min-free-space 1125899906842624'
 ${lnav_test} -m file split --lines 2 -o split-space \
-    ${test_dir}/logfile_syslog.0 2> split-space.err
+    split-src/logfile_syslog.0 2> split-space.err
 sed -e 's/only .* is available/only NNN is available/' \
     split-space.err > split-space.masked
 run_cap_test cat split-space.masked

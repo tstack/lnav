@@ -170,6 +170,7 @@ main(int argc, char* argv[])
         if (!append_path.empty()) {
             std::ifstream append_in(append_path, std::ios::binary);
             std::ofstream log_out(argv[0], std::ios::binary | std::ios::app);
+            assert(log_out.is_open());
 
             log_out << append_in.rdbuf();
             log_out.close();

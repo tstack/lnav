@@ -318,7 +318,7 @@ run_test ./drive_logfile -o -f bro_conn_log -a logfile_bro_conn_append.tail \
 cmp logfile_bro_conn_order.full ${test_file_base}_${test_num}.tmp
 on_error_fail_with "appended bro lines not merged into the time order?"
 
-cp ${srcdir}/logfile_w3c.0 logfile_w3c_append.0
+cat ${srcdir}/logfile_w3c.0 > logfile_w3c_append.0
 cat > logfile_w3c_append.tail <<EOF
 2002-05-02 17:40:00 172.22.255.255 - 172.30.255.255 80 GET /older.jpg - 200 x
 2002-05-02 17:50:00 172.22.255.255 - 172.30.255.255 80 GET /newer.jpg - 200 x

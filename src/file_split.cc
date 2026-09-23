@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <optional>
 #include <set>
 
 #include "file_split.hh"
@@ -429,19 +430,25 @@ split(const std::filesystem::path& path,
                     .append(lnav::roles::file(opts.o_output_dir.string())))
                 .with_reason("not a directory"));
     }
+    std::optional<std::filesystem::path> existing_piece;
     for (const auto& entry :
          std::filesystem::directory_iterator(opts.o_output_dir, ec))
     {
-        if (is_piece_name(entry.path(), path)) {
-            return Err(lnav::console::user_message::error(
-                           attr_line_t("refusing to overwrite pieces of ")
-                               .append(lnav::roles::file(path.string())))
-                           .with_reason(attr_line_t("found existing file ")
-                                            .append(lnav::roles::file(
-                                                entry.path().string())))
-                           .with_help("remove the existing pieces or use a "
-                                      "different output directory"));
+        if (is_piece_name(entry.path(), path)
+            && (!existing_piece || entry.path() < existing_piece.value()))
+        {
+            existing_piece = entry.path();
         }
+    }
+    if (existing_piece) {
+        return Err(lnav::console::user_message::error(
+                       attr_line_t("refusing to overwrite pieces of ")
+                           .append(lnav::roles::file(path.string())))
+                       .with_reason(attr_line_t("found existing file ")
+                                        .append(lnav::roles::file(
+                                            existing_piece->string())))
+                       .with_help("remove the existing pieces or use a "
+                                  "different output directory"));
     }
 
     const auto& lf_cfg = injector::get<const lnav::logfile::config&>();

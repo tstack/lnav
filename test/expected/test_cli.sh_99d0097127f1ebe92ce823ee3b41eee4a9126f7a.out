@@ -1,3 +1,3 @@
-[1m[31m✘[0m [1m[31merror[0m: not enough free space in [1msplit-space[0m to split [1m{test_dir}/logfile_syslog.0[0m
+[1m[31m✘[0m [1m[31merror[0m: not enough free space in [1msplit-space[0m to split [1msplit-src/logfile_syslog.0[0m
  [1m[31mreason[0m: the pieces need about [1m384B[0m and [1m1.1PB[0m must stay free, but only NNN is available
 [36m =[0m [36mhelp[0m: free up space, write the pieces to another directory with -o, or lower /tuning/archive-manager/min-free-space

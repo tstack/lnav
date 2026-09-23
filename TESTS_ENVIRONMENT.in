@@ -122,7 +122,7 @@ run_cap_test() {
     LNAV_TEST_HASH="${test_hash}"
     export LNAV_TEST_HASH
     echo "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
-    timeout 15s "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
+    timeout ${LNAV_CAP_TIMEOUT:-15s} "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
     printf "Exit code: $?"
 
     sed -ibak \

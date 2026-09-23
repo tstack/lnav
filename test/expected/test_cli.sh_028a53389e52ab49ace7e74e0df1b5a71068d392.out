@@ -1,0 +1,2 @@
+[1m[32m✔[0m no split needed for [1msplit-src/logfile_syslog.0[0m
+ [33mreason[0m: the file's [1m4[0m lines fit in a single piece
