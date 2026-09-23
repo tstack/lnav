@@ -52,7 +52,6 @@ indexing_scan_progress(file_off_t off,
     if (lnav_data.ld_window == nullptr) {
         return lnav::progress_result_t::ok;
     }
-    log_debug("progress here %lld %lld", off, total);
     // The closing tick, which clears the loading indicator, is the one with
     // nothing left in flight.  Tested ahead of the interrupt checks so that an
     // interrupted pass still gets the indicator cleared.  The total alone will
@@ -99,7 +98,6 @@ indexing_scan_progress(file_off_t off,
         // Only while spinning up, on the same reasoning as there: once the
         // session is going, the selection belongs to the user.
         if (exec_phase.spinning_up()) {
-            log_debug("still spinning up");
             const auto& fc = lnav_data.ld_active_files;
             size_t index = 0;
 
@@ -108,7 +106,6 @@ indexing_scan_progress(file_off_t off,
                 {
                     const auto row = fc.fc_other_files.size() + index;
 
-                    log_debug("found row %lu", row);
                     lnav_data.ld_files_view.set_selection(vis_line_t(row));
                     // Second from the top rather than wherever the scroll
                     // happens to leave it, which is the bottom: the files
@@ -456,7 +453,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             // indexed quickly.
             log_debug("extending indexing deadline for %u new log file(s)",
                       cb.promotion_count);
-            deadline = deadline.value() + 500ms;
+            deadline = deadline.value() + 250ms;
         }
     }
 

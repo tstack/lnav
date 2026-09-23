@@ -910,7 +910,8 @@ line_buffer::fill_range(file_off_t start,
         retval = this->lb_loader_future.get();
         if (wait_start) {
             auto diff = std::chrono::system_clock::now() - wait_start.value();
-            this->lb_stats.s_preload_wait_time += diff;
+            this->lb_stats.s_preload_wait_time +=
+                std::chrono::duration_cast<std::chrono::milliseconds>(diff);
         }
         // log_debug("got preload");
         this->lb_loader_future = {};

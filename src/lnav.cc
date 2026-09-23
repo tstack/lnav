@@ -1977,6 +1977,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     // The files are indexed as they are found, but the log messages are not
     // merged until all of the files have been found.
     lnav_data.ld_log_source.set_merge_deferred(true);
+
+    // make sure the whole screen is painted.
+    breadcrumb_view->do_update();
+    lnav_data.ld_view_stack.do_update();
+    notcurses_render(sc.get_notcurses());
+
     while (lnav_data.ld_looping) {
         auto loop_deadline
             = ui_clock::now() + (exec_phase.spinning_up() ? 3s : 50ms);
@@ -2128,7 +2134,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (ui_now >= next_rebuild_time) {
                 // Index the files found so far while the scan continues.  The
                 // deadline is short so that the scan results are not held up.
+                log_debug("BEGIN prescan rebuild");
                 auto rebuild_res = rebuild_indexes(ui_now + 250ms);
+                log_debug("END prescan rebuild");
                 if (!rebuild_res.rir_completed) {
                     next_rebuild_time = ui_now;
                 } else {

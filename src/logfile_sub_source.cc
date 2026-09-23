@@ -1369,8 +1369,6 @@ logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
     // still means a worker, because the tick has to run somewhere.
     const auto width = lnav::logfile_indexing_width(work.size());
 
-    log_info("pre-scanning %zu log files over %zu threads", work.size(), width);
-
     // Reused across ticks so the UI poll allocates nothing.
     std::vector<index_progress_report> in_flight;
     std::vector<prescan_result> results(work.size());
