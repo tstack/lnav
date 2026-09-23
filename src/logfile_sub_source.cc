@@ -3933,7 +3933,7 @@ logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t>& gp,
 }
 
 static std::vector<breadcrumb::possibility>
-timestamp_poss()
+timestamp_poss(string_fragment)
 {
     const static std::vector<breadcrumb::possibility> retval = {
         breadcrumb::possibility{"-1 day"},
@@ -3994,7 +3994,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         crumbs.emplace_back(
             key,
             display,
-            [this]() -> std::vector<breadcrumb::possibility> {
+            [this](string_fragment) -> std::vector<breadcrumb::possibility> {
                 auto& vb = this->tss_view->get_bookmarks();
                 const auto& bv = vb[&textview_curses::BM_PARTITION];
                 std::vector<breadcrumb::possibility> retval;
@@ -4046,7 +4046,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     crumbs.emplace_back(
         format_name,
         attr_line_t().append(format_name),
-        [this]() -> std::vector<breadcrumb::possibility> {
+        [this](string_fragment) -> std::vector<breadcrumb::possibility> {
             return this->lss_files
                 | lnav::itertools::filter_in([](const auto& file_data) {
                        return file_data->is_visible();
@@ -4084,7 +4084,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     crumbs.emplace_back(
         lf->get_unique_path(),
         to_display(lf).appendf(FMT_STRING("[{:L}]"), file_line_number),
-        [this]() -> std::vector<breadcrumb::possibility> {
+        [this](string_fragment) -> std::vector<breadcrumb::possibility> {
             return this->lss_files
                 | lnav::itertools::filter_in([](const auto& file_data) {
                        return file_data->is_visible();
@@ -4152,9 +4152,16 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 .append(ui_icon_t::thread)
                 .append(" ")
                 .append(tid_display),
-            [this]() -> std::vector<breadcrumb::possibility> {
-                std::set<std::string> poss_strs;
+            [this,
+             curr_tid = values.lvv_thread_id_value.value_or(""_frag)
+                            .to_string()](string_fragment search)
+                -> std::vector<breadcrumb::possibility> {
+                breadcrumb::possibility_collector collector(search);
 
+                if (search.empty() && !curr_tid.empty()) {
+                    // First, so the view can select it.
+                    collector.add(string_fragment::from_str(curr_tid));
+                }
                 for (const auto& file_data : this->lss_files) {
                     if (file_data->get_file_ptr() == nullptr) {
                         continue;
@@ -4163,20 +4170,11 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         file_data->get_file_ptr()->get_thread_ids());
 
                     for (const auto& pair : r_tid_map->ltis_tid_ranges) {
-                        poss_strs.emplace(pair.first.to_string());
+                        collector.add(pair.first);
                     }
                 }
 
-                std::vector<breadcrumb::possibility> retval;
-
-                std::transform(poss_strs.begin(),
-                               poss_strs.end(),
-                               std::back_inserter(retval),
-                               [](const auto& tid_str) {
-                                   return breadcrumb::possibility(tid_str);
-                               });
-
-                return retval;
+                return collector.release();
             },
             [ec = this->lss_exec_context](const auto& tid) {
                 ec->execute_with(
@@ -4206,9 +4204,15 @@ logfile_sub_source::text_crumbs_for_line(int line,
             values.lvv_opid_value.has_value() ? values.lvv_opid_value.value()
                                               : "",
             attr_line_t().append(opid_display),
-            [this]() -> std::vector<breadcrumb::possibility> {
-                std::unordered_set<std::string> poss_strs;
+            [this, curr_opid = values.lvv_opid_value.value_or("")](
+                string_fragment search)
+                -> std::vector<breadcrumb::possibility> {
+                breadcrumb::possibility_collector collector(search);
 
+                if (search.empty() && !curr_opid.empty()) {
+                    // First, so the view can select it.
+                    collector.add(string_fragment::from_str(curr_opid));
+                }
                 for (const auto& file_data : this->lss_files) {
                     if (file_data->get_file_ptr() == nullptr) {
                         continue;
@@ -4216,24 +4220,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
                     safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
                         file_data->get_file_ptr()->get_opids());
 
-                    poss_strs.reserve(poss_strs.size()
-                                      + r_opid_map->los_opid_ranges.size());
                     for (const auto& pair : r_opid_map->los_opid_ranges) {
-                        poss_strs.insert(pair.first.to_string());
+                        collector.add(pair.first);
                     }
                 }
 
-                std::vector<breadcrumb::possibility> retval;
-                retval.reserve(poss_strs.size());
-
-                std::transform(poss_strs.begin(),
-                               poss_strs.end(),
-                               std::back_inserter(retval),
-                               [](const auto& opid_str) {
-                                   return breadcrumb::possibility(opid_str);
-                               });
-
-                return retval;
+                return collector.release();
             },
             [ec = this->lss_exec_context](const auto& opid) {
                 ec->execute_with(
@@ -4302,7 +4294,9 @@ logfile_sub_source::text_crumbs_for_line(int line,
 
                 crumbs.emplace_back(
                     iv.value,
-                    [meta, path]() { return meta->possibility_provider(path); },
+                    [meta, path](string_fragment) {
+                        return meta->possibility_provider(path);
+                    },
                     [this, curr_node, path, line_from_top](const auto& key) {
                         if (!curr_node) {
                             return;
@@ -4347,7 +4341,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
             this->lss_token_meta.m_sections_root.get(), path);
 
         if (node && !node.value()->hn_children.empty()) {
-            auto poss_provider = [curr_node = node.value()]() {
+            auto poss_provider = [curr_node = node.value()](string_fragment) {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
                     retval.emplace_back(child.first);

@@ -408,7 +408,7 @@ CREATE TABLE lnav_db.lnav_views (
                 break;
             }
             case 11: {
-                static const size_t MAX_POSSIBILITIES = 128;
+                static constexpr size_t MAX_POSSIBILITIES = 128;
 
                 if (sqlite3_vtab_nochange(ctx)) {
                     return SQLITE_OK;
@@ -452,7 +452,8 @@ CREATE TABLE lnav_db.lnav_views (
                             };
                     });
                     for (const auto& crumb : crumbs) {
-                        auto poss = crumb.c_possibility_provider();
+                        auto poss
+                            = crumb.c_possibility_provider(string_fragment{});
                         if (poss.size() > MAX_POSSIBILITIES) {
                             poss.resize(MAX_POSSIBILITIES);
                         }

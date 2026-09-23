@@ -2458,8 +2458,8 @@ timeline_source::get_filtered_count_for(size_t filter_index) const
     return this->ts_filter_hits[filter_index];
 }
 
-static const std::vector<breadcrumb::possibility>&
-timestamp_poss()
+static std::vector<breadcrumb::possibility>
+timestamp_poss(string_fragment)
 {
     const static std::vector<breadcrumb::possibility> retval = {
         breadcrumb::possibility{"-1 day"},

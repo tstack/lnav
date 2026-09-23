@@ -746,7 +746,7 @@ textfile_sub_source::text_crumbs_for_line(
     crumbs.emplace_back(
         lf->get_unique_path(),
         to_display(lf),
-        [this]() {
+        [this](string_fragment) {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
                            lf->fvs_file->get_path_for_key(),
@@ -790,7 +790,9 @@ textfile_sub_source::text_crumbs_for_line(
 
         crumbs.emplace_back(
             std::string(ts),
-            []() -> std::vector<breadcrumb::possibility> { return {}; },
+            [](string_fragment) -> std::vector<breadcrumb::possibility> {
+                return {};
+            },
             [](const auto& key) {});
     }
 
@@ -830,7 +832,7 @@ textfile_sub_source::text_crumbs_for_line(
                         meta->m_sections_root.get(), path);
                     crumbs.emplace_back(
                         iv.value,
-                        [meta, path]() {
+                        [meta, path](string_fragment) {
                             return meta->possibility_provider(path);
                         },
                         [this, curr_node, path, lf](const auto& key) {
@@ -892,7 +894,7 @@ textfile_sub_source::text_crumbs_for_line(
             (*curr_iter)->fvs_metadata.m_sections_root.get(), path);
 
         if (node && !node.value()->hn_children.empty()) {
-            auto poss_provider = [curr_node = node.value()]() {
+            auto poss_provider = [curr_node = node.value()](string_fragment) {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
                     retval.emplace_back(child.first);

@@ -230,7 +230,7 @@ public:
                 auto path = crumbs | lnav::itertools::skip(initial_size)
                     | lnav::itertools::map(&breadcrumb::crumb::c_key)
                     | lnav::itertools::append(iv.value);
-                auto poss_provider = [root_node, path]() {
+                auto poss_provider = [root_node, path](string_fragment) {
                     std::vector<breadcrumb::possibility> retval;
                     auto curr_node = lnav::document::hier_node::lookup_path(
                         root_node, path);
@@ -318,7 +318,7 @@ public:
         auto node = lnav::document::hier_node::lookup_path(root_node, path);
 
         if (node && !node.value()->hn_children.empty()) {
-            auto poss_provider = [curr_node = node.value()]() {
+            auto poss_provider = [curr_node = node.value()](string_fragment) {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
                     retval.emplace_back(child.first);
@@ -1540,7 +1540,7 @@ hist_index_delegate::index_complete(logfile_sub_source& lss)
 }
 
 static std::vector<breadcrumb::possibility>
-view_title_poss()
+view_title_poss(string_fragment)
 {
     std::vector<breadcrumb::possibility> retval;
 

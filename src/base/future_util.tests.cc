@@ -125,3 +125,54 @@ TEST_CASE("future_queue-no-submit")
     }
     CHECK(results == std::vector<int>{1});
 }
+
+TEST_CASE("future_queue-processor-throws")
+{
+    // A processor that throws must not leave its future in the queue to be
+    // processed a second time, and the destructor still has to wait for the
+    // rest.
+    std::vector<int> results;
+    auto thrown = false;
+
+    {
+        future_queue<int> fq(
+            [&results](std::future<int>& fut) {
+                auto v = fut.get();
+                if (v == 1) {
+                    throw std::runtime_error("processor failed");
+                }
+                results.push_back(v);
+                return lnav::progress_result_t::ok;
+            },
+            1);
+
+        fq.push_back(fq.submit([]() { return 0; }));
+        fq.push_back(fq.submit([]() { return 1; }));
+        try {
+            fq.push_back(fq.submit([]() { return 2; }));
+        } catch (const std::runtime_error&) {
+            thrown = true;
+        }
+        fq.push_back(fq.submit([]() { return 3; }));
+    }
+
+    CHECK(thrown);
+    CHECK(results == std::vector<int>{0, 2, 3});
+}
+
+TEST_CASE("future_queue-zero-size")
+{
+    std::vector<int> results;
+    {
+        future_queue<int> fq(
+            [&results](std::future<int>& fut) {
+                results.push_back(fut.get());
+                return lnav::progress_result_t::ok;
+            },
+            0);
+
+        fq.push_back(fq.submit([]() { return 1; }));
+        fq.push_back(fq.submit([]() { return 2; }));
+    }
+    CHECK(results == std::vector<int>{1, 2});
+}

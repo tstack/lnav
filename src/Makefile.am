@@ -499,6 +499,7 @@ libdiag_a_SOURCES = \
 	bin2c_rt.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
+	breadcrumb.cc \
 	breadcrumb_curses.cc \
 	cmd.parser.cc \
 	cmds.bookmarks.cc \

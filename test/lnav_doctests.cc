@@ -34,6 +34,9 @@
 
 #include "base/relative_time.hh"
 #include "base/from_trait.hh"
+#include "base/fts_fuzzy_match.hh"
+#include "base/itertools.similar.hh"
+#include "breadcrumb.hh"
 #include "byte_array.hh"
 #include "cmd.parser.hh"
 #include "data_scanner.hh"
@@ -55,6 +58,7 @@
 
 #include <condition_variable>
 #include <random>
+#include <set>
 #include <mutex>
 #include <thread>
 
@@ -431,6 +435,90 @@ TEST_CASE("data_scanner quote3")
         CHECK(tok_res->tr_token == DT_LINE);
         tok_res = ds.tokenize2();
         CHECK(tok_res->tr_token == DT_QUOTED_STRING);
+    }
+}
+
+TEST_CASE("possibility_collector")
+{
+    auto keys_of = [](const std::vector<breadcrumb::possibility>& poss) {
+        std::vector<std::string> retval;
+        for (const auto& p : poss) {
+            retval.emplace_back(p.p_key);
+        }
+        return retval;
+    };
+
+    SUBCASE("empty search keeps the first keys")
+    {
+        breadcrumb::possibility_collector pc(string_fragment{}, 3);
+
+        pc.add("b"_frag);
+        pc.add("a"_frag);
+        pc.add("c"_frag);
+        pc.add("d"_frag);
+        CHECK(keys_of(pc.release())
+              == std::vector<std::string>{"b", "a", "c"});
+    }
+
+    SUBCASE("duplicates are returned once")
+    {
+        breadcrumb::possibility_collector pc(string_fragment{}, 3);
+
+        pc.add("b"_frag);
+        pc.add("a"_frag);
+        pc.add("b"_frag);
+        pc.add("c"_frag);
+        CHECK(keys_of(pc.release()) == std::vector<std::string>{"b", "a"});
+    }
+
+    SUBCASE("search keeps the best matches, best first")
+    {
+        auto score_of = [](const std::string& key) {
+            int retval = 0;
+            fts::fuzzy_match("a1", key.c_str(), retval);
+            return retval;
+        };
+
+        std::vector<std::string> keys;
+        for (int lpc = 0; lpc < 5000; lpc++) {
+            keys.emplace_back(fmt::format(FMT_STRING("{:x}"), lpc * 7919));
+        }
+
+        breadcrumb::possibility_collector pc("a1"_frag, 10);
+        for (const auto& key : keys) {
+            // Not NUL-terminated, the way keys come out of a larger buffer.
+            auto buf = key + "a1a1";
+            pc.add(string_fragment::from_bytes(buf.data(), key.size()));
+        }
+        auto actual = keys_of(pc.release());
+        REQUIRE(actual.size() == 10);
+        CHECK(std::set<std::string>(actual.begin(), actual.end()).size()
+              == 10);
+        for (size_t lpc = 1; lpc < actual.size(); lpc++) {
+            CHECK(score_of(actual[lpc - 1]) >= score_of(actual[lpc]));
+        }
+
+        // The same scores similar_to() would keep, which is what the view
+        // narrows to afterward.  Keys with equal scores may differ.
+        auto expected = keys | lnav::itertools::similar_to("a1", 10);
+        std::vector<int> expected_scores, actual_scores;
+        for (const auto& key : expected) {
+            expected_scores.push_back(score_of(key));
+        }
+        for (const auto& key : actual) {
+            actual_scores.push_back(score_of(key));
+        }
+        std::sort(expected_scores.begin(), expected_scores.end());
+        std::sort(actual_scores.begin(), actual_scores.end());
+        CHECK(actual_scores == expected_scores);
+    }
+
+    SUBCASE("no matches")
+    {
+        breadcrumb::possibility_collector pc("xyz"_frag);
+
+        pc.add("abc"_frag);
+        CHECK(pc.release().empty());
     }
 }
 

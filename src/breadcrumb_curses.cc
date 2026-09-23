@@ -146,7 +146,8 @@ breadcrumb_curses::reload_data()
 
     auto& selected_crumb_ref
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
-    this->bc_possible_values = selected_crumb_ref.c_possibility_provider();
+    this->bc_possible_values = selected_crumb_ref.c_possibility_provider(
+        string_fragment::from_str(this->bc_current_search));
 
     std::optional<size_t> selected_value;
     this->bc_similar_values = this->bc_possible_values
@@ -179,22 +180,18 @@ breadcrumb_curses::reload_data()
     auto matches = this->bc_similar_values
         | lnav::itertools::map(&breadcrumb::possibility::p_display_value);
     this->bc_match_source.replace_with(matches);
-    auto width = this->bc_possible_values
-        | lnav::itertools::fold(
-                     [](const auto& match, auto& accum) {
-                         auto mlen = match.p_display_value.length();
-                         if (mlen > accum) {
-                             return mlen;
-                         }
-                         return accum;
-                     },
-                     selected_crumb_ref.c_display_value.length());
-
-    if (static_cast<ssize_t>(selected_crumb_ref.c_search_placeholder.size())
-        > width)
-    {
-        width = selected_crumb_ref.c_search_placeholder.size();
+    if (this->bc_current_search.empty()) {
+        this->bc_match_width = 0;
     }
+    auto width = std::max(
+        this->bc_match_width,
+        static_cast<size_t>(selected_crumb_ref.c_display_value.length()));
+    for (const auto& poss : this->bc_possible_values) {
+        width = std::max(width,
+                         static_cast<size_t>(poss.p_display_value.length()));
+    }
+    width = std::max(width, selected_crumb_ref.c_search_placeholder.size());
+    this->bc_match_width = width;
     this->bc_match_view.set_height(vis_line_t(
         std::min(this->bc_match_source.get_lines().size() + 1, size_t{4})));
     this->bc_match_view.set_width(width + 3);

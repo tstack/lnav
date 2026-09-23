@@ -107,6 +107,27 @@ BEGIN
    WHERE name = NEW.name;
 END;
 
+CREATE VIEW lnav_db.lnav_top_view_options AS
+SELECT name, top, left, top_time, paused, search, filtering, movement, selection, options
+FROM lnav_views
+WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
+
+CREATE TRIGGER lnav_db.lnav_top_view_options_update
+INSTEAD OF UPDATE ON lnav_db.lnav_top_view_options
+BEGIN
+  UPDATE lnav_views
+     SET top = NEW.top,
+         left = NEW.left,
+         top_time = NEW.top_time,
+         paused = NEW.paused,
+         search = NEW.search,
+         filtering = NEW.filtering,
+         movement = NEW.movement,
+         selection = NEW.selection,
+         options = NEW.options
+   WHERE name = NEW.name;
+END;
+
 CREATE VIEW lnav_db.lnav_focused_msg AS
 SELECT *,
        log_msg_schema,

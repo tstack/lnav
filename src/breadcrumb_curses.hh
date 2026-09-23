@@ -108,6 +108,12 @@ private:
     std::vector<breadcrumb::possibility> bc_possible_values;
     std::vector<breadcrumb::possibility> bc_similar_values;
     std::string bc_current_search;
+    /**
+     * The widest match seen since the search was last empty.  The provider
+     * narrows the list as the search grows, and sizing the popup to that
+     * alone would make it shrink on every keystroke.
+     */
+    size_t bc_match_width{0};
 
     plain_text_source bc_match_source;
     search_overlay_source bc_match_search_overlay;

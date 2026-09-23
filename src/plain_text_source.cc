@@ -298,7 +298,9 @@ plain_text_source::text_crumbs_for_line(int line,
                 | lnav::itertools::append(iv.value);
             crumbs.emplace_back(
                 iv.value,
-                [meta, path]() { return meta->possibility_provider(path); },
+                [meta, path](string_fragment) {
+                    return meta->possibility_provider(path);
+                },
                 [this, meta, path](const auto& key) {
                     auto curr_node = lnav::document::hier_node::lookup_path(
                         meta->m_sections_root.get(), path);
@@ -350,7 +352,7 @@ plain_text_source::text_crumbs_for_line(int line,
         this->tds_doc_sections.m_sections_root.get(), path);
 
     if (node && !node.value()->hn_children.empty()) {
-        auto poss_provider = [curr_node = node.value()]() {
+        auto poss_provider = [curr_node = node.value()](string_fragment) {
             std::vector<breadcrumb::possibility> retval;
             for (const auto& child : curr_node->hn_named_children) {
                 retval.emplace_back(child.first);
