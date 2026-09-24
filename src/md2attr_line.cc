@@ -47,9 +47,11 @@
 #include "pcrepp/pcre2pp.hh"
 #include "pugixml/pugixml.hpp"
 #include "readline_highlighters.hh"
+#include "scn/scan.h"
 #include "text_format.hh"
 #include "textfile_highlighters.hh"
 #include "view_curses.hh"
+#include "ww898/cp_utf8.hpp"
 
 using namespace lnav::roles::literals;
 using namespace md4cpp::literals;
@@ -79,6 +81,40 @@ struct md_script_annotator : lnav::script::parser {
         return Ok();
     }
 };
+
+/**
+ * @return The UTF-8 for a numeric character reference, like "&#169;" or
+ * "&#x2014;", or nullopt if it is not one or does not name a valid code point.
+ */
+static std::optional<std::string>
+decode_numeric_entity(string_fragment sf)
+{
+    if (!sf.startswith("&#") || !sf.endswith(";")) {
+        return std::nullopt;
+    }
+
+    auto digits = sf.substr(2).sub_range(0, sf.length() - 3);
+    auto base = 10;
+    if (digits.startswith("x") || digits.startswith("X")) {
+        digits = digits.substr(1);
+        base = 16;
+    }
+    auto scan_res = scn::scan_int<uint32_t>(digits.to_string_view(), base);
+    if (!scan_res || !scan_res->range().empty()) {
+        return std::nullopt;
+    }
+
+    auto cp = scan_res->value();
+    if (cp == 0 || (0xD800 <= cp && cp <= 0xDFFF) || cp > 0x10FFFF) {
+        return std::nullopt;
+    }
+
+    std::string retval;
+    ww898::utf::utf8::write(cp, [&retval](uint8_t ch) {
+        retval.push_back(static_cast<char>(ch));
+    });
+    return retval;
+}
 
 static highlight_map_t
 get_highlight_map()
@@ -163,6 +199,15 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
     if (this->ml_source_path) {
         log_trace("leave_block %s",
                   mapbox::util::apply_visitor(type_visitor(), bl));
+    }
+
+    // The offsets of any tags still open refer to the block that is ending.
+    while (!this->ml_html_starts.empty()
+           && this->ml_html_starts.back().hs_depth >= this->ml_blocks.size())
+    {
+        log_warning("unclosed HTML tag: %s",
+                    this->ml_html_starts.back().hs_name.c_str());
+        this->ml_html_starts.pop_back();
     }
 
     auto block_text = std::move(this->ml_blocks.back());
@@ -524,11 +569,14 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             for (const auto& [col, cell] : lnav::itertools::enumerate(cells)) {
                 block_text.append(" ");
                 if (line_index < cell.cl_lines.size()) {
+                    // A word longer than the column is not broken up, so
+                    // the line can be wider than the column.
+                    auto line_width
+                        = (ssize_t) cell.cl_lines[line_index].column_width();
                     block_text.append(cell.cl_lines[line_index]);
-                    block_text.append(
-                        col_sizes[col]
-                            - cell.cl_lines[line_index].column_width(),
-                        ' ');
+                    if (col_sizes[col] > line_width) {
+                        block_text.append(col_sizes[col] - line_width, ' ');
+                    }
                 } else {
                     block_text.append(col_sizes[col], ' ');
                 }
@@ -849,6 +897,27 @@ span_style_border(border_side side, const string_fragment& value)
     return attr_line_t(ch).with_attr_for_all(VC_STYLE.value(border_attrs));
 }
 
+/**
+ * @return The text of a pcdata/cdata node, taken from the original source
+ * when possible so the attributes there are kept.  pugixml decodes entities
+ * in place, so the text only lines up with the source when there were none.
+ */
+static attr_line_t
+text_node_to_attr_line(const pugi::xml_node& node, const attr_line_t& orig)
+{
+    const auto* value = node.value();
+    const auto len = strlen(value);
+    const auto off = node.offset_debug();
+
+    if (off >= 0 && (size_t) off + len <= orig.al_string.length()
+        && orig.al_string.compare(off, len, value) == 0)
+    {
+        return orig.subline(off, len);
+    }
+
+    return attr_line_t(value);
+}
+
 attr_line_t
 md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
 {
@@ -856,6 +925,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
     static constexpr auto NAME_IMG = "img"_frag;
     static constexpr auto NAME_SPAN = "span"_frag;
     static constexpr auto NAME_PRE = "pre"_frag;
+    static constexpr auto NAME_BR = "br"_frag;
     static constexpr auto NAME_FG = "color"_frag;
     static constexpr auto NAME_BG = "background-color"_frag;
     static constexpr auto NAME_FONT_WEIGHT = "font-weight"_frag;
@@ -871,7 +941,9 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
     }
 
     attr_line_t retval;
-    if (doc.name() == NAME_A) {
+    if (doc.type() == pugi::node_pcdata || doc.type() == pugi::node_cdata) {
+        retval.append(text_node_to_attr_line(doc, orig));
+    } else if (doc.name() == NAME_A) {
         auto anc_al = attr_line_t();
 
         for (const auto& sub : doc.children()) {
@@ -946,11 +1018,11 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
     } else if (doc.name() == NAME_SPAN) {
         std::optional<attr_line_t> left_border;
         std::optional<attr_line_t> right_border;
-        auto text_node = doc.text();
-        auto styled_span = text_node.empty()
-            ? attr_line_t()
-            : orig.subline(text_node.data().offset_debug(),
-                           strlen(text_node.get()));
+        attr_line_t styled_span;
+
+        for (const auto& sub : doc.children()) {
+            styled_span.append(this->to_attr_line(sub, orig));
+        }
 
         auto span_class = doc.attribute("class");
         if (span_class) {
@@ -1053,13 +1125,9 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc, const attr_line_t& orig)
         }
         pre_al.with_attr_for_all(SA_PREFORMATTED.value());
         retval.append(pre_al);
+    } else if (doc.name() == NAME_BR) {
+        retval.append("\n");
     } else {
-        auto text_node = doc.text();
-        auto styled_text = text_node.empty()
-            ? attr_line_t()
-            : orig.subline(text_node.data().offset_debug(),
-                           strlen(text_node.get()));
-        retval.append(styled_text);
         for (const auto& child : doc.children()) {
             retval.append(this->to_attr_line(child, orig));
         }
@@ -1091,6 +1159,10 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
             if (xe_iter != entity_map.xem_entities.end()) {
                 last_block.append(xe_iter->second.xe_chars);
+            } else if (auto decoded = decode_numeric_entity(sf)) {
+                last_block.append(decoded.value());
+            } else {
+                last_block.append(sf);
             }
             break;
         }
@@ -1108,41 +1180,71 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             struct close_tag {
                 std::string ct_name;
             };
-            struct empty_tag {};
+            struct empty_tag {
+                std::string et_xml;
+            };
 
             using html_tag_t
                 = mapbox::util::variant<open_tag, close_tag, empty_tag>;
 
             html_tag_t tag{mapbox::util::no_init{}};
 
-            auto lbracket = sf.find('<');
-            if (!lbracket) {
-            } else if (lbracket && lbracket.value() + 1 < sf.length()
-                       && sf[lbracket.value() + 1] == '/')
+            auto tag_name = [](string_fragment rest) {
+                return rest
+                    .split_when([](char ch) {
+                        return isspace((unsigned char) ch) || ch == '>'
+                            || ch == '/';
+                    })
+                    .first;
+            };
+
+            // Comments, processing instructions, and declarations have no
+            // closing tag to wait for.  Comments are dropped, like they are
+            // in an HTML block.
+            if (sf.startswith("<!--")) {
+                last_block.erase(last_block_start_length);
+            } else if (!sf.startswith("<") || sf.startswith("<!")
+                       || sf.startswith("<?"))
             {
-                tag = close_tag{
-                    sf.substr(lbracket.value() + 2)
-                        .split_when(string_fragment::tag1{'>'})
-                        .first.to_string(),
-                };
-            } else if (sf.startswith("<")) {
-                if (sf.endswith("/>")) {
-                    tag = empty_tag{};
+            } else if (sf.startswith("</")) {
+                tag = close_tag{tag_name(sf.substr(2)).to_string()};
+            } else if (sf.endswith("/>")) {
+                tag = empty_tag{sf.to_string()};
+            } else {
+                auto name = tag_name(sf.substr(1));
+
+                if (name.is_one_of("area",
+                                   "base",
+                                   "br",
+                                   "col",
+                                   "embed",
+                                   "hr",
+                                   "img",
+                                   "input",
+                                   "link",
+                                   "meta",
+                                   "source",
+                                   "track",
+                                   "wbr"))
+                {
+                    // A void element never has a closing tag, so turn it
+                    // into XML that pugixml will accept.
+                    auto xml = sf.to_string();
+                    xml.insert(xml.length() - 1, "/");
+                    tag = empty_tag{xml};
                 } else {
-                    tag = open_tag{
-                        sf.substr(1)
-                            .split_when(
-                                [](char ch) { return ch == ' ' || ch == '>'; })
-                            .first.to_string(),
-                    };
+                    tag = open_tag{name.to_string()};
                 }
             }
 
             if (tag.valid()) {
                 tag.match(
                     [this, last_block_start_length](const open_tag& ot) {
-                        this->ml_html_starts.emplace_back(
-                            ot.ot_name, last_block_start_length);
+                        this->ml_html_starts.emplace_back(html_start{
+                            ot.ot_name,
+                            (size_t) last_block_start_length,
+                            this->ml_blocks.size(),
+                        });
                     },
                     [this, &last_block](const close_tag& ct) {
                         if (this->ml_html_starts.empty()) {
@@ -1150,7 +1252,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                                         ct.ct_name.c_str());
                             return;
                         }
-                        if (this->ml_html_starts.back().first != ct.ct_name) {
+                        if (this->ml_html_starts.back().hs_name != ct.ct_name)
+                        {
                             log_warning(
                                 "closing tag %s with no matching open tag",
                                 ct.ct_name.c_str());
@@ -1158,7 +1261,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                         }
 
                         const auto html_span_attr = last_block.subline(
-                            this->ml_html_starts.back().second);
+                            this->ml_html_starts.back().hs_offset);
                         const auto& html_span = html_span_attr.al_string;
 
                         pugi::xml_document doc;
@@ -1177,15 +1280,15 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                                       error_line.data());
                         } else {
                             last_block.erase(
-                                this->ml_html_starts.back().second);
+                                this->ml_html_starts.back().hs_offset);
                             last_block.append(
                                 this->to_attr_line(doc, html_span_attr));
                         }
                         this->ml_html_starts.pop_back();
                     },
-                    [this, &sf, &last_block, last_block_start_length](
-                        const empty_tag&) {
-                        const auto html_span = sf.to_string();
+                    [this, &last_block, last_block_start_length](
+                        const empty_tag& et) {
+                        const auto& html_span = et.et_xml;
 
                         pugi::xml_document doc;
 
@@ -1195,8 +1298,11 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                                       load_res.offset,
                                       load_res.description());
 
-                            auto error_line = sf.find_boundaries_around(
-                                load_res.offset, string_fragment::tag1{'\n'});
+                            auto error_line
+                                = string_fragment::from_str(html_span)
+                                      .find_boundaries_around(
+                                          load_res.offset,
+                                          string_fragment::tag1{'\n'});
                             log_error("  %.*s",
                                       error_line.length(),
                                       error_line.data());

@@ -126,7 +126,13 @@ private:
     bool ml_in_html_block{false};
     std::vector<table_t> ml_tables;
     std::vector<size_t> ml_span_starts;
-    std::vector<std::pair<std::string, size_t>> ml_html_starts;
+    struct html_start {
+        std::string hs_name;
+        size_t hs_offset;
+        size_t hs_depth;
+    };
+
+    std::vector<html_start> ml_html_starts;
     std::vector<attr_line_t> ml_footnotes;
     int32_t ml_code_depth{0};
     ssize_t ml_last_superscript_index{-1};

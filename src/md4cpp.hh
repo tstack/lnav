@@ -30,8 +30,10 @@
 #ifndef lnav_md4cpp_hh
 #define lnav_md4cpp_hh
 
+#include <filesystem>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -60,6 +62,14 @@ struct emoji {
 };
 
 struct emoji_map {
+    emoji_map() = default;
+    // em_shortname2emoji refers into em_emojis, so a copy would point back
+    // at the original.  A move keeps the vector's buffer, so it is safe.
+    emoji_map(const emoji_map&) = delete;
+    emoji_map& operator=(const emoji_map&) = delete;
+    emoji_map(emoji_map&&) = default;
+    emoji_map& operator=(emoji_map&&) = default;
+
     std::vector<emoji> em_emojis;
     std::unordered_map<std::string, std::reference_wrapper<emoji>>
         em_shortname2emoji;
@@ -78,6 +88,7 @@ public:
     struct block_tbody {};
     struct block_tr {};
     struct block_th {};
+    struct block_unknown {};
 
     using block = mapbox::util::variant<block_doc,
                                         block_quote,
@@ -94,7 +105,8 @@ public:
                                         block_tbody,
                                         block_tr,
                                         block_th,
-                                        MD_BLOCK_TD_DETAIL*>;
+                                        MD_BLOCK_TD_DETAIL*,
+                                        block_unknown>;
 
     virtual Result<void, std::string> enter_block(const block& bl) = 0;
     virtual Result<void, std::string> leave_block(const block& bl) = 0;
@@ -104,6 +116,7 @@ public:
     struct span_code {};
     struct span_del {};
     struct span_u {};
+    struct span_unknown {};
 
     using span = mapbox::util::variant<span_em,
                                        span_strong,
@@ -111,7 +124,8 @@ public:
                                        MD_SPAN_IMG_DETAIL*,
                                        span_code,
                                        span_del,
-                                       span_u>;
+                                       span_u,
+                                       span_unknown>;
 
     virtual Result<void, std::string> enter_span(const span& bl) = 0;
     virtual Result<void, std::string> leave_span(const span& bl) = 0;
@@ -204,9 +218,9 @@ inline constexpr emoji_literal KNOWN_EMOJIS[] = {
  * @return The glyph for one of the shortcodes in KNOWN_EMOJIS.
  *
  * The fragment is over a string literal, so it outlives any caller.  A
- * shortcode that is not in the table yields an empty fragment, which the
- * test above catches -- and is a hard error when this is evaluated as a
- * constant expression.
+ * shortcode that is not in the table yields an empty fragment.  The test
+ * only checks the table against the map, so a misspelled shortcode at a
+ * call site is not caught.
  */
 constexpr string_fragment
 operator""_emoji(const char* str, std::size_t len)

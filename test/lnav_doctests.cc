@@ -47,6 +47,7 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "logfile.hh"
+#include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "ptimec.hh"
 #include "shlex.hh"
@@ -684,6 +685,175 @@ TEST_CASE("md4cpp::KNOWN_EMOJIS")
         REQUIRE(iter != em.em_shortname2emoji.end());
         CHECK(iter->second.get().e_value == lit.el_value.to_string());
     }
+}
+
+namespace {
+struct code_line_recorder : md4cpp::typed_event_handler<std::vector<int>> {
+    Result<void, std::string> enter_block(const block& bl) override
+    {
+        if (bl.is<MD_BLOCK_CODE_DETAIL*>()) {
+            this->clr_lines.push_back(this->eh_line_number);
+        }
+        return Ok();
+    }
+
+    Result<void, std::string> leave_block(const block& bl) override
+    {
+        return Ok();
+    }
+
+    Result<void, std::string> enter_span(const span& sp) override
+    {
+        return Ok();
+    }
+
+    Result<void, std::string> leave_span(const span& sp) override
+    {
+        return Ok();
+    }
+
+    Result<void, std::string> text(MD_TEXTTYPE tt,
+                                   const string_fragment& sf) override
+    {
+        return Ok();
+    }
+
+    std::vector<int> get_result() override { return this->clr_lines; }
+
+    std::vector<int> clr_lines;
+};
+}  // namespace
+
+TEST_CASE("md4cpp::parse code block line after front matter")
+{
+    static const auto CONTENT = string_fragment::from_const(
+        "---\n"
+        "title: test\n"
+        "---\n"
+        "\n"
+        "Some text\n"
+        "\n"
+        "```lnav\n"
+        ":echo hi\n"
+        "```\n");
+
+    auto md_file = md4cpp::parse_file("test.md", CONTENT);
+    CHECK(md_file.f_frontmatter_format == text_format_t::TF_YAML);
+
+    code_line_recorder clr;
+    auto res = md4cpp::parse(md_file.f_body, clr);
+    REQUIRE(res.isOk());
+    CHECK(res.unwrap() == std::vector<int>{7});
+}
+
+TEST_CASE("md4cpp::parse code block without a language has no line")
+{
+    static const auto CONTENT = string_fragment::from_const(
+        "```lnav\n"
+        ":echo hi\n"
+        "```\n"
+        "\n"
+        "```\n"
+        "plain\n"
+        "```\n"
+        "\n"
+        "    indented\n");
+
+    code_line_recorder clr;
+    auto res = md4cpp::parse(CONTENT, clr);
+    REQUIRE(res.isOk());
+    CHECK(res.unwrap() == std::vector<int>{1, 0, 0});
+}
+
+TEST_CASE("md4cpp::parse_file TOML front matter is not greedy")
+{
+    static const auto CONTENT = string_fragment::from_const(
+        "+++\n"
+        "title = 'test'\n"
+        "+++\n"
+        "body\n"
+        "+++\n"
+        "more body\n");
+
+    auto md_file = md4cpp::parse_file("test.md", CONTENT);
+    CHECK(md_file.f_frontmatter_format == text_format_t::TF_TOML);
+    CHECK(md_file.f_frontmatter.to_string() == "title = 'test'");
+    CHECK(md_file.f_body.to_string() == "body\n+++\nmore body\n");
+}
+
+TEST_CASE("md4cpp::parse_file empty and CRLF front matter")
+{
+    {
+        static const auto CONTENT
+            = string_fragment::from_const("---\n---\nbody\n");
+
+        auto md_file = md4cpp::parse_file("test.md", CONTENT);
+        CHECK(md_file.f_frontmatter_format == text_format_t::TF_YAML);
+        CHECK(md_file.f_frontmatter.empty());
+        CHECK(md_file.f_body.to_string() == "body\n");
+    }
+    {
+        static const auto CONTENT = string_fragment::from_const(
+            "+++\r\ntitle = 'test'\r\n+++\r\nbody\r\n");
+
+        auto md_file = md4cpp::parse_file("test.md", CONTENT);
+        CHECK(md_file.f_frontmatter_format == text_format_t::TF_TOML);
+        CHECK(md_file.f_frontmatter.to_string() == "title = 'test'");
+        CHECK(md_file.f_body.to_string() == "body\r\n");
+    }
+    {
+        static const auto CONTENT
+            = string_fragment::from_const("{\"title\": \"test\"}\r\nbody\r\n");
+
+        auto md_file = md4cpp::parse_file("test.md", CONTENT);
+        CHECK(md_file.f_frontmatter_format == text_format_t::TF_JSON);
+        CHECK(md_file.f_frontmatter.to_string() == "{\"title\": \"test\"}");
+    }
+}
+
+static std::string
+render_md(const char* md)
+{
+    md2attr_line mdal;
+
+    auto parse_res = md4cpp::parse(string_fragment::from_c_str(md), mdal);
+    REQUIRE(parse_res.isOk());
+    return parse_res.unwrap().get_string();
+}
+
+TEST_CASE("md2attr_line entities")
+{
+    auto str = render_md("a &#169; b &#x2014; c &bogus; d &amp;\n");
+
+    CHECK(str.find("a \u00a9 b \u2014 c &bogus; d &") != std::string::npos);
+}
+
+TEST_CASE("md2attr_line inline HTML")
+{
+    auto str = render_md("plain <b>bold</b> <i>it</i> end\n");
+    CHECK(str.find("plain bold it end") != std::string::npos);
+
+    str = render_md("x <span>a<br>b</span> <!-- c --> y\n");
+    CHECK(str.find("<") == std::string::npos);
+    CHECK(str.find("x a\nb") != std::string::npos);
+}
+
+TEST_CASE("md2attr_line HTML block span with an entity")
+{
+    auto str = render_md("<div>\n<span style=\"color: red\">a &amp; b</span>\n</div>\n");
+
+    CHECK(str.find("a & b") != std::string::npos);
+}
+
+TEST_CASE("md2attr_line table header wider than the column")
+{
+    auto str = render_md(
+        "| https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        " | b |\n"
+        "|---|---|\n"
+        "| x | y |\n");
+
+    CHECK(str.find("https://example.com/") != std::string::npos);
 }
 
 TEST_CASE("file_split::piece_path")

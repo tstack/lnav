@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include "md4cpp.hh"
 
 #include "base/is_utf8.hh"
@@ -170,8 +172,8 @@ file
 parse_file(const std::filesystem::path& src, const string_fragment& sf)
 {
     static const auto FRONTMATTER_RE = lnav::pcre2pp::code::from_const(
-        R"((?:\A^---\n(.*?)\n---\n|\A^\+\+\+\n(.*)\n\+\+\+\n))",
-        PCRE2_MULTILINE | PCRE2_DOTALL);
+        R"(\A(?:---\r?\n(?:(.*?)\r?\n)?---\r?\n|\+\+\+\r?\n(?:(.*?)\r?\n)?\+\+\+\r?\n))",
+        PCRE2_DOTALL);
     thread_local auto md = FRONTMATTER_RE.create_match_data();
 
     auto frontmatter_sf = string_fragment{};
@@ -183,12 +185,14 @@ parse_file(const std::filesystem::path& src, const string_fragment& sf)
                        .matches()
                        .ignore_error();
     if (cap_res) {
-        if (md[1]) {
+        // The capture is absent for an empty block, so the delimiter
+        // decides the format.
+        if (content_sf.startswith("---")) {
             frontmatter_format = text_format_t::TF_YAML;
-            frontmatter_sf = md[1].value();
-        } else if (md[2]) {
+            frontmatter_sf = md[1].value_or(string_fragment{});
+        } else {
             frontmatter_format = text_format_t::TF_TOML;
-            frontmatter_sf = md[2].value();
+            frontmatter_sf = md[2].value_or(string_fragment{});
         }
         content_sf = cap_res->f_remaining;
     } else if (content_sf.startswith("{")) {
@@ -207,8 +211,8 @@ parse_file(const std::filesystem::path& src, const string_fragment& sf)
             });
         if (ypc.parse_doc(content_sf)) {
             ssize_t consumed = ypc.ypc_total_consumed;
-            if (consumed < content_sf.length() && content_sf[consumed] == '\n')
-            {
+            auto rest_sf = content_sf.substr(consumed);
+            if (rest_sf.startswith("\n") || rest_sf.startswith("\r\n")) {
                 frontmatter_format = text_format_t::TF_JSON;
                 frontmatter_sf = sf.sub_range(0, consumed);
                 content_sf = content_sf.substr(consumed);
@@ -231,14 +235,20 @@ struct parse_userdata {
 void
 event_handler::set_line_number_from(const char* text)
 {
-    if (this->eh_fragment.begin() <= text && text < this->eh_fragment.end()) {
-        auto off = text - this->eh_fragment.begin();
-
-        this->eh_tree->visit_overlapping(
-            off, off + 1, [this](const auto& cintv) {
-                this->eh_line_number = cintv.value;
-            });
+    // md4c only hands back pointers into the source for some details (e.g.
+    // not for indented code or an escaped language), so zero out the line
+    // number instead of leaving the previous block's value.
+    this->eh_line_number = 0;
+    if (text == nullptr || text < this->eh_fragment.begin()
+        || this->eh_fragment.end() <= text)
+    {
+        return;
     }
+
+    size_t off = text - this->eh_fragment.begin();
+    this->eh_tree->visit_overlapping(off, [this](const auto& cintv) {
+        this->eh_line_number = cintv.value;
+    });
 }
 
 event_handler::block
@@ -283,7 +293,8 @@ event_handler::build_block(MD_BLOCKTYPE type, void* detail)
             return static_cast<MD_BLOCK_TD_DETAIL*>(detail);
     }
 
-    return {};
+    log_warning("unhandled markdown block type: %d", type);
+    return block_unknown{};
 }
 
 event_handler::span
@@ -308,80 +319,63 @@ event_handler::build_span(MD_SPANTYPE type, void* detail)
             break;
     }
 
-    return {};
+    log_warning("unhandled markdown span type: %d", type);
+    return span_unknown{};
+}
+
+template<typename F>
+static int
+md4cpp_call(void* userdata, F&& func)
+{
+    auto* pu = static_cast<parse_userdata*>(userdata);
+
+    auto res = func(pu->pu_handler);
+    if (res.isErr()) {
+        pu->pu_error_msg = res.unwrapErr();
+        return 1;
+    }
+
+    return 0;
 }
 
 static int
 md4cpp_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
 {
-    auto* pu = static_cast<parse_userdata*>(userdata);
-
-    auto enter_res
-        = pu->pu_handler.enter_block(pu->pu_handler.build_block(type, detail));
-    if (enter_res.isErr()) {
-        pu->pu_error_msg = enter_res.unwrapErr();
-        return 1;
-    }
-
-    return 0;
+    return md4cpp_call(userdata, [&](event_handler& eh) {
+        return eh.enter_block(eh.build_block(type, detail));
+    });
 }
 
 static int
 md4cpp_leave_block(MD_BLOCKTYPE type, void* detail, void* userdata)
 {
-    auto* pu = static_cast<parse_userdata*>(userdata);
-    auto leave_res
-        = pu->pu_handler.leave_block(pu->pu_handler.build_block(type, detail));
-    if (leave_res.isErr()) {
-        pu->pu_error_msg = leave_res.unwrapErr();
-        return 1;
-    }
-
-    return 0;
+    return md4cpp_call(userdata, [&](event_handler& eh) {
+        return eh.leave_block(eh.build_block(type, detail));
+    });
 }
 
 static int
 md4cpp_enter_span(MD_SPANTYPE type, void* detail, void* userdata)
 {
-    auto* pu = static_cast<parse_userdata*>(userdata);
-
-    auto enter_res
-        = pu->pu_handler.enter_span(pu->pu_handler.build_span(type, detail));
-    if (enter_res.isErr()) {
-        pu->pu_error_msg = enter_res.unwrapErr();
-        return 1;
-    }
-
-    return 0;
+    return md4cpp_call(userdata, [&](event_handler& eh) {
+        return eh.enter_span(eh.build_span(type, detail));
+    });
 }
 
 static int
 md4cpp_leave_span(MD_SPANTYPE type, void* detail, void* userdata)
 {
-    auto* pu = static_cast<parse_userdata*>(userdata);
-
-    auto leave_res
-        = pu->pu_handler.leave_span(pu->pu_handler.build_span(type, detail));
-    if (leave_res.isErr()) {
-        pu->pu_error_msg = leave_res.unwrapErr();
-        return 1;
-    }
-
-    return 0;
+    return md4cpp_call(userdata, [&](event_handler& eh) {
+        return eh.leave_span(eh.build_span(type, detail));
+    });
 }
 
 static int
 md4cpp_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata)
 {
-    auto* pu = static_cast<parse_userdata*>(userdata);
-
-    auto text_res = pu->pu_handler.text(type, string_fragment(text, 0, size));
-    if (text_res.isErr()) {
-        pu->pu_error_msg = text_res.unwrapErr();
-        return 1;
-    }
-
-    return 0;
+    return md4cpp_call(userdata, [&](event_handler& eh) {
+        return eh.text(type, string_fragment(text, 0, size));
+    });
 }
 
 namespace details {
@@ -397,14 +391,20 @@ parse(const string_fragment& sf, event_handler& eh)
     }
 
     auto eols = std::vector<event_handler::line_type_t>{};
-    int lineno = 1;
+    // The fragment can start partway into a file (e.g. the body after the
+    // front matter), so count the lines that precede it to keep the line
+    // numbers relative to the start of the file.
+    int lineno = 1
+        + std::count(sf.sf_string, sf.sf_string + sf.sf_begin, '\n');
 
     auto rest_sf = sf;
     while (!rest_sf.empty()) {
         auto split_pair = rest_sf.split_when(string_fragment::tag1{'\n'});
         auto line_sf = split_pair.first;
 
-        eols.emplace_back(line_sf.sf_begin, line_sf.sf_end, lineno++);
+        eols.emplace_back(line_sf.sf_begin - sf.sf_begin,
+                          line_sf.sf_end - sf.sf_begin,
+                          lineno++);
         rest_sf = split_pair.second;
     }
 
@@ -415,8 +415,7 @@ parse(const string_fragment& sf, event_handler& eh)
 
     parser.abi_version = 0;
     parser.flags
-        = (MD_DIALECT_GITHUB | MD_FLAG_UNDERLINE | MD_FLAG_STRIKETHROUGH)
-        & ~(MD_FLAG_PERMISSIVEAUTOLINKS);
+        = (MD_DIALECT_GITHUB | MD_FLAG_UNDERLINE) & ~MD_FLAG_PERMISSIVEAUTOLINKS;
     parser.enter_block = md4cpp_enter_block;
     parser.leave_block = md4cpp_leave_block;
     parser.enter_span = md4cpp_enter_span;
@@ -425,8 +424,16 @@ parse(const string_fragment& sf, event_handler& eh)
 
     auto rc = md_parse(sf.data(), sf.length(), &parser, &pu);
 
+    // The fragment belongs to the caller and need not outlive this call.
+    eh.eh_fragment = string_fragment{};
+    eh.eh_tree.reset();
+
     if (rc == 0) {
         return Ok();
+    }
+
+    if (pu.pu_error_msg.empty()) {
+        return Err(fmt::format(FMT_STRING("markdown parser failed ({})"), rc));
     }
 
     return Err(pu.pu_error_msg);
