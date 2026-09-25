@@ -1,0 +1,4 @@
+Row 0:
+  Column dirname('foo//bar'): foo
+  Column dirname('/foo//bar'): /foo
+  Column dirname('//bar'): /

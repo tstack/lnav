@@ -1,0 +1,6 @@
+Row 0:
+  Column yaml_to_json('---
+a: 1
+---
+b: 2
+'): [{"a": 1},{"b": 2}]

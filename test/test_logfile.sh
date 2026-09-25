@@ -491,6 +491,12 @@ Nov 03 08:09:33 2007 -- 816
 EOF
 
 
+# A line whose timestamp has less precision than the rest is rejected, and
+# the lines after it keep being parsed with the format that was working.
+run_cap_test ${lnav_test} -nN -I ${test_dir} \
+    -c ";SELECT log_line, log_time, log_body FROM relock_log" \
+    ${test_dir}/logfile_relock.0
+
 run_test ./drive_logfile -t -f epoch_log ${srcdir}/logfile_epoch.0
 
 check_output "epoch_log timestamp interpreted incorrectly?" <<EOF

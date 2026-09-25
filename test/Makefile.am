@@ -440,6 +440,7 @@ dist_noinst_DATA = \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
 	logfile_regexp_access_log.0 \
+	logfile_relock.0 \
 	logfile_rollover.0 \
 	logfile_rollover.1 \
 	logfile_rust_tracing.0 \
@@ -528,6 +529,7 @@ dist_noinst_DATA = \
 	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
 	formats/partitions/format.json \
+	formats/relock/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/scripts/redirecting.lnav \
 	formats/scripts/nested-redirecting.lnav \

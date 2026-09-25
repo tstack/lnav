@@ -1,0 +1,2 @@
+[1m[4mshell_exec('echo "[$TZ] [$msg] [$YES_COLOR]"', NULL, json_object('env', json_object('TZ', NULL, 'msg', 'hi')))[0m[1m[4m [0m
+[] [hi] [1][33m␊[0m                                                                                                   

@@ -14,9 +14,10 @@ rm sql_fs_readlink_test.lnk
 
 run_cap_test ./drive_sql "select realpath('non-existent-path')"
 
-# ln -sf drive_sql sql_fs_realpath_test.lnk
-# run_cap_test ./drive_sql "select realpath('sql_fs_realpath_test.lnk')"
-# rm sql_fs_realpath_test.lnk
+# the resolved path depends on the build directory, so only check parts of it
+ln -sf drive_sql sql_fs_realpath_test.lnk
+run_cap_test ./drive_sql "select basename(realpath('sql_fs_realpath_test.lnk')), realpath('sql_fs_realpath_test.lnk') = realpath('drive_sql'), substr(realpath('.'), 1, 1)"
+rm sql_fs_realpath_test.lnk
 
 run_cap_test ./drive_sql "select basename('')"
 
@@ -50,6 +51,8 @@ run_cap_test ./drive_sql "select dirname('/foo//')"
 
 run_cap_test ./drive_sql "select dirname('foo//')"
 
+run_cap_test ./drive_sql "select dirname('foo//bar'), dirname('/foo//bar'), dirname('//bar')"
+
 run_cap_test ./drive_sql "select joinpath()"
 
 run_cap_test ./drive_sql "select joinpath('foo')"
@@ -66,6 +69,10 @@ run_cap_test ${lnav_test} -Nn -c ";SELECT shell_exec('echo hi', NULL, '{ 1')"
 
 run_cap_test ${lnav_test} -Nn \
     -c ";SELECT shell_exec('echo \$msg', NULL, json_object('env', json_object('msg', 'hi')))"
+
+# a NULL unsets the variable and the rest of the environment is passed through
+run_cap_test ${lnav_test} -Nn \
+    -c ";SELECT shell_exec('echo \"[\$TZ] [\$msg] [\$YES_COLOR]\"', NULL, json_object('env', json_object('TZ', NULL, 'msg', 'hi')))"
 
 run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/non-existent')"
 

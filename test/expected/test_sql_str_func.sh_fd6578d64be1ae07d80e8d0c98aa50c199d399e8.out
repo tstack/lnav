@@ -1,0 +1,2 @@
+Row 0:
+  Column parse_url('https://example.com/?a=%ff&b=1&c%3Dd=e%3Df'): {"scheme":"https","username":null,"password":null,"host":"example.com","port":null,"path":"/","query":"a=%ff&b=1&c%3Dd=e%3Df","parameters":{"a":"%ff","b":"1","c=d":"e=f"},"fragment":null}

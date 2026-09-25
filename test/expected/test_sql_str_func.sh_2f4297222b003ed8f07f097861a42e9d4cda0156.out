@@ -1,0 +1,2 @@
+Row 0:
+  Column decode(encode('abcdefg', 'base64'), 'base64'): abcdefg

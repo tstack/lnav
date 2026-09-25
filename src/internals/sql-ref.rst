@@ -597,7 +597,7 @@ anonymize(*value*)
       Aback, 10.0.0.1
 
   **See Also**
-    :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -903,7 +903,7 @@ char(*X*)
       HI
 
   **See Also**
-    :ref:`anonymize`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -936,7 +936,7 @@ charindex(*needle*, *haystack*, *\[start\]*)
       0
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -983,7 +983,7 @@ concat(*X*)
       Size: 1234
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1008,7 +1008,7 @@ concat_ws(*sep*, *X*)
       1,2,3,4
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1153,7 +1153,7 @@ decode(*value*, *algorithm*)
       curl
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1299,7 +1299,7 @@ encode(*value*, *algorithm*)
       Hello%2C%20World%21
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1331,7 +1331,7 @@ endswith(*str*, *suffix*)
       0
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1388,7 +1388,7 @@ extract(*str*)
       {"col_0":1.0,"col_1":2.0}
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1478,7 +1478,7 @@ fuzzy_match(*pattern*, *str*)
       137
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1643,7 +1643,7 @@ group_concat(*X*, *\[sep\]*)
       hw,gw
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1667,7 +1667,7 @@ group_spooky_hash(*str*)
       4e7a190aead058cb123c94290f29c34a
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1683,7 +1683,7 @@ gunzip(*b*)
     * **b** --- The blob to decompress
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1699,7 +1699,7 @@ gzip(*value*)
     * **value** --- The value to compress
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1754,7 +1754,7 @@ humanize_duration(*secs*)
       1s500ms
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1780,7 +1780,7 @@ humanize_file_size(*value*)
       10.5MB
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1806,7 +1806,7 @@ humanize_id(*id*)
       cluster1
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -1854,7 +1854,7 @@ instr(*haystack*, *needle*)
       2
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -2716,7 +2716,7 @@ leftstr(*str*, *N*)
       abc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -2740,7 +2740,7 @@ length(*str*)
       3
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -2953,7 +2953,7 @@ logfmt2json(*str*)
       {"foo":1,"bar":2,"name":"Rolo Tomassi"}
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -2977,7 +2977,7 @@ lower(*str*)
       abc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3009,7 +3009,7 @@ ltrim(*str*, *\[chars\]*)
       c
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3195,7 +3195,7 @@ padc(*str*, *len*)
        abcdef ghi
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3227,7 +3227,7 @@ padl(*str*, *len*)
       abcdef
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3259,7 +3259,7 @@ padr(*str*, *len*)
       abcdefghi
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3290,7 +3290,7 @@ parse_url(*url*)
       {"scheme":"https","username":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3378,7 +3378,7 @@ pretty_print(*str*)
       }
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3417,7 +3417,7 @@ printf(*format*, *X*)
       value: 00011
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3441,7 +3441,7 @@ proper(*str*)
       Hello, World!
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3569,7 +3569,7 @@ rank()
 readlink(*path*)
 ^^^^^^^^^^^^^^^^
 
-  Read the target of a symbolic link.
+  Read the target of a symbolic link.  If the path is not a symbolic link, it is returned unchanged.
 
   **PRQL Name**: fs.readlink
 
@@ -3641,7 +3641,7 @@ regexp_capture(*string*, *pattern*)
                 1             2 <NULL>                   3           8          9       2 
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3669,7 +3669,7 @@ regexp_capture_into_json(*string*, *pattern*, *\[options\]*)
                 1 {"col_0⋯l_1":2} 
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3710,7 +3710,7 @@ regexp_match(*re*, *str*)
       {"num":123,"str":"four"}
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3745,7 +3745,7 @@ regexp_replace(*str*, *re*, *repl*)
       <123> <abc>
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3778,7 +3778,7 @@ replace(*str*, *old*, *replacement*)
       zbc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3803,7 +3803,7 @@ replicate(*str*, *N*)
       abcabcabc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3829,7 +3829,7 @@ reverse(*str*)
       cba
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3861,7 +3861,7 @@ rightstr(*str*, *N*)
       abc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -3957,7 +3957,7 @@ rtrim(*str*, *\[chars\]*)
       a
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4036,34 +4036,34 @@ source_log_stmt(*path*)
 ----
 
 
-.. _sparkline:
+.. _sparkline_agg:
 
 sparkline(*value*, *\[bound_a\]*, *\[bound_b\]*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Function used to generate a sparkline bar chart.  The non-aggregate version converts a single numeric value on a range to a bar chart character.  The aggregate version returns a string with a bar character for every numeric input
+  Aggregate function that returns a sparkline bar chart with a bar character for every numeric input
 
   **PRQL Name**: text.sparkline
 
   **Parameters**
-    * **value\*** --- The numeric value to convert
-    * **bound_a** --- One bound of the numeric range.  Order does not matter: the smaller of bound_a and bound_b is the floor, the larger is the ceiling.  Defaults to 100; the aggregate version uses the largest input as the ceiling.
+    * **value\*** --- The numeric value to chart
+    * **bound_a** --- One bound of the numeric range.  Order does not matter: the smaller of bound_a and bound_b is the floor, the larger is the ceiling.  Defaults to the largest input.
     * **bound_b** --- The other bound of the numeric range.  Defaults to 0.
 
   **Examples**
-    To get the unicode block element for the value 32 in the range of 0-128:
-
-    .. code-block::  custsqlite
-
-      ;SELECT sparkline(32, 128)
-      ▂
-
     To chart the values in a JSON array:
 
     .. code-block::  custsqlite
 
       ;SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, 4, 5, 6, 7, 8]')
        ▁▂▃▄▅▆▇█
+
+    To chart the values on a range of 0-100:
+
+    .. code-block::  custsqlite
+
+      ;SELECT sparkline(value, 0, 100) FROM json_each('[10, 50, 90]')
+      ▁▄█
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
@@ -4111,7 +4111,7 @@ spooky_hash(*str*)
       f96b3d9c1a19f4394c97a1b79b1880df
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4225,7 +4225,7 @@ startswith(*str*, *prefix*)
       0
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4250,7 +4250,7 @@ strfilter(*source*, *include*)
       bcbc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4337,7 +4337,7 @@ substr(*str*, *start*, *\[size\]*)
       b
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4449,7 +4449,7 @@ timeslice(*time*, *slice*)
   **PRQL Name**: time.slice
 
   **Parameters**
-    * **time\*** --- The timestamp to get the time slice for.
+    * **time\*** --- The timestamp to get the time slice for.  A number is taken as time since the epoch: an integer in milliseconds and a real in seconds.
     * **slice\*** --- The size of the time slices
 
   **Examples**
@@ -4508,7 +4508,7 @@ timezone(*tz*, *ts*)
       2022-03-02T02:00:00.000000-0800
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4575,7 +4575,7 @@ trim(*str*, *\[chars\]*)
       abc
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4628,7 +4628,7 @@ unhex(*X*)
       Hello
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4652,7 +4652,7 @@ unicode(*X*)
       97
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4690,7 +4690,7 @@ unparse_url(*obj*)
       https://example.com/
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -4714,7 +4714,7 @@ upper(*str*)
       ABC
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`xpath`
 
 ----
 
@@ -4757,7 +4757,7 @@ xpath(*xpath*, *xmldoc*)
       Hello ★ /abc/def/text() {}        Hello ★   
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`
 
 ----
 

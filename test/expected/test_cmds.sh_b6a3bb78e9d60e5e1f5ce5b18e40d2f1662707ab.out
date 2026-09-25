@@ -4597,7 +4597,8 @@ For support questions, email:
 
 [1m[4mreadlink[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Read the target of a symbolic link.
+  Read the target of a symbolic link.  If the path is not a symbolic
+  link, it is returned unchanged.
 [4mParameter[0m
   [4mpath[0m   The path to the symbolic link.
 [4mSee Also[0m
@@ -5006,16 +5007,14 @@ For support questions, email:
 
 [1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  Function used to generate a sparkline bar chart.  The
-  non-aggregate version converts a single numeric value on a range to
-  a bar chart character.  The aggregate version returns a string with
-  a bar character for every numeric input
+  Aggregate function that returns a sparkline bar chart with a bar
+  character for every numeric input
 [4mParameters[0m
-  [4mvalue[0m     The numeric value to convert
+  [4mvalue[0m     The numeric value to chart
   [4mbound_a[0m   One bound of the numeric range.  Order does
             not matter: the smaller of bound_a and bound_b is the
-            floor, the larger is the ceiling.  Defaults to 100; the
-            aggregate version uses the largest input as the ceiling.
+            floor, the larger is the ceiling.  Defaults to the largest
+            input.
   [4mbound_b[0m   The other bound of the numeric range.
             Defaults to 0.
 [4mSee Also[0m
@@ -5030,13 +5029,13 @@ For support questions, email:
   [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, 
   [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
-#1 To get the unicode block element for the value 32 in the range of 0-128:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[1m[37m[40m32[0m[37m[40m, [0m[1m[37m[40m128[0m[37m[40m)                         [0m
-   ▂
-
-#2 To chart the values in a JSON array:
+#1 To chart the values in a JSON array:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[0, 1, 2, 3, 4, 5, 6, 7, 8]'[0m[37m[40m)[0m
     ▁▂▃▄▅▆▇█
+
+#2 To chart the values on a range of 0-100:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40m, [0m[1m[37m[40m100[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[10, 50, 90]'[0m[37m[40m)[0m
+   ▁▄█
 
 
 [1m[4mspooky_hash[0m[4m([0m[4mstr[0m[4m, ...)[0m
@@ -5314,7 +5313,9 @@ For support questions, email:
   Return the start of the slice of time that the given timestamp
   falls in.  If the time falls outside of the slice, NULL is returned.
 [4mParameters[0m
-  [4mtime[0m    The timestamp to get the time slice for.
+  [4mtime[0m    The timestamp to get the time slice for.  A number
+          is taken as time since the epoch: an integer in milliseconds
+          and a real in seconds.
   [4mslice[0m   The size of the time slices
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 

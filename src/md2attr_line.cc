@@ -47,11 +47,9 @@
 #include "pcrepp/pcre2pp.hh"
 #include "pugixml/pugixml.hpp"
 #include "readline_highlighters.hh"
-#include "scn/scan.h"
 #include "text_format.hh"
 #include "textfile_highlighters.hh"
 #include "view_curses.hh"
-#include "ww898/cp_utf8.hpp"
 
 using namespace lnav::roles::literals;
 using namespace md4cpp::literals;
@@ -81,40 +79,6 @@ struct md_script_annotator : lnav::script::parser {
         return Ok();
     }
 };
-
-/**
- * @return The UTF-8 for a numeric character reference, like "&#169;" or
- * "&#x2014;", or nullopt if it is not one or does not name a valid code point.
- */
-static std::optional<std::string>
-decode_numeric_entity(string_fragment sf)
-{
-    if (!sf.startswith("&#") || !sf.endswith(";")) {
-        return std::nullopt;
-    }
-
-    auto digits = sf.substr(2).sub_range(0, sf.length() - 3);
-    auto base = 10;
-    if (digits.startswith("x") || digits.startswith("X")) {
-        digits = digits.substr(1);
-        base = 16;
-    }
-    auto scan_res = scn::scan_int<uint32_t>(digits.to_string_view(), base);
-    if (!scan_res || !scan_res->range().empty()) {
-        return std::nullopt;
-    }
-
-    auto cp = scan_res->value();
-    if (cp == 0 || (0xD800 <= cp && cp <= 0xDFFF) || cp > 0x10FFFF) {
-        return std::nullopt;
-    }
-
-    std::string retval;
-    ww898::utf::utf8::write(cp, [&retval](uint8_t ch) {
-        retval.push_back(static_cast<char>(ch));
-    });
-    return retval;
-}
 
 static highlight_map_t
 get_highlight_map()
@@ -1159,7 +1123,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
             if (xe_iter != entity_map.xem_entities.end()) {
                 last_block.append(xe_iter->second.xe_chars);
-            } else if (auto decoded = decode_numeric_entity(sf)) {
+            } else if (auto decoded = md4cpp::decode_numeric_entity(sf)) {
                 last_block.append(decoded.value());
             } else {
                 last_block.append(sf);

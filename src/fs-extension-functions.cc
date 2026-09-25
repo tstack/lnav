@@ -29,6 +29,7 @@
  * @file fs-extension-functions.cc
  */
 
+#include <algorithm>
 #include <future>
 #include <map>
 #include <optional>
@@ -56,6 +57,8 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp_def.hh"
+
+extern char** environ;
 
 static mapbox::util::variant<const char*, string_fragment>
 sql_basename(const char* path_in)
@@ -95,6 +98,13 @@ sql_dirname(const char* path_in)
 
     while (text_end >= 0) {
         if (path_in[text_end] == '/' || path_in[text_end] == '\\') {
+            // Drop any other separators before this one, like "foo//bar".
+            while (text_end > 0
+                   && (path_in[text_end - 1] == '/'
+                       || path_in[text_end - 1] == '\\'))
+            {
+                text_end -= 1;
+            }
             return string_fragment(path_in, 0, text_end == 0 ? 1 : text_end);
         }
 
@@ -150,17 +160,26 @@ sql_readlink(const char* path)
         return text_auto_buffer{std::move(buf)};
     }
 
-    auto buf = auto_buffer::alloc(st.st_size);
-    auto rc = readlink(path, buf.in(), buf.capacity());
-    if (rc < 0) {
-        throw lnav::console::user_message::error(
-            attr_line_t("readlink() failed for path: ")
-                .append(lnav::roles::file(path)))
-            .with_errno_reason();
+    // st_size is not reliable: it is zero for some links, like the ones in
+    // /proc on Linux, and the link can change after the lstat().  So, grow
+    // the buffer until the target fits with room to spare, since readlink()
+    // truncates without saying so.
+    auto buf_size = std::max<size_t>(st.st_size, PATH_MAX) + 1;
+    while (true) {
+        auto buf = auto_buffer::alloc(buf_size);
+        auto rc = readlink(path, buf.in(), buf.capacity());
+        if (rc < 0) {
+            throw lnav::console::user_message::error(
+                attr_line_t("readlink() failed for path: ")
+                    .append(lnav::roles::file(path)))
+                .with_errno_reason();
+        }
+        if ((size_t) rc < buf.capacity()) {
+            buf.resize(rc);
+            return text_auto_buffer{std::move(buf)};
+        }
+        buf_size *= 2;
     }
-    buf.resize(rc);
-
-    return text_auto_buffer{std::move(buf)};
 }
 
 static text_auto_buffer
@@ -173,6 +192,7 @@ sql_realpath(const char* path)
                 .append_quoted(lnav::roles::file(path)))
             .with_errno_reason();
     }
+    resolved_path.resize(strlen(resolved_path.in()));
 
     return text_auto_buffer{std::move(resolved_path)};
 }
@@ -223,6 +243,37 @@ sql_shell_exec(const char* cmd,
         options = parse_res.unwrap();
     }
 
+    // The child can only call async-signal-safe functions between fork() and
+    // exec, so everything that allocates is done here.
+    const auto shell = getenv_opt("SHELL").value_or("bash");
+    const char* const args[] = {
+        shell,
+        "-c",
+        cmd,
+        nullptr,
+    };
+    std::vector<std::string> env_strs;
+    for (size_t lpc = 0; environ[lpc] != nullptr; lpc++) {
+        auto name = string_fragment::from_c_str(environ[lpc])
+                        .split_when(string_fragment::tag1{'='})
+                        .first;
+
+        if (options.po_env.count(name.to_string()) == 0) {
+            env_strs.emplace_back(environ[lpc]);
+        }
+    }
+    for (const auto& epair : options.po_env) {
+        if (epair.second.has_value()) {
+            env_strs.emplace_back(
+                fmt::format(FMT_STRING("{}={}"), epair.first, *epair.second));
+        }
+    }
+    std::vector<char*> child_env;
+    for (auto& env_str : env_strs) {
+        child_env.emplace_back(env_str.data());
+    }
+    child_env.emplace_back(nullptr);
+
     auto child_fds_res
         = auto_pipe::for_child_fds(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
     if (child_fds_res.isErr()) {
@@ -243,21 +294,7 @@ sql_shell_exec(const char* cmd,
     }
 
     if (child_pid.in_child()) {
-        const char* const args[] = {
-            getenv_opt("SHELL").value_or("bash"),
-            "-c",
-            cmd,
-            nullptr,
-        };
-
-        for (const auto& epair : options.po_env) {
-            if (epair.second.has_value()) {
-                setenv(epair.first.c_str(), epair.second->c_str(), 1);
-            } else {
-                unsetenv(epair.first.c_str());
-            }
-        }
-
+        environ = child_env.data();
         execvp(args[0], (char**) args);
         _exit(EXIT_FAILURE);
     }
@@ -274,6 +311,9 @@ sql_shell_exec(const char* cmd,
                 auto rc
                     = read(out_fd, buffer.next_available(), buffer.available());
                 if (rc < 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
                     break;
                 }
                 if (rc == 0) {
@@ -297,6 +337,9 @@ sql_shell_exec(const char* cmd,
                 auto rc
                     = read(err_fd, buffer.next_available(), buffer.available());
                 if (rc < 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
                     break;
                 }
                 if (rc == 0) {
@@ -309,7 +352,9 @@ sql_shell_exec(const char* cmd,
         });
 
     if (input) {
-        child_fds[0].write_end().write_fully(input.value());
+        // A child that exits without reading all of its input is not an
+        // error, and SIGPIPE is ignored, so a failed write is ignored too.
+        (void) child_fds[0].write_end().write_fully(input.value());
     }
     child_fds[0].close();
 
@@ -318,8 +363,11 @@ sql_shell_exec(const char* cmd,
     auto finished_child = std::move(child_pid).wait_for_child();
 
     if (!finished_child.was_normal_exit()) {
-        throw sqlite_func_error("child failed with signal {}",
-                                finished_child.term_signal());
+        throw lnav::console::user_message::error(
+            attr_line_t("child failed with signal ")
+                .append(lnav::roles::number(
+                    fmt::to_string(finished_child.term_signal()))))
+            .with_reason(err_reader.get().to_string());
     }
 
     if (finished_child.exit_status() != EXIT_SUCCESS) {
@@ -411,7 +459,9 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                      "SELECT joinpath('/', 'foo', '/bar')"})),
 
         sqlite_func_adapter<decltype(&sql_readlink), sql_readlink>::builder(
-            help_text("readlink", "Read the target of a symbolic link.")
+            help_text("readlink",
+                      "Read the target of a symbolic link.  If the path is "
+                      "not a symbolic link, it is returned unchanged.")
                 .sql_function()
                 .with_prql_path({"fs", "readlink"})
                 .with_parameter({"path", "The path to the symbolic link."})

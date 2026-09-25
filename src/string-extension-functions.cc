@@ -7,6 +7,8 @@
  * commercial or non-commercial, and by any means.
  */
 
+#include <cmath>
+#include <optional>
 #include <unordered_map>
 
 #include <sqlite3.h>
@@ -120,6 +122,29 @@ find_re(string_fragment re)
     return &iter->second;
 }
 
+/**
+ * @return The capture as an integer, or as a finite real, when all of it
+ * parses as one.
+ */
+std::optional<mapbox::util::variant<int64_t, double>>
+capture_to_number(string_fragment cap)
+{
+    const auto sv = cap.to_string_view();
+
+    auto scan_int_res = scn::scan_value<int64_t>(sv);
+    if (scan_int_res && scan_int_res->range().empty()) {
+        return scan_int_res->value();
+    }
+    auto scan_float_res = scn::scan_value<double>(sv);
+    if (scan_float_res && scan_float_res->range().empty()
+        && std::isfinite(scan_float_res->value()))
+    {
+        return scan_float_res->value();
+    }
+
+    return std::nullopt;
+}
+
 bool
 regexp(string_fragment re, string_fragment str)
 {
@@ -158,16 +183,23 @@ mapbox::util::
             return static_cast<const char*>(nullptr);
         }
 
-        auto scan_int_res = scn::scan_int<int64_t>(cap->to_string_view());
-        if (scan_int_res) {
-            if (scan_int_res->range().empty()) {
-                return scan_int_res->value();
-            }
-            auto scan_float_res
-                = scn::scan_value<double>(cap->to_string_view());
-            if (scan_float_res && scan_float_res->range().empty()) {
-                return scan_float_res->value();
-            }
+        auto num = capture_to_number(cap.value());
+        if (num) {
+            return num->match(
+                [](int64_t iv) -> mapbox::util::variant<int64_t,
+                                                        double,
+                                                        const char*,
+                                                        string_fragment,
+                                                        json_string> {
+                    return iv;
+                },
+                [](double dv) -> mapbox::util::variant<int64_t,
+                                                       double,
+                                                       const char*,
+                                                       string_fragment,
+                                                       json_string> {
+                    return dv;
+                });
         }
 
         return cap.value();
@@ -187,18 +219,23 @@ mapbox::util::
             if (!cap) {
                 yajl_gen_null(gen);
             } else {
-                auto scan_int_res
-                    = scn::scan_value<int64_t>(cap->to_string_view());
-                if (scan_int_res && scan_int_res->range().empty()) {
-                    yajl_gen_integer(gen, scan_int_res->value());
+                static const auto JSON_NUMBER_RE
+                    = lnav::pcre2pp::code::from_const(
+                        R"(\A-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\z)");
+
+                auto num = capture_to_number(cap.value());
+                if (!num) {
+                    yajl_gen_pstring(gen, cap->data(), cap->length());
+                } else if (num->is<int64_t>()) {
+                    yajl_gen_integer(gen, num->get<int64_t>());
+                } else if (JSON_NUMBER_RE.find_in(cap.value())
+                               .ignore_error()
+                               .has_value())
+                {
+                    // Keep the text as written when it is already valid JSON.
+                    yajl_gen_number(gen, cap->data(), cap->length());
                 } else {
-                    auto scan_float_res
-                        = scn::scan_value<double>(cap->to_string_view());
-                    if (scan_float_res && scan_float_res->range().empty()) {
-                        yajl_gen_number(gen, cap->data(), cap->length());
-                    } else {
-                        yajl_gen_pstring(gen, cap->data(), cap->length());
-                    }
+                    yajl_gen_double(gen, num->get<double>());
                 }
             }
         }
@@ -379,7 +416,8 @@ sql_spooky_hash_final(sqlite3_context* context)
 struct sparkline_context {
     bool sc_initialized{true};
     double sc_max_value{0.0};
-    std::optional<double> sc_lower;
+    std::optional<double> sc_bound_a;
+    std::optional<double> sc_bound_b;
     std::vector<double> sc_values;
 };
 
@@ -400,12 +438,11 @@ sparkline_step(sqlite3_context* context, int argc, sqlite3_value** argv)
     sc->sc_values.push_back(sqlite3_value_double(argv[0]));
     sc->sc_max_value = std::max(sc->sc_max_value, sc->sc_values.back());
 
-    if (argc >= 2) {
-        sc->sc_max_value
-            = std::max(sc->sc_max_value, sqlite3_value_double(argv[1]));
+    if (argc >= 2 && sqlite3_value_type(argv[1]) != SQLITE_NULL) {
+        sc->sc_bound_a = sqlite3_value_double(argv[1]);
     }
-    if (argc >= 3) {
-        sc->sc_lower = sqlite3_value_double(argv[2]);
+    if (argc >= 3 && sqlite3_value_type(argv[2]) != SQLITE_NULL) {
+        sc->sc_bound_b = sqlite3_value_double(argv[2]);
     }
 }
 
@@ -423,8 +460,11 @@ sparkline_final(sqlite3_context* context)
     auto retval = auto_mem<char>::malloc(sc->sc_values.size() * 3 + 1);
     auto* start = retval.in();
 
+    // Without a bound, the largest input is the ceiling.  The bounds are
+    // otherwise treated like humanize::sparkline() does.
+    const auto bound_a = sc->sc_bound_a.value_or(sc->sc_max_value);
     for (const auto& value : sc->sc_values) {
-        auto bar = humanize::sparkline(value, sc->sc_max_value, sc->sc_lower);
+        auto bar = humanize::sparkline(value, bound_a, sc->sc_bound_b);
 
         strcpy(start, bar.c_str());
         start += bar.length();
@@ -535,7 +575,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
 
             switch (algo) {
                 case encode_algo::base64: {
-                    auto buf = auto_buffer::alloc((blob_len * 5) / 3);
+                    auto buf = auto_buffer::alloc(4 * ((blob_len + 2) / 3));
                     auto outlen = buf.capacity();
 
                     base64_encode(blob, blob_len, buf.in(), &outlen, 0);
@@ -573,7 +613,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
 
             switch (algo) {
                 case encode_algo::base64: {
-                    auto buf = auto_buffer::alloc((text_len * 5) / 3);
+                    auto buf = auto_buffer::alloc(4 * ((text_len + 2) / 3));
                     size_t outlen = buf.capacity();
 
                     base64_encode(text, text_len, buf.in(), &outlen, 0);
@@ -616,7 +656,11 @@ sql_decode(string_fragment str, encode_algo algo)
         case encode_algo::base64: {
             auto buf = auto_buffer::alloc(str.length());
             auto outlen = buf.capacity();
-            base64_decode(str.data(), str.length(), buf.in(), &outlen, 0);
+            if (base64_decode(str.data(), str.length(), buf.in(), &outlen, 0)
+                != 1)
+            {
+                throw sqlite_func_error("invalid base64 input");
+            }
             buf.resize(outlen);
 
             return blob_auto_buffer{std::move(buf)};
@@ -657,7 +701,7 @@ sql_decode(string_fragment str, encode_algo algo)
             static const auto ENTITY_RE = lnav::pcre2pp::code::from_const(
                 R"(&(?:([a-z0-9]+)|#([0-9]{1,6})|#x([0-9a-fA-F]{1,6}));)",
                 PCRE2_CASELESS);
-            static const auto ENTITIES = md4cpp::get_xml_entity_map();
+            static const auto& ENTITIES = md4cpp::get_xml_entity_map();
 
             auto buf = auto_buffer::alloc(str.length());
             auto res = ENTITY_RE.capture_from(str).for_each(
@@ -674,31 +718,12 @@ sql_decode(string_fragment str, encode_algo algo)
                         }
                         return;
                     }
-                    auto dec = match[2];
-                    if (dec) {
-                        auto scan_res
-                            = scn::scan_int<uint32_t>(dec->to_string_view());
-                        if (scan_res) {
-                            ww898::utf::utf8::write(
-                                scan_res.value().value(),
-                                [&buf](uint8_t c) { buf.push_back(c); });
-                        } else {
-                            buf.append(match[0]->to_string_view());
-                        }
-                        return;
-                    }
-                    auto hex = match[3];
-                    if (hex) {
-                        auto scan_res = scn::scan_int<uint32_t>(
-                            hex->to_string_view(), 16);
-                        if (scan_res) {
-                            ww898::utf::utf8::write(
-                                scan_res.value().value(),
-                                [&buf](uint8_t c) { buf.push_back(c); });
-                        } else {
-                            buf.append(match[0]->to_string_view());
-                        }
-                        return;
+                    auto decoded
+                        = md4cpp::decode_numeric_entity(match[0].value());
+                    if (decoded) {
+                        buf.append(decoded.value());
+                    } else {
+                        buf.append(match[0]->to_string_view());
                     }
                 });
             if (res.isOk()) {
@@ -837,51 +862,47 @@ sql_parse_url(std::string url)
             }
             auto query_frag = string_fragment::from_c_str(url_part.in());
             auto remaining = query_frag;
+            auto unescape = [](string_fragment sf, auto_mem<char>& buf) {
+                // curl treats a zero length as "use strlen()".
+                if (sf.empty()) {
+                    return string_fragment::from_const("");
+                }
+
+                int out_len = 0;
+
+                buf = curl_easy_unescape(
+                    CURL_HANDLE, sf.data(), sf.length(), &out_len);
+                return string_fragment::from_bytes(buf.in(), out_len);
+            };
 
             while (true) {
                 auto split_res
                     = remaining.split_when(string_fragment::tag1{'&'});
-                auto_mem<char> kv_pair(curl_free);
                 auto kv_pair_encoded = split_res.first;
-                int out_len = 0;
+                // Split before decoding so an encoded '=' stays in the key
+                // or value it belongs to.
+                auto eq_split = kv_pair_encoded.split_pair(
+                    string_fragment::tag1{'='});
+                auto key_encoded
+                    = eq_split ? eq_split->first : kv_pair_encoded;
+                auto_mem<char> key_buf(curl_free);
+                auto key_sf = unescape(key_encoded, key_buf);
 
-                kv_pair = curl_easy_unescape(CURL_HANDLE,
-                                             kv_pair_encoded.data(),
-                                             kv_pair_encoded.length(),
-                                             &out_len);
-
-                auto kv_pair_frag
-                    = string_fragment::from_bytes(kv_pair.in(), out_len);
-                auto eq_index_opt = kv_pair_frag.find('=');
-                if (eq_index_opt) {
-                    auto key = kv_pair_frag.sub_range(0, eq_index_opt.value());
-                    auto val = kv_pair_frag.substr(eq_index_opt.value() + 1);
-
-                    auto key_utf_res = is_utf8(key);
-                    auto val_utf_res = is_utf8(val);
-                    if (key_utf_res.is_valid()) {
-                        auto key_str = key.to_string();
-
-                        if (seen_keys.count(key_str) == 0) {
-                            seen_keys.emplace(key_str);
-                            query_map.gen(key);
-                            if (val_utf_res.is_valid()) {
-                                query_map.gen(val);
-                            } else {
-                                auto eq = strchr(kv_pair_encoded.data(), '=');
-                                query_map.gen(
-                                    string_fragment::from_c_str(eq + 1));
-                            }
-                        }
-                    } else {
-                    }
-                } else {
-                    auto val_str = split_res.first.to_string();
-
-                    if (seen_keys.count(val_str) == 0) {
-                        seen_keys.insert(val_str);
-                        query_map.gen(split_res.first);
+                if (is_utf8(key_sf).is_valid()
+                    && seen_keys.emplace(key_sf.to_string()).second)
+                {
+                    query_map.gen(key_sf);
+                    if (!eq_split) {
                         query_map.gen();
+                    } else {
+                        auto_mem<char> val_buf(curl_free);
+                        auto val_sf = unescape(eq_split->second, val_buf);
+
+                        if (is_utf8(val_sf).is_valid()) {
+                            query_map.gen(val_sf);
+                        } else {
+                            query_map.gen(eq_split->second);
+                        }
                     }
                 }
 
@@ -1154,45 +1175,6 @@ string_extension_functions(struct FuncDef** basic_funcs,
                             "To colorize the ID 'cluster1'",
                             "SELECT humanize_id('cluster1')",
                         })),
-
-        sqlite_func_adapter<decltype(&humanize::sparkline),
-                            humanize::sparkline>::
-            builder(
-                help_text("sparkline",
-                          "Function used to generate a sparkline bar chart.  "
-                          "The non-aggregate version converts a single numeric "
-                          "value on a range to a bar chart character.  The "
-                          "aggregate version returns a string with a bar "
-                          "character for every numeric input")
-                    .sql_function()
-                    .with_prql_path({"text", "sparkline"})
-                    .with_parameter({"value", "The numeric value to convert"})
-                    .with_parameter(help_text("bound_a",
-                                              "One bound of the numeric "
-                                              "range.  Order does not matter: "
-                                              "the smaller of bound_a and "
-                                              "bound_b is the floor, the "
-                                              "larger is the ceiling.  "
-                                              "Defaults to 100; the aggregate "
-                                              "version uses the largest input "
-                                              "as the ceiling.")
-                                        .optional())
-                    .with_parameter(help_text("bound_b",
-                                              "The other bound of the "
-                                              "numeric range.  Defaults to 0.")
-                                        .optional())
-                    .with_tags({"string"})
-                    .with_example({
-                        "To get the unicode block element for the "
-                        "value 32 in the "
-                        "range of 0-128",
-                        "SELECT sparkline(32, 128)",
-                    })
-                    .with_example({
-                        "To chart the values in a JSON array",
-                        "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, "
-                        "4, 5, 6, 7, 8]')",
-                    })),
 
         sqlite_func_adapter<decltype(&sql_anonymize), sql_anonymize>::builder(
             help_text("anonymize",
@@ -1488,6 +1470,34 @@ string_extension_functions(struct FuncDef** basic_funcs,
             0,
             sparkline_step,
             sparkline_final,
+            help_text("sparkline",
+                      "Aggregate function that returns a sparkline bar chart "
+                      "with a bar character for every numeric input")
+                .sql_agg_function()
+                .with_prql_path({"text", "sparkline"})
+                .with_parameter({"value", "The numeric value to chart"})
+                .with_parameter(help_text("bound_a",
+                                          "One bound of the numeric range.  "
+                                          "Order does not matter: the smaller "
+                                          "of bound_a and bound_b is the "
+                                          "floor, the larger is the ceiling.  "
+                                          "Defaults to the largest input.")
+                                    .optional())
+                .with_parameter(help_text("bound_b",
+                                          "The other bound of the numeric "
+                                          "range.  Defaults to 0.")
+                                    .optional())
+                .with_tags({"string"})
+                .with_example({
+                    "To chart the values in a JSON array",
+                    "SELECT sparkline(value) FROM json_each('[0, 1, 2, 3, 4, "
+                    "5, 6, 7, 8]')",
+                })
+                .with_example({
+                    "To chart the values on a range of 0-100",
+                    "SELECT sparkline(value, 0, 100) FROM json_each('[10, 50, "
+                    "90]')",
+                }),
         },
 
         {nullptr},

@@ -41,27 +41,46 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 
+/**
+ * Call a resolver function, retrying a few times when it reports a temporary
+ * failure.  EAI_AGAIN can go on indefinitely, like when the resolver is
+ * unreachable, so the query must not wait on it forever.
+ */
+template<typename F>
+static int
+retry_eai_again(F func)
+{
+    static constexpr int MAX_TRIES = 3;
+
+    auto rc = func();
+    for (auto tries = 1; rc == EAI_AGAIN && tries < MAX_TRIES; tries++) {
+        sqlite3_sleep(10);
+        rc = func();
+    }
+
+    return rc;
+}
+
 static std::string
 sql_gethostbyname(const char* name_in)
 {
     char buffer[INET6_ADDRSTRLEN];
     auto_mem<struct addrinfo> ai(freeaddrinfo);
-    void* addr_ptr = nullptr;
     struct addrinfo hints;
-    int rc;
 
     memset(&hints, 0, sizeof(hints));
+    // Prefer an IPv4 address, but fall back to IPv6 for a host that only has
+    // an AAAA record.
     for (auto family : {AF_INET, AF_INET6}) {
         hints.ai_family = family;
-        while ((rc = getaddrinfo(name_in, nullptr, &hints, ai.out()))
-               == EAI_AGAIN)
-        {
-            sqlite3_sleep(10);
-        }
+        auto rc = retry_eai_again([&]() {
+            return getaddrinfo(name_in, nullptr, &hints, ai.out());
+        });
         if (rc != 0) {
-            return name_in;
+            continue;
         }
 
+        void* addr_ptr = nullptr;
         switch (ai.in()->ai_family) {
             case AF_INET:
                 addr_ptr = &((struct sockaddr_in*) ai.in()->ai_addr)->sin_addr;
@@ -73,14 +92,17 @@ sql_gethostbyname(const char* name_in)
                 break;
 
             default:
-                return name_in;
+                continue;
         }
 
-        inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer));
-        break;
+        if (inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer))
+            != nullptr)
+        {
+            return buffer;
+        }
     }
 
-    return buffer;
+    return name_in;
 }
 
 static std::string
@@ -93,7 +115,6 @@ sql_gethostbyaddr(const char* addr_str)
     char buffer[NI_MAXHOST];
     int family, socklen;
     char* addr_raw;
-    int rc;
 
     memset(&sa, 0, sizeof(sa));
     if (strchr(addr_str, ':')) {
@@ -112,18 +133,15 @@ sql_gethostbyaddr(const char* addr_str)
         return addr_str;
     }
 
-    while ((rc = getnameinfo((struct sockaddr*) &sa,
-                             socklen,
-                             buffer,
-                             sizeof(buffer),
-                             NULL,
-                             0,
-                             0))
-           == EAI_AGAIN)
-    {
-        sqlite3_sleep(10);
-    }
-
+    auto rc = retry_eai_again([&]() {
+        return getnameinfo((struct sockaddr*) &sa,
+                           socklen,
+                           buffer,
+                           sizeof(buffer),
+                           nullptr,
+                           0,
+                           0);
+    });
     if (rc != 0) {
         return addr_str;
     }

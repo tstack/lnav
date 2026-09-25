@@ -1,0 +1,2 @@
+Row 0:
+  Column decode('&#0;x&#x110000;&#xD800;&#169;&#x2014;&amp;&bogus;', 'html'): &#0;x&#x110000;&#xD800;©—&&bogus;

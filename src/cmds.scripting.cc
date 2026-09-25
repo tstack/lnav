@@ -711,10 +711,24 @@ render_markdown(const std::filesystem::path& src,
     auto title = fmt::format(FMT_STRING("lnav: {}"), src);
 
     if (md_file.f_frontmatter_format == text_format_t::TF_YAML) {
-        auto tree = ryml::parse_in_arena(
-            lnav::ryml::to_csubstr(src.string()),
-            lnav::ryml::to_csubstr(md_file.f_frontmatter));
-        tree["title"] >> title;
+        // The page is still worth rendering with the default title if the
+        // front matter cannot be read.
+        try {
+            const auto src_str = src.string();
+            ryml::Parser parser(lnav::ryml::throwing_callbacks());
+            auto tree = parser.parse_in_arena(
+                lnav::ryml::to_csubstr(src_str),
+                lnav::ryml::to_csubstr(md_file.f_frontmatter));
+            auto root = tree.rootref();
+
+            if (root.is_map() && root.has_child("title")) {
+                root["title"] >> title;
+            }
+        } catch (const std::runtime_error& e) {
+            log_warning("%s: unable to read the front matter -- %s",
+                        src.c_str(),
+                        e.what());
+        }
     }
 
     auto head = fmt::format(HEADER, fmt::arg("title", title));

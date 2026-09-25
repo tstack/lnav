@@ -1,0 +1,3 @@
+Row 0:
+  Column json_group_object('a', x'00', 'b', 1): {"a":null,"b":1}
+  Column json_group_object('a', 1e999, 'b', 1): {"a":null,"b":1}

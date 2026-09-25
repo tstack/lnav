@@ -240,7 +240,8 @@ date_time_scanner::scan(const char* time_dest,
                     && last_tm.tm_mon == tm_out->et_tm.tm_mon
                     && last_tm.tm_mday == tm_out->et_tm.tm_mday
                     && last_tm.tm_hour == tm_out->et_tm.tm_hour
-                    && last_tm.tm_min == tm_out->et_tm.tm_min)
+                    && last_tm.tm_min == tm_out->et_tm.tm_min
+                    && this->dts_last_gmtoff == tm_out->et_gmtoff)
                 {
                     const auto sec_diff = tm_out->et_tm.tm_sec - last_tm.tm_sec;
 
@@ -307,7 +308,8 @@ date_time_scanner::scan(const char* time_dest,
                     && last_tm.tm_mon == tm_out->et_tm.tm_mon
                     && last_tm.tm_mday == tm_out->et_tm.tm_mday
                     && last_tm.tm_hour == tm_out->et_tm.tm_hour
-                    && last_tm.tm_min == tm_out->et_tm.tm_min)
+                    && last_tm.tm_min == tm_out->et_tm.tm_min
+                    && this->dts_last_gmtoff == tm_out->et_gmtoff)
                 {
                     const auto sec_diff = tm_out->et_tm.tm_sec - last_tm.tm_sec;
 
@@ -335,6 +337,7 @@ date_time_scanner::scan(const char* time_dest,
 
     if (retval != nullptr) {
         this->dts_last_tm = tm_out->et_tm;
+        this->dts_last_gmtoff = tm_out->et_gmtoff;
         this->dts_last_tv = tv_out;
     }
 
@@ -395,6 +398,30 @@ date_time_scanner::scan(const char* time_dest,
     return retval;
 }
 
+const char*
+date_time_scanner::scan_relocking(const char* time_src,
+                                  size_t time_len,
+                                  const char* const time_fmt[],
+                                  struct exttm* tm_out,
+                                  struct timeval& tv_out,
+                                  bool convert_local)
+{
+    const auto was_locked = this->dts_fmt_lock != -1;
+    const auto* retval
+        = this->scan(time_src, time_len, time_fmt, tm_out, tv_out, convert_local);
+
+    if (was_locked && retval == nullptr) {
+        const auto lock = this->unlock();
+        retval = this->scan(
+            time_src, time_len, time_fmt, tm_out, tv_out, convert_local);
+        if (retval == nullptr) {
+            this->relock(lock);
+        }
+    }
+
+    return retval;
+}
+
 date_time_scanner
 date_time_scanner::unlocked_copy() const
 {
@@ -404,6 +431,7 @@ date_time_scanner::unlocked_copy() const
     retval.dts_fmt_len = -1;
     retval.dts_last_tv = timeval{};
     retval.dts_last_tm = tm{};
+    retval.dts_last_gmtoff = 0;
     retval.dts_local_offset_cache = 0;
     retval.dts_local_offset_valid = 0;
     retval.dts_local_offset_expiry = 0;
@@ -422,6 +450,7 @@ date_time_scanner::clear()
     this->dts_fmt_len = -1;
     this->dts_last_tv = timeval{};
     this->dts_last_tm = tm{};
+    this->dts_last_gmtoff = 0;
     this->dts_localtime_cached_gmt = 0;
     this->dts_localtime_cached_tm = tm{};
 }
@@ -432,6 +461,7 @@ date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
     this->dts_base_time = base_time;
     this->dts_base_tm.et_tm = local_tm;
     this->dts_last_tm = tm{};
+    this->dts_last_gmtoff = 0;
     this->dts_last_tv = timeval{};
 }
 

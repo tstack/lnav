@@ -30,6 +30,11 @@
 #ifndef lnav_ryml_hh
 #define lnav_ryml_hh
 
+#include <stdexcept>
+
+#include <ctype.h>
+#include <string>
+
 #include "intern_string.hh"
 #include "ryml_all.hpp"
 
@@ -39,6 +44,30 @@ inline ::ryml::csubstr
 to_csubstr(const string_fragment& sf)
 {
     return {sf.data(), (size_t) sf.length()};
+}
+
+/**
+ * @return Callbacks for a ryml::Parser that throw a std::runtime_error on an
+ * error.  The default callbacks call abort().
+ */
+inline ::ryml::Callbacks
+throwing_callbacks()
+{
+    return ::ryml::Callbacks(
+        nullptr,
+        nullptr,
+        nullptr,
+        +[](const char* msg, size_t len, ::ryml::Location, void*) {
+            // Some messages count their NUL terminator in the length and
+            // others end with newlines.
+            while (len > 0
+                   && (msg[len - 1] == '\0'
+                       || isspace((unsigned char) msg[len - 1])))
+            {
+                len -= 1;
+            }
+            throw std::runtime_error(std::string(msg, len));
+        });
 }
 
 }  // namespace lnav::ryml

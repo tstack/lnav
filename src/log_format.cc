@@ -2345,6 +2345,9 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
             = this->timestamp_flags_for(sbc) & DATE_TIME_SET_FLAGS;
         auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
         if (new_flags != old_flags) {
+            // The line is rejected, so the lines after it should still be
+            // scanned with the format that was working.
+            sbc.sbc_time_scanner.relock(ls);
             return timestamp_outcome::relock_mismatch;
         }
         if (lf != nullptr) {
@@ -3486,29 +3489,18 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         {
             timeval tv;
 
-            const auto* last = jlu->jlu_time_scanner.scan(
+            const auto* last = jlu->jlu_time_scanner.scan_relocking(
                 (const char*) str,
                 len,
                 jlu->jlu_format->get_timestamp_formats(),
                 &jlu->jlu_exttm,
                 tv);
             if (last == nullptr) {
-                auto ls = jlu->jlu_time_scanner.unlock();
-                if ((last = jlu->jlu_time_scanner.scan(
-                         (const char*) str,
-                         len,
-                         jlu->jlu_format->get_timestamp_formats(),
-                         &jlu->jlu_exttm,
-                         tv))
-                    == nullptr)
-                {
-                    jlu->jlu_time_scanner.relock(ls);
-                    jlu->jlu_scan_error = log_format::scan_error{
-                        fmt::format(FMT_STRING("failed to parse timestamp "
-                                               "'{}' in string property '{}'"),
-                                    frag,
-                                    field_name)};
-                }
+                jlu->jlu_scan_error = log_format::scan_error{
+                    fmt::format(FMT_STRING("failed to parse timestamp "
+                                           "'{}' in string property '{}'"),
+                                frag,
+                                field_name)};
             }
             if (!jlu->jlu_subline_opts.hash_hack) {
                 if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET

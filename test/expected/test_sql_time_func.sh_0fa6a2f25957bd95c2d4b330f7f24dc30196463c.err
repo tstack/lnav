@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: call to [1m[4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m failed
+ [1m[31mreason[0m: time value is out of range -- 1e+300
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[1m[37m[40m1e300[0m[37m[40m, [0m[35m[40m'1s'[0m[37m[40m)          [0m

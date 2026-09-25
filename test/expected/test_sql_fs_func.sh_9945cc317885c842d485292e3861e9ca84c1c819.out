@@ -1,0 +1,4 @@
+Row 0:
+  Column basename(realpath('sql_fs_realpath_test.lnk')): drive_sql
+  Column realpath('sql_fs_realpath_test.lnk') = realpath('drive_sql'): 1
+  Column substr(realpath('.'), 1, 1): /

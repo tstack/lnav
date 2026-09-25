@@ -1,0 +1,11 @@
+Row 0:
+  Column yaml_to_json('a:
+b: ~
+c: NULL
+d: False
+e: TRUE
+f: 0x1F
+g: 0o17
+h: "~"
+i: |-
+  null'): {"a": null,"b": null,"c": null,"d": false,"e": true,"f": 31,"g": 15,"h": "~","i": "null"}

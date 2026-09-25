@@ -1,0 +1,5 @@
+Row 0:
+  Column encode('a', 'base64'): YQ==
+  Column encode('ab', 'base64'): YWI=
+  Column encode('abcd', 'base64'): YWJjZA==
+  Column encode('abcdefg', 'base64'): YWJjZGVmZw==

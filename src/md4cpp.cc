@@ -35,6 +35,8 @@
 #include "base/lnav_log.hh"
 #include "emojis-json.h"
 #include "pcrepp/pcre2pp.hh"
+#include "scn/scan.h"
+#include "ww898/cp_utf8.hpp"
 #include "xml-entities-json.h"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -166,6 +168,36 @@ escape_html(string_fragment content)
     }
 
     return text_auto_buffer{std::move(retval)};
+}
+
+std::optional<std::string>
+decode_numeric_entity(string_fragment sf)
+{
+    if (!sf.startswith("&#") || !sf.endswith(";")) {
+        return std::nullopt;
+    }
+
+    auto digits = sf.substr(2).sub_range(0, sf.length() - 3);
+    auto base = 10;
+    if (digits.startswith("x") || digits.startswith("X")) {
+        digits = digits.substr(1);
+        base = 16;
+    }
+    auto scan_res = scn::scan_int<uint32_t>(digits.to_string_view(), base);
+    if (!scan_res || !scan_res->range().empty()) {
+        return std::nullopt;
+    }
+
+    auto cp = scan_res->value();
+    if (cp == 0 || (0xD800 <= cp && cp <= 0xDFFF) || cp > 0x10FFFF) {
+        return std::nullopt;
+    }
+
+    std::string retval;
+    ww898::utf::utf8::write(cp, [&retval](uint8_t ch) {
+        retval.push_back(static_cast<char>(ch));
+    });
+    return retval;
 }
 
 file

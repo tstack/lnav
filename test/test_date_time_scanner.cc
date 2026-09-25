@@ -633,3 +633,85 @@ TEST_CASE("date_time_scanner")
         }
     }
 }
+
+TEST_CASE("date_time_scanner same minute with a different offset")
+{
+    static const char* const TS1 = "2022-03-02T10:20:30-0700";
+    static const char* const TS2 = "2022-03-02T10:20:31+0000";
+
+    date_time_scanner dts;
+    timeval tv1, tv2;
+    exttm tm1, tm2;
+
+    REQUIRE(dts.scan(TS1, strlen(TS1), nullptr, &tm1, tv1, false) != nullptr);
+    REQUIRE(dts.scan(TS2, strlen(TS2), nullptr, &tm2, tv2, false) != nullptr);
+
+    // Same wall-clock minute, but seven hours apart.
+    CHECK(tv2.tv_sec - tv1.tv_sec == 1 - 7 * 60 * 60);
+}
+
+TEST_CASE("date_time_scanner scan_relocking")
+{
+    static const char* const TS1 = "2022-03-02T10:00";
+    static const char* const TS2 = "2022-03-02 10:00:00.123";
+
+    timeval tv;
+    exttm tm;
+
+    SUBCASE("scan() stays on the locked format")
+    {
+        date_time_scanner dts;
+
+        REQUIRE(dts.scan(TS1, strlen(TS1), nullptr, &tm, tv, false)
+                != nullptr);
+        CHECK(dts.scan(TS2, strlen(TS2), nullptr, &tm, tv, false) == nullptr);
+    }
+
+    SUBCASE("scan_relocking() finds the new format")
+    {
+        date_time_scanner dts;
+
+        REQUIRE(dts.scan_relocking(TS1, strlen(TS1), nullptr, &tm, tv, false)
+                != nullptr);
+        CHECK(dts.scan_relocking(TS2, strlen(TS2), nullptr, &tm, tv, false)
+              == TS2 + strlen(TS2));
+        CHECK(tm.et_tm.tm_hour == 10);
+        CHECK(tm.et_tm.tm_min == 0);
+        CHECK(tv.tv_usec == 123000);
+    }
+
+    SUBCASE("scan_relocking() keeps the lock when nothing else matches")
+    {
+        static const char* const BAD = "not a timestamp";
+
+        date_time_scanner dts;
+
+        REQUIRE(dts.scan_relocking(TS1, strlen(TS1), nullptr, &tm, tv, false)
+                != nullptr);
+        const auto locked_fmt = dts.dts_fmt_lock;
+        REQUIRE(locked_fmt != -1);
+
+        CHECK(dts.scan_relocking(BAD, strlen(BAD), nullptr, &tm, tv, false)
+              == nullptr);
+        CHECK(dts.dts_fmt_lock == locked_fmt);
+    }
+
+    SUBCASE("scan_relocking() returns a partial match")
+    {
+        static const char* const PARTIAL = "2022-03-02T11:30 and more";
+
+        date_time_scanner dts;
+
+        REQUIRE(dts.scan_relocking(TS1, strlen(TS1), nullptr, &tm, tv, false)
+                != nullptr);
+        const auto locked_fmt = dts.dts_fmt_lock;
+
+        const auto* end = dts.scan_relocking(
+            PARTIAL, strlen(PARTIAL), nullptr, &tm, tv, false);
+        REQUIRE(end != nullptr);
+        CHECK(end == PARTIAL + strlen("2022-03-02T11:30"));
+        CHECK(tm.et_tm.tm_hour == 11);
+        CHECK(tm.et_tm.tm_min == 30);
+        CHECK(dts.dts_fmt_lock == locked_fmt);
+    }
+}

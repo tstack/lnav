@@ -1,0 +1,3 @@
+Row 0:
+  Column jget('{"a": 1e999}', '/a'): 1e999
+  Column typeof(jget('{"a": 1e999}', '/a')): text

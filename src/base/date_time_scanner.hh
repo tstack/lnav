@@ -104,6 +104,7 @@ struct date_time_scanner {
     int dts_fmt_lock{-1};
     int dts_fmt_len{-1};
     tm dts_last_tm{};
+    long dts_last_gmtoff{0};
     struct timeval dts_last_tv{};
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};
@@ -125,6 +126,23 @@ struct date_time_scanner {
                      struct exttm* tm_out,
                      struct timeval& tv_out,
                      bool convert_local = true);
+
+    /**
+     * Scan a timestamp whose format may differ from the last one scanned.
+     * The format lock is kept as a fast path, but it is dropped and the
+     * format rediscovered when the locked format does not match.  If no
+     * other format matches either, the lock is restored.  When the format
+     * does not change, this costs the same as scan().
+     *
+     * Like scan(), a match can stop short of the end of the input.  Whether
+     * that is acceptable is up to the caller.
+     */
+    const char* scan_relocking(const char* time_src,
+                               size_t time_len,
+                               const char* const time_fmt[],
+                               struct exttm* tm_out,
+                               struct timeval& tv_out,
+                               bool convert_local = true);
 
     size_t ftime(char* dst,
                  size_t len,

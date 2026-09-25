@@ -14,6 +14,9 @@ run_cap_test ./drive_sql "select json_concat(NULL, NULL)"
 
 run_cap_test ./drive_sql "select json_concat(NULL, json('{\"abc\": 1}'))"
 
+# a BLOB has no JSON form, so it becomes null
+run_cap_test ./drive_sql "select json_concat('[]', x'00', 1)"
+
 run_cap_test ./drive_sql "select json_contains(NULL, 4)"
 
 run_cap_test ./drive_sql "select json_contains('', 4)"
@@ -25,6 +28,11 @@ run_cap_test ./drive_sql "select json_contains('[[0]]', 0)"
 run_cap_test ./drive_sql "select json_contains('4', 4)"
 
 run_cap_test ./drive_sql "select json_contains('4', 2)"
+
+run_cap_test ./drive_sql "select json_contains('[1.5]', 1.5), json_contains('[1.0]', 1)"
+
+# an integer too big for 64 bits should not fail the parse
+run_cap_test ./drive_sql "select json_contains('[99999999999999999999, 1]', 1)"
 
 run_cap_test env TEST_COMMENT='contains1' ./drive_sql <<EOF
 select json_contains('"hi"', 'hi')
@@ -79,6 +87,9 @@ run_cap_test ./drive_sql "select jget('[null, true, 20, 30, 4.0]', '/4')"
 run_cap_test ./drive_sql "select typeof(jget('[null, true, 20, 30, 4.0]', '/4'))"
 
 run_cap_test ./drive_sql "select jget('[null, true, 20, 30, 40', '/0/foo')"
+
+# a number out of range for a double is returned as written
+run_cap_test ./drive_sql "select jget('{\"a\": 1e999}', '/a'), typeof(jget('{\"a\": 1e999}', '/a'))"
 
 run_cap_test ./drive_sql "select json_group_object(key) from (select 1 as key)"
 
@@ -136,6 +147,15 @@ EOF
 run_cap_test ./drive_sql "$GROUP_ARRAY_SELECT_2"
 
 run_cap_test ./drive_sql "SELECT json_group_array(column1) FROM (VALUES (1)) WHERE 0"
+
+# values JSON cannot represent become null and the keys stay paired
+run_cap_test ./drive_sql "SELECT json_group_object('a', x'00', 'b', 1), json_group_object('a', 1e999, 'b', 1)"
+
+run_cap_test ./drive_sql "SELECT json_group_array(1, 1e999, x'00', 2)"
+
+run_cap_test ./drive_sql "SELECT json_object_count_of(column1) FROM (VALUES ('a'), (NULL), ('a'))"
+
+run_cap_test ./drive_sql "SELECT json_object_sum_of(column1, column2) FROM (VALUES ('a', 1), ('a', 1.5), ('b', 2), (NULL, 5))"
 
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM nextcloud" \

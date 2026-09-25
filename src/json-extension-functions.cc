@@ -29,6 +29,7 @@
  * @file json-extension-functions.cc
  */
 
+#include <cmath>
 #include <cstring>
 #include <string>
 
@@ -70,8 +71,8 @@ null_or_default(sqlite3_context* context, int argc, sqlite3_value* argv[])
 }
 
 struct contains_userdata {
-    mapbox::util::variant<string_fragment, sqlite3_int64, bool> cu_match_value{
-        false};
+    mapbox::util::variant<string_fragment, sqlite3_int64, double, bool>
+        cu_match_value{false};
     size_t cu_depth{0};
     bool cu_result{false};
 };
@@ -92,13 +93,40 @@ contains_string(void* ctx,
     return 1;
 }
 
+/**
+ * Compare the number token as written, instead of having yajl convert it,
+ * so that a number too big for an integer does not fail the parse.
+ */
 int
-contains_integer(void* ctx, long long value)
+contains_number(void* ctx, const char* num, size_t len)
 {
     auto& cu = *((contains_userdata*) ctx);
 
-    if (cu.cu_depth <= 1 && cu.cu_match_value.get<sqlite3_int64>() == value) {
-        cu.cu_result = true;
+    if (cu.cu_depth > 1) {
+        return 1;
+    }
+
+    const auto num_sv = std::string_view{num, len};
+    if (cu.cu_match_value.is<sqlite3_int64>()) {
+        auto scan_int_res = scn::scan_value<int64_t>(num_sv);
+        if (scan_int_res && scan_int_res->range().empty()) {
+            if (scan_int_res->value() == cu.cu_match_value.get<sqlite3_int64>())
+            {
+                cu.cu_result = true;
+            }
+            return 1;
+        }
+    }
+
+    auto scan_float_res = scn::scan_value<double>(num_sv);
+    if (scan_float_res && scan_float_res->range().empty()) {
+        const auto needle = cu.cu_match_value.is<double>()
+            ? cu.cu_match_value.get<double>()
+            : (double) cu.cu_match_value.get<sqlite3_int64>();
+
+        if (scan_float_res->value() == needle) {
+            cu.cu_result = true;
+        }
     }
 
     return 1;
@@ -168,8 +196,12 @@ json_contains(vtab_types::nullable<const char> nullable_json_in,
                 sqlite3_value_text(value), sqlite3_value_bytes(value));
             break;
         case SQLITE_INTEGER:
-            cb.yajl_integer = contains_integer;
+            cb.yajl_number = contains_number;
             cu.cu_match_value = sqlite3_value_int64(value);
+            break;
+        case SQLITE_FLOAT:
+            cb.yajl_number = contains_number;
+            cu.cu_match_value = sqlite3_value_double(value);
             break;
         case SQLITE_NULL:
             cb.yajl_null = contains_null;
@@ -252,8 +284,15 @@ gen_handle_number(void* ctx, const char* numval, size_t numlen)
         } else {
             auto scan_float_res = scn::scan_value<double>(num_sv);
 
-            sjo->sjo_float = scan_float_res->value();
-            sjo->sjo_type = SQLITE_FLOAT;
+            if (scan_float_res && scan_float_res->range().empty()) {
+                sjo->sjo_float = scan_float_res->value();
+                sjo->sjo_type = SQLITE_FLOAT;
+            } else {
+                // Out of range for a double, like 1e999, so hand back the
+                // number as it was written.
+                sjo->sjo_str = std::string(numval, numlen);
+                sjo->sjo_type = SQLITE3_TEXT;
+            }
         }
     } else {
         sjo->jo_ptr_error_code = yajl_gen_number(gen, numval, numlen);
@@ -278,7 +317,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
     const auto json_in = from_sqlite<string_fragment>()(argc, argv, 0);
 
     if (sqlite3_value_type(argv[1]) == SQLITE_NULL) {
-        sqlite3_result_text(context, json_in.data(), -1, SQLITE_TRANSIENT);
+        sqlite3_result_text(
+            context, json_in.data(), json_in.length(), SQLITE_TRANSIENT);
         return;
     }
 
@@ -538,14 +578,20 @@ json_concat(std::optional<const char*> json_in,
                 case SQLITE3_TEXT: {
                     const auto* text_val = sqlite3_value_text(val);
 
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
                     if (sqlite3_value_subtype(val) == JSON_SUBTYPE) {
                         concat_gen_elements(
                             gen, text_val, strlen((const char*) text_val));
-                    } else {
-                        array.gen((const char*) text_val);
+                        break;
                     }
+#endif
+                    array.gen((const char*) text_val);
                     break;
                 }
+                default:
+                    // A BLOB has no JSON representation.
+                    array.gen();
+                    break;
             }
         }
     }
@@ -594,6 +640,49 @@ sql_flatten_json_object(string_fragment sf)
 }
 #endif
 
+/**
+ * Generate an SQL value as a JSON value.  Values that JSON cannot represent,
+ * a BLOB or a non-finite real, become null so that the output is still
+ * well-formed.
+ */
+void
+gen_sql_value(yajl_gen gen, sqlite3_value* val)
+{
+    switch (sqlite3_value_type(val)) {
+        case SQLITE3_TEXT: {
+            const auto* value = (const char*) sqlite3_value_text(val);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+            if (sqlite3_value_subtype(val) == JSON_SUBTYPE) {
+                yajl_gen_number(gen, value, strlen(value));
+                return;
+            }
+#endif
+            yajl_gen_string(
+                gen, (const unsigned char*) value, strlen(value));
+            return;
+        }
+        case SQLITE_INTEGER: {
+            const auto* value = (const char*) sqlite3_value_text(val);
+
+            yajl_gen_number(gen, value, strlen(value));
+            return;
+        }
+        case SQLITE_FLOAT: {
+            const auto value = sqlite3_value_double(val);
+
+            if (std::isfinite(value)) {
+                yajl_gen_double(gen, value);
+                return;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    yajl_gen_null(gen);
+}
+
 struct json_agg_context {
     yajl_gen_t* jac_yajl_gen;
 };
@@ -631,43 +720,7 @@ sql_json_group_object_step(sqlite3_context* context,
 
         yajl_gen_string(jac->jac_yajl_gen, key, strlen((const char*) key));
 
-        switch (sqlite3_value_type(argv[lpc + 1])) {
-            case SQLITE_NULL:
-                yajl_gen_null(jac->jac_yajl_gen);
-                break;
-            case SQLITE3_TEXT: {
-                const unsigned char* value = sqlite3_value_text(argv[lpc + 1]);
-#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
-                int subtype = sqlite3_value_subtype(argv[lpc + 1]);
-
-                if (subtype == JSON_SUBTYPE) {
-                    yajl_gen_number(jac->jac_yajl_gen,
-                                    (const char*) value,
-                                    strlen((const char*) value));
-                } else {
-#endif
-                    yajl_gen_string(
-                        jac->jac_yajl_gen, value, strlen((const char*) value));
-#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
-                }
-#endif
-                break;
-            }
-            case SQLITE_INTEGER: {
-                const unsigned char* value = sqlite3_value_text(argv[lpc + 1]);
-
-                yajl_gen_number(jac->jac_yajl_gen,
-                                (const char*) value,
-                                strlen((const char*) value));
-                break;
-            }
-            case SQLITE_FLOAT: {
-                double value = sqlite3_value_double(argv[lpc + 1]);
-
-                yajl_gen_double(jac->jac_yajl_gen, value);
-                break;
-            }
-        }
+        gen_sql_value(jac->jac_yajl_gen, argv[lpc + 1]);
     }
 }
 
@@ -708,43 +761,7 @@ sql_json_group_array_step(sqlite3_context* context,
     }
 
     for (int lpc = 0; lpc < argc; lpc++) {
-        switch (sqlite3_value_type(argv[lpc])) {
-            case SQLITE_NULL:
-                yajl_gen_null(jac->jac_yajl_gen);
-                break;
-            case SQLITE3_TEXT: {
-                const unsigned char* value = sqlite3_value_text(argv[lpc]);
-#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
-                int subtype = sqlite3_value_subtype(argv[lpc]);
-
-                if (subtype == JSON_SUBTYPE) {
-                    yajl_gen_number(jac->jac_yajl_gen,
-                                    (const char*) value,
-                                    strlen((const char*) value));
-                } else {
-#endif
-                    yajl_gen_string(
-                        jac->jac_yajl_gen, value, strlen((const char*) value));
-#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
-                }
-#endif
-                break;
-            }
-            case SQLITE_INTEGER: {
-                const unsigned char* value = sqlite3_value_text(argv[lpc]);
-
-                yajl_gen_number(jac->jac_yajl_gen,
-                                (const char*) value,
-                                strlen((const char*) value));
-                break;
-            }
-            case SQLITE_FLOAT: {
-                double value = sqlite3_value_double(argv[lpc]);
-
-                yajl_gen_double(jac->jac_yajl_gen, value);
-                break;
-            }
-        }
+        gen_sql_value(jac->jac_yajl_gen, argv[lpc]);
     }
 }
 
@@ -771,22 +788,47 @@ sql_json_group_array_final(sqlite3_context* context)
 }
 
 struct json_object_num_context {
+    struct num_value {
+        int64_t nv_int{0};
+        double nv_real{0.0};
+        bool nv_is_real{false};
+    };
+
     using obj_map
-        = robin_hood::unordered_map<string_fragment, int64_t, frag_hasher>;
+        = robin_hood::unordered_map<string_fragment, num_value, frag_hasher>;
 
     bool initialized{true};
     obj_map counts;
     ArenaAlloc::Alloc<char> alloc;
 
-    int64_t& operator[](string_fragment key)
+    num_value& operator[](string_fragment key)
     {
         auto iter = this->counts.find(key);
         if (iter == this->counts.end()) {
             key = key.to_owned(this->alloc);
-            iter = this->counts.emplace(key, 0).first;
+            iter = this->counts.emplace(key, num_value{}).first;
         }
 
         return iter->second;
+    }
+
+    json_string to_json() const
+    {
+        yajlpp_gen gen;
+        {
+            yajlpp_map root(gen);
+
+            for (const auto& [key, value] : this->counts) {
+                root.gen(key);
+                if (value.nv_is_real) {
+                    root.gen(value.nv_real);
+                } else {
+                    root.gen(value.nv_int);
+                }
+            }
+        }
+
+        return json_string(gen);
     }
 };
 
@@ -800,8 +842,11 @@ sql_json_object_count_of_step(sqlite3_context* ctx,
     if (!jctx.initialized) {
         new (&jctx) json_object_num_context();
     }
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        return;
+    }
     auto str = from_sqlite<string_fragment>()(argc, argv, 0);
-    jctx[str] += 1;
+    jctx[str].nv_int += 1;
 }
 
 void
@@ -814,17 +859,7 @@ sql_json_object_count_of_final(sqlite3_context* ctx)
         return;
     }
 
-    yajlpp_gen gen;
-    {
-        yajlpp_map root(gen);
-
-        for (const auto& [key, value] : jctx.counts) {
-            root.gen(key);
-            root.gen(value);
-        }
-    }
-
-    to_sqlite(ctx, json_string(gen));
+    to_sqlite(ctx, jctx.to_json());
 
     jctx.~json_object_num_context();
 }
@@ -839,9 +874,24 @@ sql_json_object_sum_of_step(sqlite3_context* ctx,
     if (!jctx.initialized) {
         new (&jctx) json_object_num_context();
     }
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        return;
+    }
     auto str = from_sqlite<string_fragment>()(argc, argv, 0);
-    auto val = sqlite3_value_int64(argv[1]);
-    jctx[str] += val;
+    auto& nv = jctx[str];
+    // Keep an integer sum until a real shows up, then report the real sum.
+    switch (sqlite3_value_numeric_type(argv[1])) {
+        case SQLITE_INTEGER:
+            nv.nv_int += sqlite3_value_int64(argv[1]);
+            nv.nv_real += (double) sqlite3_value_int64(argv[1]);
+            break;
+        case SQLITE_FLOAT:
+            nv.nv_is_real = true;
+            nv.nv_real += sqlite3_value_double(argv[1]);
+            break;
+        default:
+            break;
+    }
 }
 
 void
@@ -854,17 +904,7 @@ sql_json_object_sum_of_final(sqlite3_context* ctx)
         return;
     }
 
-    yajlpp_gen gen;
-    {
-        yajlpp_map root(gen);
-
-        for (const auto& [key, value] : jctx.counts) {
-            root.gen(key);
-            root.gen(value);
-        }
-    }
-
-    to_sqlite(ctx, json_string(gen));
+    to_sqlite(ctx, jctx.to_json());
 
     jctx.~json_object_num_context();
 }

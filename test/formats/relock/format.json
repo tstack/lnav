@@ -1,0 +1,17 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "relock_log": {
+        "title": "Timestamp relock test",
+        "description": "A format whose timestamps usually have milliseconds, but not always",
+        "regex": {
+            "std": {
+                "pattern": "^relock (?<timestamp>\\d{4}-\\d{2}-\\d{2} [\\d:.]+) (?<body>.*)$"
+            }
+        },
+        "sample": [
+            {
+                "line": "relock 2022-01-01 10:00:01.123 a"
+            }
+        ]
+    }
+}

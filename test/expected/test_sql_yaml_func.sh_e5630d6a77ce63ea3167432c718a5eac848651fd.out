@@ -1,0 +1,5 @@
+Row 0:
+  Column yaml_to_json('a: &x 1
+b: *x
+c: &y [1, 2]
+d: *y'): {"a": 1,"b": 1,"c": [1,2],"d": [1,2]}

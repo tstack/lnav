@@ -72,6 +72,9 @@ run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+)', 'foo=abc
 
 run_cap_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+\.\w+)', 'foo=abc; 123.456') as result"
 
+# captures that only look like numbers stay strings, so the JSON is valid
+run_cap_test ./drive_sql "select regexp_match('(\w+) (\S+) (\S+) (\S+)', 'nan inf .5 1.50') as result"
+
 run_cap_test ${lnav_test} -nN \
    -c ";SELECT regexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;')"
 
@@ -127,6 +130,16 @@ run_cap_test ./drive_sql "SELECT encode('abc & def nl1 ' || char(0x1b) || ' eof'
 
 run_cap_test ./drive_sql "SELECT decode('abc &amp; def nl1 &#10; nl2 &#x0a; eof', 'html')"
 
+# base64 output of every length, including those not a multiple of three
+run_cap_test ./drive_sql "SELECT encode('a', 'base64'), encode('ab', 'base64'), encode('abcd', 'base64'), encode('abcdefg', 'base64')"
+
+run_cap_test ./drive_sql "SELECT decode(encode('abcdefg', 'base64'), 'base64')"
+
+run_cap_test ./drive_sql "SELECT decode('!!!!', 'base64')"
+
+# numeric entities that are not valid code points are left as-is
+run_cap_test ./drive_sql "SELECT decode('&#0;x&#x110000;&#xD800;&#169;&#x2014;&amp;&bogus;', 'html')"
+
 #run_cap_test env TEST_COMMENT=invalid_url ./drive_sql <<'EOF'
 #SELECT parse_url('https://bad@[fe::')
 #EOF
@@ -161,6 +174,16 @@ EOF
 
 run_cap_test env TEST_COMMENT=parse_url7 ./drive_sql <<'EOF'
 SELECT parse_url('https://example.com/sea%26rch?flag&flag2&=def&flag3=abc+def#frag1%20space')
+EOF
+
+# a value that is not UTF-8 once decoded, and encoded '=' in a key and value
+run_cap_test env TEST_COMMENT=parse_url8 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/?a=%ff&b=1&c%3Dd=e%3Df')
+EOF
+
+# keys without a value are decoded too
+run_cap_test env TEST_COMMENT=parse_url9 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/?a%20b&x=')
 EOF
 
 
@@ -213,3 +236,8 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -nN \
     -c ";SELECT humanize_id('foo'), humanize_id('bar')"
+
+# the bounds can be given in either order
+run_cap_test ./drive_sql "SELECT sparkline(value, 0, 100), sparkline(value, 100, 0) FROM json_each('[10, 50, 90]')"
+
+run_cap_test ./drive_sql "SELECT sparkline(value) FROM json_each('[10, 50, 90]')"

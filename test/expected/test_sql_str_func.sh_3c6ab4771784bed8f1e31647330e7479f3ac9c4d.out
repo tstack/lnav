@@ -1,0 +1,3 @@
+Row 0:
+  Column sparkline(value, 0, 100): ▁▄█
+  Column sparkline(value, 100, 0): ▁▄█

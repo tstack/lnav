@@ -34,6 +34,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -170,6 +171,12 @@ const xml_entity_map& get_xml_entity_map();
 const emoji_map& get_emoji_map();
 
 text_auto_buffer escape_html(string_fragment content);
+
+/**
+ * @return The UTF-8 for a numeric character reference, like "&#169;" or
+ * "&#x2014;", or nullopt if it is not one or does not name a valid code point.
+ */
+std::optional<std::string> decode_numeric_entity(string_fragment sf);
 
 struct file {
     string_fragment f_frontmatter;
