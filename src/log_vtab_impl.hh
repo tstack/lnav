@@ -247,6 +247,13 @@ struct log_cursor {
 
     void update(unsigned char op, vis_line_t vl, constraint_t cons);
 
+    /**
+     * Move to the next line that could produce a row: the next line from
+     * the column index while the index covers the cursor, otherwise the next
+     * line in the scan direction.
+     */
+    void advance();
+
     void set_eof() { this->lc_curr_line = this->lc_end_line = 0_vl; }
 
     bool is_eof() const

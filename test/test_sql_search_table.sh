@@ -88,3 +88,9 @@ run_cap_test env TEST_COMMENT='search name collides' ${lnav_test} -n \
     -c ':create-named-search access_log gPXE' \
     -c ';SELECT count(*) FROM lnav_view_searches' \
     ${test_dir}/logfile_access_log.0
+
+# a branch reset group has fewer captures than groups in the pattern
+run_cap_test ${lnav_test} -n \
+    -c ':create-search-table st (?|(GET)|(POST))' \
+    -c ';SELECT log_line, col_0, typeof(col_0) FROM st LIMIT 3' \
+    ${test_dir}/logfile_access_log.0

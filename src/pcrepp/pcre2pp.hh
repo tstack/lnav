@@ -325,6 +325,11 @@ public:
 
     int name_index(const char* name) const;
 
+    /**
+     * @return The text of each capture group in the pattern, in the order
+     * of their capture numbers.  In a branch reset group, "(?|(a)|(b))",
+     * the text is from the first alternative that uses the number.
+     */
     std::vector<string_fragment> get_captures() const;
 
     uint32_t get_match_data_capacity() const

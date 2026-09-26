@@ -248,6 +248,79 @@ TEST_CASE("get_captures-nested")
     CHECK(re.get_captures()[0].length() == 14);
 }
 
+TEST_CASE("get_captures-branch-reset")
+{
+    // Each alternative of a branch reset group numbers its captures from the
+    // same start, and the text kept is from the first one to use the number.
+    {
+        auto re = lnav::pcre2pp::code::from_const("(?|(GET)|(POST))");
+
+        CHECK(re.get_capture_count() == 1);
+        const auto caps = re.get_captures();
+        REQUIRE(caps.size() == 1);
+        CHECK(caps[0].to_string() == "(GET)");
+    }
+    {
+        // Numbering after the group carries on from the alternative with the
+        // most captures.
+        auto re = lnav::pcre2pp::code::from_const("(?|(a)|(b)(c))(d)");
+
+        CHECK(re.get_capture_count() == 3);
+        const auto caps = re.get_captures();
+        REQUIRE(caps.size() == 3);
+        CHECK(caps[0].to_string() == "(a)");
+        CHECK(caps[1].to_string() == "(c)");
+        CHECK(caps[2].to_string() == "(d)");
+    }
+    {
+        // An alternative in a group nested in the branch reset does not reset
+        // the numbering.
+        auto re = lnav::pcre2pp::code::from_const("(?|(a(?:x|y))|(b))(c)");
+
+        CHECK(re.get_capture_count() == 2);
+        const auto caps = re.get_captures();
+        REQUIRE(caps.size() == 2);
+        CHECK(caps[0].to_string() == "(a(?:x|y))");
+        CHECK(caps[1].to_string() == "(c)");
+    }
+}
+
+TEST_CASE("get_captures-nested-order")
+{
+    // Captures are numbered by where they open, so an outer group comes
+    // before the groups inside of it.
+    auto re = lnav::pcre2pp::code::from_const(R"(((\d+)x)(y))");
+
+    CHECK(re.get_capture_count() == 3);
+    const auto caps = re.get_captures();
+    REQUIRE(caps.size() == 3);
+    CHECK(caps[0].to_string() == R"(((\d+)x))");
+    CHECK(caps[1].to_string() == R"((\d+))");
+    CHECK(caps[2].to_string() == "(y)");
+}
+
+TEST_CASE("get_captures-comment")
+{
+    // A comment ends at the first ")", so the parens in it are not groups.
+    auto re = lnav::pcre2pp::code::from_const("(?#see (a)(b)");
+
+    CHECK(re.get_capture_count() == 1);
+    const auto caps = re.get_captures();
+    REQUIRE(caps.size() == 1);
+    CHECK(caps[0].to_string() == "(b)");
+}
+
+TEST_CASE("get_captures-conditional")
+{
+    // The reference in a condition is not a capture.
+    auto re = lnav::pcre2pp::code::from_const("(a)?(?(1)b|c)");
+
+    CHECK(re.get_capture_count() == 1);
+    const auto caps = re.get_captures();
+    REQUIRE(caps.size() == 1);
+    CHECK(caps[0].to_string() == "(a)");
+}
+
 TEST_CASE("get_captures-basic")
 {
     auto re = lnav::pcre2pp::code::from_const("(a)(b)(c)");

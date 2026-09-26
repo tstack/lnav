@@ -626,25 +626,7 @@ vt_next(sqlite3_vtab_cursor* cur)
 #endif
 
     vc->invalidate();
-    if (!vc->log_cursor.lc_indexed_lines.empty()
-        && vc->log_cursor.lc_indexed_lines_range.contains(
-            vc->log_cursor.lc_curr_line))
-    {
-#ifdef DEBUG_INDEXING
-        log_debug("going to next line from index %d",
-                  (int) vc->log_cursor.lc_curr_line);
-#endif
-        vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
-        vc->log_cursor.lc_indexed_lines.pop_back();
-    } else {
-#ifdef DEBUG_INDEXING
-        log_debug("stepping to next line %d + %d",
-                  (int) vc->log_cursor.lc_curr_line,
-                  (int) vc->log_cursor.lc_direction);
-#endif
-        vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
-    }
-    vc->log_cursor.lc_sub_index = 0;
+    vc->log_cursor.advance();
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0)
@@ -654,11 +636,14 @@ vt_next(sqlite3_vtab_cursor* cur)
             break;
         }
 
+        // Skipping a line has to go through the index too: stepping to the
+        // next line number would visit lines the index already ruled out,
+        // and could walk off the end since is_eof() is false while indexed
+        // lines remain.
         while (vc->log_cursor.lc_curr_line != -1_vl && !vc->log_cursor.is_eof()
                && !vt->vi->is_valid(vc->log_cursor, *vt->lss))
         {
-            vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
-            vc->log_cursor.lc_sub_index = 0;
+            vc->log_cursor.advance();
         }
         if (vc->log_cursor.is_eof()) {
             log_info("vt_next at EOF (%d:%d:%d), scanned rows %lu",
@@ -681,17 +666,7 @@ vt_next(sqlite3_vtab_cursor* cur)
                 vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
                                           vc->log_cursor.lc_curr_line);
             } else {
-                if (!vc->log_cursor.lc_indexed_lines.empty()
-                    && vc->log_cursor.lc_indexed_lines_range.contains(
-                        vc->log_cursor.lc_curr_line))
-                {
-                    vc->log_cursor.lc_curr_line
-                        = vc->log_cursor.lc_indexed_lines.back();
-                    vc->log_cursor.lc_indexed_lines.pop_back();
-                } else {
-                    vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
-                }
-                vc->log_cursor.lc_sub_index = 0;
+                vc->log_cursor.advance();
             }
         }
     } while (!done);
@@ -737,25 +712,9 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
             require(vc->log_cursor.lc_curr_line
                     < (ssize_t) vt->lss->text_line_count());
 
-            if (!vc->log_cursor.lc_indexed_lines.empty()
-                && vc->log_cursor.lc_indexed_lines_range.contains(
-                    vc->log_cursor.lc_curr_line))
-            {
-                vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
-                                          vc->log_cursor.lc_curr_line);
-                vc->log_cursor.lc_curr_line
-                    = vc->log_cursor.lc_indexed_lines.back();
-                vc->log_cursor.lc_indexed_lines.pop_back();
-#ifdef DEBUG_INDEXING
-                log_debug("going to next line from index %d",
-                          (int) vc->log_cursor.lc_curr_line);
-#endif
-            } else {
-                vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
-                                          vc->log_cursor.lc_curr_line);
-                vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
-            }
-            vc->log_cursor.lc_sub_index = 0;
+            vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
+                                      vc->log_cursor.lc_curr_line);
+            vc->log_cursor.advance();
         }
     } while (!done);
 
@@ -864,20 +823,23 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                                 vc->line_values);
                             }
 
-                            struct line_range time_range;
-
-                            time_range = find_string_attr_range(vc->attrs,
-                                                                &L_TIMESTAMP);
-
-                            const auto* time_src
-                                = vc->line_values.lvv_sbr.get_data()
-                                + time_range.lr_start;
+                            // The format might not have marked where the
+                            // timestamp is, so check before reading from it.
+                            const auto& sbr = vc->line_values.lvv_sbr;
+                            const auto time_range = find_string_attr_range(
+                                vc->attrs, &L_TIMESTAMP);
+                            const auto time_end = time_range.lr_end == -1
+                                ? (int) sbr.length()
+                                : time_range.lr_end;
                             struct timeval actual_tv;
                             struct exttm tm;
 
-                            if (lf->get_time_scanner().scan(
-                                    time_src,
-                                    time_range.length(),
+                            if (time_range.is_valid()
+                                && time_range.lr_start <= time_end
+                                && time_end <= (int) sbr.length()
+                                && lf->get_time_scanner().scan(
+                                    sbr.get_data() + time_range.lr_start,
+                                    time_end - time_range.lr_start,
                                     lf->get_format_ptr()
                                         ->get_timestamp_formats(),
                                     &tm,
@@ -1549,52 +1511,51 @@ vt_rowid(sqlite3_vtab_cursor* cur, sqlite_int64* p_rowid)
 void
 log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
 {
+    // The constraint is turned into an inclusive range of lines, and the scan
+    // is narrowed to it.  Which end of the scan each side of the range limits
+    // depends on the direction: a forward scan goes up from lc_curr_line to
+    // just before lc_end_line, a reverse scan goes down from lc_curr_line to
+    // just after it.  When a line can hold more than one row, the bounds of
+    // GT and LT are kept inclusive and the rows are left for SQLite to check.
+    const auto unique = cons == constraint_t::unique;
+    std::optional<vis_line_t> low;
+    std::optional<vis_line_t> high;
+
     switch (op) {
         case SQLITE_INDEX_CONSTRAINT_EQ:
-            if (vl < 0_vl) {
-                this->lc_curr_line = this->lc_end_line;
-            } else if (vl < this->lc_end_line) {
-                this->lc_curr_line = vl;
-                if (cons == constraint_t::unique) {
-                    this->lc_end_line = this->lc_curr_line + 1_vl;
-                }
-            }
+            low = vl;
+            high = vl;
             break;
         case SQLITE_INDEX_CONSTRAINT_GE:
-            if (vl < 0_vl) {
-                vl = 0_vl;
-            }
-            this->lc_curr_line = vl;
+            low = vl;
             break;
         case SQLITE_INDEX_CONSTRAINT_GT:
-            if (vl < 0_vl) {
-                this->lc_curr_line = 0_vl;
-            } else {
-                this->lc_curr_line
-                    = vl + (cons == constraint_t::unique ? 1_vl : 0_vl);
-            }
+            low = unique ? vl + 1_vl : vl;
             break;
         case SQLITE_INDEX_CONSTRAINT_LE:
-            if (vl < 0_vl) {
-                this->lc_curr_line = this->lc_end_line;
-            } else if (vl < this->lc_end_line) {
-                this->lc_end_line
-                    = vl + (cons == constraint_t::unique ? 1_vl : 0_vl);
-            }
+            high = vl;
             break;
         case SQLITE_INDEX_CONSTRAINT_LT:
-            if (vl <= 0_vl) {
-                this->lc_curr_line = this->lc_end_line;
-            } else if (this->lc_direction > 0) {
-                if (vl < this->lc_end_line) {
-                    this->lc_end_line = vl;
-                }
-            } else if (this->lc_direction < 0) {
-                if (vl <= this->lc_curr_line) {
-                    this->lc_curr_line = vl - 1_vl;
-                }
-            }
+            high = unique ? vl - 1_vl : vl;
             break;
+        default:
+            return;
+    }
+
+    if (this->lc_direction > 0) {
+        if (low && this->lc_curr_line < low.value()) {
+            this->lc_curr_line = low.value();
+        }
+        if (high && high.value() + 1_vl < this->lc_end_line) {
+            this->lc_end_line = high.value() + 1_vl;
+        }
+    } else {
+        if (high && high.value() < this->lc_curr_line) {
+            this->lc_curr_line = high.value();
+        }
+        if (low && this->lc_end_line < low.value() - 1_vl) {
+            this->lc_end_line = low.value() - 1_vl;
+        }
     }
 #ifdef DEBUG_INDEXING
     log_debug("log_cursor::update(%s, %d) -> (%d:%d:%d)",
@@ -1604,6 +1565,28 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
               this->lc_end_line,
               this->lc_direction);
 #endif
+}
+
+void
+log_cursor::advance()
+{
+    if (!this->lc_indexed_lines.empty()
+        && this->lc_indexed_lines_range.contains(this->lc_curr_line))
+    {
+#ifdef DEBUG_INDEXING
+        log_debug("going to next line from index %d", (int) this->lc_curr_line);
+#endif
+        this->lc_curr_line = this->lc_indexed_lines.back();
+        this->lc_indexed_lines.pop_back();
+    } else {
+#ifdef DEBUG_INDEXING
+        log_debug("stepping to next line %d + %d",
+                  (int) this->lc_curr_line,
+                  (int) this->lc_direction);
+#endif
+        this->lc_curr_line += this->lc_direction;
+    }
+    this->lc_sub_index = 0;
 }
 
 log_cursor::string_constraint::string_constraint(unsigned char op,
@@ -2248,6 +2231,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 #endif
         p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
     } else {
+        // The time range is narrowed to a range of lines with update() so
+        // that it is applied the right way around for the scan direction.
         if (log_time_range->vtr_begin) {
             auto vl_opt = vt->lss->row_for_time(
                 to_timeval(log_time_range->vtr_begin.value()));
@@ -2263,14 +2248,16 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                           log_time_range->vtr_begin.value().count(),
                           vl_opt.value());
 #endif
-                p_cur->log_cursor.lc_curr_line = vl_opt.value();
+                p_cur->log_cursor.update(SQLITE_INDEX_CONSTRAINT_GE,
+                                         vl_opt.value(),
+                                         log_cursor::constraint_t::unique);
             }
         }
         if (log_time_range->vtr_end) {
             auto vl_max_opt = vt->lss->row_for_time(
                 to_timeval(log_time_range->vtr_end.value()));
             if (vl_max_opt) {
-                p_cur->log_cursor.lc_end_line = vl_max_opt.value();
+                auto last_line = vl_max_opt.value() - 1_vl;
                 auto win = vt->lss->window_at(
                     vl_max_opt.value(), vis_line_t(vt->lss->text_line_count()));
                 for (const auto& msg_info : *win) {
@@ -2279,9 +2266,11 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                     {
                         break;
                     }
-                    p_cur->log_cursor.lc_end_line
-                        = msg_info.get_vis_line() + 1_vl;
+                    last_line = msg_info.get_vis_line();
                 }
+                p_cur->log_cursor.update(SQLITE_INDEX_CONSTRAINT_LE,
+                                         last_line,
+                                         log_cursor::constraint_t::unique);
             }
         }
     }
@@ -2885,9 +2874,10 @@ log_vtab_manager::unregister_vtab(string_fragment name)
     } else {
         auto_mem<char, sqlite3_free> sql;
         __attribute((unused)) int rc;
+        const auto name_str = name.to_string();
 
-        sql = sqlite3_mprintf(
-            "DROP TABLE IF EXISTS %.*s", name.length(), name.data());
+        sql = sqlite3_mprintf("DROP TABLE IF EXISTS lnav_db.\"%w\"",
+                              name_str.c_str());
         log_debug("unregister_vtab: %s", sql.in());
         rc = sqlite3_exec(this->vm_db, sql, nullptr, nullptr, nullptr);
 

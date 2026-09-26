@@ -96,7 +96,9 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         logline_value_meta::table_column{cols.size()});
     cols.emplace_back(intern_string::lookup(MATCH_ROWID), SQLITE_INTEGER);
     cols.back().vc_comment
-        = "The row number of the log message that matched"_frag;
+        = "A sequence number for the matching log messages in this result, "
+          "starting at zero.  It follows the order the rows are produced in, "
+          "so it is not stable across queries."_frag;
     this->lst_column_metas.emplace_back(
         match_index_name,
         value_kind_t::VALUE_INTEGER,
@@ -114,30 +116,23 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
             = cn.add_column(string_fragment::from_c_str(
                                 this->lst_regex->get_name_for_capture(lpc + 1)))
                   .to_string();
-        if (captures.size() == (size_t) this->lst_regex->get_capture_count()) {
-            auto cap_re = captures[lpc].to_string();
-            sqlite_type = guess_type_from_pcre(cap_re, collator);
-            switch (sqlite_type) {
-                case SQLITE_FLOAT:
-                    this->lst_column_metas.emplace_back(
-                        intern_string::lookup(colname),
-                        value_kind_t::VALUE_FLOAT,
-                        logline_value_meta::table_column{cols.size()});
-                    break;
-                case SQLITE_INTEGER:
-                    this->lst_column_metas.emplace_back(
-                        intern_string::lookup(colname),
-                        value_kind_t::VALUE_INTEGER,
-                        logline_value_meta::table_column{cols.size()});
-                    break;
-                default:
-                    this->lst_column_metas.emplace_back(
-                        intern_string::lookup(colname),
-                        value_kind_t::VALUE_TEXT,
-                        logline_value_meta::table_column{cols.size()});
-                    break;
-            }
+        auto kind = value_kind_t::VALUE_TEXT;
+        auto cap_re = captures[lpc].to_string();
+        sqlite_type = guess_type_from_pcre(cap_re, collator);
+        switch (sqlite_type) {
+            case SQLITE_FLOAT:
+                kind = value_kind_t::VALUE_FLOAT;
+                break;
+            case SQLITE_INTEGER:
+                kind = value_kind_t::VALUE_INTEGER;
+                break;
+            default:
+                break;
         }
+        this->lst_column_metas.emplace_back(
+            intern_string::lookup(colname),
+            kind,
+            logline_value_meta::table_column{cols.size()});
         cols.emplace_back(intern_string::lookup(colname),
                           sqlite_type,
                           intern_string::lookup(collator));
@@ -166,16 +161,11 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
                              .ignore_error();
 
         if (match_res) {
-#if 0
-            log_debug("matched within line: %d",
-                      this->lst_match_context.get_count());
-#endif
             this->lst_remaining = match_res->f_remaining;
             this->lst_match_index += 1;
             return true;
         }
 
-        // log_debug("done matching message");
         this->lst_attrs_cache.clear();
         this->lst_line_values_cache.lvv_values.clear();
         this->lst_remaining.clear();
@@ -205,11 +195,9 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     }
 
     if (this->lst_mismatch_bitmap.is_bit_set(lc.lc_curr_line)) {
-        // log_debug("%d: mismatch, aborting", (int) lc.lc_curr_line);
         return false;
     }
 
-    // log_debug("%d: doing message", (int) lc.lc_curr_line);
     auto& sbr = this->lst_line_values_cache.lvv_sbr;
     lf->read_full_message(lf_iter, sbr);
     sbr.erase_ansi();
@@ -327,12 +315,6 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
     if (this->lst_mismatch_bitmap.bitmap_size() < lss.text_line_count()) {
         this->lst_mismatch_bitmap.expand_bitmap_to(lss.text_line_count());
         this->lst_mismatch_bitmap.resize_bitmap(lss.text_line_count());
-#if 1
-        log_debug("%s:bitmap resize %zu:%zu",
-                  this->vi_name.c_str(),
-                  this->lst_mismatch_bitmap.size(),
-                  this->lst_mismatch_bitmap.capacity());
-#endif
     }
     this->drive_from_named_search(lc, lss);
 

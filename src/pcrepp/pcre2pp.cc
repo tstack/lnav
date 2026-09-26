@@ -279,35 +279,51 @@ code::get_capture_count() const
 std::vector<string_fragment>
 code::get_captures() const
 {
+    struct group {
+        int g_begin;
+        std::optional<size_t> g_capture;
+        bool g_branch_reset{false};
+        size_t g_reset_start{0};
+        size_t g_reset_max{0};
+    };
+
+    const auto pat_len = (int) this->p_pattern.length();
+    auto pat_char = [this, pat_len](int index) {
+        return index < pat_len ? this->p_pattern[index] : '\0';
+    };
     int class_start = 0;
     bool in_class = false, in_escape = false, in_literal = false;
-    auto pat_frag = string_fragment::from_str(this->p_pattern);
-    std::vector<string_fragment> cap_in_progress;
+    std::vector<group> groups;
     std::vector<string_fragment> retval;
+    // The number of the next capture, less one.  It is tracked separately
+    // from the size of the result since a branch reset group, "(?|...)",
+    // numbers the captures in each of its alternatives from the same start.
+    size_t next_capture = 0;
 
-    for (int lpc = 0; this->p_pattern[lpc]; lpc++) {
+    for (int lpc = 0; lpc < pat_len; lpc++) {
+        const auto ch = this->p_pattern[lpc];
+
         if (in_escape) {
             in_escape = false;
-            if (this->p_pattern[lpc] == 'Q') {
+            if (ch == 'Q') {
                 in_literal = true;
             }
         } else if (in_class) {
-            if (lpc == class_start + 1 && this->p_pattern[lpc] == '^') {
+            if (lpc == class_start + 1 && ch == '^') {
                 class_start = lpc;
-            } else if (lpc > class_start + 1 && this->p_pattern[lpc] == ']') {
+            } else if (lpc > class_start + 1 && ch == ']') {
                 in_class = false;
             }
-            if (this->p_pattern[lpc] == '\\') {
+            if (ch == '\\') {
                 in_escape = true;
             }
         } else if (in_literal) {
-            if (this->p_pattern[lpc] == '\\' && this->p_pattern[lpc + 1] == 'E')
-            {
+            if (ch == '\\' && pat_char(lpc + 1) == 'E') {
                 in_literal = false;
                 lpc += 1;
             }
         } else {
-            switch (this->p_pattern[lpc]) {
+            switch (ch) {
                 case '\\':
                     in_escape = true;
                     break;
@@ -315,55 +331,81 @@ code::get_captures() const
                     in_class = true;
                     class_start = lpc;
                     break;
-                case '(':
-                    cap_in_progress.emplace_back(pat_frag.sub_range(lpc, lpc));
-                    break;
-                case ')': {
-                    if (!cap_in_progress.empty()) {
-                        static const auto DEFINE_SF
-                            = string_fragment::from_const("(?(DEFINE)");
+                case '(': {
+                    const auto first = pat_char(lpc + 1);
+                    const auto second = pat_char(lpc + 2);
+                    const auto third = pat_char(lpc + 3);
+                    auto is_cap = false;
+                    group grp{lpc};
 
-                        auto& cap = cap_in_progress.back();
-                        char first = '\0', second = '\0', third = '\0';
-                        bool is_cap = false;
+                    if (first == '?' && second == '#') {
+                        // A comment runs to the first ")", whatever is
+                        // inside of it.
+                        while (lpc < pat_len && this->p_pattern[lpc] != ')') {
+                            lpc += 1;
+                        }
+                        break;
+                    }
 
-                        cap.sf_end = lpc + 1;
-                        if (cap.length() >= 2) {
-                            first = this->p_pattern[cap.sf_begin + 1];
-                        }
-                        if (cap.length() >= 3) {
-                            second = this->p_pattern[cap.sf_begin + 2];
-                        }
-                        if (cap.length() >= 4) {
-                            third = this->p_pattern[cap.sf_begin + 3];
-                        }
-                        if (cap.sf_begin >= 2) {
-                            auto poss_define = string_fragment::from_str_range(
-                                this->p_pattern, cap.sf_begin - 2, cap.sf_end);
-                            if (poss_define == DEFINE_SF) {
-                                cap_in_progress.pop_back();
-                                continue;
-                            }
-                        }
-                        if (first == '?') {
-                            if (second == '\'') {
-                                is_cap = true;
-                            }
-                            if (second == '<'
-                                && (isalpha(third) || third == '_'))
-                            {
-                                is_cap = true;
-                            }
-                            if (second == 'P' && third == '<') {
-                                is_cap = true;
-                            }
-                        } else if (first != '*') {
+                    if (lpc >= 2 && this->p_pattern[lpc - 2] == '('
+                        && this->p_pattern[lpc - 1] == '?')
+                    {
+                        // The condition of a conditional group, like the
+                        // "(1)" in "(?(1)a|b)" or "(?(DEFINE)...)".
+                    } else if (first == '?') {
+                        if (second == '|') {
+                            grp.g_branch_reset = true;
+                            grp.g_reset_start = next_capture;
+                            grp.g_reset_max = next_capture;
+                        } else if (second == '\'') {
+                            is_cap = true;
+                        } else if (second == '<'
+                                   && (isalpha(third) || third == '_'))
+                        {
+                            is_cap = true;
+                        } else if (second == 'P' && third == '<') {
                             is_cap = true;
                         }
-                        if (is_cap) {
-                            retval.emplace_back(cap);
+                    } else if (first != '*') {
+                        is_cap = true;
+                    }
+                    if (is_cap) {
+                        grp.g_capture = next_capture;
+                        next_capture += 1;
+                        if (grp.g_capture.value() == retval.size()) {
+                            retval.emplace_back();
                         }
-                        cap_in_progress.pop_back();
+                    }
+                    groups.emplace_back(grp);
+                    break;
+                }
+                case '|':
+                    if (!groups.empty() && groups.back().g_branch_reset) {
+                        auto& grp = groups.back();
+
+                        grp.g_reset_max = std::max(grp.g_reset_max, next_capture);
+                        next_capture = grp.g_reset_start;
+                    }
+                    break;
+                case ')': {
+                    if (groups.empty()) {
+                        break;
+                    }
+
+                    const auto grp = groups.back();
+                    groups.pop_back();
+                    if (grp.g_capture) {
+                        auto& cap = retval[grp.g_capture.value()];
+
+                        // In a branch reset group, the first alternative to
+                        // use a number is the one kept for it.
+                        if (cap.empty()) {
+                            cap = string_fragment::from_str_range(
+                                this->p_pattern, grp.g_begin, lpc + 1);
+                        }
+                    }
+                    if (grp.g_branch_reset) {
+                        next_capture = std::max(grp.g_reset_max, next_capture);
                     }
                     break;
                 }

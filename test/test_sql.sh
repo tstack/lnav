@@ -867,6 +867,16 @@ run_cap_test ${lnav_test} -n \
     -c ":create-search-table search_test1 bad(" \
     ${test_dir}/logfile_multiline.0
 
+# Deleting a search table only drops it from lnav_db, not a table with the
+# same name in the main database.
+run_cap_test ${lnav_test} -n \
+    -c ";CREATE TABLE main.search_test1 (x)" \
+    -c ";INSERT INTO main.search_test1 VALUES (42)" \
+    -c ":create-search-table search_test1 GET" \
+    -c ":delete-search-table search_test1" \
+    -c ";SELECT (SELECT count(*) FROM main.search_test1) AS main_rows, (SELECT count(*) FROM lnav_db.sqlite_master WHERE name = 'search_test1') AS in_lnav_db" \
+    ${test_dir}/logfile_access_log.0
+
 NULL_GRAPH_SELECT_1=$(cat <<EOF
 ;SELECT value FROM (
               SELECT 10 as value

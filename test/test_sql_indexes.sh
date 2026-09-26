@@ -99,3 +99,20 @@ run_cap_test ${lnav_test} -d sql_index.err -n \
     -c ":write-csv-to -" \
     -c ":switch-to-view log" \
     ${test_dir}/logfile_shop_access_log.0
+
+# A line that the column index gives, but that another constraint rules out,
+# is skipped by moving to the next indexed line, not the next line number.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT count(*) FROM access_log WHERE c_ip = '192.168.202.254'" \
+    -c ";SELECT (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '192.168.202.254' AND log_level = 'error') AS err, (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '192.168.202.254' AND log_level = 'info') AS info, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE c_ip = '192.168.202.254' AND log_level = 'info' ORDER BY log_line DESC)) AS info_desc" \
+    ${test_dir}/logfile_access_log.0
+
+# Ranges of log_line apply to a reverse scan the right way around.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line >= 1 ORDER BY log_line DESC)) AS ge, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line > 0 ORDER BY log_line DESC)) AS gt, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line <= 1 ORDER BY log_line DESC)) AS le, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line < 2 ORDER BY log_line DESC)) AS lt" \
+    ${test_dir}/logfile_access_log.0
+
+# So do ranges of time.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time >= '2009-07-20 22:59:29.000000' ORDER BY log_line DESC)) AS time_ge, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time <= '2009-07-20 22:59:26.000000' ORDER BY log_line DESC)) AS time_le, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time_msecs >= 1248130769000 ORDER BY log_line DESC)) AS msecs_ge" \
+    ${test_dir}/logfile_access_log.0
