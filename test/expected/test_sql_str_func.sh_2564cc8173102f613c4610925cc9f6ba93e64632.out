@@ -1,0 +1,30 @@
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_count: 3
+  Column    content: abc
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_count: 3
+  Column    content: abc
+Row 2:
+  Column match_index: 0
+  Column capture_index: 2
+  Column capture_count: 3
+  Column    content: (null)
+Row 3:
+  Column match_index: 1
+  Column capture_index: 0
+  Column capture_count: 3
+  Column    content: 12
+Row 4:
+  Column match_index: 1
+  Column capture_index: 1
+  Column capture_count: 3
+  Column    content: (null)
+Row 5:
+  Column match_index: 1
+  Column capture_index: 2
+  Column capture_count: 3
+  Column    content: 12

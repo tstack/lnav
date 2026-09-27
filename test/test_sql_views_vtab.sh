@@ -202,9 +202,22 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_time = '2014-10-08T00:00:00' WHERE name = 'log'" \
     ${test_dir}/logfile_generic.0
 
+# A valid time for a view with nothing in it has nothing to move to.
+run_cap_test env TEST_COMMENT="top_time on an empty view" ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top_time = '2014-10-08T00:00:00' WHERE name = 'log'" \
+    -c ";SELECT name, selection FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/textfile_0.md
+
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
     -c ";SELECT search FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/logfile_generic.0
+
+# A NULL search is the same as no search.
+run_cap_test env TEST_COMMENT="NULL search" ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
+    -c ";UPDATE lnav_views SET search = NULL WHERE name = 'log'" \
+    -c ";SELECT quote(search) AS search FROM lnav_views WHERE name = 'log'" \
     ${test_dir}/logfile_generic.0
 
 run_cap_test ${lnav_test} -n \

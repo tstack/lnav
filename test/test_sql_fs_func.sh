@@ -78,6 +78,9 @@ run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/non-existent')"
 
 run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/*.non-existent')"
 
+# a NULL pattern matches nothing
+run_cap_test ${lnav_test} -Nn -c ";SELECT count(*) FROM fstat(NULL)"
+
 echo "Hello, World!" > fstat-hw.dat
 touch -t 200711030923 fstat-hw.dat
 chmod 0644 fstat-hw.dat

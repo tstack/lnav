@@ -124,6 +124,7 @@ CREATE TABLE lnav_db.fstat (
             if (this->c_path_index >= this->c_glob->gl_pathc) {
                 return;
             }
+            this->c_error.clear();
             auto rc = lstat(this->c_glob->gl_pathv[this->c_path_index],
                             &this->c_stat);
 
@@ -193,7 +194,7 @@ CREATE TABLE lnav_db.fstat (
             }
             case FSTAT_COL_DEV:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_dev);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_dev);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -221,7 +222,7 @@ CREATE TABLE lnav_db.fstat (
                 } else if (S_ISLNK(vc.c_stat.st_mode)) {
                     sqlite3_result_text(ctx, "lnk", 3, SQLITE_STATIC);
                 } else if (S_ISSOCK(vc.c_stat.st_mode)) {
-                    sqlite3_result_text(ctx, "sock", 3, SQLITE_STATIC);
+                    sqlite3_result_text(ctx, "sock", 4, SQLITE_STATIC);
                 }
                 break;
             case FSTAT_COL_MODE:
@@ -233,14 +234,14 @@ CREATE TABLE lnav_db.fstat (
                 break;
             case FSTAT_COL_NLINK:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_nlink);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_nlink);
                 } else {
                     sqlite3_result_null(ctx);
                 }
                 break;
             case FSTAT_COL_UID:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_uid);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -253,7 +254,7 @@ CREATE TABLE lnav_db.fstat (
                         sqlite3_result_text(
                             ctx, pw->pw_name, -1, SQLITE_TRANSIENT);
                     } else {
-                        sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                        sqlite3_result_int64(ctx, vc.c_stat.st_uid);
                     }
                 } else {
                     sqlite3_result_null(ctx);
@@ -262,7 +263,7 @@ CREATE TABLE lnav_db.fstat (
             }
             case FSTAT_COL_GID:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_gid);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -275,7 +276,7 @@ CREATE TABLE lnav_db.fstat (
                         sqlite3_result_text(
                             ctx, gr->gr_name, -1, SQLITE_TRANSIENT);
                     } else {
-                        sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                        sqlite3_result_int64(ctx, vc.c_stat.st_gid);
                     }
                 } else {
                     sqlite3_result_null(ctx);
@@ -284,7 +285,7 @@ CREATE TABLE lnav_db.fstat (
             }
             case FSTAT_COL_RDEV:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_rdev);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_rdev);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -298,14 +299,14 @@ CREATE TABLE lnav_db.fstat (
                 break;
             case FSTAT_COL_BLKSIZE:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_blksize);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_blksize);
                 } else {
                     sqlite3_result_null(ctx);
                 }
                 break;
             case FSTAT_COL_BLOCKS:
                 if (vc.c_error.empty()) {
-                    sqlite3_result_int(ctx, vc.c_stat.st_blocks);
+                    sqlite3_result_int64(ctx, vc.c_stat.st_blocks);
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -445,6 +446,24 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
     return SQLITE_OK;
 }
 
+/**
+ * The directory that glob() could not read and why.  The error callback
+ * glob() takes has no way to pass along user data, hence the thread_local.
+ */
+thread_local struct {
+    std::string ge_path;
+    int ge_errno{0};
+} glob_error;
+
+int
+record_glob_error(const char* epath, int eerrno)
+{
+    glob_error.ge_path = epath;
+    glob_error.ge_errno = eerrno;
+    // GLOB_ERR is set, so glob() stops here regardless of what is returned.
+    return 1;
+}
+
 int
 rcFilter(sqlite3_vtab_cursor* pVtabCursor,
          int idxNum,
@@ -454,15 +473,22 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 {
     auto* pCur = (fstat_table::cursor*) pVtabCursor;
 
+    // The cursor can be filtered again, like in a join, so drop the paths
+    // from the last glob before anything else.
+    pCur->c_glob.inout();
+    pCur->c_pattern.clear();
+    pCur->c_path_index = 0;
+    pCur->c_error.clear();
+
     if (argc != 1) {
-        pCur->c_pattern.clear();
         return SQLITE_OK;
     }
 
-    const char* pattern = (const char*) sqlite3_value_text(argv[0]);
-    pCur->c_pattern = pattern;
-    pCur->c_path_index = 0;
-    pCur->c_error.clear();
+    auto pattern = from_sqlite<std::optional<std::string>>()(argc, argv, 0);
+    if (!pattern) {
+        return SQLITE_OK;
+    }
+    pCur->c_pattern = std::move(pattern.value());
 
     auto glob_flags = GLOB_ERR;
     if (!lnav::filesystem::is_glob(pCur->c_pattern)) {
@@ -473,16 +499,30 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     glob_flags |= GLOB_TILDE;
 #endif
 
-    log_debug("doing glob %s", pattern);
+    log_debug("doing glob %s", pCur->c_pattern.c_str());
 #if defined(__MSYS__)
-    auto win_path = lnav::filesystem::escape_glob_for_win(pattern);
-    switch (glob(win_path.c_str(), glob_flags, nullptr, pCur->c_glob.inout())) {
+    auto win_path = lnav::filesystem::escape_glob_for_win(pCur->c_pattern);
+    switch (glob(win_path.c_str(),
+                 glob_flags,
+                 record_glob_error,
+                 pCur->c_glob.inout()))
+    {
 #else
-    switch (glob(pattern, glob_flags, nullptr, pCur->c_glob.inout())) {
+    switch (glob(pCur->c_pattern.c_str(),
+                 glob_flags,
+                 record_glob_error,
+                 pCur->c_glob.inout()))
+    {
 #endif
         case GLOB_NOSPACE:
             pVtabCursor->pVtab->zErrMsg
                 = sqlite3_mprintf("No space to perform glob()");
+            return SQLITE_ERROR;
+        case GLOB_ABORTED:
+            pVtabCursor->pVtab->zErrMsg
+                = sqlite3_mprintf("Unable to read directory \"%s\" -- %s",
+                                  glob_error.ge_path.c_str(),
+                                  strerror(glob_error.ge_errno));
             return SQLITE_ERROR;
         case GLOB_NOMATCH:
             return SQLITE_OK;

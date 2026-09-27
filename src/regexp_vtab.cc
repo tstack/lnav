@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
+
 #include "base/lnav.console.into.hh"
 #include "base/lnav_log.hh"
 #include "column_namer.hh"
@@ -92,7 +94,10 @@ CREATE TABLE regexp_capture (
 
         int next()
         {
-            if (this->c_index >= (int) (this->c_match_data.get_count() - 1)) {
+            // There is a row for every capture in the pattern, not just the
+            // ones set by this match: get_count() stops at the last capture
+            // that was set.
+            if (this->c_index >= (int) this->c_pattern->get_capture_count()) {
                 auto match_res = this->c_pattern->capture_from(this->c_content)
                                      .at(this->c_remaining)
                                      .into(this->c_match_data)
@@ -145,7 +150,8 @@ CREATE TABLE regexp_capture (
                 }
                 break;
             case RC_COL_CAPTURE_COUNT:
-                sqlite3_result_int64(ctx, vc.c_match_data.get_count());
+                sqlite3_result_int64(ctx,
+                                     vc.c_pattern->get_capture_count() + 1);
                 break;
             case RC_COL_RANGE_START:
                 if (cap.has_value()) {
@@ -290,6 +296,52 @@ get_regexp_capture_flags_handlers()
     return retval;
 }
 
+/**
+ * Generate a captured value, turning text that looks like a number into a
+ * JSON number.  A "0x" prefix is read as hex, and anything else as decimal,
+ * so a zero-padded value like "0755" is 755 and not octal.
+ */
+void
+gen_capture_value(yajl_gen gen, string_fragment cap)
+{
+    static const auto JSON_NUMBER_RE = lnav::pcre2pp::code::from_const(
+        R"(\A-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\z)");
+
+    const auto cap_view = cap.to_string_view();
+
+    if (cap.startswith("0x") || cap.startswith("0X")) {
+        auto scan_hex_res
+            = scn::scan_int<int64_t>(cap_view.substr(2), 16);
+        if (cap.length() > 2 && scan_hex_res && scan_hex_res->range().empty())
+        {
+            yajl_gen_integer(gen, scan_hex_res->value());
+            return;
+        }
+    } else {
+        auto scan_int_res = scn::scan_int<int64_t>(cap_view, 10);
+        if (scan_int_res && scan_int_res->range().empty()) {
+            yajl_gen_integer(gen, scan_int_res->value());
+            return;
+        }
+
+        auto scan_float_res = scn::scan_value<double>(cap_view);
+        if (scan_float_res && scan_float_res->range().empty()
+            && std::isfinite(scan_float_res->value()))
+        {
+            // Keep the number as written when it is already valid JSON,
+            // otherwise write the value that was parsed from it.
+            if (JSON_NUMBER_RE.find_in(cap).ignore_error().has_value()) {
+                yajl_gen_number(gen, cap_view.data(), cap_view.length());
+            } else {
+                yajl_gen_double(gen, scan_float_res->value());
+            }
+            return;
+        }
+    }
+
+    yajl_gen_pstring(gen, cap_view.data(), cap_view.length());
+}
+
 struct regexp_capture_into_json {
     static constexpr const char* NAME = "regexp_capture_into_json";
     static constexpr const char* CREATE_STMT = R"(
@@ -380,27 +432,7 @@ CREATE TABLE regexp_capture_into_json (
                         yajl_gen_pstring(gen, colname.data(), colname.length());
 
                         if (!vc.c_flags || vc.c_flags->convert_numbers) {
-                            auto cap_view = cap->to_string_view();
-                            auto scan_int_res
-                                = scn::scan_int<int64_t>(cap_view, 0);
-
-                            if (scan_int_res && scan_int_res->range().empty()) {
-                                yajl_gen_integer(gen, scan_int_res->value());
-                                continue;
-                            }
-
-                            auto scan_float_res
-                                = scn::scan_value<double>(cap_view);
-                            if (scan_float_res
-                                && scan_float_res->range().empty())
-                            {
-                                yajl_gen_number(
-                                    gen, cap_view.data(), cap_view.length());
-                                continue;
-                            }
-
-                            yajl_gen_pstring(
-                                gen, cap_view.data(), cap_view.length());
+                            gen_capture_value(gen, cap.value());
                         } else {
                             yajl_gen_pstring(gen, cap->data(), cap->length());
                         }

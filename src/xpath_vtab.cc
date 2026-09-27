@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 
@@ -107,6 +108,11 @@ CREATE TABLE xpath (
         pugi::xpath_query c_query;
         pugi::xml_document c_doc;
         pugi::xpath_node_set c_results;
+        /**
+         * The value of an expression that does not select nodes, like
+         * "count(/a)", which is returned as a single row.
+         */
+        std::optional<std::string> c_scalar_result;
 
         cursor(sqlite3_vtab* vt) : base({vt}) {}
 
@@ -127,7 +133,14 @@ CREATE TABLE xpath (
             return SQLITE_OK;
         }
 
-        int eof() { return this->c_rowid >= (int64_t) this->c_results.size(); }
+        int eof()
+        {
+            const auto row_count = this->c_scalar_result
+                ? size_t{1}
+                : this->c_results.size();
+
+            return this->c_rowid >= (int64_t) row_count;
+        }
 
         int get_rowid(sqlite3_int64& rowid_out)
         {
@@ -139,6 +152,21 @@ CREATE TABLE xpath (
 
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)
     {
+        if (vc.c_scalar_result) {
+            switch (col) {
+                case XP_COL_RESULT:
+                    to_sqlite(ctx, vc.c_scalar_result.value());
+                    return SQLITE_OK;
+                case XP_COL_NODE_PATH:
+                case XP_COL_NODE_ATTR:
+                case XP_COL_NODE_TEXT:
+                    sqlite3_result_null(ctx);
+                    return SQLITE_OK;
+                default:
+                    break;
+            }
+        }
+
         switch (col) {
             case XP_COL_RESULT: {
                 const auto& xpath_node = vc.c_results[vc.c_rowid];
@@ -295,17 +323,51 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 {
     auto* pCur = (xpath_vtab::cursor*) pVtabCursor;
 
+    // The cursor can be filtered again, like in a join, so start from
+    // nothing: put back the last query and forget the last document.
+    pCur->reset();
+    pCur->c_xpath.clear();
+    pCur->c_value.clear();
+    pCur->c_value_as_blob = false;
+    pCur->c_doc.reset();
+    pCur->c_results = pugi::xpath_node_set();
+    pCur->c_scalar_result = std::nullopt;
+
     if (argc != 2) {
-        pCur->c_xpath.clear();
-        pCur->c_value.clear();
         return SQLITE_OK;
+    }
+
+    const auto* xpath_str = (const char*) sqlite3_value_text(argv[0]);
+    if (xpath_str == nullptr) {
+        return SQLITE_OK;
+    }
+
+    // The expression is checked before the document so that a bad one is
+    // reported even when there is no document to run it on.
+    pCur->c_xpath = xpath_str;
+    pCur->c_query = checkout_query(pCur->c_xpath);
+    if (!pCur->c_query) {
+        static const intern_string_t ARG0 = intern_string::lookup("xpath");
+
+        const auto& res = pCur->c_query.result();
+        auto attr_xpath
+            = attr_line_t(pCur->c_xpath)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                  .move();
+        auto um = lnav::console::user_message::error("Invalid XPath expression")
+                      .with_reason(res.description())
+                      .with_snippet(
+                          lnav::console::snippet::from_content_with_offset(
+                              ARG0, attr_xpath, res.offset, res.description()))
+                      .move();
+        set_vtable_errmsg(pVtabCursor->pVtab, um);
+        return SQLITE_ERROR;
     }
 
     pCur->c_value_as_blob = (sqlite3_value_type(argv[1]) == SQLITE_BLOB);
     auto byte_count = sqlite3_value_bytes(argv[1]);
 
     if (byte_count == 0) {
-        pCur->c_rowid = 0;
         return SQLITE_OK;
     }
 
@@ -332,28 +394,12 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
         return SQLITE_ERROR;
     }
 
-    pCur->c_xpath = (const char*) sqlite3_value_text(argv[0]);
-    pCur->c_query = checkout_query(pCur->c_xpath);
-    if (!pCur->c_query) {
-        static const intern_string_t ARG0 = intern_string::lookup("xpath");
-
-        const auto& res = pCur->c_query.result();
-        auto attr_xpath
-            = attr_line_t(pCur->c_xpath)
-                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
-                  .move();
-        auto um = lnav::console::user_message::error("Invalid XPath expression")
-                      .with_reason(res.description())
-                      .with_snippet(
-                          lnav::console::snippet::from_content_with_offset(
-                              ARG0, attr_xpath, res.offset, res.description()))
-                      .move();
-        set_vtable_errmsg(pVtabCursor->pVtab, um);
-        return SQLITE_ERROR;
+    if (pCur->c_query.return_type() == pugi::xpath_type_node_set) {
+        pCur->c_results = pCur->c_doc.select_nodes(pCur->c_query);
+    } else {
+        // Something like "count(/a)" has a value instead of nodes.
+        pCur->c_scalar_result = pCur->c_query.evaluate_string(pCur->c_doc);
     }
-
-    pCur->c_rowid = 0;
-    pCur->c_results = pCur->c_doc.select_nodes(pCur->c_query);
 
     return SQLITE_OK;
 }

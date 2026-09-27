@@ -28,6 +28,7 @@
  */
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <string.h>
@@ -260,12 +261,24 @@ CREATE TABLE lnav_db.lnav_file (
                    const char* content)
     {
         auto lf = this->lf_collection.fc_files[rowid];
+        // Round toward negative infinity so the microseconds stay positive,
+        // which is how a timeval is kept.
+        auto offset_secs = time_offset / 1000LL;
+        auto offset_msecs = time_offset % 1000LL;
+        if (offset_msecs < 0) {
+            offset_secs -= 1;
+            offset_msecs += 1000LL;
+        }
         struct timeval tv = {
-            (int) (time_offset / 1000LL),
-            (int) (time_offset / (1000LL * 1000LL)),
+            (time_t) offset_secs,
+            (suseconds_t) (offset_msecs * 1000LL),
         };
 
-        lf->adjust_content_time(0, tv, true);
+        // Every update passes all of the columns, so only re-time the file
+        // when the offset was actually changed.
+        if (tv != lf->get_time_offset()) {
+            lf->adjust_content_time(0, tv, true);
+        }
 
         if (path != lf->get_filename()) {
             if (lf->is_valid_filename()) {
@@ -329,7 +342,9 @@ CREATE TABLE lnav_db.lnav_file_metadata (
 
         cursor(sqlite3_vtab* vt)
             : base({vt}),
-              c_meta(((vtab_module<lnav_file_metadata>::vtab*) vt)->v_impl)
+              c_meta(
+                  ((vtab_module<tvt_no_update<lnav_file_metadata>>::vtab*) vt)
+                      ->v_impl)
         {
             for (auto& lf : this->c_meta.lfm_collection.fc_files) {
                 auto& lf_meta = lf->get_embedded_metadata();
@@ -339,8 +354,6 @@ CREATE TABLE lnav_db.lnav_file_metadata (
                 }
             }
         }
-
-        ~cursor() { this->c_iter = this->c_rows.end(); }
 
         int next()
         {
@@ -371,6 +384,11 @@ CREATE TABLE lnav_db.lnav_file_metadata (
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)
     {
         auto& mr = *vc.c_iter;
+        // The descriptors were collected when the cursor was opened, so the
+        // metadata might not have one anymore.  Look it up without adding it.
+        const auto& lf_meta
+            = std::as_const(*mr.mr_logfile).get_embedded_metadata();
+        const auto meta_iter = lf_meta.find(mr.mr_descriptor);
 
         switch (col) {
             case 0:
@@ -380,18 +398,18 @@ CREATE TABLE lnav_db.lnav_file_metadata (
                 to_sqlite(ctx, mr.mr_descriptor);
                 break;
             case 2:
-                to_sqlite(
-                    ctx,
-                    fmt::to_string(
-                        mr.mr_logfile->get_embedded_metadata()[mr.mr_descriptor]
-                            .m_format));
+                if (meta_iter == lf_meta.end()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, fmt::to_string(meta_iter->second.m_format));
+                }
                 break;
             case 3:
-                to_sqlite(
-                    ctx,
-                    fmt::to_string(
-                        mr.mr_logfile->get_embedded_metadata()[mr.mr_descriptor]
-                            .m_value));
+                if (meta_iter == lf_meta.end()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, fmt::to_string(meta_iter->second.m_value));
+                }
                 break;
             default:
                 ensure(0);

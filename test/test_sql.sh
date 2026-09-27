@@ -162,6 +162,17 @@ logfile_access_log.0,access_log,3,0
 logfile_access_log.1,access_log,1,0
 EOF
 
+# A time offset keeps its milliseconds, whichever way it goes.
+run_cap_test env TEST_COMMENT="lnav_file positive ms offset" ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET time_offset = 1500" \
+    -c ";SELECT time_offset, (SELECT log_time FROM access_log WHERE log_line = 0) AS first_time FROM lnav_file" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env TEST_COMMENT="lnav_file negative ms offset" ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET time_offset = -1500" \
+    -c ";SELECT time_offset, (SELECT log_time FROM access_log WHERE log_line = 0) AS first_time FROM lnav_file" \
+    ${test_dir}/logfile_access_log.0
+
 # lnav_file.stats: pin the JSON shape without locking in
 # timing-dependent values.  json_type() returns the SQLite type
 # string for each path, so an unexpected schema change shows up
@@ -570,6 +581,24 @@ check_output "update environ table does not work" <<EOF
 name,value
 NEW_ENV_VALUE,"foo bar,baz"
 EOF
+
+# Renaming a variable onto one that already exists follows the conflict
+# clause, like an insert does.
+run_cap_test env TEST_COMMENT="rename environ conflict" ${lnav_test} -n \
+    -c ";UPDATE environ SET name='HOME' WHERE name='SQL_ENV_VALUE'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env TEST_COMMENT="rename environ or replace" ${lnav_test} -n \
+    -c ";INSERT INTO environ (name, value) VALUES ('RENAME_DEST', 'dest')" \
+    -c ";UPDATE OR REPLACE environ SET name='RENAME_DEST' WHERE name='SQL_ENV_VALUE'" \
+    -c ";SELECT * FROM environ WHERE name IN ('RENAME_DEST', 'SQL_ENV_VALUE')" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env TEST_COMMENT="rename environ or ignore" ${lnav_test} -n \
+    -c ";INSERT INTO environ (name, value) VALUES ('RENAME_DEST', 'dest')" \
+    -c ";UPDATE OR IGNORE environ SET name='RENAME_DEST' WHERE name='SQL_ENV_VALUE'" \
+    -c ";SELECT * FROM environ WHERE name IN ('RENAME_DEST', 'SQL_ENV_VALUE') ORDER BY name" \
+    ${test_dir}/logfile_access_log.0
 
 
 run_test ${lnav_test} -n \

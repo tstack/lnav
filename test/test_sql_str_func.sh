@@ -110,6 +110,12 @@ run_cap_test ./drive_sql "SELECT * FROM regexp_capture('foo foo', '^foo')"
 
 run_cap_test ./drive_sql "SELECT * FROM regexp_capture_into_json('foo=1 bar=2; foo=3 bar=4', 'foo=(\d+) bar=(\d+)')"
 
+# every capture in the pattern gets a row, even when this match did not set it
+run_cap_test ./drive_sql "SELECT match_index, capture_index, capture_count, content FROM regexp_capture('abc 12', '(?:([a-z]+)|(\d+))')"
+
+# numbers are read as decimal unless they start with 0x, and the JSON is valid
+run_cap_test ./drive_sql "SELECT content FROM regexp_capture_into_json('a=0755 b=08 c=nan d=0x1F e=1.50 f=12abc', '(\w)=(\S+)')"
+
 run_cap_test ./drive_sql "SELECT encode('foo', 'bar')"
 
 run_cap_test ./drive_sql "SELECT encode('foo', null)"

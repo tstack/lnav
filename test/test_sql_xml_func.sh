@@ -12,6 +12,17 @@ run_cap_test ./drive_sql "SELECT * FROM xpath('/abc/def[@a=\"b\"]', '<abc><def/>
 
 run_cap_test ./drive_sql "SELECT * FROM xpath('/abc/def', '<abc><def>Hello &gt;</def></abc>')"
 
+# a NULL expression selects nothing
+run_cap_test ./drive_sql "SELECT count(*) FROM xpath(NULL, '<abc/>')"
+
+# an expression with a value instead of nodes returns that value as one row
+run_cap_test ./drive_sql "SELECT result, node_path, node_attr, node_text FROM xpath('count(/abc/def)', '<abc><def/><def/></abc>')"
+
+run_cap_test ./drive_sql "SELECT result FROM xpath('string(/abc/def[2])', '<abc><def>x</def><def>y</def></abc>')"
+
+# a bad expression is reported even when there is no document
+run_cap_test ./drive_sql "SELECT * FROM xpath('/abc[', '')"
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM xpath('/catalog', (SELECT content FROM lnav_file LIMIT 1))" \
     ${test_dir}/invalid-books.xml

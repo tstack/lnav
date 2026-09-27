@@ -421,9 +421,12 @@ CREATE TABLE lnav_db.lnav_views (
                         tc.get_sub_source());
                     auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
                     auto sel = tc.get_selection();
+                    // Like top_time and top_file, the metadata is for the
+                    // selected line, which is the top in "top" movement mode.
+                    const auto meta_row = sel.value_or(tc.get_top());
                     std::vector<breadcrumb::crumb> crumbs;
 
-                    tss->text_crumbs_for_line(tc.get_top(), crumbs);
+                    tss->text_crumbs_for_line(meta_row, crumbs);
 
                     top_line_meta tlm;
                     if (sel && time_source != nullptr) {
@@ -441,7 +444,7 @@ CREATE TABLE lnav_db.lnav_views (
                         }
                     }
                     if (ta != nullptr) {
-                        tlm.tlm_anchor = ta->anchor_for_row(tc.get_top());
+                        tlm.tlm_anchor = ta->anchor_for_row(meta_row);
                     }
                     tlm.tlm_file = tc.map_top_row([](const auto& al) {
                         return get_string_attr(al.get_attrs(), L_FILE) |
@@ -637,7 +640,22 @@ CREATE TABLE lnav_db.lnav_views (
             log_debug("setting top time for %s to %s",
                       tc.get_title().c_str(),
                       top_time);
-            if (sel && dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
+            if (!dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("top_time"_symbol)
+                                  .append(" value"))
+                              .with_reason(
+                                  attr_line_t("Unrecognized time value: ")
+                                      .append(lnav::roles::string(top_time)))
+                              .move();
+                set_vtable_errmsg(tab, um);
+                return SQLITE_ERROR;
+            }
+            if (!sel) {
+                log_debug("  %s has no rows to move to the time",
+                          tc.get_title().c_str());
+            } else {
                 auto last_ri_opt = time_source->time_for_row(sel.value());
 
                 if (last_ri_opt) {
@@ -659,17 +677,6 @@ CREATE TABLE lnav_db.lnav_views (
                     log_warning("  could not get for time top row of %s",
                                 tc.get_title().c_str());
                 }
-            } else {
-                auto um = lnav::console::user_message::error(
-                              attr_line_t("Invalid ")
-                                  .append_quoted("top_time"_symbol)
-                                  .append(" value"))
-                              .with_reason(
-                                  attr_line_t("Unrecognized time value: ")
-                                      .append(lnav::roles::string(top_time)))
-                              .move();
-                set_vtable_errmsg(tab, um);
-                return SQLITE_ERROR;
             }
         }
         if (tc.get_selection() != selection) {
@@ -714,7 +721,8 @@ CREATE TABLE lnav_db.lnav_views (
                 auto req_anchor = tlm.tlm_anchor.value();
                 auto req_anchor_top = ta->row_for_anchor(req_anchor);
                 if (req_anchor_top) {
-                    auto curr_anchor = ta->anchor_for_row(tc.get_top());
+                    auto curr_anchor = ta->anchor_for_row(
+                        tc.get_selection().value_or(tc.get_top()));
 
                     if (!curr_anchor || curr_anchor.value() != req_anchor) {
                         tc.set_selection(req_anchor_top.value());
@@ -781,7 +789,7 @@ CREATE TABLE lnav_db.lnav_views (
         }
         tc.set_left(left);
         tc.set_paused(is_paused);
-        tc.execute_search(search);
+        tc.execute_search(search != nullptr ? search : "");
         auto* tss = tc.get_sub_source();
         if (tss != nullptr && tss->tss_supports_filtering
             && tss->tss_apply_filters != do_filtering)

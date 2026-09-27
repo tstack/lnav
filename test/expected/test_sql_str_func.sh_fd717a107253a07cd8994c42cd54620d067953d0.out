@@ -1,0 +1,12 @@
+Row 0:
+  Column    content: {"col_0":"a","col_1":755}
+Row 1:
+  Column    content: {"col_0":"b","col_1":8}
+Row 2:
+  Column    content: {"col_0":"c","col_1":"nan"}
+Row 3:
+  Column    content: {"col_0":"d","col_1":31}
+Row 4:
+  Column    content: {"col_0":"e","col_1":1.50}
+Row 5:
+  Column    content: {"col_0":"f","col_1":"12abc"}
