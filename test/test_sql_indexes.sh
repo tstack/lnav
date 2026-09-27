@@ -116,3 +116,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time >= '2009-07-20 22:59:29.000000' ORDER BY log_line DESC)) AS time_ge, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time <= '2009-07-20 22:59:26.000000' ORDER BY log_line DESC)) AS time_le, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time_msecs >= 1248130769000 ORDER BY log_line DESC)) AS msecs_ge" \
     ${test_dir}/logfile_access_log.0
+
+# A log_level constraint that is pushed down into the table has to agree with
+# the loglevel collation that SQLite checks the rows with, so the same
+# condition finds the same rows either way.  Concatenating an empty string
+# keeps the constraint from being pushed down.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT group_concat(log_line) FROM access_log WHERE log_level >= 'deprecation') AS pushed_ge, (SELECT group_concat(log_line) FROM access_log WHERE (log_level || '') >= 'deprecation' COLLATE loglevel) AS collation_ge, (SELECT group_concat(log_line) FROM access_log WHERE log_level = 'fail') AS pushed_eq, (SELECT group_concat(log_line) FROM access_log WHERE (log_level || '') = 'fail' COLLATE loglevel) AS collation_eq" \
+    ${test_dir}/logfile_access_log.0

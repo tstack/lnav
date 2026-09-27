@@ -30,6 +30,7 @@
  */
 
 #include <arpa/inet.h>
+#include <ctype.h>
 #include <netinet/in.h>
 #include <sqlite3.h>
 #include <string.h>
@@ -63,6 +64,44 @@ try_inet_pton(int p_len, const char* p, char* n)
     return retval;
 }
 
+/**
+ * @return True if the string is a dotted-quad IPv4 address that inet_pton()
+ * would accept: four decimal octets, each at most 255, and no leading zeros.
+ */
+static bool
+is_strict_ipv4(int len, const char* str)
+{
+    auto octets = 0;
+    auto digits = 0;
+    auto value = 0;
+
+    for (int lpc = 0; lpc <= len; lpc++) {
+        if (lpc == len || str[lpc] == '.') {
+            if (digits == 0 || value > 255) {
+                return false;
+            }
+            octets += 1;
+            digits = 0;
+            value = 0;
+            continue;
+        }
+        if (!isdigit((unsigned char) str[lpc])) {
+            return false;
+        }
+        if (digits > 0 && value == 0) {
+            // a leading zero
+            return false;
+        }
+        digits += 1;
+        if (digits > 3) {
+            return false;
+        }
+        value = value * 10 + (str[lpc] - '0');
+    }
+
+    return octets == 4;
+}
+
 static int
 convert_v6_to_v4(int family, char* n)
 {
@@ -85,17 +124,23 @@ ipaddress(void* ptr, int a_len, const void* a_in, int b_len, const void* b_in)
     const char *a_str = (const char*) a_in, *b_str = (const char*) b_in;
     int a_family, b_family, retval;
 
-    if ((a_len > MAX_ADDR_LEN) || (b_len > MAX_ADDR_LEN)) {
-        return strnatcasecmp(a_len, a_str, b_len, b_str);
-    }
-
+    // The quick comparison accepts any digits and dots, so it is only used
+    // when both are addresses by the same rules as inet_pton() below.
+    // Otherwise, something like "999" would be an address when compared
+    // with one, but not when compared with other text.
     int v4res = 0;
-    if (ipv4cmp(a_len, a_str, b_len, b_str, &v4res)) {
+    if (is_strict_ipv4(a_len, a_str) && is_strict_ipv4(b_len, b_str)
+        && ipv4cmp(a_len, a_str, b_len, b_str, &v4res))
+    {
         return v4res;
     }
 
-    a_family = try_inet_pton(a_len, a_str, a_addr);
-    b_family = try_inet_pton(b_len, b_str, b_addr);
+    // A value too long to be an address is ordered like any other text that
+    // is not one, so that every comparison agrees on where it goes.
+    a_family = a_len > MAX_ADDR_LEN ? AF_MAX
+                                    : try_inet_pton(a_len, a_str, a_addr);
+    b_family = b_len > MAX_ADDR_LEN ? AF_MAX
+                                    : try_inet_pton(b_len, b_str, b_addr);
 
     if (a_family == AF_MAX && b_family == AF_MAX) {
         return strnatcasecmp(a_len, a_str, b_len, b_str);
@@ -163,6 +208,17 @@ sql_measure_with_units(
             return 0;
         }
         return 1;
+    }
+
+    // Text that is not a measurement comes before all of the measurements,
+    // like non-addresses in the ipaddress collation.  Comparing it to a
+    // measurement as text would make the order depend on what it is compared
+    // with.
+    if (a_opt) {
+        return 1;
+    }
+    if (b_opt) {
+        return -1;
     }
 
     return sql_strnatcasecmp(nullptr, a_len, a_in, b_len, b_in);

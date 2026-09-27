@@ -108,5 +108,5 @@ abbrev2level(const char* levelstr, ssize_t len)
 int
 levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len)
 {
-    return abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
+    return string2level(l1, l1_len) - string2level(l2, l2_len);
 }

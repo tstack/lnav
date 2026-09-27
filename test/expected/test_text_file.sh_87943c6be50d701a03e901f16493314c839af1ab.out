@@ -108,5 +108,5 @@ abbrev2level([1m[36mconst[0m [1m[36mchar[0m* levelstr, ssize_t len)
 [1m[36mint[0m
 levelcmp([1m[36mconst[0m [1m[36mchar[0m* l1, ssize_t l1_len, [1m[36mconst[0m [1m[36mchar[0m* l2, ssize_t l2_len)
 {
-    [1m[36mreturn[0m abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
+    [1m[36mreturn[0m string2level(l1, l1_len) - string2level(l2, l2_len);
 }

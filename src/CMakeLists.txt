@@ -415,6 +415,7 @@ add_library(lnavfileio STATIC
         grep_proc.cc
         line_buffer.cc
         log_level.cc
+        log_level_re.cc
         piper.header.cc
         pollable.cc
         shared_buffer.cc
@@ -719,7 +720,6 @@ add_library(
         mapbox/variant_io.hpp
         mapbox/variant_visitor.hpp
         ww898/cp_utf8.hpp
-        log_level_re.cc
 
         third-party/ArenaAlloc/arenaalloc.h
         third-party/ArenaAlloc/arenaallocimpl.h
