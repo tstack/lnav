@@ -113,7 +113,6 @@ struct date_time_scanner {
     tm dts_localtime_cached_tm{};
     const date::time_zone* dts_default_zone{nullptr};
 
-    static const int EXPIRE_TIME = 15 * 60;
     /**
      * Times before this (1979-07-05) are not converted to local time.  Any
      * timestamp this early is taken to be relative, not a real date.

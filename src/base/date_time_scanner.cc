@@ -142,11 +142,7 @@ date_time_scanner::scan(const char* time_dest,
                     if (convert_local
                         && (this->dts_local_time || this->dts_zoned_to_local))
                     {
-                        localtime_r(&gmt, &tm_out->et_tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-                        tm_out->et_tm.tm_zone = nullptr;
-#endif
-                        tm_out->et_tm.tm_isdst = 0;
+                        this->to_localtime(gmt, *tm_out);
                         gmt = tm_out->to_timeval().tv_sec;
                     }
                     tv_out.tv_sec = gmt;
@@ -477,21 +473,20 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
 
     if (t < this->dts_local_offset_valid || t >= this->dts_local_offset_expiry)
     {
-        localtime_r(&t, &tm_out.et_tm);
-        // Clear the gmtoff set by localtime_r() otherwise tm2sec() will
-        // convert the time back again.
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-        tm_out.et_tm.tm_gmtoff = 0;
-        tm_out.et_tm.tm_zone = nullptr;
-#endif
-        tm_out.et_tm.tm_isdst = 0;
-        auto new_gmt = tm2sec(&tm_out.et_tm);
-        this->dts_local_offset_cache = new_gmt - t;
-        this->dts_local_offset_valid = t;
-        this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);
-        this->dts_local_offset_expiry
-            -= this->dts_local_offset_expiry % EXPIRE_TIME;
-    } else {
+        // localtime_r() is not used here because, on macOS, it reloads the
+        // zone file on every call in a forked process, like a grep child,
+        // which makes it thousands of times slower.  The zone info also
+        // gives the whole span the offset holds for, so the cache only
+        // misses when crossing a transition.
+        const auto info = lnav::sys_time_to_info(
+            date::sys_seconds{std::chrono::seconds{t}});
+
+        this->dts_local_offset_cache = info.offset.count();
+        this->dts_local_offset_valid = info.begin.time_since_epoch().count();
+        this->dts_local_offset_expiry = info.end.time_since_epoch().count();
+    }
+
+    {
         time_t adjust_gmt = t + this->dts_local_offset_cache;
         auto adjust_gmt_min = adjust_gmt / 60;
         if (this->dts_localtime_cached_gmt == adjust_gmt_min) {

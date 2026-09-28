@@ -1,0 +1,20 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "epoch_plus_json_log": {
+        "title": "JSON Log with +epoch timestamps",
+        "file-type": "json",
+        "file-pattern": "logfile_json_epoch_plus\\.json",
+        "convert-to-local-time": true,
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "timestamp-field": "ts",
+        "body-field": "msg"
+    }
+}

@@ -194,6 +194,9 @@ Performance:
   - Multiple files are now indexed at the same time.
   - Date-time scanning has been sped up a bit.
   - The k-way merge of log messages has been optimized.
+* Search performance on macOS has been fixed for
+  certain cases due to an issue with `localtime_r()`
+  being slow in a child process.
 
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.

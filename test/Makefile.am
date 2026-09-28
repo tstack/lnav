@@ -394,6 +394,7 @@ dist_noinst_DATA = \
 	logfile_json2.json \
 	logfile_json3.json \
 	logfile_jsonid.json \
+	logfile_json_epoch_plus.json \
 	logfile_json_invalid.json \
 	logfile_json_subsec.json \
 	logfile_postgres_json.json \
@@ -527,6 +528,7 @@ dist_noinst_DATA = \
 	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
 	formats/jsontest3/format.json \
+	formats/jsontest-epoch-plus/format.json \
 	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
 	formats/partitions/format.json \

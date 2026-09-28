@@ -154,6 +154,11 @@ run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json_subsec.json
 
+# +epoch timestamps are converted to local time across DST changes
+run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_epoch_plus.json
+
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_bunyan.0
 

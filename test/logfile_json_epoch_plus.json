@@ -1,0 +1,8 @@
+{"ts": "+1710061200", "msg": "01:00 PST, before spring forward"}
+{"ts": "+1710063000", "msg": "01:30 PST, before spring forward"}
+{"ts": "+1710064800", "msg": "03:00 PDT, after spring forward"}
+{"ts": "+1710066600", "msg": "03:30 PDT, after spring forward"}
+{"ts": "+1730620800", "msg": "01:00 PDT, before fall back"}
+{"ts": "+1730622600", "msg": "01:30 PDT, before fall back"}
+{"ts": "+1730624400", "msg": "01:00 PST, after fall back"}
+{"ts": "+1730626200", "msg": "01:30 PST, after fall back"}
