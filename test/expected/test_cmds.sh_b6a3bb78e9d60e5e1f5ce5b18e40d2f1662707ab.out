@@ -835,8 +835,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mclear-file-timezone[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Clear the timezone setting for the focused file or the given glob
-  pattern.
+  Clear the timezone setting for the given glob pattern or all files
+  whose message timestamps do not have a timezone.
 [4mParameter[0m
   [4mpattern[0m   The glob pattern to match against files that
             should no longer use this timezone
@@ -1842,8 +1842,8 @@ For support questions, email:
 [4m:[0m[1m[4mset-file-timezone[0m[4m [0m[4mzone[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Set the timezone to use for log messages that do not include a
-  timezone.  The timezone is applied to the focused file or the given
-  glob pattern.
+  timezone.  The timezone is applied to the given glob pattern or all
+  files whose message timestamps do not have a timezone.
 [4mParameters[0m
   [4mzone[0m      The timezone name
   [4mpattern[0m   The glob pattern to match against files that

@@ -97,6 +97,7 @@ endforeach (FILE_TO_LINK)
 set(FORMAT_FILES
         formats/access_log.json
         formats/alb_log.json
+        formats/asterisk_log.json
         formats/block_log.json
         formats/bunyan_log.json
         formats/candlepin_log.json

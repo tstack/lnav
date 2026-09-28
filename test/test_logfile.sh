@@ -690,6 +690,8 @@ run_cap_test ./drive_logfile -t -f mysql_error_log ${srcdir}/logfile_mysql_error
 
 run_cap_test ./drive_logfile -t -f mysql_gen_log ${srcdir}/logfile_mysql_gen.0
 
+run_cap_test ./drive_logfile -t -f asterisk_log ${srcdir}/logfile_asterisk.0
+
 run_test ${lnav_test} -C ${test_dir}/logfile_bad_access_log.0
 
 sed -ibak -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_err_filename`
@@ -799,6 +801,9 @@ run_cap_test ${lnav_test} -n \
     -c ':filter-in Air Mob' \
     ${test_dir}/logfile_ansi.1
 
+# The file options saved by :set-file-timezone go in the config dir, so these
+# tests get a HOME of their own.
+saved_home="${HOME}"
 export HOME="./file-tz"
 rm -rf "./file-tz"
 mkdir -p $HOME
@@ -817,8 +822,34 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT options_path, options FROM lnav_file" \
     ${test_dir}/logfile_syslog.0
 
+rm -rf "./file-tz"
+mkdir -p $HOME
+
 run_cap_test ${lnav_test} -n \
     -c ':set-file-timezone America/New_York' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':clear-file-timezone' \
+    -c ':set-file-timezone America/Los_Angeles' \
+    ${test_dir}/logfile_syslog.0
+
+# A zone that is already set is not replaced without clearing it first.
+run_cap_test env TEST_COMMENT="set-file-timezone when one is set" \
+    ${lnav_test} -n \
+    -c ':set-file-timezone America/Chicago' \
+    ${test_dir}/logfile_syslog.0
+
+# A zone saved by an earlier run is cleared without giving a pattern.
+run_cap_test env TEST_COMMENT="clear a saved file timezone" ${lnav_test} -n \
+    -c ':clear-file-timezone' \
+    -c ";SELECT options_path, options FROM lnav_file" \
+    ${test_dir}/logfile_syslog.0
+
+# There is nothing left to clear.
+run_cap_test env TEST_COMMENT="clear-file-timezone with nothing set" \
+    ${lnav_test} -n \
+    -c ':clear-file-timezone' \
     ${test_dir}/logfile_syslog.0
 
 run_cap_test ${lnav_test} -n \
@@ -829,11 +860,16 @@ run_cap_test ${lnav_test} -n \
     -c ';SELECT log_time FROM all_logs' \
     ${test_dir}/logfile_yday.0
 
+rm -rf "./file-tz"
+mkdir -p $HOME
+
 touch -t 202411030000 ${test_dir}/logfile_dst.0
 
 run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n \
     -c ':set-file-timezone America/Los_Angeles' \
     ${test_dir}/logfile_dst.0
+
+export HOME="${saved_home}"
 
 cat ${test_dir}/logfile_generic.0 | run_cap_test ${lnav_test} -n \
     -c ':test-comment generic before piper'
@@ -843,6 +879,8 @@ run_cap_test ${lnav_test} -n ${test_dir}/logfile_logfmt.0
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.0
 
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.1
+
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_asterisk.0
 
 run_cap_test ${lnav_test} -n ${test_dir}/\#with
 

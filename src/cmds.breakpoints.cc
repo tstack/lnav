@@ -137,7 +137,12 @@ com_breakpoint(exec_context& ec,
                         "top view is not the LOG view");
                 }
 
-                auto line_pair = lss->find_line_with_file(tc->get_selection());
+                auto sel_opt = tc->get_selection();
+                if (!sel_opt) {
+                    return ec.make_error("no log line selected");
+                }
+
+                auto line_pair = lss->find_line_with_file(sel_opt.value());
                 if (!line_pair) {
                     return ec.make_error("cannot find line");
                 }

@@ -199,7 +199,7 @@
 :clear-file-timezone *pattern*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Clear the timezone setting for the focused file or the given glob pattern.
+  Clear the timezone setting for the given glob pattern or all files whose message timestamps do not have a timezone.
 
   **Parameters**
     * **pattern\*** --- The glob pattern to match against files that should no longer use this timezone
@@ -1721,7 +1721,7 @@
 :set-file-timezone *zone* *\[pattern\]*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Set the timezone to use for log messages that do not include a timezone.  The timezone is applied to the focused file or the given glob pattern.
+  Set the timezone to use for log messages that do not include a timezone.  The timezone is applied to the given glob pattern or all files whose message timestamps do not have a timezone.
 
   **Parameters**
     * **zone\*** --- The timezone name

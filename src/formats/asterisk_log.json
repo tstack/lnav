@@ -1,0 +1,94 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "asterisk_log": {
+        "title": "Asterisk",
+        "url": [
+            "https://www.asterisk.org",
+            "https://docs.asterisk.org/Configuration/Core-Configuration/Logging-Configuration/"
+        ],
+        "description": "Log files written by the Asterisk PBX framework (e.g. /var/log/asterisk/full and messages) and saved console output.",
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>TRACE|DEBUG|VERBOSE|DTMF|FAX|NOTICE|SECURITY|WARNING|ERROR)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? (?<src_file>[^:\\s]+)(?::(?<src_line>\\d+) (?<function>\\w+))?: ?(?<body>.*)$"
+            },
+            "version": {
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] Asterisk (?<version>[^ ]+)(?<body>.*)$"
+            }
+        },
+        "level": {
+            "debug": "^DEBUG$",
+            "info": "^(?:VERBOSE|DTMF|FAX)$",
+            "notice": "^(?:NOTICE|SECURITY)$",
+            "warning": "^WARNING$",
+            "error": "^ERROR$",
+            "trace": "^TRACE$"
+        },
+        "opid-field": "callid",
+        "thread-id-field": "tid",
+        "src-file-field": "src_file",
+        "src-line-field": "src_line",
+        "value": {
+            "callid": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The call identifier that ties together the messages for a single call"
+            },
+            "function": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
+                "kind": "string"
+            },
+            "src_file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_line": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "tid": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The ID of the thread that logged the message"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[Jan  5 10:22:31] NOTICE[2217] chan_sip.c: Registration from '\"1001\" <sip:1001@203.0.113.10:5060>' failed for '198.51.100.23:5071' - Wrong password",
+                "level": "notice"
+            },
+            {
+                "line": "[Jan 15 10:22:45] VERBOSE[2245][C-00000001] pbx.c: Executing [2000@from-internal:1] NoOp(\"PJSIP/1000-00000000\", \"Call to 2000\") in new stack",
+                "level": "info"
+            },
+            {
+                "line": "[2024-01-05 10:23:31.118] WARNING[2261][C-0000001a] app_dial.c: Unable to create channel of type 'PJSIP' (cause 3 - No route to destination)",
+                "level": "warning"
+            },
+            {
+                "line": "[2024-01-05 10:23:31] ERROR[2261][C-00000002]: res_pjsip.c:1245 ast_sip_create_dialog_uac: Endpoint '3000': Could not create dialog to invalid URI 'sip:3000'.  Is endpoint registered and reachable?",
+                "level": "error"
+            },
+            {
+                "line": "[Jan  5 10:22:40] VERBOSE[2217] chan_sip.c: \n<--- SIP read from UDP:198.51.100.23:5071 --->\nREGISTER sip:203.0.113.10 SIP/2.0\nCSeq: 1 REGISTER\n<------------->",
+                "level": "info"
+            },
+            {
+                "line": "[Jan  5 10:22:48] DTMF[2250][C-00000001] channel.c: DTMF begin '5' received on PJSIP/2000-00000001",
+                "level": "info"
+            },
+            {
+                "line": "[Jan  5 10:22:50] DEBUG[2270] res_pjsip_session.c: Endpoint '1000(PJSIP/1000-00000002)' has no session",
+                "level": "debug"
+            },
+            {
+                "line": "[2026-09-26 22:31:23] Asterisk 22.9.0 built by root @ myserver on a aarch64 running Linux on 2026-05-04 22:38:06 UTC"
+            }
+        ]
+    }
+}

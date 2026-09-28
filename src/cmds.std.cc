@@ -32,7 +32,7 @@
 #include <utility>
 #include <vector>
 
-#include "lnav.hh"
+#include "cmds.hh"
 
 #include <fnmatch.h>
 #include <sys/stat.h>
@@ -60,9 +60,9 @@
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "hasher.hh"
+#include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
-#include "cmds.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log.annotate.hh"
@@ -474,15 +474,6 @@ com_set_file_timezone(exec_context& ec,
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
 
     if (lss != nullptr) {
-        if (lss->text_line_count() == 0) {
-            return ec.make_error("no log messages to examine");
-        }
-
-        auto line_pair = lss->find_line_with_file(tc->get_selection());
-        if (!line_pair) {
-            return ec.make_error(FMT_STRING("cannot find line"));
-        }
-
         shlex lexer(cmdline);
         auto split_res = lexer.split(ec.create_resolver());
         if (split_res.isErr()) {
@@ -501,10 +492,28 @@ com_set_file_timezone(exec_context& ec,
             = split_res.unwrap() | lnav::itertools::map([](const auto& elem) {
                   return elem.se_value;
               });
+
         const auto* tz = TRY(lnav::locate_zone(split_args[1]));
-        auto pattern = split_args.size() == 2
-            ? line_pair->first->get_filename()
-            : std::filesystem::path(split_args[2]);
+        std::vector<std::filesystem::path> patterns;
+        if (split_args.size() == 2) {
+            for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                auto format = lf->get_format_ptr();
+                if (format == nullptr) {
+                    continue;
+                }
+
+                if (format->lf_timestamp_flags & ETF_ZONE_SET) {
+                    log_info(
+                        "skipping %s because it has a timestamp with a "
+                        "timezone",
+                        lf->get_filename().c_str());
+                } else {
+                    patterns.emplace_back(lf->get_filename());
+                }
+            }
+        } else {
+            patterns.emplace_back(split_args[2]);
+        }
 
         if (!ec.ec_dry_run) {
             static auto& safe_options_hier
@@ -516,17 +525,31 @@ com_set_file_timezone(exec_context& ec,
             options_hier->foh_generation += 1;
             auto& coll = options_hier->foh_path_to_collection["/"];
 
-            log_info("setting timezone for %s to %s (%s)",
-                     pattern.c_str(),
-                     args[1].c_str(),
-                     tz->name().c_str());
-            coll.foc_pattern_to_options[pattern] = lnav::file_options{
-                {intern_string_t{}, source_location{}, tz},
-            };
+            for (const auto& pattern : patterns) {
+                log_info("setting timezone for %s to %s (%s)",
+                         pattern.c_str(),
+                         args[1].c_str(),
+                         tz->name().c_str());
+                coll.foc_pattern_to_options[pattern] = lnav::file_options{
+                    {intern_string_t{}, source_location{}, tz},
+                };
+            }
 
             auto opt_path = lnav::paths::dotlnav() / "file-options.json";
             auto coll_str = coll.to_json();
             lnav::filesystem::write_file(opt_path, coll_str);
+
+            if (split_args.size() == 2) {
+                retval = fmt::format(
+                    FMT_STRING("info: set the timezone for {} file(s) to {}"),
+                    patterns.size(),
+                    tz->name());
+            } else {
+                retval = fmt::format(
+                    FMT_STRING("info: set the timezone for {} to {}"),
+                    split_args[2],
+                    tz->name());
+            }
         }
     } else {
         return ec.make_error(
@@ -661,17 +684,57 @@ com_clear_file_timezone(exec_context& ec,
 
             options_hier->foh_generation += 1;
             auto& coll = options_hier->foh_path_to_collection["/"];
-            const auto iter = coll.foc_pattern_to_options.find(path);
+            if (path.empty()) {
+                // Undo what :set-file-timezone without a pattern does: it
+                // sets the zone for each file by its name.
+                size_t cleared = 0;
+                for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                    auto format = lf->get_format_ptr();
+                    if (format == nullptr
+                        || format->lf_timestamp_flags & ETF_ZONE_SET)
+                    {
+                        continue;
+                    }
 
-            if (iter == coll.foc_pattern_to_options.end()) {
-                return ec.make_error(FMT_STRING("no timezone set for: {}"),
-                                     path);
-            }
+                    const auto iter
+                        = coll.foc_pattern_to_options.find(lf->get_filename());
+                    if (iter == coll.foc_pattern_to_options.end()
+                        || iter->second.fo_default_zone.pp_value == nullptr)
+                    {
+                        continue;
+                    }
 
-            log_info("clearing timezone for %s", path.c_str());
-            iter->second.fo_default_zone.pp_value = nullptr;
-            if (iter->second.empty()) {
-                coll.foc_pattern_to_options.erase(iter);
+                    log_info("clearing timezone for %s",
+                             lf->get_filename().c_str());
+                    iter->second.fo_default_zone.pp_value = nullptr;
+                    if (iter->second.empty()) {
+                        coll.foc_pattern_to_options.erase(iter);
+                    }
+                    cleared += 1;
+                }
+
+                if (cleared == 0) {
+                    return ec.make_error(
+                        "no files have a timezone set to clear");
+                }
+                retval = fmt::format(
+                    FMT_STRING("info: cleared the timezone for {} file(s)"),
+                    cleared);
+            } else {
+                const auto iter = coll.foc_pattern_to_options.find(path);
+
+                if (iter == coll.foc_pattern_to_options.end()) {
+                    return ec.make_error(FMT_STRING("no timezone set for: {}"),
+                                         path);
+                }
+
+                log_info("clearing timezone for %s", path.c_str());
+                iter->second.fo_default_zone.pp_value = nullptr;
+                if (iter->second.empty()) {
+                    coll.foc_pattern_to_options.erase(iter);
+                }
+                retval = fmt::format(
+                    FMT_STRING("info: cleared the timezone for {}"), path);
             }
 
             auto opt_path = lnav::paths::dotlnav() / "file-options.json";
@@ -1130,8 +1193,7 @@ com_mark_expr(exec_context& ec,
         // there is nothing here for an impure expression to invalidate and
         // the preview must not reject what the command itself accepts.
         auto set_res = lss.set_preview_sql_filter(
-            stmt.release(),
-            logfile_sub_source::expr_purity::not_required);
+            stmt.release(), logfile_sub_source::expr_purity::not_required);
 
         if (set_res.isErr()) {
             return Err(set_res.unwrapErr());
@@ -3323,8 +3385,8 @@ lnav::commands::command_t STD_COMMANDS[] = {
         help_text(":set-file-timezone")
             .with_summary("Set the timezone to use for log messages that do "
                           "not include a timezone.  The timezone is applied "
-                          "to "
-                          "the focused file or the given glob pattern.")
+                          "to the given glob pattern or all files whose "
+                          "message timestamps do not have a timezone.")
             .with_parameter(help_text{"zone", "The timezone name"}.with_format(
                 help_parameter_format_t::HPF_TIMEZONE))
             .with_parameter(help_text{"pattern",
@@ -3338,9 +3400,9 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "clear-file-timezone",
         com_clear_file_timezone,
         help_text(":clear-file-timezone")
-            .with_summary("Clear the timezone setting for the "
-                          "focused file or "
-                          "the given glob pattern.")
+            .with_summary("Clear the timezone setting for the given glob "
+                          "pattern or all files whose message timestamps do "
+                          "not have a timezone.")
             .with_parameter(
                 help_text{"pattern",
                           "The glob pattern to match against files "

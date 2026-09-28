@@ -1,0 +1,17 @@
+[Jan  5 10:22:31] NOTICE[2217] [4mc[0mhan_sip.c: Registration from '"1001" <sip:1001@203.0.113.10:5060>' failed for '198.51.100.23:5071' - Wrong password
+[Jan  5 10:22:31] SECURITY[2206] [4mr[0mes_security_log.c: SecurityEvent="InvalidPassword",EventTV="2024-01-05T10:22:31.402+0000",Severity="Error",Service="SIP",EventVersion="2",AccountID="1001",RemoteAddress="IPV4/UDP/198.51.100.23/5071"
+[Jan  5 10:22:40] VERBOSE[2217] [4mc[0mhan_sip.c:
+<--- SIP read from UDP:198.51.100.23:5071 --->
+REGISTER sip:203.0.113.10 SIP/2.0
+CSeq: 1 REGISTER
+<------------->
+[Jan  5 10:22:45] VERBOSE[2245][C-00000001] [4mp[0mbx.c: Executing [2000@from-internal:1] NoOp("PJSIP/1000-00000000", "Call to 2000") in new stack
+[Jan  5 10:22:45] VERBOSE[2245][C-00000001] [4mp[0mbx.c: Executing [2000@from-internal:2] Dial("PJSIP/1000-00000000", "PJSIP/2000,30") in new stack
+[Jan  5 10:22:45] VERBOSE[2245][C-00000001] [4ma[0mpp_dial.c: Called PJSIP/2000
+[Jan  5 10:22:46] VERBOSE[2250][C-00000001] [4ma[0mpp_dial.c: PJSIP/2000-00000001 is ringing
+[Jan  5 10:22:48] DTMF[2250][C-00000001] [4mc[0mhannel.c: DTMF begin '5' received on PJSIP/2000-00000001
+[Jan  5 10:22:52] VERBOSE[2245][C-00000001] [4ma[0mpp_dial.c: PJSIP/2000-00000001 answered PJSIP/1000-00000000
+[Jan  5 10:23:30] VERBOSE[2245][C-00000001] [4mp[0mbx.c: Spawn extension (from-internal, 2000, 2) exited non-zero on 'PJSIP/1000-00000000'
+[33m[[0m[33mJan  5 10:23:31[0m[33m] [0m[33mWARNING[0m[33m[[0m[33m2261[0m[33m][[0m[33mC-00000002[0m[33m] [0m[4m[33ma[0m[33mpp_dial.c[0m[33m: [0m[33mUnable to create channel of type 'PJSIP' (cause 3 - No route to destination)[0m
+[31m[[0m[31mJan  5 10:23:31[0m[31m] [0m[31mERROR[0m[31m[[0m[31m2261[0m[31m][[0m[31mC-00000002[0m[31m] [0m[4m[31mr[0m[31mes_pjsip.c[0m[31m: [0m[31mEndpoint '3000': Could not create dialog to invalid URI 'sip:3000'.  Is endpoint registered and reachable?[0m
+[Jan  5 10:23:35] DEBUG[2270] [4mr[0mes_pjsip_session.c: Endpoint '1000(PJSIP/1000-00000002)' has no session

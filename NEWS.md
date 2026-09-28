@@ -56,6 +56,9 @@ Features:
   The new format exposes `device`, `tool`, and `action` fields,
   groups messages by device in the TIMELINE view, and highlights
   `error:` lines and `FILESYSTEM CLEAN` status messages.
+* Added a log format for the Asterisk PBX framework.  The
+  call ID (e.g. `C-00000001`) is used as the operation ID so
+  the messages for a call are grouped in the TIMELINE view.
 * Log format value definitions now accept a `unit` object
   with `suffix` and `divisor` properties.  `suffix` specifies
   how numeric fields are humanized. `divisor` normalizes
@@ -286,6 +289,10 @@ Features:
 Breaking changes:
 * Mouse mode is disabled by default again since there
   has been some grumbling and it needs some refinement.
+* When the `:set-file-timezone` command is run without
+  a path, it will apply the zone to all log files
+  with timestamps that do not include a zone instead of
+  only to the file whose line was focused.
 * The `humanize_file_size()` SQLite function now
   uses 1,000 for the base instead of 1,024.
 

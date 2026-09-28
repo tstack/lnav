@@ -174,7 +174,6 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
     auto sel = tc->get_selection();
     auto& ec = lnav_data.ld_exec_context;
     auto* tc_tss = tc->get_sub_source();
-    auto& bm = tc->get_bookmarks();
 
     if (ch.id == NCKEY_PASTE) {
         handle_paste_content(nc, ch);

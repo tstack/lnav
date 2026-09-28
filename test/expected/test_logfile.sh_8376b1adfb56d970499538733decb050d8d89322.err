@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: no files have a timezone set to clear
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:clear-file-timezone                    [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mclear-file-timezone[0m[4m [0m[4mpattern[0m
+         ══════════════════════════════════════════════════════════════════════
+           Clear the timezone setting for the given glob pattern or all files
+           whose message timestamps do not have a timezone.

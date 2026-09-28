@@ -35,7 +35,10 @@
 #include <optional>
 #include <string>
 
+#include "bookmarks.hh"
 #include "lnav.commands.hh"
+#include "textview_curses.hh"
+#include "vis_line.hh"
 
 /**
  * Initialize the given map with the builtin lnav commands.

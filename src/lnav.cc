@@ -3475,6 +3475,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     {
         lnav_data.ld_debug_log_name = fmt::format(
             FMT_STRING("{}_{}_debug.log"), test_file_base, test_hash);
+
+        std::error_code ec;
+        std::filesystem::remove(lnav_data.ld_debug_log_name, ec);
     }
 
     if (!lnav_data.ld_debug_log_name.empty()) {
