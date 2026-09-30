@@ -15,3 +15,10 @@ CSeq: 1 REGISTER
 [Jan  5 10:23:31] WARNING[2261][C-00000002] app_dial.c: Unable to create channel of type 'PJSIP' (cause 3 - No route to destination)
 [Jan  5 10:23:31] ERROR[2261][C-00000002] res_pjsip.c: Endpoint '3000': Could not create dialog to invalid URI 'sip:3000'.  Is endpoint registered and reachable?
 [Jan  5 10:23:35] DEBUG[2270] res_pjsip_session.c: Endpoint '1000(PJSIP/1000-00000002)' has no session
+[Jan  5 10:23:36] NOTICE[2245][C-00000001] Ext. 2000:  User 1000 dialed 2000.
+[Jan  5 10:23:37] WARNING[2245][C-00000001]: Ext. s:3 @ from-internal: Caller hung up
+[Jan  5 10:23:38] TRACE[2270] :  1     --> res_pjsip_session.c:4283 create_local_sdp: PJSIP/1000-00000002
+[Jan  5 10:23:39] ERROR[2261] : Got 2 backtrace records
+#0: [0x55d3a1b2c3d4] asterisk ast_bt_get_addresses()
+#1: [0x55d3a1b2c5e6] asterisk main()
+[Jan  5 10:23:40] PJSIP_HISTORY[2261] res_pjsip_history.c: <--- Transmitting SIP request (512 bytes) to UDP:192.0.2.5:5060 --->

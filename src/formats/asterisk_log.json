@@ -9,7 +9,13 @@
         "description": "Log files written by the Asterisk PBX framework (e.g. /var/log/asterisk/full and messages) and saved console output.",
         "regex": {
             "std": {
-                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>TRACE|DEBUG|VERBOSE|DTMF|FAX|NOTICE|SECURITY|WARNING|ERROR)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? (?<src_file>[^:\\s]+)(?::(?<src_line>\\d+) (?<function>\\w+))?: ?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? (?<src_file>[^:\\s]+)(?::(?<src_line>\\d+) (?<function>\\w+))?: ?(?<body>.*)$"
+            },
+            "dialplan": {
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? Ext\\. (?<exten>[^:]*)(?::(?<priority>\\d+) @ (?<context>[^:]+))?: ?(?<body>.*)$"
+            },
+            "nofile": {
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?(?: :|:(?! ?(?:Ext\\. [^:]*|[^:\\s]+):)) (?: *\\d+ +(?:(?:-->|<--) +)?(?<src_file>[^:\\s]+):(?<src_line>\\d+) (?<function>\\w+): )?(?<body>.*)$"
             },
             "version": {
                 "pattern": "^\\[(?<timestamp>[^\\]]+)\\] Asterisk (?<version>[^ ]+)(?<body>.*)$"
@@ -33,12 +39,27 @@
                 "identifier": true,
                 "description": "The call identifier that ties together the messages for a single call"
             },
+            "context": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The dialplan context of a message logged by the Log() application"
+            },
+            "exten": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The dialplan extension of a message logged by the Log() application"
+            },
             "function": {
                 "kind": "string",
                 "identifier": true
             },
             "level": {
                 "kind": "string"
+            },
+            "priority": {
+                "kind": "integer",
+                "foreign-key": true,
+                "description": "The dialplan priority of a message logged by the Log() application"
             },
             "src_file": {
                 "kind": "string",
@@ -88,6 +109,34 @@
             },
             {
                 "line": "[2026-09-26 22:31:23] Asterisk 22.9.0 built by root @ myserver on a aarch64 running Linux on 2026-05-04 22:38:06 UTC"
+            },
+            {
+                "line": "[2026-09-29 20:33:58] NOTICE[744803][C-000095cb] Ext. 1234568:  User 1234567 dialed 1234568.",
+                "level": "notice"
+            },
+            {
+                "line": "[2026-09-29 20:33:59] WARNING[744803][C-000095cb]: Ext. s:3 @ from-internal: Caller hung up",
+                "level": "warning"
+            },
+            {
+                "line": "[2020-05-17 15:16:51] TRACE[953402] :  1     --> res_pjsip_session.c:4283 create_local_sdp: PJSIP/1173-00000001",
+                "level": "trace"
+            },
+            {
+                "line": "[2020-05-17 15:16:51] TRACE[953402]:  1     <-- res_pjsip_session.c:4283 create_local_sdp: PJSIP/1173-00000001",
+                "level": "trace"
+            },
+            {
+                "line": "[2024-01-05 10:23:31] ERROR[2261] : Got 5 backtrace records",
+                "level": "error"
+            },
+            {
+                "line": "[2024-01-05 10:23:32] PJSIP_HISTORY[2261] res_pjsip_history.c: <--- Transmitting SIP request (512 bytes) to UDP:192.0.2.5:5060 --->",
+                "level": "info"
+            },
+            {
+                "line": "[2024-01-05 10:23:33] MYAPP[2261][C-00000002] Ext. 100: Custom level message",
+                "level": "info"
             }
         ]
     }
