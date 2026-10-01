@@ -5511,7 +5511,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_snippets(this->get_snippets()));
         }
         if (this->lf_file_type == file_type_t::JSON) {
-            this->lf_multiline = true;
+            // Each message is a single line of input, even when it is
+            // rendered over several.
+            this->lf_multiline = false;
             this->lf_structured = true;
             this->lf_formatted_lines = true;
             this->jlf_parse_context

@@ -55,6 +55,12 @@ constexpr std::array<string_fragment, LEVEL__MAX> level_names = {
     "header"_frag,
 };
 
+std::vector<string_fragment>
+selectable_level_names()
+{
+    return {level_names.begin(), level_names.begin() + LEVEL_HEADER};
+}
+
 log_level_t
 abbrev2level(const char* levelstr, ssize_t len)
 {
@@ -101,8 +107,6 @@ abbrev2level(const char* levelstr, ssize_t len)
             return LEVEL_CRITICAL;
         case 'F':
             return LEVEL_FATAL;
-        case 'H':
-            return LEVEL_HEADER;
         default:
             return LEVEL_UNKNOWN;
     }

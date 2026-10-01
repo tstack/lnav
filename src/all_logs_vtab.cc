@@ -137,7 +137,6 @@ all_logs_vtab::extract(logfile* lf,
             lineno = scan_res->value();
         }
     }
-    auto is_res = is_utf8(body_sf);
     std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_res;
     if (is_msg_utf8) {
         auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());

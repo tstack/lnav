@@ -55,6 +55,12 @@
     [35m"header"[0m_frag,
 };
 
+std::vector<string_fragment>
+selectable_level_names()
+{
+    [1m[36mreturn[0m {level_names.begin(), level_names.begin() + [1mLEVEL_HEADER[0m};
+}
+
 log_level_t
 abbrev2level([1m[36mconst[0m [1m[36mchar[0m* levelstr, ssize_t len)
 {
@@ -101,8 +107,6 @@ abbrev2level([1m[36mconst[0m [1m[36mchar[0m* levelstr, ssize_t len)
             [1m[36mreturn[0m [1mLEVEL_CRITICAL[0m;
         [1m[36mcase[0m [35m'F'[0m:
             [1m[36mreturn[0m [1mLEVEL_FATAL[0m;
-        [1m[36mcase[0m [35m'H'[0m:
-            [1m[36mreturn[0m [1mLEVEL_HEADER[0m;
         [1m[36mdefault[0m:
             [1m[36mreturn[0m [1mLEVEL_UNKNOWN[0m;
     }

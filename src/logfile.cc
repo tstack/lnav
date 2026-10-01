@@ -1570,8 +1570,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                     this->lf_index[lpc].set_time(last_line.get_time());
                     if (this->lf_format->lf_structured) {
                         this->lf_index[lpc].set_ignore(true);
-                    }
-                    if (this->lf_format->lf_multiline) {
+                        this->lf_index[lpc].set_level(LEVEL_HEADER);
+                    } else if (this->lf_format->lf_multiline) {
                         this->lf_index[lpc].set_level(LEVEL_HEADER);
                     } else {
                         this->lf_index[lpc].set_level(LEVEL_INVALID);

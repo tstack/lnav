@@ -33,6 +33,7 @@
 #define log_level_hh
 
 #include <array>
+#include <vector>
 
 #include <sys/types.h>
 
@@ -50,6 +51,12 @@ log_level_t string2level(const char* levelstr,
                          bool exact = false);
 
 log_level_t abbrev2level(const char* levelstr, ssize_t len = -1);
+
+/**
+ * @return The level names a user can choose from, which leaves out the
+ * internal LEVEL_HEADER.
+ */
+std::vector<string_fragment> selectable_level_names();
 
 int levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len);
 

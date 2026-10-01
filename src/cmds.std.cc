@@ -3851,7 +3851,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
             .with_summary(
                 "Set the minimum log level to display in the log view")
             .with_parameter(help_text("log-level", "The new minimum log level")
-                                .with_enum_values(level_names))
+                                .with_enum_values(selectable_level_names()))
             .with_example(
                 {"To set the minimum log level displayed to error", "error"}),
     },

@@ -765,7 +765,7 @@ filter_sub_source::level_filter_row::ti_completion_request(
     completion_request_type_t crt)
 {
     auto lev = tc.get_content();
-    auto poss = level_names | lnav::itertools::similar_to(lev)
+    auto poss = selectable_level_names() | lnav::itertools::similar_to(lev)
         | lnav::itertools::map([](const auto& elem) {
                     return attr_line_t().append(elem).with_attr_for_all(
                         lnav::prompt::SUBST_TEXT.value(elem.to_string()));

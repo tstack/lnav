@@ -1856,7 +1856,7 @@ For support questions, email:
   Set the minimum log level to display in the log view
 [4mParameter[0m
   [4mlog-level[0m   The new minimum log level
-              [4mValues[0m: [1munknown[0m|[1mtrace[0m|[1mdebug5[0m|[1mdebug4[0m|[1mdebug3[0m|[1mdebug2[0m|[1mdebug[0m|[1minfo[0m|[1mstats[0m|[1mnotice[0m|[1mwarning[0m|[1merror[0m|[1mcritical[0m|[1mfatal[0m|[1minvalid[0m|[1mheader[0m
+              [4mValues[0m: [1munknown[0m|[1mtrace[0m|[1mdebug5[0m|[1mdebug4[0m|[1mdebug3[0m|[1mdebug2[0m|[1mdebug[0m|[1minfo[0m|[1mstats[0m|[1mnotice[0m|[1mwarning[0m|[1merror[0m|[1mcritical[0m|[1mfatal[0m|[1minvalid[0m
 
 [4mExample[0m
 #1 To set the minimum log level displayed to error:

@@ -124,7 +124,9 @@ longpoll(const PollInput& pi)
             const auto& changes = latest.vs_log_index_changes;
             // The entries after the caller's seq are only all there if the
             // oldest retained one immediately follows it.
-            log_index.reset = pi.log_index_seq == 0 || changes.empty()
+            // A seq ahead of ours came from an earlier lnav process.
+            log_index.reset = pi.log_index_seq == 0
+                || pi.log_index_seq > latest.vs_log_index_seq || changes.empty()
                 || changes.front().lic_seq > pi.log_index_seq + 1;
             if (!log_index.reset) {
                 for (const auto& lic : changes) {

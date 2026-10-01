@@ -624,6 +624,8 @@ private:
     uint8_t ll_level : 4;
 };
 
+static_assert(LEVEL__MAX <= 16, "log_level_t must fit in logline::ll_level");
+
 static_assert(sizeof(logline) == 24);
 
 struct format_tag_def {
