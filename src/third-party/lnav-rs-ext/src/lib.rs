@@ -227,16 +227,41 @@ mod ffi {
     }
 
     #[derive(Serialize, Deserialize, Default)]
+    #[serde(default)]
     struct PollInput {
         pub last_event_id: usize,
         pub view_states: ViewStates,
         pub task_states: Vec<usize>,
+        /// The `log_index.seq` from the previous response.  0 asks for a reset.
+        pub log_index_seq: u64,
+    }
+
+    /// Rows `from_row` and later of the LOG view's filtered index were added or
+    /// replaced, leaving `row_count` rows.  An append has `from_row` equal to
+    /// the previous row count.
+    #[derive(Serialize)]
+    struct LogIndexChange {
+        pub seq: u64,
+        pub generation: u32,
+        pub from_row: u64,
+        pub row_count: u64,
+    }
+
+    #[derive(Serialize)]
+    struct LogIndexState {
+        pub seq: u64,
+        pub row_count: u64,
+        /// The changes since the caller's seq aren't available (first poll, or
+        /// too many changes since); treat every row as changed.
+        pub reset: bool,
+        pub changes: Vec<LogIndexChange>,
     }
 
     #[derive(Serialize)]
     struct PollResult {
         pub next_input: PollInput,
         pub background_tasks: Vec<ExtProgress>,
+        pub log_index: LogIndexState,
     }
 
     #[derive(Serialize)]

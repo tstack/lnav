@@ -34,6 +34,7 @@
 
 #include <array>
 #include <atomic>
+#include <deque>
 #include <exception>
 #include <functional>
 #include <map>
@@ -767,6 +768,28 @@ public:
 
     uint32_t lss_index_generation{0};
 
+    /**
+     * A change to the filtered index: every row from ic_from_row onward was
+     * added or replaced, leaving ic_row_count rows.  Appends have ic_from_row
+     * equal to the previous row count; rebuilds and filter changes start
+     * earlier.  External clients get these through /api/poll so they can
+     * re-query only the rows that changed.
+     */
+    struct index_change {
+        uint64_t ic_seq;
+        uint32_t ic_generation;
+        size_t ic_from_row;
+        size_t ic_row_count;
+    };
+
+    static constexpr size_t MAX_INDEX_CHANGES = 256;
+
+    /** Sequence number of the latest entry in lss_index_changes. */
+    uint64_t lss_index_change_seq{0};
+    std::deque<index_change> lss_index_changes;
+
+    void record_index_change(size_t from_row);
+
     void quiesce();
 
     struct __attribute__((__packed__)) indexed_content {
@@ -959,6 +982,12 @@ public:
 
     std::optional<json_string> text_row_details(const textview_curses& tc);
 
+    /**
+     * Adds "index-seq" (lss_index_change_seq) so a script can read the change
+     * log position in the same snapshot as its queries.
+     */
+    std::optional<std::string> text_view_details() const;
+
     void reload_config(error_reporter& reporter);
 
     bool is_indexing_in_progress() const
@@ -1016,6 +1045,18 @@ private:
      */
     prescan_map prescan_files(const std::vector<size_t>& file_order,
                               std::optional<ui_clock::time_point> deadline);
+
+    /**
+     * One progress tick for a fan-out over `work`: read each file's progress
+     * slots into `in_flight` and hand the totals to lss_scan_progress.
+     *
+     * @return True if the callback asked for the scan to stop.
+     */
+    bool tick_scan_progress(const std::vector<logfile*>& work,
+                            std::vector<index_progress_report>& in_flight);
+
+    /** Re-run the filters over every file from where each one left off. */
+    void reobserve_files();
 
     void clear_line_size_cache()
     {

@@ -345,9 +345,11 @@ public:
         lr.lr_end = prefix_len;
         sa.emplace_back(lr, L_PREFIX.value());
 
-        lr.lr_start = prefix_len;
-        lr.lr_end = line.length();
-        sa.emplace_back(lr, SA_BODY.value());
+        if (prefix_len < line.length()) {
+            lr.lr_start = prefix_len;
+            lr.lr_end = line.length();
+            sa.emplace_back(lr, SA_BODY.value());
+        }
 
         log_format::annotate(lf, line_number, sa, values);
     }

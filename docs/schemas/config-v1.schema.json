@@ -1052,7 +1052,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/log-level-styles",
                                     "type": "object",
                                     "patternProperties": {
-                                        "^(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid)$": {
+                                        "^(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid|header)$": {
                                             "title": "/ui/theme-defs/<theme_name>/log-level-styles/<level>",
                                             "$ref": "#/definitions/style"
                                         }

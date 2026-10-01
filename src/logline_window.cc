@@ -86,6 +86,9 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
                     = std::distance(this->li_file->begin(), this->li_logline);
                 break;
             }
+            if (this->li_line == 0_vl) {
+                break;
+            }
             --this->li_line;
         }
     }

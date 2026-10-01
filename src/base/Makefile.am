@@ -132,6 +132,7 @@ check_PROGRAMS = \
     test_base
 
 test_base_SOURCES = \
+    arena_alloc.tests.cc \
     attr_line.tests.cc \
     cell_container.tests.cc \
     color_spaces.tests.cc \

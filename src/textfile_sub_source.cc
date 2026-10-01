@@ -975,11 +975,6 @@ textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
     // still means a worker, because the tick has to run somewhere.
     const auto width = lnav::logfile_indexing_width(work.size());
 
-    log_info("pre-scanning %zu text files over %zu threads (skipped %zu done)",
-             work.size(),
-             width,
-             retval.size());
-
     // Reused across ticks so the UI poll allocates nothing.
     std::vector<index_progress_report> in_flight;
     std::vector<prescan_result> results(work.size());

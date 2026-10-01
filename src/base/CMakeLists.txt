@@ -126,6 +126,7 @@ target_link_libraries(base
 
 add_executable(
         test_base
+        arena_alloc.tests.cc
         attr_line.tests.cc
         cell_container.tests.cc
         color_spaces.tests.cc

@@ -1064,7 +1064,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 
         auto file_and_line = this->fos_lss.find_line_with_file(row);
 
-        if (file_and_line && !file_and_line->second->is_continued()) {
+        if (file_and_line && file_and_line->second->is_message()) {
             auto get_res = this->fos_anno_cache.get(row);
             if (get_res) {
                 auto anno_val = get_res.value();

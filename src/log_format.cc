@@ -1318,7 +1318,7 @@ struct json_log_userdata {
     yajl_handle jlu_handle{nullptr};
     const char* jlu_line_value{nullptr};
     size_t jlu_line_size{0};
-    std::stack<size_t> jlu_sub_start;
+    std::stack<size_t, std::vector<size_t>> jlu_sub_start;
     uint32_t jlu_quality{0};
     uint32_t jlu_strikes{0};
     uint32_t jlu_precision{0};
@@ -3834,13 +3834,21 @@ external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
 void
 external_log_format::compute_subline_offsets()
 {
+    const auto* str = this->jlf_attr_line.al_string.data();
+    const auto len = this->jlf_attr_line.al_string.size();
+    const auto* curr = str;
+    const auto* end = str + len;
+
     this->jlf_line_offsets.push_back(0);
-    for (size_t lpc = 0; lpc < this->jlf_attr_line.al_string.size(); lpc++) {
-        if (this->jlf_attr_line.al_string[lpc] == '\n') {
-            this->jlf_line_offsets.push_back(lpc + 1);
+    while (curr < end) {
+        const auto* nl = (const char*) memchr(curr, '\n', end - curr);
+        if (nl == nullptr) {
+            break;
         }
+        this->jlf_line_offsets.push_back(nl - str + 1);
+        curr = nl + 1;
     }
-    this->jlf_line_offsets.push_back(this->jlf_attr_line.al_string.size());
+    this->jlf_line_offsets.push_back(len);
 }
 
 void
@@ -4318,6 +4326,26 @@ external_log_format::emit_detail_block(const std::vector<bool>& used_values,
                                                       L_OPID.value());
         }
     }
+}
+
+bool
+external_log_format::has_cached_subline(const logline& ll,
+                                        subline_options opts) const
+{
+    switch (this->lf_file_type) {
+        case file_type_t::TEXT:
+            return false;
+        case file_type_t::TABULAR:
+            if (this->jlf_line_format.empty()) {
+                return false;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return this->jlf_cached_offset == ll.get_offset()
+        && this->jlf_cached_opts == opts;
 }
 
 void

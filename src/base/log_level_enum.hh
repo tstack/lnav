@@ -49,6 +49,7 @@ enum log_level_t : int {
     LEVEL_CRITICAL,
     LEVEL_FATAL,
     LEVEL_INVALID,
+    LEVEL_HEADER,
 
     LEVEL__MAX,
 };

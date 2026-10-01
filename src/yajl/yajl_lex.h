@@ -53,6 +53,9 @@ yajl_lexer yajl_lex_alloc(yajl_alloc_funcs * alloc,
 
 void yajl_lex_free(yajl_lexer lexer);
 
+/* return the lexer to its initial state, keeping its buffer */
+void yajl_lex_reset(yajl_lexer lexer);
+
 /**
  * run/continue a lex. "offset" is an input/output parameter.
  * It should be initialized to zero for a

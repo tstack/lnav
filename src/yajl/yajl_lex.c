@@ -117,6 +117,18 @@ yajl_lex_alloc(yajl_alloc_funcs * alloc,
 }
 
 void
+yajl_lex_reset(yajl_lexer lxr)
+{
+    yajl_buf_clear(lxr->buf);
+    lxr->lineOff = 0;
+    lxr->charOff = 0;
+    lxr->error = yajl_lex_e_ok;
+    lxr->bufOff = 0;
+    lxr->bufInUse = 0;
+    lxr->needKey = 0;
+}
+
+void
 yajl_lex_free(yajl_lexer lxr)
 {
     yajl_buf_free(lxr->buf);

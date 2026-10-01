@@ -146,6 +146,20 @@ pub fn script_body_with_limit(request: &Request, limit: usize) -> Result<String,
     Ok(out)
 }
 
+const SCRIPT_VAR_PREFIX: &str = "X-Lnav-Var-";
+
+/// The script variable named by an `X-Lnav-Var-<name>` header.  Header names are
+/// case-insensitive (and HTTP/2 lowercases them), so the prefix is matched without
+/// regard to case; the rest of the name is used as given.
+fn script_var_name(header: &str) -> Option<&str> {
+    let prefix = header.get(..SCRIPT_VAR_PREFIX.len())?;
+    if prefix.eq_ignore_ascii_case(SCRIPT_VAR_PREFIX) {
+        Some(&header[SCRIPT_VAR_PREFIX.len()..])
+    } else {
+        None
+    }
+}
+
 fn do_exec(request: &Request) -> Response {
     let body = try_or_400!(script_body_with_limit(request, 1024 * 1024));
 
@@ -160,7 +174,7 @@ fn do_exec(request: &Request) -> Response {
         .headers()
         .filter_map(|(name, value)| {
             Some(VarPair {
-                expr: name.strip_prefix("X-Lnav-Var-")?.to_string(),
+                expr: script_var_name(name)?.to_string(),
                 value: value.to_string(),
             })
         })

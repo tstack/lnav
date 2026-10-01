@@ -547,6 +547,84 @@ vt_eof(sqlite3_vtab_cursor* cur)
     return vc->log_cursor.is_eof();
 }
 
+/**
+ * Brings a column index up to date with the LOG view's index.  Appends leave
+ * the indexed lines valid; any other change (a partial rebuild from some row,
+ * a full rebuild, a filter change) invalidates them from its first changed row
+ * onward, so the index is truncated there instead of thrown away.  If the
+ * change log no longer reaches back to this index, it's cleared.
+ */
+static void
+sync_column_index(log_vtab_impl::column_index& coli,
+                  const logfile_sub_source& lss)
+{
+    if (coli.ci_index_change_seq == lss.lss_index_change_seq
+        && coli.ci_index_generation == lss.lss_index_generation)
+    {
+        return;
+    }
+
+    std::optional<size_t> trim_from;
+    const auto& changes = lss.lss_index_changes;
+    if (coli.ci_index_change_seq != lss.lss_index_change_seq) {
+        if (changes.empty()
+            || changes.front().ic_seq > coli.ci_index_change_seq + 1)
+        {
+            trim_from = 0;
+        } else {
+            for (const auto& ic : changes) {
+                if (ic.ic_seq <= coli.ci_index_change_seq) {
+                    continue;
+                }
+                trim_from = std::min(trim_from.value_or(ic.ic_from_row),
+                                     ic.ic_from_row);
+            }
+        }
+    }
+    if (!trim_from && coli.ci_index_generation != lss.lss_index_generation) {
+        // A generation change is always recorded, but don't trust that.
+        trim_from = 0;
+    }
+
+    if (trim_from) {
+        const auto end = vis_line_t(trim_from.value());
+        size_t dropped = 0;
+        if (end <= 0_vl) {
+            for (const auto& [value, lines] : coli.ci_value_to_lines) {
+                dropped += lines.size();
+            }
+            coli.ci_value_to_lines.clear();
+            coli.ci_indexed_range = msg_range::empty();
+            coli.ci_string_arena.reset();
+        } else {
+            for (auto iter = coli.ci_value_to_lines.begin();
+                 iter != coli.ci_value_to_lines.end();)
+            {
+                auto& lines = iter->second;
+                const auto before = lines.size();
+                lines.erase(std::remove_if(lines.begin(),
+                                           lines.end(),
+                                           [end](auto vl) { return vl >= end; }),
+                            lines.end());
+                dropped += before - lines.size();
+                if (lines.empty()) {
+                    iter = coli.ci_value_to_lines.erase(iter);
+                } else {
+                    ++iter;
+                }
+            }
+            coli.ci_indexed_range.truncate_at(end);
+        }
+        if (dropped > 0) {
+            log_debug("column index truncated at row %d, dropped %zu entries",
+                      (int) end,
+                      dropped);
+        }
+    }
+    coli.ci_index_change_seq = lss.lss_index_change_seq;
+    coli.ci_index_generation = lss.lss_index_generation;
+}
+
 static void
 populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 {
@@ -588,6 +666,7 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
             continue;
         }
 
+        const auto arena_cp = ci.ci_string_arena.getCheckpoint();
         auto value = lv_iter->to_string_fragment(ci.ci_string_arena);
 
 #ifdef DEBUG_INDEXING
@@ -598,7 +677,16 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
                   (int) vc->log_cursor.lc_curr_line);
 #endif
 
-        auto& line_deq = ci.ci_value_to_lines[value];
+        auto find_res = ci.ci_value_to_lines.find(value);
+        if (find_res == ci.ci_value_to_lines.end()) {
+            find_res = ci.ci_value_to_lines
+                           .emplace(value, std::deque<vis_line_t>{})
+                           .first;
+        } else {
+            // the key already owns a copy, drop this one
+            ci.ci_string_arena.rollback(arena_cp);
+        }
+        auto& line_deq = find_res->second;
         if (line_deq.empty()
             || (line_deq.front() != vl && line_deq.back() != vl))
         {
@@ -643,6 +731,14 @@ vt_next(sqlite3_vtab_cursor* cur)
         while (vc->log_cursor.lc_curr_line != -1_vl && !vc->log_cursor.is_eof()
                && !vt->vi->is_valid(vc->log_cursor, *vt->lss))
         {
+            // A row that can't be a row of this table (e.g. a continuation
+            // line) has been looked at as far as the indexes are concerned.
+            // Otherwise trailing rows like that would leave the indexed
+            // range one short of the scan and force a rescan every time.
+            if (!vc->log_cursor.has_row_constraints()) {
+                vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
+                                          vc->log_cursor.lc_curr_line);
+            }
             vc->log_cursor.advance();
         }
         if (vc->log_cursor.is_eof()) {
@@ -666,6 +762,11 @@ vt_next(sqlite3_vtab_cursor* cur)
                 vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
                                           vc->log_cursor.lc_curr_line);
             } else {
+                if (!vc->log_cursor.has_row_constraints()) {
+                    vt->vi->expand_indexes_to(
+                        vc->log_cursor.lc_indexed_columns,
+                        vc->log_cursor.lc_curr_line);
+                }
                 vc->log_cursor.advance();
             }
         }
@@ -2067,12 +2168,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                   .value();
         for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
             auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
-            if (coli.ci_index_generation != vt->lss->lss_index_generation) {
-                coli.ci_value_to_lines.clear();
-                coli.ci_index_generation = vt->lss->lss_index_generation;
-                coli.ci_indexed_range = msg_range::empty();
-                coli.ci_string_arena.reset();
-            }
+            sync_column_index(coli, *vt->lss);
 
             {
                 auto col_valid_opt = coli.ci_indexed_range.get_valid();

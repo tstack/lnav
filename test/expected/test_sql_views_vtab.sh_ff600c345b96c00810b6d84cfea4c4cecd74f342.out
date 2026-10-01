@@ -105,7 +105,7 @@
         },
         "selected_text": null,
         "row_details": null,
-        "view_details": "{\"zoom-level\":\"5-minute\"}"
+        "view_details": "{\"zoom-level\":\"5-minute\",\"index-seq\":1}"
     },
     {
         "name": "text",

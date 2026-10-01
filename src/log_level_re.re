@@ -98,6 +98,7 @@ log_level_t string2level(const char *levelstr, ssize_t len, bool exact)
      'critical'|'severe'|'alert' { RET(LEVEL_CRITICAL); }
      'fatal'|'emergency' { RET(LEVEL_FATAL); }
      'invalid' { RET(LEVEL_INVALID); }
+     'header' { RET(LEVEL_HEADER); }
      * { goto loop; }
 
      */

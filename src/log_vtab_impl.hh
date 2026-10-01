@@ -117,6 +117,21 @@ struct msg_range {
         return *this;
     }
 
+    /** Drops the lines at or after `end`. */
+    msg_range& truncate_at(vis_line_t end)
+    {
+        this->mr_value = this->mr_value.match(
+            [end](valid v) -> range_t {
+                if (end <= v.v_min_line) {
+                    return empty_t{};
+                }
+                v.v_max_line = std::min(v.v_max_line, end);
+                return v;
+            },
+            [](empty_t e) -> range_t { return e; });
+        return *this;
+    }
+
     msg_range& intersect(const msg_range& rhs)
     {
         if (this->mr_value.valid()) {
@@ -256,6 +271,20 @@ struct log_cursor {
 
     void set_eof() { this->lc_curr_line = this->lc_end_line = 0_vl; }
 
+    /**
+     * True if is_valid() can skip a row because of this query's own
+     * constraints, rather than because the row can never be a row of the table
+     * (e.g. a continuation line).  Rows skipped for the latter reason can still
+     * count as covered by a column index.
+     */
+    bool has_row_constraints() const
+    {
+        return this->lc_level_constraint || !this->lc_format_name.empty()
+            || !this->lc_pattern_name.empty() || this->lc_opid_bloom_bits
+            || this->lc_tid_bloom_bits || !this->lc_log_path.empty()
+            || !this->lc_unique_path.empty();
+    }
+
     bool is_eof() const
     {
         return this->lc_indexed_lines.empty()
@@ -358,6 +387,9 @@ public:
             unordered_map<string_fragment, std::deque<vis_line_t>, frag_hasher>
                 ci_value_to_lines;
         uint32_t ci_index_generation{0};
+        /** logfile_sub_source::lss_index_change_seq this index is current with.
+         */
+        uint64_t ci_index_change_seq{0};
         msg_range ci_indexed_range = msg_range::empty();
 
         ArenaAlloc::Alloc<char> ci_string_arena;

@@ -273,6 +273,17 @@ public:
     {
     }
 
+    /**
+     * @return True if get_subline() already has the rendered form of the
+     * message containing the given line, so the caller can skip reading the
+     * raw message from the file.
+     */
+    virtual bool has_cached_subline(const logline& ll,
+                                    subline_options opts) const
+    {
+        return false;
+    }
+
     virtual const std::vector<std::string>* get_actions(
         const logline_value& lv) const
     {

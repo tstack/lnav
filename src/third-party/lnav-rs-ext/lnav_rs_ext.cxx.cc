@@ -854,6 +854,8 @@ namespace lnav_rs_ext {
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
+  struct LogIndexChange;
+  struct LogIndexState;
   struct PollResult;
   struct ExecError;
   struct ExecResult;
@@ -1012,16 +1014,48 @@ struct PollInput final {
   ::std::size_t last_event_id CXX_DEFAULT_VALUE(0);
   ::lnav_rs_ext::ViewStates view_states;
   ::rust::Vec<::std::size_t> task_states;
+  // The `log_index.seq` from the previous response.  0 asks for a reset.
+  ::std::uint64_t log_index_seq CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexChange
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexChange
+// Rows `from_row` and later of the LOG view's filtered index were added or
+// replaced, leaving `row_count` rows.  An append has `from_row` equal to
+// the previous row count.
+struct LogIndexChange final {
+  ::std::uint64_t seq CXX_DEFAULT_VALUE(0);
+  ::std::uint32_t generation CXX_DEFAULT_VALUE(0);
+  ::std::uint64_t from_row CXX_DEFAULT_VALUE(0);
+  ::std::uint64_t row_count CXX_DEFAULT_VALUE(0);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexChange
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexState
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexState
+struct LogIndexState final {
+  ::std::uint64_t seq CXX_DEFAULT_VALUE(0);
+  ::std::uint64_t row_count CXX_DEFAULT_VALUE(0);
+  // The changes since the caller's seq aren't available (first poll, or
+  // too many changes since); treat every row as changed.
+  bool reset CXX_DEFAULT_VALUE(false);
+  ::rust::Vec<::lnav_rs_ext::LogIndexChange> changes;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexState
 
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$PollResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$PollResult
 struct PollResult final {
   ::lnav_rs_ext::PollInput next_input;
   ::rust::Vec<::lnav_rs_ext::ExtProgress> background_tasks;
+  ::lnav_rs_ext::LogIndexState log_index;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -1217,6 +1251,15 @@ void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$drop(::rust::Vec<::lnav_rs_ext::Var
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$reserve_total(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$set_len(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$truncate(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t len) noexcept;
+
+void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$new(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$drop(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$len(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$capacity(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+::lnav_rs_ext::LogIndexChange const *cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$reserve_total(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t new_cap) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$set_len(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t len) noexcept;
+void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$truncate(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t len) noexcept;
 
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$new(::rust::Vec<::lnav_rs_ext::ExtProgress> const *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$drop(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr) noexcept;
@@ -1415,6 +1458,38 @@ void Vec<::lnav_rs_ext::VarPair>::set_len(::std::size_t len) noexcept {
 template <>
 void Vec<::lnav_rs_ext::VarPair>::truncate(::std::size_t len) {
   return cxxbridge1$rust_vec$lnav_rs_ext$VarPair$truncate(this, len);
+}
+template <>
+Vec<::lnav_rs_ext::LogIndexChange>::Vec() noexcept {
+  cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$new(this);
+}
+template <>
+void Vec<::lnav_rs_ext::LogIndexChange>::drop() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$drop(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::LogIndexChange>::size() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$len(this);
+}
+template <>
+::std::size_t Vec<::lnav_rs_ext::LogIndexChange>::capacity() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$capacity(this);
+}
+template <>
+::lnav_rs_ext::LogIndexChange const *Vec<::lnav_rs_ext::LogIndexChange>::data() const noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data(this);
+}
+template <>
+void Vec<::lnav_rs_ext::LogIndexChange>::reserve_total(::std::size_t new_cap) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$reserve_total(this, new_cap);
+}
+template <>
+void Vec<::lnav_rs_ext::LogIndexChange>::set_len(::std::size_t len) noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$set_len(this, len);
+}
+template <>
+void Vec<::lnav_rs_ext::LogIndexChange>::truncate(::std::size_t len) {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$truncate(this, len);
 }
 template <>
 Vec<::lnav_rs_ext::ExtProgress>::Vec() noexcept {

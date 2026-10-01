@@ -907,11 +907,12 @@ logfile::truncate_time_order(size_t line_count)
         return;
     }
 
-    this->lf_time_order.erase(
-        std::remove_if(this->lf_time_order.begin(),
-                       this->lf_time_order.end(),
-                       [line_count](auto index) { return index >= line_count; }),
-        this->lf_time_order.end());
+    this->lf_time_order.erase(std::remove_if(this->lf_time_order.begin(),
+                                             this->lf_time_order.end(),
+                                             [line_count](auto index) {
+                                                 return index >= line_count;
+                                             }),
+                              this->lf_time_order.end());
     this->lf_time_order_size = line_count;
 }
 
@@ -1566,13 +1567,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 const auto& last_line = this->lf_index.back();
 
                 for (size_t lpc = 0; lpc < starting_index_size - 1; lpc++) {
+                    this->lf_index[lpc].set_time(last_line.get_time());
+                    if (this->lf_format->lf_structured) {
+                        this->lf_index[lpc].set_ignore(true);
+                    }
                     if (this->lf_format->lf_multiline) {
-                        this->lf_index[lpc].set_time(last_line.get_time());
-                        if (this->lf_format->lf_structured) {
-                            this->lf_index[lpc].set_ignore(true);
-                        }
+                        this->lf_index[lpc].set_level(LEVEL_HEADER);
                     } else {
-                        this->lf_index[lpc].set_time(last_line.get_time());
                         this->lf_index[lpc].set_level(LEVEL_INVALID);
                     }
                     retval = true;
@@ -2547,6 +2548,16 @@ logfile::read_line(iterator ll, subline_options opts)
 {
     try {
         if (this->lf_format && this->lf_format->lf_formatted_lines) {
+            // The other lines of a multi-line rendering are served from the
+            // format's cache, so the raw message does not need to be read.
+            if (this->lf_format->has_cached_subline(*ll, opts)) {
+                shared_buffer_ref sbr;
+
+                this->lf_format->get_subline(
+                    this->get_format_file_state(), *ll, sbr, opts);
+                return Ok(std::move(sbr));
+            }
+
             auto raw_read_res = this->read_raw_message(this->message_start(ll));
             if (raw_read_res.isErr()) {
                 return Err(raw_read_res.unwrapErr());
@@ -2749,17 +2760,17 @@ logfile::reobserve_from(iterator iter)
     // filter change between the interrupt and the next pre-scan would break
     // out on the first line and leave the filter state unbuilt.
     this->lf_index_progress.ip_abort.store(false, std::memory_order_relaxed);
+    // In bytes, like the indexing pass, since the file list draws the
+    // offset as a size.
+    this->lf_index_progress.ip_total.store(this->lf_index_size,
+                                           std::memory_order_relaxed);
 
     for (; iter != this->end(); ++iter) {
-        off_t offset = std::distance(this->begin(), iter);
-
         if (iter->get_sub_offset() > 0) {
             continue;
         }
 
-        this->lf_index_progress.ip_total.store(this->size(),
-                                               std::memory_order_relaxed);
-        this->lf_index_progress.ip_offset.store(offset,
+        this->lf_index_progress.ip_offset.store(iter->get_offset(),
                                                 std::memory_order_relaxed);
         if (this->lf_index_progress.ip_abort.load(std::memory_order_relaxed)) {
             break;
@@ -2775,9 +2786,7 @@ logfile::reobserve_from(iterator iter)
                 *this, iter, iter_end, sbr);
         });
     }
-    this->lf_index_progress.ip_total.store(this->size(),
-                                           std::memory_order_relaxed);
-    this->lf_index_progress.ip_offset.store(this->size(),
+    this->lf_index_progress.ip_offset.store(this->lf_index_size,
                                             std::memory_order_relaxed);
     this->lf_logline_observer->logline_eof(*this);
 }
@@ -2828,7 +2837,6 @@ logfile::message_byte_length(const_iterator ll, bool include_continues)
     } while ((next_line != this->end())
              && ((ll->get_offset() == next_line->get_offset())
                  || (include_continues && next_line->is_continued())));
-
     if (next_line == this->end()) {
         if (this->lf_upper_bound_size) {
             retval = this->lf_upper_bound_size.value() - ll->get_offset();

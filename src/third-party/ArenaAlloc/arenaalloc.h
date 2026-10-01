@@ -111,6 +111,14 @@ public:
 
     void reset() { m_impl->reset(); }
 
+    using checkpoint = typename MemblockImpl::checkpoint;
+
+    checkpoint getCheckpoint() const { return m_impl->getCheckpoint(); }
+
+    // Release everything allocated since the checkpoint was taken.  The
+    // checkpoint is invalid after a reset() or an earlier rollback().
+    void rollback(const checkpoint& cp) { m_impl->rollback(cp); }
+
     // allocate but don't initialize num elements of type T
     pointer allocate(size_type num, const void* = 0)
     {

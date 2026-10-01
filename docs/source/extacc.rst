@@ -46,6 +46,12 @@ The following routes are available:
   | :code:`Content-Type: text/x-lnav-script`
 
   Execute an lnav :ref:`script<scripts>` and receive the resulting output.
+  Values can be passed to the script in headers instead of being quoted
+  into its text: a :code:`X-Lnav-Var-<name>` header whose value is the
+  Base64-encoded value sets the variable :code:`$<name>`.  The prefix is
+  matched without regard to case; the rest of the header name is the
+  variable name as sent.  In SQL statements, the variable is a bound
+  parameter, and in commands it expands to a single argument.
 
 * | :code:`POST /api/poll`
   | :code:`Content-Type: application/json`
@@ -58,8 +64,29 @@ The following routes are available:
     server knows when there has been a state-change with respect to this
     client.  Currently, the :code:`view_states/log_selection` field is
     the only stable field and refers to the focused message in the LOG
-    view.
+    view.  The :code:`log_index_seq` field is the :code:`log_index.seq`
+    from the previous response.
   * :code:`background_tasks` - A list of background task progress updates.
+  * :code:`log_index` - What changed in the LOG view's index since the
+    :code:`log_index_seq` that was sent, so a client can re-query only the
+    rows that changed (e.g. with :code:`log_line >= from_row` against
+    :code:`all_logs`).  It contains:
+
+    * :code:`seq` - The current change sequence number.  A script can read
+      it in the same snapshot as its queries with
+      :code:`jget(view_details, '/index-seq')` from the :code:`log` row of
+      :code:`lnav_views`, so it can send that instead and skip changes its
+      query already saw.
+    * :code:`row_count` - The number of rows in the LOG view.
+    * :code:`reset` - True when the changes since the given sequence
+      number are not available (the first poll, or too many changes
+      since then); treat every row as changed.
+    * :code:`changes` - A list of changes, oldest first.  Each has a
+      :code:`seq`, the index :code:`generation`, :code:`from_row`, and
+      :code:`row_count`: every row from :code:`from_row` onward was added
+      or replaced, leaving :code:`row_count` rows.  Newly appended lines
+      have a :code:`from_row` equal to the previous row count.  A rebuild
+      or filter change starts earlier, possibly at zero.
 
 Apps
 ----

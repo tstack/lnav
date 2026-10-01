@@ -30,14 +30,28 @@
 #ifndef lnav_ext_longpoll_hh
 #define lnav_ext_longpoll_hh
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace lnav::ext {
+
+struct log_index_change {
+    uint64_t lic_seq;
+    uint32_t lic_generation;
+    uint64_t lic_from_row;
+    uint64_t lic_row_count;
+};
 
 struct view_states {
     std::string vs_log;
     std::string vs_log_selection;
     std::string vs_text;
+    /** logfile_sub_source::lss_index_change_seq */
+    uint64_t vs_log_index_seq{0};
+    uint64_t vs_log_row_count{0};
+    /** A copy of logfile_sub_source::lss_index_changes */
+    std::vector<log_index_change> vs_log_index_changes;
 };
 
 void notify_pollers();

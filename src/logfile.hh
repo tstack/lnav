@@ -553,6 +553,25 @@ public:
                                                std::memory_order_relaxed);
     }
 
+    /**
+     * The reobserve_from() counterpart of begin_indexing_progress(): seeds
+     * the same slots, in the same byte units, for a re-scan starting at
+     * `iter`.
+     */
+    void begin_reobserve_progress(iterator iter)
+    {
+        const auto start = iter == this->end() ? this->lf_index_size
+                                               : iter->get_offset();
+
+        this->lf_index_progress.ip_offset.store(start,
+                                                std::memory_order_relaxed);
+        this->lf_index_progress.ip_total.store(this->lf_index_size,
+                                               std::memory_order_relaxed);
+        this->lf_index_progress.ip_done.store(false, std::memory_order_relaxed);
+        this->lf_index_progress.ip_abort.store(false,
+                                               std::memory_order_relaxed);
+    }
+
     /** @see index_progress -- safe to read while a worker is scanning. */
     const index_progress& indexing_progress() const
     {

@@ -219,6 +219,35 @@ struct _memblockimplbase {
         }
     }
 
+    struct checkpoint {
+        _memblock<AllocatorImpl>* cp_block;
+        std::size_t cp_index;
+        std::size_t cp_numBytesAllocated;
+    };
+
+    checkpoint getCheckpoint() const
+    {
+        return {m_current, m_current->m_index, m_numBytesAllocated};
+    }
+
+    // Release everything allocated since the checkpoint was taken.  Blocks
+    // added after the checkpoint are freed.
+    void rollback(const checkpoint& cp)
+    {
+        _memblock<AllocatorImpl>* block = cp.cp_block->m_next;
+        cp.cp_block->m_next = nullptr;
+        cp.cp_block->m_index = cp.cp_index;
+        m_current = cp.cp_block;
+        m_numBytesAllocated = cp.cp_numBytesAllocated;
+        while (block) {
+            _memblock<AllocatorImpl>* curr = block;
+            block = block->m_next;
+            curr->dispose(m_alloc);
+            curr->~_memblock<AllocatorImpl>();
+            m_alloc.deallocate(curr);
+        }
+    }
+
     // The reference count is atomic, so sharing this object across threads
     // is safe.  The arena *contents* are not: only one thread may allocate
     // from a given arena at a time.

@@ -221,6 +221,9 @@ public:
                      shared_buffer_ref& sbr,
                      subline_options opts) override;
 
+    bool has_cached_subline(const logline& ll,
+                            subline_options opts) const override;
+
     std::shared_ptr<log_vtab_impl> get_vtab_impl() const override;
 
     const std::vector<std::string>* get_actions(

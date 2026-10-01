@@ -108,6 +108,7 @@ all_logs_vtab::extract(logfile* lf,
     sa.clear();
     sub_values.lvv_sbr = line.clone();
     format->annotate(lf, line_number, sa, sub_values);
+    auto is_msg_utf8 = line.get_metadata().m_valid_utf;
 
     auto body = find_string_attr_range(sa, &SA_BODY);
     if (!body.is_valid()) {
@@ -136,9 +137,13 @@ all_logs_vtab::extract(logfile* lf,
             lineno = scan_res->value();
         }
     }
-    auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
-    auto find_res = lnav_rs_ext::find_log_statement_json(
-        file_rust_str, lineno, body_rust_str);
+    auto is_res = is_utf8(body_sf);
+    std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_res;
+    if (is_msg_utf8) {
+        auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
+        find_res = lnav_rs_ext::find_log_statement_json(
+            file_rust_str, lineno, body_rust_str);
+    }
     if (find_res != nullptr) {
         if (!src_file_sf || !src_line_sf) {
             h.update(find_res->src.c_str());

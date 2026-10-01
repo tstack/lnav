@@ -60,6 +60,7 @@ longpoll(const PollInput& pi)
     auto pi_retval = PollInput{
         0,
     };
+    auto log_index = LogIndexState{};
     auto timeout = 10000ms;
 
     {
@@ -79,7 +80,8 @@ longpoll(const PollInput& pi)
         auto views_are_same = pi.view_states.log == p->p_latest_state.vs_log
             && pi.view_states.log_selection
                 == p->p_latest_state.vs_log_selection
-            && pi.view_states.text == p->p_latest_state.vs_text;
+            && pi.view_states.text == p->p_latest_state.vs_text
+            && pi.log_index_seq == p->p_latest_state.vs_log_index_seq;
         auto tasks_are_same = true;
 
         {
@@ -113,6 +115,31 @@ longpoll(const PollInput& pi)
             ::rust::String::lossy(p->p_latest_state.vs_log_selection),
             ::rust::String::lossy(p->p_latest_state.vs_text),
         };
+
+        const auto& latest = p->p_latest_state;
+        pi_retval.log_index_seq = latest.vs_log_index_seq;
+        log_index.seq = latest.vs_log_index_seq;
+        log_index.row_count = latest.vs_log_row_count;
+        if (pi.log_index_seq != latest.vs_log_index_seq) {
+            const auto& changes = latest.vs_log_index_changes;
+            // The entries after the caller's seq are only all there if the
+            // oldest retained one immediately follows it.
+            log_index.reset = pi.log_index_seq == 0 || changes.empty()
+                || changes.front().lic_seq > pi.log_index_seq + 1;
+            if (!log_index.reset) {
+                for (const auto& lic : changes) {
+                    if (lic.lic_seq <= pi.log_index_seq) {
+                        continue;
+                    }
+                    log_index.changes.emplace_back(LogIndexChange{
+                        lic.lic_seq,
+                        lic.lic_generation,
+                        lic.lic_from_row,
+                        lic.lic_row_count,
+                    });
+                }
+            }
+        }
     }
 
     ::rust::Vec<ExtProgress> bt_out;
@@ -158,6 +185,7 @@ longpoll(const PollInput& pi)
     return PollResult{
         pi_retval,
         std::move(bt_out),
+        std::move(log_index),
     };
 }
 
@@ -190,7 +218,8 @@ notify_pollers(const view_states& vs)
     for (const auto& poller : p->p_pollers) {
         if (poller.view_states.log != vs.vs_log
             || poller.view_states.log_selection != vs.vs_log_selection
-            || poller.view_states.text != vs.vs_text)
+            || poller.view_states.text != vs.vs_text
+            || poller.log_index_seq != vs.vs_log_index_seq)
         {
             p->p_condvar.notify_all();
             break;

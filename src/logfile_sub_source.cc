@@ -296,9 +296,15 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             retval.li_utf8_scan_result.usr_has_ansi = ll->has_ansi();
             retval.li_utf8_scan_result.usr_message
                 = ll->is_valid_utf() ? nullptr : "bad";
-            value_out = lf->read_line(lf->begin() + line)
-                            .map([](auto sbr) { return to_string(sbr); })
-                            .unwrapOr({});
+            // Assigning in place keeps the capacity the caller reserved,
+            // which matters when grepping every line of a file.
+            auto read_res = lf->read_line(ll);
+            if (read_res.isOk()) {
+                auto sbr = read_res.unwrap();
+                value_out.assign(sbr.get_data(), sbr.length());
+            } else {
+                value_out.clear();
+            }
             return retval;
         }
     }
@@ -1326,6 +1332,41 @@ struct logline_cmp {
     logfile_sub_source& llss_controller;
 };
 
+bool
+logfile_sub_source::tick_scan_progress(
+    const std::vector<logfile*>& work,
+    std::vector<index_progress_report>& in_flight)
+{
+    file_off_t off = 0;
+    file_ssize_t total = 0;
+
+    in_flight.clear();
+    for (auto* lf : work) {
+        const auto& prog = lf->indexing_progress();
+        // Read each field once.  The scan publishes the offset and the total
+        // as two separate stores, so the pair seen here can be a fresh offset
+        // next to a stale total; the sum is clamped because running past the
+        // denominator would trip the require() in update_loading().
+        const auto file_total = prog.ip_total.load(std::memory_order_relaxed);
+        const auto file_off = prog.ip_offset.load(std::memory_order_relaxed);
+
+        off += std::min(file_off, file_total);
+        total += file_total;
+        if (file_off > 0 && !prog.ip_done.load(std::memory_order_relaxed)) {
+            // A total of zero is a file that cannot say how big it is.  The
+            // row still gets the offset, so it can show the bytes read so far
+            // beside a "working" icon instead of a bar drawn against a
+            // denominator that does not exist.
+            in_flight.emplace_back(index_progress_report{
+                lf->get_serial(), file_off, file_total, file_total > 0});
+        }
+    }
+
+    return this->lss_scan_progress
+        && this->lss_scan_progress(off, total, in_flight)
+        == lnav::progress_result_t::interrupt;
+}
+
 logfile_sub_source::prescan_map
 logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
                                   std::optional<ui_clock::time_point> deadline)
@@ -1405,42 +1446,8 @@ logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
             lf->finish_indexing_progress();
         },
         [&]() {
-            file_off_t off = 0;
-            file_ssize_t total = 0;
-
             ticked = true;
-            in_flight.clear();
-            for (auto* lf : work) {
-                const auto& prog = lf->indexing_progress();
-                // Read each field once.  The scan publishes the offset and
-                // the total as two separate stores, so the pair seen here can
-                // be a fresh offset next to a stale total; the sum is clamped
-                // because running past the denominator would trip the
-                // require() in update_loading().
-                const auto file_total
-                    = prog.ip_total.load(std::memory_order_relaxed);
-                const auto file_off
-                    = prog.ip_offset.load(std::memory_order_relaxed);
-
-                off += std::min(file_off, file_total);
-                total += file_total;
-                if (file_off > 0
-                    && !prog.ip_done.load(std::memory_order_relaxed)) {
-                    // A total of zero is a file that cannot say how big it
-                    // is.  The row still gets the offset, so it can show the
-                    // bytes read so far beside a "working" icon instead of a
-                    // bar drawn against a denominator that does not exist.
-                    in_flight.emplace_back(
-                        index_progress_report{lf->get_serial(),
-                                              file_off,
-                                              file_total,
-                                              file_total > 0});
-                }
-            }
-            if (this->lss_scan_progress
-                && this->lss_scan_progress(off, total, in_flight)
-                    == lnav::progress_result_t::interrupt)
-            {
+            if (this->tick_scan_progress(work, in_flight)) {
                 for (auto* lf : work) {
                     lf->abort_indexing();
                 }
@@ -2177,6 +2184,12 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         this->update_regions(filt_start_rows);
+        if (retval == rebuild_result::rr_full_rebuild
+            || retval == rebuild_result::rr_partial_rebuild
+            || this->lss_filtered_index.size() != filt_start_rows)
+        {
+            this->record_index_change(filt_start_rows);
+        }
 
         this->lss_indexing_in_progress = false;
 
@@ -2610,6 +2623,61 @@ logfile_sub_source::flush_context_before_msgs()
 }
 
 void
+logfile_sub_source::reobserve_files()
+{
+    std::vector<logfile*> work;
+    std::vector<logfile::iterator> starts;
+
+    for (auto& ld : *this) {
+        auto* lf = ld->get_file_ptr();
+
+        if (lf == nullptr) {
+            continue;
+        }
+        ld->ld_filter_state.clear_deleted_filter_state();
+
+        auto start
+            = lf->begin() + ld->ld_filter_state.get_min_count(lf->size());
+
+        lf->begin_reobserve_progress(start);
+        work.emplace_back(lf);
+        starts.emplace_back(start);
+    }
+
+    if (work.empty()) {
+        return;
+    }
+
+    const auto width = lnav::logfile_indexing_width(work.size());
+    std::vector<index_progress_report> in_flight;
+    auto curr_opid = lnav_current_opid();
+    bool ticked = false;
+
+    lnav::parallel_for_each(
+        work.size(),
+        width,
+        [&](size_t index) {
+            auto op = lnav_opid_guard::resume(curr_opid);
+            auto* lf = work[index];
+
+            lf->reobserve_from(starts[index]);
+            lf->finish_indexing_progress();
+        },
+        [&]() {
+            ticked = true;
+            // Not interruptible: a file left part-way would keep stale
+            // filter results for the rest of its lines until the next
+            // filter change.
+            this->tick_scan_progress(work, in_flight);
+        },
+        100ms);
+
+    if (ticked && this->lss_scan_progress) {
+        this->lss_scan_progress(0, 0, {});
+    }
+}
+
+void
 logfile_sub_source::text_filters_changed()
 {
     static auto op = lnav_operation{"text_filters_changed"};
@@ -2624,18 +2692,13 @@ logfile_sub_source::text_filters_changed()
     }
 
     log_debug("filtering files");
-    for (auto& ld : *this) {
-        auto* lf = ld->get_file_ptr();
-
-        if (lf != nullptr) {
-            ld->ld_filter_state.clear_deleted_filter_state();
-            lf->reobserve_from(lf->begin()
-                               + ld->ld_filter_state.get_min_count(lf->size()));
-        }
-    }
+    this->reobserve_files();
 
     if (this->lss_force_rebuild) {
         log_debug("skipping update since in the middle of force rebuild");
+        // The generation changed, so record it: anything keyed by the change
+        // log must not assume the old rows are still valid.
+        this->record_index_change(0);
         return;
     }
 
@@ -2751,6 +2814,7 @@ logfile_sub_source::text_filters_changed()
     }
 
     this->update_regions(0);
+    this->record_index_change(0);
 
     if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_complete(*this);
@@ -2762,6 +2826,35 @@ logfile_sub_source::text_filters_changed()
         this->tss_view->redo_search();
     }
     log_debug("finished filter update");
+}
+
+std::optional<std::string>
+logfile_sub_source::text_view_details() const
+{
+    yajlpp_gen gen;
+    {
+        yajlpp_map root(gen);
+        root.gen("zoom-level");
+        root.gen(this->format_zoom_level());
+        root.gen("index-seq");
+        root.gen(this->lss_index_change_seq);
+    }
+    return gen.to_string_fragment().to_string();
+}
+
+void
+logfile_sub_source::record_index_change(size_t from_row)
+{
+    this->lss_index_change_seq += 1;
+    this->lss_index_changes.push_back(index_change{
+        this->lss_index_change_seq,
+        this->lss_index_generation,
+        from_row,
+        this->lss_filtered_index.size(),
+    });
+    while (this->lss_index_changes.size() > MAX_INDEX_CHANGES) {
+        this->lss_index_changes.pop_front();
+    }
 }
 
 std::optional<json_string>

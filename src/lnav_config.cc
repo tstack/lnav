@@ -1177,7 +1177,7 @@ static const struct json_path_container theme_status_styles_handlers = {
 static const struct json_path_container theme_log_level_styles_handlers = {
     yajlpp::pattern_property_handler(
         "(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|"
-        "warning|error|critical|fatal|invalid)")
+        "warning|error|critical|fatal|invalid|header)")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
                 auto& sc = root->lt_level_styles[string2level(

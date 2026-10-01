@@ -130,15 +130,11 @@ struct opid_time_range {
     opid_time_range& operator|=(const opid_time_range& rhs);
 };
 
-using log_opid_map = robin_hood::unordered_map<string_fragment,
-                                               opid_time_range,
-                                               frag_hasher,
-                                               frag_equal>;
+using log_opid_map = robin_hood::
+    unordered_map<string_fragment, opid_time_range, frag_hasher, frag_equal>;
 
-using sub_opid_map = robin_hood::unordered_map<string_fragment,
-                                               string_fragment,
-                                               frag_hasher,
-                                               frag_equal>;
+using sub_opid_map = robin_hood::
+    unordered_map<string_fragment, string_fragment, frag_hasher, frag_equal>;
 
 struct log_opid_state {
     log_opid_map los_opid_ranges;
@@ -178,11 +174,10 @@ struct thread_id_time_range {
     thread_id_time_range& operator|=(const thread_id_time_range& rhs);
 };
 
-using log_thread_id_map
-    = robin_hood::unordered_map<string_fragment,
-                                thread_id_time_range,
-                                frag_hasher,
-                                frag_equal>;
+using log_thread_id_map = robin_hood::unordered_map<string_fragment,
+                                                    thread_id_time_range,
+                                                    frag_hasher,
+                                                    frag_equal>;
 
 struct log_thread_id_state {
     log_thread_id_map ltis_tid_ranges;
@@ -547,7 +542,7 @@ public:
     bool is_message() const
     {
         return !this->ll_ignore && !this->ll_continued
-            && this->ll_sub_offset == 0;
+            && this->ll_sub_offset == 0 && this->ll_level != LEVEL_HEADER;
     }
 
     logline& set_continued(bool val)

@@ -2273,6 +2273,21 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     lnav_data.ld_views[LNV_TEXT].update_hash_state(h);
                     vs.vs_text = h.to_uuid_string();
                 }
+                {
+                    auto& lss = lnav_data.ld_log_source;
+
+                    vs.vs_log_index_seq = lss.lss_index_change_seq;
+                    vs.vs_log_row_count = lss.text_line_count();
+                    for (const auto& ic : lss.lss_index_changes) {
+                        vs.vs_log_index_changes.emplace_back(
+                            lnav::ext::log_index_change{
+                                ic.ic_seq,
+                                ic.ic_generation,
+                                ic.ic_from_row,
+                                ic.ic_row_count,
+                            });
+                    }
+                }
                 lnav::ext::notify_pollers(vs);
             }
             if (top_source->update_user_msg()) {

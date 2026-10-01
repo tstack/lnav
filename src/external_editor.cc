@@ -150,19 +150,19 @@ get_impl(const std::filesystem::path& path)
                   const auto& [lmtime, lprefers, ldisfavors, limpl] = lhs;
                   const auto& [rmtime, rprefers, rdisfavors, rimpl] = rhs;
 
-                  if (lmtime > rmtime) {
-                      return true;
-                  }
-
-                  if (lmtime < rmtime) {
-                      return false;
-                  }
-
                   if (lprefers && !rprefers) {
                       return true;
                   }
 
                   if (!lprefers && rprefers) {
+                      return false;
+                  }
+
+                  if (lmtime > rmtime) {
+                      return true;
+                  }
+
+                  if (lmtime < rmtime) {
                       return false;
                   }
 

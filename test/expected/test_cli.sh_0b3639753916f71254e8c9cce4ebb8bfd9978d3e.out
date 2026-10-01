@@ -1186,6 +1186,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -2243,6 +2252,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -3239,6 +3257,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -4227,6 +4254,15 @@
                         "nestable": true
                     },
                     "invalid": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "header": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
@@ -5264,6 +5300,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -6260,6 +6305,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -7248,6 +7302,15 @@
                         "nestable": true
                     },
                     "invalid": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "header": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
@@ -8260,6 +8323,15 @@
                         "italic": false,
                         "strike": false,
                         "nestable": true
+                    },
+                    "header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
                     }
                 },
                 "highlights": {
@@ -9258,6 +9330,15 @@
                         "nestable": true
                     },
                     "invalid": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false,
+                        "nestable": true
+                    },
+                    "header": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
