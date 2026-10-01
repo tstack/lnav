@@ -662,6 +662,15 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             } else {
                 details.emplace_back(attr_line_t().append("  Piped"));
             }
+            if (open_opts.loo_glob_pattern) {
+                details.emplace_back(
+                    attr_line_t()
+                        .append("Glob Pattern"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(lnav::roles::file(
+                            open_opts.loo_glob_pattern.value())));
+            }
             if (open_opts.loo_child_poller) {
                 auto cmd_al = attr_line_t(
                     open_opts.loo_child_poller->get_description());

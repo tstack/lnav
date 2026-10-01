@@ -2,6 +2,14 @@
 ## lnav v0.15.0
 
 Features:
+* File patterns given on the command-line or to the `:open`
+  command can now contain a `**` component to do a hierarchical
+  glob search.  For example, the pattern `/var/log/**/*.log`
+  will match all files under "/var/log" that end in ".log".
+  New files that turn up in the tree are picked up as the
+  directories change.  The patterns in `:close`,
+  `:hide-file`, `:show-file`, and the file options set by
+  `:set-file-timezone` also accept `**`.
 * Added the `:filter-context` command to show lines surrounding
   filter matches, similar to grep's `-C` option.  The command
   accepts one or two arguments for the number of messages to

@@ -31,10 +31,8 @@
 
 #include "shlex.hh"
 
-#include <pwd.h>
-
+#include "base/fs_util.hh"
 #include "base/opt_util.hh"
-#include "base/short_alloc.h"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
 
@@ -265,21 +263,8 @@ shlex::scan_variable_ref()
 void
 shlex::resolve_home_dir(std::string& result, string_fragment cap) const
 {
-    if (cap.length() == 1) {
-        result.append(getenv_opt("HOME").value_or("~"));
-    } else {
-        stack_buf allocator;
-        auto* username = allocator.allocate(cap.length());
-
-        memcpy(username, &this->s_str[cap.sf_begin + 1], cap.length() - 1);
-        username[cap.length() - 1] = '\0';
-        auto pw = getpwnam(username);
-        if (pw != nullptr) {
-            result.append(pw->pw_dir);
-        } else {
-            result.append(&this->s_str[cap.sf_begin], cap.length());
-        }
-    }
+    result.append(lnav::filesystem::expand_tilde(
+        std::string(&this->s_str[cap.sf_begin], cap.length())));
 }
 
 bool

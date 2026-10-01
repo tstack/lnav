@@ -344,12 +344,11 @@ struct same_file {
  * @param required Specifies whether or not the file must exist and be valid.
  */
 std::optional<std::future<file_collection>>
-file_collection::watch_logfile(
-    lnav::futures::future_queue<file_collection>& fq,
-    const std::string& user_req,
-    const std::string& filename,
-    logfile_open_options& loo,
-    bool required)
+file_collection::watch_logfile(lnav::futures::future_queue<file_collection>& fq,
+                               const std::string& user_req,
+                               const std::string& filename,
+                               logfile_open_options& loo,
+                               bool required)
 {
     static auto op = lnav_operation{__FUNCTION__};
 
@@ -774,8 +773,6 @@ file_collection::expand_filename(
     logfile_open_options& loo,
     bool required)
 {
-    static_root_mem<glob_t, globfree> gl;
-
     {
         std::lock_guard lg(REALPATH_CACHE_MUTEX);
 
@@ -789,21 +786,57 @@ file_collection::expand_filename(
     }
 
     auto filename_key = loo.loo_filename.empty() ? path : loo.loo_filename;
+    std::vector<std::string> paths;
+    auto glob_rc = 0;
+
+    if (lnav::filesystem::is_recursive_glob(path)) {
+        static constexpr size_t MAX_DIRS_PER_RESCAN = 1000;
+        static constexpr size_t MAX_MATCHES_PER_RESCAN = 100;
+
+        auto rglobs = this->fc_recursive_globs->writeAccess();
+        auto& rgs = rglobs->try_emplace(path, path).first->second;
+        if (!rgs.rgs_iter || rgs.rgs_iter->finished()) {
+            rgs.rgs_iter = rgs.rgs_glob.begin(MAX_DIRS_PER_RESCAN);
+        } else {
+            rgs.rgs_iter->resume(MAX_DIRS_PER_RESCAN);
+        }
+
+        auto& it = rgs.rgs_iter.value();
+        for (;
+             it != rgs.rgs_glob.end() && paths.size() < MAX_MATCHES_PER_RESCAN;
+             ++it)
+        {
+            paths.emplace_back(*it);
+        }
+        if (it.finished() && it.match_count() == 0) {
+            // Act like GLOB_NOCHECK so a pattern that does not match
+            // anything yet is handled the same as with glob().
+            paths.emplace_back(path);
+        } else if (paths.empty()) {
+            return;
+        }
+    } else {
+        static_root_mem<glob_t, globfree> gl;
+
 #if defined(__MSYS__)
-    auto win_path = lnav::filesystem::escape_glob_for_win(path);
-    auto glob_rc = glob(win_path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
+        auto win_path = lnav::filesystem::escape_glob_for_win(path);
+        glob_rc = glob(win_path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
 #else
-    auto glob_rc = glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
+        glob_rc = glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
 #endif
+        if (glob_rc == 0) {
+            paths.assign(gl->gl_pathv, gl->gl_pathv + gl->gl_pathc);
+        }
+    }
     auto glob_matched_nothing = false;
 
     if (glob_rc == 0) {
-        if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
+        if (paths.size() == 1) {
             /* It's a pattern that doesn't match any files
              * yet, allow it through since we'll load it in
              * dynamically.
              */
-            if (access(gl->gl_pathv[0], F_OK) == -1) {
+            if (access(paths[0].c_str(), F_OK) == -1) {
                 auto rp_opt = humanize::network::path::from_str(path);
                 if (rp_opt) {
                     auto iter = this->fc_other_files.find(path);
@@ -836,14 +869,18 @@ file_collection::expand_filename(
                 required = false;
             }
         }
-        if (gl->gl_pathc > 1 || strcmp(path.c_str(), gl->gl_pathv[0]) != 0) {
+        if (paths.size() > 1 || path != paths[0]) {
             required = false;
         }
 
-        std::lock_guard lg(REALPATH_CACHE_MUTEX);
-        for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-            auto path_str = std::string(gl->gl_pathv[lpc]);
+        std::optional<logfile_open_options> glob_loo;
+        if (lnav::filesystem::is_glob(path)) {
+            glob_loo = loo;
+            glob_loo->loo_glob_pattern = path;
+        }
 
+        std::lock_guard lg(REALPATH_CACHE_MUTEX);
+        for (const auto& path_str : paths) {
             // watch_logfile() makes this same check, but a path that only
             // ever produced a stub never gets that far.
             if (this->fc_closed_files.count(path_str)
@@ -857,14 +894,14 @@ file_collection::expand_filename(
             if (iter == REALPATH_CACHE.end()) {
                 auto_mem<char> abspath;
 
-                if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == nullptr)
+                if ((abspath = realpath(path_str.c_str(), nullptr)) == nullptr)
                 {
                     auto* errmsg = strerror(errno);
 
                     if (required) {
                         fprintf(stderr,
                                 "Cannot find file: %s -- %s",
-                                gl->gl_pathv[lpc],
+                                path_str.c_str(),
                                 errmsg);
                     } else if (loo.loo_filename.empty()
                                && !glob_matched_nothing)
@@ -876,7 +913,7 @@ file_collection::expand_filename(
 
                         if (!in_map) {
                             file_collection retval;
-                            if (gl->gl_pathc == 1 && path == path_str) {
+                            if (paths.size() == 1 && path == path_str) {
                                 log_error("failed to find path: %s (%s) -- %s",
                                           filename_key.c_str(),
                                           path.c_str(),
@@ -944,9 +981,11 @@ file_collection::expand_filename(
             }
 
             if (required || access(iter->second.c_str(), R_OK) == 0) {
-                auto future_opt
-                    = watch_logfile(
-                        fq, filename_key, iter->second, loo, required);
+                auto& file_loo = glob_loo && path_str != path
+                    ? glob_loo.value()
+                    : loo;
+                auto future_opt = watch_logfile(
+                    fq, filename_key, iter->second, file_loo, required);
                 if (future_opt) {
                     auto fut = std::move(future_opt.value());
                     if (fq.push_back(std::move(fut))
@@ -1006,6 +1045,24 @@ file_collection::rescan_files(bool required)
         });
 
     this->fc_new_stats.clear();
+    {
+        auto rglobs = this->fc_recursive_globs->writeAccess();
+
+        for (auto iter = rglobs->begin(); iter != rglobs->end();) {
+            const auto& pat = iter->first;
+            auto in_use = this->fc_file_names.count(pat) > 0;
+            if (!in_use && this->fc_rotated && endswith(pat, ".*")) {
+                in_use
+                    = this->fc_file_names.count(pat.substr(0, pat.size() - 2))
+                    > 0;
+            }
+            if (in_use) {
+                ++iter;
+            } else {
+                iter = rglobs->erase(iter);
+            }
+        }
+    }
     for (auto& pair : this->fc_file_names) {
         if (this->fc_files.size() + retval.fc_files.size()
             >= get_limits().l_open_files)
@@ -1044,6 +1101,17 @@ file_collection::rescan_files(bool required)
     }
 
     fq.pop_to();
+
+    {
+        auto rglobs = this->fc_recursive_globs->readAccess();
+
+        for (const auto& pair : *rglobs) {
+            if (pair.second.rgs_iter && !pair.second.rgs_iter->finished()) {
+                retval.fc_rescan_pending = true;
+                break;
+            }
+        }
+    }
 
     return retval;
 }
@@ -1105,6 +1173,7 @@ file_collection::copy()
 
     retval.merge(*this);
     retval.fc_name_to_stubs = this->fc_name_to_stubs;
+    retval.fc_recursive_globs = this->fc_recursive_globs;
     retval.fc_progress = this->fc_progress;
     return retval;
 }
@@ -1113,6 +1182,7 @@ void
 file_collection::clear()
 {
     this->fc_name_to_stubs->writeAccess()->clear();
+    this->fc_recursive_globs->writeAccess()->clear();
     this->fc_file_names.clear();
     this->fc_files.clear();
     this->fc_renamed_files.clear();

@@ -10,6 +10,7 @@ add_library(
         color_spaces.cc
         date_time_scanner.cc
         fs_util.cc
+        fs_util.glob_match.cc
         fts_fuzzy_match.cc
         humanize.cc
         humanize.network.cc

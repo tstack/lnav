@@ -34,7 +34,6 @@
 
 #include "cmds.hh"
 
-#include <fnmatch.h>
 #include <sys/stat.h>
 #include <termios.h>
 
@@ -2098,8 +2097,8 @@ com_file_visibility(exec_context& ec,
 
             auto find_iter
                 = find_if(args.begin(), args.end(), [&lf](const auto& arg) {
-                      return fnmatch(arg.c_str(), lf->get_filename().c_str(), 0)
-                          == 0;
+                      return lnav::filesystem::matches_file_pattern(
+                          arg, lf->get_filename());
                   });
 
             if (find_iter == args.end()) {

@@ -261,6 +261,30 @@ run_test ${lnav_test} -n 'unreadable.*'
 check_output "unreadable file was not skipped" <<EOF
 EOF
 
+rm -rf rglob-tree
+mkdir -p rglob-tree/a/b/c rglob-tree/.hidden
+cp ${test_dir}/logfile_access_log.0 rglob-tree/top.log
+cp ${test_dir}/logfile_access_log.1 rglob-tree/a/one.log
+cp ${test_dir}/logfile_syslog.0 rglob-tree/a/b/c/deep.log
+cp ${test_dir}/logfile_syslog.1 rglob-tree/.hidden/secret.log
+ln -sf .. rglob-tree/a/loop
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT substr(filepath, instr(filepath, 'rglob-tree')) AS path FROM lnav_file ORDER BY path" \
+    'rglob-tree/**/*.log'
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT substr(filepath, instr(filepath, 'rglob-tree')) AS path FROM lnav_file ORDER BY path" \
+    'rglob-tree/**/c/*.log'
+
+run_cap_test ${lnav_test} -n \
+    -c ':hide-file **/rglob-tree/**/top.log' \
+    'rglob-tree/**/*.log'
+
+run_cap_test env HOME=${PWD} ${lnav_test} -n \
+    -c ";SELECT substr(filepath, instr(filepath, 'rglob-tree')) AS path FROM lnav_file ORDER BY path" \
+    '~/rglob-tree/**/*.log'
+
 run_test ./drive_logfile -f syslog_log ${srcdir}/logfile_syslog.0
 
 on_error_fail_with "Didn't infer syslog log format?"

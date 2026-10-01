@@ -27,7 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <fnmatch.h>
 #include <glob.h>
 
 #include "base/attr_line.builder.hh"
@@ -1595,40 +1594,121 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     });
                 lnav_data.ld_preview_view[0].set_needs_update();
             } else if (lnav::filesystem::is_glob(fn_str)) {
-                static_root_mem<glob_t, globfree> gl;
+                // The preview is refreshed on the UI thread as the user
+                // types, so do not walk forever on a pattern like "/**/*".
+                static constexpr size_t MAX_PREVIEW_MATCHES = 1000;
+                static constexpr size_t PREVIEW_DIR_CHUNK = 100;
+                static constexpr size_t MAX_PREVIEW_DIRS = 2000;
+                static constexpr auto MAX_PREVIEW_TIME
+                    = std::chrono::milliseconds{50};
+                static constexpr size_t MAX_PREVIEW_LINES = 10;
 
                 fn_str = lnav::filesystem::escape_glob_for_win(fn_str);
                 auto fn = std::filesystem::path(fn_str);
                 if (fn.has_root_name() && fn.root_directory().empty()) {
                     log_debug("ignoring incomplete root name: %s", fn.c_str());
-                } else if (glob(fn_str.c_str(),
-                                GLOB_NOCHECK,
-                                nullptr,
-                                gl.inout())
-                           == 0)
-                {
+                } else {
+                    std::vector<std::string> paths;
+                    auto truncated = false;
+                    std::optional<std::string> stopped_at;
+                    size_t dirs_searched = 0;
+
+                    if (lnav::filesystem::is_recursive_glob(fn_str)) {
+                        lnav::filesystem::recursive_glob rg(fn_str);
+                        auto deadline
+                            = std::chrono::steady_clock::now() + MAX_PREVIEW_TIME;
+                        auto it = rg.begin(PREVIEW_DIR_CHUNK);
+
+                        while (true) {
+                            for (; it != rg.end()
+                                 && paths.size() < MAX_PREVIEW_MATCHES;
+                                 ++it)
+                            {
+                                paths.emplace_back(*it);
+                            }
+                            if (it.finished()
+                                || paths.size() >= MAX_PREVIEW_MATCHES
+                                || it.dirs_visited() >= MAX_PREVIEW_DIRS
+                                || std::chrono::steady_clock::now() >= deadline)
+                            {
+                                break;
+                            }
+                            it.resume(PREVIEW_DIR_CHUNK);
+                        }
+                        truncated = !it.finished();
+                        dirs_searched = it.dirs_visited();
+                        if (truncated) {
+                            stopped_at = it.next_top_dir();
+                        }
+                        if (paths.empty() && !truncated) {
+                            paths.emplace_back(fn_str);
+                        }
+                    } else {
+                        static_root_mem<glob_t, globfree> gl;
+
+                        if (glob(fn_str.c_str(),
+                                 GLOB_NOCHECK,
+                                 nullptr,
+                                 gl.inout())
+                            != 0)
+                        {
+                            return ec.make_error(
+                                "failed to evaluate glob -- {}", fn_str);
+                        }
+                        paths.assign(gl->gl_pathv,
+                                     gl->gl_pathv + gl->gl_pathc);
+                    }
+
                     attr_line_t al;
 
-                    for (size_t lpc = 0; lpc < gl->gl_pathc && lpc < 10; lpc++)
+                    for (size_t lpc = 0;
+                         lpc < paths.size() && lpc < MAX_PREVIEW_LINES;
+                         lpc++)
                     {
-                        al.append(gl->gl_pathv[lpc]).append("\n");
+                        al.append(paths[lpc]).append("\n");
                     }
-                    if (gl->gl_pathc > 10) {
+                    if (paths.size() > MAX_PREVIEW_LINES) {
                         al.append(" ... ")
-                            .append(lnav::roles::number(
-                                std::to_string(gl->gl_pathc - 10)))
+                            .append(lnav::roles::number(fmt::format(
+                                FMT_STRING("{}{}"),
+                                paths.size() - MAX_PREVIEW_LINES,
+                                truncated ? "+" : "")))
                             .append(" files not shown ...");
+                    } else if (truncated) {
+                        al.append(" ... ")
+                            .append(paths.empty() ? "No matches" : "No more")
+                            .append(" in the first ")
+                            .append(lnav::roles::number(
+                                std::to_string(dirs_searched)))
+                            .append(" directories searched");
+                        if (stopped_at) {
+                            al.append(", still searching under ")
+                                .append(lnav::roles::file(stopped_at.value()));
+                        }
+                        al.append("\n")
+                            .append(" ... ")
+                            .append(lnav::roles::ok("Note"))
+                            .append(": the search continues in the background "
+                                    "when the command is executed\n")
+                            .append(" ... ")
+                            .append(lnav::roles::suggestion("Hint"))
+                            .append(": narrow the search by putting more "
+                                    "directories before the ")
+                            .append(lnav::roles::symbol("**"))
+                            .append(", like ")
+                            .append(lnav::roles::file("/var/log/**/*.log"));
                     }
                     lnav_data.ld_preview_status_source[0]
                         .get_description()
-                        .set_value("The following files will be loaded:"_frag);
+                        .set_value(
+                            paths.empty()
+                                ? "No files found yet, the search will continue "
+                                  "when the command is executed"_frag
+                                : "The following files will be loaded:"_frag);
                     lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                     lnav_data.ld_preview_view[0].set_sub_source(
                         &lnav_data.ld_preview_source[0]);
                     lnav_data.ld_preview_source[0].replace_with(al);
-                } else {
-                    return ec.make_error("failed to evaluate glob -- {}",
-                                         fn_str);
                 }
             } else {
                 auto fn = std::filesystem::path(fn_str);
@@ -1768,23 +1848,18 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             // however the user spelled it, so match against a version with
             // the directory resolved as well.
             auto resolved_pat = pat;
-            auto slash_index = pat.rfind('/');
+            auto [prefix, rest] = lnav::filesystem::split_glob_prefix(pat);
+            auto_mem<char> abs_dir;
 
-            if (slash_index != std::string::npos) {
-                auto_mem<char> abs_dir;
-
-                abs_dir = realpath(pat.substr(0, slash_index).c_str(), nullptr);
-                if (abs_dir != nullptr) {
-                    resolved_pat
-                        = fmt::format(FMT_STRING("{}{}"),
-                                      abs_dir.in(),
-                                      pat.substr(slash_index));
-                }
+            abs_dir = realpath(prefix.empty() ? "." : prefix.c_str(), nullptr);
+            if (abs_dir != nullptr) {
+                resolved_pat
+                    = fmt::format(FMT_STRING("{}/{}"), abs_dir.in(), rest);
             }
 
             for (auto iter = closed.begin(); iter != closed.end();) {
-                if (fnmatch(pat.c_str(), iter->c_str(), 0) == 0
-                    || fnmatch(resolved_pat.c_str(), iter->c_str(), 0) == 0)
+                if (lnav::filesystem::matches_file_pattern(pat, *iter)
+                    || lnav::filesystem::matches_file_pattern(resolved_pat, *iter))
                 {
                     iter = closed.erase(iter);
                 } else {
@@ -1888,8 +1963,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
             auto find_iter
                 = find_if(args.begin(), args.end(), [&lf](const auto& arg) {
-                      return fnmatch(arg.c_str(), lf->get_filename().c_str(), 0)
-                          == 0;
+                      return lnav::filesystem::matches_file_pattern(arg, lf->get_filename());
                   });
 
             if (find_iter == args.end()) {

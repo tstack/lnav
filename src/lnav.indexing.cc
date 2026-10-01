@@ -748,8 +748,12 @@ rescan_files(bool req)
         if (!all_synced) {
             delay = 30ms;
         }
-        done = !fc.found_anything() && all_synced;
-        if (!done && !lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
+        auto headless = lnav_data.ld_flags.is_set<lnav_flags::headless>();
+        // A paused "**" walk is only waited on in headless mode, the main
+        // loop continues it in the background otherwise.
+        done = !(fc.found_anything() || (fc.fc_rescan_pending && headless))
+            && all_synced;
+        if (!done && !headless) {
             lnav_data.ld_files_view.set_needs_update();
             lnav_data.ld_files_view.do_update();
             lnav_data.ld_status_refresher(lnav::func::op_type::interactive);

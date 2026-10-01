@@ -756,6 +756,8 @@ add_library(
 
         third-party/digestible/include/digestible/digestible.h
 
+        third-party/glob-cpp/glob.h
+
         third-party/intervaltree/IntervalTree.h
 
         third-party/md4c/entity.h

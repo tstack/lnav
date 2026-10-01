@@ -40,7 +40,10 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
+#include <glob.h>
 #include <limits.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <sys/param.h>
 #include <unistd.h>
@@ -82,6 +85,347 @@ escape_glob_for_win(std::string arg)
 #else
     return arg;
 #endif
+}
+
+std::string
+expand_tilde(const std::string& path)
+{
+    if (path.empty() || path[0] != '~') {
+        return path;
+    }
+
+    auto slash_pos = path.find('/');
+    auto user_end = slash_pos == std::string::npos ? path.size() : slash_pos;
+    std::optional<std::string> home;
+
+    if (user_end == 1) {
+        const auto* home_env = getenv("HOME");
+        if (home_env != nullptr) {
+            home = home_env;
+        } else {
+            const auto* pw = getpwuid(getuid());
+            if (pw != nullptr) {
+                home = pw->pw_dir;
+            }
+        }
+    } else {
+        auto username = path.substr(1, user_end - 1);
+        const auto* pw = getpwnam(username.c_str());
+        if (pw != nullptr) {
+            home = pw->pw_dir;
+        }
+    }
+
+    if (!home) {
+        return path;
+    }
+
+    return home.value() + path.substr(user_end);
+}
+
+bool
+is_recursive_glob(const std::string& fn)
+{
+    size_t start = 0;
+
+    while (start <= fn.size()) {
+        auto end = fn.find('/', start);
+        if (end == std::string::npos) {
+            end = fn.size();
+        }
+        if (end - start == 2 && fn.compare(start, 2, "**") == 0) {
+            return true;
+        }
+        start = end + 1;
+    }
+
+    return false;
+}
+
+bool
+matches_file_pattern(const std::string& pattern, const std::string& path)
+{
+    if (is_recursive_glob(pattern)) {
+        return glob_match(pattern, path);
+    }
+
+    return fnmatch(pattern.c_str(), path.c_str(), 0) == 0;
+}
+
+std::pair<std::string, std::string>
+split_glob_prefix(const std::string& pattern)
+{
+    size_t prefix_end = 0;
+    size_t start = 0;
+
+    while (true) {
+        auto end = pattern.find('/', start);
+        if (end == std::string::npos) {
+            break;
+        }
+        if (is_glob(pattern.substr(start, end - start))) {
+            break;
+        }
+        prefix_end = end + 1;
+        start = end + 1;
+    }
+
+    return {pattern.substr(0, prefix_end), pattern.substr(prefix_end)};
+}
+
+recursive_glob::recursive_glob(std::string pattern)
+    : rg_pattern(std::move(pattern))
+{
+    size_t start = 0;
+    auto found_globstar = false;
+
+    while (start <= this->rg_pattern.size()) {
+        auto end = this->rg_pattern.find('/', start);
+        if (end == std::string::npos) {
+            end = this->rg_pattern.size();
+        }
+
+        auto comp_len = end - start;
+        if (found_globstar) {
+            if (comp_len > 0 && this->rg_pattern[start] == '.') {
+                this->rg_allow_hidden = true;
+            }
+        } else if (comp_len == 2
+                   && this->rg_pattern.compare(start, 2, "**") == 0)
+        {
+            found_globstar = true;
+            this->rg_prefix = this->rg_pattern.substr(0, start);
+            if (this->rg_prefix.size() > 1 && this->rg_prefix.back() == '/') {
+                this->rg_prefix.pop_back();
+            }
+        }
+        start = end + 1;
+    }
+}
+
+std::vector<std::string>
+recursive_glob::find_roots() const
+{
+    if (!is_glob(this->rg_prefix)) {
+        return {this->rg_prefix};
+    }
+
+    std::vector<std::string> retval;
+    glob_t gl;
+
+    memset(&gl, 0, sizeof(gl));
+    auto win_prefix = escape_glob_for_win(this->rg_prefix);
+    if (glob(win_prefix.c_str(), GLOB_MARK, nullptr, &gl) == 0) {
+        for (size_t lpc = 0; lpc < gl.gl_pathc; lpc++) {
+            std::string path = gl.gl_pathv[lpc];
+
+            // GLOB_MARK adds a slash to the directories
+            if (path.size() > 1 && path.back() == '/') {
+                path.pop_back();
+                retval.emplace_back(std::move(path));
+            }
+        }
+    }
+    globfree(&gl);
+
+    return retval;
+}
+
+const recursive_glob::dir_state*
+recursive_glob::lookup(const std::string& dir, size_t pass)
+{
+    // An empty directory is the current directory, which is kept out of
+    // the paths so they come out spelled like the pattern.
+    auto dir_path = std::filesystem::path(dir.empty() ? "." : dir);
+    std::error_code ec;
+    auto mtime = std::filesystem::last_write_time(dir_path, ec);
+    if (ec) {
+        return nullptr;
+    }
+
+    auto& ds = this->rg_dirs[dir];
+    auto cached = ds.ds_pass != 0 && ds.ds_mtime == mtime;
+    ds.ds_pass = pass;
+    if (cached) {
+        return &ds;
+    }
+
+    ds.ds_mtime = mtime;
+    ds.ds_subdirs.clear();
+    ds.ds_files.clear();
+
+    auto dir_iter = std::filesystem::directory_iterator(
+        dir_path, std::filesystem::directory_options::skip_permission_denied, ec);
+    for (; !ec && dir_iter != std::filesystem::directory_iterator();
+         dir_iter.increment(ec))
+    {
+        const auto& entry = *dir_iter;
+        auto name = entry.path().filename().string();
+
+        if (!this->rg_allow_hidden && startswith(name, ".")) {
+            continue;
+        }
+
+        std::string child;
+        if (dir.empty()) {
+            child = name;
+        } else if (dir == "/") {
+            child = "/" + name;
+        } else {
+            child = dir + "/" + name;
+        }
+
+        std::error_code entry_ec;
+        if (entry.is_symlink(entry_ec)) {
+            // Symbolic links to directories are not followed to avoid
+            // loops, but links to files are fine.
+            if (!entry.is_regular_file(entry_ec)) {
+                continue;
+            }
+        } else if (entry.is_directory(entry_ec)) {
+            ds.ds_subdirs.emplace_back(std::move(child));
+            continue;
+        } else if (!entry.is_regular_file(entry_ec)) {
+            continue;
+        }
+
+        if (glob_match(this->rg_pattern, child)) {
+            ds.ds_files.emplace_back(std::move(child));
+        }
+    }
+    if (ec) {
+        log_warning("unable to read directory for glob: %s -- %s",
+                    dir_path.c_str(),
+                    ec.message().c_str());
+    }
+
+    std::sort(ds.ds_subdirs.begin(), ds.ds_subdirs.end());
+    std::sort(ds.ds_files.begin(), ds.ds_files.end());
+
+    return &ds;
+}
+
+void
+recursive_glob::end_pass(size_t pass)
+{
+    if (pass != this->rg_pass) {
+        return;
+    }
+
+    for (auto iter = this->rg_dirs.begin(); iter != this->rg_dirs.end();) {
+        if (iter->second.ds_pass == pass) {
+            ++iter;
+        } else {
+            iter = this->rg_dirs.erase(iter);
+        }
+    }
+}
+
+recursive_glob::iterator
+recursive_glob::begin(size_t max_dirs)
+{
+    require(max_dirs > 0);
+
+    iterator retval;
+
+    this->rg_pass += 1;
+    retval.i_parent = this;
+    retval.i_pass = this->rg_pass;
+    retval.i_dirs = this->find_roots();
+    std::sort(retval.i_dirs.rbegin(), retval.i_dirs.rend());
+    retval.i_dir_budget = max_dirs;
+    retval.i_state = iterator::state_t::paused;
+    retval.advance();
+
+    return retval;
+}
+
+std::optional<std::string>
+recursive_glob::iterator::next_top_dir() const
+{
+    if (this->i_dirs.empty()) {
+        return std::nullopt;
+    }
+
+    // Each component of the prefix, glob or not, matches exactly one
+    // component of a root.
+    const auto& prefix = this->i_parent->rg_prefix;
+    size_t prefix_comps = 0;
+    for (size_t lpc = 0; lpc < prefix.size(); lpc++) {
+        if (prefix[lpc] != '/' && (lpc == 0 || prefix[lpc - 1] == '/')) {
+            prefix_comps += 1;
+        }
+    }
+
+    const auto& dir = this->i_dirs.back();
+    size_t pos = startswith(dir, "/") ? 1 : 0;
+    for (size_t lpc = 0; lpc <= prefix_comps; lpc++) {
+        pos = dir.find('/', pos);
+        if (pos == std::string::npos) {
+            return dir;
+        }
+        pos += 1;
+    }
+
+    return dir.substr(0, pos - 1);
+}
+
+recursive_glob::iterator&
+recursive_glob::iterator::operator++()
+{
+    if (this->at_match()) {
+        this->i_file_index += 1;
+        this->advance();
+    }
+
+    return *this;
+}
+
+void
+recursive_glob::iterator::resume(size_t max_dirs)
+{
+    require(max_dirs > 0);
+
+    this->i_dir_budget = max_dirs;
+    if (this->i_state == state_t::paused) {
+        this->advance();
+    }
+}
+
+void
+recursive_glob::iterator::advance()
+{
+    while (this->i_file_index >= this->i_files.size()) {
+        this->i_files.clear();
+        this->i_file_index = 0;
+
+        if (this->i_dirs.empty()) {
+            this->i_state = state_t::finished;
+            this->i_parent->end_pass(this->i_pass);
+            return;
+        }
+        if (this->i_dir_budget == 0) {
+            this->i_state = state_t::paused;
+            return;
+        }
+        this->i_dir_budget -= 1;
+        this->i_dirs_visited += 1;
+
+        auto dir = std::move(this->i_dirs.back());
+        this->i_dirs.pop_back();
+
+        const auto* ds = this->i_parent->lookup(dir, this->i_pass);
+        if (ds == nullptr) {
+            continue;
+        }
+
+        this->i_files = ds->ds_files;
+        this->i_dirs.insert(
+            this->i_dirs.end(), ds->ds_subdirs.rbegin(), ds->ds_subdirs.rend());
+    }
+
+    this->i_state = state_t::match;
+    this->i_match_count += 1;
 }
 
 std::optional<std::filesystem::path>

@@ -1955,6 +1955,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                false);
 
     auto rescan_needed = false;
+    // A walk for a "**" pattern paused on its directory budget in the last
+    // rescan, so keep rescanning to continue it.
+    auto rescan_walk_pending = false;
     auto ui_start_time = ui_clock::now();
     auto next_rebuild_time = ui_start_time;
     auto next_status_update_time = ui_start_time;
@@ -2010,6 +2013,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 == std::future_status::ready)
         {
             auto new_files = rescan_future.get();
+            rescan_walk_pending = new_files.fc_rescan_pending;
             auto indexing_pipers
                 = lnav_data.ld_active_files.initial_indexing_pipers();
             if (exec_phase.scanning() && new_files.empty()
@@ -2065,8 +2069,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
 
             rescan_future = std::future<file_collection>{};
-            next_rescan_time
-                = ui_now + (std::exchange(rescan_needed, false) ? 0ms : 333ms);
+            next_rescan_time = ui_now
+                + (std::exchange(rescan_needed, false) || rescan_walk_pending
+                       ? 0ms
+                       : 333ms);
         }
 
         if (!opened_files && exec_phase.scanning()
@@ -2501,6 +2507,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         break;
                 }
                 next_rebuild_time = next_rescan_time;
+                if (rescan_walk_pending) {
+                    // The walk happens in the background, so it does not
+                    // need to wait for the user to stop typing.  The
+                    // rebuild still waits.
+                    next_rescan_time
+                        = std::min(next_rescan_time, ui_now + 333ms);
+                }
             }
 
             auto old_mode = lnav_data.ld_mode;
@@ -4138,7 +4151,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         load_stdin = true;
     }
 
-    for (const auto& file_path_str : file_args) {
+    for (const auto& file_arg : file_args) {
+        // The argument might have been quoted to keep the shell from
+        // expanding a glob, which also keeps it from expanding a "~".
+        const auto file_path_str = lnav::filesystem::expand_tilde(file_arg);
         auto [file_path_without_trailer, file_loc]
             = lnav::filesystem::split_file_location(file_path_str);
         auto_mem<char> abspath;

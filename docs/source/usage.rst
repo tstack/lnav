@@ -32,7 +32,14 @@ Viewing Files
 The files to view in **lnav** can be given on the command-line or passed to the
 :ref:`:open<open>` command.  A
 `glob pattern <https://en.wikipedia.org/wiki/Glob_(programming)>`_ can be given
-to watch for files with a common name.  If the path is a directory, all of the
+to watch for files with a common name.  A :code:`**` component in a pattern
+matches zero or more directories, so :code:`/var/log/**/*.log` will open the
+files ending in :code:`.log` anywhere under :code:`/var/log`.  Directories and
+files whose names start with a period are skipped unless the part of the
+pattern after the :code:`**` starts with a period, and symbolic links to
+directories are not followed.  Since the pattern needs to be quoted to keep
+the shell from expanding it, **lnav** will expand a leading :code:`~` itself.
+If the path is a directory, all of the
 files in the directory will be opened and the directory will be monitored for
 files to be added or removed from the view.  If the path is an archive or
 compressed file (and lnav was built with libarchive), the archive will be

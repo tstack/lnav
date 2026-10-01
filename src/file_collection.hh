@@ -48,6 +48,7 @@
 
 #include "archive_manager.hh"
 #include "base/auto_pid.hh"
+#include "base/fs_util.hh"
 #include "base/future_util.hh"
 #include "base/lnav.console.hh"
 #include "base/string_util.hh"
@@ -117,6 +118,28 @@ is_stub_stale(const file_stub_info& fsi, const struct stat& st)
 }
 
 using safe_name_to_stubs = safe::Safe<std::map<std::string, file_stub_info>>;
+
+/**
+ * The directory walk for a pattern with a "**" component.  A rescan only
+ * visits a limited number of directories, so the walk in progress is kept
+ * to be continued by the next rescan.
+ */
+struct recursive_glob_state {
+    explicit recursive_glob_state(std::string pattern)
+        : rgs_glob(std::move(pattern))
+    {
+    }
+
+    lnav::filesystem::recursive_glob rgs_glob;
+    std::optional<lnav::filesystem::recursive_glob::iterator> rgs_iter;
+};
+
+/**
+ * The walks for the patterns with a "**" component, keyed by the pattern.
+ * The map's nodes do not move, so an iterator stays attached to its glob.
+ */
+using safe_recursive_globs
+    = safe::Safe<std::map<std::string, recursive_glob_state>>;
 
 struct file_collection;
 
@@ -192,9 +215,18 @@ struct file_collection {
 
     bool fc_recursive{false};
     bool fc_rotated{false};
+    /**
+     * Set on the result of rescan_files() when a walk for a "**" pattern
+     * paused before visiting every directory.  It is not part of
+     * found_anything() since the caller decides whether to wait for the
+     * walk to finish or let a later rescan continue it.
+     */
+    bool fc_rescan_pending{false};
 
     std::shared_ptr<safe_name_to_stubs> fc_name_to_stubs{
         std::make_shared<safe_name_to_stubs>()};
+    std::shared_ptr<safe_recursive_globs> fc_recursive_globs{
+        std::make_shared<safe_recursive_globs>()};
     tlx::btree_map<std::string, logfile_open_options, strnatless> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};

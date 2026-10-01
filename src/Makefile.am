@@ -464,6 +464,8 @@ THIRD_PARTY_SRCS = \
     third-party/cpp-HyperLogLog/include/hyperloglog.hpp \
     third-party/digestible/include/digestible/digestible.h \
     third-party/doctest-root/doctest/doctest.h \
+    third-party/glob-cpp/glob.h \
+    third-party/glob-cpp/token.def \
     third-party/intervaltree/IntervalTree.h \
     third-party/md4c/entity.c \
     third-party/md4c/md4c.c \

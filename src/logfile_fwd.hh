@@ -119,6 +119,8 @@ struct logfile_open_options_base {
      * eventually opened, whatever name that file ends up displaying.
      */
     std::string loo_scan_key;
+    /** The glob pattern that matched this file, if it was opened by one. */
+    std::optional<std::string> loo_glob_pattern;
     logfile_name_source loo_source{logfile_name_source::USER};
     dev_t loo_temp_dev{0};
     ino_t loo_temp_ino{0};

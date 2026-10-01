@@ -31,6 +31,7 @@
 
 #include <fnmatch.h>
 
+#include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -102,6 +103,13 @@ file_options_collection::match(const std::string& path) const
         log_trace("  file options pattern check: %s ~ %s",
                   path.c_str(),
                   pair.first.c_str());
+        if (lnav::filesystem::is_recursive_glob(pair.first)) {
+            if (lnav::filesystem::glob_match(pair.first, path)) {
+                return pair;
+            }
+            continue;
+        }
+
         auto rc = fnmatch(pair.first.c_str(), path.c_str(), FNM_PATHNAME);
 
         if (rc == 0) {
