@@ -280,11 +280,6 @@ private:
   std::size_t stride;
 };
 
-#if __cplusplus >= 202002L
-static_assert(std::ranges::contiguous_range<rust::Slice<const uint8_t>>);
-static_assert(std::contiguous_iterator<rust::Slice<const uint8_t>::iterator>);
-#endif
-
 template <typename T>
 Slice<T>::Slice() noexcept {
   sliceInit(this, reinterpret_cast<void *>(align_of<T>()), 0);
