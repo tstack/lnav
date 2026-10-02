@@ -143,6 +143,18 @@ TEST_CASE("fs_util::glob_match")
     CHECK(glob_match("/d/a**b/*.log", "/d/aXXb/x.log"));
     CHECK_FALSE(glob_match("/d/a**b/*.log", "/d/aX/Xb/x.log"));
     CHECK_FALSE(glob_match("/d/**/[", "/d/["));
+    CHECK(glob_match("/d/Logs (old)/**/*.log", "/d/Logs (old)/a/x.log"));
+    CHECK_FALSE(glob_match("/d/Logs (old)/**/*.log", "/d/Logs old/a/x.log"));
+    CHECK(glob_match("/d/foo(1/**/*.log", "/d/foo(1/x.log"));
+    CHECK(glob_match("/d/{a,b}/**/*.log", "/d/{a,b}/x.log"));
+    CHECK_FALSE(glob_match("/d/{a,b}/**/*.log", "/d/a/x.log"));
+    CHECK(glob_match("/d/**/app(1).log", "/d/a/app(1).log"));
+    CHECK(glob_match("/d/**/@(x).log", "/d/a/@(x).log"));
+    CHECK_FALSE(glob_match("/d/**/@(x).log", "/d/a/x.log"));
+    CHECK(glob_match("/d/**/*(x).log", "/d/a/y(x).log"));
+    CHECK(glob_match("/d/**/[!x].log", "/d/a/y.log"));
+    CHECK_FALSE(glob_match("/d/**/[!x].log", "/d/a/x.log"));
+    CHECK(glob_match("/d/**/[()].log", "/d/a/(.log"));
 }
 
 TEST_CASE("fs_util::split_glob_prefix")

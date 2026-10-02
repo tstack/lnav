@@ -46,6 +46,65 @@
 
 namespace lnav::filesystem {
 
+/**
+ * Escape the characters that glob-cpp treats as the start of a group or
+ * brace expansion so that they are matched literally like they are in a
+ * POSIX glob.  Bracket expressions are copied as-is.
+ */
+static std::string
+to_glob_cpp_pattern(const std::string& pattern)
+{
+    std::string retval;
+
+    retval.reserve(pattern.size());
+    for (size_t lpc = 0; lpc < pattern.size(); lpc++) {
+        auto ch = pattern[lpc];
+
+        switch (ch) {
+            case '\\':
+                retval.push_back(ch);
+                if (lpc + 1 < pattern.size()) {
+                    lpc += 1;
+                    retval.push_back(pattern[lpc]);
+                }
+                break;
+            case '[': {
+                // A ']' right after the "[" or "[!" is part of the set.
+                auto end = lpc + 1;
+                if (end < pattern.size()
+                    && (pattern[end] == '!' || pattern[end] == '^'))
+                {
+                    end += 1;
+                }
+                if (end < pattern.size() && pattern[end] == ']') {
+                    end += 1;
+                }
+                end = pattern.find(']', end);
+                if (end == std::string::npos) {
+                    // Not a valid set, leave the rest for glob-cpp to reject.
+                    retval.append(pattern, lpc, std::string::npos);
+                    return retval;
+                }
+                retval.append(pattern, lpc, end - lpc + 1);
+                lpc = end;
+                break;
+            }
+            case '(':
+            case ')':
+            case '{':
+            case '}':
+                retval.push_back('\\');
+                retval.push_back(ch);
+                break;
+            default:
+                retval.push_back(ch);
+                break;
+        }
+    }
+
+    return retval;
+}
+
 bool
 glob_match(const std::string& pattern, const std::string& path)
 {
@@ -57,7 +116,10 @@ glob_match(const std::string& pattern, const std::string& path)
         if (CACHE.size() >= MAX_CACHED_PATTERNS) {
             CACHE.clear();
         }
-        iter = CACHE.emplace(pattern, std::make_unique<glob::glob>(pattern))
+        iter = CACHE
+                   .emplace(pattern,
+                            std::make_unique<glob::glob>(
+                                to_glob_cpp_pattern(pattern)))
                    .first;
     }
 

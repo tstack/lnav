@@ -86,7 +86,8 @@ bool is_recursive_glob(const std::string& fn);
 /**
  * Match a path against a glob pattern where a "**" component matches zero
  * or more path components.  Other components are matched individually, so
- * a "*" does not cross a "/".
+ * a "*" does not cross a "/".  Only the POSIX glob syntax is supported, so
+ * parentheses and braces match themselves.
  */
 bool glob_match(const std::string& pattern, const std::string& path);
 

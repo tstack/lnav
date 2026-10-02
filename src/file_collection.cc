@@ -1102,6 +1102,10 @@ file_collection::rescan_files(bool required)
 
     fq.pop_to();
 
+    // A paused walk can only be resumed when there is room for more files,
+    // otherwise the loop above stops before expand_filename() gets to it.
+    if (this->fc_files.size() + retval.fc_files.size()
+        < get_limits().l_open_files)
     {
         auto rglobs = this->fc_recursive_globs->readAccess();
 
