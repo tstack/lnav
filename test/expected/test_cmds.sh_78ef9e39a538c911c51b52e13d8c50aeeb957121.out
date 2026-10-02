@@ -10,17 +10,17 @@
           [1m\s[0m
         [1m[36m|[0m [1m\d[0m[1m[32m{[0m4[1m[32m}[0m[1m[32m[[0m\-\/[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m[[0m\-\/[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m         # YYYY-MM-DD or YYYY/MM/DD
         [1m[36m|[0m T                                   # ISO date/time separator
-        [1m[36m|[0m [1m\d[0m[1m[32m{[0m1,2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m[1m[32m[[0m\.,[1m[32m][0m[1m\d[0m[1m[32m{[0m1,9[1m[32m}[0m[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[36m?[0m   # HH:MM[1m[32m[[0m:SS[1m[32m[[0m[1m[36m.[0mfrac[1m[32m][0m[1m[32m][0m
+        [1m[36m|[0m [1m\d[0m[1m[32m{[0m1,2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[1m[32m([0m[1m[32m?:[0m[1m[32m[[0m\.,[1m[32m][0m[1m\d[0m[1m[32m{[0m1,9[1m[32m}[0m[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m[1m[36m?[0m   # HH:MM[1m[32m[[0m:SS[.frac[1m[32m][0m]
         [1m[36m|[0m Z                                   # UTC zulu marker
-        [1m[36m|[0m [1m[32m[[0m[1m[36m+[0m\-[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[33m:[0m[1m[36m?[0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m                   # timezone offset,[33m [0m[1m[36m+[0m0500 or[33m [0m[1m[36m+[0m05:00
+        [1m[36m|[0m [1m[32m[[0m+\-[1m[32m][0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m[33m:[0m[1m[36m?[0m[1m\d[0m[1m[32m{[0m2[1m[32m}[0m                   # timezone offset,[33m [0m[1m[36m+[0m0500 or[33m [0m[1m[36m+[0m05:00
         [1m[36m|[0m [1m[32m([0m[1m[32m?![0mDBG[1m[36m|[0mDEBUG[1m\d[0m[1m[36m?[0m[1m[36m|[0mERR[1m[36m|[0mINFO[1m[36m|[0mWARN[1m[36m|[0mNONE[1m[36m|[0mCRITICAL[1m[36m|[0mFATAL[1m[32m)[0m    # [1m[36m.[0m[1m[36m.[0m[1m[36m.[0mnot one of these levels
           [1m[32m[[0mA-Z[1m[32m][0m[1m[32m{[0m3,4[1m[32m}[0m                          # 3-4 uppercase letters [1m[32m([0me[1m[36m.[0mg[1m[36m.[0m month/tz abbrev[1m[32m)[0m
       [1m[32m)[0m[1m[36m+[0m
   [1m[32m)[0m
   [1m[32m([0m[1m[32m?:[0m [1m\d[0m[1m[36m+[0m[1m[32m)[0m[1m[36m?[0m
-  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m\][1m[32m][0m[1m[36m?[0m                                     # optional separator
+  [1m[32m[[0m:|[1m\s[0m\][1m[32m][0m[1m[36m?[0m                                     # optional separator
   [1m[32m([0mtrc[1m[36m|[0mtrace[1m[36m|[0mcritical[1m[36m|[0mfatal[1m[36m|[0mdbg[1m\d[0m[1m[36m?[0m[1m[36m|[0mdebug[1m\d[0m[1m[36m?[0m[1m[36m|[0minfo[1m[36m|[0mwarn[1m[32m([0m[1m[32m?:[0ming[1m[32m)[0m[1m[36m?[0m[1m[36m|[0merr[1m[32m([0m[1m[32m?:[0mor[1m[32m)[0m[1m[36m?[0m[1m[32m)[0m   # log level
-  [1m[32m[[0m:[1m[36m|[0m[1m\s[0m[1m[32m][0m                                      # separator
+  [1m[32m[[0m:|[1m\s[0m[1m[32m][0m                                      # separator
   [1m\s[0m[1m[36m*[0m
  Searches:
  | 🔍 greeting = today

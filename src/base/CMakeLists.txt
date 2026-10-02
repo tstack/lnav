@@ -144,8 +144,10 @@ add_executable(
         math_util.tests.cc
         separated_string.tests.cc
         small_string_map.tests.cc
+        snippet_highlighters.tests.cc
         sparse_cursor_container.tests.cc
         string_util.tests.cc
+        time_util.tests.cc
         parallel_for.tests.cc
         network.tcp.tests.cc
         test_base.cc)

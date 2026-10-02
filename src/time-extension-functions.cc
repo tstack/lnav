@@ -188,7 +188,7 @@ timeslice(sqlite3_value* time_in, std::optional<string_fragment> slice_in_opt)
 
     auto ts = auto_buffer::alloc(64);
     auto actual_length
-        = sql_strftime(ts.in(), ts.size(), win_start.to_timeval());
+        = sql_strftime(ts.in(), ts.capacity(), win_start.to_timeval());
 
     ts.resize(actual_length);
     return text_auto_buffer{std::move(ts)};

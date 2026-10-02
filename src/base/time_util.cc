@@ -29,7 +29,9 @@
  * @file time_util.cc
  */
 
+#include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <map>
 
 #include "time_util.hh"
@@ -50,40 +52,56 @@ strftime_rfc3339(char* buffer,
                  std::chrono::microseconds micros,
                  char sep)
 {
-    int year, month, index = 0;
+    if (buffer_size == 0) {
+        return 0;
+    }
+
+    char tmp[64];
+    int index = 0;
+    auto put2 = [&](int value) {
+        tmp[index++] = '0' + ((value / 10) % 10);
+        tmp[index++] = '0' + (value % 10);
+    };
+
     auto micros_count = micros.count() % 1000000;
+    if (micros_count < 0) {
+        micros_count += 1000000;
+    }
 
-    year = tm.tm_year + 1900;
-    month = tm.tm_mon + 1;
-    buffer[index++] = '0' + ((year / 1000) % 10);
-    buffer[index++] = '0' + ((year / 100) % 10);
-    buffer[index++] = '0' + ((year / 10) % 10);
-    buffer[index++] = '0' + ((year / 1) % 10);
-    buffer[index++] = '-';
-    buffer[index++] = '0' + ((month / 10) % 10);
-    buffer[index++] = '0' + ((month / 1) % 10);
-    buffer[index++] = '-';
-    buffer[index++] = '0' + ((tm.tm_mday / 10) % 10);
-    buffer[index++] = '0' + ((tm.tm_mday / 1) % 10);
-    buffer[index++] = sep;
-    buffer[index++] = '0' + ((tm.tm_hour / 10) % 10);
-    buffer[index++] = '0' + ((tm.tm_hour / 1) % 10);
-    buffer[index++] = ':';
-    buffer[index++] = '0' + ((tm.tm_min / 10) % 10);
-    buffer[index++] = '0' + ((tm.tm_min / 1) % 10);
-    buffer[index++] = ':';
-    buffer[index++] = '0' + ((tm.tm_sec / 10) % 10);
-    buffer[index++] = '0' + ((tm.tm_sec / 1) % 10);
-    buffer[index++] = '.';
-    buffer[index++] = '0' + ((micros_count / 100000) % 10);
-    buffer[index++] = '0' + ((micros_count / 10000) % 10);
-    buffer[index++] = '0' + ((micros_count / 1000) % 10);
-    buffer[index++] = '0' + ((micros_count / 100) % 10);
-    buffer[index++] = '0' + ((micros_count / 10) % 10);
-    buffer[index++] = '0' + ((micros_count / 1) % 10);
-    buffer[index] = '\0';
+    long year = tm.tm_year + 1900L;
+    if (year < 0) {
+        tmp[index++] = '-';
+        year = -year;
+    }
+    char year_digits[24];
+    int year_len = 0;
+    do {
+        year_digits[year_len++] = '0' + (year % 10);
+        year /= 10;
+    } while (year > 0 || year_len < 4);
+    while (year_len > 0) {
+        tmp[index++] = year_digits[--year_len];
+    }
+    tmp[index++] = '-';
+    put2(tm.tm_mon + 1);
+    tmp[index++] = '-';
+    put2(tm.tm_mday);
+    tmp[index++] = sep;
+    put2(tm.tm_hour);
+    tmp[index++] = ':';
+    put2(tm.tm_min);
+    tmp[index++] = ':';
+    put2(tm.tm_sec);
+    tmp[index++] = '.';
+    for (auto divisor = 100000; divisor > 0; divisor /= 10) {
+        tmp[index++] = '0' + ((micros_count / divisor) % 10);
+    }
 
-    return index;
+    auto len = std::min((size_t) index, buffer_size - 1);
+    memcpy(buffer, tmp, len);
+    buffer[len] = '\0';
+
+    return len;
 }
 
 ssize_t
@@ -93,7 +111,7 @@ strftime_rfc3339(char* buffer,
                  char sep)
 {
     struct tm gmtm;
-    auto secs = std::chrono::duration_cast<std::chrono::seconds>(micros);
+    auto secs = std::chrono::floor<std::chrono::seconds>(micros);
 
     secs2tm(secs.count(), &gmtm);
     return strftime_rfc3339(buffer, buffer_size, gmtm, micros, sep);
@@ -152,21 +170,21 @@ to_sys_time(date::local_seconds secs)
 {
     static const auto* TZ = getenv("TZ");
     static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
+    // A local time in a DST gap or overlap has no single UTC equivalent;
+    // pick the earlier one instead of throwing.
     if (TZ_POSIX_ZONE) {
-        return TZ_POSIX_ZONE.value().to_sys(secs);
+        return TZ_POSIX_ZONE.value().to_sys(secs, date::choose::earliest);
     }
 
     static const auto TZ_DATE_ZONE = get_date_zone(TZ);
 
     if (TZ_DATE_ZONE) {
-        auto inf = TZ_DATE_ZONE.value()->get_info(secs);
-
-        return TZ_DATE_ZONE.value()->to_sys(secs);
+        return TZ_DATE_ZONE.value()->to_sys(secs, date::choose::earliest);
     }
 
     static const auto TZ_POSIX_UTC = get_posix_zone("UTC0");
 
-    return TZ_POSIX_UTC.value().to_sys(secs);
+    return TZ_POSIX_UTC.value().to_sys(secs, date::choose::earliest);
 }
 
 date::local_seconds
@@ -268,7 +286,7 @@ tm2sec(const struct tm* t)
         int yday_diff = 0;
         if (t->tm_yday > 59) {
             yday_diff = t->tm_yday - 59;
-            if (isleap(year)) {
+            if (isleap(year + 1900)) {
                 yday_diff -= 1;
             }
         } else {
