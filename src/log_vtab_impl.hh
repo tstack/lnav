@@ -160,6 +160,20 @@ struct msg_range {
 };
 
 struct log_cursor {
+    struct extract_context {
+        sqlite3_uint64 ec_cols_used;
+
+        bool is_column_used(int column_index) const;
+
+        bool is_column_used(const logline_value_meta& lvm) const;
+
+        template<typename... Args>
+        bool are_columns_used(Args... args) const
+        {
+            return (this->is_column_used(args) || ...);
+        }
+    };
+
     struct string_constraint {
         unsigned char sc_op;
         std::string sc_value;
@@ -237,6 +251,7 @@ struct log_cursor {
 
     using level_constraint = integral_constraint<log_level_t>;
 
+    extract_context lc_extract_context;
     std::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
     intern_string_t lc_pattern_name;
@@ -375,7 +390,8 @@ public:
 
     virtual void get_primary_keys(std::vector<std::string>& keys_out) const {}
 
-    virtual void extract(logfile* lf,
+    virtual void extract(const log_cursor::extract_context& ec,
+                         logfile* lf,
                          uint64_t line_number,
                          string_attrs_t& sa,
                          logline_value_vector& values);

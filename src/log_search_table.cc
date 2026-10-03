@@ -237,7 +237,8 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
 }
 
 void
-log_search_table::extract(logfile* lf,
+log_search_table::extract(const log_cursor::extract_context& ec,
+                          logfile* lf,
                           uint64_t line_number,
                           string_attrs_t& sa,
                           logline_value_vector& values)

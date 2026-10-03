@@ -223,8 +223,7 @@ log_vtab_impl::get_table_statement()
 
     oss << ");\n";
 
-    log_trace("log_vtab_impl.get_table_statement() -> %s",
-              oss.str().c_str());
+    log_trace("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
 
     return oss.str();
 }
@@ -285,7 +284,8 @@ log_vtab_impl::get_foreign_keys(
 }
 
 void
-log_vtab_impl::extract(logfile* lf,
+log_vtab_impl::extract(const log_cursor::extract_context& ec,
+                       logfile* lf,
                        uint64_t line_number,
                        string_attrs_t& sa,
                        logline_value_vector& values)
@@ -390,9 +390,14 @@ struct log_vtab {
 };
 
 struct vtab_cursor {
+    bool is_msg_cached() const
+    {
+        return this->log_msg_line == this->log_cursor.lc_curr_line;
+    }
+
     void cache_msg(logfile* lf, logfile::const_iterator ll)
     {
-        if (this->log_msg_line == this->log_cursor.lc_curr_line) {
+        if (this->is_msg_cached()) {
             return;
         }
         auto& sbr = this->line_values.lvv_sbr;
@@ -514,6 +519,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     p_cur->log_cursor.lc_direction = 1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
+    p_cur->log_cursor.lc_extract_context.ec_cols_used = -1;
 
     for (auto& ld : *p_vt->lss) {
         auto* lf = ld->get_file_ptr();
@@ -602,10 +608,11 @@ sync_column_index(log_vtab_impl::column_index& coli,
             {
                 auto& lines = iter->second;
                 const auto before = lines.size();
-                lines.erase(std::remove_if(lines.begin(),
-                                           lines.end(),
-                                           [end](auto vl) { return vl >= end; }),
-                            lines.end());
+                lines.erase(
+                    std::remove_if(lines.begin(),
+                                   lines.end(),
+                                   [end](auto vl) { return vl >= end; }),
+                    lines.end());
                 dropped += before - lines.size();
                 if (lines.empty()) {
                     iter = coli.ci_value_to_lines.erase(iter);
@@ -652,7 +659,11 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 
             vc->cache_msg(lf, ll);
             require(vc->line_values.lvv_sbr.get_data() != nullptr);
-            vt->vi->extract(lf, line_number, vc->attrs, vc->line_values);
+            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                            lf,
+                            line_number,
+                            vc->attrs,
+                            vc->line_values);
         }
 
         auto sub_col = logline_value_meta::table_column{
@@ -679,9 +690,9 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 
         auto find_res = ci.ci_value_to_lines.find(value);
         if (find_res == ci.ci_value_to_lines.end()) {
-            find_res = ci.ci_value_to_lines
-                           .emplace(value, std::deque<vis_line_t>{})
-                           .first;
+            find_res
+                = ci.ci_value_to_lines.emplace(value, std::deque<vis_line_t>{})
+                      .first;
         } else {
             // the key already owns a copy, drop this one
             ci.ci_string_arena.rollback(arena_cp);
@@ -763,9 +774,8 @@ vt_next(sqlite3_vtab_cursor* cur)
                                           vc->log_cursor.lc_curr_line);
             } else {
                 if (!vc->log_cursor.has_row_constraints()) {
-                    vt->vi->expand_indexes_to(
-                        vc->log_cursor.lc_indexed_columns,
-                        vc->log_cursor.lc_curr_line);
+                    vt->vi->expand_indexes_to(vc->log_cursor.lc_indexed_columns,
+                                              vc->log_cursor.lc_curr_line);
                 }
                 vc->log_cursor.advance();
             }
@@ -914,14 +924,16 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         char buffer[64] = "";
 
                         if (ll->is_time_skewed()) {
-                            if (vc->line_values.lvv_values.empty()) {
+                            if (!vc->is_msg_cached()) {
                                 vc->cache_msg(lf, ll);
                                 require(vc->line_values.lvv_sbr.get_data()
                                         != nullptr);
-                                vt->vi->extract(lf,
-                                                line_number,
-                                                vc->attrs,
-                                                vc->line_values);
+                                vt->vi->extract(
+                                    vc->log_cursor.lc_extract_context,
+                                    lf,
+                                    line_number,
+                                    vc->attrs,
+                                    vc->line_values);
                             }
 
                             // The format might not have marked where the
@@ -1089,12 +1101,15 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::opid: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         if (vc->line_values.lvv_opid_value) {
@@ -1106,12 +1121,15 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::user_opid: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         if (vc->line_values.lvv_opid_value
@@ -1126,12 +1144,15 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::opid_definition: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         if (vc->line_values.lvv_opid_value) {
@@ -1210,12 +1231,15 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::body: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         auto body_range
@@ -1282,48 +1306,60 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::src_file: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         to_sqlite(ctx, vc->line_values.lvv_src_file_value);
                         break;
                     }
                     case log_footer_columns::src_line: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         to_sqlite(ctx, vc->line_values.lvv_src_line_value);
                         break;
                     }
                     case log_footer_columns::thread_id: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         to_sqlite(ctx, vc->line_values.lvv_thread_id_value);
                         break;
                     }
                     case log_footer_columns::duration: {
-                        if (vc->line_values.lvv_values.empty()) {
+                        if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
                                     != nullptr);
-                            vt->vi->extract(
-                                lf, line_number, vc->attrs, vc->line_values);
+                            vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                            lf,
+                                            line_number,
+                                            vc->attrs,
+                                            vc->line_values);
                         }
 
                         std::optional<double> duration_opt;
@@ -1369,8 +1405,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 for (const auto& ns :
                                      vt->tc->get_named_searches())
                                 {
-                                    if (matches
-                                        & grep_pattern_bit(ns.ns_slot))
+                                    if (matches & grep_pattern_bit(ns.ns_slot))
                                     {
                                         arr.gen(ns.ns_name);
                                     }
@@ -1384,11 +1419,14 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                 }
             } else {
-                if (vc->line_values.lvv_values.empty()) {
+                if (!vc->is_msg_cached()) {
                     vc->cache_msg(lf, ll);
                     require(vc->line_values.lvv_sbr.get_data() != nullptr);
-                    vt->vi->extract(
-                        lf, line_number, vc->attrs, vc->line_values);
+                    vt->vi->extract(vc->log_cursor.lc_extract_context,
+                                    lf,
+                                    line_number,
+                                    vc->attrs,
+                                    vc->line_values);
                 }
 
                 auto sub_col = logline_value_meta::table_column{
@@ -1690,6 +1728,27 @@ log_cursor::advance()
     this->lc_sub_index = 0;
 }
 
+bool
+log_cursor::extract_context::is_column_used(int column_index) const
+{
+    if (column_index >= 63) {
+        column_index = 63;
+    }
+
+    return this->ec_cols_used & (1ULL << column_index);
+}
+bool
+log_cursor::extract_context::is_column_used(const logline_value_meta& lvm) const
+{
+    if (!lvm.lvm_column.is<logline_value_meta::table_column>()) {
+        return true;  // XXX
+    }
+
+    return this->is_column_used(
+        lvm.lvm_column.get<logline_value_meta::table_column>().value
+        + VT_COL_MAX);
+}
+
 log_cursor::string_constraint::string_constraint(unsigned char op,
                                                  std::string value)
     : sc_op(op), sc_value(std::move(value))
@@ -1772,33 +1831,25 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 {
     auto* p_cur = (vtab_cursor*) p_vtc;
     auto* vt = (log_vtab*) p_vtc->pVtab;
-    sqlite3_index_info::sqlite3_index_constraint* index = nullptr;
+    const sqlite3_index_info* index = nullptr;
 
     if (idxStr != nullptr) {
-        auto desc_len = strlen(idxStr);
-        auto index_len = idxNum * sizeof(*index);
-        auto storage_len = desc_len + 128 + index_len;
-        auto direction_storage
-            = static_cast<const char*>(idxStr) + desc_len + 1;
-        p_cur->log_cursor.lc_direction = vis_line_t(direction_storage[0]);
-        auto* remaining_storage = const_cast<void*>(
-            static_cast<const void*>(idxStr + desc_len + 1 + 1));
-        auto* index_storage
-            = std::align(alignof(sqlite3_index_info::sqlite3_index_constraint),
-                         index_len,
-                         remaining_storage,
-                         storage_len);
-        index = static_cast<sqlite3_index_info::sqlite3_index_constraint*>(
-            index_storage);
+        auto* index_storage = idxStr + idxNum;
+        index = reinterpret_cast<const sqlite3_index_info*>(index_storage);
+        p_cur->log_cursor.lc_direction = vis_line_t(index->orderByConsumed);
+        p_cur->log_cursor.lc_extract_context.ec_cols_used = index->colUsed;
     } else {
+        p_cur->log_cursor.lc_extract_context.ec_cols_used = -1;
         p_cur->log_cursor.lc_direction = 1_vl;
     }
 
 #ifdef DEBUG_INDEXING
-    log_info("vt_filter(%s, %d, direction=%d)",
+    log_info("vt_filter(%s, %d, %p {cols_used=0x%llx; direction=%d})",
              vt->vi->get_name().get(),
              idxNum,
-             p_cur->log_cursor.lc_direction);
+             idxStr,
+             p_cur->log_cursor.lc_extract_context.ec_cols_used,
+             (int) p_cur->log_cursor.lc_direction);
     log_info("  index storage: %p", index);
 #endif
     p_cur->log_cursor.lc_format_name.clear();
@@ -1830,9 +1881,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
 
-    for (int lpc = 0; lpc < idxNum; lpc++) {
-        auto col = index[lpc].iColumn;
-        auto op = index[lpc].op;
+    for (int lpc = 0; index != nullptr && lpc < index->nConstraint; lpc++) {
+        const auto& cons = index->aConstraint[lpc];
+        auto col = cons.iColumn;
+        auto op = cons.op;
         switch (col) {
             case VT_COL_LINE_NUMBER: {
                 auto vl = vis_line_t(sqlite3_value_int64(argv[lpc]));
@@ -2440,11 +2492,9 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
             p_info->orderByConsumed = 1;
         }
     }
-    if (!vt->vi->vi_supports_indexes) {
-        p_info->orderByConsumed = 0;
-        return SQLITE_OK;
-    }
-    for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
+    for (int lpc = 0; vt->vi->vi_supports_indexes && lpc < p_info->nConstraint;
+         lpc++)
+    {
         const auto& constraint = p_info->aConstraint[lpc];
         if (!constraint.usable || constraint.op == SQLITE_INDEX_CONSTRAINT_MATCH
 #ifdef SQLITE_INDEX_CONSTRAINT_OFFSET
@@ -2605,45 +2655,54 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
             }
         }
     }
+    if (!vt->vi->vi_supports_indexes) {
+        p_info->orderByConsumed = 0;
+        direction = 1;
+    }
+
+    std::string full_desc;
+    if (argvInUse) {
+        full_desc = fmt::format(FMT_STRING("SEARCH {} USING {}"),
+                                vt->vi->get_name().get(),
+                                fmt::join(index_desc, " AND "));
+        log_info("found index: %s", full_desc.c_str());
+    } else {
+        full_desc = "fullscan";
+    }
+
+    auto constraint_len
+        = indexes.size() * sizeof(sqlite3_index_info::sqlite3_index_constraint);
+    size_t len = full_desc.size() + 128 + sizeof(*p_info) + constraint_len;
+    auto* storage = sqlite3_malloc(len);
+    if (!storage) {
+        return SQLITE_NOMEM;
+    }
+
+    auto* arena_storage = static_cast<char*>(storage);
+    arena index_arena(arena_storage, len);
+
+    auto* desc = index_arena.allocate(full_desc.size() + 1, 1);
+    strcpy(desc, full_desc.c_str());
+
+    auto* index_info_copy = index_arena.allocate<sqlite3_index_info>();
+    *index_info_copy = *p_info;
+    index_info_copy->aConstraintUsage = nullptr;
+    index_info_copy->aOrderBy = nullptr;
+
+    auto* index_constraints
+        = index_arena.allocate<sqlite3_index_info::sqlite3_index_constraint>(
+            indexes.size());
+    memcpy(index_constraints, indexes.data(), constraint_len);
+    index_info_copy->aConstraint = index_constraints;
+    index_info_copy->nConstraint = indexes.size();
+    index_info_copy->orderByConsumed = direction;
+    p_info->idxNum = reinterpret_cast<char*>(index_info_copy) - arena_storage;
+    p_info->idxStr = static_cast<char*>(storage);
+    p_info->needToFreeIdxStr = 1;
 
     if (argvInUse) {
-        auto full_desc = fmt::format(FMT_STRING("SEARCH {} USING {}"),
-                                     vt->vi->get_name().get(),
-                                     fmt::join(index_desc, " AND "));
-        log_info("found index: %s", full_desc.c_str());
-
-        sqlite3_index_info::sqlite3_index_constraint* index_copy;
-        auto index_len = indexes.size() * sizeof(*index_copy);
-        size_t len = full_desc.size() + 128 + index_len;
-        auto* storage = sqlite3_malloc(len);
-        if (!storage) {
-            return SQLITE_NOMEM;
-        }
-        auto* desc_storage = static_cast<char*>(storage);
-        memcpy(desc_storage, full_desc.c_str(), full_desc.size() + 1);
-        desc_storage[full_desc.size() + 1] = direction;
-        auto* remaining_storage
-            = static_cast<void*>(desc_storage + full_desc.size() + 1 + 1);
-        len -= 1 + full_desc.size() - 1;
-        auto* index_storage
-            = std::align(alignof(sqlite3_index_info::sqlite3_index_constraint),
-                         index_len,
-                         remaining_storage,
-                         len);
-        index_copy
-            = reinterpret_cast<sqlite3_index_info::sqlite3_index_constraint*>(
-                index_storage);
-        log_info("  index storage: %p", index_copy);
-        memcpy(index_copy, &indexes[0], index_len);
-        p_info->idxNum = argvInUse;
-        p_info->idxStr = static_cast<char*>(storage);
-        p_info->needToFreeIdxStr = 1;
         p_info->estimatedCost = 10.0;
     } else {
-        static char fullscan_asc[] = "fullscan\0\001";
-        static char fullscan_desc[] = "fullscan\0\377";
-
-        p_info->idxStr = direction < 0 ? fullscan_desc : fullscan_asc;
         p_info->estimatedCost = 1000000000.0;
     }
 

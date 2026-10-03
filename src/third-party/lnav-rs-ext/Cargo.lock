@@ -1395,7 +1395,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=caching1#544c14986bd3dc22ae028e81be6d2ca8bb41b009"
+source = "git+https://github.com/tstack/log2src.git?branch=caching1#54bc8aac14eaeb69b3aaaf92337ff555f06cc261"
 dependencies = [
  "aho-corasick",
  "bincode",

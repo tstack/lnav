@@ -95,7 +95,8 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
 }
 
 void
-all_logs_vtab::extract(logfile* lf,
+all_logs_vtab::extract(const log_cursor::extract_context& ec,
+                       logfile* lf,
                        uint64_t line_number,
                        string_attrs_t& sa,
                        logline_value_vector& values)
@@ -108,6 +109,26 @@ all_logs_vtab::extract(logfile* lf,
     sa.clear();
     sub_values.lvv_sbr = line.clone();
     format->annotate(lf, line_number, sa, sub_values);
+
+    values.lvv_thread_id_value
+        = to_owned(sub_values.lvv_thread_id_value, values.lvv_allocator);
+    values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
+    values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
+    values.lvv_src_file_value
+        = to_owned(sub_values.lvv_src_file_value, values.lvv_allocator);
+    values.lvv_src_line_value
+        = to_owned(sub_values.lvv_src_line_value, values.lvv_allocator);
+    values.lvv_duration_value = sub_values.lvv_duration_value;
+
+    if (!ec.are_columns_used(this->alv_msg_meta,
+                             this->alv_schema_meta,
+                             this->alv_values_meta,
+                             this->alv_src_meta,
+                             this->alv_stacktrace_meta))
+    {
+        return;
+    }
+
     auto is_msg_utf8 = line.get_metadata().m_valid_utf;
 
     auto body = find_string_attr_range(sa, &SA_BODY);
@@ -186,15 +207,6 @@ all_logs_vtab::extract(logfile* lf,
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());
     }
-    values.lvv_thread_id_value
-        = to_owned(sub_values.lvv_thread_id_value, values.lvv_allocator);
-    values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
-    values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
-    values.lvv_src_file_value
-        = to_owned(sub_values.lvv_src_file_value, values.lvv_allocator);
-    values.lvv_src_line_value
-        = to_owned(sub_values.lvv_src_line_value, values.lvv_allocator);
-    values.lvv_duration_value = sub_values.lvv_duration_value;
 }
 
 bool

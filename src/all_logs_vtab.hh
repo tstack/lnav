@@ -48,7 +48,8 @@ public:
 
     void get_columns(std::vector<vtab_column>& cols) const override;
 
-    void extract(logfile* lf,
+    void extract(const log_cursor::extract_context& ec,
+                 logfile* lf,
                  uint64_t line_number,
                  string_attrs_t& sa,
                  logline_value_vector& values) override;
