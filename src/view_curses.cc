@@ -47,6 +47,7 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "lnav_config.hh"
+#include "md4cpp.hh"
 #include "shlex.hh"
 #include "terminfo-files.h"
 #include "terminfo/terminfo.h"
@@ -55,6 +56,7 @@
 #include "uniwidth.h"
 #include "xterm_mouse.hh"
 
+using namespace md4cpp::literals;
 using namespace std::chrono_literals;
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
@@ -357,7 +359,7 @@ view_curses::mvwattrline(ncplane* window,
                 break;
 
             case '\x07':
-                expanded_line.append("\U0001F514");
+                expanded_line.append(":bell:"_emoji.to_string_view());
                 utf_adjustments.emplace_back(lpc, -1);
                 curr_ch_col_count = 1;
                 char_index += 1;

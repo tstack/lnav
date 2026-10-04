@@ -40,6 +40,7 @@
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "fmt/format.h"
+#include "md4cpp.hh"
 
 enum class file_format_t : int {
     UNKNOWN,
@@ -82,22 +83,28 @@ struct formatter<file_format_t> : formatter<string_view> {
     template<typename FormatContext>
     auto format(file_format_t ff, FormatContext& ctx)
     {
-        string_view name = "unknown";
+        using namespace md4cpp::literals;
+
+        std::string name = "unknown";
         switch (ff) {
             case file_format_t::SQLITE_DB:
-                name = "\U0001F5C2  SQLite DB";
+                name = fmt::format(FMT_STRING("{}  SQLite DB"),
+                                   ":card_index_dividers:"_emoji);
                 break;
             case file_format_t::UNSUPPORTED:
-                name = "\U0001F6AB Unsupported";
+                name = fmt::format(FMT_STRING("{} Unsupported"),
+                                   ":no_entry_sign:"_emoji);
                 break;
             case file_format_t::ARCHIVE:
-                name = "\U0001F5C4  Archive";
+                name = fmt::format(FMT_STRING("{}  Archive"),
+                                   ":file_cabinet:"_emoji);
                 break;
             case file_format_t::MULTIPLEXED:
                 name = "\u22fa  Multiplexed";
                 break;
             case file_format_t::REMOTE:
-                name = "\U0001F5A5  Remote";
+                name = fmt::format(FMT_STRING("{}  Remote"),
+                                   ":desktop_computer:"_emoji);
                 break;
             default:
                 break;

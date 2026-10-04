@@ -71,6 +71,7 @@
 #endif
 
 using namespace lnav::roles::literals;
+using namespace md4cpp::literals;
 using namespace std::string_view_literals;
 
 static Result<std::string, lnav::console::user_message>
@@ -1026,7 +1027,7 @@ com_external_access(exec_context& ec,
             top_status_source::TSF_EXT_ACCESS);
 
         sf.set_width(3);
-        sf.set_value("\xF0\x9F\x8C\x90");
+        sf.set_value(":globe_with_meridians:"_emoji);
         sf.on_click = [](auto& top_source) {
             auto& ec = lnav_data.ld_exec_context;
             ec.execute(INTERNAL_SRC_LOC, ":external-access-login");

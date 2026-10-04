@@ -204,15 +204,20 @@ struct emoji_literal {
  */
 inline constexpr emoji_literal KNOWN_EMOJIS[] = {
     {":bar_chart:"_frag, "\U0001F4CA"_frag},
+    {":bell:"_frag, "\U0001F514"_frag},
     {":bulb:"_frag, "\U0001F4A1"_frag},
+    {":card_index_dividers:"_frag, "\U0001F5C2"_frag},  // NB: emojis.json lists this shortcode twice
     {":clipboard:"_frag, "\U0001F4CB"_frag},
     {":compass:"_frag, "\U0001F9ED"_frag},
+    {":desktop_computer:"_frag, "\U0001F5A5"_frag},  // NB: emojis.json lists this shortcode twice
+    {":file_cabinet:"_frag, "\U0001F5C4"_frag},  // NB: emojis.json lists this shortcode twice
     {":floppy_disk:"_frag, "\U0001F4BE"_frag},
     {":framed_picture:"_frag, "\U0001F5BC"_frag},  // NB: emojis.json lists this shortcode twice
     {":globe_with_meridians:"_frag, "\U0001F310"_frag},
     {":mag_right:"_frag, "\U0001F50E"_frag},
     {":mailbox:"_frag, "\U0001F4EB"_frag},
     {":memo:"_frag, "\U0001F4DD"_frag},
+    {":no_entry_sign:"_frag, "\U0001F6AB"_frag},
     {":open_file_folder:"_frag, "\U0001F4C2"_frag},
     {":play_button:"_frag, "\u25B6"_frag},
     {":small_red_triangle:"_frag, "\U0001F53A"_frag},
