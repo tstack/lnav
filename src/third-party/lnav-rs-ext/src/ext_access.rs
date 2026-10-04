@@ -10,17 +10,17 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Error as IoError;
 use std::io::Read;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, TcpListener};
 use std::os::fd::{FromRawFd, OwnedFd, RawFd};
 use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::sync::{mpsc, LazyLock, Mutex};
 use std::thread::JoinHandle;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{error, fmt, thread};
 use uuid::Uuid;
 
-static SERVER: LazyLock<Mutex<Option<(JoinHandle<()>, Sender<()>)>>> =
+static SERVER: LazyLock<Mutex<Option<(JoinHandle<()>, Sender<()>, u16)>>> =
     LazyLock::new(|| None.into());
 
 static LOGIN_OTP: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| None.into());
@@ -282,14 +282,24 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
         }
     });
 
-    SERVER.lock().unwrap().replace((handle, tx));
+    SERVER.lock().unwrap().replace((handle, tx, retval));
 
     Ok(retval)
 }
 
 pub fn stop_server() {
-    if let Some((handle, sender)) = SERVER.lock().unwrap().take() {
+    if let Some((handle, sender, port)) = SERVER.lock().unwrap().take() {
         let _ = sender.send(());
         let _ = handle.join();
+
+        // tiny_http closes the listening socket from its own accept thread
+        // after the server is dropped, so wait for the port to be released
+        // to let the caller bind to it again.
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_err()
+            && Instant::now() < deadline
+        {
+            thread::sleep(Duration::from_millis(10));
+        }
     }
 }

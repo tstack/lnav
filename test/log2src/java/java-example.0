@@ -1,0 +1,4 @@
+2025-09-26 21:12:39,384 [main] INFO  com.example.net.Server - constructing server on port 8080
+2025-09-26 21:12:39,385 [main] DEBUG com.example.net.Server - handling request from 10.0.0.1
+2025-09-26 21:12:39,385 [main] WARN  com.example.net.Server - client 10.0.0.1 is slow
+2025-09-26 21:12:39,386 [main] ERROR com.example.net.Server - inner worker failed

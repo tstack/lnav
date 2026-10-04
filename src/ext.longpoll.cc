@@ -27,27 +27,67 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
 #include <condition_variable>
 #include <list>
+#include <map>
 
 #include "ext.longpoll.hh"
 
 #include "base/injector.hh"
+#include "base/isc.hh"
 #include "base/itertools.enumerate.hh"
+#include "base/lnav_log.hh"
 #include "base/progress.hh"
 #include "config.h"
+#include "lnav.hh"
 #include "lnav_rs_ext.cxx.hh"
 #include "safe/safe.h"
+#include "service_tags.hh"
 
 using namespace std::chrono_literals;
 
 #ifdef HAVE_RUST_DEPS
 namespace lnav_rs_ext {
 
+struct editor_client {
+    std::vector<std::string> ec_roots;
+    std::chrono::steady_clock::time_point ec_last_seen;
+    bool ec_polling{false};
+};
+
+struct open_request {
+    size_t or_id;
+    std::string or_client;
+    std::string or_path;
+    uint32_t or_line;
+    uint32_t or_col;
+    bool or_delivered{false};
+};
+
 struct pollers {
     std::list<PollInput> p_pollers;
     lnav::ext::view_states p_latest_state;
     std::condition_variable p_condvar;
+
+    std::map<std::string, editor_client> p_editors;
+    std::list<open_request> p_open_requests;
+    // Ids start from the wall clock so that a last_event_id echoed back by a
+    // client of an earlier lnav process on the same port is below them.
+    size_t p_next_request_id{static_cast<size_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count())};
+
+    bool has_requests_for(const std::string& client) const
+    {
+        for (const auto& req : this->p_open_requests) {
+            if (req.or_client == client) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 using safe_pollers_t = safe::Safe<pollers>;
@@ -75,8 +115,28 @@ longpoll(const PollInput& pi)
         }
     }
 
+    ::rust::Vec<OpenRequest> open_requests;
     {
         auto p = POLLERS.writeAccess<std::unique_lock>();
+        const auto client_id = (std::string) pi.client_id;
+        // An id this process never issued came from an earlier process.
+        const auto last_event_id = pi.last_event_id < p->p_next_request_id
+            ? pi.last_event_id
+            : 0;
+        if (!client_id.empty()) {
+            auto& ec = p->p_editors[client_id];
+            ec.ec_roots.clear();
+            for (const auto& root : pi.editor_roots) {
+                ec.ec_roots.emplace_back((std::string) root);
+            }
+            ec.ec_last_seen = std::chrono::steady_clock::now();
+            ec.ec_polling = true;
+            // The client echoes back the highest request id it received.
+            p->p_open_requests.remove_if([&](const open_request& req) {
+                return req.or_client == client_id
+                    && req.or_id <= last_event_id;
+            });
+        }
         auto views_are_same = pi.view_states.log == p->p_latest_state.vs_log
             && pi.view_states.log_selection
                 == p->p_latest_state.vs_log_selection
@@ -103,12 +163,37 @@ longpoll(const PollInput& pi)
             }
         }
 
-        if (views_are_same && tasks_are_same) {
+        if (views_are_same && tasks_are_same
+            && (client_id.empty() || !p->has_requests_for(client_id)))
+        {
             p->p_pollers.emplace_front(pi);
             auto iter = p->p_pollers.begin();
 
             p->p_condvar.wait_for(p.lock, timeout);
             p->p_pollers.erase(iter);
+        }
+        pi_retval.last_event_id = last_event_id;
+        pi_retval.client_id = pi.client_id;
+        pi_retval.editor_roots = pi.editor_roots;
+        if (!client_id.empty()) {
+            auto& ec = p->p_editors[client_id];
+            ec.ec_polling = false;
+            ec.ec_last_seen = std::chrono::steady_clock::now();
+
+            for (auto& req : p->p_open_requests) {
+                if (req.or_client != client_id) {
+                    continue;
+                }
+                open_requests.emplace_back(OpenRequest{
+                    req.or_id,
+                    ::rust::String::lossy(req.or_path),
+                    req.or_line,
+                    req.or_col,
+                });
+                pi_retval.last_event_id
+                    = std::max(pi_retval.last_event_id, req.or_id);
+                req.or_delivered = true;
+            }
         }
         pi_retval.view_states = ViewStates{
             ::rust::String::lossy(p->p_latest_state.vs_log),
@@ -188,6 +273,7 @@ longpoll(const PollInput& pi)
         pi_retval,
         std::move(bt_out),
         std::move(log_index),
+        std::move(open_requests),
     };
 }
 
@@ -228,6 +314,122 @@ notify_pollers(const view_states& vs)
         }
     }
     p->p_latest_state = vs;
+#endif
+}
+
+bool
+send_to_editor_client(const std::filesystem::path& path,
+                      uint32_t line,
+                      uint32_t col,
+                      std::chrono::milliseconds deadline)
+{
+#ifdef HAVE_RUST_DEPS
+    // A client that is between polls comes back quickly, unless it's gone.
+    static constexpr auto LIVENESS = std::chrono::seconds(5);
+    static constexpr auto EXPIRY = std::chrono::seconds(10);
+
+    auto& main_service = injector::get<main_looper&, services::main_t>();
+
+    std::vector<std::string> candidates = {path.lexically_normal().string()};
+    {
+        std::error_code ec;
+        auto canon = std::filesystem::weakly_canonical(path, ec);
+        if (!ec && canon.string() != candidates.front()) {
+            candidates.emplace_back(canon.string());
+        }
+    }
+
+    auto p = lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>();
+    auto now = std::chrono::steady_clock::now();
+    const std::string* best_client = nullptr;
+    const std::string* best_path = nullptr;
+    size_t best_len = 0;
+    auto best_seen = std::chrono::steady_clock::time_point{};
+
+    for (auto iter = p->p_editors.begin(); iter != p->p_editors.end();) {
+        const auto& [client, ec] = *iter;
+        if (!ec.ec_polling && now - ec.ec_last_seen > EXPIRY) {
+            const auto gone = client;
+            p->p_open_requests.remove_if(
+                [&](const auto& req) { return req.or_client == gone; });
+            log_info("editor client %s expired", gone.c_str());
+            iter = p->p_editors.erase(iter);
+            continue;
+        }
+        if (ec.ec_polling || now - ec.ec_last_seen <= LIVENESS) {
+            for (const auto& root_str : ec.ec_roots) {
+                auto root = std::string_view(root_str);
+                while (root.size() > 1 && root.back() == '/') {
+                    root.remove_suffix(1);
+                }
+                if (root.empty()) {
+                    continue;
+                }
+                for (const auto& cand : candidates) {
+                    auto inside = cand == root
+                        || (cand.size() > root.size()
+                            && cand.compare(0, root.size(), root) == 0
+                            && (root.back() == '/'
+                                || cand[root.size()] == '/'));
+                    if (!inside) {
+                        continue;
+                    }
+                    if (root.size() > best_len
+                        || (root.size() == best_len
+                            && ec.ec_last_seen > best_seen))
+                    {
+                        best_client = &client;
+                        best_path = &cand;
+                        best_len = root.size();
+                        best_seen = ec.ec_last_seen;
+                    }
+                }
+            }
+        }
+        ++iter;
+    }
+
+    if (best_client == nullptr) {
+        log_info(
+            "no editor client found for %s:%u:%u", path.c_str(), line, col);
+        return false;
+    }
+
+    auto req_id = p->p_next_request_id++;
+
+    auto _queue_item_id = main_service.run_after(
+        deadline, [req_id, best_client = *best_client] {
+            auto p = lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>();
+            p->p_open_requests.remove_if([&](const auto& req) {
+                if (req_id != req.or_id || req.or_client != best_client) {
+                    return false;
+                }
+                if (!req.or_delivered) {
+                    log_error("editor client %s did not pick up request %zu",
+                              req.or_client.c_str(),
+                              req.or_id);
+                }
+                return true;
+            });
+        });
+
+    p->p_open_requests.emplace_back(lnav_rs_ext::open_request{
+        req_id,
+        *best_client,
+        *best_path,
+        line,
+        col,
+    });
+    log_info("sending %s:%u:%u to editor client %s (request %zu)",
+             best_path->c_str(),
+             line,
+             col,
+             best_client->c_str(),
+             req_id);
+    p->p_condvar.notify_all();
+    return true;
+#else
+    return false;
 #endif
 }
 

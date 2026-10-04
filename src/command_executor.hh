@@ -49,6 +49,10 @@
 #include "lnav.script.parser.hh"
 #include "vis_line.hh"
 
+namespace CLI {
+class App;
+}
+
 struct exec_context;
 class attr_line_t;
 class logline_value;
@@ -88,6 +92,17 @@ struct exec_context {
     void add_error_context(lnav::console::user_message& um) const;
 
     lnav::console::user_message make_error_from_str(std::string&& str) const;
+
+    /**
+     * Parse command arguments with a CLI11 app.
+     *
+     * @param app The app with the options and positionals to fill in.
+     * @param args The arguments in command-line order, not including the
+     *   command name.
+     * @return An error if CLI11 rejected the arguments.
+     */
+    Result<void, lnav::console::user_message> parse_cli(
+        CLI::App& app, std::vector<std::string> args) const;
 
     template<typename... Args>
     lnav::console::user_message make_error_msg(fmt::string_view format_str,

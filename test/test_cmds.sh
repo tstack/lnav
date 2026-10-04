@@ -537,6 +537,22 @@ run_cap_test env TEST_COMMENT="secure mode write test" ${lnav_test} -n \
 unset LNAVSECURE
 
 run_cap_test ${lnav_test} -n \
+    -c ":external-access 1 2 3" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":external-access abc" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":external-access --name=" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test env LNAVSECURE=1 ${lnav_test} -n \
+    -c ":external-access" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
     -c ";update generic_log set log_mark=1" \
     -c ":pipe-to sed -e 's/World!/Bork!/g' -e 's/2009//g'" \
     ${test_dir}/logfile_multiline.0

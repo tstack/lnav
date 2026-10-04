@@ -1,0 +1,65 @@
+{
+    "$id": "https://lnav.org/external-access-instance-v1.schema.json",
+    "title": "https://lnav.org/external-access-instance-v1.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Written by each running lnav whose external-access server is open, so clients can find and connect to it.",
+    "properties": {
+        "$schema": {
+            "title": "/$schema",
+            "description": "The URI that specifies the schema that describes this type of file",
+            "type": "string",
+            "examples": [
+                "https://lnav.org/external-access-instance-v1.schema.json"
+            ]
+        },
+        "pid": {
+            "title": "/pid",
+            "description": "The ID of the lnav process.  Clients should ignore the file if this process is not running.",
+            "type": "integer"
+        },
+        "version": {
+            "title": "/version",
+            "description": "The version of lnav",
+            "type": "string"
+        },
+        "name": {
+            "title": "/name",
+            "description": "The name of the instance, set with the --name option of the :external-access command.  Defaults to the name of the directory lnav was started in.",
+            "type": "string"
+        },
+        "cwd": {
+            "title": "/cwd",
+            "description": "The current working directory of lnav, which is updated by the :cd command",
+            "type": "string"
+        },
+        "paths": {
+            "title": "/paths",
+            "description": "The paths given on the command-line.  Local paths and glob patterns are absolute; remote paths and URLs are as given.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "url": {
+            "title": "/url",
+            "description": "The base URL of the external-access server",
+            "type": "string"
+        },
+        "port": {
+            "title": "/port",
+            "description": "The port number of the external-access server",
+            "type": "integer"
+        },
+        "api_key": {
+            "title": "/api_key",
+            "description": "The API key, before Base64 encoding.  Send it Base64-encoded in the X-Api-Key header.",
+            "type": "string"
+        },
+        "started": {
+            "title": "/started",
+            "description": "When the server was started, in seconds since the epoch",
+            "type": "integer"
+        }
+    },
+    "additionalProperties": false
+}

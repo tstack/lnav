@@ -15,6 +15,7 @@ EXTRA_DIST = \
     docs/schemas/event-file-open-v1.schema.json \
     docs/schemas/event-log-msg-detected-v1.schema.json \
     docs/schemas/event-session-loaded-v1.schema.json \
+    docs/schemas/external-access-instance-v1.schema.json \
     docs/schemas/format-v1.schema.json \
     ARCHITECTURE.md \
 	AUTHORS \

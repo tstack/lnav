@@ -1,0 +1,2 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid command-line arguments
+ [1m[31mreason[0m: --output: bogus not in {text,json,url}

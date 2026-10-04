@@ -46,6 +46,7 @@
 #include "base/paths.hh"
 #include "base/result.h"
 #include "base/time_util.hh"
+#include "ext.longpoll.hh"
 #include "external_editor.cfg.hh"
 #include "fmt/format.h"
 
@@ -87,12 +88,12 @@ get_config_dir_mtime(const std::filesystem::path& path,
             }
 
             auto sib_config_path = sib.path() / config_dir;
-            auto mtime = std::filesystem::last_write_time(config_path, ec);
+            auto mtime = std::filesystem::last_write_time(sib_config_path, ec);
             if (!ec) {
                 time64_t retval = mtime.time_since_epoch().count();
 
                 log_debug("    found editor config dir: %s (%lld)",
-                          config_path.c_str(),
+                          sib_config_path.c_str(),
                           retval);
                 return retval;
             }
@@ -186,6 +187,20 @@ get_impl(const std::filesystem::path& path)
 
 Result<void, std::string>
 open(std::filesystem::path p, uint32_t line, uint32_t col)
+{
+    // An IDE plugin connected through external access can open the file
+    // right away, while launching the IDE's command can take seconds.
+    if (lnav::ext::send_to_editor_client(
+            p, line, col, std::chrono::seconds(2)))
+    {
+        return Ok();
+    }
+
+    return launch(std::move(p), line, col);
+}
+
+Result<void, std::string>
+launch(std::filesystem::path p, uint32_t line, uint32_t col)
 {
     const auto impl = get_impl(p);
 

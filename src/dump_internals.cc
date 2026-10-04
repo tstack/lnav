@@ -31,6 +31,7 @@
 
 #include "base/injector.hh"
 #include "bound_tags.hh"
+#include "ext.access.hh"
 #include "help_text_formatter.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
@@ -57,6 +58,7 @@ dump_internals(const char* internals_dir)
              &lnav::events::file::format_detected::handlers,
              &lnav::events::log::msg_detected::handlers,
              &lnav::events::session::loaded::handlers,
+             &lnav::ext::instance_record::handlers,
          })
     {
         dump_schema_to(*handlers, internals_dir);

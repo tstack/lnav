@@ -210,6 +210,9 @@ mod ffi {
         pub begin_line: usize,
         pub end_line: usize,
         pub name: String,
+        pub qualified_name: String,
+        /// The start byte of the innermost block containing the statement.
+        pub block_id: u32,
         pub language: &'static str,
     }
 
@@ -229,11 +232,27 @@ mod ffi {
     #[derive(Serialize, Deserialize, Default)]
     #[serde(default)]
     struct PollInput {
+        /// The highest `open_requests` id the client has handled.
         pub last_event_id: usize,
         pub view_states: ViewStates,
         pub task_states: Vec<usize>,
         /// The `log_index.seq` from the previous response.  0 asks for a reset.
         pub log_index_seq: u64,
+        /// Identifies an editor client, like an IDE plugin, across polls.
+        pub client_id: String,
+        /// The directories, as lnav sees them, that the client can open files
+        /// under.  Files under them are sent to the client in `open_requests`
+        /// instead of being opened with an external editor command.
+        pub editor_roots: Vec<String>,
+    }
+
+    /// A file for an editor client to open.
+    #[derive(Serialize)]
+    struct OpenRequest {
+        pub id: usize,
+        pub path: String,
+        pub line: u32,
+        pub col: u32,
     }
 
     /// Rows `from_row` and later of the LOG view's filtered index were added or
@@ -262,6 +281,7 @@ mod ffi {
         pub next_input: PollInput,
         pub background_tasks: Vec<ExtProgress>,
         pub log_index: LogIndexState,
+        pub open_requests: Vec<OpenRequest>,
     }
 
     #[derive(Serialize)]
@@ -532,6 +552,8 @@ impl From<SourceRef> for FindLogResult {
                 begin_line: value.line_no,
                 end_line: value.end_line_no,
                 name: value.name,
+                qualified_name: value.qualified_name,
+                block_id: value.block_id,
                 language: value.language.as_str(),
             },
             pattern: value.pattern_str,
@@ -591,6 +613,8 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
             begin_line: src_ref.line_no,
             end_line: src_ref.end_line_no,
             name: src_ref.name,
+            qualified_name: src_ref.qualified_name,
+            block_id: src_ref.block_id,
             language: src_ref.language.as_str(),
         };
         let stack_trace = if exception_trace.is_empty() {
@@ -634,8 +658,7 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     for stmts in matcher.find_source_file_statements(path) {
         retval.extend(
             stmts
-                .log_statements
-                .iter()
+                .statements()
                 .map(|src_ref| src_ref.clone().into()),
         );
     }

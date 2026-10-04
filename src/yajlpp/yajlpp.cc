@@ -180,7 +180,12 @@ json_path_handler_base::json_path_handler_base(
 yajl_gen_status
 json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 {
-    if (this->jph_is_array) {
+    if (this->jph_is_array && !this->jph_size_provider) {
+        // An array of scalars, like a string vector, generates itself.
+        if (this->jph_gen_callback != nullptr) {
+            return this->jph_gen_callback(ygc, *this, handle);
+        }
+    } else if (this->jph_is_array) {
         auto size = this->jph_size_provider(ygc.ygc_obj_stack.top());
         auto md = lnav::pcre2pp::match_data::unitialized();
 

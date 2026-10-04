@@ -47,6 +47,59 @@ service_base::start()
     this->s_started = true;
 }
 
+service_base::queue_item_id
+service_base::run_after(std::chrono::milliseconds rel_time,
+                        std::function<void()> callback)
+{
+    auto deadline = std::chrono::steady_clock::now() + rel_time;
+    std::unique_lock<std::mutex> guard(this->s_mutex);
+    auto id = this->s_next_queue_id++;
+    this->s_run_queue.emplace_back(id, deadline, std::move(callback));
+    return id;
+}
+
+void
+service_base::cancel_run_after(queue_item_id id)
+{
+    std::unique_lock<std::mutex> guard(this->s_mutex);
+    this->s_run_queue.remove_if(
+        [id](const run_queue_item& rqi) { return rqi.rqi_id == id; });
+}
+
+void
+service_base::loop_body()
+{
+    std::list<run_queue_item> items_to_run;
+    {
+        std::unique_lock<std::mutex> guard(this->s_mutex);
+        auto now = std::chrono::steady_clock::now();
+
+        for (auto iter = this->s_run_queue.begin();
+             iter != this->s_run_queue.end();)
+        {
+            auto next = std::next(iter);
+            if (iter->rqi_deadline <= now) {
+                items_to_run.splice(
+                    items_to_run.end(), this->s_run_queue, iter);
+            }
+            iter = next;
+        }
+    }
+
+    for (auto& rqi : items_to_run) {
+        try {
+            rqi.rqi_callback();
+        } catch (const std::exception& e) {
+            log_error("%s: callback() failed with -- %s",
+                      this->s_name.c_str(),
+                      e.what());
+        } catch (...) {
+            log_error("%s: callback() failed with non-standard exception",
+                      this->s_name.c_str());
+        }
+    }
+}
+
 void*
 service_base::run(worker* w)
 {

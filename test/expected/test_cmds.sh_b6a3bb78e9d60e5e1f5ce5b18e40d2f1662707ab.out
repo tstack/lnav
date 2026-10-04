@@ -1227,18 +1227,28 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
-[4m:[0m[1m[4mexternal-access[0m[4m [0m[4mport[0m[4m [0m[4mapi-key[0m
+[4m:[0m[1m[4mexternal-access[0m[4m [[0m[4m--name[0m[4m] [[0m[4mport[0m[4m] [[0m[4mapi-key[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
-  Open a port to give remote access to this lnav instance
+  Open a port to give remote access to this lnav instance.  This is
+  done automatically when lnav starts in the TUI.
 [4mParameters[0m
-  [4mport[0m      The port number to listen on
-  [4mapi-key[0m   The API key
+  [4m--name[0m    The name clients can use to find this
+            instance.  Defaults to the name of the current directory.
+  [4mport[0m      The port number to listen on.  Defaults to a
+            port picked by the OS.
+  [4mapi-key[0m   The API key.  Defaults to a random key that is
+            written to the discovery file.
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m
+[4mExample[0m
+#1 To give this instance a name for clients to look up:
+   [37m[40m:[0m[1m[36m[40mexternal-access[0m[37m[40m --name=tectonic                  [0m
+   
+
 
 [4m:[0m[1m[4mexternal-access-login[0m[4m [[0m[4mapp[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -4993,16 +5003,21 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The source file path
 [4mResults[0m
-  [4mbegin_line[0m      The line number where the
-                  statement begins
-  [4mend_line[0m        The line number where the
-                  statement ends
-  [4mlanguage[0m        The language of the source code
-  [4mfunction_name[0m   The name of the function
-                  containing the log statement
-  [4mpattern[0m         The pattern used to match log
-                  messages from this log statement
-  [4mpath[0m            The path to the source file
+  [4mbegin_line[0m       The line number where the
+                   statement begins
+  [4mend_line[0m         The line number where the
+                   statement ends
+  [4mlanguage[0m         The language of the source code
+  [4mfunction_name[0m    The name of the function
+                   containing the log statement
+  [4mqualified_name[0m   The function name qualified by
+                   its enclosing scopes
+  [4mblock_id[0m         An ID for the innermost block
+                   containing the statement.  Statements in the same
+                   file with the same ID are in the same block.
+  [4mpattern[0m          The pattern used to match log
+                   messages from this log statement
+  [4mpath[0m             The path to the source file
 
 
 [1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m

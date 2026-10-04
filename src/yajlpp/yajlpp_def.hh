@@ -656,6 +656,16 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field, const auto&, const auto&, yajl_gen handle) {
+                yajlpp_array arr(handle);
+
+                for (const auto& elem : field) {
+                    arr.gen(elem);
+                }
+                return yajl_gen_status_ok;
+            },
+            args...);
         return *this;
     }
 

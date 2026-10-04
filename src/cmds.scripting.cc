@@ -35,6 +35,7 @@
 #include <string_view>
 #include <vector>
 
+#include "CLI/App.hpp"
 #include "apps.cfg.hh"
 #include "apps.hh"
 #include "base/itertools.hh"
@@ -44,6 +45,7 @@
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "ext.access.hh"
 #include "external_opener.hh"
 #include "base/itertools.similar.hh"
 #include "libbase64.h"
@@ -55,7 +57,6 @@
 #include "md4cpp.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "lnav.commands.hh"
-#include "scn/scan.h"
 #include "service_tags.hh"
 #include "session.export.hh"
 #include "shlex.hh"
@@ -336,6 +337,7 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (!ec.ec_dry_run) {
         chdir(split_args[0].c_str());
         setenv("PWD", split_args[0].c_str(), 1);
+        lnav::ext::refresh_instance();
     }
 
     return Ok(std::string());
@@ -570,6 +572,17 @@ version_info()
         root.gen(PACKAGE_VERSION);
         root.gen("pid");
         root.gen(getpid());
+        auto inst = lnav::ext::current_instance();
+        if (inst) {
+            root.gen("name");
+            root.gen(inst->ii_name);
+        }
+        std::error_code cwd_ec;
+        auto cwd = std::filesystem::current_path(cwd_ec);
+        if (!cwd_ec) {
+            root.gen("cwd");
+            root.gen(cwd.string());
+        }
     }
 
     return gen.to_string_fragment().to_string();
@@ -893,8 +906,18 @@ com_external_access(exec_context& ec,
                     std::vector<std::string>& args)
 {
 #ifdef HAVE_RUST_DEPS
-    if (args.size() != 3) {
-        return ec.make_error("Expecting port number and API key");
+    CLI::App app{"external-access"};
+    std::string name_flag;
+    uint16_t port = 0;
+    std::string api_key_arg;
+
+    auto* name_opt = app.add_option("--name", name_flag);
+    auto* port_opt = app.add_option("port", port);
+    auto* key_opt = app.add_option("api-key", api_key_arg);
+
+    TRY(ec.parse_cli(app, {args.begin() + 1, args.end()}));
+    if (name_opt->count() > 0 && name_flag.empty()) {
+        return ec.make_error("--name requires a value");
     }
 
     if (lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
@@ -906,27 +929,94 @@ com_external_access(exec_context& ec,
         return Ok(retval);
     }
 
-    auto scan_res = scn::scan_int<uint16_t>(args[1]);
-    if (!scan_res || !scan_res.value().range().empty()) {
-        return ec.make_error(FMT_STRING("port value is not a number: {}"),
-                             args[1]);
+    auto curr_inst = lnav::ext::current_instance();
+    if (curr_inst && port_opt->count() == 0) {
+        if (name_opt->count() > 0 && name_flag != curr_inst->ii_name) {
+            auto old_name = curr_inst->ii_name;
+            curr_inst->ii_name = name_flag;
+            lnav::ext::register_instance(curr_inst.value());
+            retval = fmt::format(
+                FMT_STRING("info: renamed external access on port {} from "
+                           "\"{}\" to \"{}\""),
+                curr_inst->ii_port,
+                old_name,
+                curr_inst->ii_name);
+            return Ok(retval);
+        }
+        retval = fmt::format(
+            FMT_STRING("info: external access is already running on port {} "
+                       "with name \"{}\""),
+            curr_inst->ii_port,
+            curr_inst->ii_name);
+        return Ok(retval);
     }
-    auto port = scan_res->value();
 
-    auto buf = auto_buffer::alloc((args[2].size() * 5) / 3);
-    auto outlen = buf.capacity();
-    base64_encode(args[2].data(), args[2].size(), buf.in(), &outlen, 0);
-    auto start_res
-        = lnav_rs_ext::start_ext_access(port, ::rust::String(buf.in(), outlen));
+    auto start_with_key = [](uint16_t port, const std::string& api_key) {
+        auto buf = auto_buffer::alloc((api_key.size() * 5) / 3 + 4);
+        auto outlen = buf.capacity();
+        base64_encode(api_key.data(), api_key.size(), buf.in(), &outlen, 0);
+        return lnav_rs_ext::start_ext_access(port,
+                                             ::rust::String(buf.in(), outlen));
+    };
+    auto api_key = key_opt->count() > 0 ? api_key_arg
+                                        : lnav::ext::generate_api_key();
+    if (curr_inst) {
+        lnav_rs_ext::stop_ext_access();
+    }
+    auto start_res = start_with_key(port, api_key);
     if (start_res.port == 0) {
+        auto error = (std::string) start_res.error;
+        if (curr_inst) {
+            auto restart_res
+                = start_with_key(curr_inst->ii_port, curr_inst->ii_api_key);
+            if (restart_res.port == curr_inst->ii_port) {
+                return ec.make_error(
+                    FMT_STRING("unable to start external access: {}; "
+                               "kept the existing server on port {}"),
+                    error,
+                    curr_inst->ii_port);
+            }
+            if (restart_res.port != 0) {
+                lnav_rs_ext::stop_ext_access();
+            }
+            lnav::ext::unregister_instance();
+            unsetenv("LNAV_EXTERNAL_PORT");
+            unsetenv("LNAV_EXTERNAL_URL");
+
+            auto top_source
+                = injector::get<std::shared_ptr<top_status_source>>();
+            auto& sf = top_source->statusview_value_for_field(
+                top_status_source::TSF_EXT_ACCESS);
+            sf.set_width(0);
+            sf.clear();
+            sf.on_click = status_field::no_op_action;
+        }
         return ec.make_error(FMT_STRING("unable to start external access: {}"),
-                             (std::string) start_res.error);
+                             error);
     }
 
-    retval = fmt::format(FMT_STRING("info: started external access on port {}"),
-                         start_res.port);
-    setenv("LNAV_EXTERNAL_PORT", fmt::to_string(start_res.port).c_str(), 1);
     auto url = fmt::format(FMT_STRING("http://127.0.0.1:{}"), start_res.port);
+    std::string name;
+    if (name_opt->count() > 0) {
+        name = name_flag;
+    } else if (curr_inst) {
+        name = curr_inst->ii_name;
+    } else {
+        std::error_code cwd_ec;
+        name = std::filesystem::current_path(cwd_ec).filename().string();
+    }
+    lnav::ext::register_instance(lnav::ext::instance_info{
+        start_res.port,
+        url,
+        api_key,
+        name,
+    });
+
+    retval = fmt::format(
+        FMT_STRING("info: started external access on port {} with name \"{}\""),
+        start_res.port,
+        name);
+    setenv("LNAV_EXTERNAL_PORT", fmt::to_string(start_res.port).c_str(), 1);
     setenv("LNAV_EXTERNAL_URL", url.c_str(), 1);
 
     {
@@ -1122,14 +1212,28 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_external_access,
         help_text(":external-access")
             .with_summary(
-                "Open a port to give remote access to this lnav instance")
+                "Open a port to give remote access to this lnav instance.  "
+                "This is done automatically when lnav starts in the TUI.")
             .with_parameter(
-                help_text("port", "The port number to listen on")
-                    .with_format(help_parameter_format_t::HPF_NUMBER))
+                help_text("--name",
+                          "The name clients can use to find this instance.  "
+                          "Defaults to the name of the current directory.")
+                    .optional())
             .with_parameter(
-                help_text("api-key", "The API key")
-                    .with_format(help_parameter_format_t::HPF_STRING))
-            .with_tags({"scripting"}),
+                help_text("port",
+                          "The port number to listen on.  Defaults to a "
+                          "port picked by the OS.")
+                    .with_format(help_parameter_format_t::HPF_NUMBER)
+                    .optional())
+            .with_parameter(
+                help_text("api-key",
+                          "The API key.  Defaults to a random key that is "
+                          "written to the discovery file.")
+                    .with_format(help_parameter_format_t::HPF_STRING)
+                    .optional())
+            .with_tags({"scripting"})
+            .with_example({"To give this instance a name for clients to look up",
+                           "--name=tectonic"}),
     },
     {
         "external-access-login",

@@ -802,14 +802,22 @@
 
 .. _external_access:
 
-:external-access *port* *api-key*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:external-access *\[--name\]* *\[port\]* *\[api-key\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Open a port to give remote access to this lnav instance
+  Open a port to give remote access to this lnav instance.  This is done automatically when lnav starts in the TUI.
 
   **Parameters**
-    * **port\*** --- The port number to listen on
-    * **api-key\*** --- The API key
+    * **--name** --- The name clients can use to find this instance.  Defaults to the name of the current directory.
+    * **port** --- The port number to listen on.  Defaults to a port picked by the OS.
+    * **api-key** --- The API key.  Defaults to a random key that is written to the discovery file.
+
+  **Examples**
+    To give this instance a name for clients to look up:
+
+    .. code-block::  lnav
+
+      :external-access --name=tectonic
 
   **See Also**
     :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`

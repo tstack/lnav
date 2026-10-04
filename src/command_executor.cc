@@ -27,11 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <set>
 #include <vector>
 
 #include "command_executor.hh"
 
+#include "CLI/App.hpp"
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
@@ -1390,6 +1392,20 @@ exec_context::make_error_from_str(std::string&& str) const
     auto retval = lnav::console::user_message::error(std::move(str));
     this->add_error_context(retval);
     return retval;
+}
+
+Result<void, lnav::console::user_message>
+exec_context::parse_cli(CLI::App& app, std::vector<std::string> args) const
+{
+    // CLI11 consumes the vector from the back
+    std::reverse(args.begin(), args.end());
+    try {
+        app.parse(args);
+    } catch (const CLI::ParseError& e) {
+        return Err(this->make_error_from_str(e.what()));
+    }
+
+    return Ok();
 }
 
 exec_context::sql_callback_guard

@@ -144,6 +144,33 @@ main(int argc, char* argv[])
         }
     }
 
+    {
+        struct vec_struct {
+            std::vector<std::string> vs_array;
+        };
+
+        typed_json_path_container<vec_struct> vec_handlers = {
+            yajlpp::property_handler("array#").for_field(
+                &vec_struct::vs_array),
+        };
+
+        static const auto VEC_SRC = intern_string::lookup("vec");
+        const auto INPUT = R"({"array":["b","c"]})"_frag;
+        auto parse_res = vec_handlers.parser_for(VEC_SRC).of(INPUT);
+        if (parse_res.isErr()) {
+            fprintf(stderr,
+                    "parse error: %s\n",
+                    parse_res.unwrapErr()[0].to_attr_line().al_string.c_str());
+        }
+        assert(parse_res.isOk());
+        auto val = parse_res.unwrap();
+        assert(val.vs_array.size() == 2);
+
+        auto output = vec_handlers.to_string(val);
+        printf("vec %s\n", output.c_str());
+        assert(output == INPUT.to_string());
+    }
+
     static const auto TEST_SRC = intern_string::lookup("test_data");
 
     {

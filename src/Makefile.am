@@ -283,6 +283,7 @@ noinst_HEADERS = \
 	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
+	ext.access.hh \
 	ext.longpoll.hh \
 	external_editor.hh \
 	external_editor.cfg.hh \
@@ -524,6 +525,7 @@ libdiag_a_SOURCES = \
 	file_split.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
+	ext.access.cc \
 	ext.longpoll.cc \
 	extension-functions.cc \
 	external_editor.cc \

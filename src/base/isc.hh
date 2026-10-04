@@ -33,6 +33,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <list>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -97,6 +98,15 @@ public:
 
     bool is_looping() const { return this->s_looping; }
 
+    using queue_item_id = uint64_t;
+
+    queue_item_id run_after(std::chrono::milliseconds rel_time,
+                            std::function<void()> callback);
+
+    void cancel_run_after(queue_item_id id);
+
+    virtual void loop_body();
+
     friend supervisor;
 
     int s_wakeup_fd{-1};
@@ -113,8 +123,21 @@ protected:
         bool w_kicked{true};
     };
 
+    struct run_queue_item {
+        run_queue_item(queue_item_id id,
+                       std::chrono::steady_clock::time_point deadline,
+                       std::function<void()> callback)
+            : rqi_id(id), rqi_deadline(deadline),
+              rqi_callback(std::move(callback))
+        {
+        }
+
+        uint64_t rqi_id;
+        std::chrono::steady_clock::time_point rqi_deadline;
+        std::function<void()> rqi_callback;
+    };
+
     virtual void* run(worker*);
-    virtual void loop_body() {}
     virtual void child_finished(std::shared_ptr<service_base> child) {}
     virtual void stopped() {}
     virtual std::optional<std::chrono::milliseconds> compute_timeout(
@@ -187,6 +210,8 @@ protected:
     std::vector<worker> s_workers;
     std::vector<worker*> s_ready_workers;
     std::atomic<bool> s_looping{true};
+    std::list<run_queue_item> s_run_queue;
+    uint64_t s_next_queue_id{0};
     msg_port s_port;
     supervisor s_children;
 

@@ -31,6 +31,7 @@
 
 #include "lnav.management_cli.hh"
 
+#include <fnmatch.h>
 #include <glob.h>
 #include <pwd.h>
 
@@ -43,6 +44,7 @@
 #include "base/result.h"
 #include "base/string_util.hh"
 #include "crashd.client.hh"
+#include "ext.access.hh"
 #include "file_options.hh"
 #include "file_split.hh"
 #include "fmt/chrono.h"
@@ -1780,6 +1782,192 @@ struct subcmd_crash_t {
     }
 };
 
+struct subcmd_instances_t {
+    using action_t
+        = std::function<perform_result_t(const subcmd_instances_t&)>;
+
+    CLI::App* si_app{nullptr};
+    action_t si_action;
+    std::string si_name;
+    std::string si_cwd;
+    std::string si_path;
+    std::string si_output{"text"};
+
+    subcmd_instances_t& set_action(action_t act)
+    {
+        if (!this->si_action) {
+            this->si_action = std::move(act);
+        }
+        return *this;
+    }
+
+    static perform_result_t default_action(const subcmd_instances_t& si)
+    {
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to running lnav instances")
+                  .with_help(si.si_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
+
+        return {std::move(um)};
+    }
+
+    static std::filesystem::path normalize(const std::string& path)
+    {
+        std::error_code ec;
+        auto retval = std::filesystem::weakly_canonical(
+            std::filesystem::absolute(path, ec), ec);
+        if (ec) {
+            return std::filesystem::path(path).lexically_normal();
+        }
+        return retval;
+    }
+
+    static bool is_within(const std::filesystem::path& child,
+                          const std::filesystem::path& parent)
+    {
+        auto mm = std::mismatch(
+            parent.begin(), parent.end(), child.begin(), child.end());
+        return mm.first == parent.end()
+            || (std::next(mm.first) == parent.end() && mm.first->empty());
+    }
+
+    static bool path_matches(const std::string& inst_path,
+                             const std::filesystem::path& query)
+    {
+        if (inst_path.empty() || inst_path[0] != '/') {
+            return false;
+        }
+        if (lnav::filesystem::is_glob(inst_path)
+            && fnmatch(inst_path.c_str(), query.c_str(), FNM_PATHNAME) == 0)
+        {
+            return true;
+        }
+
+        auto norm = normalize(inst_path);
+        return is_within(norm, query) || is_within(query, norm);
+    }
+
+    static perform_result_t list_action(const subcmd_instances_t& si)
+    {
+        auto insts = lnav::ext::running_instances();
+        auto total = insts.size();
+        std::optional<std::filesystem::path> cwd_query;
+        std::optional<std::filesystem::path> path_query;
+
+        if (!si.si_cwd.empty()) {
+            cwd_query = normalize(si.si_cwd);
+        }
+        if (!si.si_path.empty()) {
+            path_query = normalize(si.si_path);
+        }
+
+        auto is_filtered = [&](const lnav::ext::instance_record& rec) {
+            if (!si.si_name.empty()
+                && fnmatch(si.si_name.c_str(), rec.ir_name.c_str(), 0) != 0)
+            {
+                return true;
+            }
+            if (cwd_query
+                && (rec.ir_cwd.empty()
+                    || !is_within(normalize(rec.ir_cwd), cwd_query.value())))
+            {
+                return true;
+            }
+            if (path_query
+                && std::none_of(rec.ir_paths.begin(),
+                                rec.ir_paths.end(),
+                                [&](const auto& inst_path) {
+                                    return path_matches(inst_path,
+                                                        path_query.value());
+                                }))
+            {
+                return true;
+            }
+            return false;
+        };
+        insts.erase(std::remove_if(insts.begin(), insts.end(), is_filtered),
+                    insts.end());
+        if (cwd_query) {
+            auto depth = [&](const lnav::ext::instance_record& rec) {
+                auto cwd = normalize(rec.ir_cwd);
+                return std::distance(cwd.begin(), cwd.end());
+            };
+            std::stable_sort(insts.begin(),
+                             insts.end(),
+                             [&](const auto& lhs, const auto& rhs) {
+                                 return depth(lhs) < depth(rhs);
+                             });
+        }
+
+        if (insts.empty()) {
+            auto um = console::user_message::error(
+                          total == 0
+                              ? "no running lnav instances were found"
+                              : "no running lnav instances matched")
+                          .move();
+            if (total > 0) {
+                um.with_note(
+                    attr_line_t()
+                        .append(lnav::roles::number(fmt::to_string(total)))
+                        .append(" instance(s) are running, run without "
+                                "filters to see them all"));
+            } else {
+                um.with_note(
+                      attr_line_t("instances are registered in: ")
+                          .append(lnav::roles::file(
+                              lnav::ext::instance_dir().string())))
+                    .with_help(
+                        "an instance is registered while its external-access "
+                        "server is open, which is the default when the TUI is "
+                        "running");
+            }
+            return {std::move(um)};
+        }
+
+        auto txt = attr_line_t();
+        for (const auto& rec : insts) {
+            if (si.si_output == "json") {
+                txt.append(lnav::ext::instance_record::handlers.to_string(rec))
+                    .append("\n");
+            } else if (si.si_output == "url") {
+                txt.append(rec.ir_url).append("\n");
+            } else {
+                auto ago = humanize::time::point::from_tv(
+                               timeval{static_cast<time_t>(rec.ir_started),
+                                       0})
+                               .as_time_ago();
+                txt.append(lnav::roles::number(
+                           fmt::format(FMT_STRING("{:>8}"), rec.ir_pid)))
+                    .append("  ")
+                    .append(lnav::roles::identifier(rec.ir_name))
+                    .append("  ")
+                    .append(lnav::roles::file(rec.ir_url))
+                    .append("  ")
+                    .append(lnav::roles::comment(
+                        fmt::format(FMT_STRING("started {}"), ago)))
+                    .append("\n")
+                    .append(10, ' ')
+                    .append("cwd: ")
+                    .append(lnav::roles::file(rec.ir_cwd))
+                    .append("\n");
+                for (const auto& path : rec.ir_paths) {
+                    txt.append(10, ' ')
+                        .append("path: ")
+                        .append(lnav::roles::file(path))
+                        .append("\n");
+                }
+            }
+        }
+        txt.rtrim();
+
+        return {console::user_message::raw(txt)};
+    }
+};
+
 using operations_v = mapbox::util::variant<no_subcmd_t,
                                            subcmd_apps_t,
                                            subcmd_config_t,
@@ -1787,7 +1975,8 @@ using operations_v = mapbox::util::variant<no_subcmd_t,
                                            subcmd_file_t,
                                            subcmd_piper_t,
                                            subcmd_regex101_t,
-                                           subcmd_crash_t>;
+                                           subcmd_crash_t,
+                                           subcmd_instances_t>;
 
 class operations {
 public:
@@ -1812,6 +2001,7 @@ describe_cli(CLI::App& app, int argc, char* argv[])
     subcmd_piper_t piper_args;
     subcmd_regex101_t regex101_args;
     subcmd_crash_t crash_args;
+    subcmd_instances_t instances_args;
 
     {
         auto* subcmd_apps
@@ -2095,6 +2285,49 @@ describe_cli(CLI::App& app, int argc, char* argv[])
         }
     }
 
+    {
+        auto* subcmd_instances
+            = app.add_subcommand("instances",
+                                 "find running lnav instances that have an "
+                                 "open external-access server")
+                  ->callback([&]() {
+                      instances_args.set_action(
+                          subcmd_instances_t::default_action);
+                      retval->o_ops = instances_args;
+                  });
+        instances_args.si_app = subcmd_instances;
+
+        auto* subcmd_instances_list
+            = subcmd_instances
+                  ->add_subcommand("list",
+                                   "print the running instances that match "
+                                   "the given filters")
+                  ->callback([&]() {
+                      instances_args.set_action(
+                          subcmd_instances_t::list_action);
+                  });
+        subcmd_instances_list->add_option(
+            "--name",
+            instances_args.si_name,
+            "Only show instances whose name matches this glob pattern");
+        subcmd_instances_list->add_option(
+            "--cwd",
+            instances_args.si_cwd,
+            "Only show instances whose current directory is this directory "
+            "or is inside of it");
+        subcmd_instances_list->add_option(
+            "--path",
+            instances_args.si_path,
+            "Only show instances with a command-line path that is this path, "
+            "is inside of it, or contains it");
+        subcmd_instances_list
+            ->add_option("-o,--output",
+                         instances_args.si_output,
+                         "The output format: text, json (one object per "
+                         "line), or url")
+            ->check(CLI::IsMember({"text", "json", "url"}));
+    }
+
     app.parse(argc, argv);
 
     return retval;
@@ -2122,7 +2355,8 @@ perform(std::shared_ptr<operations> opts)
         [](const subcmd_file_t& sf) { return sf.sfi_action(sf); },
         [](const subcmd_piper_t& sp) { return sp.sp_action(sp); },
         [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); },
-        [](const subcmd_crash_t& sc) { return sc.sc_action(sc); });
+        [](const subcmd_crash_t& sc) { return sc.sc_action(sc); },
+        [](const subcmd_instances_t& si) { return si.si_action(si); });
 }
 
 }  // namespace lnav::management

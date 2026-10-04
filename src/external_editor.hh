@@ -37,9 +37,18 @@
 
 namespace lnav::external_editor {
 
+/**
+ * Open the file in an editor client connected through external access, if
+ * one handles the path, or with the configured external editor command.
+ */
 Result<void, std::string> open(std::filesystem::path p,
                                uint32_t line,
                                uint32_t col);
+
+/** Open the file with the configured external editor command. */
+Result<void, std::string> launch(std::filesystem::path p,
+                                 uint32_t line,
+                                 uint32_t col);
 
 }  // namespace lnav::external_editor
 

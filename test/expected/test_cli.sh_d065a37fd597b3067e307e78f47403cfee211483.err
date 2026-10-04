@@ -1,0 +1,3 @@
+[1m[31m✘[0m [1m[31merror[0m: expecting an operation related to running lnav instances
+[36m =[0m [36mhelp[0m: the available operations are:
+          [33m•[0m [1m[36mlist[0m: print the running instances that match the given filters

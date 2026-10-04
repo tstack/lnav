@@ -90,7 +90,9 @@
 #include "date/tz.h"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
+#include "ext.access.hh"
 #include "ext.longpoll.hh"
+#include "external_editor.hh"
 #include "file_converter_manager.hh"
 #include "file_options.hh"
 #include "filter_sub_source.hh"
@@ -376,6 +378,13 @@ sigint(int sig)
     if (counter >= 3) {
         abort();
     }
+}
+
+static void
+sigterm(int sig)
+{
+    lnav_data.ld_terminate_signal = sig;
+    lnav_data.ld_looping = false;
 }
 
 static void
@@ -1376,7 +1385,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     }
 
     (void) signal(SIGINT, sigint);
-    (void) signal(SIGTERM, sigint);
+    (void) signal(SIGTERM, sigterm);
+    (void) signal(SIGHUP, sigterm);
     (void) signal(SIGWINCH, sigwinch);
     (void) signal(SIGCONT, sigwinch);
     auto _ign_signal = lnav::finally([] {
@@ -1981,6 +1991,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     // merged until all of the files have been found.
     lnav_data.ld_log_source.set_merge_deferred(true);
 
+#ifdef HAVE_RUST_DEPS
+    if (!lnav_data.ld_flags.is_set<lnav_flags::secure_mode>()) {
+        auto ext_res = execute_any(ec, ":external-access");
+        if (ext_res.isErr()) {
+            log_error("unable to start external access: %s",
+                      ext_res.unwrapErr().um_message.al_string.c_str());
+        }
+    }
+#endif
+
     // make sure the whole screen is painted.
     breadcrumb_view->do_update();
     lnav_data.ld_view_stack.do_update();
@@ -2097,6 +2117,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         mlooper.process_for(0s);
+        mlooper.loop_body();
         ui_now = ui_clock::now();
 
         if (last_files_generation
@@ -2716,6 +2737,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_looping = false;
         }
 
+        if (lnav_data.ld_terminate_signal != 0) {
+            log_info("received signal %d, exiting...",
+                     (int) lnav_data.ld_terminate_signal);
+            lnav_data.ld_looping = false;
+        }
+
         if (lnav_data.ld_sigint_count > 0) {
             auto found_piper = false;
 
@@ -2761,7 +2788,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     }
 
     if (rescan_future.valid()) {
-        rescan_future.get();
+        auto _dropped_scan = rescan_future.get();
     }
 
     save_session();
@@ -3192,6 +3219,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
 #ifdef HAVE_RUST_DEPS
         lnav_rs_ext::stop_ext_access();
+        lnav::ext::unregister_instance();
 #endif
 
         {
@@ -4151,6 +4179,30 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         load_stdin = true;
     }
 
+    {
+        std::vector<std::string> cmdline_paths;
+
+        for (const auto& file_arg : file_args) {
+            const auto path_str = lnav::filesystem::expand_tilde(file_arg);
+            switch (lnav::filesystem::determine_path_type(path_str)) {
+                case lnav::filesystem::path_type::remote:
+                case lnav::filesystem::path_type::url:
+                    cmdline_paths.emplace_back(path_str);
+                    break;
+                default: {
+                    std::error_code ec;
+                    auto abs_path = path_str == "-"
+                        ? std::filesystem::path(path_str)
+                        : std::filesystem::absolute(path_str, ec);
+                    cmdline_paths.emplace_back(
+                        ec ? path_str : abs_path.lexically_normal().string());
+                    break;
+                }
+            }
+        }
+        lnav::ext::set_command_line_paths(std::move(cmdline_paths));
+    }
+
     for (const auto& file_arg : file_args) {
         // The argument might have been quoted to keep the shell from
         // expanding a glob, which also keeps it from expanding a "~".
@@ -4689,6 +4741,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     mlooper.s_wakeup_fd = wakeup_pair.write_end().get();
                     while (lnav_data.ld_looping) {
                         mlooper.process_for(50ms);
+                        mlooper.loop_body();
                         rescan_files();
                         auto deadline = ui_clock::now() + 1s;
                         wait_for_pipers(deadline);

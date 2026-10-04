@@ -1,0 +1,4 @@
+{"begin_line":10,"end_line":10,"language":"Java","function_name":"Server","qualified_name":"com.example.net.Server.Server","block_id":215,"pattern":"(?s)^constructing server on port (.+)$","path":"{test_dir}/log2src/java/com/example/net/Server.java"}
+{"begin_line":14,"end_line":14,"language":"Java","function_name":"handle","qualified_name":"com.example.net.Server.handle","block_id":323,"pattern":"(?s)^handling request from (.+)$","path":"{test_dir}/log2src/java/com/example/net/Server.java"}
+{"begin_line":15,"end_line":15,"language":"Java","function_name":"handle","qualified_name":"com.example.net.Server.handle","block_id":410,"pattern":"(?s)^client (.+) is slow$","path":"{test_dir}/log2src/java/com/example/net/Server.java"}
+{"begin_line":21,"end_line":21,"language":"Java","function_name":"run","qualified_name":"com.example.net.Server.Inner.run","block_id":520,"pattern":"(?s)^inner worker failed$","path":"{test_dir}/log2src/java/com/example/net/Server.java"}

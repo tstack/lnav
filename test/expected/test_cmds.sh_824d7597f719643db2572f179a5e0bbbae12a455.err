@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: External access is not available in secure mode
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:external-access                        [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mexternal-access[0m[4m [[0m[4m--name[0m[4m] [[0m[4mport[0m[4m] [[0m[4mapi-key[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Open a port to give remote access to this lnav instance.  This is
+           done automatically when lnav starts in the TUI.

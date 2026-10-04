@@ -1,0 +1,3 @@
+[1m[31m✘[0m [1m[31merror[0m: no running lnav instances were found
+[36m =[0m [36mnote[0m: instances are registered in: [1m./instances-config/.lnav/external-access[0m
+[36m =[0m [36mhelp[0m: an instance is registered while its external-access server is open, which is the default when the TUI is running

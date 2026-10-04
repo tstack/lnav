@@ -813,6 +813,7 @@ namespace lnav_rs_ext {
   struct FindLogResult;
   struct ViewStates;
   struct PollInput;
+  struct OpenRequest;
   struct LogIndexChange;
   struct LogIndexState;
   struct PollResult;
@@ -939,6 +940,9 @@ struct SourceDetails final {
   ::std::size_t begin_line CXX_DEFAULT_VALUE(0);
   ::std::size_t end_line CXX_DEFAULT_VALUE(0);
   ::rust::String name;
+  ::rust::String qualified_name;
+  // The start byte of the innermost block containing the statement.
+  ::std::uint32_t block_id CXX_DEFAULT_VALUE(0);
   ::rust::Str language;
 
   using IsRelocatable = ::std::true_type;
@@ -970,15 +974,35 @@ struct ViewStates final {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
 struct PollInput final {
+  // The highest `open_requests` id the client has handled.
   ::std::size_t last_event_id CXX_DEFAULT_VALUE(0);
   ::lnav_rs_ext::ViewStates view_states;
   ::rust::Vec<::std::size_t> task_states;
   // The `log_index.seq` from the previous response.  0 asks for a reset.
   ::std::uint64_t log_index_seq CXX_DEFAULT_VALUE(0);
+  // Identifies an editor client, like an IDE plugin, across polls.
+  ::rust::String client_id;
+  // The directories, as lnav sees them, that the client can open files
+  // under.  Files under them are sent to the client in `open_requests`
+  // instead of being opened with an external editor command.
+  ::rust::Vec<::rust::String> editor_roots;
 
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$PollInput
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$OpenRequest
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$OpenRequest
+// A file for an editor client to open.
+struct OpenRequest final {
+  ::std::size_t id CXX_DEFAULT_VALUE(0);
+  ::rust::String path;
+  ::std::uint32_t line CXX_DEFAULT_VALUE(0);
+  ::std::uint32_t col CXX_DEFAULT_VALUE(0);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$OpenRequest
 
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexChange
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$LogIndexChange
@@ -1015,6 +1039,7 @@ struct PollResult final {
   ::lnav_rs_ext::PollInput next_input;
   ::rust::Vec<::lnav_rs_ext::ExtProgress> background_tasks;
   ::lnav_rs_ext::LogIndexState log_index;
+  ::rust::Vec<::lnav_rs_ext::OpenRequest> open_requests;
 
   using IsRelocatable = ::std::true_type;
 };

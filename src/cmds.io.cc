@@ -1244,7 +1244,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     app.add_option("-S,--since", since_time, "start time for the log");
     app.add_option("-U,--until", until_time, "end time for the log");
     app.add_option("file", file_args, "files to open");
-    app.parse(split_args);
+    TRY(ec.parse_cli(app, std::move(split_args)));
 
     if (!since_time.empty()) {
         auto from_res = humanize::time::point::from(since_time);

@@ -262,6 +262,8 @@ curl_looper::get_multi()
 void
 curl_looper::loop_body()
 {
+    service_base::loop_body();
+
     mstime_t current_time = getmstime();
 
     this->perform_io();

@@ -158,6 +158,8 @@ update_tailer_description(
 void
 tailer::looper::loop_body()
 {
+    service_base::loop_body();
+
     auto now = std::chrono::steady_clock::now();
     std::vector<std::string> to_erase;
 

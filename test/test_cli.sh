@@ -296,3 +296,28 @@ run_cap_test ${lnav_test} -m file split --lines 50000 -o split-rollover \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT min(log_time), max(log_time) FROM all_logs' \
     split-rollover/split-rollover.0001.log
+
+saved_home="$HOME"
+export HOME="./instances-config"
+rm -rf ./instances-config
+mkdir -p $HOME/.lnav
+
+run_cap_test ${lnav_test} -m instances
+
+run_cap_test ${lnav_test} -m instances list
+
+mkdir -p $HOME/.lnav/external-access
+cat > $HOME/.lnav/external-access/$$.json <<EOJ
+{"pid": $$, "name": "live", "cwd": "/live", "url": "http://127.0.0.1:1"}
+EOJ
+cat > $HOME/.lnav/external-access/99999999.json <<EOJ
+{"pid": 99999999, "name": "stale", "cwd": "/stale", "url": "http://127.0.0.1:2"}
+EOJ
+
+run_cap_test ${lnav_test} -m instances list --name nope
+
+run_cap_test ${lnav_test} -m instances list --name stale
+
+run_cap_test ${lnav_test} -m instances list -o bogus
+
+export HOME="$saved_home"

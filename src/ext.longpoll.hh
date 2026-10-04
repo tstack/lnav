@@ -30,7 +30,9 @@
 #ifndef lnav_ext_longpoll_hh
 #define lnav_ext_longpoll_hh
 
+#include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -57,6 +59,20 @@ struct view_states {
 void notify_pollers();
 
 void notify_pollers(const view_states& vs);
+
+/**
+ * Queue the given file to be opened by an editor client, like an IDE plugin
+ * polling through the external-access server.  The client whose editor
+ * roots most closely contain the path is used.  This does not wait for
+ * the client.  If the client does not pick up the request before the
+ * deadline, the request is dropped.
+ *
+ * @return true if the request was queued for a client.
+ */
+bool send_to_editor_client(const std::filesystem::path& path,
+                           uint32_t line,
+                           uint32_t col,
+                           std::chrono::milliseconds deadline);
 
 }  // namespace lnav::ext
 

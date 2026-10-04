@@ -4,8 +4,11 @@ External Access (v0.14.0+)
 ==========================
 
 The "External Access" feature opens a local HTTP port that can be used to
-interact with an lnav instance outside of the TUI.  This feature can be
-enabled with the :ref:`external_access` command.  Once the port is open,
+interact with an lnav instance outside of the TUI.  The server is started
+automatically when lnav runs with the TUI (but not in headless or secure mode)
+on a port picked by the OS and with a random API key.  The
+:ref:`external_access` command can be used to pick the port, API key, or
+instance name instead.  Once the port is open,
 HTTP requests can be sent to access static files, execute commands, or
 poll for changes.  When the external port is open, a globe icon (🌐) is
 displayed in the top-right corner.  Clicking that icon will open a URL
@@ -16,6 +19,35 @@ command can also be used to login.
     be accessible over the network.  If you need to access lnav
     remotely, consider using SSH forwarding.
 
+Discovery
+---------
+
+So that clients, like editor plugins, can find a running lnav without being
+configured with a port and key, each instance with an open port writes a
+discovery file to :file:`external-access/<pid>.json` in lnav's
+configuration directory (usually :file:`~/.lnav`).  The directory
+is only accessible by the user and the file is removed when lnav exits.  Files
+left behind by instances that did not exit cleanly are removed the next time
+an instance starts.  The file contains the paths given on lnav's
+command-line, along with its name and current directory, to make it easier to
+tell instances apart.  The contents are described by the following schema:
+
+.. jsonschema:: ../schemas/external-access-instance-v1.schema.json#
+
+When there are multiple instances, a client can pick the one to talk to by
+matching the :code:`name` or :code:`cwd` against its own project.  The
+:code:`instances list` subcommand of the
+:ref:`management CLI<management_cli>` does this matching and skips files
+whose process has exited.  For example, to get the URL of the instance
+started in the current directory, or the closest one beneath it:
+
+.. code-block:: bash
+
+    lnav -m instances list --cwd . -o url | head -1
+
+The :code:`GET /api/version` response also includes the :code:`name` and
+:code:`cwd` so a client can check that it reached the instance it expected.
+
 Authentication
 --------------
 
@@ -23,8 +55,8 @@ All requests to lnav's external access server are authenticated.  A request
 must have one of the following:
 
 * An :code:`X-Api-Key` header with the Base64-encoded value of the API-key that
-  was passed to the :code:`:external-access` command.  This header should be
-  used for automations.
+  was passed to the :code:`:external-access` command or that was written to
+  the discovery file.  This header should be used for automations.
 * An :code:`lnav_session_id` cookie.  This cookie will be set through the
   flow initiated by the :ref:`external_access_login` command that opens
   the :code:`/login` URL using the configured
@@ -40,7 +72,8 @@ The following routes are available:
 
 * | :code:`GET /api/version`
 
-  Get the version of the lnav instance.
+  Get the version, process ID, name, and current working directory of the
+  lnav instance.
 
 * | :code:`POST /api/exec`
   | :code:`Content-Type: text/x-lnav-script`
@@ -87,6 +120,26 @@ The following routes are available:
       or replaced, leaving :code:`row_count` rows.  Newly appended lines
       have a :code:`from_row` equal to the previous row count.  A rebuild
       or filter change starts earlier, possibly at zero.
+  * :code:`open_requests` - Files for an editor client to open; see below.
+
+  An editor, like an IDE plugin, can ask to open the files that lnav would
+  otherwise pass to an :ref:`external editor<config_external_editor>`
+  command, which can be much faster for IDEs that are slow to launch.  To
+  do so, it adds these fields to the object it sends:
+
+  * :code:`client_id` - A string that identifies the client across polls.
+  * :code:`editor_roots` - The directories, as lnav sees them, that the
+    client can open files under.
+
+  When lnav needs to open a file under one of those directories, it adds an
+  entry to the :code:`open_requests` of the client with the closest root.
+  Each entry has an :code:`id`, the :code:`path`, and the :code:`line` and
+  :code:`col` to go to, which are one-based.  The :code:`last_event_id` in
+  :code:`next_input` is the highest :code:`id` sent; a request is sent again
+  until a poll comes back with that :code:`last_event_id`.  If no client
+  has a matching root, the external editor command is used instead.  If
+  the client does not receive the request within two seconds, the request
+  is dropped.
 
 Apps
 ----

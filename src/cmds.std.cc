@@ -1433,7 +1433,7 @@ com_highlight_field(exec_context& ec,
     std::vector<lnav::console::user_message> errors;
 
     text_attrs attrs;
-    app.parse(cli_args);
+    TRY(ec.parse_cli(app, std::move(cli_args)));
     if (!fg_color.empty()) {
         attrs.ta_fg_color = vc.match_color(
             styling::color_unit::from_str(fg_color).unwrapOrElse(

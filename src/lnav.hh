@@ -137,6 +137,8 @@ struct lnav_data_t {
     std::list<std::string> ld_files_to_front;
     bool ld_stdout_used;
     std::atomic_uint32_t ld_sigint_count{0};
+    /** The SIGHUP or SIGTERM that asked lnav to exit, or zero. */
+    sig_atomic_t ld_terminate_signal{0};
     sig_atomic_t ld_looping{true};
     sig_atomic_t ld_winched;
     sig_atomic_t ld_child_terminated;

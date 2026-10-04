@@ -44,6 +44,8 @@ enum class log_stmt_col : uint8_t {
     end_line,
     language,
     function_name,
+    qualified_name,
+    block_id,
     pattern,
     path,
     search_path,
@@ -60,6 +62,8 @@ CREATE TABLE lnav_db.source_log_stmt (
     end_line INTEGER,
     language TEXT,
     function_name TEXT,
+    qualified_name TEXT,
+    block_id INTEGER,
     pattern TEXT,
     path TEXT,
     search_path TEXT HIDDEN
@@ -117,6 +121,12 @@ CREATE TABLE lnav_db.source_log_stmt (
                 break;
             case log_stmt_col::function_name:
                 to_sqlite(ctx, (std::string) stmt.src.name);
+                break;
+            case log_stmt_col::qualified_name:
+                to_sqlite(ctx, (std::string) stmt.src.qualified_name);
+                break;
+            case log_stmt_col::block_id:
+                to_sqlite(ctx, (int64_t) stmt.src.block_id);
                 break;
             case log_stmt_col::pattern:
                 to_sqlite(ctx, (std::string) stmt.pattern);
@@ -205,6 +215,13 @@ register_log_stmt_vtab(sqlite3* db)
               .with_result(
                   {"function_name",
                    "The name of the function containing the log statement"})
+              .with_result({"qualified_name",
+                            "The function name qualified by its enclosing "
+                            "scopes"})
+              .with_result({"block_id",
+                            "An ID for the innermost block containing the "
+                            "statement.  Statements in the same file with the "
+                            "same ID are in the same block."})
               .with_result({"pattern",
                             "The pattern used to match log messages from this "
                             "log statement"})

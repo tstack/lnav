@@ -190,6 +190,18 @@ Subcommands
 
    Test this format against the given file.
 
+.. option:: instances list [--name <glob>] [--cwd <dir>] [--path <path>] [-o text|json|url]
+
+   Print the running **lnav** instances that have an open
+   :ref:`external-access<ExternalAccess>` server.  The options narrow the
+   list to the instances whose name matches the glob pattern, whose current
+   directory is or is inside :code:`<dir>`, or that were given a path on the
+   command-line that is, is inside, or contains :code:`<path>`.  When
+   :code:`--cwd` is given, the instances closest to that directory are
+   printed first.  The :code:`-o` option selects the output: a summary
+   (the default), the contents of each discovery file as a line of JSON, or
+   just the URL.  The exit status is non-zero if no instances matched.
+
 .. option:: piper clean
 
    Remove all of the files that stored data that was piped into **lnav**
