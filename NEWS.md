@@ -179,6 +179,52 @@ Features:
   only write the messages in a time range.  They
   accept the same kinds of times as the `-S` and `-U`
   options.
+* The external-access server is now started automatically
+  when lnav runs with the TUI, on a port picked by the OS
+  and with a random API key.  The `:external-access`
+  command can still be used to pick the port, key, or
+  instance name.  So that clients, like editor plugins,
+  can find a running instance, each one writes a discovery
+  file to `~/.lnav/external-access/<pid>.json` that
+  contains its URL, API key, name, current directory, and
+  the paths given on the command-line.  The
+  `lnav -m instances list` management command prints the
+  running instances and can narrow them down by name,
+  directory, or path.  An editor plugin that polls lnav
+  can also ask to be sent the files that lnav would
+  otherwise open with the external editor command.
+* Added the `log_msg_line_count` column to the log tables.
+  It contains the number of lines in the log message,
+  including any continuation lines.  The value is also
+  available as the `:log_msg_line_count` variable in
+  filter expressions.
+* Added the `:write-html-to` command to write the top view
+  (or the one given with `--view`) as an HTML fragment, a
+  `<pre>` element that can be put in a larger document.
+  The lines are styled with the CSS classes from the
+  current theme, whose rules are returned by the
+  `lnav_theme_css()` SQL function, so the output looks
+  like what is shown on the screen.
+* Added the `lnav_view_lines()` SQL table-valued function
+  to get the lines of a view as they are rendered on the
+  screen.  It takes the view name, an optional range of
+  lines, and an output format: `ansi` for text with ANSI
+  escape sequences that use the theme's colors, `html`
+  for HTML that uses the theme's CSS classes, or `text`
+  for plain text.  For example, the lines currently shown
+  in the LOG view can be retrieved with:
+  ```
+  SELECT content FROM lnav_views,
+      lnav_view_lines(name, top, top + height - 1, 'html')
+    WHERE name = 'log'
+  ```
+  The CSS for the `html` output can be retrieved with the
+  new `lnav_theme_css()` SQL function or from the
+  `/assets/css/theme.css` URL of the external-access
+  server, which is linked from the pages it renders.
+  In the `html` output, and in that of `:write-html-to`,
+  the file a line came from, its log format, and why it
+  is invalid are shown as tooltips.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

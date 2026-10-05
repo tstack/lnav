@@ -744,9 +744,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To display 'Press t to switch to the text view' on the bottom right:
    [37m[40m:[0m[1m[36m[40malt-msg[0m[37m[40m Press t to switch to the text view       [0m
@@ -766,9 +766,10 @@ For support questions, email:
   [4mpath[0m   The path to the file to append to
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To append marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m {TMPDIR}interesting-lines.txt             [0m
@@ -798,9 +799,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1m[4mclear-adjusted-log-time[0m
 ══════════════════════════════════════════════════════════════════════
@@ -911,7 +912,7 @@ For support questions, email:
          close
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
@@ -1142,9 +1143,9 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
   [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
    [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
@@ -1204,9 +1205,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To substitute the table name from a variable:
    [37m[40m:[0m[1m[36m[40meval[0m[37m[40m ;SELECT * FROM [0m[1m[37m[40m${[0m[37m[40mtable[0m[1m[37m[40m}[0m[37m[40m                     [0m
@@ -1222,7 +1223,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
@@ -1241,9 +1242,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To give this instance a name for clients to look up:
    [37m[40m:[0m[1m[36m[40mexternal-access[0m[37m[40m --name=tectonic                  [0m
@@ -1258,9 +1259,10 @@ For support questions, email:
   [4mapp[0m   The app to launch
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m
 
 [4m:[0m[1m[4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1617,7 +1619,7 @@ For support questions, email:
   [4mpath[0m      The path to the file to open
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:close[0m, [1m:echo[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
@@ -1653,9 +1655,10 @@ For support questions, email:
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the focused line to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
@@ -1669,9 +1672,10 @@ For support questions, email:
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
@@ -1760,9 +1764,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
   [1m:external-access-login[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1m[4mredirect-to[0m[4m [[0m[4mpath[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1774,7 +1778,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
@@ -1894,9 +1898,9 @@ For support questions, email:
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
   [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1m[4mshow-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -2132,9 +2136,10 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-json-cols-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as CSV to {TMPDIR}table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m {TMPDIR}table.csv                      [0m
@@ -2147,6 +2152,28 @@ For support questions, email:
   useful if the `-d` flag was not passed on the command line
 [4mParameter[0m
   [4mpath[0m   The destination path for the debug log
+
+
+[4m:[0m[1m[4mwrite-html-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+══════════════════════════════════════════════════════════════════════
+  Write the text in the top view to the given file as an HTML
+  fragment that is styled with the classes from lnav_theme_css()
+[4mParameters[0m
+  [4m--view[0m        The view to use as the source of data
+                [4mValues[0m: [1mlog[0m|[1mtext[0m|[1mdb[0m
+  [4m--anonymize[0m   Anonymize the lines
+  [4mpath[0m          The path to the file to write
+[4mSee Also[0m
+  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+[4mExample[0m
+#1 To write the top view to {TMPDIR}view.html:
+   [37m[40m:[0m[1m[36m[40mwrite-html-to[0m[37m[40m {TMPDIR}view.html                     [0m
+   
 
 
 [4m:[0m[1m[4mwrite-json-cols-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
@@ -2164,9 +2191,9 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-cols-to[0m[37m[40m {TMPDIR}table.json               [0m
@@ -2183,7 +2210,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2206,7 +2233,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
@@ -2229,7 +2256,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2250,7 +2277,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2270,7 +2297,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2290,9 +2317,9 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
   [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
-  [1m:xopen[0m, [1mecholn()[0m
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m {TMPDIR}interesting-lines.txt              [0m
@@ -2310,7 +2337,7 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2327,7 +2354,7 @@ For support questions, email:
   [4mpath[0m   The path to the file to open
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
@@ -2895,7 +2922,7 @@ For support questions, email:
   [4mvalue[0m   The value to write to the current output file
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m
@@ -4054,6 +4081,104 @@ For support questions, email:
   [4mvalue[0m   The boolean value to return
 
 
+[1m[4mlnav_theme_css[0m[4m()[0m
+══════════════════════════════════════════════════════════════════════
+  Return the CSS rules for the classes used in the 'html' output of
+  lnav_view_lines(), generated from the current theme.
+[4mSee Also[0m
+  [1mlnav_view_lines()[0m
+[4mExample[0m
+#1 To get the stylesheet for the current theme:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlnav_theme_css[0m[37m[40m()                           [0m
+   .-lnav_styles_text { color: #c0c0c0; background-color: #000000; }
+   .-lnav_styles_search { color: #000000; background-color: #c0c0c0; }
+   .-lnav_styles_ok { color: #008000; font-weight: bold; }
+   .-lnav_styles_info { color: #c0c0c0; font-weight: bold; }
+   .-lnav_styles_error { color: #800000; font-weight: bold; }
+   .-lnav_styles_warning { color: #808000; font-weight: bold; }
+   .-lnav_styles_alt-text { font-weight: bold; }
+   .-lnav_styles_context-line { font-weight: bold; }
+   .-lnav_styles_hidden { color: #808000; font-weight: bold; }
+   .-lnav_styles_adjusted-time { color: #800000; }
+   .-lnav_styles_skewed-time { color: #808000; }
+   .-lnav_styles_offset-time { color: #008080; }
+   .-lnav_styles_time-ago { font-weight: bold; }
+   .-lnav_styles_time-column { background-color: #aaaaaa; }
+   .-lnav_styles_file-offset { color: #c0c0c0; }
+   .-lnav_styles_invalid-msg { color: #808000; }
+   .-lnav_status-styles_text { color: #000000; background-color: #c0c0c0; }
+   .-lnav_status-styles_warn { color: #808000; background-color: #c0c0c0; }
+   .-lnav_status-styles_alert { color: #800000; background-color: #c0c0c0; }
+   .-lnav_status-styles_active { color: #008000; background-color: #c0c0c0; }
+   .-lnav_status-styles_title { color: #c0c0c0; background-color: #000080; font-weight: bold; }
+   .-lnav_status-styles_subtitle { color: #000000; background-color: #008080; }
+   .-lnav_status-styles_info { color: #c0c0c0; background-color: #878787; }
+   .-lnav_status-styles_title-hotkey { color: #008080; background-color: #000080; text-decoration: underline; }
+   .-lnav_status-styles_disabled-title { color: #000000; background-color: #c0c0c0; font-weight: bold; }
+   .-lnav_status-styles_hotkey { color: #800080; font-weight: bold; text-decoration: underline; }
+   .-lnav_status-styles_alert-title { color: #800000; background-color: #000080; font-weight: bold; }
+   .-lnav_status-styles_inactive { color: #c0c0c0; background-color: #878787; }
+   .-lnav_status-styles_inactive-warn { color: #808000; background-color: #878787; }
+   .-lnav_status-styles_inactive-alert { color: #800000; background-color: #878787; }
+   .-lnav_styles_scrollbar { color: #000000; background-color: #c0c0c0; }
+   .-lnav_styles_popup { color: #c0c0c0; background-color: #474747; }
+   .-lnav_styles_popup-border { color: #800080; }
+   .-lnav_syntax-styles_quoted-code { color: #c0c0c0; background-color: #1b1b1b; }
+   .-lnav_syntax-styles_code-border { color: #444444; background-color: #1b1b1b; }
+   .-lnav_syntax-styles_keyword { color: #000080; }
+   .-lnav_syntax-styles_string { color: #008000; }
+   .-lnav_syntax-styles_comment { color: #008000; }
+   .-lnav_syntax-styles_doc-directive { color: #008080; }
+   .-lnav_syntax-styles_variable { color: #008080; }
+   .-lnav_syntax-styles_symbol { color: #000080; }
+   .-lnav_syntax-styles_null { color: #c0c0c0; }
+   .-lnav_syntax-styles_ascii-control { color: #008000; }
+   .-lnav_syntax-styles_non-ascii { color: #808000; }
+   .-lnav_syntax-styles_number { font-weight: bold; }
+   .-lnav_syntax-styles_re-special { color: #008080; }
+   .-lnav_syntax-styles_re-repeat { color: #808000; }
+   .-lnav_syntax-styles_file { color: #000080; }
+   .-lnav_syntax-styles_diff-delete { color: #800000; }
+   .-lnav_syntax-styles_diff-add { color: #008000; }
+   .-lnav_syntax-styles_diff-section { color: #800000; }
+   .-lnav_syntax-styles_spectrogram-low { color: #000000; background-color: #00ff00; font-weight: bold; }
+   .-lnav_syntax-styles_spectrogram-medium { color: #000000; background-color: #ffff5f; font-weight: bold; }
+   .-lnav_syntax-styles_spectrogram-high { color: #000000; background-color: #d70000; font-weight: bold; }
+   .-lnav_styles_h1 { text-decoration: underline; }
+   .-lnav_styles_h2 { text-decoration: underline; }
+   .-lnav_styles_h3 { text-decoration: underline; }
+   .-lnav_styles_h4 { text-decoration: underline; }
+   .-lnav_styles_h5 { text-decoration: underline; }
+   .-lnav_styles_h6 { text-decoration: underline; }
+   .-lnav_styles_hr { color: #444444; }
+   .-lnav_styles_hyperlink { text-decoration: underline; }
+   .-lnav_styles_list-glyph { color: #808000; }
+   .-lnav_styles_breadcrumb { color: #008080; font-weight: bold; }
+   .-lnav_styles_table-border { color: #444444; }
+   .-lnav_styles_table-header { font-weight: bold; }
+   .-lnav_styles_quote-border { color: #666666; background-color: #444444; }
+   .-lnav_styles_quoted-text { background-color: #444444; }
+   .-lnav_styles_footnote-border { color: #000080; background-color: #444444; }
+   .-lnav_styles_footnote-text { color: #eeeeee; background-color: #444444; }
+   .-lnav_styles_snippet-border { color: #008080; }
+   .-lnav_styles_indent-guide { color: #444444; }
+   .-lnav_syntax-styles_inline-code { color: #800000; background-color: #1b1b1b; }
+   .-lnav_syntax-styles_function { color: #00ffff; }
+   .-lnav_syntax-styles_type { color: #000080; }
+   .-lnav_syntax-styles_separators-references-accessors { color: #c0c0c0; }
+   .-lnav_styles_selected-text { background-color: #00af87; }
+   .-lnav_styles_fuzzy-match { color: #808000; font-weight: bold; text-decoration: underline; }
+   .-lnav_styles_timeline-bar { background-color: #008080; }
+   .-lnav_styles_disabled-cursor-line { color: #00ffff; background-color: #5f005f; }
+   .-lnav_styles_focused { color: #000000; background-color: #c0c0c0; }
+   .-lnav_styles_disabled-focused { color: #000000; background-color: #888888; }
+   .-lnav_log-level-styles_warning { color: #808000; }
+   .-lnav_log-level-styles_error { color: #800000; }
+   .-lnav_log-level-styles_critical { color: #800000; }
+   .-lnav_log-level-styles_fatal { color: #800000; }
+
+
+
 [1m[4mlnav_top_file[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the name of the file that the top line in the current view
@@ -4063,6 +4188,39 @@ For support questions, email:
 [1m[4mlnav_version[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the current version of lnav
+
+
+[1m[4mlnav_view_lines[0m[4m([0m[4mview_name[0m[4m, [[0m[4mfirst_line[0m[4m], [[0m[4mlast_line[0m[4m], [[0m[4mformat[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued function that renders the lines of a view as they
+  are shown on the screen.  The view's header lines, like the column
+  names in the DB view, come first with a NULL line number.
+[4mParameters[0m
+  [4mview_name[0m    The name of the view.
+  [4mfirst_line[0m   The number of the first line to render,
+               starting from zero.  Defaults to zero.
+  [4mlast_line[0m    The number of the last line to render.
+               Defaults to the last line in the view.
+  [4mformat[0m       The output format: 'ansi' for text with
+               ANSI escape sequences that use the theme's colors,
+               'html' for HTML that uses the CSS classes from the
+               theme (see lnav_theme_css()) and has the line's file,
+               format, and any errors in tooltips, or 'text' for plain
+               text.  Defaults to 'ansi'.
+[4mResults[0m
+  [4mline[0m      The number of the line in the view, or NULL
+            for a header line.
+  [4mcontent[0m   The rendered line.
+[4mSee Also[0m
+  [1mlnav_theme_css()[0m
+[4mExample[0m
+#1 To get the lines displayed in the log view as HTML:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcontent[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_views[0m[37m[40m, [0m[1m[37m[40mlnav_view_lines[0m[37m[40m([0m[37m[40mname[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m [0m[1m[37m[40m+[0m[37m[40m [0m[37m[40mheight[0m[37m[40m [0m[1m[37m[40m-[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m,[0m
+   [37m[40m   [0m[35m[40m'html'[0m[37m[40m) [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[35m[40m'log'[0m
+   [1m[4m    content    [0m[1m[4m [0m
+   <span t[33m⋯[0m</span> 
+   <span t[33m⋯[0m</span> 
+   [1m<span t[0m[1m[33m⋯[0m[1m</span> [0m
 
 
 [1m[4mload_extension[0m[4m([0m[4mpath[0m[4m, [[0m[4mentry-point[0m[4m])[0m

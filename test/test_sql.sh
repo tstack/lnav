@@ -229,6 +229,15 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_msg_line_count FROM generic_log" \
+    ${test_dir}/logfile_multiline.0
+
+# The whole stylesheet changes with the theme, so only check for a rule.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT lnav_theme_css() LIKE '%.-lnav_styles_error {%' AS has_error_rule" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
     -c ";SELECT log_top_datetime()" \
     ${test_dir}/logfile_uwsgi.0

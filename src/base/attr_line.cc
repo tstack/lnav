@@ -213,6 +213,9 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
 
     if (has_ansi) {
         scrub_ansi_string(retval.al_string, &retval.al_attrs);
+        // The bytes of an escape sequence after the ESC were counted as
+        // visible characters, but the scrub took them out.
+        char_width = utf8_string_length(retval.al_string).unwrapOr(char_width);
     }
 
     if (char_width > max_char_width) {

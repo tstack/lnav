@@ -93,6 +93,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_thread_id"_frag,
         "log_duration"_frag,
         "log_named_searches"_frag,
+        "log_msg_line_count"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -130,7 +131,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_src_line     TEXT HIDDEN,                       -- The source line the log message came from
   log_thread_id    TEXT HIDDEN,                       -- The ID of the thread that generated this message
   log_duration     REAL HIDDEN,                       -- The duration associated with this log message
-  log_named_searches TEXT HIDDEN                      -- A JSON list of the named searches that matched this message
+  log_named_searches TEXT HIDDEN,                     -- A JSON list of the named searches that matched this message
+  log_msg_line_count INTEGER HIDDEN                   -- The number of lines in the log message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -161,6 +163,7 @@ enum class log_footer_columns : uint32_t {
     thread_id,
     duration,
     named_searches,
+    msg_line_count,
 };
 
 std::string
@@ -1381,13 +1384,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         // relative to the file).  A multi-line message has to
                         // be tested across all of its lines: the hit may well
                         // be on a continuation line rather than the first one.
-                        auto msg_lines = vis_line_t{1};
-                        for (auto next = std::next(ll);
-                             next != lf->end() && next->is_continued();
-                             ++next)
-                        {
-                            msg_lines += 1_vl;
-                        }
+                        auto msg_lines
+                            = vis_line_t(lf->message_line_count(ll));
                         auto matches = vt->tc->named_search_matches(
                             vc->log_cursor.lc_curr_line,
                             vc->log_cursor.lc_curr_line + msg_lines);
@@ -1415,6 +1413,11 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             to_sqlite(ctx, gen.to_string_fragment());
                             sqlite3_result_subtype(ctx, JSON_SUBTYPE);
                         }
+                        break;
+                    }
+                    case log_footer_columns::msg_line_count: {
+                        to_sqlite(ctx,
+                                  (int64_t) lf->message_line_count(ll));
                         break;
                     }
                 }
@@ -2122,6 +2125,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::annotations:
                         case log_footer_columns::filters:
                         case log_footer_columns::named_searches:
+                        case log_footer_columns::msg_line_count:
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:
@@ -2298,9 +2302,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 log_debug("  min_index_range[%d:%d)",
                           (int) index_valid_opt->v_min_line,
                           (int) index_valid_opt->v_max_line);
-                if (scan_range.v_min_line < index_valid_opt->v_min_line
-                    && index_valid_opt->v_max_line < scan_range.v_max_line)
-                {
+                auto drop_indexes = [p_cur, vt]() {
                     for (const auto& icol :
                          p_cur->log_cursor.lc_indexed_columns)
                     {
@@ -2309,6 +2311,14 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                     p_cur->log_cursor.lc_indexed_lines.clear();
                     p_cur->log_cursor.lc_indexed_lines_range
                         = msg_range::empty();
+                };
+                auto dropped = false;
+
+                if (scan_range.v_min_line < index_valid_opt->v_min_line
+                    && index_valid_opt->v_max_line < scan_range.v_max_line)
+                {
+                    drop_indexes();
+                    dropped = true;
                 } else if (scan_range.v_max_line < index_valid_opt->v_min_line
                            || scan_range.v_min_line
                                >= index_valid_opt->v_max_line)
@@ -2335,6 +2345,22 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 = index_valid_opt->v_max_line;
                         }
                     }
+                }
+
+                // The indexed range is a single span that grows to each line
+                // the scan reaches.  A scan that starts away from it would
+                // stretch it over the lines in between as soon as it starts,
+                // and if it stops before getting there (a LIMIT), the index
+                // claims lines it never saw.  Start over from this scan so
+                // the range only covers what was scanned.
+                const auto scan_start = p_cur->log_cursor.lc_curr_line;
+                if (!dropped
+                    && (scan_start < index_valid_opt->v_min_line - 1_vl
+                        || index_valid_opt->v_max_line < scan_start))
+                {
+                    log_debug("  scan starts at %d, away from the index",
+                              (int) scan_start);
+                    drop_indexes();
                 }
             } else {
                 log_debug("  min_index_range::empty");
@@ -2615,6 +2641,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::annotations:
                         case log_footer_columns::filters:
                         case log_footer_columns::named_searches:
+                        case log_footer_columns::msg_line_count:
                         case log_footer_columns::text:
                         case log_footer_columns::body:
                         case log_footer_columns::raw_text:

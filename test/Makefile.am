@@ -213,6 +213,7 @@ dist_noinst_SCRIPTS = \
 	test_data_parser.sh \
 	test_demux.sh \
 	test_events.sh \
+	test_ext_access.sh \
 	test_format_installer.sh \
 	test_format_loader.sh \
 	test_timeline.sh \
@@ -426,6 +427,7 @@ dist_noinst_DATA = \
 	logfile_tabular_num_multiline.csv \
 	logfile_tabular_space.0 \
 	logfile_tabular_synth.csv \
+	logfile_hyperlink.0 \
 	logfile_multiline.0 \
 	logfile_muxed_syslog.0 \
 	logfile_mysql_error.0 \
@@ -601,6 +603,7 @@ TESTS = \
 	test_data_parser.sh \
 	test_demux.sh \
 	test_events.sh \
+	test_ext_access.sh \
 	test_listview.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \

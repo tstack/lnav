@@ -264,8 +264,9 @@ longpoll(const PollInput& pi)
                 tp.tp_step,
                 tp.tp_completed,
                 tp.tp_total,
+                std::move(errors_out),
             };
-            bt_out.emplace_back(ep);
+            bt_out.emplace_back(std::move(ep));
         }
     }
 

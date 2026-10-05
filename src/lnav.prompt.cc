@@ -269,6 +269,7 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
         ":log_src_line",
         ":log_thread_id",
         ":log_duration",
+        ":log_msg_line_count",
     };
 
     this->insert_sql_completion("log_line", sql_format_column_t{});

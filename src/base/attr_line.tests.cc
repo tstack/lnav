@@ -213,3 +213,22 @@ TEST_CASE("attr_line_t::from_table_cell_content")
 
     auto al = attr_line_t::from_table_cell_content(sf, 100);
 }
+
+TEST_CASE("attr_line_t::from_table_cell_content with escapes")
+{
+    // Only the visible characters count toward the width, so a long run of
+    // escape sequences around a short string must not be truncated past the
+    // end of what is left once they are removed.
+    std::string content;
+    for (int lpc = 0; lpc < 20; lpc++) {
+        content.append("\x1b[38;2;192;192;192;48;2;0;0;0mab\x1b[0m");
+    }
+    auto sf = string_fragment::from_str(content);
+
+    auto al = attr_line_t::from_table_cell_content(sf, 10);
+    CHECK(al.get_string().find("\x1b") == std::string::npos);
+    CHECK(al.column_width() == 10);
+
+    auto short_al = attr_line_t::from_table_cell_content(sf, 100);
+    CHECK(short_al.get_string() == "abababababababababababababababababababab");
+}

@@ -258,6 +258,9 @@ noinst_HEADERS = \
 	apps.cfg.hh \
 	apps.hh \
 	archive_manager.hh \
+	attr_line.html.hh \
+	attr_line.ansi.hh \
+	attr_line.render.hh \
 	archive_manager.cfg.hh \
 	big_array.hh \
 	bin2c.hh \
@@ -498,6 +501,9 @@ libdiag_a_SOURCES = \
 	$(RUST_CPP) \
 	all_logs_vtab.cc \
 	archive_manager.cc \
+	attr_line.html.cc \
+	attr_line.ansi.cc \
+	attr_line.render.cc \
 	apps.cc \
 	bin2c_rt.cc \
 	bookmarks.cc \

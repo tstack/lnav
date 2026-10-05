@@ -2543,6 +2543,18 @@ logfile::message_lines(iterator ll)
     return std::make_pair(starting_ll, ending_ll);
 }
 
+size_t
+logfile::message_line_count(const_iterator ll) const
+{
+    size_t retval = 1;
+    for (auto next = std::next(ll); next != this->end() && next->is_continued();
+         ++next)
+    {
+        retval += 1;
+    }
+    return retval;
+}
+
 Result<shared_buffer_ref, std::string>
 logfile::read_line(iterator ll, subline_options opts)
 {

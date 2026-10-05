@@ -141,6 +141,14 @@ The following routes are available:
   the client does not receive the request within two seconds, the request
   is dropped.
 
+* | :code:`GET /assets/css/theme.css`
+
+  Get the CSS rules for the classes used in the :code:`'html'` output of the
+  :code:`lnav_view_lines()` SQL function.  The rules are generated from the
+  current theme, so the HTML looks like the lines on the screen.  The pages
+  rendered from Markdown, including apps, already link to this stylesheet.
+  The same rules are returned by the :code:`lnav_theme_css()` SQL function.
+
 Apps
 ----
 

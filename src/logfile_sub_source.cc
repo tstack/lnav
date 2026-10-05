@@ -3478,6 +3478,11 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
+        if (strcmp(name, ":log_msg_line_count") == 0) {
+            sqlite3_bind_int64(
+                stmt, lpc + 1, (int64_t) lf->message_line_count(ll));
+            continue;
+        }
         for (const auto& lv : values.lvv_values) {
             if (lv.lv_meta.lvm_name != &name[1]) {
                 continue;

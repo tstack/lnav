@@ -37,6 +37,7 @@
 
 #include "CLI/App.hpp"
 #include "apps.cfg.hh"
+#include "attr_line.html.hh"
 #include "apps.hh"
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
@@ -700,6 +701,7 @@ render_markdown(const std::filesystem::path& src,
 <head>
 <title>{title}</title>
 <link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="/assets/css/theme.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
 <script src="/assets/js/lnav-client.js"></script>
 </head>
@@ -765,6 +767,15 @@ get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
         path_str.erase(0, 1);
     }
     log_info("static file request: %s", path_str.c_str());
+    if (path_str == "assets/css/theme.css") {
+        // The theme belongs to the main thread and this is called from the
+        // server's.
+        std::string css;
+        isc::to<main_looper&, services::main_t>().send_and_wait(
+            [&css](auto& mlooper) { css = lnav::html::theme_stylesheet(); });
+        std::copy(css.begin(), css.end(), std::back_inserter(dst));
+        return;
+    }
     auto matched_file = resolve_static_src_file(path_str);
     matched_file.match(
         [&dst](const bin_src_file* file) {

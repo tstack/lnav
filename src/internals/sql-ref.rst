@@ -1260,7 +1260,7 @@ echoln(*value*)
     * **value\*** --- The value to write to the current output file
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2805,6 +2805,115 @@ likely(*value*)
 ----
 
 
+.. _lnav_theme_css:
+
+lnav_theme_css()
+^^^^^^^^^^^^^^^^
+
+  Return the CSS rules for the classes used in the 'html' output of lnav_view_lines(), generated from the current theme.
+
+  **PRQL Name**: lnav.theme_css
+
+  **Examples**
+    To get the stylesheet for the current theme:
+
+    .. code-block::  custsqlite
+
+      ;SELECT lnav_theme_css()
+      .-lnav_styles_text { color: #657b83; background-color: #fdf6e3; }
+      .-lnav_styles_search { color: #fdf6e3; background-color: #657b83; }
+      .-lnav_styles_ok { color: #859900; font-weight: bold; }
+      .-lnav_styles_error { color: #dc322f; font-weight: bold; }
+      .-lnav_styles_warning { color: #b58900; font-weight: bold; }
+      .-lnav_styles_alt-text { background-color: #fefcf7; }
+      .-lnav_styles_context-line { background-color: #fefcf7; }
+      .-lnav_styles_hidden { color: #b58900; font-weight: bold; }
+      .-lnav_styles_adjusted-time { color: #d33682; }
+      .-lnav_styles_skewed-time { color: #b58900; }
+      .-lnav_styles_offset-time { color: #2aa198; }
+      .-lnav_styles_time-ago { font-weight: bold; }
+      .-lnav_styles_time-column { background-color: #ededb0; }
+      .-lnav_styles_file-offset { color: #93a1a1; }
+      .-lnav_styles_invalid-msg { color: #b58900; }
+      .-lnav_status-styles_text { color: #839496; background-color: #ededb0; }
+      .-lnav_status-styles_warn { color: #b58900; background-color: #ededb0; }
+      .-lnav_status-styles_alert { color: #dc322f; background-color: #ededb0; }
+      .-lnav_status-styles_active { color: #859900; background-color: #ededb0; }
+      .-lnav_status-styles_title { color: #ededb0; background-color: #2aa198; font-weight: bold; }
+      .-lnav_status-styles_subtitle { color: #ededb0; background-color: #586e75; font-weight: bold; }
+      .-lnav_status-styles_info { color: #839496; background-color: #ededb0; }
+      .-lnav_status-styles_title-hotkey { color: #002b36; background-color: #2aa198; text-decoration: underline; }
+      .-lnav_status-styles_disabled-title { color: #ededb0; background-color: #073642; font-weight: bold; }
+      .-lnav_status-styles_hotkey { color: #002b36; text-decoration: underline; }
+      .-lnav_status-styles_alert-title { color: #dc322f; background-color: #2aa198; font-weight: bold; }
+      .-lnav_status-styles_inactive { color: #586e75; background-color: #d9d9a0; }
+      .-lnav_status-styles_inactive-warn { color: #b58900; background-color: #d9d9a0; }
+      .-lnav_status-styles_inactive-alert { color: #dc322f; background-color: #ededb0; }
+      .-lnav_styles_scrollbar { color: #fdf6e3; background-color: #657b83; }
+      .-lnav_styles_popup { color: #657b83; background-color: #ededb0; }
+      .-lnav_styles_popup-border { color: #d33682; background-color: #ededb0; }
+      .-lnav_syntax-styles_quoted-code { color: #073642; background-color: #ededb0; }
+      .-lnav_syntax-styles_code-border { color: #586e75; background-color: #ededb0; }
+      .-lnav_syntax-styles_keyword { color: #b58900; }
+      .-lnav_syntax-styles_string { color: #2aa198; font-weight: bold; }
+      .-lnav_syntax-styles_comment { color: #93a1a1; }
+      .-lnav_syntax-styles_doc-directive { color: #268bd2; }
+      .-lnav_syntax-styles_variable { color: #268bd2; }
+      .-lnav_syntax-styles_symbol { color: #268bd2; }
+      .-lnav_syntax-styles_null { color: #93a1a1; }
+      .-lnav_syntax-styles_ascii-control { color: #859900; }
+      .-lnav_syntax-styles_non-ascii { color: #b58900; }
+      .-lnav_syntax-styles_number { font-weight: bold; }
+      .-lnav_syntax-styles_re-special { color: #2aa198; }
+      .-lnav_syntax-styles_re-repeat { color: #b58900; }
+      .-lnav_syntax-styles_file { color: #268bd2; }
+      .-lnav_syntax-styles_diff-delete { color: #dc322f; }
+      .-lnav_syntax-styles_diff-add { color: #859900; }
+      .-lnav_syntax-styles_diff-section { color: #d33682; }
+      .-lnav_syntax-styles_spectrogram-low { color: #002b36; background-color: #c7e600; font-weight: bold; }
+      .-lnav_syntax-styles_spectrogram-medium { color: #002b36; background-color: #f2b500; font-weight: bold; }
+      .-lnav_syntax-styles_spectrogram-high { color: #002b36; background-color: #fc3835; font-weight: bold; }
+      .-lnav_styles_h1 { color: #d33682; font-weight: bold; }
+      .-lnav_styles_h2 { color: #d33682; text-decoration: underline; }
+      .-lnav_styles_h3 { color: #d33682; }
+      .-lnav_styles_h4 { text-decoration: underline; }
+      .-lnav_styles_h5 { font-style: italic; }
+      .-lnav_styles_h6 { font-style: italic; }
+      .-lnav_styles_hr { color: #444444; }
+      .-lnav_styles_hyperlink { text-decoration: underline; }
+      .-lnav_styles_list-glyph { color: #b58900; }
+      .-lnav_styles_breadcrumb { color: #d33682; font-weight: bold; }
+      .-lnav_styles_table-border { color: #657b83; }
+      .-lnav_styles_table-header { font-weight: bold; }
+      .-lnav_styles_quote-border { color: #b58900; background-color: #ededb0; }
+      .-lnav_styles_quoted-text { background-color: #ededb0; }
+      .-lnav_styles_footnote-border { color: #268bd2; background-color: #ededb0; }
+      .-lnav_styles_footnote-text { color: #eeeeee; background-color: #ededb0; }
+      .-lnav_styles_snippet-border { color: #2aa198; }
+      .-lnav_styles_indent-guide { color: #ededb0; }
+      .-lnav_syntax-styles_inline-code { color: #073642; background-color: #ededb0; }
+      .-lnav_syntax-styles_function { color: #2aa198; }
+      .-lnav_syntax-styles_type { color: #6c71c4; }
+      .-lnav_syntax-styles_separators-references-accessors { color: #dc322f; }
+      .-lnav_status-styles_suggestion { color: #93a1a1; }
+      .-lnav_styles_selected-text { background-color: #2aa198; }
+      .-lnav_styles_fuzzy-match { color: #cb4b16; font-weight: bold; text-decoration: underline; }
+      .-lnav_styles_timeline-bar { background-color: #d33682; }
+      .-lnav_styles_cursor-line { color: #839496; background-color: #eee8d5; font-weight: bold; }
+      .-lnav_styles_disabled-cursor-line { color: #2aa198; background-color: #ddd6c1; }
+      .-lnav_styles_focused { color: #002b36; background-color: #586e75; }
+      .-lnav_styles_disabled-focused { color: #839496; background-color: #073642; }
+      .-lnav_log-level-styles_warning { color: #b58900; }
+      .-lnav_log-level-styles_error { color: #dc322f; }
+      .-lnav_log-level-styles_critical { color: #dc322f; }
+      .-lnav_log-level-styles_fatal { color: #dc322f; }
+
+  **See Also**
+    :ref:`lnav_view_lines`
+
+----
+
+
 .. _lnav_top_file:
 
 lnav_top_file()
@@ -2827,6 +2936,33 @@ lnav_version()
 
   **PRQL Name**: lnav.version
 
+
+----
+
+
+.. _lnav_view_lines:
+
+lnav_view_lines(*view_name*, *\[first_line\]*, *\[last_line\]*, *\[format\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued function that renders the lines of a view as they are shown on the screen.  The view's header lines, like the column names in the DB view, come first with a NULL line number.
+
+  **Parameters**
+    * **view_name\*** --- The name of the view.
+    * **first_line** --- The number of the first line to render, starting from zero.  Defaults to zero.
+    * **last_line** --- The number of the last line to render.  Defaults to the last line in the view.
+    * **format** --- The output format: 'ansi' for text with ANSI escape sequences that use the theme's colors, 'html' for HTML that uses the CSS classes from the theme (see lnav_theme_css()) and has the line's file, format, and any errors in tooltips, or 'text' for plain text.  Defaults to 'ansi'.
+
+  **Examples**
+    To get the lines displayed in the log view as HTML:
+
+    .. code-block::  custsqlite
+
+      ;SELECT content FROM lnav_views, lnav_view_lines(name, top, top + height - 1, 'html') WHERE name = 'log'
+      content 
+
+  **See Also**
+    :ref:`lnav_theme_css`
 
 ----
 
@@ -4814,7 +4950,7 @@ zeroblob(*N*)
     * **table** --- The name of the table to dump
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -4841,7 +4977,7 @@ zeroblob(*N*)
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -4857,7 +4993,7 @@ zeroblob(*N*)
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 

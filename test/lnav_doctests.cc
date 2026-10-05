@@ -32,6 +32,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <data_parser.hh>
 
+#include "attr_line.ansi.hh"
+#include "attr_line.html.hh"
+#include "attr_line.render.hh"
+#include "base/injector.bind.hh"
 #include "base/relative_time.hh"
 #include "base/from_trait.hh"
 #include "base/fts_fuzzy_match.hh"
@@ -44,6 +48,7 @@
 #include "doctest/doctest.h"
 #include "file_split.hh"
 #include "hasher.hh"
+#include "lnav.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "logfile.hh"
@@ -55,6 +60,7 @@
 #include "sqlitepp.hh"
 #include "terminfo/terminfo.h"
 #include "unique_path.hh"
+#include "view_curses.hh"
 #include "vtab_module.hh"
 
 #include <condition_variable>
@@ -854,6 +860,435 @@ TEST_CASE("md2attr_line table header wider than the column")
         "| x | y |\n");
 
     CHECK(str.find("https://example.com/") != std::string::npos);
+}
+
+// The configuration listeners that run when the theme is loaded need these.
+static auto_sqlite3 html_theme_db;
+static auto bound_lnav_exec_context
+    = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
+static auto bound_sqlite_db
+    = injector::bind<auto_sqlite3>::to_instance(&html_theme_db);
+
+static void
+init_html_theme()
+{
+    static auto done = false;
+
+    if (!done) {
+        // Only the builtin configuration, so the user's own theme cannot
+        // change the results.
+        REQUIRE(sqlite3_open(":memory:", html_theme_db.out()) == SQLITE_OK);
+        reset_config("*");
+        view_colors::init(nullptr);
+        done = true;
+    }
+}
+
+static std::string
+html_class_for(role_t role)
+{
+    return view_colors::singleton().class_for_role(role).to_string();
+}
+
+TEST_CASE("html::to_html plain text is escaped")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("a < b & \"c\"");
+
+    CHECK(lnav::html::to_html(al) == "a &lt; b &amp; &quot;c&quot;");
+}
+
+TEST_CASE("html::to_html role becomes a theme class")
+{
+    init_html_theme();
+
+    const auto err_class = html_class_for(role_t::VCR_ERROR);
+    REQUIRE(err_class == "-lnav_styles_error");
+
+    auto al = attr_line_t("x ").append(lnav::roles::error("bad")).append(" y");
+
+    CHECK(lnav::html::to_html(al)
+          == "x <span class=\"-lnav_styles_error\">bad</span> y");
+}
+
+TEST_CASE("html::to_html overlapping attributes are split into flat runs")
+{
+    init_html_theme();
+
+    const auto err_class = html_class_for(role_t::VCR_ERROR);
+    const auto ok_class = html_class_for(role_t::VCR_OK);
+    auto al = attr_line_t("abcdef");
+
+    al.al_attrs.emplace_back(line_range{0, 4},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+    al.al_attrs.emplace_back(line_range{2, 6}, VC_ROLE.value(role_t::VCR_OK));
+
+    auto classes = std::vector<std::string>{err_class, ok_class};
+    std::sort(classes.begin(), classes.end());
+
+    // Both classes set a color and the stylesheet cannot say which was
+    // applied last, so the winner, ok's Green, is given inline.
+    CHECK(lnav::html::to_html(al)
+          == fmt::format(FMT_STRING("<span class=\"{}\">ab</span>"
+                                    "<span class=\"{} {}\" "
+                                    "style=\"color: #008000\">cd</span>"
+                                    "<span class=\"{}\">ef</span>"),
+                         err_class,
+                         classes[0],
+                         classes[1],
+                         ok_class));
+}
+
+TEST_CASE("html::to_html inline styles and links")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("bold red link");
+
+    al.al_attrs.emplace_back(line_range{0, 4},
+                             VC_STYLE.value(text_attrs::with_bold()));
+    al.al_attrs.emplace_back(
+        line_range{5, 8},
+        VC_FOREGROUND.value(styling::color_unit::from_rgb(rgb_color{255, 0, 0})));
+    al.al_attrs.emplace_back(line_range{9, 13},
+                             VC_HYPERLINK.value("https://a.example/?x=1&y=2"));
+
+    CHECK(lnav::html::to_html(al)
+          == "<span style=\"font-weight: bold\">bold</span> "
+             "<span style=\"color: #ff0000\">red</span> "
+             "<a href=\"https://a.example/?x=1&amp;y=2\">link</a>");
+}
+
+TEST_CASE("html::to_html only links to safe schemes")
+{
+    init_html_theme();
+
+    auto link_html = [](const std::string& href) {
+        auto al = attr_line_t("x");
+
+        al.al_attrs.emplace_back(line_range{0, 1}, VC_HYPERLINK.value(href));
+        return lnav::html::to_html(al);
+    };
+
+    CHECK(link_html("https://a.example/") == "<a href=\"https://a.example/\">x</a>");
+    CHECK(link_html("HTTP://a.example/") == "<a href=\"HTTP://a.example/\">x</a>");
+    CHECK(link_html("file:///tmp/a.log#L1")
+          == "<a href=\"file:///tmp/a.log#L1\">x</a>");
+    CHECK(link_html("mailto:a@example.com")
+          == "<a href=\"mailto:a@example.com\">x</a>");
+    CHECK(link_html("#section") == "<a href=\"#section\">x</a>");
+    // A colon after a path separator does not end a scheme.
+    CHECK(link_html("dir/a:b") == "<a href=\"dir/a:b\">x</a>");
+
+    CHECK(link_html("javascript:alert(1)") == "x");
+    CHECK(link_html("JavaScript:alert(1)") == "x");
+    CHECK(link_html(" javascript:alert(1)") == "x");
+    CHECK(link_html("java\tscript:alert(1)") == "x");
+    CHECK(link_html("data:text/html,<b>x</b>") == "x");
+}
+
+TEST_CASE("html::to_html drops an unsafe link but keeps its style")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("x");
+
+    al.al_attrs.emplace_back(line_range{0, 1},
+                             VC_HYPERLINK.value("javascript:alert(1)"));
+    al.al_attrs.emplace_back(line_range{0, 1},
+                             VC_STYLE.value(text_attrs::with_bold()));
+
+    CHECK(lnav::html::to_html(al) == "<span style=\"font-weight: bold\">x</span>");
+}
+
+TEST_CASE("render::to_text shows each invalid byte as a replacement")
+{
+    init_html_theme();
+
+    // Two bad bytes, then a lead byte that is missing its continuation,
+    // which must not swallow the "x" after it.
+    auto al = attr_line_t("a\xff\xfe" "b\xe2" "x");
+
+    CHECK(lnav::render::to_text(al) == "a\ufffd\ufffdb\ufffdx");
+}
+
+TEST_CASE("html::to_html marks invalid bytes with the non-ASCII role")
+{
+    init_html_theme();
+
+    const auto non_ascii_class = html_class_for(role_t::VCR_NON_ASCII);
+    REQUIRE(!non_ascii_class.empty());
+
+    auto al = attr_line_t("a\xff" "b");
+
+    CHECK(lnav::html::to_html(al)
+          == fmt::format(
+              FMT_STRING("a<span class=\"{}\">\ufffd</span>b"),
+              non_ascii_class));
+}
+
+TEST_CASE("html::to_html invalid byte inside a role keeps the role")
+{
+    init_html_theme();
+
+    const auto err_class = html_class_for(role_t::VCR_ERROR);
+    const auto non_ascii_class = html_class_for(role_t::VCR_NON_ASCII);
+    auto al = attr_line_t("a\xff" "b");
+
+    al.al_attrs.emplace_back(line_range{0, 3},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+
+    auto classes = std::vector<std::string>{err_class, non_ascii_class};
+    std::sort(classes.begin(), classes.end());
+
+    auto html = lnav::html::to_html(al);
+
+    CHECK(html.find(fmt::format(FMT_STRING("<span class=\"{}\">a</span>"),
+                                err_class))
+          == 0);
+    CHECK(html.find(fmt::format(FMT_STRING("<span class=\"{} {}\""),
+                                classes[0],
+                                classes[1]))
+          != std::string::npos);
+    CHECK(html.find("\ufffd") != std::string::npos);
+    CHECK(html.find("\xff") == std::string::npos);
+}
+
+TEST_CASE("html::to_html whole-line notes go on a wrapper span")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("abc");
+
+    al.al_attrs.emplace_back(line_range{0, -1},
+                             SA_FORMAT.value(intern_string::lookup("x_log")));
+    al.al_attrs.emplace_back(line_range{0, 1},
+                             VC_STYLE.value(text_attrs::with_bold()));
+
+    CHECK(lnav::html::to_html(al)
+          == "<span title=\"Format: x_log\">"
+             "<span style=\"font-weight: bold\">a</span>bc</span>");
+}
+
+TEST_CASE("html::to_html partial notes go on the run's span")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("abcd");
+
+    al.al_attrs.emplace_back(line_range{2, -1}, SA_INVALID.value("no match"));
+
+    CHECK(lnav::html::to_html(al)
+          == "ab<span title=\"Invalid: no match\">cd</span>");
+}
+
+TEST_CASE("html::to_html notes are escaped and kept on one line")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("ab");
+
+    al.al_attrs.emplace_back(line_range{0, 1},
+                             SA_ERROR.value("first \"line\"\nsecond\tline"));
+
+    CHECK(lnav::html::to_html(al)
+          == "<span title=\"Error: first &quot;line&quot;&#10;"
+             "second&#9;line\">a</span>b");
+}
+
+TEST_CASE("html::to_html whole-line and partial notes together")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("abcd");
+
+    // Out of order, to check that the line's notes are sorted.
+    al.al_attrs.emplace_back(line_range{0, 4}, SA_ERROR.value("oops"));
+    al.al_attrs.emplace_back(line_range{0, -1},
+                             SA_FORMAT.value(intern_string::lookup("x_log")));
+    al.al_attrs.emplace_back(line_range{1, 2}, SA_INVALID.value("bad"));
+
+    CHECK(lnav::html::to_html(al)
+          == "<span title=\"Format: x_log&#10;Error: oops\">"
+             "a<span title=\"Invalid: bad\">b</span>cd</span>");
+}
+
+TEST_CASE("html::to_html does not wrap an empty line")
+{
+    init_html_theme();
+
+    auto al = attr_line_t();
+
+    al.al_attrs.emplace_back(line_range{0, -1},
+                             SA_FORMAT.value(intern_string::lookup("x_log")));
+
+    CHECK(lnav::html::to_html(al).empty());
+}
+
+TEST_CASE("ansi::to_ansi and render::to_text ignore notes")
+{
+    init_html_theme();
+
+    auto plain = attr_line_t("abcd");
+    auto noted = attr_line_t("abcd");
+
+    noted.al_attrs.emplace_back(
+        line_range{0, -1}, SA_FORMAT.value(intern_string::lookup("x_log")));
+    noted.al_attrs.emplace_back(line_range{1, 2}, SA_INVALID.value("bad"));
+
+    CHECK(lnav::ansi::to_ansi(noted) == lnav::ansi::to_ansi(plain));
+    CHECK(lnav::render::to_text(noted) == "abcd");
+}
+
+TEST_CASE("html::to_html does not split a character")
+{
+    init_html_theme();
+
+    // "é" is two bytes, and the role's range ends in the middle of it.
+    auto al = attr_line_t("aéb");
+
+    al.al_attrs.emplace_back(line_range{0, 2},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+
+    auto html = lnav::html::to_html(al);
+
+    CHECK(html.find("é") != std::string::npos);
+    CHECK(html.find("\xc3<") == std::string::npos);
+}
+
+TEST_CASE("html::to_html control characters become glyphs")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("a\x1b" "b\x01" "c\td");
+
+    CHECK(lnav::html::to_html(al) == "a⎋b␁c\td");
+}
+
+TEST_CASE("html::to_html output reads back through md2attr_line")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("x ").append(lnav::roles::error("bad"));
+    auto md = lnav::html::to_html(al) + "\n";
+
+    md2attr_line mdal;
+    auto parse_res = md4cpp::parse(string_fragment::from_str(md), mdal);
+    REQUIRE(parse_res.isOk());
+    auto parsed = parse_res.unwrap();
+
+    auto found = false;
+    for (const auto& sa : parsed.get_attrs()) {
+        if (sa.sa_type == &VC_ROLE
+            && sa.sa_value.get<role_t>() == role_t::VCR_ERROR)
+        {
+            CHECK(parsed.to_string_fragment(sa).to_string() == "bad");
+            found = true;
+        }
+    }
+    CHECK(found);
+}
+
+TEST_CASE("html::theme_stylesheet has rules for the theme classes")
+{
+    init_html_theme();
+
+    auto css = lnav::html::theme_stylesheet();
+
+    CHECK(css.find(".-lnav_styles_error {") != std::string::npos);
+    CHECK(css.find(".-lnav_log-level-styles_error {") != std::string::npos);
+    // Reverse video swaps the role's colors, filling in the text's.
+    CHECK(css.find(".-lnav_styles_search { color: #000000; "
+                   "background-color: #c0c0c0; }")
+          != std::string::npos);
+    // A named color past the eight ANSI colors.
+    CHECK(css.find(".-lnav_styles_selected-text { background-color: #00af87; }")
+          != std::string::npos);
+}
+
+TEST_CASE("html::theme_stylesheet uses the theme's RGB colors")
+{
+    init_html_theme();
+
+    auto prev_theme = lnav_config.lc_ui_theme;
+    lnav_config.lc_ui_theme = "monocai";
+    view_colors::init(nullptr);
+
+    auto css = lnav::html::theme_stylesheet();
+
+    lnav_config.lc_ui_theme = prev_theme;
+    view_colors::init(nullptr);
+
+    CHECK(css.find(".-lnav_styles_error { color: #f92772; font-weight: bold; }")
+          != std::string::npos);
+}
+
+// The default theme draws text in Silver on Black.
+#define ANSI_TEXT_COLORS "38;2;192;192;192;48;2;0;0;0"
+
+TEST_CASE("ansi::to_ansi plain text gets the theme's text colors")
+{
+    init_html_theme();
+
+    CHECK(lnav::ansi::to_ansi(attr_line_t("abc"))
+          == "\x1b[" ANSI_TEXT_COLORS "mabc\x1b[0m");
+}
+
+TEST_CASE("ansi::to_ansi role uses the theme's RGB colors")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("x ").append(lnav::roles::error("bad"));
+
+    // error is bold Maroon in the default theme.
+    CHECK(lnav::ansi::to_ansi(al)
+          == "\x1b[" ANSI_TEXT_COLORS "mx \x1b[0m"
+             "\x1b[1;38;2;128;0;0;48;2;0;0;0mbad\x1b[0m");
+}
+
+TEST_CASE("ansi::to_ansi a later attribute wins")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("abcdef");
+
+    al.al_attrs.emplace_back(line_range{0, 4},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+    al.al_attrs.emplace_back(line_range{2, 6}, VC_ROLE.value(role_t::VCR_OK));
+
+    // ok is bold Green in the default theme.
+    CHECK(lnav::ansi::to_ansi(al)
+          == "\x1b[1;38;2;128;0;0;48;2;0;0;0mab\x1b[0m"
+             "\x1b[1;38;2;0;128;0;48;2;0;0;0mcdef\x1b[0m");
+}
+
+TEST_CASE("ansi::to_ansi styles and links")
+{
+    init_html_theme();
+
+    auto al = attr_line_t("u link");
+
+    al.al_attrs.emplace_back(line_range{0, 1},
+                             VC_STYLE.value(text_attrs::with_underline()));
+    al.al_attrs.emplace_back(line_range{2, 6},
+                             VC_HYPERLINK.value("https://a.example/"));
+
+    CHECK(lnav::ansi::to_ansi(al)
+          == "\x1b[4;" ANSI_TEXT_COLORS "mu\x1b[0m"
+             "\x1b[" ANSI_TEXT_COLORS "m "
+             "\x1b]8;;https://a.example/\x1b\\link\x1b]8;;\x1b\\\x1b[0m");
+}
+
+TEST_CASE("render::to_text shows glyphs and control characters")
+{
+    init_html_theme();
+
+    auto al = attr_line_t(" a\x1b");
+
+    al.al_attrs.emplace_back(line_range{0, 1}, VC_GRAPHIC.value("x"));
+
+    CHECK(lnav::render::to_text(al) == "│a⎋");
 }
 
 TEST_CASE("file_split::piece_path")

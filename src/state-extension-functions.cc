@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 
+#include "attr_line.html.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "lnav.hh"
@@ -124,6 +125,12 @@ sql_lnav_version()
     return PACKAGE_VERSION;
 }
 
+static std::string
+sql_lnav_theme_css()
+{
+    return lnav::html::theme_stylesheet();
+}
+
 static int64_t
 sql_error(const char* str,
           std::optional<string_fragment> reason,
@@ -198,6 +205,19 @@ state_extension_functions(struct FuncDef** basic_funcs,
                 help_text("lnav_version", "Return the current version of lnav")
                     .sql_function()
                     .with_prql_path({"lnav", "version"})),
+
+        sqlite_func_adapter<decltype(&sql_lnav_theme_css), sql_lnav_theme_css>::
+            builder(help_text("lnav_theme_css",
+                              "Return the CSS rules for the classes used in "
+                              "the 'html' output of lnav_view_lines(), "
+                              "generated from the current theme.")
+                        .sql_function()
+                        .with_prql_path({"lnav", "theme_css"})
+                        .with_tags({"text"})
+                        .with_example({
+                            "To get the stylesheet for the current theme",
+                            "SELECT lnav_theme_css()",
+                        })),
 
         sqlite_func_adapter<decltype(&sql_error), sql_error>::builder(
             help_text("raise_error",

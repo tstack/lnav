@@ -1395,7 +1395,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=caching1#353d75912f6bd18a81cf6efb3766f28c2d6f8635"
+source = "git+https://github.com/tstack/log2src.git?branch=caching1#c62d2067490acf76e841f1715d725c27fc576c92"
 dependencies = [
  "aho-corasick",
  "bincode",
@@ -1419,6 +1419,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-cpp",
  "tree-sitter-java",
+ "tree-sitter-kotlin-ng",
  "tree-sitter-python",
  "tree-sitter-rust-orchard",
 ]
@@ -1657,9 +1658,9 @@ dependencies = [
 
 [[package]]
 name = "powerfmt"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
+checksum = "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958"
 
 [[package]]
 name = "ppv-lite86"
@@ -2420,6 +2421,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-kotlin-ng"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e800ebbda938acfbf224f4d2c34947a31994b1295ee6e819b65226c7b51b4450"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
 name = "tree-sitter-language"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2462,9 +2473,9 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
 name = "unicase"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbc4bc3a9f746d862c45cb89d705aa10f187bb96c76001afab07a0d35ce60142"
+checksum = "357cc3acc6a036009fd6c973ed009037c732d60d0b4f6c673e9041497482a28f"
 
 [[package]]
 name = "unicode-ident"

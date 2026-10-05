@@ -54,6 +54,15 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT count(*) FROM access_log WHERE cs_uri_stem = '/vmw/cgi/tramp'" \
     ${test_dir}/logfile_access_log.0
 
+# A scan that stops early (a LIMIT) and started away from the indexed lines
+# must not leave the index claiming the lines in between: the count should be
+# all 14 POSTs, not just the ones the LIMITed queries saw.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM access_log WHERE cs_method = 'POST' ORDER BY log_line DESC LIMIT 1" \
+    -c ";SELECT log_line FROM access_log WHERE cs_method = 'POST' ORDER BY log_line ASC LIMIT 1" \
+    -c ";SELECT count(*) AS indexed FROM access_log WHERE cs_method = 'POST'" \
+    ${test_dir}/logfile_shop_access_log.0
+
 rm -f sql_index.err
 run_cap_test ${lnav_test} -d sql_index.err -n \
     -c ":goto -1" \

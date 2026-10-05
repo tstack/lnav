@@ -706,6 +706,16 @@ view_colors::view_colors()
           styling::color_unit::from_palette({5}),
           styling::color_unit::from_palette({6}),
           styling::color_unit::from_palette({7}),
+      },
+      vc_ansi_to_theme_rgb{
+          styling::color_unit::from_palette({0}),
+          styling::color_unit::from_palette({1}),
+          styling::color_unit::from_palette({2}),
+          styling::color_unit::from_palette({3}),
+          styling::color_unit::from_palette({4}),
+          styling::color_unit::from_palette({5}),
+          styling::color_unit::from_palette({6}),
+          styling::color_unit::from_palette({7}),
       }
 {
     auto text_default = text_attrs{};
@@ -864,7 +874,11 @@ void
 view_colors::init(notcurses* nc)
 {
     vc_active_palette = ansi_colors();
-    if (nc != nullptr) {
+    if (nc == nullptr) {
+        // Without a terminal, colors are only rendered as RGB, so the full
+        // palette is available.
+        vc_active_palette = xterm_colors();
+    } else {
         const auto* caps = notcurses_capabilities(nc);
         if (caps->rgb) {
             log_info("terminal supports RGB colors");
@@ -1010,6 +1024,8 @@ view_colors::to_attrs(const lnav_theme& lt,
             return styling::color_unit::EMPTY;
         });
 
+    auto theme_attrs = text_attrs{0, fg, bg};
+
     fg = this->match_color(fg);
     bg = this->match_color(bg);
 
@@ -1032,8 +1048,54 @@ view_colors::to_attrs(const lnav_theme& lt,
         retval1 |= text_attrs::style::struck;
         retval2 |= text_attrs::style::struck;
     }
+    theme_attrs.ta_attrs = retval1.ta_attrs;
 
-    return {retval1, retval2, role_class};
+    return {retval1, retval2, role_class, theme_attrs};
+}
+
+text_attrs
+view_colors::with_theme_colors(const role_attrs& ra)
+{
+    auto retval = ra.ra_normal;
+
+    if (!ra.ra_theme.ta_fg_color.empty()) {
+        retval.ta_fg_color = ra.ra_theme.ta_fg_color;
+    }
+    if (!ra.ra_theme.ta_bg_color.empty()) {
+        retval.ta_bg_color = ra.ra_theme.ta_bg_color;
+    }
+
+    return retval;
+}
+
+text_attrs
+view_colors::theme_attrs_for_role(role_t role) const
+{
+    if (role <= role_t::VCR_NONE || role >= role_t::VCR__MAX) {
+        return {};
+    }
+
+    return with_theme_colors(
+        this->vc_role_attrs[lnav::enums::to_underlying(role)]);
+}
+
+text_attrs
+view_colors::theme_attrs_for_level(log_level_t level) const
+{
+    if (level < 0 || level >= LEVEL__MAX) {
+        return {};
+    }
+
+    return with_theme_colors(this->vc_level_attrs[level]);
+}
+
+void
+view_colors::set_derived_color(role_attrs& ra,
+                               styling::color_unit text_attrs::* field,
+                               const styling::color_unit& cu)
+{
+    ra.ra_theme.*field = cu;
+    ra.ra_normal.*field = this->match_color(cu);
 }
 
 void
@@ -1153,6 +1215,11 @@ view_colors::init_roles(const lnav_theme& lt,
 
         if (rgb_fg.empty()) {
             fg = ansi_fg;
+            this->vc_ansi_to_theme_rgb[ansi_fg]
+                = styling::color_unit::from_palette(palette_color(ansi_fg));
+        } else {
+            this->vc_ansi_to_theme_rgb[ansi_fg]
+                = styling::color_unit::from_rgb(rgb_fg);
         }
 
         this->vc_ansi_to_theme[ansi_fg] = palette_color{fg};
@@ -1228,6 +1295,10 @@ view_colors::init_roles(const lnav_theme& lt,
 
         time_to_text.ra_normal.ta_fg_color = time_attrs.ta_bg_color;
         time_to_text.ra_normal.ta_bg_color = text_attrs.ta_bg_color;
+        time_to_text.ra_theme.ta_fg_color
+            = this->theme_attrs_for_role(role_t::VCR_TIME_COLUMN).ta_bg_color;
+        time_to_text.ra_theme.ta_bg_color
+            = this->theme_attrs_for_role(role_t::VCR_TEXT).ta_bg_color;
 
         auto fg_as_lab_opt = to_lab_color(time_attrs.ta_bg_color);
         auto bg_as_lab_opt = to_lab_color(text_attrs.ta_bg_color);
@@ -1238,9 +1309,13 @@ view_colors::init_roles(const lnav_theme& lt,
             fg_as_lab.lc_l -= diff / 4.0;
             bg_as_lab.lc_l += diff / 4.0;
 
-            time_to_text.ra_normal.ta_fg_color = this->match_color(
+            this->set_derived_color(
+                time_to_text,
+                &text_attrs::ta_fg_color,
                 styling::color_unit::from_rgb(fg_as_lab.to_rgb()));
-            time_to_text.ra_normal.ta_bg_color = this->match_color(
+            this->set_derived_color(
+                time_to_text,
+                &text_attrs::ta_bg_color,
                 styling::color_unit::from_rgb(bg_as_lab.to_rgb()));
         }
 
@@ -1282,10 +1357,10 @@ view_colors::init_roles(const lnav_theme& lt,
                 } else {
                     adjusted_cursor.lc_l -= 15;
                 }
-                auto new_cursor_bg = this->match_color(
+                this->set_derived_color(
+                    this->get_role_attrs(role_t::VCR_CURSOR_LINE),
+                    &text_attrs::ta_bg_color,
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
-                this->get_role_attrs(role_t::VCR_CURSOR_LINE)
-                    .ra_normal.ta_bg_color = new_cursor_bg;
             }
             if (lt.lt_style_popup.pp_value.sc_background_color.pp_value.empty())
             {
@@ -1295,10 +1370,10 @@ view_colors::init_roles(const lnav_theme& lt,
                 } else {
                     adjusted_cursor.lc_l -= 30;
                 }
-                auto new_cursor_bg = this->match_color(
+                this->set_derived_color(
+                    this->get_role_attrs(role_t::VCR_POPUP),
+                    &text_attrs::ta_bg_color,
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
-                this->get_role_attrs(role_t::VCR_POPUP).ra_normal.ta_bg_color
-                    = new_cursor_bg;
             }
             if (lt.lt_style_inline_code.pp_value.sc_background_color.pp_value
                     .empty())
@@ -1309,10 +1384,10 @@ view_colors::init_roles(const lnav_theme& lt,
                 } else {
                     adjusted_cursor.lc_l -= 25;
                 }
-                auto new_cursor_bg = this->match_color(
+                this->set_derived_color(
+                    this->get_role_attrs(role_t::VCR_INLINE_CODE),
+                    &text_attrs::ta_bg_color,
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
-                this->get_role_attrs(role_t::VCR_INLINE_CODE)
-                    .ra_normal.ta_bg_color = new_cursor_bg;
             }
             if (lt.lt_style_quoted_code.pp_value.sc_background_color.pp_value
                     .empty())
@@ -1323,12 +1398,16 @@ view_colors::init_roles(const lnav_theme& lt,
                 } else {
                     adjusted_cursor.lc_l -= 25;
                 }
-                auto new_cursor_bg = this->match_color(
-                    styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
-                this->get_role_attrs(role_t::VCR_QUOTED_CODE)
-                    .ra_normal.ta_bg_color = new_cursor_bg;
-                this->get_role_attrs(role_t::VCR_CODE_BORDER)
-                    .ra_normal.ta_bg_color = new_cursor_bg;
+                auto new_cursor_bg
+                    = styling::color_unit::from_rgb(adjusted_cursor.to_rgb());
+                this->set_derived_color(
+                    this->get_role_attrs(role_t::VCR_QUOTED_CODE),
+                    &text_attrs::ta_bg_color,
+                    new_cursor_bg);
+                this->set_derived_color(
+                    this->get_role_attrs(role_t::VCR_CODE_BORDER),
+                    &text_attrs::ta_bg_color,
+                    new_cursor_bg);
             }
         }
     }
@@ -1605,16 +1684,22 @@ view_colors::init_roles(const lnav_theme& lt,
         if (t0_color && t3_color && t6_color) {
             auto low_mid = t0_color->avg(t3_color.value());
             auto mid_high = t3_color->avg(t6_color.value());
-            t1_attrs.ra_normal.ta_bg_color = this->match_color(
+            this->set_derived_color(
+                t1_attrs,
+                &text_attrs::ta_bg_color,
                 styling::color_unit::from_rgb(t0_color->avg(low_mid).to_rgb()));
-            t2_attrs.ra_normal.ta_bg_color = this->match_color(
+            this->set_derived_color(
+                t2_attrs,
+                &text_attrs::ta_bg_color,
                 styling::color_unit::from_rgb(t3_color->avg(low_mid).to_rgb()));
-            t4_attrs.ra_normal.ta_bg_color
-                = this->match_color(styling::color_unit::from_rgb(
-                    t3_color->avg(mid_high).to_rgb()));
-            t5_attrs.ra_normal.ta_bg_color
-                = this->match_color(styling::color_unit::from_rgb(
-                    t6_color->avg(mid_high).to_rgb()));
+            this->set_derived_color(t4_attrs,
+                                    &text_attrs::ta_bg_color,
+                                    styling::color_unit::from_rgb(
+                                        t3_color->avg(mid_high).to_rgb()));
+            this->set_derived_color(t5_attrs,
+                                    &text_attrs::ta_bg_color,
+                                    styling::color_unit::from_rgb(
+                                        t6_color->avg(mid_high).to_rgb()));
         }
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD0) = t0_attrs;
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD1) = t1_attrs;
@@ -1623,6 +1708,18 @@ view_colors::init_roles(const lnav_theme& lt,
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD4) = t4_attrs;
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD5) = t5_attrs;
         this->get_role_attrs(role_t::VCR_SPECTRO_THRESHOLD6) = t6_attrs;
+        // The classes belong to the threshold roles these were copied from,
+        // and most of these have colors of their own.
+        for (auto role : {role_t::VCR_SPECTRO_THRESHOLD0,
+                          role_t::VCR_SPECTRO_THRESHOLD1,
+                          role_t::VCR_SPECTRO_THRESHOLD2,
+                          role_t::VCR_SPECTRO_THRESHOLD3,
+                          role_t::VCR_SPECTRO_THRESHOLD4,
+                          role_t::VCR_SPECTRO_THRESHOLD5,
+                          role_t::VCR_SPECTRO_THRESHOLD6})
+        {
+            this->get_role_attrs(role).ra_class_name.clear();
+        }
     }
 
     for (auto level = static_cast<log_level_t>(LEVEL_UNKNOWN + 1);
@@ -1710,6 +1807,21 @@ view_colors::attrs_for_ident(const char* str, size_t len) const
     }
 
     return retval;
+}
+
+styling::color_unit
+view_colors::ansi_to_theme_rgb(styling::color_unit ansi_fg) const
+{
+    auto* palp = std::get_if<palette_color>(&ansi_fg.cu_value);
+    if (palp != nullptr) {
+        auto pal = static_cast<ansi_color>(*palp);
+
+        if (pal >= ansi_color::black && pal <= ansi_color::white) {
+            return this->vc_ansi_to_theme_rgb[lnav::enums::to_underlying(pal)];
+        }
+    }
+
+    return ansi_fg;
 }
 
 styling::color_unit

@@ -470,6 +470,13 @@ public:
 
     std::pair<iterator, iterator> message_lines(iterator ll);
 
+    /**
+     * @param ll The first line of a message.
+     * @return The number of lines in the message, counting the first line
+     *   and the continuation lines after it.
+     */
+    size_t message_line_count(const_iterator ll) const;
+
     struct message_length_result {
         file_ssize_t mlr_length;
         size_t mlr_line_count;

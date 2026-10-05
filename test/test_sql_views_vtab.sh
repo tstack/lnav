@@ -377,3 +377,47 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT enabled, name FROM lnav_view_searches" \
     -c ";SELECT log_line, log_named_searches FROM access_log" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_view_lines('log', 0, 1, 'text')" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 1, NULL, 'html')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_multiline.0
+
+# The link is unsupported in the log view, so it is shown in reverse with the
+# warning role, inside the error level.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, NULL, 'html')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_hyperlink.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, NULL, 'ansi')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_hyperlink.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT content FROM lnav_view_lines('log', 0, 2, 'ansi')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_multiline.0
+
+# Only the view name is required.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, format FROM lnav_view_lines('log')" \
+    ${test_dir}/logfile_multiline.0
+
+# The arguments can also come from a WHERE clause, with some left out.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines WHERE view_name = 'log' AND format = 'text'" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_view_lines('nope')" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_view_lines('log', 0, 1, 'xml')" \
+    ${test_dir}/logfile_multiline.0

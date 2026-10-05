@@ -34,11 +34,15 @@
 
 #include <unistd.h>
 
+#include "attr_line.ansi.hh"
+#include "attr_line.html.hh"
+#include "attr_line.render.hh"
 #include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "lnav.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -1610,6 +1614,336 @@ CREATE TABLE lnav_db.lnav_view_files (
     }
 };
 
+
+enum class view_lines_col : int {
+    line,
+    content,
+    view_name,
+    first_line,
+    last_line,
+    format,
+};
+
+enum class view_lines_format {
+    ansi,
+    html,
+    text,
+};
+
+struct lnav_view_lines {
+    static constexpr const char* NAME = "lnav_view_lines";
+    static constexpr const char* CREATE_STMT = R"(
+-- The lnav_view_lines() table-valued function renders the lines of a view.
+CREATE TABLE lnav_db.lnav_view_lines (
+    line INTEGER,           -- The number of the line in the view, or NULL for a header line.
+    content TEXT,           -- The rendered line.
+    view_name TEXT HIDDEN,
+    first_line INTEGER HIDDEN,
+    last_line INTEGER HIDDEN,
+    format TEXT HIDDEN
+);
+)";
+
+    /** The number of lines to render at a time. */
+    static constexpr auto BATCH_SIZE = 256_vl;
+
+    struct cursor {
+        sqlite3_vtab_cursor base;
+        textview_curses* c_tc{nullptr};
+        std::string c_view_name;
+        std::optional<int64_t> c_first_arg;
+        std::optional<int64_t> c_last_arg;
+        view_lines_format c_format{view_lines_format::ansi};
+        std::vector<attr_line_t> c_header;
+        size_t c_header_index{0};
+        vis_line_t c_line{0};
+        vis_line_t c_end{0};
+        mutable std::vector<attr_line_t> c_batch;
+        mutable vis_line_t c_batch_start{-1};
+        sqlite3_int64 c_rowid{0};
+
+        explicit cursor(sqlite3_vtab* vt) : base({vt}) {}
+
+        int next()
+        {
+            if (this->c_header_index < this->c_header.size()) {
+                this->c_header_index += 1;
+            } else if (this->c_line < this->c_end) {
+                ++this->c_line;
+            }
+            this->c_rowid += 1;
+
+            return SQLITE_OK;
+        }
+
+        int reset() { return SQLITE_OK; }
+
+        int eof() const
+        {
+            return this->c_header_index >= this->c_header.size()
+                && this->c_line >= this->c_end;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_rowid;
+
+            return SQLITE_OK;
+        }
+
+        bool in_header() const
+        {
+            return this->c_header_index < this->c_header.size();
+        }
+
+        const attr_line_t& current() const
+        {
+            if (this->in_header()) {
+                return this->c_header[this->c_header_index];
+            }
+
+            if (this->c_batch_start < 0_vl || this->c_line < this->c_batch_start
+                || this->c_line
+                    >= this->c_batch_start
+                        + vis_line_t(static_cast<int>(this->c_batch.size())))
+            {
+                auto count = std::min(BATCH_SIZE, this->c_end - this->c_line);
+
+                this->c_batch.clear();
+                this->c_batch.resize(count);
+                this->c_batch_start = this->c_line;
+                this->c_tc->listview_value_for_rows(
+                    *this->c_tc, this->c_line, this->c_batch);
+            }
+
+            return this->c_batch[this->c_line - this->c_batch_start];
+        }
+    };
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        switch (view_lines_col(col)) {
+            case view_lines_col::line:
+                if (vc.in_header()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, (int64_t) vc.c_line);
+                }
+                break;
+            case view_lines_col::content: {
+                const auto& al = vc.current();
+
+                switch (vc.c_format) {
+                    case view_lines_format::ansi:
+                        to_sqlite(ctx, lnav::ansi::to_ansi(al));
+                        break;
+                    case view_lines_format::html:
+                        to_sqlite(ctx, lnav::html::to_html(al));
+                        break;
+                    case view_lines_format::text:
+                        to_sqlite(ctx, lnav::render::to_text(al));
+                        break;
+                }
+                break;
+            }
+            case view_lines_col::view_name:
+                to_sqlite(ctx, vc.c_view_name);
+                break;
+            case view_lines_col::first_line:
+                to_sqlite(ctx, vc.c_first_arg);
+                break;
+            case view_lines_col::last_line:
+                to_sqlite(ctx, vc.c_last_arg);
+                break;
+            case view_lines_col::format:
+                switch (vc.c_format) {
+                    case view_lines_format::ansi:
+                        to_sqlite(ctx, "ansi");
+                        break;
+                    case view_lines_format::html:
+                        to_sqlite(ctx, "html");
+                        break;
+                    case view_lines_format::text:
+                        to_sqlite(ctx, "text");
+                        break;
+                }
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+};
+
+/**
+ * The arguments can come from a WHERE clause as well as from the function
+ * call, so any of them may be missing.  The columns that were given are
+ * recorded in idxNum so the filter can tell which value is which.
+ */
+int
+vlBestIndex(sqlite3_vtab* tab, sqlite3_index_info* p_info)
+{
+    auto argv_index = 0;
+    auto has_view_name = false;
+
+    p_info->idxNum = 0;
+    for (int lpc = 0; lpc < lnav::enums::to_underlying(view_lines_col::format)
+                                + 1;
+         lpc++)
+    {
+        for (int cons_index = 0; cons_index < p_info->nConstraint; cons_index++)
+        {
+            const auto& cons = p_info->aConstraint[cons_index];
+
+            if (cons.iColumn != lpc || !cons.usable
+                || cons.op != SQLITE_INDEX_CONSTRAINT_EQ
+                || lpc < lnav::enums::to_underlying(view_lines_col::view_name))
+            {
+                continue;
+            }
+            if (p_info->idxNum & (1 << lpc)) {
+                continue;
+            }
+
+            p_info->idxNum |= (1 << lpc);
+            p_info->aConstraintUsage[cons_index].argvIndex = ++argv_index;
+            p_info->aConstraintUsage[cons_index].omit = 1;
+            if (view_lines_col(lpc) == view_lines_col::view_name) {
+                has_view_name = true;
+            }
+        }
+    }
+
+    if (!has_view_name) {
+        p_info->estimatedCost = 2147483647;
+        p_info->estimatedRows = 2147483647;
+    } else {
+        p_info->estimatedCost = 1.0;
+        p_info->estimatedRows = 100;
+    }
+
+    return SQLITE_OK;
+}
+
+int
+vlFilter(sqlite3_vtab_cursor* p_vtab_cursor,
+         int idxNum,
+         const char* idxStr,
+         int argc,
+         sqlite3_value** argv)
+{
+    auto* p_cur = (lnav_view_lines::cursor*) p_vtab_cursor;
+    auto set_error = [p_vtab_cursor](const std::string& msg) {
+        sqlite3_free(p_vtab_cursor->pVtab->zErrMsg);
+        p_vtab_cursor->pVtab->zErrMsg = sqlite3_mprintf("%s", msg.c_str());
+        return SQLITE_ERROR;
+    };
+
+    p_cur->c_tc = nullptr;
+    p_cur->c_header.clear();
+    p_cur->c_header_index = 0;
+    p_cur->c_batch.clear();
+    p_cur->c_batch_start = -1_vl;
+    p_cur->c_line = 0_vl;
+    p_cur->c_end = 0_vl;
+    p_cur->c_rowid = 0;
+    p_cur->c_first_arg = std::nullopt;
+    p_cur->c_last_arg = std::nullopt;
+    p_cur->c_format = view_lines_format::ansi;
+
+    std::optional<lnav_view_t> view_index;
+    auto argi = 0;
+    for (int col = lnav::enums::to_underlying(view_lines_col::view_name);
+         col <= lnav::enums::to_underlying(view_lines_col::format) && argi < argc;
+         col++)
+    {
+        if (!(idxNum & (1 << col))) {
+            continue;
+        }
+
+        auto* val = argv[argi];
+        switch (view_lines_col(col)) {
+            case view_lines_col::view_name: {
+                const auto* name = (const char*) sqlite3_value_text(val);
+                if (name == nullptr) {
+                    return set_error("lnav_view_lines() expects a view name");
+                }
+                p_cur->c_view_name = name;
+                view_index = view_from_string(name);
+                if (!view_index) {
+                    return set_error(fmt::format(
+                        FMT_STRING("lnav_view_lines() was given an invalid "
+                                   "view name: {}"),
+                        name));
+                }
+                break;
+            }
+            case view_lines_col::first_line:
+                if (sqlite3_value_type(val) != SQLITE_NULL) {
+                    p_cur->c_first_arg = sqlite3_value_int64(val);
+                }
+                break;
+            case view_lines_col::last_line:
+                if (sqlite3_value_type(val) != SQLITE_NULL) {
+                    p_cur->c_last_arg = sqlite3_value_int64(val);
+                }
+                break;
+            case view_lines_col::format: {
+                const auto* fmt_name = (const char*) sqlite3_value_text(val);
+                auto fmt_sf = string_fragment::from_c_str(
+                    fmt_name == nullptr ? "" : fmt_name);
+
+                if (fmt_sf == "ansi") {
+                    p_cur->c_format = view_lines_format::ansi;
+                } else if (fmt_sf == "html") {
+                    p_cur->c_format = view_lines_format::html;
+                } else if (fmt_sf == "text") {
+                    p_cur->c_format = view_lines_format::text;
+                } else {
+                    return set_error(fmt::format(
+                        FMT_STRING("lnav_view_lines() was given an invalid "
+                                   "format: {} (expecting 'ansi', 'html', "
+                                   "or 'text')"),
+                        fmt_sf));
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        argi += 1;
+    }
+
+    if (!view_index) {
+        return set_error("lnav_view_lines() expects a view name");
+    }
+
+    auto* tc = &lnav_data.ld_views[view_index.value()];
+    p_cur->c_tc = tc;
+
+    auto height = tc->get_inner_height();
+    auto* los = tc->get_overlay_source();
+    auto y = 0_vl;
+    attr_line_t ov_al;
+    while (los != nullptr
+           && los->list_static_overlay(
+               *tc, list_overlay_source::media_t::file, y, height, ov_al))
+    {
+        p_cur->c_header.emplace_back(std::move(ov_al));
+        ov_al.clear();
+        ++y;
+    }
+
+    auto first = std::max(int64_t{0}, p_cur->c_first_arg.value_or(0));
+    auto last = std::min(p_cur->c_last_arg.value_or((int64_t) height - 1),
+                         (int64_t) height - 1);
+    if (first <= last) {
+        p_cur->c_line = vis_line_t(first);
+        p_cur->c_end = vis_line_t(last + 1);
+    }
+
+    return SQLITE_OK;
+}
+
 auto a = injector::bind_multiple<vtab_module_base>()
              .add<vtab_module<lnav_views>>()
              .add<vtab_module<lnav_view_stack>>()
@@ -1629,6 +1963,55 @@ CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
     FROM lnav_db.lnav_view_filters
     LEFT NATURAL JOIN lnav_db.lnav_view_filter_stats
 )";
+
+    static vtab_module<tvt_no_update<lnav_view_lines>> VIEW_LINES_MODULE;
+    static auto view_lines_help
+        = help_text("lnav_view_lines",
+                    "A table-valued function that renders the lines of a view "
+                    "as they are shown on the screen.  The view's header "
+                    "lines, like the column names in the DB view, come first "
+                    "with a NULL line number.")
+              .sql_table_valued_function()
+              .with_parameter({"view_name", "The name of the view."})
+              .with_parameter(
+                  help_text{"first_line",
+                            "The number of the first line to render, "
+                            "starting from zero.  Defaults to zero."}
+                      .optional())
+              .with_parameter(
+                  help_text{"last_line",
+                            "The number of the last line to render.  Defaults "
+                            "to the last line in the view."}
+                      .optional())
+              .with_parameter(
+                  help_text{"format",
+                            "The output format: 'ansi' for text with ANSI "
+                            "escape sequences that use the theme's colors, "
+                            "'html' for HTML that uses the CSS classes from "
+                            "the theme (see lnav_theme_css()) and has the "
+                            "line's file, format, and any errors in "
+                            "tooltips, or 'text' for plain text.  Defaults "
+                            "to 'ansi'."}
+                      .optional())
+              .with_result({"line",
+                            "The number of the line in the view, or NULL for "
+                            "a header line."})
+              .with_result({"content", "The rendered line."})
+              .with_tags({"text"})
+              .with_example({
+                  "To get the lines displayed in the log view as HTML",
+                  "SELECT content FROM lnav_views, "
+                  "lnav_view_lines(name, top, top + height - 1, 'html') "
+                  "WHERE name = 'log'",
+              });
+
+    VIEW_LINES_MODULE.vm_module.xBestIndex = vlBestIndex;
+    VIEW_LINES_MODULE.vm_module.xFilter = vlFilter;
+
+    auto rc = VIEW_LINES_MODULE.create(db, lnav_view_lines::NAME);
+    ensure(rc == SQLITE_OK);
+    sqlite_function_help.emplace(lnav_view_lines::NAME, &view_lines_help);
+    view_lines_help.index_tags();
 
     auto_mem<char> errmsg(sqlite3_free);
     log_info("creating filter view: %s", CREATE_FILTER_VIEW);

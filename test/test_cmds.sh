@@ -129,12 +129,25 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":write-view-to --anonymize -" \
     "${test_dir}/logfile_pretty.0"
 
+run_cap_test ${lnav_test} -n \
+    -c ":write-html-to -" \
+    "${test_dir}/logfile_multiline.0"
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_level FROM all_logs" \
+    -c ":write-html-to --view=db -" \
+    "${test_dir}/logfile_multiline.0"
+
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr timeslice(:log_time_msecs, 'bad') is not null" \
     "${test_dir}/logfile_multiline.0"
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-expr :log_text LIKE '%How are%'" \
+    "${test_dir}/logfile_multiline.0"
+
+run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-expr :log_msg_line_count > 1" \
     "${test_dir}/logfile_multiline.0"
 
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
@@ -423,6 +436,17 @@ run_cap_test ${lnav_test} -n \
     -c ":rebuild" \
     -c ":create-named-search bye Goodbye" \
     -c ";SELECT log_line, log_named_searches FROM generic_log" \
+    logfile_append.0
+
+cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
+
+# A continuation line that arrives later adds to the count of the message
+# it continues.
+run_cap_test ${lnav_test} -n \
+    -c ":shexec echo '  and see you later' >> logfile_append.0" \
+    -c ":rebuild" \
+    -c ";SELECT log_line, log_msg_line_count FROM generic_log" \
     logfile_append.0
 
 run_cap_test ${lnav_test} -n \

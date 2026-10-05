@@ -220,6 +220,51 @@ public:
             : this->vc_role_attrs[lnav::enums::to_underlying(role)].ra_normal;
     }
 
+    /**
+     * @param role The role to look up.
+     * @return The CSS class name for the role, which is derived from the
+     *   theme's property path (e.g. "-lnav_styles_error").  Empty if the
+     *   theme does not define the role.
+     */
+    intern_string_t class_for_role(role_t role) const
+    {
+        if (role <= role_t::VCR_NONE || role >= role_t::VCR__MAX) {
+            return {};
+        }
+
+        return this->vc_role_attrs[lnav::enums::to_underlying(role)]
+            .ra_class_name;
+    }
+
+    /**
+     * @param level The log level to look up.
+     * @return The CSS class name for the level, which is derived from the
+     *   theme's property path (e.g. "-lnav_log-level-styles_error").  Empty
+     *   if the theme does not define the level.
+     */
+    intern_string_t class_for_level(log_level_t level) const
+    {
+        if (level < 0 || level >= LEVEL__MAX) {
+            return {};
+        }
+
+        return this->vc_level_attrs[level].ra_class_name;
+    }
+
+    /**
+     * @param role The role to look up.
+     * @return The attributes for the role, but with the colors as the theme
+     *   gave them instead of as they were matched to the terminal's palette.
+     */
+    text_attrs theme_attrs_for_role(role_t role) const;
+
+    /**
+     * @param level The log level to look up.
+     * @return The attributes for the level, but with the colors as the theme
+     *   gave them instead of as they were matched to the terminal's palette.
+     */
+    text_attrs theme_attrs_for_level(log_level_t level) const;
+
     styling::color_unit color_for_ident(const char* str, size_t len) const;
 
     styling::color_unit color_for_ident(const string_fragment& sf) const
@@ -246,6 +291,12 @@ public:
 
     styling::color_unit ansi_to_theme_color(styling::color_unit ansi_fg) const;
 
+    /**
+     * Like ansi_to_theme_color(), but with the color the theme gave instead
+     * of the one it was matched to in the terminal's palette.
+     */
+    styling::color_unit ansi_to_theme_rgb(styling::color_unit ansi_fg) const;
+
     std::unordered_map<std::string, string_attr_pair> vc_class_to_role;
 
     block_elem_t wchar_for_icon(ui_icon_t ic) const;
@@ -268,7 +319,23 @@ private:
         text_attrs ra_normal;
         text_attrs ra_reverse;
         intern_string_t ra_class_name;
+        /**
+         * The colors as the theme gave them, before they were matched to the
+         * terminal's palette.  A color is empty if it is the same as the one
+         * in ra_normal.
+         */
+        text_attrs ra_theme;
     };
+
+    static text_attrs with_theme_colors(const role_attrs& ra);
+
+    /**
+     * Set a color that was derived from the theme's colors, keeping the
+     * derived value as the theme color and the matched one for display.
+     */
+    void set_derived_color(role_attrs& ra,
+                           styling::color_unit text_attrs::* field,
+                           const styling::color_unit& cu);
 
     role_attrs to_attrs(const lnav_theme& lt,
                         const positioned_property<style_config>& sc,
@@ -285,6 +352,7 @@ private:
     /** Map of role IDs to attribute values. */
     role_attrs vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
     styling::color_unit vc_ansi_to_theme[8];
+    styling::color_unit vc_ansi_to_theme_rgb[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
     block_elem_t vc_icons[ui_icon_count];
 };

@@ -431,6 +431,9 @@ add_library(
         all_logs_vtab.cc
         apps.cc
         archive_manager.cc
+        attr_line.html.cc
+        attr_line.ansi.cc
+        attr_line.render.cc
         document.sections.cc
         bin2c.hh
         bin2c_rt.cc
@@ -578,6 +581,9 @@ add_library(
         apps.cfg.hh
         apps.hh
         archive_manager.hh
+        attr_line.html.hh
+        attr_line.ansi.hh
+        attr_line.render.hh
         archive_manager.cfg.hh
         document.sections.hh
         big_array.hh

@@ -200,6 +200,8 @@ included in a :code:`SELECT *`:
   :log_line_link: The permalink for the log message.
   :log_named_searches: A JSON list of the names of the
     :ref:`named searches<named_searches>` that matched this message.
+  :log_msg_line_count: The number of lines in the log message, including
+    any continuation lines.
 
 Extensions
 ----------

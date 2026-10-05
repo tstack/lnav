@@ -45,6 +45,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
             let errs = if let Ok(tracker) = TRACKER.lock() {
                 if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
                     ext_prog.status = Status::working;
+                    ext_prog.version += 1;
                 }
                 let mut matcher = LOG_MATCHER.lock().unwrap();
                 let mut errs: Vec<LogError> = vec![];
@@ -73,6 +74,9 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
                 );
 
                 ext_prog.status = Status::idle;
+                // Pollers skip an idle task whose version they've seen, so the
+                // finished scan and its messages need a version of their own.
+                ext_prog.version += 1;
             }
             notify_completion();
         }
@@ -535,6 +539,7 @@ pub fn add_src_root(path: String) -> UniquePtr<ExtError> {
 fn discover_srcs() {
     if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
         ext_prog.status = Status::working;
+        ext_prog.version += 1;
     }
     let _ = REFRESH_WORKER.send(());
 }

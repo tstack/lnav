@@ -29,6 +29,7 @@
 
 #include <glob.h>
 
+#include "attr_line.html.hh"
 #include "base/attr_line.builder.hh"
 #include "base/cell_container.hh"
 #include "base/fs_util.hh"
@@ -434,7 +435,9 @@ com_save_to(exec_context& ec,
                 "views");
         }
     } else if (args[0] == "write-raw-to" && tc == &lnav_data.ld_views[LNV_DB]) {
-    } else if (args[0] != "write-screen-to" && args[0] != "write-view-to") {
+    } else if (args[0] != "write-screen-to" && args[0] != "write-view-to"
+               && args[0] != "write-html-to")
+    {
         all_user_marks = combined_user_marks(tc->get_bookmarks());
         if (all_user_marks.empty()) {
             return ec.make_error(
@@ -1057,6 +1060,55 @@ com_save_to(exec_context& ec,
                 line_count += 1;
             }
         }
+    } else if (args[0] == "write-html-to") {
+        auto text_class = view_colors::singleton()
+                              .class_for_role(role_t::VCR_TEXT)
+                              .to_string();
+        std::vector<attr_line_t> rows(1);
+
+        // A fragment to put in a page that links the theme's stylesheet, so
+        // only the <pre> needed to keep the whitespace is added.
+        fmt::print(outfile, FMT_STRING("<pre class=\"{}\">"), text_class);
+
+        auto* los = tc->get_overlay_source();
+        auto y = 0_vl;
+        attr_line_t ov_al;
+        while (los != nullptr
+               && los->list_static_overlay(*tc,
+                                           list_overlay_source::media_t::file,
+                                           y,
+                                           tc->get_inner_height(),
+                                           ov_al))
+        {
+            fmt::print(
+                outfile, FMT_STRING("{}\n"), lnav::html::to_html(ov_al));
+            ov_al.clear();
+            ++y;
+        }
+        for (auto row = 0_vl; row < tc->get_inner_height(); ++row) {
+            if (ec.ec_dry_run && line_count >= 10) {
+                break;
+            }
+
+            tc->listview_value_for_rows(*tc, row, rows);
+            if (anonymize) {
+                rows[0].al_attrs.clear();
+                rows[0].al_string = ta.next(rows[0].al_string);
+            }
+            fmt::print(outfile,
+                       FMT_STRING("{}\n"),
+                       lnav::html::to_html(rows[0]));
+
+            if (line_count > 0 && line_count % 1000 == 0) {
+                if (write_progress(line_count, tc->get_inner_height())
+                    == lnav::progress_result_t::interrupt)
+                {
+                    break;
+                }
+            }
+            line_count += 1;
+        }
+        fmt::print(outfile, FMT_STRING("</pre>\n"));
     } else if (args[0] == "write-view-to") {
         bool wrapped = tc->get_word_wrap();
         auto tss = tc->get_sub_source();
@@ -2454,6 +2506,27 @@ static lnav::commands::command_t IO_COMMANDS[] = {
             .with_tags({"io", "scripting", "sql"})
             .with_example(
                 {"To write the top view to /tmp/table.txt", "/tmp/table.txt"}),
+    },
+    {
+        "write-html-to",
+        com_save_to,
+
+        help_text(":write-html-to")
+            .with_summary("Write the text in the top view to the given file "
+                          "as an HTML fragment that is styled with the "
+                          "classes from lnav_theme_css()")
+            .with_parameter(
+                help_text("--view", "The view to use as the source of data")
+                    .optional()
+                    .with_enum_values({"log"_frag, "text"_frag, "db"_frag}))
+            .with_parameter(
+                help_text("--anonymize", "Anonymize the lines").flag())
+            .with_parameter(
+                help_text("path", "The path to the file to write")
+                    .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
+            .with_tags({"io", "scripting"})
+            .with_example({"To write the top view to /tmp/view.html",
+                           "/tmp/view.html"}),
     },
     {
         "write-screen-to",
