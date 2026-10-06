@@ -675,6 +675,9 @@ DISTCLEANFILES = \
 	*.xz \
 	*_debug.log \
 	capture.btsnoop \
+	ext_access_*.status \
+	ext_access_page.html \
+	ext_access_theme.css \
 	exported-session.0.lnav \
 	exported-sh-session.0.lnav \
 	exported-stdin-session.0.lnav \
@@ -709,6 +712,7 @@ DISTCLEANFILES = \
 	tmp \
 	unreadable.log \
 	UTF-8-test.md \
+	value_stats_append.0 \
 	empty \
 	scripts-empty
 
@@ -738,6 +742,8 @@ distclean-local:
 	$(RM_V)rm -rf tui-home
 	$(RM_V)rm -rf ../installer-test-home
 	$(RM_V)rm -rf demux-work
+	$(RM_V)rm -rf instances-config
+	$(RM_V)rm -rf rglob-tree
 	$(RM_V)rm -rf split-*
 	$(RM_V)rm -f “quoted.0
 
