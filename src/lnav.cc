@@ -302,6 +302,15 @@ force_linking(services::main_t anno)
 
 lnav_data_t lnav_data;
 
+void
+show_user_message(attr_line_t al)
+{
+    lnav_data.ld_user_message_source.replace_with(al.rtrim());
+    lnav_data.ld_user_message_view.reload_data();
+    lnav_data.ld_user_message_expiration
+        = std::chrono::steady_clock::now() + 20s;
+}
+
 static auto nc_debug = false;
 
 bool
@@ -1105,6 +1114,11 @@ struct refresh_status_bars {
         if (this->rsb_top_source->update_time(current_time)) {
             lnav_data.ld_status[LNS_TOP].set_needs_update();
         }
+        if (this->rsb_top_source->update_ext_clients(
+                lnav::ext::active_client_count()))
+        {
+            lnav_data.ld_status[LNS_TOP].set_needs_update();
+        }
         if (lnav_data.ld_db_status_source.update_from_db_source()) {
             lnav_data.ld_status[LNS_DB].set_needs_update();
         }
@@ -1160,10 +1174,7 @@ check_for_enough_colors(const screen_curses& sc)
                                  .append("TERM"_symbol)
                                  .append(" to ")
                                  .append_quoted("xterm-256color"));
-    lnav_data.ld_user_message_source.replace_with(um.to_attr_line());
-    lnav_data.ld_user_message_view.reload_data();
-    lnav_data.ld_user_message_expiration
-        = std::chrono::steady_clock::now() + 20s;
+    show_user_message(um.to_attr_line());
 }
 
 static void
@@ -1523,10 +1534,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
               if (al.get_string().find('\n') == std::string::npos) {
                   lnav::prompt::get().p_editor.set_inactive_value(al);
               } else {
-                  lnav_data.ld_user_message_source.replace_with(al);
-                  lnav_data.ld_user_message_view.reload_data();
-                  lnav_data.ld_user_message_expiration
-                      = std::chrono::steady_clock::now() + 20s;
+                  show_user_message(al);
                   lnav::prompt::get().p_editor.clear_inactive_value();
               }
           });
@@ -2022,6 +2030,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         gettimeofday(&current_time, nullptr);
 
         if (top_source->update_time(current_time)) {
+            lnav_data.ld_status[LNS_TOP].set_needs_update();
+        }
+        if (top_source->update_ext_clients(lnav::ext::active_client_count())) {
             lnav_data.ld_status[LNS_TOP].set_needs_update();
         }
 

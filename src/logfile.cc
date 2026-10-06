@@ -2147,8 +2147,56 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_longest_line
                 = std::max(this->lf_longest_line,
                            li.li_utf8_scan_result.usr_column_width_guess);
+            const auto prev_line_partial = this->lf_last_line_info.li_partial;
             this->lf_last_line_info = li;
+
+            // A line's counts in the stats are only kept once the line is
+            // complete, since the value stats cannot have a line taken back
+            // out.  The line that is rolled back at the start of each pass
+            // was already counted if it was complete then, so its rescan is
+            // not counted again.  A line that was partial then was not
+            // counted, so its rescan is.  Lines that are not counted go into
+            // a scratch copy of the value stats that is thrown away, and the
+            // other counts are put back the way they were.  If the scan
+            // picks a different format, everything was reset and what it
+            // counted is kept.
+            const auto is_rescan = this->lf_index.size() < begin_size;
+            const auto* uncounted_format
+                = (li.li_partial || (is_rescan && !prev_line_partial))
+                ? this->lf_format.get()
+                : nullptr;
+            std::vector<logline_value_stats> kept_value_stats;
+            std::optional<log_level_stats> kept_level_stats;
+            size_t kept_invalid_total = 0;
+            size_t kept_invalid_count = 0;
+            std::optional<log_opid_state> kept_opids;
+            std::optional<log_thread_id_state> kept_tids;
+            if (uncounted_format != nullptr) {
+                kept_value_stats.resize(sbc.sbc_value_stats.size());
+                kept_value_stats.swap(sbc.sbc_value_stats);
+                kept_level_stats = this->lf_level_stats;
+                kept_invalid_total = this->lf_invalid_lines.ili_total;
+                kept_invalid_count = this->lf_invalid_lines.ili_lines.size();
+                kept_opids = sbc.sbc_opids;
+                kept_tids = sbc.sbc_tids;
+            }
             sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
+            if (uncounted_format != nullptr) {
+                if (this->lf_format.get() == uncounted_format) {
+                    sbc.sbc_value_stats.swap(kept_value_stats);
+                    sbc.sbc_opids = std::move(kept_opids.value());
+                    sbc.sbc_tids = std::move(kept_tids.value());
+                    this->lf_level_stats = std::move(kept_level_stats.value());
+                    this->lf_invalid_lines.ili_total = kept_invalid_total;
+                    this->lf_invalid_lines.ili_lines.resize(
+                        std::min(this->lf_invalid_lines.ili_lines.size(),
+                                 kept_invalid_count));
+                } else {
+                    log_info("%s: format changed while scanning line %zu",
+                             this->lf_filename_as_string.c_str(),
+                             this->lf_index.size());
+                }
+            }
             if (sort_needed && this->lf_index.empty()) {
                 if (limit < 1000) {
                     limit = 1000;
@@ -2399,7 +2447,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_stat = st;
         this->lf_time_rollovers = std::move(sbc.sbc_time_rollovers);
 
-        this->lf_value_stats.resize(sbc.sbc_value_stats.size());
+        if (this->lf_value_stats.size() < sbc.sbc_value_stats.size()) {
+            this->lf_value_stats.resize(sbc.sbc_value_stats.size());
+        }
         for (size_t lpc = 0; lpc < sbc.sbc_value_stats.size(); lpc++) {
             this->lf_value_stats[lpc].merge(sbc.sbc_value_stats[lpc]);
         }

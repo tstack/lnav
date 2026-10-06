@@ -74,6 +74,19 @@ bool send_to_editor_client(const std::filesystem::path& path,
                            uint32_t col,
                            std::chrono::milliseconds deadline);
 
+/**
+ * @return The number of clients, like browser pages and editor plugins,
+ *   that are polling the external-access server.  A client is counted while
+ *   it has a poll in progress and for a while after its last one, since it
+ *   comes right back unless it is gone.
+ */
+size_t active_client_count();
+
+/**
+ * Forget the clients that were polling, for when the server is stopped.
+ */
+void forget_clients();
+
 }  // namespace lnav::ext
 
 #endif

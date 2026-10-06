@@ -101,7 +101,7 @@ const intern_string_t log_format::LOG_EXTRA_FIELDS_STR
     = intern_string::lookup("log_extra_fields");
 
 static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
-    | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
+    | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET;
 
 log_level_stats&
 log_level_stats::operator|=(const log_level_stats& rhs)
@@ -253,10 +253,9 @@ log_thread_id_state::flush_no_tid(ArenaAlloc::Alloc<char>& alloc)
         return;
     }
 
-    auto tid_iter
-        = this->insert_tid(alloc,
-                           hashed_frag::from(string_fragment{}),
-                           this->ltis_no_tid->titr_range.tr_begin);
+    auto tid_iter = this->insert_tid(alloc,
+                                     hashed_frag::from(string_fragment{}),
+                                     this->ltis_no_tid->titr_range.tr_begin);
     tid_iter->second |= this->ltis_no_tid.value();
     this->ltis_no_tid.reset();
 }
@@ -951,8 +950,7 @@ external_log_format::update_op_description(
                 break;
             }
             for (const auto& desc_def : *desc_defs->od_descriptors) {
-                auto desc_cap_iter
-                    = desc_caps.find(desc_def.od_field.pp_value);
+                auto desc_cap_iter = desc_caps.find(desc_def.od_field.pp_value);
 
                 if (desc_cap_iter == desc_caps.end()) {
                     continue;
@@ -980,8 +978,7 @@ external_log_format::update_op_description(
         {
             const auto& desc_def = desc_def_v[desc_def_index];
             auto found_desc = desc_v.value_for(desc_def_index);
-            auto desc_cap_iter
-                = desc_caps.find(desc_def.od_field.pp_value);
+            auto desc_cap_iter = desc_caps.find(desc_def.od_field.pp_value);
             if (desc_cap_iter == desc_caps.end()) {
                 continue;
             }
@@ -1082,8 +1079,7 @@ log_format::log_scanf(scan_batch_context& sbc,
                     ts->data(), ts->length(), nullptr, tm_out, *tv_out);
                 if (retval != nullptr) {
                     auto old_flags
-                        = this->timestamp_flags_for(sbc)
-                        & DATE_TIME_SET_FLAGS;
+                        = this->timestamp_flags_for(sbc) & DATE_TIME_SET_FLAGS;
                     auto new_flags = tm_out->et_flags & DATE_TIME_SET_FLAGS;
 
                     // It is unlikely a valid timestamp would lose much
@@ -1174,7 +1170,8 @@ time_rollover::apply(std::chrono::microseconds t) const
     if (new_time == -1) {
         return t;
     }
-    new_time -= (this->tr_off_day * 24 * 60 * 60) + (this->tr_off_hour * 60 * 60);
+    new_time
+        -= (this->tr_off_day * 24 * 60 * 60) + (this->tr_off_hour * 60 * 60);
 
     return std::chrono::seconds{new_time} + t % std::chrono::seconds{1};
 }
@@ -1229,20 +1226,20 @@ log_format::check_for_new_year(std::vector<logline>& dst,
  * XXX This needs some cleanup.
  */
 struct json_log_userdata {
-    json_log_userdata(shared_buffer_ref& sbr,
-                      scan_batch_context* sbc,
-                      date_time_scanner& dts,
-                      logline_value_vector& lvv,
-                      log_format::desc_cap_map& desc_caps,
-                      ArenaAlloc::Alloc<char>& desc_alloc,
-                      std::vector<std::pair<string_fragment,
-                                            external_log_format::value_def*>>&
-                          read_order,
-                      ArenaAlloc::Alloc<char>& field_alloc)
-        : jlu_shared_buffer(sbr), jlu_batch_context(sbc),
-          jlu_time_scanner(dts), jlu_line_values(lvv),
-          jlu_desc_captures(desc_caps), jlu_desc_allocator(desc_alloc),
-          jlu_read_order(read_order), jlu_field_allocator(field_alloc)
+    json_log_userdata(
+        shared_buffer_ref& sbr,
+        scan_batch_context* sbc,
+        date_time_scanner& dts,
+        logline_value_vector& lvv,
+        log_format::desc_cap_map& desc_caps,
+        ArenaAlloc::Alloc<char>& desc_alloc,
+        std::vector<std::pair<string_fragment,
+                              external_log_format::value_def*>>& read_order,
+        ArenaAlloc::Alloc<char>& field_alloc)
+        : jlu_shared_buffer(sbr), jlu_batch_context(sbc), jlu_time_scanner(dts),
+          jlu_line_values(lvv), jlu_desc_captures(desc_caps),
+          jlu_desc_allocator(desc_alloc), jlu_read_order(read_order),
+          jlu_field_allocator(field_alloc)
     {
     }
 
@@ -1337,7 +1334,8 @@ struct json_log_userdata {
      * probed against the same root -- so it gets a throwaway.
      */
     logline_value_vector& jlu_line_values;
-    /** @see jlu_line_values -- same split, for the opid-description captures. */
+    /** @see jlu_line_values -- same split, for the opid-description captures.
+     */
     log_format::desc_cap_map& jlu_desc_captures;
     ArenaAlloc::Alloc<char>& jlu_desc_allocator;
     /** @see jlu_line_values -- same split, for the field read order. */
@@ -1418,8 +1416,7 @@ read_json_number(yajlpp_parse_context* ypc,
         jlu->jlu_end_time = to_us(tv);
         jlu->jlu_time_scanner.to_localtime(tv.tv_sec, jlu->jlu_exttm);
         tv.tv_sec = tm2sec(&jlu->jlu_exttm.et_tm);
-        jlu->jlu_exttm.et_gmtoff
-            = jlu->jlu_time_scanner.dts_local_offset_cache;
+        jlu->jlu_exttm.et_gmtoff = jlu->jlu_time_scanner.dts_local_offset_cache;
         jlu->jlu_exttm.et_flags
             |= ETF_MACHINE_ORIENTED | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET;
         if (divisor == 1000) {
@@ -1993,8 +1990,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_tid_frag) {
             line_values.lvv_thread_id_value
-                = jlu.jlu_tid_frag->hf_frag.to_owned(
-                    line_values.lvv_allocator);
+                = jlu.jlu_tid_frag->hf_frag.to_owned(line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
@@ -2019,8 +2015,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         {
             const auto& od = this->lf_opid_description_def->begin()->second;
             for (const auto& desc : *od.od_descriptors) {
-                auto desc_iter
-                    = desc_captures.find(desc.od_field.pp_value);
+                auto desc_iter = desc_captures.find(desc.od_field.pp_value);
                 if (desc_iter == desc_captures.end()) {
                     continue;
                 }
@@ -2054,8 +2049,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_opid_frag) {
             ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
-            line_values.lvv_opid_value
-                = jlu.jlu_opid_frag->hf_frag.to_string();
+            line_values.lvv_opid_value = jlu.jlu_opid_frag->hf_frag.to_string();
             line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
@@ -2326,12 +2320,12 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
                                       scan_batch_context& sbc)
 {
     const char* last = sbc.sbc_time_scanner.scan(ts_sf.data(),
-                                                ts_sf.length(),
-                                                this->get_timestamp_formats(),
-                                                &log_time_tm,
-                                                log_tv);
-    if (last == nullptr) {
-        auto ls = sbc.sbc_time_scanner.unlock();
+                                                 ts_sf.length(),
+                                                 this->get_timestamp_formats(),
+                                                 &log_time_tm,
+                                                 log_tv);
+    if (last == nullptr || last != ts_sf.end()) {
+        const auto ls = sbc.sbc_time_scanner.unlock();
         last = sbc.sbc_time_scanner.scan(ts_sf.data(),
                                          ts_sf.length(),
                                          this->get_timestamp_formats(),
@@ -2341,8 +2335,7 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
             sbc.sbc_time_scanner.relock(ls);
             return timestamp_outcome::no_parse;
         }
-        auto old_flags
-            = this->timestamp_flags_for(sbc) & DATE_TIME_SET_FLAGS;
+        auto old_flags = this->timestamp_flags_for(sbc) & DATE_TIME_SET_FLAGS;
         auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
         if (new_flags != old_flags) {
             // The line is rejected, so the lines after it should still be
@@ -2351,10 +2344,14 @@ external_log_format::ingest_timestamp(string_fragment ts_sf,
             return timestamp_outcome::relock_mismatch;
         }
         if (lf != nullptr) {
-            log_debug("%s:%zu: date-time re-locked to %d",
-                      lf->get_unique_path().c_str(),
-                      dst.size(),
-                      sbc.sbc_time_scanner.dts_fmt_lock);
+            log_debug(
+                "%s:%zu: date-time lock changed from %d(0x%x) to %d(0x%x)",
+                lf->get_unique_path().c_str(),
+                dst.size(),
+                ls.ls_fmt_index,
+                this->timestamp_flags_for(sbc),
+                sbc.sbc_time_scanner.dts_fmt_lock,
+                log_time_tm.et_flags);
         }
     }
 
@@ -2537,10 +2534,10 @@ external_log_format::scan_tabular(logfile& lf,
             if (opid_iter_opt) {
                 // What log_opid_definition reads back, and what names the op
                 // in the all_opids view.
-                this->update_op_description(*this->lf_opid_description_def_vec,
-                                            opid_iter_opt.value()
-                                                ->second.otr_description,
-                                            this->lf_desc_captures);
+                this->update_op_description(
+                    *this->lf_opid_description_def_vec,
+                    opid_iter_opt.value()->second.otr_description,
+                    this->lf_desc_captures);
             }
         } else if (sf.startswith("#")) {
             ll.set_ignore(true);
@@ -2659,8 +2656,7 @@ external_log_format::scan_tabular(logfile& lf,
                             value_iter->first, value_iter->second);
                     } else {
                         misses += 1;
-                        auto owned_name
-                            = canon_hdr.to_owned(sbc.sbc_allocator);
+                        auto owned_name = canon_hdr.to_owned(sbc.sbc_allocator);
                         st.ess_value_def_read_order.emplace_back(owned_name,
                                                                  nullptr);
                     }
@@ -2729,8 +2725,7 @@ external_log_format::scan(logfile& lf,
     }
 
     if (this->lf_file_type == file_type_t::JSON) {
-        if (!this->lf_specialized
-            && !sbr.to_string_fragment().startswith("{"))
+        if (!this->lf_specialized && !sbr.to_string_fragment().startswith("{"))
         {
             return scan_no_match{"line is not a JSON object"};
         }
@@ -3336,9 +3331,8 @@ read_json_field(yajlpp_parse_context* ypc,
                 jlu->jlu_time_scanner.relock(ls);
             }
             if (last != nullptr) {
-                auto old_flags
-                    = jlu->jlu_format->timestamp_flags_for(
-                          *jlu->jlu_batch_context)
+                auto old_flags = jlu->jlu_format->timestamp_flags_for(
+                                     *jlu->jlu_batch_context)
                     & DATE_TIME_SET_FLAGS;
                 auto new_flags = jlu->jlu_exttm.et_flags & DATE_TIME_SET_FLAGS;
 
@@ -3542,8 +3536,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     } else if (vd != nullptr
                && vd->vd_meta.lvm_kind == value_kind_t::VALUE_TIMESTAMP)
     {
-        auto dts
-            = jlu->jlu_format->build_time_scanner(jlu->jlu_time_scanner);
+        auto dts = jlu->jlu_format->build_time_scanner(jlu->jlu_time_scanner);
         exttm tm;
         timeval tv;
 
@@ -3813,8 +3806,7 @@ external_log_format::rewrite_tabular_subline(const log_format_file_state& lffs,
             this->jlf_line_values.lvv_values.back().lv_origin.clear();
         }
     }
-    this->synthesize_tabular_opid(
-        this->jlf_line_values, opid_desc, line_frag);
+    this->synthesize_tabular_opid(this->jlf_line_values, opid_desc, line_frag);
 
     this->jlf_used_values.assign(this->jlf_line_values.lvv_values.size(),
                                  false);
@@ -4198,12 +4190,11 @@ external_log_format::render_line_format(const log_format_file_state& lffs,
                             sub_offset += jfe.jfe_prefix_line_feeds;
                         }
                         lr.lr_start = this->jlf_attr_line.al_string.size();
-                        auto dur_str
-                            = humanize::time::duration::from(
-                                  this->jlf_line_values.lvv_duration_value
-                                      .value())
-                                  .with_compact(false)
-                                  .to_string();
+                        auto dur_str = humanize::time::duration::from(
+                                           this->jlf_line_values
+                                               .lvv_duration_value.value())
+                                           .with_compact(false)
+                                           .to_string();
                         this->json_append(lffs, jfe, nullptr, dur_str);
                         lr.lr_end = this->jlf_attr_line.al_string.size();
                         this->jlf_attr_line.al_attrs.emplace_back(
@@ -4297,12 +4288,11 @@ external_log_format::emit_detail_block(const std::vector<bool>& used_values,
             this->json_append_to_cache(
                 utf_scan_res.is_valid()
                     ? utf_scan_res.usr_valid_frag
-                    : frag.sub_range(
-                          0,
-                          utf_scan_res.usr_remaining
-                              ? utf_scan_res.usr_remaining->sf_begin
-                                  - frag.sf_begin - 1
-                              : frag.length()));
+                    : frag.sub_range(0,
+                                     utf_scan_res.usr_remaining
+                                         ? utf_scan_res.usr_remaining->sf_begin
+                                             - frag.sf_begin - 1
+                                         : frag.length()));
             lr.lr_end = this->jlf_attr_line.al_string.size();
             if (lv.lv_meta.lvm_name == this->elf_body_field) {
                 this->jlf_attr_line.al_attrs.emplace_back(lr, SA_BODY.value());
@@ -5251,15 +5241,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
     for (auto& od_pair : *this->lf_opid_description_def) {
         od_pair.second.od_name = od_pair.first;
-        od_pair.second.od_index = static_cast<uint16_t>(
-            this->lf_opid_description_def_vec->size());
+        od_pair.second.od_index
+            = static_cast<uint16_t>(this->lf_opid_description_def_vec->size());
         this->lf_opid_description_def_vec->emplace_back(&od_pair.second);
     }
 
     for (auto& od_pair : *this->lf_subid_description_def) {
         od_pair.second.od_name = od_pair.first;
-        od_pair.second.od_index = static_cast<uint16_t>(
-            this->lf_subid_description_def_vec->size());
+        od_pair.second.od_index
+            = static_cast<uint16_t>(this->lf_subid_description_def_vec->size());
         this->lf_subid_description_def_vec->emplace_back(&od_pair.second);
     }
 
@@ -5297,9 +5287,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                                 std::vector<int>{});
             }
             pat.p_dup_captures.erase(
-                std::remove_if(pat.p_dup_captures.begin(),
-                               pat.p_dup_captures.end(),
-                               [](const auto& dup) { return dup.second.empty(); }),
+                std::remove_if(
+                    pat.p_dup_captures.begin(),
+                    pat.p_dup_captures.end(),
+                    [](const auto& dup) { return dup.second.empty(); }),
                 pat.p_dup_captures.end());
         }
 
@@ -5871,9 +5862,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
-    if (this->lf_file_type == file_type_t::TEXT
-        && this->elf_samples.empty())
-    {
+    if (this->lf_file_type == file_type_t::TEXT && this->elf_samples.empty()) {
         errors.emplace_back(
             lnav::console::user_message::error(
                 attr_line_t()
@@ -6081,10 +6070,10 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
         jfe.jfe_default_value_line_feeds = std::count(
             jfe.jfe_default_value.begin(), jfe.jfe_default_value.end(), '\n');
-        jfe.jfe_prefix_line_feeds = std::count(
-            jfe.jfe_prefix.begin(), jfe.jfe_prefix.end(), '\n');
-        jfe.jfe_suffix_line_feeds = std::count(
-            jfe.jfe_suffix.begin(), jfe.jfe_suffix.end(), '\n');
+        jfe.jfe_prefix_line_feeds
+            = std::count(jfe.jfe_prefix.begin(), jfe.jfe_prefix.end(), '\n');
+        jfe.jfe_suffix_line_feeds
+            = std::count(jfe.jfe_suffix.begin(), jfe.jfe_suffix.end(), '\n');
         this->jlf_line_format_init_count += jfe.jfe_default_value_line_feeds
             + jfe.jfe_prefix_line_feeds + jfe.jfe_suffix_line_feeds;
     }
@@ -6329,8 +6318,7 @@ external_log_format::adopt_scan_state(format_scan_state& fss)
     // file's indexing pass; re-own them here so they live as long as this
     // format does.
     this->elf_value_def_read_order.clear();
-    this->elf_value_def_read_order.reserve(
-        st.ess_value_def_read_order.size());
+    this->elf_value_def_read_order.reserve(st.ess_value_def_read_order.size());
     for (const auto& [name, vd] : st.ess_value_def_read_order) {
         this->elf_value_def_read_order.emplace_back(
             vd == nullptr ? name.to_owned(this->elf_allocator) : name, vd);
@@ -6662,9 +6650,7 @@ log_format::tm_for_display(logfile::iterator ll,
     }
     gmtime_r(&adjusted_time.tv_sec, &retval.et_tm);
     retval.et_flags = this->lf_timestamp_flags;
-    if (this->lf_timestamp_flags & ETF_ZONE_SET
-        && dts.dts_zoned_to_local)
-    {
+    if (this->lf_timestamp_flags & ETF_ZONE_SET && dts.dts_zoned_to_local) {
         retval.et_flags &= ~ETF_Z_IS_UTC;
     }
     retval.et_gmtoff = dts.dts_local_offset_cache;

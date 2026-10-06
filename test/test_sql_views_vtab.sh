@@ -421,3 +421,38 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_view_lines('log', 0, 1, 'xml')" \
     ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":filter-context 2 1" \
+    -c ";SELECT name, options ->> '\$.filter-context' AS fc FROM lnav_views" \
+    ${test_dir}/logfile_access_log.0
+
+# An UPDATE of the options changes the context like :filter-context does.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-in vmkboot" \
+    -c ";UPDATE lnav_views SET options = json_set(options, '\$.filter-context.before', 1, '\$.filter-context.after', 1) WHERE name = 'log'" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET options = json_set(options, '\$.filter-context.before', 1) WHERE name = 'db'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET options = json_set(options, '\$.filter-context.after', -1) WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":hide-in-timeline thread" \
+    -c ";UPDATE lnav_views SET options = json_set(options, '\$.row-types.opid', 'hide') WHERE name = 'timeline'" \
+    -c ";SELECT options ->> '\$.row-types' AS row_types FROM lnav_views WHERE name = 'timeline'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET options = json_set(options, '\$.row-types.opid', 'hide') WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-named-search vmk vmk" \
+    -c ";SELECT name, pattern, hits FROM lnav_view_searches" \
+    ${test_dir}/logfile_access_log.0

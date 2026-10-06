@@ -1,0 +1,6 @@
+[1m[4m  format   [0m[1m[4m [0m[1m[4mname[0m[1m[4m [0m[1m[4munit_suffix[0m[1m[4m [0m[1m[4m[7munit_divisor[0m[1m[4m [0m
+haproxy_log tq   s           [7m        1000[0m 
+haproxy_log tw   s           [7m        1000[0m 
+[1mhaproxy_log[0m[1m [0m[1mtc  [0m[1m [0m[1ms          [0m[1m [0m[1m[7m        1000[0m[1m [0m
+[1mhaproxy_log[0m[1m [0m[1mtr  [0m[1m [0m[1ms          [0m[1m [0m[1m[7m        1000[0m[1m [0m
+haproxy_log tt   s           [7m        1000[0m 

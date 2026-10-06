@@ -39,6 +39,8 @@ files whose names start with a period are skipped unless the part of the
 pattern after the :code:`**` starts with a period, and symbolic links to
 directories are not followed.  Since the pattern needs to be quoted to keep
 the shell from expanding it, **lnav** will expand a leading :code:`~` itself.
+The :ref:`path_match()<path_match>` SQL function can be used to match a path
+against this kind of pattern.
 If the path is a directory, all of the
 files in the directory will be opened and the directory will be monitored for
 files to be added or removed from the view.  If the path is an archive or

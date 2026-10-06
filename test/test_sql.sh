@@ -1043,3 +1043,43 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM all_opids" \
     ${test_dir}/logfile_vpxd.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_format_values WHERE format = 'access_log'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT format, name, unit_suffix, unit_divisor FROM lnav_format_values WHERE unit_divisor != 1 AND format = 'haproxy_log'" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT name, count, text_count, min, max, mean, p50, p90, p99, distinct_estimate FROM lnav_file_value_stats" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT s.name, s.max / v.unit_divisor AS max, v.unit_suffix FROM lnav_file_value_stats AS s JOIN lnav_format_values AS v USING (format, name) WHERE v.unit_suffix IS NOT NULL" \
+    ${test_dir}/logfile_access_log.0
+
+# The last message is rolled back and scanned again when the file grows, which
+# must not count it twice in the stats.
+cp ${test_dir}/logfile_access_log.0 value_stats_append.0
+chmod ug+w value_stats_append.0
+run_cap_test ${lnav_test} -n \
+    -c ":shexec tail -1 ${test_dir}/logfile_access_log.0 >> value_stats_append.0" \
+    -c ":rebuild" \
+    -c ":shexec tail -1 ${test_dir}/logfile_access_log.0 >> value_stats_append.0" \
+    -c ":rebuild" \
+    -c ";SELECT (SELECT count(*) FROM access_log) AS lines, (SELECT count FROM lnav_file_value_stats WHERE name = 'sc_bytes') AS sc_bytes_count, (SELECT text_count FROM lnav_file_value_stats WHERE name = 'c_ip') AS c_ip_count, (SELECT sum(total) FROM all_opids) AS opid_total" \
+    value_stats_append.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_format_value_stats WHERE format = 'access_log' AND (count > 0 OR text_count > 0)" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log.1
+
+# A hidden file is not part of the combined stats.
+run_cap_test ${lnav_test} -n \
+    -c ":hide-file */logfile_access_log.1" \
+    -c ";SELECT name, files, count, text_count FROM lnav_format_value_stats WHERE format = 'access_log' AND (count > 0 OR text_count > 0)" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log.1

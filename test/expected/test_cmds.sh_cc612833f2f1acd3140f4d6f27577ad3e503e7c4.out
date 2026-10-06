@@ -9,16 +9,16 @@
  | 🔍 every = vmw
  | 🔍 one   = cgi
  Known message fields for table [1maccess_log[0m:
- | [1m[32m◆[0m 📊 c_ip          = 192.168.202.254[32m  ~1 distinct of 4[0m
+ | [1m[32m◆[0m 📊 c_ip          = 192.168.202.254[32m  ~1 distinct of 3[0m
  | [1m[32m◆[0m    cs_username   = null
- | [1m[32m◆[0m 📊 cs_method     = GET[32m  ~1 distinct of 4[0m
- | [1m[32m◆[0m 📊 cs_uri_stem   = /vmw/cgi/tramp[32m  ~3 distinct of 4[0m
+ | [1m[32m◆[0m 📊 cs_method     = GET[32m  ~1 distinct of 3[0m
+ | [1m[32m◆[0m 📊 cs_uri_stem   = /vmw/cgi/tramp[32m  ~3 distinct of 3[0m
  | [1m[32m◆[0m    cs_uri_query  = null
- | [1m[32m◆[0m 📊 cs_version    = HTTP/1.0[32m  ~1 distinct of 4[0m
+ | [1m[32m◆[0m 📊 cs_version    = HTTP/1.0[32m  ~1 distinct of 3[0m
  | [1m[32m◆[0m 📊 sc_status     = 200
- | [1m[32m◆[0m 📊 sc_bytes      = 134B[32m  134B..78.9KB of 4[0m
+ | [1m[32m◆[0m 📊 sc_bytes      = 134B[32m  134B..78.9KB of 3[0m
  | [1m[32m◆[0m    cs_referer    = null
- | [1m[32m◆[0m 📊 cs_user_agent = gPXE/0.9.7[32m  ~1 distinct of 4[0m
+ | [1m[32m◆[0m 📊 cs_user_agent = gPXE/0.9.7[32m  ~1 distinct of 3[0m
  [32mNo discovered message fields[0m
 [32m The following SQL tables contains this line: [0m[4mevery[0m, [4mone[0m
 [31m192.168.202.254[0m[31m - - [[0m[31m20/Jul/2009[0m[31m:22:59:29 +0000[0m[31m] "[0m[31mGET[0m[31m [0m[31m/[0m[31mvmw[0m[31m/vSphere/default/vmkboot.gz[0m[31m [0m[31mHTTP/1.0[0m[31m" [0m[31m404[0m[31m 46210 "-" "[0m[31mgPXE/0.9.7[0m[31m"[0m

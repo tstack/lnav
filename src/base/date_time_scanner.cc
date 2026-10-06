@@ -403,8 +403,8 @@ date_time_scanner::scan_relocking(const char* time_src,
                                   bool convert_local)
 {
     const auto was_locked = this->dts_fmt_lock != -1;
-    const auto* retval
-        = this->scan(time_src, time_len, time_fmt, tm_out, tv_out, convert_local);
+    const auto* retval = this->scan(
+        time_src, time_len, time_fmt, tm_out, tv_out, convert_local);
 
     if (was_locked && retval == nullptr) {
         const auto lock = this->unlock();

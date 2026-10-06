@@ -41,6 +41,7 @@
 #include "apps.hh"
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
+#include "ext.longpoll.hh"
 #include "base/lnav.ryml.hh"
 #include "base/result.h"
 #include "bound_tags.hh"
@@ -974,6 +975,7 @@ com_external_access(exec_context& ec,
                                         : lnav::ext::generate_api_key();
     if (curr_inst) {
         lnav_rs_ext::stop_ext_access();
+        lnav::ext::forget_clients();
     }
     auto start_res = start_with_key(port, api_key);
     if (start_res.port == 0) {
@@ -990,6 +992,7 @@ com_external_access(exec_context& ec,
             }
             if (restart_res.port != 0) {
                 lnav_rs_ext::stop_ext_access();
+                lnav::ext::forget_clients();
             }
             lnav::ext::unregister_instance();
             unsetenv("LNAV_EXTERNAL_PORT");
@@ -1037,8 +1040,7 @@ com_external_access(exec_context& ec,
         auto& sf = top_source->statusview_value_for_field(
             top_status_source::TSF_EXT_ACCESS);
 
-        sf.set_width(3);
-        sf.set_value(":globe_with_meridians:"_emoji);
+        top_source->enable_ext_access(lnav::ext::active_client_count());
         sf.on_click = [](auto& top_source) {
             auto& ec = lnav_data.ld_exec_context;
             ec.execute(INTERNAL_SRC_LOC, ":external-access-login");

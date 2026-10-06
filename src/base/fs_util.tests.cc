@@ -157,6 +157,36 @@ TEST_CASE("fs_util::glob_match")
     CHECK(glob_match("/d/**/[()].log", "/d/a/(.log"));
 }
 
+TEST_CASE("fs_util::glob_match without a recursive component")
+{
+    using lnav::filesystem::glob_match;
+
+    // Only a "**" component crosses a "/".
+    CHECK(glob_match("/a/*/x.log", "/a/b/x.log"));
+    CHECK_FALSE(glob_match("/a/*/x.log", "/a/b/c/x.log"));
+    CHECK_FALSE(glob_match("*.log", "/a/b/x.log"));
+    CHECK(glob_match("*.log", "x.log"));
+    CHECK_FALSE(glob_match("/a/?/x.log", "/a/bc/x.log"));
+    CHECK_FALSE(glob_match("/a?b", "/a/b"));
+    CHECK_FALSE(glob_match("/a[/]b", "/a/b"));
+    CHECK(glob_match("/a[/c]b", "/acb"));
+    CHECK_FALSE(glob_match("/a[/c]b", "/a/b"));
+    CHECK(glob_match("/a[!x]b", "/acb"));
+    CHECK_FALSE(glob_match("/a[!x]b", "/a/b"));
+    CHECK(glob_match("/a[^x]b", "/acb"));
+    CHECK_FALSE(glob_match("/a[^x]b", "/a/b"));
+    CHECK_FALSE(glob_match("/d/**/a?b", "/d/a/b"));
+    CHECK(glob_match("/d/**/a?b", "/d/x/acb"));
+}
+
+TEST_CASE("fs_util::glob_match and hidden names")
+{
+    using lnav::filesystem::glob_match;
+
+    // Unlike the directory walk, matching does not skip hidden names.
+    CHECK(glob_match("/d/**/*.log", "/d/.h/x.log"));
+}
+
 TEST_CASE("fs_util::split_glob_prefix")
 {
     using lnav::filesystem::split_glob_prefix;

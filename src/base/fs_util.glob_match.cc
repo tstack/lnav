@@ -32,6 +32,7 @@
  * glob-cpp conflicts with the glob() function from <glob.h>.
  */
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -105,9 +106,67 @@ to_glob_cpp_pattern(const std::string& pattern)
     return retval;
 }
 
+/**
+ * @return The number of path separators in the pattern, not counting the
+ *   ones inside bracket expressions.
+ */
+static size_t
+count_separators(const std::string& pattern)
+{
+    size_t retval = 0;
+
+    for (size_t lpc = 0; lpc < pattern.size(); lpc++) {
+        switch (pattern[lpc]) {
+            case '\\':
+                lpc += 1;
+                if (lpc < pattern.size() && pattern[lpc] == '/') {
+                    retval += 1;
+                }
+                break;
+            case '[': {
+                // The same rules as to_glob_cpp_pattern() for where the
+                // expression ends.
+                auto end = lpc + 1;
+                if (end < pattern.size()
+                    && (pattern[end] == '!' || pattern[end] == '^'))
+                {
+                    end += 1;
+                }
+                if (end < pattern.size() && pattern[end] == ']') {
+                    end += 1;
+                }
+                end = pattern.find(']', end);
+                if (end != std::string::npos) {
+                    lpc = end;
+                }
+                break;
+            }
+            case '/':
+                retval += 1;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return retval;
+}
+
 bool
 glob_match(const std::string& pattern, const std::string& path)
 {
+    // glob-cpp only matches one component at a time when there is a "**".
+    // Otherwise, a "*" stops at a "/", but a "?" or a bracket expression can
+    // match one.  So, each "/" in the path has to be matched by one in the
+    // pattern, which means there must be the same number of them.
+    if (!is_recursive_glob(pattern)
+        && count_separators(pattern)
+            != static_cast<size_t>(
+                std::count(path.begin(), path.end(), '/')))
+    {
+        return false;
+    }
+
     static constexpr size_t MAX_CACHED_PATTERNS = 64;
     thread_local std::map<std::string, std::unique_ptr<glob::glob>> CACHE;
 

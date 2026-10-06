@@ -1,0 +1,10 @@
+[1m[4m  name   [0m[1m[4m [0m[1m[4m          fc          [0m[1m[4m [0m
+log       [7m{"before":2,"af[0m[7mter":1}[0m 
+text      {"before":0,"after":0} 
+[1mhelp     [0m[1m [0m[1m[36m<NULL>                [0m[1m [0m
+[1mhistogram[0m[1m [0m[1m[36m<NULL>                [0m[1m [0m
+db        [1m[36m<NULL>                [0m 
+schema    [1m[36m<NULL>                [0m 
+[1mpretty   [0m[1m [0m[1m[36m<NULL>                [0m[1m [0m
+[1mspectro  [0m[1m [0m[1m[36m<NULL>                [0m[1m [0m
+timeline  {"before":0,"after":0} 

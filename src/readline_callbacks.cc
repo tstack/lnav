@@ -1532,11 +1532,7 @@ rl_callback(textinput_curses& rc)
                 auto um = exec_res.unwrapErr();
 
                 hist_guard.og_status = log_level_t::LEVEL_ERROR;
-                lnav_data.ld_user_message_source.replace_with(
-                    um.to_attr_line().rtrim());
-                lnav_data.ld_user_message_view.reload_data();
-                lnav_data.ld_user_message_expiration
-                    = std::chrono::steady_clock::now() + 20s;
+                show_user_message(um.to_attr_line());
                 rc.clear_inactive_value();
             }
             ec.ec_source.back().s_content.clear();
@@ -1652,11 +1648,7 @@ rl_callback(textinput_curses& rc)
             } else {
                 hist_guard.og_status = log_level_t::LEVEL_ERROR;
                 auto um = result.unwrapErr();
-                lnav_data.ld_user_message_source.replace_with(
-                    um.to_attr_line().rtrim());
-                lnav_data.ld_user_message_view.reload_data();
-                lnav_data.ld_user_message_expiration
-                    = std::chrono::steady_clock::now() + 20s;
+                show_user_message(um.to_attr_line());
             }
             ec.ec_source.back().s_content.clear();
 
@@ -1703,11 +1695,7 @@ rl_callback(textinput_curses& rc)
                         auto um = exec_res.unwrapErr();
 
                         hist_guard.og_status = log_level_t::LEVEL_ERROR;
-                        lnav_data.ld_user_message_source.replace_with(
-                            um.to_attr_line().rtrim());
-                        lnav_data.ld_user_message_view.reload_data();
-                        lnav_data.ld_user_message_expiration
-                            = std::chrono::steady_clock::now() + 20s;
+                        show_user_message(um.to_attr_line());
                         rc.clear_inactive_value();
                     }
                 }

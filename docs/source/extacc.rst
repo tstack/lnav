@@ -15,6 +15,14 @@ displayed in the top-right corner.  Clicking that icon will open a URL
 in a browser and log you into the server.  The :ref:`external_access_login`
 command can also be used to login.
 
+Clients that poll the server for changes, like a browser page or an editor
+plugin, are counted next to the globe (e.g. 🌐 2), and a message is shown when
+a new one connects.  A browser is identified by its login session, an editor
+plugin by its :code:`client_id`, and anything else by its :code:`User-Agent`.
+Since the requests do not keep a connection open, a client stops being counted
+when it has not polled for 15 seconds.  Requests that do not poll, like a
+script sending a command, are not counted.
+
 .. note:: The server only binds to :code:`localhost`, so it will not
     be accessible over the network.  If you need to access lnav
     remotely, consider using SSH forwarding.

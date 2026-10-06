@@ -1,0 +1,5 @@
+Row 0:
+  Column  zero_dirs: 1
+  Column  many_dirs: 1
+  Column missing_dir: 0
+  Column   relative: 1

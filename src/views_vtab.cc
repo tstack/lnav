@@ -44,6 +44,7 @@
 #include "lnav.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "timeline_source.hh"
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -231,12 +232,71 @@ enum class word_wrap_t {
     normal,
 };
 
+/**
+ * The lines of context to show around the lines that pass the filters, as
+ * set by :filter-context.
+ */
+struct filter_context_options {
+    std::optional<int64_t> fco_before;
+    std::optional<int64_t> fco_after;
+
+    bool empty() const
+    {
+        return !this->fco_before.has_value() && !this->fco_after.has_value();
+    }
+};
+
+/**
+ * Whether each type of row is shown in the TIMELINE view, as set by
+ * :hide-in-timeline and :show-in-timeline.  A type that is not given is
+ * left as it is.
+ */
+struct timeline_row_type_options {
+    std::optional<row_details_t> trto_logfile;
+    std::optional<row_details_t> trto_thread;
+    std::optional<row_details_t> trto_opid;
+    std::optional<row_details_t> trto_tag;
+    std::optional<row_details_t> trto_partition;
+    std::optional<row_details_t> trto_search;
+
+    std::optional<row_details_t>& for_type(timeline_source::row_type rt)
+    {
+        switch (rt) {
+            case timeline_source::row_type::logfile:
+                return this->trto_logfile;
+            case timeline_source::row_type::thread:
+                return this->trto_thread;
+            case timeline_source::row_type::opid:
+                return this->trto_opid;
+            case timeline_source::row_type::tag:
+                return this->trto_tag;
+            case timeline_source::row_type::partition:
+                return this->trto_partition;
+            case timeline_source::row_type::search:
+                return this->trto_search;
+        }
+
+        ensure(false);
+    }
+
+    bool empty() const
+    {
+        return !this->trto_logfile.has_value()
+            && !this->trto_thread.has_value() && !this->trto_opid.has_value()
+            && !this->trto_tag.has_value()
+            && !this->trto_partition.has_value()
+            && !this->trto_search.has_value();
+    }
+};
+
 struct view_options {
     std::optional<row_details_t> vo_row_details;
     std::optional<row_details_t> vo_row_time_offset;
     std::optional<int32_t> vo_overlay_focus;
     std::optional<word_wrap_t> vo_word_wrap;
     std::optional<row_details_t> vo_hidden_fields;
+    filter_context_options vo_filter_context;
+    timeline_row_type_options vo_row_types;
 
     bool empty() const
     {
@@ -244,7 +304,8 @@ struct view_options {
             && !this->vo_row_time_offset.has_value()
             && !this->vo_overlay_focus.has_value()
             && !this->vo_word_wrap.has_value()
-            && !this->vo_hidden_fields.has_value();
+            && !this->vo_hidden_fields.has_value()
+            && this->vo_filter_context.empty() && this->vo_row_types.empty();
     }
 };
 
@@ -264,6 +325,48 @@ get_view_options_handlers()
 
         json_path_handler_base::ENUM_TERMINATOR,
     };
+
+    static const typed_json_path_container<filter_context_options>
+        FILTER_CONTEXT_HANDLERS = {
+            yajlpp::property_handler("before")
+                .with_description(
+                    "The number of lines to show before a line that passes "
+                    "the filters")
+                .for_field(&filter_context_options::fco_before),
+            yajlpp::property_handler("after")
+                .with_description(
+                    "The number of lines to show after a line that passes "
+                    "the filters")
+                .for_field(&filter_context_options::fco_after),
+        };
+
+    static const typed_json_path_container<timeline_row_type_options>
+        ROW_TYPE_HANDLERS = {
+            yajlpp::property_handler("logfile")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for files")
+                .for_field(&timeline_row_type_options::trto_logfile),
+            yajlpp::property_handler("thread")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for threads")
+                .for_field(&timeline_row_type_options::trto_thread),
+            yajlpp::property_handler("opid")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for operations")
+                .for_field(&timeline_row_type_options::trto_opid),
+            yajlpp::property_handler("tag")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for tags")
+                .for_field(&timeline_row_type_options::trto_tag),
+            yajlpp::property_handler("partition")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for partitions")
+                .for_field(&timeline_row_type_options::trto_partition),
+            yajlpp::property_handler("search")
+                .with_enum_values(ROW_DETAILS_ENUM)
+                .with_description("Show or hide the rows for searches")
+                .for_field(&timeline_row_type_options::trto_search),
+        };
 
     static const typed_json_path_container<view_options> retval = {
         yajlpp::property_handler("row-details")
@@ -288,6 +391,31 @@ get_view_options_handlers()
             .with_enum_values(WORD_WRAP_ENUM)
             .with_description("How to break long lines")
             .for_field(&view_options::vo_word_wrap),
+        yajlpp::property_handler("filter-context")
+            .with_description(
+                "The lines of context to show around the lines that pass the "
+                "filters, for a view that supports filtering")
+            .with_path_provider<view_options>(
+                [](view_options* vo, std::vector<std::string>& paths_out) {
+                    // Only views that support filtering have a context.
+                    if (!vo->vo_filter_context.empty()) {
+                        paths_out.emplace_back("filter-context");
+                    }
+                })
+            .for_child(&view_options::vo_filter_context)
+            .with_children(FILTER_CONTEXT_HANDLERS),
+        yajlpp::property_handler("row-types")
+            .with_description(
+                "Show or hide each type of row in the TIMELINE view")
+            .with_path_provider<view_options>(
+                [](view_options* vo, std::vector<std::string>& paths_out) {
+                    // Only the TIMELINE view has row types.
+                    if (!vo->vo_row_types.empty()) {
+                        paths_out.emplace_back("row-types");
+                    }
+                })
+            .for_child(&view_options::vo_row_types)
+            .with_children(ROW_TYPE_HANDLERS),
     };
 
     return retval;
@@ -516,6 +644,23 @@ CREATE TABLE lnav_db.lnav_views (
                         ? row_details_t::show
                         : row_details_t::hide;
                 }
+                const auto* opt_tss = tc.get_sub_source();
+                if (opt_tss != nullptr && opt_tss->tss_supports_filtering) {
+                    vo.vo_filter_context.fco_before
+                        = opt_tss->tss_context_before;
+                    vo.vo_filter_context.fco_after = opt_tss->tss_context_after;
+                }
+                if (view_index == LNV_TIMELINE) {
+                    const auto* ts
+                        = static_cast<const timeline_source*>(opt_tss);
+
+                    for (const auto rt : timeline_source::ALL_ROW_TYPES) {
+                        vo.vo_row_types.for_type(rt)
+                            = ts->is_row_type_visible(rt)
+                            ? row_details_t::show
+                            : row_details_t::hide;
+                    }
+                }
 
                 if (vo.empty()) {
                     sqlite3_result_null(ctx);
@@ -625,6 +770,52 @@ CREATE TABLE lnav_db.lnav_views (
             }
 
             vo = parse_res.unwrap();
+
+            // Checked before anything else is changed, so a bad value does
+            // not leave the update half done.
+            if (!vo.vo_filter_context.empty()) {
+                const auto* fc_tss = tc.get_sub_source();
+
+                if (fc_tss == nullptr || !fc_tss->tss_supports_filtering) {
+                    auto um = lnav::console::user_message::error(
+                                  attr_line_t("Invalid ")
+                                      .append_quoted("filter-context"_symbol)
+                                      .append(" option"))
+                                  .with_reason(attr_line_t("The ")
+                                                   .append(lnav::roles::symbol(
+                                                       lnav_view_strings[index]))
+                                                   .append(" view does not "
+                                                           "support filtering"))
+                                  .move();
+                    set_vtable_errmsg(tab, um);
+                    return SQLITE_ERROR;
+                }
+                if (vo.vo_filter_context.fco_before.value_or(0) < 0
+                    || vo.vo_filter_context.fco_after.value_or(0) < 0)
+                {
+                    auto um = lnav::console::user_message::error(
+                                  attr_line_t("Invalid ")
+                                      .append_quoted("filter-context"_symbol)
+                                      .append(" option"))
+                                  .with_reason("The number of lines of context "
+                                               "cannot be negative")
+                                  .move();
+                    set_vtable_errmsg(tab, um);
+                    return SQLITE_ERROR;
+                }
+            }
+            if (!vo.vo_row_types.empty() && index != LNV_TIMELINE) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("row-types"_symbol)
+                                  .append(" option"))
+                              .with_reason(
+                                  "Row types can only be set for the "
+                                  "TIMELINE view")
+                              .move();
+                set_vtable_errmsg(tab, um);
+                return SQLITE_ERROR;
+            }
         }
 
         if (tc.get_top() != top_row) {
@@ -780,6 +971,47 @@ CREATE TABLE lnav_db.lnav_views (
         if (vo.vo_hidden_fields) {
             tc.set_hide_fields(vo.vo_hidden_fields.value()
                                == row_details_t::hide);
+        }
+        if (!vo.vo_filter_context.empty()) {
+            auto* fc_tss = tc.get_sub_source();
+            const auto before = static_cast<size_t>(
+                vo.vo_filter_context.fco_before.value_or(
+                    fc_tss->tss_context_before));
+            const auto after = static_cast<size_t>(
+                vo.vo_filter_context.fco_after.value_or(
+                    fc_tss->tss_context_after));
+
+            // The current values come back from an UPDATE that sets the
+            // options, so only refilter when they changed.
+            if (before != fc_tss->tss_context_before
+                || after != fc_tss->tss_context_after)
+            {
+                fc_tss->tss_context_before = before;
+                fc_tss->tss_context_after = after;
+                fc_tss->text_filters_changed();
+                tc.reload_data();
+            }
+        }
+        if (!vo.vo_row_types.empty()) {
+            auto* ts = static_cast<timeline_source*>(tc.get_sub_source());
+            auto changed = !ts->ts_preview_hidden_row_types.empty();
+
+            ts->ts_preview_hidden_row_types.clear();
+            for (const auto rt : timeline_source::ALL_ROW_TYPES) {
+                const auto& opt = vo.vo_row_types.for_type(rt);
+                if (!opt) {
+                    continue;
+                }
+
+                const auto show = opt.value() == row_details_t::show;
+                if (show != ts->is_row_type_visible(rt)) {
+                    ts->set_row_type_visibility(rt, show);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                ts->text_filters_changed();
+            }
         }
         if (text_accel_p != nullptr && vo.vo_row_time_offset) {
             switch (vo.vo_row_time_offset.value()) {
@@ -1359,7 +1591,8 @@ CREATE TABLE lnav_db.lnav_view_searches (
     view_name TEXT,      -- The name of the view.
     enabled   INTEGER,   -- Indicates whether this search is enabled or disabled.
     name      TEXT,      -- The name of the search.
-    pattern   TEXT       -- The regular expression being searched for.
+    pattern   TEXT,      -- The regular expression being searched for.
+    hits      INTEGER    -- The number of lines that matched this search.
 );
 )";
 
@@ -1383,6 +1616,11 @@ CREATE TABLE lnav_db.lnav_view_searches (
             case 3:
                 to_sqlite(ctx, ns.ns_pattern);
                 break;
+            case 4:
+                to_sqlite(
+                    ctx,
+                    (int64_t) tc.search_matches_for_slot(ns.ns_slot).size());
+                break;
         }
 
         return SQLITE_OK;
@@ -1393,7 +1631,8 @@ CREATE TABLE lnav_db.lnav_view_searches (
                    lnav_view_t view_index,
                    std::optional<bool> enabled,
                    const char* name,
-                   const char* pattern)
+                   const char* pattern,
+                   std::optional<int64_t> hits)
     {
         auto& tc = lnav_data.ld_views[view_index];
 
@@ -1439,7 +1678,8 @@ CREATE TABLE lnav_db.lnav_view_searches (
                    lnav_view_t new_view_index,
                    std::optional<bool> enabled,
                    const char* new_name,
-                   const char* new_pattern)
+                   const char* new_pattern,
+                   std::optional<int64_t> hits)
     {
         auto view_index = lnav_view_t(rowid >> 32);
         size_t slot = rowid & 0xffffffffLL;

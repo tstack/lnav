@@ -281,7 +281,9 @@ run_cap_test ${lnav_test} -n \
     -c ':hide-file **/rglob-tree/**/top.log' \
     'rglob-tree/**/*.log'
 
-run_cap_test env HOME=${PWD} ${lnav_test} -n \
+# HOME is set outside of the command so the absolute path is not part of the
+# hash that names the expected output.
+HOME=${PWD} run_cap_test ${lnav_test} -n \
     -c ";SELECT substr(filepath, instr(filepath, 'rglob-tree')) AS path FROM lnav_file ORDER BY path" \
     '~/rglob-tree/**/*.log'
 

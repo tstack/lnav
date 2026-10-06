@@ -89,3 +89,10 @@ run_cap_test ${lnav_test} -Nn -c ";SELECT st_name,st_type,st_mode,st_nlink,st_si
 run_cap_test ${lnav_test} -n \
     -c ";SELECT filepath, st_size FROM lnav_file, fstat(filepath)" \
     ${test_dir}/logfile_access_log.*
+
+# Only a "**" component can match more than one component of the path.
+run_cap_test ./drive_sql "select path_match('/d/**/*.log', '/d/x.log') as zero_dirs, path_match('/d/**/*.log', '/d/a/b/c/x.log') as many_dirs, path_match('/d/**/c/*.log', '/d/a/b/x.log') as missing_dir, path_match('**/*.log', 'a/x.log') as relative"
+
+run_cap_test ./drive_sql "select path_match('*.log', '/d/x.log') as star, path_match('/d/?/x.log', '/d/ab/x.log') as question, path_match('/d?x.log', '/d/x.log') as question_slash, path_match('/d[/]x.log', '/d/x.log') as bracket_slash, path_match('/d/[ab]/x.log', '/d/a/x.log') as bracket"
+
+run_cap_test ./drive_sql "select path_match('/d/**/[', '/d/[') as invalid, path_match(NULL, '/d/x.log') as null_pattern, path_match('/d/*.log', NULL) as null_path"

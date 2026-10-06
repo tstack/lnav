@@ -11,6 +11,9 @@ the following tables/views:
 * `lnav_events`_
 * `lnav_file`_
 * `lnav_file_metadata`_
+* `lnav_file_value_stats`_
+* `lnav_format_value_stats`_
+* `lnav_format_values`_
 * `lnav_log_breakpoints`_
 * `lnav_user_notifications`_
 * `lnav_views`_
@@ -151,6 +154,75 @@ loaded file.  Currently,
 :content: The metadata itself.
 
 
+lnav_file_value_stats
+---------------------
+
+The :code:`lnav_file_value_stats` table contains the statistics that are
+collected for the values in each open log file.  They are the same numbers that
+are shown in the details overlay for a message.  The numbers are raw values,
+on the same scale as the columns in the log tables.  Divide them by the
+:code:`unit_divisor` from the `lnav_format_values`_ table to get them in the
+base unit for the value.  The following columns are available in this table:
+
+:filepath: The path to the file.
+:format: The name of the file's log format.
+:name: The name of the value.
+:count: The number of numeric values seen.
+:text_count: The number of non-numeric values seen.
+:min: The smallest numeric value, or NULL if there were none.
+:max: The largest numeric value, or NULL if there were none.
+:mean: The mean of the numeric values, or NULL if there were none.
+:p50: The estimated median of the numeric values.
+:p90: The estimated 90th percentile of the numeric values.
+:p99: The estimated 99th percentile of the numeric values.
+:distinct_estimate: The estimated number of distinct non-numeric values,
+  or NULL if there were none.
+
+For example, to get the 99th percentile of each value with a unit in the base
+unit:
+
+.. code-block:: custsqlite
+
+   ;SELECT s.filepath, s.name, s.p99 / v.unit_divisor AS p99, v.unit_suffix
+      FROM lnav_file_value_stats AS s
+      JOIN lnav_format_values AS v USING (format, name)
+     WHERE v.unit_suffix IS NOT NULL
+
+lnav_format_value_stats
+-----------------------
+
+The :code:`lnav_format_value_stats` table has the same statistics as the
+`lnav_file_value_stats`_ table, but combined across the files with that log
+format that are visible in the LOG view, so there is one row for each value of
+each format.  The percentiles and distinct estimates are combined from the
+underlying sketches, so they are not the same as averaging or adding up the
+numbers from the per-file table.  Files hidden with
+:ref:`:hide-file<hide_file>` are left out, but the statistics are collected
+when a file is indexed, so they still include the messages that are hidden by
+filters or by :ref:`:hide-lines-before<hide_lines_before>` and
+:ref:`:hide-lines-after<hide_lines_after>`.  The columns are the same as the
+per-file table, except that :code:`filepath` is replaced by:
+
+:files: The number of files the statistics were combined from.
+
+lnav_format_values
+------------------
+
+The :code:`lnav_format_values` table lists the values that are defined by the
+loaded log formats, whether or not a file with that format is open.  The
+following columns are available in this table:
+
+:format: The name of the log format.
+:name: The name of the value.
+:kind: The kind of value, using the same names as the :code:`kind` property
+  in a format file (e.g. :code:`string`, :code:`integer`).
+:unit_suffix: The suffix used when humanizing the value (e.g. :code:`s` or
+  :code:`B`), or NULL if the value has no unit.
+:unit_divisor: What the raw value is divided by to get the base unit implied
+  by the suffix.  For example, a value in milliseconds with a suffix of
+  :code:`s` has a divisor of 1000.
+:identifier: Indicates if the value is an identifier.
+
 .. _table_lnav_log_breakpoints:
 
 lnav_log_breakpoints
@@ -242,6 +314,28 @@ available in this table:
   in the view.
 :selection: The number of the line that is focused for selection.
 :options: A JSON object that contains optional settings for this view.
+  Besides the settings for the details overlay, time offsets, hidden fields,
+  and word wrap, the following can be read and UPDATEd:
+
+  :filter-context: For a view that supports filtering, an object with the
+    :code:`before` and :code:`after` number of lines of context to show
+    around the lines that pass the filters, as set by
+    :ref:`:filter-context<filter_context>`.
+  :row-types: For the TIMELINE view, an object with a property for each
+    type of row (:code:`logfile`, :code:`thread`, :code:`opid`, :code:`tag`,
+    :code:`partition`, and :code:`search`) that is either :code:`show` or
+    :code:`hide`, as set by :ref:`:hide-in-timeline<hide_in_timeline>` and
+    :ref:`:show-in-timeline<show_in_timeline>`.  A type that is left out
+    is not changed.
+
+  For example, to show two lines of context in the LOG view:
+
+  .. code-block:: custsqlite
+
+     ;UPDATE lnav_views
+        SET options = json_set(options, '$.filter-context.before', 2,
+                                        '$.filter-context.after', 2)
+      WHERE name = 'log'
 
 lnav_views_echo
 ---------------
@@ -326,6 +420,7 @@ columns are available in this table:
   :enabled: Indicates whether this search is enabled or disabled.
   :name: The name of the search.
   :pattern: The regular expression being searched for.
+  :hits: The number of lines that matched this search.
 
 This table supports :code:`SELECT`, :code:`INSERT`, and :code:`DELETE` on the
 table rows to read, create, and delete named searches for the views.  Only the

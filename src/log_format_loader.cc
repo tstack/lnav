@@ -514,7 +514,7 @@ static const json_path_container line_format_handlers = {
         .for_field(&external_log_format::json_format_element::jfe_suffix),
 };
 
-static constexpr json_path_handler_base::enum_value_t KIND_ENUM[] = {
+constexpr json_path_handler_base::enum_value_t VALUE_KIND_ENUM[] = {
     {"string"_frag, value_kind_t::VALUE_TEXT},
     {"integer"_frag, value_kind_t::VALUE_INTEGER},
     {"float"_frag, value_kind_t::VALUE_FLOAT},
@@ -685,7 +685,7 @@ static const struct json_path_container value_def_handlers = {
     yajlpp::property_handler("kind")
         .with_synopsis("<data-type>")
         .with_description("The type of data in the field")
-        .with_enum_values(KIND_ENUM)
+        .with_enum_values(VALUE_KIND_ENUM)
         .for_field(&external_log_format::value_def::vd_meta,
                    &logline_value_meta::lvm_kind),
 

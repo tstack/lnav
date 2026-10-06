@@ -193,7 +193,25 @@ fn do_exec(request: &Request) -> Response {
 }
 
 fn do_poll(request: &Request) -> Response {
-    let body = try_or_400!(input::json_input::<Option<PollInput>>(request)).unwrap_or_default();
+    let mut body =
+        try_or_400!(input::json_input::<Option<PollInput>>(request)).unwrap_or_default();
+    // A request has no lasting connection, so lnav tells pollers apart by
+    // what the request carries: the browser session, the editor's client ID,
+    // or, failing those, the user agent.
+    if let Some((_cookie_name, session_id)) = cookies(request)
+        .filter(|&(name, _)| name == "lnav_session_id")
+        .next()
+    {
+        body.poller_key = format!("session:{}", session_id);
+        body.poller_name = "A browser session".to_string();
+    } else if !body.client_id.is_empty() {
+        body.poller_key = format!("client:{}", body.client_id);
+        body.poller_name = format!("Editor client \"{}\"", body.client_id);
+    } else {
+        let agent = request.header("User-Agent").unwrap_or("unknown");
+        body.poller_key = format!("agent:{}", agent);
+        body.poller_name = format!("A client ({})", agent);
+    }
     let vs = longpoll(&body);
 
     Response::json(&vs)

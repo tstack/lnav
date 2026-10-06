@@ -2602,7 +2602,7 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path
 [4mSee Also[0m
-  [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To get the base of a plain file name:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[35m[40m'foobar'[0m[37m[40m)                         [0m
@@ -2892,7 +2892,7 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path
 [4mSee Also[0m
-  [1mbasename()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To get the directory of a relative file path:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[35m[40m'foo/bar'[0m[37m[40m)                         [0m
@@ -3443,7 +3443,7 @@ For support questions, email:
          considered an absolute path and any preceding elements will
          be ignored.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
 [4mExamples[0m
 #1 To join a directory and file name into a relative path:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[35m[40m'foo'[0m[37m[40m, [0m[35m[40m'bar'[0m[37m[40m)                     [0m
@@ -4574,6 +4574,32 @@ For support questions, email:
    {"scheme":"https","username":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
 
 
+[1m[4mpath_match[0m[4m([0m[4mpattern[0m[4m, [0m[4mpath[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Match a path against a glob pattern where a '**' component matches
+  zero or more directories.  Unlike glob(), a '*', '?', or bracket
+  expression never matches a '/', so only a '**' can match more than
+  one component of the path.  Names that start with a period are
+  matched like any other.
+[4mParameters[0m
+  [4mpattern[0m   The glob pattern
+  [4mpath[0m      The path to match
+[4mSee Also[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+[4mExamples[0m
+#1 To test if a path is anywhere under /var/log:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpath_match[0m[37m[40m([0m[35m[40m'/var/log/**/*.log'[0m[37m[40m, [0m[35m[40m'/var/log/nginx/access.log'[0m[37m[40m)[0m
+   1
+
+#2 To test if a path is directly in /var/log:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpath_match[0m[37m[40m([0m[35m[40m'/var/log/*.log'[0m[37m[40m, [0m[35m[40m'/var/log/nginx/access.log'[0m[37m[40m)[0m
+   0
+
+#3 To show that a '?' does not match a '/':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpath_match[0m[37m[40m([0m[35m[40m'/var/log/nginx?access.log'[0m[37m[40m, [0m[35m[40m'/var/log/nginx/access.log'[0m[37m[40m)[0m
+   0
+
+
 [1m[4mpercent_rank[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns (rank - 1) / (partition-rows - 1)
@@ -4770,7 +4796,7 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the symbolic link.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mrealpath()[0m
 
 [1m[4mrealpath[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -4779,7 +4805,7 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to resolve.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m
 
 [1m[4mregexp[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════

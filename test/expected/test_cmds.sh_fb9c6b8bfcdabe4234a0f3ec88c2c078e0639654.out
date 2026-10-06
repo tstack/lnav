@@ -1,4 +1,4 @@
-<pre class="-lnav_styles_text"><span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #ffffaf">┌</span>2009-07-20 22:59:27,672:DEBUG:Hello, World!</span>
-<span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #ffffaf">│</span>  How are you today?</span>
-<span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #ffffaf">│</span><span class="-lnav_log-level-styles_error">2009-07-20 22:59:30,221:ERROR:Goodbye, World!</span></span>
+<pre class="-lnav_styles_text"><span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #d7ff87">┌</span>2009-07-20 22:59:27,672:DEBUG:Hello, World!</span>
+<span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #d7ff87">│</span>  How are you today?</span>
+<span title="File: {test_dir}/logfile_multiline.0&#10;Format: generic_log"><span style="color: #d7ff87">│</span><span class="-lnav_log-level-styles_error">2009-07-20 22:59:30,221:ERROR:Goodbye, World!</span></span>
 </pre>

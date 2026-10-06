@@ -9,7 +9,10 @@ Features:
   New files that turn up in the tree are picked up as the
   directories change.  The patterns in `:close`,
   `:hide-file`, `:show-file`, and the file options set by
-  `:set-file-timezone` also accept `**`.
+  `:set-file-timezone` also accept `**`.  The new
+  `path_match()` SQL function does the same kind of matching
+  against a path, where a `*`, `?`, or bracket expression
+  never matches a "/".
 * Added the `:filter-context` command to show lines surrounding
   filter matches, similar to grep's `-C` option.  The command
   accepts one or two arguments for the number of messages to
@@ -142,7 +145,8 @@ Features:
   - The `lnav_view_searches` table.  Rows can be
     `INSERT`ed and `DELETE`d to create and remove them
     from SQL and the `enabled` column can be `UPDATE`d
-    to turn them on and off.
+    to turn them on and off.  The `hits` column has the
+    number of lines that matched.
   In the LOG view, a named search also creates a search
   table of the same name that contains the messages it
   matched, with a column for each capture in the
@@ -193,6 +197,28 @@ Features:
   directory, or path.  An editor plugin that polls lnav
   can also ask to be sent the files that lnav would
   otherwise open with the external editor command.
+  When a client, like a browser page or an editor
+  plugin, starts polling the server, a message is shown
+  and the number of polling clients is displayed next
+  to the globe in the top-right corner.
+* Added the `lnav_file_value_stats` SQL table, which has
+  the statistics for each value in an open log file that
+  are shown in the details overlay: the count, min, max,
+  mean, p50/p90/p99, and estimated number of distinct
+  values.  The `lnav_format_value_stats` table has the same
+  statistics combined across the visible files for each
+  format.  Added the `lnav_format_values` SQL table, which
+  lists the values defined by the loaded formats, along
+  with their kind and unit (`unit_suffix` and
+  `unit_divisor`).  The two tables can be joined on the
+  `format` and `name` columns.
+* The `options` column of the `lnav_views` table now has
+  a `filter-context` property for the views that support
+  filtering and, for the TIMELINE view, a `row-types`
+  property that says which types of rows are shown.
+  Both can be `UPDATE`d, so the context set by
+  `:filter-context` and the rows hidden by
+  `:hide-in-timeline` can be read and changed from SQL.
 * Added the `log_msg_line_count` column to the log tables.
   It contains the number of lines in the log message,
   including any continuation lines.  The value is also

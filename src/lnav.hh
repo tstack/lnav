@@ -253,6 +253,11 @@ enum class verbosity_t : int {
 };
 
 extern struct lnav_data_t lnav_data;
+
+/**
+ * Show a message in the panel above the prompt for a while.
+ */
+void show_user_message(attr_line_t al);
 extern verbosity_t verbosity;
 
 extern lnav::commands::command_map_t lnav_commands;

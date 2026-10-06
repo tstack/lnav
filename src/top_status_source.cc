@@ -37,6 +37,8 @@
 #include "sqlitepp.client.hh"
 #include "top_status_source.cfg.hh"
 
+using namespace md4cpp::literals;
+
 static const char* const MSG_QUERY = R"(
 SELECT message FROM lnav_user_notifications
   WHERE message IS NOT NULL AND
@@ -80,6 +82,43 @@ top_status_source::update_time(const timeval& current_time)
         return true;
     }
     return false;
+}
+
+bool
+top_status_source::update_ext_clients(size_t count)
+{
+    auto& sf = this->tss_fields[TSF_EXT_ACCESS];
+
+    // The field has no width while external access is off.
+    if (sf.get_width() == 0) {
+        this->tss_ext_client_count = std::nullopt;
+        return false;
+    }
+    if (this->tss_ext_client_count == count) {
+        return false;
+    }
+
+    this->tss_ext_client_count = count;
+    // The globe is two columns wide, plus one for padding.
+    if (count == 0) {
+        sf.set_width(3);
+        sf.set_value(":globe_with_meridians:"_emoji);
+    } else {
+        auto count_str = fmt::to_string(count);
+
+        sf.set_width(3 + 1 + count_str.size());
+        sf.set_value(fmt::format(
+            FMT_STRING("{} {}"), ":globe_with_meridians:"_emoji, count_str));
+    }
+    return true;
+}
+
+void
+top_status_source::enable_ext_access(size_t count)
+{
+    this->tss_ext_client_count = std::nullopt;
+    this->tss_fields[TSF_EXT_ACCESS].set_width(3);
+    this->update_ext_clients(count);
 }
 
 void

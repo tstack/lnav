@@ -84,4 +84,9 @@ void load_format_extra(sqlite3* db,
 extern const json_path_container format_handlers;
 extern const json_path_container root_format_handler;
 
+/**
+ * The kinds of value that can be written in a format file, by name.
+ */
+extern const json_path_handler_base::enum_value_t VALUE_KIND_ENUM[];
+
 #endif

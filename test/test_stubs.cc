@@ -58,6 +58,11 @@ wait_for_children()
 {
 }
 
+void
+show_user_message(attr_line_t al)
+{
+}
+
 size_t
 rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {

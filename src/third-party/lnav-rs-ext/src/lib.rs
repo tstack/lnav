@@ -248,6 +248,13 @@ mod ffi {
         /// under.  Files under them are sent to the client in `open_requests`
         /// instead of being opened with an external editor command.
         pub editor_roots: Vec<String>,
+        /// Identifies the poller to lnav, filled in by the server from the
+        /// request, so the client can neither set it nor see it.
+        #[serde(skip)]
+        pub poller_key: String,
+        /// How the poller is described to the user.
+        #[serde(skip)]
+        pub poller_name: String,
     }
 
     /// A file for an editor client to open.

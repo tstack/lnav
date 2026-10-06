@@ -1,0 +1,7 @@
+[1m[4m    name     [0m[1m[4m [0m[1m[4m[7m  files   [0m[1m[4m [0m[1m[4m[7m  count   [0m[1m[4m [0m[1m[4m[7mtext_count[0m[1m[4m [0m
+c_ip          [1m[7m         1[0m [1m         0[0m [7m         3[0m 
+cs_method     [1m[7m         1[0m [1m         0[0m [7m         3[0m 
+[1mcs_uri_stem  [0m[1m [0m[1m[7m         1[0m[1m [0m[1m         0[0m[1m [0m[1m[7m         3[0m[1m [0m
+[1mcs_version   [0m[1m [0m[1m[7m         1[0m[1m [0m[1m         0[0m[1m [0m[1m[7m         3[0m[1m [0m
+sc_bytes      [1m[7m         1[0m [1m[7m         3[0m          0 
+cs_user_agent [1m[7m         1[0m [1m         0[0m [7m         3[0m 

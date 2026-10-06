@@ -17,7 +17,11 @@
             "row-details": "hide",
             "row-time-offset": "hide",
             "hidden-fields": "hide",
-            "word-wrap": "none"
+            "word-wrap": "none",
+            "filter-context": {
+                "before": 0,
+                "after": 0
+            }
         },
         "selected_text": null,
         "row_details": null,
@@ -54,7 +58,11 @@
             "row-details": "hide",
             "row-time-offset": "hide",
             "hidden-fields": "hide",
-            "word-wrap": "none"
+            "word-wrap": "none",
+            "filter-context": {
+                "before": 0,
+                "after": 0
+            }
         },
         "selected_text": null,
         "row_details": null,
@@ -242,7 +250,19 @@
         "options": {
             "row-details": "hide",
             "hidden-fields": "hide",
-            "word-wrap": "none"
+            "word-wrap": "none",
+            "filter-context": {
+                "before": 0,
+                "after": 0
+            },
+            "row-types": {
+                "logfile": "show",
+                "thread": "show",
+                "opid": "show",
+                "tag": "show",
+                "partition": "show",
+                "search": "show"
+            }
         },
         "selected_text": null,
         "row_details": null,

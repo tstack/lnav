@@ -1,0 +1,12 @@
+[1m[4m  format  [0m[1m[4m [0m[1m[4m    name     [0m[1m[4m [0m[1m[4m kind  [0m[1m[4m [0m[1m[4munit_suffix[0m[1m[4m [0m[1m[4m[7munit_divisor[0m[1m[4m [0m[1m[4m[7midentifier[0m[1m[4m [0m
+access_log cs_host       string  [1m[36m<NULL>     [0m [1m[7m           1[0m [7m         1[0m 
+access_log c_ip          string  [1m[36m<NULL>     [0m [1m[7m           1[0m [7m         1[0m 
+[1maccess_log[0m[1m [0m[1mcs_username  [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[7m           1[0m[1m [0m[1m[7m         1[0m[1m [0m
+[1maccess_log[0m[1m [0m[1mcs_method    [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[7m           1[0m[1m [0m[1m[7m         1[0m[1m [0m
+access_log cs_uri_stem   string  [1m[36m<NULL>     [0m [1m[7m           1[0m [7m         1[0m 
+access_log cs_uri_query  string  [1m[36m<NULL>     [0m [1m[7m           1[0m          0 
+[1maccess_log[0m[1m [0m[1mcs_version   [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[7m           1[0m[1m [0m[1m[7m         1[0m[1m [0m
+[1maccess_log[0m[1m [0m[1msc_status    [0m[1m [0m[1minteger[0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[7m           1[0m[1m [0m[1m         0 [0m
+access_log sc_bytes      integer B           [1m[7m           1[0m          0 
+access_log cs_referer    string  [1m[36m<NULL>     [0m [1m[7m           1[0m [7m         1[0m 
+[1maccess_log[0m[1m [0m[1mcs_user_agent[0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[7m           1[0m[1m [0m[1m[7m         1[0m[1m [0m

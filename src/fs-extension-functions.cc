@@ -46,6 +46,7 @@
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
+#include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
@@ -59,6 +60,16 @@
 #include "yajlpp/yajlpp_def.hh"
 
 extern char** environ;
+
+static std::optional<bool>
+sql_path_match(const char* pattern, const char* path)
+{
+    if (pattern == nullptr || path == nullptr) {
+        return std::nullopt;
+    }
+
+    return lnav::filesystem::glob_match(pattern, path);
+}
 
 static mapbox::util::variant<const char*, string_fragment>
 sql_basename(const char* path_in)
@@ -428,6 +439,43 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                                "SELECT dirname('foo\\bar')"})
                 .with_example({"To get the directory of an empty path",
                                "SELECT dirname('')"})),
+
+        sqlite_func_adapter<decltype(&sql_path_match), sql_path_match>::
+            builder(
+                help_text("path_match",
+                          "Match a path against a glob pattern where a '**' "
+                          "component matches zero or more directories.  "
+                          "Unlike glob(), a '*', '?', or bracket expression "
+                          "never matches a '/', so only a '**' can match "
+                          "more than one component of the path.  Names "
+                          "that start with a period are matched like any "
+                          "other.")
+                    .sql_function()
+                    .with_prql_path({"fs", "path_match"})
+                    .with_parameter({"pattern", "The glob pattern"})
+                    .with_parameter({"path", "The path to match"})
+                    .with_tags({"filename"})
+                    .with_example({
+                        "To test if a path is anywhere under /var/log",
+                        "SELECT path_match('/var/log/**/*.log', "
+                        "'/var/log/nginx/access.log')",
+                    })
+                    .with_example({
+                        "To test if a path is directly in /var/log",
+                        "SELECT path_match('/var/log/*.log', "
+                        "'/var/log/nginx/access.log')",
+                    })
+                    .with_example({
+                        "To show that a '?' does not match a '/'",
+                        "SELECT path_match('/var/log/nginx?access.log', "
+                        "'/var/log/nginx/access.log')",
+                    })
+                    .with_example({
+                        "To test if a path is anywhere under /var/log",
+                        "from [{p='/var/log/nginx/access.log'}] | "
+                        "select { fs.path_match '/var/log/**/*.log' p }",
+                        help_example::language::prql,
+                    })),
 
         sqlite_func_adapter<decltype(&sql_joinpath), sql_joinpath>::builder(
             help_text("joinpath", "Join components of a path together.")

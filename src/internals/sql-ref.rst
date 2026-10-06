@@ -844,7 +844,7 @@ basename(*path*)
       bar
 
   **See Also**
-    :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
+    :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
 
 ----
 
@@ -1244,7 +1244,7 @@ dirname(*path*)
       .
 
   **See Also**
-    :ref:`basename`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
+    :ref:`basename`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
 
 ----
 
@@ -1943,7 +1943,7 @@ joinpath(*path*)
       /bar
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`readlink`, :ref:`realpath`
+    :ref:`basename`, :ref:`dirname`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
 
 ----
 
@@ -3431,6 +3431,54 @@ parse_url(*url*)
 ----
 
 
+.. _path_match:
+
+path_match(*pattern*, *path*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Match a path against a glob pattern where a '**' component matches zero or more directories.  Unlike glob(), a '*', '?', or bracket expression never matches a '/', so only a '**' can match more than one component of the path.  Names that start with a period are matched like any other.
+
+  **PRQL Name**: fs.path_match
+
+  **Parameters**
+    * **pattern\*** --- The glob pattern
+    * **path\*** --- The path to match
+
+  **Examples**
+    To test if a path is anywhere under /var/log:
+
+    .. code-block::  custsqlite
+
+      ;SELECT path_match('/var/log/**/*.log', '/var/log/nginx/access.log')
+      1
+
+    To test if a path is directly in /var/log:
+
+    .. code-block::  custsqlite
+
+      ;SELECT path_match('/var/log/*.log', '/var/log/nginx/access.log')
+      0
+
+    To show that a '?' does not match a '/':
+
+    .. code-block::  custsqlite
+
+      ;SELECT path_match('/var/log/nginx?access.log', '/var/log/nginx/access.log')
+      0
+
+    To test if a path is anywhere under /var/log:
+
+    .. code-block::  custsqlite
+
+      ;from [{p='/var/log/nginx/access.log'}] | select { fs.path_match '/var/log/**/*.log' p }
+      1
+
+  **See Also**
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
+
+----
+
+
 .. _percent_rank:
 
 percent_rank()
@@ -3713,7 +3761,7 @@ readlink(*path*)
     * **path\*** --- The path to the symbolic link.
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`realpath`
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`realpath`
 
 ----
 
@@ -3731,7 +3779,7 @@ realpath(*path*)
     * **path\*** --- The path to resolve.
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`
 
 ----
 

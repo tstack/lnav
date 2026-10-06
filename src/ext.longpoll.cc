@@ -56,6 +56,23 @@ struct editor_client {
     bool ec_polling{false};
 };
 
+/**
+ * Something polling the server, like a browser page or an editor plugin.
+ */
+struct poller_client {
+    std::string pc_name;
+    std::chrono::steady_clock::time_point pc_last_seen;
+    /** A browser with several pages open shares one session. */
+    int pc_polls_in_progress{0};
+};
+
+/**
+ * How long after its last poll a client is still counted.  A poll waits for
+ * at most ten seconds and clients come right back, so a client that has not
+ * polled in this long is gone.
+ */
+constexpr auto CLIENT_EXPIRY = std::chrono::seconds(15);
+
 struct open_request {
     size_t or_id;
     std::string or_client;
@@ -71,6 +88,7 @@ struct pollers {
     std::condition_variable p_condvar;
 
     std::map<std::string, editor_client> p_editors;
+    std::map<std::string, poller_client> p_clients;
     std::list<open_request> p_open_requests;
     // Ids start from the wall clock so that a last_event_id echoed back by a
     // client of an earlier lnav process on the same port is below them.
@@ -123,6 +141,34 @@ longpoll(const PollInput& pi)
         const auto last_event_id = pi.last_event_id < p->p_next_request_id
             ? pi.last_event_id
             : 0;
+        const auto poller_key = (std::string) pi.poller_key;
+        if (!poller_key.empty()) {
+            const auto now = std::chrono::steady_clock::now();
+            auto& pc = p->p_clients[poller_key];
+            const auto is_new = pc.pc_polls_in_progress == 0
+                && now - pc.pc_last_seen > CLIENT_EXPIRY;
+
+            pc.pc_name = (std::string) pi.poller_name;
+            pc.pc_last_seen = now;
+            pc.pc_polls_in_progress += 1;
+            if (is_new) {
+                log_info("external access client connected: %s",
+                         pc.pc_name.c_str());
+                // Sent without waiting, so the poll never waits on the UI.
+                isc::to<main_looper&, services::main_t>().send(
+                    [name = pc.pc_name](auto& mlooper) {
+                        auto um = lnav::console::user_message::info(
+                                      attr_line_t(name).append(
+                                          " connected to external access"))
+                                      .with_help(
+                                          "The number of connected clients is "
+                                          "shown next to the globe in the top "
+                                          "status bar")
+                                      .move();
+                        show_user_message(um.to_attr_line());
+                    });
+            }
+        }
         if (!client_id.empty()) {
             auto& ec = p->p_editors[client_id];
             ec.ec_roots.clear();
@@ -171,6 +217,16 @@ longpoll(const PollInput& pi)
 
             p->p_condvar.wait_for(p.lock, timeout);
             p->p_pollers.erase(iter);
+        }
+        // The clients are forgotten if the server is stopped while a poll is
+        // waiting.
+        auto pc_iter = poller_key.empty() ? p->p_clients.end()
+                                          : p->p_clients.find(poller_key);
+        if (pc_iter != p->p_clients.end()
+            && pc_iter->second.pc_polls_in_progress > 0)
+        {
+            pc_iter->second.pc_polls_in_progress -= 1;
+            pc_iter->second.pc_last_seen = std::chrono::steady_clock::now();
         }
         pi_retval.last_event_id = last_event_id;
         pi_retval.client_id = pi.client_id;
@@ -431,6 +487,39 @@ send_to_editor_client(const std::filesystem::path& path,
     return true;
 #else
     return false;
+#endif
+}
+
+size_t
+active_client_count()
+{
+#ifdef HAVE_RUST_DEPS
+    auto p = lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>();
+    const auto now = std::chrono::steady_clock::now();
+
+    for (auto iter = p->p_clients.begin(); iter != p->p_clients.end();) {
+        const auto& pc = iter->second;
+        if (pc.pc_polls_in_progress == 0
+            && now - pc.pc_last_seen > lnav_rs_ext::CLIENT_EXPIRY)
+        {
+            log_info("external access client gone: %s", pc.pc_name.c_str());
+            iter = p->p_clients.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
+    return p->p_clients.size();
+#else
+    return 0;
+#endif
+}
+
+void
+forget_clients()
+{
+#ifdef HAVE_RUST_DEPS
+    lnav_rs_ext::POLLERS.writeAccess<std::unique_lock>()->p_clients.clear();
 #endif
 }
 

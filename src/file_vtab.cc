@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
+#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -41,7 +43,9 @@
 #include "config.h"
 #include "file_collection.hh"
 #include "file_vtab.cfg.hh"
+#include "lnav.hh"
 #include "log_format.hh"
+#include "log_format_loader.hh"
 #include "logfile.hh"
 #include "session_data.hh"
 #include "text_format.hh"
@@ -422,6 +426,470 @@ CREATE TABLE lnav_db.lnav_file_metadata (
     file_collection& lfm_collection;
 };
 
+/**
+ * @return The name of the kind, as it is written in a format file.  The
+ *   kinds that a format file cannot use are given the name of the closest
+ *   kind it can.
+ */
+static string_fragment
+value_kind_name(value_kind_t kind)
+{
+    switch (kind) {
+        case value_kind_t::VALUE_W3C_QUOTED:
+            kind = value_kind_t::VALUE_QUOTED;
+            break;
+        case value_kind_t::VALUE_UNKNOWN:
+        case value_kind_t::VALUE_NULL:
+        case value_kind_t::VALUE__MAX:
+            kind = value_kind_t::VALUE_ANY;
+            break;
+        default:
+            break;
+    }
+    for (const auto* ev = VALUE_KIND_ENUM; !ev->first.empty(); ++ev) {
+        if (ev->second == (int) kind) {
+            return ev->first;
+        }
+    }
+
+    return "any"_frag;
+}
+
+struct lnav_format_values {
+    static constexpr const char* NAME = "lnav_format_values";
+    static constexpr const char* CREATE_STMT = R"(
+-- The values that the loaded log formats define.
+CREATE TABLE lnav_db.lnav_format_values (
+    format text,         -- The name of the log format.
+    name text,           -- The name of the value.
+    kind text,           -- The kind of value, e.g. 'string' or 'integer'.
+    unit_suffix text,    -- The suffix used when humanizing the value, e.g. 's' or 'B'.
+    unit_divisor real,   -- What the raw value is divided by to get the base unit implied by the suffix.
+    identifier integer   -- Indicates if the value is an identifier.
+);
+)";
+
+    struct cursor {
+        struct value_row {
+            intern_string_t vr_format;
+            logline_value_meta vr_meta;
+        };
+
+        sqlite3_vtab_cursor base;
+        std::vector<value_row>::iterator c_iter;
+        std::vector<value_row> c_rows;
+
+        explicit cursor(sqlite3_vtab* vt) : base({vt})
+        {
+            for (const auto& format : log_format::get_root_formats()) {
+                for (auto& meta : format->get_value_metadata()) {
+                    this->c_rows.emplace_back(
+                        value_row{format->get_name(), std::move(meta)});
+                }
+            }
+        }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& vr = *vc.c_iter;
+        const auto& meta = vr.vr_meta;
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, vr.vr_format);
+                break;
+            case 1:
+                to_sqlite(ctx, meta.lvm_name);
+                break;
+            case 2:
+                to_sqlite(ctx, value_kind_name(meta.lvm_kind));
+                break;
+            case 3:
+                if (meta.lvm_unit_suffix.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, meta.lvm_unit_suffix);
+                }
+                break;
+            case 4:
+                to_sqlite(ctx, meta.lvm_unit_divisor);
+                break;
+            case 5:
+                to_sqlite(ctx, meta.lvm_identifier);
+                break;
+            default:
+                ensure(0);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+};
+
+/**
+ * The columns that the value stats tables have in common, in order, starting
+ * from the count.
+ */
+enum class value_stats_col {
+    count,
+    text_count,
+    min,
+    max,
+    mean,
+    p50,
+    p90,
+    p99,
+    distinct_estimate,
+};
+
+void
+value_stats_to_sqlite(sqlite3_context* ctx,
+                      const logline_value_stats* stats,
+                      value_stats_col col)
+{
+    const auto has_numbers = stats != nullptr && stats->lvs_count > 0;
+    auto quantile = [&](double p) {
+        if (has_numbers && stats->lvs_tdigest.has_value()) {
+            to_sqlite(ctx, stats->lvs_tdigest->quantile(p));
+        } else {
+            sqlite3_result_null(ctx);
+        }
+    };
+
+    switch (col) {
+        case value_stats_col::count:
+            if (stats == nullptr) {
+                sqlite3_result_null(ctx);
+            } else {
+                to_sqlite(ctx, stats->lvs_count);
+            }
+            break;
+        case value_stats_col::text_count:
+            if (stats == nullptr) {
+                sqlite3_result_null(ctx);
+            } else {
+                to_sqlite(ctx, stats->lvs_text_count);
+            }
+            break;
+        case value_stats_col::min:
+            if (has_numbers) {
+                to_sqlite(ctx, stats->lvs_min_value);
+            } else {
+                sqlite3_result_null(ctx);
+            }
+            break;
+        case value_stats_col::max:
+            if (has_numbers) {
+                to_sqlite(ctx, stats->lvs_max_value);
+            } else {
+                sqlite3_result_null(ctx);
+            }
+            break;
+        case value_stats_col::mean:
+            if (has_numbers) {
+                to_sqlite(ctx, stats->lvs_total / stats->lvs_count);
+            } else {
+                sqlite3_result_null(ctx);
+            }
+            break;
+        case value_stats_col::p50:
+            quantile(50);
+            break;
+        case value_stats_col::p90:
+            quantile(90);
+            break;
+        case value_stats_col::p99:
+            quantile(99);
+            break;
+        case value_stats_col::distinct_estimate: {
+            auto est
+                = stats != nullptr ? stats->distinct_estimate() : std::nullopt;
+            if (est) {
+                to_sqlite(ctx, (int64_t) std::llround(est.value()));
+            } else {
+                sqlite3_result_null(ctx);
+            }
+            break;
+        }
+    }
+}
+
+struct lnav_file_value_stats {
+    static constexpr const char* NAME = "lnav_file_value_stats";
+    static constexpr const char* CREATE_STMT = R"(
+-- Statistics for the values in each open log file.  The numbers are raw
+-- values, divide them by the unit_divisor in lnav_format_values to get the
+-- base unit.
+CREATE TABLE lnav_db.lnav_file_value_stats (
+    filepath text,              -- The path to the file.
+    format text,                -- The name of the file's log format.
+    name text,                  -- The name of the value.
+    count integer,              -- The number of numeric values seen.
+    text_count integer,         -- The number of non-numeric values seen.
+    min real,                   -- The smallest numeric value.
+    max real,                   -- The largest numeric value.
+    mean real,                  -- The mean of the numeric values.
+    p50 real,                   -- The estimated median of the numeric values.
+    p90 real,                   -- The estimated 90th percentile of the numeric values.
+    p99 real,                   -- The estimated 99th percentile of the numeric values.
+    distinct_estimate integer   -- The estimated number of distinct non-numeric values.
+);
+)";
+
+    struct cursor {
+        struct stats_row {
+            std::shared_ptr<logfile> sr_logfile;
+            intern_string_t sr_format;
+            intern_string_t sr_name;
+            size_t sr_index;
+        };
+
+        sqlite3_vtab_cursor base;
+        std::vector<stats_row>::iterator c_iter;
+        std::vector<stats_row> c_rows;
+
+        cursor(sqlite3_vtab* vt)
+            : base({vt})
+        {
+            const auto& fc = ((vtab_module<tvt_no_update<lnav_file_value_stats>>::
+                                   vtab*) vt)
+                                 ->v_impl.lfvs_collection;
+
+            for (const auto& lf : fc.fc_files) {
+                const auto* format = lf->get_format_ptr();
+                if (format == nullptr) {
+                    continue;
+                }
+
+                const auto stats_count = lf->get_value_stats().size();
+                for (const auto& meta : format->get_value_metadata()) {
+                    if (!meta.lvm_values_index
+                        || meta.lvm_values_index.value() >= stats_count)
+                    {
+                        continue;
+                    }
+                    this->c_rows.emplace_back(
+                        stats_row{lf,
+                                  format->get_name(),
+                                  meta.lvm_name,
+                                  meta.lvm_values_index.value()});
+                }
+            }
+        }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    explicit lnav_file_value_stats(file_collection& fc) : lfvs_collection(fc)
+    {
+    }
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& sr = *vc.c_iter;
+        // The rows were collected when the cursor was opened, so check that
+        // the file still has the stats.
+        const auto& all_stats = sr.sr_logfile->get_value_stats();
+        const auto* stats = sr.sr_index < all_stats.size()
+            ? &all_stats[sr.sr_index]
+            : nullptr;
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, sr.sr_logfile->get_filename());
+                break;
+            case 1:
+                to_sqlite(ctx, sr.sr_format);
+                break;
+            case 2:
+                to_sqlite(ctx, sr.sr_name);
+                break;
+            default:
+                value_stats_to_sqlite(ctx, stats, value_stats_col(col - 3));
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    file_collection& lfvs_collection;
+};
+
+struct lnav_format_value_stats {
+    static constexpr const char* NAME = "lnav_format_value_stats";
+    static constexpr const char* CREATE_STMT = R"(
+-- Statistics for the values in each log format, combined across the files
+-- that are visible in the LOG view.  The numbers are raw values, divide them
+-- by the unit_divisor in lnav_format_values to get the base unit.
+CREATE TABLE lnav_db.lnav_format_value_stats (
+    format text,                -- The name of the log format.
+    name text,                  -- The name of the value.
+    files integer,              -- The number of files the statistics were combined from.
+    count integer,              -- The number of numeric values seen.
+    text_count integer,         -- The number of non-numeric values seen.
+    min real,                   -- The smallest numeric value.
+    max real,                   -- The largest numeric value.
+    mean real,                  -- The mean of the numeric values.
+    p50 real,                   -- The estimated median of the numeric values.
+    p90 real,                   -- The estimated 90th percentile of the numeric values.
+    p99 real,                   -- The estimated 99th percentile of the numeric values.
+    distinct_estimate integer   -- The estimated number of distinct non-numeric values.
+);
+)";
+
+    struct cursor {
+        struct stats_row {
+            intern_string_t sr_format;
+            intern_string_t sr_name;
+            size_t sr_files{0};
+            logline_value_stats sr_stats;
+        };
+
+        sqlite3_vtab_cursor base;
+        std::vector<stats_row>::iterator c_iter;
+        std::vector<stats_row> c_rows;
+
+        explicit cursor(sqlite3_vtab* vt) : base({vt})
+        {
+            // The rows are in the order the files and their values are
+            // first seen, so the output does not depend on addresses.
+            std::map<std::pair<const intern_string*, const intern_string*>,
+                     size_t>
+                row_indexes;
+
+            for (const auto& ld : lnav_data.ld_log_source) {
+                if (!ld->is_visible()) {
+                    continue;
+                }
+
+                const auto* lf = ld->get_file_ptr();
+                const auto* format = lf->get_format_ptr();
+                if (format == nullptr) {
+                    continue;
+                }
+
+                const auto& all_stats = lf->get_value_stats();
+                for (const auto& meta : format->get_value_metadata()) {
+                    if (!meta.lvm_values_index
+                        || meta.lvm_values_index.value() >= all_stats.size())
+                    {
+                        continue;
+                    }
+
+                    const auto key = std::make_pair(
+                        format->get_name().unwrap(), meta.lvm_name.unwrap());
+                    auto iter = row_indexes.find(key);
+                    if (iter == row_indexes.end()) {
+                        iter = row_indexes.emplace(key, this->c_rows.size())
+                                   .first;
+                        this->c_rows.emplace_back(
+                            stats_row{format->get_name(), meta.lvm_name});
+                    }
+
+                    auto& row = this->c_rows[iter->second];
+                    row.sr_files += 1;
+                    row.sr_stats.merge(
+                        all_stats[meta.lvm_values_index.value()]);
+                }
+            }
+            for (auto& row : this->c_rows) {
+                row.sr_stats.finalize();
+            }
+        }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& sr = *vc.c_iter;
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, sr.sr_format);
+                break;
+            case 1:
+                to_sqlite(ctx, sr.sr_name);
+                break;
+            case 2:
+                to_sqlite(ctx, (int64_t) sr.sr_files);
+                break;
+            default:
+                value_stats_to_sqlite(
+                    ctx, &sr.sr_stats, value_stats_col(col - 3));
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+};
+
 struct injectable_lnav_file : vtab_module<lnav_file> {
     using vtab_module::vtab_module;
     using injectable = injectable_lnav_file(file_collection&);
@@ -438,5 +906,22 @@ auto file_binder
 
 auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
                             .add<injectable_lnav_file_metadata>();
+
+struct injectable_lnav_file_value_stats
+    : vtab_module<tvt_no_update<lnav_file_value_stats>> {
+    using vtab_module::vtab_module;
+    using injectable = injectable_lnav_file_value_stats(file_collection&);
+};
+
+auto file_value_stats_binder = injector::bind_multiple<vtab_module_base>()
+                                   .add<injectable_lnav_file_value_stats>();
+
+auto format_value_stats_binder
+    = injector::bind_multiple<vtab_module_base>()
+          .add<vtab_module<tvt_no_update<lnav_format_value_stats>>>();
+
+auto format_values_binder
+    = injector::bind_multiple<vtab_module_base>()
+          .add<vtab_module<tvt_no_update<lnav_format_values>>>();
 
 }  // namespace

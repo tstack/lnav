@@ -30,6 +30,8 @@
 #ifndef lnav_top_status_source_hh
 #define lnav_top_status_source_hh
 
+#include <optional>
+
 #include "sqlitepp.client.hh"
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
@@ -64,10 +66,25 @@ public:
 
     bool update_user_msg();
 
+    /**
+     * Show the number of clients polling the external-access server next to
+     * the globe, if external access is enabled.
+     *
+     * @return True if the field changed.
+     */
+    bool update_ext_clients(size_t count);
+
+    /**
+     * Show the globe for external access, along with the given number of
+     * clients, whatever the field was showing before.
+     */
+    void enable_ext_access(size_t count);
+
 private:
     const top_status_source_cfg& tss_config;
     status_field tss_fields[TSF__MAX];
     prepared_stmt tss_user_msgs_stmt;
+    std::optional<size_t> tss_ext_client_count;
 };
 
 #endif

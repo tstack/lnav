@@ -908,10 +908,14 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
+    // The color for a file comes from the name shown for it, so it does not
+    // depend on where the file is.  Until the unique path is worked out, the
+    // file name is what it would be if no other open file had the same name.
+    const auto file_ident = this->lss_token_file->get_unique_path().empty()
+        ? this->lss_token_file->get_filename().filename()
+        : this->lss_token_file->get_unique_path();
     this->lss_token_al.al_attrs.emplace_back(
-        lr,
-        VC_STYLE.value(
-            vc.attrs_for_ident(this->lss_token_file->get_filename())));
+        lr, VC_STYLE.value(vc.attrs_for_ident(file_ident)));
 
     if (this->lss_line_context < line_context_t::none) {
         size_t file_offset_end
@@ -925,8 +929,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         lr.lr_end = file_offset_end + 1;
         this->lss_token_al.al_attrs.emplace_back(
             lr,
-            VC_STYLE.value(
-                vc.attrs_for_ident(this->lss_token_file->get_filename())));
+            VC_STYLE.value(vc.attrs_for_ident(file_ident)));
     } else if (this->lss_time_column_size > 0) {
         shift_string_attrs(
             this->lss_token_al.al_attrs, 1, this->lss_time_column_size);

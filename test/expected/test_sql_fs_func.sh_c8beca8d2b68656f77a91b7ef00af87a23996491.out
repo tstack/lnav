@@ -1,0 +1,4 @@
+Row 0:
+  Column    invalid: 0
+  Column null_pattern: (null)
+  Column  null_path: (null)
