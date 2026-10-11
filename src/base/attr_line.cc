@@ -739,7 +739,7 @@ attr_line_t::apply_hide(bool enabled)
             sattr.sa_value = icon;
             lr.lr_end = lr.lr_start + 3;
         } else if (sattr.sa_type == &SA_REPLACED) {
-            auto& lr = sattr.sa_range;
+            auto lr = sattr.sa_range;
 
             std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
                 if (attr.sa_type == &VC_STYLE && lr.contains(attr.sa_range)) {
@@ -748,9 +748,9 @@ attr_line_t::apply_hide(bool enabled)
             });
 
             this->al_string.erase(lr.lr_start, lr.length());
-            shift_string_attrs(sa, lr.lr_start, -lr.length());
+            shift_string_attrs(sa, lr, -lr.length());
             sattr.sa_type = &SA_REMOVED;
-            lr.lr_end = lr.lr_start;
+            sattr.sa_range.lr_end = lr.lr_start;
         }
     }
 }
@@ -809,14 +809,18 @@ attr_line_t::erase(size_t pos, size_t len)
 attr_line_t&
 attr_line_t::pad_to(ssize_t size)
 {
-    const ssize_t curr_len = this->column_width();
+    const ssize_t curr_width = this->column_width();
 
-    if (curr_len < size) {
-        this->append((size - curr_len), ' ');
+    if (curr_width < size) {
+        this->append((size - curr_width), ' ');
         for (auto& attr : this->al_attrs) {
-            if (attr.sa_range.lr_start == 0 && attr.sa_range.lr_end == curr_len)
-            {
+            const auto end_width
+                = attr.sa_range.lr_unit == line_range::unit::codepoint
+                ? attr.sa_range.lr_end
+                : this->byte_to_column_index(attr.sa_range.lr_end);
+            if (attr.sa_range.lr_start == 0 && end_width == curr_width) {
                 attr.sa_range.lr_end = this->al_string.length();
+                attr.sa_range.lr_unit = line_range::unit::bytes;
             }
         }
     }
@@ -886,8 +890,10 @@ line_range::shift_range(const line_range& cover, int32_t amount)
             this->lr_end = std::max(0, this->lr_end + amount);
         }
     } else {
-        if (amount < 0 && cover.contains(*this)) {
-            this->lr_start = cover.lr_start;
+        if (amount < 0) {
+            if (this->lr_start > cover.lr_start) {
+                this->lr_start = cover.lr_start;
+            }
         }
         if (this->lr_end != -1) {
             if (cover.lr_start < this->lr_end) {

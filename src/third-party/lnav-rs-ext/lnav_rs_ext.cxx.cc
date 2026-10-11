@@ -843,6 +843,7 @@ namespace lnav_rs_ext {
   enum class MessageKind : ::std::uint8_t;
   struct Message;
   struct CompileResult2;
+  struct FindLogOptions;
   struct FindLogResultJson;
   struct VarPair;
   struct SourceDetails;
@@ -946,6 +947,15 @@ struct CompileResult2 final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$CompileResult2
+
+#ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogOptions
+#define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogOptions
+struct FindLogOptions final {
+  bool extract_variables CXX_DEFAULT_VALUE(false);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogOptions
 
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResultJson
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResultJson
@@ -1183,7 +1193,7 @@ void lnav_rs_ext$cxxbridge1$202$get_status(::lnav_rs_ext::ExtProgress *return$) 
 
 ::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$202$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
 
-::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$202$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
+::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$202$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
 
 void lnav_rs_ext$cxxbridge1$202$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
@@ -1222,8 +1232,8 @@ void discover_srcs() noexcept {
   return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$202$find_log_statement(file, line, body));
 }
 
-::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$202$find_log_statement_json(file, line, body));
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept {
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$202$find_log_statement_json(file, line, body, options));
 }
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {

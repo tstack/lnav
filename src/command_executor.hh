@@ -450,6 +450,7 @@ std::future<std::string> pipe_callback(exec_context& ec,
                                        auto_fd& fd);
 
 int sql_progress(const struct log_cursor& lc);
+lnav::progress_result_t sql_cache_progress(file_off_t off, file_off_t total);
 void sql_progress_finished();
 
 void add_global_vars(exec_context& ec);

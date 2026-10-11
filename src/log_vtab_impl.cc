@@ -524,15 +524,13 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     p_cur->log_cursor.lc_sub_index = 0;
     p_cur->log_cursor.lc_extract_context.ec_cols_used = -1;
 
+    std::vector<logfile*> files;
     for (auto& ld : *p_vt->lss) {
-        auto* lf = ld->get_file_ptr();
-
-        if (lf == nullptr) {
-            continue;
+        if (ld->is_visible()) {
+            files.emplace_back(ld->get_file_ptr());
         }
-
-        lf->enable_cache();
     }
+    lnav::logfile_enable_caches(files, log_vtab_data.lvd_cache_progress);
 
     return SQLITE_OK;
 }

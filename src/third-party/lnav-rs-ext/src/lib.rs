@@ -4,12 +4,15 @@ extern crate alloc;
 mod ext_access;
 
 use crate::ext_access::{set_login_otp, start_server, stop_server};
-use crate::ffi::{get_lnav_log_level, notify_completion, notify_pollers, ExtError, ExtProgress, FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair};
+use crate::ffi::{
+    get_lnav_log_level, notify_completion, notify_pollers, ExtError, ExtProgress, FindLogOptions,
+    FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
+};
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
-    Cache, LogError, LogMapping, LogMatcher, LogRefBuilder, ProgressTracker, ProgressUpdate,
-    SourceRef, VariablePair, WorkInfo,
+    Cache, LogError, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder, ProgressTracker,
+    ProgressUpdate, SourceRef, VariablePair, WorkInfo,
 };
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
@@ -196,6 +199,10 @@ mod ffi {
         pub messages: Vec<Message>,
     }
 
+    struct FindLogOptions {
+        pub extract_variables: bool,
+    }
+
     struct FindLogResultJson {
         pub src: String,
         pub pattern: String,
@@ -363,6 +370,7 @@ mod ffi {
             file: &str,
             line: usize,
             body: &str,
+            options: &FindLogOptions,
         ) -> UniquePtr<FindLogResultJson>;
 
         fn get_log_statements_for(file: &str) -> Vec<FindLogResult>;
@@ -556,19 +564,19 @@ fn get_status() -> ExtProgress {
     retval
 }
 
-impl From<SourceRef> for FindLogResult {
-    fn from(value: SourceRef) -> Self {
+impl From<&SourceRef> for FindLogResult {
+    fn from(value: &SourceRef) -> Self {
         Self {
             src: SourceDetails {
-                file: value.source_path,
+                file: value.source_path.to_string(),
                 begin_line: value.line_no,
                 end_line: value.end_line_no,
-                name: value.name,
-                qualified_name: value.qualified_name,
+                name: value.name.to_string(),
+                qualified_name: value.qualified_name.to_string(),
                 block_id: value.block_id,
                 language: value.language.as_str(),
             },
-            pattern: value.pattern_str,
+            pattern: value.pattern_str.to_string(),
             variables: vec![],
         }
     }
@@ -596,7 +604,7 @@ fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLo
         variables,
         src_ref: Some(src_ref),
         ..
-    }) = log_matcher.match_log_statement(&log_ref)
+    }) = log_matcher.match_log_statement(&log_ref, &LogMatchOptions::default())
     {
         let retval: FindLogResult = src_ref.into();
         UniquePtr::new(retval.with_variables(variables))
@@ -605,7 +613,24 @@ fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLo
     }
 }
 
-fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResultJson> {
+#[derive(Clone, Debug, Serialize)]
+pub struct SourceDetailsBorrowed<'a> {
+    pub file: &'a str,
+    pub begin_line: usize,
+    pub end_line: usize,
+    pub name: &'a str,
+    pub qualified_name: &'a str,
+    /// The start byte of the innermost block containing the statement.
+    pub block_id: u32,
+    pub language: &'static str,
+}
+
+fn find_log_statement_json(
+    file: &str,
+    lineno: usize,
+    body: &str,
+    options: &FindLogOptions,
+) -> UniquePtr<FindLogResultJson> {
     let log_matcher = LOG_MATCHER.lock().unwrap();
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
@@ -613,19 +638,24 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
         .with_body(Some(body))
         .build(body);
 
+    
     if let Some(LogMapping {
         variables,
         src_ref: Some(src_ref),
         exception_trace,
         ..
-    }) = log_matcher.match_log_statement(&log_ref)
-    {
-        let src_details = SourceDetails {
-            file: src_ref.source_path,
+    }) = log_matcher.match_log_statement(
+        &log_ref,
+        &LogMatchOptions {
+            extract_variables: options.extract_variables,
+        },
+    ) {
+        let src_details = SourceDetailsBorrowed {
+            file: src_ref.source_path.as_str(),
             begin_line: src_ref.line_no,
             end_line: src_ref.end_line_no,
-            name: src_ref.name,
-            qualified_name: src_ref.qualified_name,
+            name: src_ref.name.as_str(),
+            qualified_name: src_ref.qualified_name.as_str(),
             block_id: src_ref.block_id,
             language: src_ref.language.as_str(),
         };
@@ -636,7 +666,7 @@ fn find_log_statement_json(file: &str, lineno: usize, body: &str) -> UniquePtr<F
         };
         UniquePtr::new(FindLogResultJson {
             src: serde_json::to_string(&src_details).unwrap(),
-            pattern: src_ref.pattern_str,
+            pattern: src_ref.pattern_str.clone(),
             variables: serde_json::to_string(&variables).unwrap(),
             stack_trace,
         })
@@ -668,11 +698,7 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     let mut retval = vec![];
 
     for stmts in matcher.find_source_file_statements(path) {
-        retval.extend(
-            stmts
-                .statements()
-                .map(|src_ref| src_ref.clone().into()),
-        );
+        retval.extend(stmts.statements().map(|src_ref| src_ref.into()));
     }
     retval
 }

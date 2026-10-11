@@ -92,6 +92,20 @@ namespace lnav {
  */
 size_t logfile_indexing_width(size_t file_count);
 
+/**
+ * Decompress the given files into the line-buffer cache, several at a time.
+ *
+ * @param on_progress Called on this thread with the compressed bytes consumed
+ *   so far and the total, or (0, 0) when none of the files can say.
+ *   Returning interrupt stops every file that is still being cached.
+ * @return False if on_progress interrupted the work.
+ */
+bool logfile_enable_caches(
+    const std::vector<::logfile*>& files,
+    const std::function<progress_result_t(file_off_t, file_off_t)>&
+        on_progress
+    = {});
+
 }  // namespace lnav
 
 struct logfile_activity {
@@ -708,7 +722,12 @@ public:
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
-    void enable_cache() { this->lf_line_buffer.enable_cache(); }
+    bool needs_cache() const { return this->lf_line_buffer.needs_cache(); }
+
+    void enable_cache(const line_buffer::cache_progress_cb& on_progress = {})
+    {
+        this->lf_line_buffer.enable_cache(on_progress);
+    }
 
     void dump_stats();
 

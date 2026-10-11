@@ -1746,7 +1746,7 @@ line_buffer_cache_path()
 }
 
 void
-line_buffer::enable_cache()
+line_buffer::enable_cache(const cache_progress_cb& on_progress)
 {
     if (!this->lb_compressed || this->lb_cached_fd) {
         log_info("%d: skipping cache request (compressed=%d already-cached=%d)",
@@ -1770,7 +1770,14 @@ line_buffer::enable_cache()
                                 .to_string();
     auto cache_dir = line_buffer_cache_path() / cached_base_name.substr(0, 2);
 
-    std::filesystem::create_directories(cache_dir);
+    std::error_code ec;
+    std::filesystem::create_directories(cache_dir, ec);
+    if (ec) {
+        log_error("failed to create cache directory: %s -- %s",
+                  cache_dir.c_str(),
+                  ec.message().c_str());
+        return;
+    }
 
     auto cached_file_name = fmt::format(FMT_STRING("{}.bin"), cached_base_name);
     auto cached_file_path = cache_dir / cached_file_name;
@@ -1826,6 +1833,27 @@ line_buffer::enable_cache()
             }
 
             off += avail;
+
+            if (on_progress) {
+                // Only gzip tracks how far into the compressed stream it has
+                // read; bzip2 reopens the file on every fill.
+                auto done = file_off_t{0};
+                auto total = file_off_t{0};
+                if (this->lb_compressed_offset > 0) {
+                    total = st.st_size;
+                    done = std::min(this->lb_compressed_offset, total);
+                }
+                if (on_progress(done, total)
+                    == lnav::progress_result_t::interrupt)
+                {
+                    log_info("%d: caching interrupted at %lld",
+                             this->lb_fd.get(),
+                             off);
+                    write_fd.reset();
+                    std::filesystem::remove(cached_file_path, ec);
+                    return;
+                }
+            }
         }
     }
 

@@ -355,14 +355,22 @@ text_anonymizer::next(string_fragment line)
                             (unsigned char) ((base_mac >> 0) & 0xff),
                         });
 
-                        return anon_mac.to_string(std::make_optional(inp[2]));
+                        return fmt::format(
+                            FMT_STRING("{:02x}"),
+                            fmt::join(anon_mac.in(),
+                                      anon_mac.in() + anon_mac.BYTE_COUNT,
+                                      std::string_view{&inp[2], 1}));
                     });
                 break;
             }
             case DT_HEX_DUMP: {
                 auto hex_str = tok_res->to_string();
-                auto hash_str = hasher().update(hex_str).to_array().to_string(
-                    std::make_optional(hex_str[2]));
+                auto hash_arr = hasher().update(hex_str).to_array();
+                auto hash_str = fmt::format(
+                    FMT_STRING("{:02x}"),
+                    fmt::join(hash_arr.in(),
+                              hash_arr.in() + hash_arr.BYTE_COUNT,
+                              std::string_view{&hex_str[2], 1}));
                 std::string anon_hex;
 
                 while (anon_hex.size() < hex_str.size()) {

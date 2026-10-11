@@ -35,6 +35,7 @@
 #include <array>
 #include <atomic>
 #include <exception>
+#include <functional>
 #include <future>
 #include <vector>
 
@@ -51,6 +52,7 @@
 #include "base/lnav.gzip.hh"
 #include "base/log_level_enum.hh"
 #include "base/piper.file.hh"
+#include "base/progress.hh"
 #include "base/result.h"
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
@@ -303,7 +305,23 @@ public:
 
     const file_header_t& get_header_data() const { return this->lb_header; }
 
-    void enable_cache();
+    /**
+     * Callback for enable_cache() to report how much of the compressed file
+     * has been consumed.  Both arguments are zero when the format cannot say.
+     */
+    using cache_progress_cb
+        = std::function<lnav::progress_result_t(file_off_t, file_off_t)>;
+
+    /**
+     * @return True if enable_cache() would decompress this file into the
+     * cache.
+     */
+    bool needs_cache() const
+    {
+        return this->lb_compressed && !this->lb_cached_fd;
+    }
+
+    void enable_cache(const cache_progress_cb& on_progress = {});
 
     file_ssize_t get_piper_header_size() const
     {

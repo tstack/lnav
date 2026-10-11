@@ -36,13 +36,38 @@
 
 using namespace lnav::roles::literals;
 
+std::ostream&
+operator<<(std::ostream& os, const line_range& lr)
+{
+    return os << lr.lr_start << ":" << lr.lr_end;
+}
+
 TEST_CASE("line_range")
 {
-    line_range lr1{0, 95};
-    line_range lr2{0, -1};
+    SUBCASE("less than")
+    {
+        line_range lr1{0, 95};
+        line_range lr2{0, -1};
 
-    CHECK(lr2 < lr1);
-    CHECK(!(lr1 < lr2));
+        CHECK(lr2 < lr1);
+        CHECK(!(lr1 < lr2));
+    }
+
+    SUBCASE("shift_range")
+    {
+        auto lr = line_range{5, 10};
+        auto cover = line_range{7, 12};
+
+        CHECK(lr.shift_range(cover, -5) == line_range{5, 7});
+    }
+
+    SUBCASE("shift_range rev")
+    {
+        auto lr = line_range{7, 12};
+        auto cover = line_range{5, 10};
+
+        CHECK(lr.shift_range(cover, -5) == line_range{5, 7});
+    }
 }
 
 TEST_CASE("string_attr::cursor-line-paint-order")
@@ -231,4 +256,128 @@ TEST_CASE("attr_line_t::from_table_cell_content with escapes")
 
     auto short_al = attr_line_t::from_table_cell_content(sf, 100);
     CHECK(short_al.get_string() == "abababababababababababababababababababab");
+}
+
+static std::optional<line_range>
+find_role_range(const attr_line_t& al, role_t role)
+{
+    for (const auto& sa : al.get_attrs()) {
+        if (sa.sa_type == &VC_ROLE && sa.sa_value.get<role_t>() == role) {
+            return sa.sa_range;
+        }
+    }
+    return std::nullopt;
+}
+
+TEST_CASE("attr_line_t::erase attr starting inside erased range")
+{
+    auto al = attr_line_t("0123456789AB");
+    al.al_attrs.emplace_back(line_range{7, 12},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+    al.al_attrs.emplace_back(line_range{7, -1},
+                             VC_ROLE.value(role_t::VCR_WARNING));
+    al.erase(5, 5);
+
+    CHECK(al.get_string() == "01234AB");
+    CHECK(find_role_range(al, role_t::VCR_ERROR) == line_range{5, 7});
+    CHECK(find_role_range(al, role_t::VCR_WARNING) == line_range{5, -1});
+}
+
+TEST_CASE("attr_line_t::apply_hide replaced")
+{
+    auto al = attr_line_t("0123456789AB");
+    al.al_attrs.emplace_back(line_range{5, 10}, SA_REPLACED.value());
+    al.al_attrs.emplace_back(line_range{0, 7},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+    al.al_attrs.emplace_back(line_range{7, 12},
+                             VC_ROLE.value(role_t::VCR_WARNING));
+    al.apply_hide(false);
+
+    CHECK(al.get_string() == "01234AB");
+    CHECK(find_role_range(al, role_t::VCR_ERROR) == line_range{0, 5});
+    CHECK(find_role_range(al, role_t::VCR_WARNING) == line_range{5, 7});
+}
+
+TEST_CASE("attr_line_t::pad_to utf8")
+{
+    auto al = attr_line_t("héllo");
+    al.al_attrs.emplace_back(line_range{0, 6},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+    al.pad_to(8);
+
+    CHECK(al.column_width() == 8);
+    CHECK(find_role_range(al, role_t::VCR_ERROR) == line_range{0, 9});
+}
+
+TEST_CASE("attr_line_t::right_justify utf8" * doctest::should_fail())
+{
+    auto al = attr_line_t("héllo");
+    al.right_justify(8);
+
+    CHECK(al.column_width() == 8);
+}
+
+TEST_CASE("attr_line_t::split_lines empty line" * doctest::should_fail())
+{
+    auto al = attr_line_t("ab\n\ncd");
+    al.al_attrs.emplace_back(line_range{0, -1},
+                             VC_ROLE.value(role_t::VCR_ERROR));
+
+    auto lines = al.split_lines();
+    REQUIRE(lines.size() == 3);
+    for (const auto& line : lines) {
+        for (const auto& sa : line.get_attrs()) {
+            CHECK(sa.sa_range.lr_end <= (int) line.get_string().length());
+        }
+    }
+}
+
+TEST_CASE("attr_line_t::highlight_fuzzy_matches past 255 bytes"
+          * doctest::should_fail())
+{
+    auto al = attr_line_t(std::string(300, 'x') + "abc");
+    al.highlight_fuzzy_matches("abc");
+
+    auto match_count = 0;
+    for (const auto& sa : al.get_attrs()) {
+        if (sa.sa_type == &VC_ROLE
+            && sa.sa_value.get<role_t>() == role_t::VCR_FUZZY_MATCH)
+        {
+            CHECK(sa.sa_range.lr_start >= 300);
+            match_count += 1;
+        }
+    }
+    CHECK(match_count == 3);
+}
+
+TEST_CASE("attr_line_t::with_ansi_string format clears attrs"
+          * doctest::should_fail())
+{
+    auto al = attr_line_t("abc").with_attr_for_all(
+        VC_ROLE.value(role_t::VCR_ERROR));
+    al.with_ansi_string("%s", "def");
+
+    CHECK(al.get_attrs().empty());
+}
+
+TEST_CASE("attr_line_t::from_table_cell_content wide chars"
+          * doctest::should_fail())
+{
+    auto al = attr_line_t::from_table_cell_content(
+        string_fragment::from_const("日本語日本語"),
+        4);
+
+    CHECK(al.column_width() <= 4);
+}
+
+TEST_CASE("attr_line_t::wrap multi-line preformatted" * doctest::skip())
+{
+    auto al = attr_line_t("abc\ndef");
+    al.al_attrs.emplace_back(line_range{0, 7}, SA_PREFORMATTED.value());
+    text_wrap_settings tws;
+    tws.with_width(40);
+
+    al.append(attr_line_t("xyz"), &tws);
+
+    CHECK(al.get_string() == "abc\ndefxyz");
 }

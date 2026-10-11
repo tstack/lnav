@@ -81,15 +81,11 @@ struct byte_array {
     void clear() { memset(this->ba_data, 0, BYTE_COUNT); }
 
     template<typename OutputIt>
-    void to_string(OutputIt out,
-                   std::optional<char> separator = std::nullopt) const
+    void to_string(OutputIt out) const
     {
-        for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
-            if (lpc > 0 && separator) {
-                *out = separator.value();
-            }
-            fmt::format_to(out, FMT_STRING("{:02x}"), this->ba_data[lpc]);
-        }
+        fmt::format_to(out,
+                       FMT_STRING("{:02x}"),
+                       fmt::join(this->ba_data, this->ba_data + BYTE_COUNT, ""));
     }
 
     std::string to_uuid_string() const
@@ -115,12 +111,12 @@ struct byte_array {
             this->ba_data[15 % BYTE_COUNT]);
     }
 
-    std::string to_string(std::optional<char> separator = std::nullopt) const
+    std::string to_string() const
     {
         std::string retval;
 
         retval.reserve(STRING_SIZE);
-        this->to_string(std::back_inserter(retval), separator);
+        this->to_string(std::back_inserter(retval));
         return retval;
     }
 

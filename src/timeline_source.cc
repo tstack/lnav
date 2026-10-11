@@ -1007,6 +1007,32 @@ timeline_source::rebuild_indexes()
     log_info("building opid table");
     auto last_log_time = std::chrono::microseconds{};
     tlx::btree_map<std::chrono::microseconds, std::string> part_map;
+    {
+        std::vector<logfile*> files;
+        for (const auto& ld : this->ts_lss) {
+            if (ld->is_visible()) {
+                files.emplace_back(ld->get_file_ptr());
+            }
+        }
+        auto on_progress
+            = std::function<lnav::progress_result_t(file_off_t, file_off_t)>{};
+        if (this->ts_index_progress) {
+            on_progress = [this](file_off_t off, file_off_t total) {
+                auto prog = progress_t{1, 1, true};
+                if (total > 0) {
+                    prog.p_curr = off;
+                    prog.p_total = total;
+                }
+                return this->ts_index_progress(prog);
+            };
+        }
+        if (!lnav::logfile_enable_caches(files, on_progress)) {
+            log_debug("timeline rebuild interrupted while caching");
+            this->ts_index_progress(std::nullopt);
+            this->ts_rebuild_in_progress = false;
+            return false;
+        }
+    }
     for (const auto& [index, ld] : lnav::itertools::enumerate(this->ts_lss)) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
@@ -1016,7 +1042,6 @@ timeline_source::rebuild_indexes()
         }
 
         auto* lf = ld->get_file_ptr();
-        lf->enable_cache();
 
         const auto& mark_meta = lf->get_bookmark_metadata();
         {

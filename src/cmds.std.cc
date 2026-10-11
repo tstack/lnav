@@ -2161,6 +2161,7 @@ com_summarize(exec_context& ec,
     const auto& top_source = ec.ec_source.back();
     sql_progress_guard progress_guard(sql_progress,
                                       sql_progress_finished,
+                                      sql_cache_progress,
                                       top_source.s_location,
                                       top_source.s_content,
                                       true);

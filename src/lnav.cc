@@ -1947,8 +1947,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         tss->ts_index_progress
             = [refresher](std::optional<timeline_source::progress_t> prog) {
                   if (prog) {
-                      lnav_data.ld_bottom_source.update_loading(prog->p_curr,
-                                                                prog->p_total);
+                      lnav_data.ld_bottom_source.update_loading(
+                          prog->p_curr,
+                          prog->p_total,
+                          prog->p_caching ? "Caching" : "Loading");
                   } else {
                       lnav_data.ld_bottom_source.update_loading(0, 0);
                   }

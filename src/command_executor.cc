@@ -108,6 +108,36 @@ sql_progress(const log_cursor& lc)
     return 0;
 }
 
+lnav::progress_result_t
+sql_cache_progress(file_off_t off, file_off_t total)
+{
+    if (lnav_data.ld_window == nullptr) {
+        return lnav::progress_result_t::ok;
+    }
+
+    if (!lnav_data.ld_looping) {
+        return lnav::progress_result_t::interrupt;
+    }
+
+    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
+        auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+        breadcrumb_view->set_enabled(false);
+        lnav_data.ld_status[LNS_TOP].set_enabled(false);
+        lnav_data.ld_view_stack.top() |
+            [](auto* tc) { tc->set_enabled(false); };
+        if (total > 0 && off < total) {
+            lnav_data.ld_bottom_source.update_loading(off, total, "Caching");
+        } else {
+            lnav_data.ld_bottom_source.update_loading(1, 1);
+        }
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+        lnav::prompt::get().p_editor.clear_alt_value();
+        return lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
+    }
+
+    return lnav::progress_result_t::ok;
+}
+
 void
 sql_progress_finished()
 {
@@ -392,6 +422,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     sql_progress_guard progress_guard(
         sql_progress,
         sql_progress_finished,
+        sql_cache_progress,
         source.s_location,
         source.s_content,
         !ec.get_provenance<exec_context::format_rewrite>().has_value());

@@ -1041,6 +1041,80 @@ lnav::logfile_indexing_width(size_t file_count)
     return std::min(static_cast<size_t>(configured), file_count);
 }
 
+bool
+lnav::logfile_enable_caches(
+    const std::vector<::logfile*>& files,
+    const std::function<progress_result_t(file_off_t, file_off_t)>&
+        on_progress)
+{
+    std::vector<::logfile*> work;
+    auto total = file_off_t{0};
+    for (auto* lf : files) {
+        if (lf == nullptr || !lf->needs_cache()) {
+            continue;
+        }
+        work.emplace_back(lf);
+        total += lf->get_stat().st_size;
+    }
+
+    if (work.empty()) {
+        return true;
+    }
+
+    // Written by the workers, read by the tick on this thread.  A file that
+    // cannot report a position (bzip2) only counts once it is finished.
+    std::vector<std::atomic<file_off_t>> done(work.size());
+    std::atomic<bool> determinate{false};
+    std::atomic<bool> interrupted{false};
+    const auto width = logfile_indexing_width(work.size());
+    auto curr_opid = lnav_current_opid();
+
+    parallel_for_each(
+        work.size(),
+        width,
+        [&](size_t index) {
+            auto op = lnav_opid_guard::resume(curr_opid);
+            auto* lf = work[index];
+
+            if (interrupted.load()) {
+                return;
+            }
+            lf->enable_cache([&](file_off_t off, file_off_t file_total) {
+                if (file_total > 0) {
+                    done[index].store(off, std::memory_order_relaxed);
+                    determinate.store(true, std::memory_order_relaxed);
+                }
+                return interrupted.load(std::memory_order_relaxed)
+                    ? progress_result_t::interrupt
+                    : progress_result_t::ok;
+            });
+            if (!interrupted.load()) {
+                done[index].store(lf->get_stat().st_size);
+            }
+        },
+        on_progress
+            ? std::function<void()>([&]() {
+                  if (interrupted.load()) {
+                      return;
+                  }
+
+                  auto curr = file_off_t{0};
+                  for (const auto& d : done) {
+                      curr += d.load(std::memory_order_relaxed);
+                  }
+                  auto res = curr == 0 && !determinate.load()
+                      ? on_progress(0, 0)
+                      : on_progress(std::min(curr, total), total);
+                  if (res == progress_result_t::interrupt) {
+                      interrupted.store(true);
+                  }
+              })
+            : std::function<void()>{},
+        100ms);
+
+    return !interrupted.load();
+}
+
 void
 logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
 {

@@ -43,6 +43,7 @@
 
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/log_level_enum.hh"
+#include "base/progress.hh"
 #include "base/string_attr_type.hh"
 #include "log_format_fwd.hh"
 #include "pcrepp/pcre2pp.hh"
@@ -444,11 +445,14 @@ protected:
 
 using sql_progress_callback_t = int (*)(const log_cursor&);
 using sql_progress_finished_callback_t = void (*)();
+using sql_cache_progress_callback_t
+    = lnav::progress_result_t (*)(file_off_t, file_off_t);
 
 struct _log_vtab_data {
     bool lvd_looping{true};
     sql_progress_callback_t lvd_progress;
     sql_progress_finished_callback_t lvd_finished;
+    sql_cache_progress_callback_t lvd_cache_progress;
     source_location lvd_location;
     attr_line_t lvd_content;
 };
@@ -459,6 +463,7 @@ class sql_progress_guard {
 public:
     sql_progress_guard(sql_progress_callback_t cb,
                        sql_progress_finished_callback_t fcb,
+                       sql_cache_progress_callback_t ccb,
                        source_location loc,
                        const attr_line_t& content,
                        bool run_cb)
@@ -467,6 +472,7 @@ public:
         if (run_cb) {
             log_vtab_data.lvd_progress = cb;
             log_vtab_data.lvd_finished = fcb;
+            log_vtab_data.lvd_cache_progress = ccb;
         }
         log_vtab_data.lvd_location = loc;
         log_vtab_data.lvd_content = content;
@@ -476,6 +482,7 @@ public:
     {
         log_vtab_data.lvd_looping = true;
         log_vtab_data.lvd_progress = nullptr;
+        log_vtab_data.lvd_cache_progress = nullptr;
         log_vtab_data.lvd_location = source_location{};
         log_vtab_data.lvd_content.clear();
         if (log_vtab_data.lvd_finished) {

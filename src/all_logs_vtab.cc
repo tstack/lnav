@@ -140,11 +140,6 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
     auto src_file_sf = sub_values.lvv_src_file_value;
     auto src_line_sf = sub_values.lvv_src_line_value;
     auto h = hasher();
-    if (src_file_sf && src_line_sf) {
-        h.update(format->get_name().c_str());
-        h.update(src_file_sf.value());
-        h.update(src_line_sf.value());
-    }
 #ifdef HAVE_RUST_DEPS
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;
@@ -161,14 +156,15 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
     std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_res;
     if (is_msg_utf8) {
         auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
+        auto find_options = lnav_rs_ext::FindLogOptions{
+            .extract_variables = ec.is_column_used(this->alv_values_meta),
+        };
         find_res = lnav_rs_ext::find_log_statement_json(
-            file_rust_str, lineno, body_rust_str);
+            file_rust_str, lineno, body_rust_str, find_options);
     }
     if (find_res != nullptr) {
-        if (!src_file_sf || !src_line_sf) {
-            h.update(find_res->src.c_str());
-            h.update(find_res->pattern.c_str());
-        }
+        h.update(find_res->src.c_str());
+        h.update(find_res->pattern.c_str());
         auto line_iter = lf->begin() + line_number;
         line_iter->merge_bloom_bits(h.to_bloom_bits());
         line_iter->set_schema_computed(true);
@@ -198,6 +194,11 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
 
         elements_to_json(gen, dp, &dp.dp_pairs);
 
+        if (src_file_sf && src_line_sf) {
+            h.update(format->get_name().c_str());
+            h.update(src_file_sf.value());
+            h.update(src_line_sf.value());
+        }
         auto schema_id = (src_file_sf && src_line_sf)
             ? h.to_string()
             : dp.dp_schema_id.to_string();

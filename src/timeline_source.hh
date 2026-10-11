@@ -305,6 +305,7 @@ public:
     struct progress_t {
         size_t p_curr{0};
         size_t p_total{0};
+        bool p_caching{false};
     };
 
     std::function<lnav::progress_result_t(std::optional<progress_t>)>
