@@ -2641,7 +2641,13 @@ logfile_sub_source::reobserve_files()
 
         auto start
             = lf->begin() + ld->ld_filter_state.get_min_count(lf->size());
+        if (start == lf->end()) {
+            continue;
+        }
 
+        log_debug("reobserving %s from %zu",
+                  lf->get_filename_as_string().c_str(),
+                  start - lf->begin());
         lf->begin_reobserve_progress(start);
         work.emplace_back(lf);
         starts.emplace_back(start);

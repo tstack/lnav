@@ -94,6 +94,12 @@ The following routes are available:
   variable name as sent.  In SQL statements, the variable is a bound
   parameter, and in commands it expands to a single argument.
 
+  The results of SQL statements in the script go to a DB view of the
+  request's own, so a client's queries don't replace what the user has in
+  the DB view.  To put them in the regular DB view instead, for example to
+  show them with :code:`:spectrogram`, send an
+  :code:`X-Lnav-Db-View: shared` header.
+
 * | :code:`POST /api/poll`
   | :code:`Content-Type: application/json`
 

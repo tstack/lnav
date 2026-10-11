@@ -1476,12 +1476,15 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                 this->fos_static_lines = msg.to_attr_line().split_lines();
                 this->fos_static_lines_state = curr_state;
             }
-
         } else if (this->fos_tss.empty()) {
             this->fos_static_lines = *lnav::messages::view::no_files();
+            this->fos_static_lines_state.clear();
         } else {
             this->fos_static_lines = *lnav::messages::view::only_text_files();
+            this->fos_static_lines_state.clear();
         }
+        this->fos_header_line = std::nullopt;
+        this->fos_header_line_context = std::nullopt;
         apply_status_attrs(this->fos_static_lines);
         lines = &this->fos_static_lines;
     } else if (y == 0) {

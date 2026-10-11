@@ -1058,8 +1058,7 @@ lnav::logfile_caches_in_flight()
 bool
 lnav::logfile_enable_caches(
     const std::vector<::logfile*>& files,
-    const std::function<progress_result_t(file_off_t, file_off_t)>&
-        on_progress)
+    const std::function<progress_result_t(file_off_t, file_off_t)>& on_progress)
 {
     std::vector<::logfile*> work;
     auto total = file_off_t{0};
@@ -1113,24 +1112,23 @@ lnav::logfile_enable_caches(
                 done[index].store(lf->get_stat().st_size);
             }
         },
-        on_progress
-            ? std::function<void()>([&]() {
-                  if (interrupted.load()) {
-                      return;
-                  }
+        on_progress ? std::function<void()>([&]() {
+            if (interrupted.load()) {
+                return;
+            }
 
-                  auto curr = file_off_t{0};
-                  for (const auto& d : done) {
-                      curr += d.load(std::memory_order_relaxed);
-                  }
-                  auto res = curr == 0 && !determinate.load()
-                      ? on_progress(0, 0)
-                      : on_progress(std::min(curr, total), total);
-                  if (res == progress_result_t::interrupt) {
-                      interrupted.store(true);
-                  }
-              })
-            : std::function<void()>{},
+            auto curr = file_off_t{0};
+            for (const auto& d : done) {
+                curr += d.load(std::memory_order_relaxed);
+            }
+            auto res = curr == 0 && !determinate.load()
+                ? on_progress(0, 0)
+                : on_progress(std::min(curr, total), total);
+            if (res == progress_result_t::interrupt) {
+                interrupted.store(true);
+            }
+        })
+                    : std::function<void()>{},
         100ms);
 
     return !interrupted.load();
@@ -2802,7 +2800,11 @@ logfile::read_file(read_format_t format)
 Result<shared_buffer_ref, std::string>
 logfile::read_range(const file_range& fr)
 {
-    return this->lf_line_buffer.read_range(fr);
+    try {
+        return this->lf_line_buffer.read_range(fr);
+    } catch (const line_buffer::error& e) {
+        return Err(std::error_code{e.e_err, std::generic_category()}.message());
+    }
 }
 
 size_t
@@ -2933,6 +2935,10 @@ logfile::reobserve_from(iterator iter)
     // offset as a size.
     this->lf_index_progress.ip_total.store(this->lf_index_size,
                                            std::memory_order_relaxed);
+    // Asked once, since the filter stack it answers for can't change while
+    // this runs.
+    const auto observer_wants_text
+        = this->lf_logline_observer->logline_wants_text();
 
     for (; iter != this->end(); ++iter) {
         if (iter->get_sub_offset() > 0) {
@@ -2945,15 +2951,26 @@ logfile::reobserve_from(iterator iter)
             break;
         }
 
-        this->read_line(iter).then([this, iter](auto sbr) {
-            auto iter_end = iter + 1;
-
-            while (iter_end != this->end() && iter_end->get_sub_offset() != 0) {
-                ++iter_end;
+        // As in the indexing pass, the line is only read if the observer is
+        // going to look at it, but the observer is still told about the line.
+        shared_buffer_ref sbr;
+        if (observer_wants_text) {
+            auto read_res
+                = this->read_range(this->get_file_range(iter, false));
+            if (read_res.isErr()) {
+                continue;
             }
-            this->lf_logline_observer->logline_new_lines(
-                *this, iter, iter_end, sbr);
-        });
+            sbr = read_res.unwrap();
+            sbr.rtrim(is_line_ending);
+            sbr.erase_ansi();
+        }
+
+        auto iter_end = iter + 1;
+        while (iter_end != this->end() && iter_end->get_sub_offset() != 0) {
+            ++iter_end;
+        }
+        this->lf_logline_observer->logline_new_lines(
+            *this, iter, iter_end, sbr);
     }
     this->lf_index_progress.ip_offset.store(this->lf_index_size,
                                             std::memory_order_relaxed);

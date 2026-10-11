@@ -841,6 +841,26 @@ get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
         });
 }
 
+/**
+ * True if the request asked for its SQL results to go to the regular DB view
+ * with an "X-Lnav-Db-View: shared" header.  [hdrs] is the request's headers as
+ * a JSON object with lowercase names.
+ */
+static bool
+wants_shared_db_view(const std::string& hdrs)
+{
+    static const char* PATH[] = {"x-lnav-db-view", nullptr};
+    char errbuf[256];
+    auto_mem<yajl_val_s> tree(yajl_tree_free);
+
+    tree = yajl_tree_parse(hdrs.c_str(), errbuf, sizeof(errbuf));
+    if (tree.in() == nullptr) {
+        return false;
+    }
+    auto* val = yajl_tree_get(tree.in(), PATH, yajl_t_string);
+    return val != nullptr && strcasecmp(YAJL_GET_STRING(val), "shared") == 0;
+}
+
 ExecResult
 execute_external_command(::rust::String rs_src,
                          ::rust::String rs_script,
@@ -850,16 +870,24 @@ execute_external_command(::rust::String rs_src,
     auto src = (std::string) rs_src;
     auto script = (std::string) rs_script;
     auto retval = std::make_shared<ExecResult>();
+    auto shared_db = wants_shared_db_view((std::string) hdrs);
 
     log_debug("sending remote command to main looper");
     isc::to<main_looper&, services::main_t>().send_and_wait(
-        [src, script, hdrs, vars, &retval](auto& mlooper) {
+        [src, script, hdrs, vars, shared_db, &retval](auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());
             db_label_source ext_db_source;
             auto& ec = lnav_data.ld_exec_context;
-            // XXX we should still allow an external command to update the
-            // regular DB view.
-            auto dsg = ec.enter_db_source(&ext_db_source);
+            // A command's SQL results go to a DB source of its own, so a
+            // client's queries don't replace what the user has in the DB
+            // view.  A request can ask for the regular DB view instead, for
+            // example to show the results in a :spectrogram.
+            std::optional<exec_context::db_source_guard> dsg;
+            if (shared_db) {
+                log_debug("  results go to the regular DB view");
+            } else {
+                dsg.emplace(ec.enter_db_source(&ext_db_source));
+            }
             auto* outfile = tmpfile();
             auto ec_out = exec_context::output_t{outfile, fclose};
             auto og = exec_context::output_guard{ec, "default", ec_out};

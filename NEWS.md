@@ -251,6 +251,10 @@ Features:
   In the `html` output, and in that of `:write-html-to`,
   the file a line came from, its log format, and why it
   is invalid are shown as tooltips.
+* A script sent to the external-access server's `/api/exec`
+  can put its SQL results in the regular DB view, instead of
+  a view of its own, with an `X-Lnav-Db-View: shared`
+  header, so a client can show them with `:spectrogram`.
 * Added the `log_stmt_stats` table to get, for each log
   statement found by log2src (see `:add-source-path`), the
   number of messages it produced in the LOG view, the times of

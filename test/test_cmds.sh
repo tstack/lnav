@@ -205,6 +205,10 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":next-location" \
     ${test_dir}/logfile_access_log.0
 
+printf 'history needle\nother line\n' | \
+    run_cap_test ${lnav_test} -t -n \
+    -c ':filter-in needle'
+
 run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":filter-in vmk" \
     -c ":disable-filter vmk" \
