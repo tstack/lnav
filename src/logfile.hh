@@ -106,6 +106,13 @@ bool logfile_enable_caches(
         on_progress
     = {});
 
+/**
+ * @return True while logfile_enable_caches() has workers filling the files'
+ *   line buffers.  Its on_progress callback runs during that time, and must not
+ *   draw anything that reads those files, like the views or breadcrumbs.
+ */
+bool logfile_caches_in_flight();
+
 }  // namespace lnav
 
 struct logfile_activity {
@@ -260,6 +267,50 @@ public:
     }
 
     int get_index_generation() const { return this->lf_index_generation; }
+
+    /**
+     * The log statement each line's message came from, kept by
+     * lnav::stmt_stats.  Cleared along with the index.
+     */
+    struct stmt_ids {
+        /** Statement ids by line number; 0 for lines not looked at yet. */
+        std::vector<uint32_t> si_ids;
+        /**
+         * Lines before this have been matched since the statements last
+         * changed.  The rest keep what they had (if anything) until they're
+         * matched again, so the counts stay available while a re-scan's
+         * changes are applied.
+         */
+        size_t si_verified{0};
+
+        void clear()
+        {
+            this->si_ids.clear();
+            this->si_verified = 0;
+        }
+
+        /** Forgets the lines from [size] on, so they are matched again. */
+        void truncate(size_t size)
+        {
+            if (size < this->si_ids.size()) {
+                this->si_ids.resize(size);
+            }
+            this->si_verified = std::min(this->si_verified, size);
+        }
+
+        /** Drops the first [count] lines, as the index does. */
+        void discard_front(size_t count)
+        {
+            count = std::min(count, this->si_ids.size());
+            this->si_ids.erase(this->si_ids.begin(),
+                               this->si_ids.begin() + count);
+            this->si_verified -= std::min(this->si_verified, count);
+        }
+    };
+
+    stmt_ids& get_stmt_ids() { return this->lf_stmt_ids; }
+
+    const stmt_ids& get_stmt_ids() const { return this->lf_stmt_ids; }
 
     file_ssize_t get_content_size() const
     {
@@ -905,6 +956,7 @@ private:
     file_off_t lf_index_size{0};
     size_t lf_input_lines{0};
     int lf_index_generation{0};
+    stmt_ids lf_stmt_ids;
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};

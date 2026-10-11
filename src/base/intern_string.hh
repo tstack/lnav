@@ -39,6 +39,7 @@
 #include <string_view>
 #include <system_error>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <assert.h>
@@ -83,6 +84,22 @@ struct string_fragment {
     static constexpr string_fragment from_const(const T (&str)[N])
     {
         return string_fragment{str, 0, (int) N - 1};
+    }
+
+    /** A char array holding a string that fills it up to its last byte, a NUL. */
+    template<std::size_t N>
+    static string_fragment from(const char (&buf)[N])
+    {
+        return string_fragment{buf, 0, (int) N - 1};
+    }
+
+    /** Any contiguous string with data() and size(), e.g. rust::String. */
+    template<typename S,
+             typename = decltype(std::declval<const S&>().data()),
+             typename = decltype(std::declval<const S&>().size())>
+    static string_fragment from(const S& str)
+    {
+        return string_fragment{str.data(), 0, (int) str.size()};
     }
 
     static string_fragment from_str(const std::string& str)

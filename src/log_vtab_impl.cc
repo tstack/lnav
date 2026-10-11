@@ -57,7 +57,7 @@ using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-static log_cursor log_cursor_latest;
+static log_cursor_summary log_cursor_latest;
 
 thread_local _log_vtab_data log_vtab_data;
 
@@ -728,8 +728,8 @@ vt_next(sqlite3_vtab_cursor* cur)
     vc->invalidate();
     vc->log_cursor.advance();
     do {
-        log_cursor_latest = vc->log_cursor;
-        if (((log_cursor_latest.lc_curr_line % 1024) == 0)
+        log_cursor_latest = vc->log_cursor.summarize();
+        if (((log_cursor_latest.lcs_curr_line % 1024) == 0)
             && (log_vtab_data.lvd_progress != nullptr
                 && log_vtab_data.lvd_progress(log_cursor_latest)))
         {
@@ -802,8 +802,8 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
 
     vc->invalidate();
     do {
-        log_cursor_latest = vc->log_cursor;
-        if (((log_cursor_latest.lc_curr_line % 1024) == 0)
+        log_cursor_latest = vc->log_cursor.summarize();
+        if (((log_cursor_latest.lcs_curr_line % 1024) == 0)
             && (log_vtab_data.lvd_progress != nullptr
                 && log_vtab_data.lvd_progress(log_cursor_latest)))
         {
@@ -2209,6 +2209,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         }
     }
 
+    // Rows a table gave for an indexed column (see lines_for_value()).
+    const std::vector<vis_line_t>* known_lines = nullptr;
     if (p_cur->log_cursor.lc_curr_line == p_cur->log_cursor.lc_end_line) {
     } else if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
         auto min_index_range = msg_range::invalid();
@@ -2220,160 +2222,198 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                       - (p_cur->log_cursor.lc_direction > 0 ? 1_vl : -1_vl))
                   .get_valid()
                   .value();
-        for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
-            auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
-            sync_column_index(coli, *vt->lss);
-
-            {
-                auto col_valid_opt = coli.ci_indexed_range.get_valid();
-                if (col_valid_opt) {
-                    log_debug("column %d valid range [%d:%d)",
-                              icol.cc_column,
-                              (int) col_valid_opt->v_min_line,
-                              (int) col_valid_opt->v_max_line);
-                }
-            }
-
-            min_index_range.intersect(coli.ci_indexed_range);
-        }
-
-        for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
-            const auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
-
-            auto iter
-                = coli.ci_value_to_lines.find(icol.cc_constraint.sc_value);
-            if (iter != coli.ci_value_to_lines.end()) {
-                for (auto vl : iter->second) {
-                    if (!scan_range.contains(vl)) {
-#ifdef DEBUG_INDEXING
-                        log_debug(
-                            "indexed line %d is outside of scan range [%d:%d)",
-                            vl,
-                            scan_range.v_min_line,
-                            scan_range.v_max_line);
-#endif
-                        continue;
-                    }
-
-                    if (!min_index_range.contains(vl)) {
-#ifdef DEBUG_INDEXING
-                        log_debug(
-                            "indexed line %d is outside of the min index range",
-                            vl);
-#endif
-                        continue;
-                    }
-
-#ifdef DEBUG_INDEXING
-                    log_debug("adding indexed line %d", vl);
-#endif
-                    p_cur->log_cursor.lc_indexed_lines.push_back(vl);
-                }
+        // A table may already know the rows with a value (all_logs knows a
+        // log statement's rows from the statement map), which saves scanning
+        // to fill the column's index.
+        if (p_cur->log_cursor.lc_indexed_columns.size() == 1) {
+            const auto& icol = p_cur->log_cursor.lc_indexed_columns.front();
+            if (icol.cc_constraint.sc_op == SQLITE_INDEX_CONSTRAINT_EQ) {
+                known_lines = vt->vi->lines_for_value(
+                    icol.cc_column, icol.cc_constraint.sc_value, *vt->lss);
             }
         }
-        p_cur->log_cursor.lc_indexed_lines_range = min_index_range;
+        if (known_lines != nullptr) {
+            log_info("table knows the %zu lines for column %d",
+                     known_lines->size(),
+                     p_cur->log_cursor.lc_indexed_columns.front().cc_column);
+            // The rows are added once the other constraints have narrowed
+            // the scan, below.
+            p_cur->log_cursor.lc_indexed_columns.clear();
+            p_cur->log_cursor.lc_indexed_lines_range
+                = msg_range::empty()
+                      .expand_to(scan_range.v_min_line)
+                      .expand_to(scan_range.v_max_line - 1_vl);
+        } else {
+            for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
+                auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
+                sync_column_index(coli, *vt->lss);
 
-#if 0
-        if (max_indexed_line && max_indexed_line.value() > 0_vl) {
-            p_cur->log_cursor.lc_indexed_lines.push_back(
-                max_indexed_line.value());
-        }
-#endif
-
-        auto index_valid_opt = min_index_range.get_valid();
-        if (!min_index_range.contains(scan_range.v_min_line)
-            || !min_index_range.contains(scan_range.v_max_line - 1_vl))
-        {
-            log_debug(
-                "scan needed to populate index, clearing other indexes "
-                "scan_range[%d:%d)",
-                (int) scan_range.v_min_line,
-                (int) scan_range.v_max_line);
-            p_cur->log_cursor.lc_level_constraint = std::nullopt;
-            opid_val = std::nullopt;
-            tid_val = std::nullopt;
-            log_time_range = std::nullopt;
-            log_path_constraints.clear();
-            log_unique_path_constraints.clear();
-
-            if (index_valid_opt) {
-                log_debug("  min_index_range[%d:%d)",
-                          (int) index_valid_opt->v_min_line,
-                          (int) index_valid_opt->v_max_line);
-                auto drop_indexes = [p_cur, vt]() {
-                    for (const auto& icol :
-                         p_cur->log_cursor.lc_indexed_columns)
-                    {
-                        vt->vi->vi_column_indexes.erase(icol.cc_column);
-                    }
-                    p_cur->log_cursor.lc_indexed_lines.clear();
-                    p_cur->log_cursor.lc_indexed_lines_range
-                        = msg_range::empty();
-                };
-                auto dropped = false;
-
-                if (scan_range.v_min_line < index_valid_opt->v_min_line
-                    && index_valid_opt->v_max_line < scan_range.v_max_line)
                 {
-                    drop_indexes();
-                    dropped = true;
-                } else if (scan_range.v_max_line < index_valid_opt->v_min_line
-                           || scan_range.v_min_line
-                               >= index_valid_opt->v_max_line)
-                {
-                    p_cur->log_cursor.lc_indexed_lines.clear();
-                    p_cur->log_cursor.lc_indexed_lines_range
-                        = msg_range::empty();
-                    if (p_cur->log_cursor.lc_direction < 0) {
-                        if (scan_range.v_max_line < index_valid_opt->v_min_line)
-                        {
-                            p_cur->log_cursor.lc_curr_line
-                                = index_valid_opt->v_min_line - 1_vl;
-                        } else {
-                            p_cur->log_cursor.lc_end_line
-                                = index_valid_opt->v_max_line - 1_vl;
-                        }
-                    } else {
-                        if (scan_range.v_max_line < index_valid_opt->v_min_line)
-                        {
-                            p_cur->log_cursor.lc_end_line
-                                = index_valid_opt->v_min_line;
-                        } else {
-                            p_cur->log_cursor.lc_curr_line
-                                = index_valid_opt->v_max_line;
-                        }
+                    auto col_valid_opt = coli.ci_indexed_range.get_valid();
+                    if (col_valid_opt) {
+                        log_debug("column %d valid range [%d:%d)",
+                                  icol.cc_column,
+                                  (int) col_valid_opt->v_min_line,
+                                  (int) col_valid_opt->v_max_line);
                     }
                 }
 
-                // The indexed range is a single span that grows to each line
-                // the scan reaches.  A scan that starts away from it would
-                // stretch it over the lines in between as soon as it starts,
-                // and if it stops before getting there (a LIMIT), the index
-                // claims lines it never saw.  Start over from this scan so
-                // the range only covers what was scanned.
-                const auto scan_start = p_cur->log_cursor.lc_curr_line;
-                if (!dropped
-                    && (scan_start < index_valid_opt->v_min_line - 1_vl
-                        || index_valid_opt->v_max_line < scan_start))
-                {
-                    log_debug("  scan starts at %d, away from the index",
-                              (int) scan_start);
-                    drop_indexes();
+                min_index_range.intersect(coli.ci_indexed_range);
+            }
+
+            for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
+                const auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
+
+                auto iter
+                    = coli.ci_value_to_lines.find(icol.cc_constraint.sc_value);
+                if (iter != coli.ci_value_to_lines.end()) {
+                    for (auto vl : iter->second) {
+                        if (!scan_range.contains(vl)) {
+    #ifdef DEBUG_INDEXING
+                            log_debug(
+                                "indexed line %d is outside of scan range [%d:%d)",
+                                vl,
+                                scan_range.v_min_line,
+                                scan_range.v_max_line);
+    #endif
+                            continue;
+                        }
+
+                        if (!min_index_range.contains(vl)) {
+    #ifdef DEBUG_INDEXING
+                            log_debug(
+                                "indexed line %d is outside of the min index range",
+                                vl);
+    #endif
+                            continue;
+                        }
+
+    #ifdef DEBUG_INDEXING
+                        log_debug("adding indexed line %d", vl);
+    #endif
+                        p_cur->log_cursor.lc_indexed_lines.push_back(vl);
+                    }
                 }
-            } else {
-                log_debug("  min_index_range::empty");
+            }
+            p_cur->log_cursor.lc_indexed_lines_range = min_index_range;
+
+    #if 0
+            if (max_indexed_line && max_indexed_line.value() > 0_vl) {
+                p_cur->log_cursor.lc_indexed_lines.push_back(
+                    max_indexed_line.value());
+            }
+    #endif
+
+            auto index_valid_opt = min_index_range.get_valid();
+            const auto index_covers_scan
+                = min_index_range.contains(scan_range.v_min_line)
+                && min_index_range.contains(scan_range.v_max_line - 1_vl);
+            if (!index_covers_scan && log_time_range && !log_time_range->empty()) {
+                // Populating the index means scanning every line of the range,
+                // so the other constraints would have to go, the time range
+                // included.  A time range already narrows the scan to a window,
+                // which is usually far cheaper than a full scan, so scan that
+                // instead and leave the index as it is.  SQLite still checks the
+                // indexed constraints itself, so the rows are the same.
+                log_debug("time range given, scanning it instead of populating "
+                          "the index scan_range[%d:%d)",
+                          (int) scan_range.v_min_line,
+                          (int) scan_range.v_max_line);
+                p_cur->log_cursor.lc_indexed_columns.clear();
                 p_cur->log_cursor.lc_indexed_lines.clear();
-            }
-        } else if (index_valid_opt) {
-            log_info("using existing index over range [%d:%d)",
-                     (int) index_valid_opt->v_min_line,
-                     (int) index_valid_opt->v_max_line);
-            if (p_cur->log_cursor.lc_direction < 0) {
-                p_cur->log_cursor.lc_indexed_lines.push_back(
-                    index_valid_opt->v_min_line - 1_vl);
-            } else {
-                p_cur->log_cursor.lc_indexed_lines.push_back(
-                    index_valid_opt->v_max_line);
+                p_cur->log_cursor.lc_indexed_lines_range = msg_range::empty();
+            } else if (!index_covers_scan) {
+                log_debug(
+                    "scan needed to populate index, clearing other indexes "
+                    "scan_range[%d:%d)",
+                    (int) scan_range.v_min_line,
+                    (int) scan_range.v_max_line);
+                p_cur->log_cursor.lc_level_constraint = std::nullopt;
+                opid_val = std::nullopt;
+                tid_val = std::nullopt;
+                log_time_range = std::nullopt;
+                log_path_constraints.clear();
+                log_unique_path_constraints.clear();
+
+                if (index_valid_opt) {
+                    log_debug("  min_index_range[%d:%d)",
+                              (int) index_valid_opt->v_min_line,
+                              (int) index_valid_opt->v_max_line);
+                    auto drop_indexes = [p_cur, vt]() {
+                        for (const auto& icol :
+                             p_cur->log_cursor.lc_indexed_columns)
+                        {
+                            vt->vi->vi_column_indexes.erase(icol.cc_column);
+                        }
+                        p_cur->log_cursor.lc_indexed_lines.clear();
+                        p_cur->log_cursor.lc_indexed_lines_range
+                            = msg_range::empty();
+                    };
+                    auto dropped = false;
+
+                    if (scan_range.v_min_line < index_valid_opt->v_min_line
+                        && index_valid_opt->v_max_line < scan_range.v_max_line)
+                    {
+                        drop_indexes();
+                        dropped = true;
+                    } else if (scan_range.v_max_line < index_valid_opt->v_min_line
+                               || scan_range.v_min_line
+                                   >= index_valid_opt->v_max_line)
+                    {
+                        p_cur->log_cursor.lc_indexed_lines.clear();
+                        p_cur->log_cursor.lc_indexed_lines_range
+                            = msg_range::empty();
+                        if (p_cur->log_cursor.lc_direction < 0) {
+                            if (scan_range.v_max_line < index_valid_opt->v_min_line)
+                            {
+                                p_cur->log_cursor.lc_curr_line
+                                    = index_valid_opt->v_min_line - 1_vl;
+                            } else {
+                                p_cur->log_cursor.lc_end_line
+                                    = index_valid_opt->v_max_line - 1_vl;
+                            }
+                        } else {
+                            if (scan_range.v_max_line < index_valid_opt->v_min_line)
+                            {
+                                p_cur->log_cursor.lc_end_line
+                                    = index_valid_opt->v_min_line;
+                            } else {
+                                p_cur->log_cursor.lc_curr_line
+                                    = index_valid_opt->v_max_line;
+                            }
+                        }
+                    }
+
+                    // The indexed range is a single span that grows to each line
+                    // the scan reaches.  A scan that starts away from it would
+                    // stretch it over the lines in between as soon as it starts,
+                    // and if it stops before getting there (a LIMIT), the index
+                    // claims lines it never saw.  Start over from this scan so
+                    // the range only covers what was scanned.
+                    const auto scan_start = p_cur->log_cursor.lc_curr_line;
+                    if (!dropped
+                        && (scan_start < index_valid_opt->v_min_line - 1_vl
+                            || index_valid_opt->v_max_line < scan_start))
+                    {
+                        log_debug("  scan starts at %d, away from the index",
+                                  (int) scan_start);
+                        drop_indexes();
+                    }
+                } else {
+                    log_debug("  min_index_range::empty");
+                    p_cur->log_cursor.lc_indexed_lines.clear();
+                }
+            } else if (index_valid_opt) {
+                log_info("using existing index over range [%d:%d)",
+                         (int) index_valid_opt->v_min_line,
+                         (int) index_valid_opt->v_max_line);
+                if (p_cur->log_cursor.lc_direction < 0) {
+                    p_cur->log_cursor.lc_indexed_lines.push_back(
+                        index_valid_opt->v_min_line - 1_vl);
+                } else {
+                    p_cur->log_cursor.lc_indexed_lines.push_back(
+                        index_valid_opt->v_max_line);
+                }
             }
         }
 
@@ -2443,6 +2483,44 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 p_cur->log_cursor.update(SQLITE_INDEX_CONSTRAINT_LE,
                                          last_line,
                                          log_cursor::constraint_t::unique);
+            }
+        }
+    }
+
+    if (known_lines != nullptr) {
+        // The known rows inside the scan, which the time range may have
+        // narrowed, in the order the cursor takes them (from the back).
+        auto& lc = p_cur->log_cursor;
+        const auto scan_is_empty = lc.lc_direction > 0
+            ? lc.lc_curr_line >= lc.lc_end_line
+            : lc.lc_curr_line <= lc.lc_end_line;
+        lc.lc_indexed_lines.clear();
+        if (scan_is_empty) {
+            // Without any indexed lines, is_eof() ends the scan right away.
+            // The end sentinel would otherwise sit outside the indexed range,
+            // so advance() would step past it and off the end of the view.
+            lc.lc_indexed_lines_range = msg_range::empty();
+        } else {
+            auto lo = std::min(lc.lc_curr_line, lc.lc_end_line);
+            auto hi = std::max(lc.lc_curr_line, lc.lc_end_line);
+            if (lc.lc_direction < 0) {
+                // A reverse scan's range is (end, curr].
+                lo += 1_vl;
+                hi += 1_vl;
+            }
+            auto first = std::lower_bound(
+                known_lines->begin(), known_lines->end(), lo);
+            auto last = std::lower_bound(first, known_lines->end(), hi);
+
+            // Where the cursor stops, past the last known row.
+            lc.lc_indexed_lines.push_back(lc.lc_end_line);
+            if (lc.lc_direction < 0) {
+                lc.lc_indexed_lines.insert(
+                    lc.lc_indexed_lines.end(), first, last);
+            } else {
+                lc.lc_indexed_lines.insert(lc.lc_indexed_lines.end(),
+                                           std::make_reverse_iterator(last),
+                                           std::make_reverse_iterator(first));
             }
         }
     }

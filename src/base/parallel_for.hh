@@ -46,15 +46,35 @@ namespace lnav {
 size_t default_worker_count(size_t count);
 
 /**
+ * Sets how long an idle pool worker waits for work before it exits.  The
+ * default is 10 seconds.
+ */
+void set_parallel_worker_idle_timeout(std::chrono::milliseconds timeout);
+
+/** @return The pool's workers that haven't exited, for tests and diagnostics. */
+size_t parallel_worker_count();
+
+/**
  * Run body(0), body(1), ... body(count - 1) across `width` threads and return
  * once every one of them has finished.
  *
- * The pool lives only for the duration of this call, which is deliberate.
- * Indexing shares a process with code that fork()s (grep_proc, pipers), and a
- * fork while a worker holds the intern-string table lock or the log mutex
- * hands the child an already-locked mutex and a deadlock on its first log
- * call.  Confining the threads to a barrier is what guarantees no fork can
- * overlap them.
+ * The workers are shared and outlive the call: the first call starts them and
+ * later ones reuse them, so a caller that fans out every main-loop slice
+ * doesn't start threads every slice.  Indexing shares a process with code that
+ * fork()s (grep_proc, pipers), and a fork while a worker holds the
+ * intern-string table lock or the log mutex hands the child an
+ * already-locked mutex and a deadlock on its first log call.  So a worker only
+ * runs a body while a call is waiting on it; between calls it's blocked on the
+ * pool's condition variable, holding nothing.  The parent's pool is forgotten
+ * in a forked child, which starts its own if it fans out.
+ *
+ * A worker that has waited about 10 seconds without work exits, so once
+ * lnav's parallel work is done (mostly indexing at startup) the threads go
+ * away.  The next call starts new ones.
+ *
+ * Calls share one pool at a time.  A call made while it's busy (from a body,
+ * from a tick, or from another thread) starts threads of its own for the
+ * duration of the call.
  *
  * While the workers run, `tick` is called on the *calling* thread about every
  * `tick_interval` -- that is where a caller drives a progress bar.  It runs

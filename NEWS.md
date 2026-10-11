@@ -251,6 +251,19 @@ Features:
   In the `html` output, and in that of `:write-html-to`,
   the file a line came from, its log format, and why it
   is invalid are shown as tooltips.
+* Added the `log_stmt_stats` table to get, for each log
+  statement found by log2src (see `:add-source-path`), the
+  number of messages it produced in the LOG view, the times of
+  its first and last messages, and a histogram of when they
+  were logged.  Querying the table starts a background task
+  that maps every message to its statement once; after that,
+  the counts follow the LOG view's filters and new lines
+  without matching the messages again, which makes them fast
+  enough for logs with millions of messages.
+* The `source_log_stmt()` table-valued function has a new
+  `schema` column with the `log_msg_schema` of the messages
+  logged by each statement, so they can be found with a
+  `log_msg_schema = …` constraint.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the
@@ -277,6 +290,11 @@ Performance:
 * Search performance on macOS has been fixed for
   certain cases due to an issue with `localtime_r()`
   being slow in a child process.
+* A query of a log table with both an `=` constraint
+  on a column and a time range (e.g. `log_time_msecs`
+  bounds) now scans just the time range when the
+  column's index hasn't been built yet, instead of
+  scanning the whole log to build the index first.
 
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.

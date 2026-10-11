@@ -62,8 +62,7 @@ ryml_error_to_um(const char* msg, size_t len, ryml::Location loc, void* ud)
 
     // Errors that do not come from the parser, like the emitter's, have the
     // location of the ryml source instead of the input.
-    if (string_fragment::from_bytes(loc.name.data(), loc.name.size())
-            == INPUT_NAME
+    if (string_fragment::from(loc.name) == INPUT_NAME
         && (ssize_t) loc.offset <= sf.length())
     {
         if ((ssize_t) loc.offset == sf.length() && loc.line > 0) {

@@ -88,9 +88,9 @@ progress_source::poll()
                 continue;
             }
 
-            auto total_str = fmt::to_string(tp.tp_total);
+            auto total_str = fmt::format("{:L}", tp.tp_total);
             auto body = attr_line_t()
-                            .appendf(FMT_STRING("{:>{}}/{} "),
+                            .appendf(FMT_STRING("{:>{}L}/{:} "),
                                      tp.tp_completed,
                                      total_str.size(),
                                      total_str)

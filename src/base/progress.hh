@@ -53,6 +53,20 @@ enum class progress_status_t : uint8_t {
     working,
 };
 
+/** How a task came to run, which decides who waits for it. */
+enum class task_origin_t : uint8_t {
+    /**
+     * Asked for by the user, like :add-source-path or ;.save.
+     * progress_tracker::wait_for_completion() waits for these.
+     */
+    requested,
+    /**
+     * Started as a side effect of other work, like the statement map, which
+     * whoever needs its results waits for themselves.
+     */
+    incidental,
+};
+
 namespace func {
 
 enum class op_type {
@@ -122,6 +136,7 @@ struct task_progress {
     size_t tp_completed{0};
     size_t tp_total{0};
     std::vector<console::user_message> tp_messages;
+    task_origin_t tp_origin{task_origin_t::requested};
 };
 
 using progress_reporter_t = task_progress (*)();
@@ -135,6 +150,7 @@ struct progress_tracker {
 
     static safe_task_container& get_tasks();
 
+    /** Waits until no requested task is working. */
     void wait_for_completion(func::scoped_cb* scoped_cb);
 
     void notify_completion();
@@ -145,10 +161,11 @@ private:
     safe_task_container pt_tasks;
     std::mutex pt_mutex;
     std::condition_variable pt_cv;
-    uint64_t pt_version{0};
     bool pt_abort{false};
 
     progress_tracker();
+
+    bool requested_tasks_working();
 };
 
 }  // namespace lnav

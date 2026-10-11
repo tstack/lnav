@@ -336,6 +336,7 @@ dist_noinst_DATA = \
 	log.clog \
 	log2src/java/com/example/net/Server.java \
 	log2src/java/java-example.0 \
+	log2src/java-multiline/com/example/Job.java \
 	log2src/python/log_example.py \
 	log2src/python/python-example.0 \
 	logfile_access_log_dupe.0 \

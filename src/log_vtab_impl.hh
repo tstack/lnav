@@ -160,6 +160,10 @@ struct msg_range {
     range_t mr_value;
 };
 
+struct log_cursor_summary {
+    vis_line_t lcs_curr_line;
+};
+
 struct log_cursor {
     struct extract_context {
         sqlite3_uint64 ec_cols_used;
@@ -270,6 +274,11 @@ struct log_cursor {
     msg_range lc_indexed_lines_range = msg_range::empty();
 
     size_t lc_scanned_rows{0};
+
+    log_cursor_summary summarize() const
+    {
+        return log_cursor_summary{this->lc_curr_line};
+    }
 
     enum class constraint_t {
         none,
@@ -382,6 +391,18 @@ public:
 
     virtual void filter(log_cursor& lc, logfile_sub_source& lss) {}
 
+    /**
+     * The rows (LOG view lines, in ascending order) where the column equals
+     * the value, when the table knows them without scanning, or nullptr to
+     * use a scan and the column's value index.  The rows must stay valid
+     * until the next call.
+     */
+    virtual const std::vector<vis_line_t>* lines_for_value(
+        int col, const std::string& value, logfile_sub_source& lss)
+    {
+        return nullptr;
+    }
+
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column>& cols) const {}
@@ -443,7 +464,7 @@ protected:
     std::shared_ptr<const log_format> lfvi_format;
 };
 
-using sql_progress_callback_t = int (*)(const log_cursor&);
+using sql_progress_callback_t = int (*)(const log_cursor_summary&);
 using sql_progress_finished_callback_t = void (*)();
 using sql_cache_progress_callback_t
     = lnav::progress_result_t (*)(file_off_t, file_off_t);

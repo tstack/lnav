@@ -101,17 +101,18 @@ public:
 
     void to_string(auto_buffer& buf) const
     {
-        auto bits = this->to_array();
-
-        bits.to_string(std::back_inserter(buf));
+        buf.expand_to(buf.size() + STRING_SIZE);
+        this->to_string(buf.next_available());
+        buf.resize_by(STRING_SIZE - 1);
     }
 
-    void to_string(char buf[STRING_SIZE]);
+    void to_string(char buf[STRING_SIZE]) const;
 
     std::string to_string() const
     {
-        auto bits = this->to_array();
-        return bits.to_string();
+        std::string retval(STRING_SIZE - 1, '\0');
+        this->to_string(retval.data());
+        return retval;
     }
 
     std::string to_uuid_string() const

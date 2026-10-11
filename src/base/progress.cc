@@ -47,27 +47,29 @@ progress_tracker::get_tasks()
     return instance().pt_tasks;
 }
 
+bool
+progress_tracker::requested_tasks_working()
+{
+    for (const auto& task : **this->pt_tasks.readAccess()) {
+        auto tp = task();
+        if (tp.tp_origin == task_origin_t::requested
+            && tp.tp_status == progress_status_t::working)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void
 progress_tracker::wait_for_completion(func::scoped_cb* scoped_cb)
 {
     std::unique_lock<std::mutex> lock(this->pt_mutex);
 
-    auto active_tasks = false;
-    {
-        for (const auto& task : **this->pt_tasks.readAccess()) {
-            auto tp = task();
-            if (tp.tp_status == progress_status_t::working) {
-                active_tasks = true;
-                break;
-            }
-        }
-    }
-    if (!active_tasks) {
-        return;
-    }
-
-    auto init_version = this->pt_version;
-    while (!this->pt_abort && init_version == this->pt_version) {
+    // Check every task each time, since one finishing doesn't mean the others
+    // have, and a task that doesn't notify is still seen within the timeout.
+    while (!this->pt_abort && this->requested_tasks_working()) {
         this->pt_cv.wait_for(lock, 100ms);
         if (scoped_cb != nullptr) {
             (*scoped_cb)(func::op_type::blocking);
@@ -80,7 +82,6 @@ progress_tracker::notify_completion()
 {
     std::lock_guard<std::mutex> lock(this->pt_mutex);
 
-    this->pt_version += 1;
     this->pt_cv.notify_all();
 }
 

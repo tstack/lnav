@@ -31,7 +31,9 @@
 
 #include "log_stmt_vtab.hh"
 
+#include "all_logs_vtab.hh"
 #include "config.h"
+#include "hasher.hh"
 #include "lnav-rs-ext/lnav_rs_ext.cxx.hh"
 #include "sql_help.hh"
 #include "vtab_module.hh"
@@ -48,6 +50,7 @@ enum class log_stmt_col : uint8_t {
     block_id,
     pattern,
     path,
+    schema,
     search_path,
 };
 
@@ -66,6 +69,7 @@ CREATE TABLE lnav_db.source_log_stmt (
     block_id INTEGER,
     pattern TEXT,
     path TEXT,
+    schema TEXT,
     search_path TEXT HIDDEN
 );
 )";
@@ -134,6 +138,16 @@ CREATE TABLE lnav_db.source_log_stmt (
             case log_stmt_col::path:
                 to_sqlite(ctx, (std::string) stmt.src.file);
                 break;
+            case log_stmt_col::schema: {
+                // The log_msg_schema of the messages logged by this statement.
+                char schema_buf[hasher::STRING_SIZE];
+                all_logs_vtab::statement_schema(
+                    string_fragment::from(stmt.src_json),
+                    string_fragment::from(stmt.pattern),
+                    schema_buf);
+                to_sqlite(ctx, string_fragment::from(schema_buf));
+                break;
+            }
             case log_stmt_col::search_path:
                 to_sqlite(ctx, vc.c_path);
                 break;
@@ -225,7 +239,10 @@ register_log_stmt_vtab(sqlite3* db)
               .with_result({"pattern",
                             "The pattern used to match log messages from this "
                             "log statement"})
-              .with_result({"path", "The path to the source file"});
+              .with_result({"path", "The path to the source file"})
+              .with_result({"schema",
+                            "The log_msg_schema of the messages logged by "
+                            "this statement"});
 
     LOG_STMT_MODULE.vm_module.xBestIndex = rcBestIndex;
     LOG_STMT_MODULE.vm_module.xFilter = rcFilter;

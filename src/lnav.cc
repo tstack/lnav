@@ -66,6 +66,7 @@
 #endif
 
 #include "all_logs_vtab.hh"
+#include "log_stmt_stats.hh"
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
@@ -1095,8 +1096,13 @@ struct refresh_status_bars {
         // the top view would read from, and is_indexing_in_progress() does
         // not cover the textfile prescan, which is exactly when the TEXT view
         // would call read_range() on one of them.  The refresh that follows
-        // the join draws it.
-        if (!lnav_data.ld_files_source.is_index_pass_in_flight()
+        // the join draws it.  Caching compressed files for a query is such a
+        // pass too; disabling the top view doesn't stop it from reading its
+        // rows.
+        const auto workers_own_files
+            = lnav_data.ld_files_source.is_index_pass_in_flight()
+            || lnav::logfile_caches_in_flight();
+        if (!workers_own_files
             && (!lnav_data.ld_log_source.is_indexing_in_progress()
                 || lnav_data.ld_log_source.lss_index_generation == 0))
         {
@@ -1125,7 +1131,7 @@ struct refresh_status_bars {
         for (auto& sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        if (!lnav_data.ld_files_source.is_index_pass_in_flight()) {
+        if (!workers_own_files) {
             // Same reasoning as the view stack above: the crumbs that
             // describe the current message are built by reading it back out
             // of the file, through the line buffer a worker is filling.
@@ -1134,7 +1140,7 @@ struct refresh_status_bars {
         lnav::prompt::get().p_editor.do_update();
         if (handle_winch(this->rsb_screen)) {
             layout_views();
-            if (!lnav_data.ld_files_source.is_index_pass_in_flight()) {
+            if (!workers_own_files) {
                 lnav_data.ld_view_stack.do_update();
             }
         }
@@ -2169,6 +2175,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     rescan_needed = true;
                     next_rescan_time = loop_deadline = ui_now;
                 }
+            }
+            // Map messages to their log statements a slice at a time, once
+            // something has asked for statement counts.  Keep the loop going
+            // while there's more to do.
+            if (lnav::stmt_stats::step(
+                    std::min(loop_deadline, ui_clock::now() + 20ms)))
+            {
+                changes += 1;
             }
         } else {
             if (ui_now >= next_rebuild_time) {

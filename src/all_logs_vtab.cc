@@ -43,6 +43,25 @@
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
+all_logs_vtab::schema_lines_t all_logs_vtab::alv_schema_lines = nullptr;
+all_logs_vtab::line_schema_t all_logs_vtab::alv_line_schema = nullptr;
+
+const std::vector<vis_line_t>*
+all_logs_vtab::lines_for_value(int col,
+                               const std::string& value,
+                               logfile_sub_source& lss)
+{
+    if (alv_schema_lines == nullptr
+        || col != VT_COL_MAX + (int) this->alv_schema_meta.lvm_column
+                                   .get<logline_value_meta::table_column>()
+                                   .value)
+    {
+        return nullptr;
+    }
+
+    return alv_schema_lines(value, lss);
+}
+
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
       alv_msg_meta(intern_string::lookup("log_msg_format"),
@@ -129,7 +148,21 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         return;
     }
 
-    auto is_msg_utf8 = line.get_metadata().m_valid_utf;
+    // When only the schema is needed (e.g. SQLite checking a log_msg_schema
+    // constraint on the rows the statement map gave), take it from the map
+    // instead of matching the message again.
+    if (alv_line_schema != nullptr
+        && !ec.are_columns_used(this->alv_msg_meta,
+                                this->alv_values_meta,
+                                this->alv_src_meta,
+                                this->alv_stacktrace_meta))
+    {
+        const auto* schema = alv_line_schema(lf, line_number);
+        if (schema != nullptr) {
+            values.lvv_values.emplace_back(this->alv_schema_meta, *schema);
+            return;
+        }
+    }
 
     auto body = find_string_attr_range(sa, &SA_BODY);
     if (!body.is_valid()) {
@@ -141,36 +174,18 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
     auto src_line_sf = sub_values.lvv_src_line_value;
     auto h = hasher();
 #ifdef HAVE_RUST_DEPS
-    auto file_rust_str = rust::Str();
-    auto lineno = 0UL;
-    if (src_file_sf) {
-        file_rust_str = rust::Str(src_file_sf->data(), src_file_sf->length());
-    }
-    if (src_line_sf) {
-        auto scan_res
-            = scn::scan_int<decltype(lineno)>(src_line_sf->to_string_view());
-        if (scan_res) {
-            lineno = scan_res->value();
-        }
-    }
-    std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_res;
-    if (is_msg_utf8) {
-        auto body_rust_str = rust::Str(body_sf.data(), body_sf.length());
-        auto find_options = lnav_rs_ext::FindLogOptions{
-            .extract_variables = ec.is_column_used(this->alv_values_meta),
-        };
-        find_res = lnav_rs_ext::find_log_statement_json(
-            file_rust_str, lineno, body_rust_str, find_options);
-    }
+    auto find_res = find_statement(
+        line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
-        h.update(find_res->src.c_str());
-        h.update(find_res->pattern.c_str());
-        auto line_iter = lf->begin() + line_number;
-        line_iter->merge_bloom_bits(h.to_bloom_bits());
-        line_iter->set_schema_computed(true);
+        char schema_buf[hasher::STRING_SIZE];
+        statement_schema(
+            string_fragment::from(find_res->src),
+            string_fragment::from(find_res->pattern),
+            schema_buf);
         values.lvv_values.emplace_back(this->alv_msg_meta,
                                        (std::string) find_res->pattern);
-        values.lvv_values.emplace_back(this->alv_schema_meta, h.to_string());
+        values.lvv_values.emplace_back(
+            this->alv_schema_meta, string_fragment::from(schema_buf).to_string());
         values.lvv_values.emplace_back(this->alv_values_meta,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,
@@ -209,6 +224,60 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
             json_string(gen).to_string_fragment().to_string());
     }
 }
+
+void
+all_logs_vtab::statement_schema(const string_fragment& src_json,
+                                const string_fragment& pattern,
+                                char buf[hasher::STRING_SIZE])
+{
+    hasher h;
+    h.update(src_json);
+    h.update(pattern);
+    h.to_string(buf);
+}
+
+#ifdef HAVE_RUST_DEPS
+std::unique_ptr<lnav_rs_ext::FindLogResultJson>
+all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
+                              const string_attrs_t& sa,
+                              const logline_value_vector& values,
+                              bool extract_variables)
+{
+    if (!sbr.get_metadata().m_valid_utf) {
+        return nullptr;
+    }
+
+    auto body = find_string_attr_range(sa, &SA_BODY);
+    if (!body.is_valid()) {
+        body.lr_start = 0;
+        body.lr_end = sbr.length();
+    }
+    auto body_sf = sbr.to_string_fragment(body);
+
+    auto file_rust_str = rust::Str();
+    auto lineno = 0UL;
+    if (values.lvv_src_file_value) {
+        file_rust_str = rust::Str(values.lvv_src_file_value->data(),
+                                  values.lvv_src_file_value->length());
+    }
+    if (values.lvv_src_line_value) {
+        auto scan_res = scn::scan_int<decltype(lineno)>(
+            values.lvv_src_line_value->to_string_view());
+        if (scan_res) {
+            lineno = scan_res->value();
+        }
+    }
+
+    auto find_options = lnav_rs_ext::FindLogOptions{
+        .extract_variables = extract_variables,
+    };
+    return lnav_rs_ext::find_log_statement_json(
+        file_rust_str,
+        lineno,
+        rust::Str(body_sf.data(), body_sf.length()),
+        find_options);
+}
+#endif
 
 bool
 all_logs_vtab::next(log_cursor& lc, logfile_sub_source& lss)

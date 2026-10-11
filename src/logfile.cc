@@ -342,6 +342,7 @@ logfile::reset_internal_state_for_reindex()
 {
     log_debug("resetting internal state for reindex");
     this->lf_index.clear();
+    this->lf_stmt_ids.clear();
     this->reset_time_order();
     this->lf_index_base = 0;
     this->lf_input_lines = 0;
@@ -392,6 +393,7 @@ logfile::discard_index_before(size_t index)
 
     this->lf_index.erase(this->lf_index.begin(),
                          this->lf_index.begin() + count);
+    this->lf_stmt_ids.discard_front(count);
     this->reset_time_order();
     this->lf_index_base += count;
 
@@ -770,6 +772,7 @@ logfile::build_content_map()
                  std::distance(this->lf_index.cbegin(), ll));
         this->lf_index_size = first_line_offset;
         this->lf_index.clear();
+        this->lf_stmt_ids.clear();
         retval = rebuild_result_t::NEW_ORDER;
     }
 
@@ -787,6 +790,7 @@ logfile::build_content_map()
         {
             log_info("  lower bound is past content");
             this->lf_index.clear();
+            this->lf_stmt_ids.clear();
             retval = rebuild_result_t::NEW_ORDER;
         }
         this->lf_file_size_at_map_time = full_size;
@@ -852,6 +856,7 @@ logfile::build_content_map()
         this->lf_pattern_locks.pl_lines.clear();
         this->lf_value_stats.clear();
         this->lf_index.clear();
+        this->lf_stmt_ids.clear();
         this->reset_time_order();
         this->lf_upper_bound_size = std::nullopt;
     }
@@ -1041,6 +1046,15 @@ lnav::logfile_indexing_width(size_t file_count)
     return std::min(static_cast<size_t>(configured), file_count);
 }
 
+/** The logfile_enable_caches() calls whose workers are running. */
+static std::atomic<int> CACHES_IN_FLIGHT{0};
+
+bool
+lnav::logfile_caches_in_flight()
+{
+    return CACHES_IN_FLIGHT.load() > 0;
+}
+
 bool
 lnav::logfile_enable_caches(
     const std::vector<::logfile*>& files,
@@ -1068,6 +1082,13 @@ lnav::logfile_enable_caches(
     std::atomic<bool> interrupted{false};
     const auto width = logfile_indexing_width(work.size());
     auto curr_opid = lnav_current_opid();
+
+    // Counted rather than set, and undone by a guard, so a nested or failed
+    // pass doesn't leave it wrong.
+    struct in_flight_guard {
+        in_flight_guard() { CACHES_IN_FLIGHT.fetch_add(1); }
+        ~in_flight_guard() { CACHES_IN_FLIGHT.fetch_sub(1); }
+    } in_flight;
 
     parallel_for_each(
         work.size(),
@@ -1934,6 +1955,18 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             rollback_index_start = this->lf_index.size();
             rollback_size += 1;
             this->truncate_time_order(rollback_index_start);
+            // The re-read message may have more text or lines than before,
+            // so its first line is matched again too.
+            auto stmt_msg_start = rollback_index_start;
+            while (stmt_msg_start > 0
+                   && this->lf_index[stmt_msg_start - 1].is_continued())
+            {
+                stmt_msg_start -= 1;
+            }
+            if (stmt_msg_start > 0) {
+                stmt_msg_start -= 1;
+            }
+            this->lf_stmt_ids.truncate(stmt_msg_start);
 
             if (!this->lf_index.empty()) {
                 auto last_line = std::prev(this->lf_index.end());

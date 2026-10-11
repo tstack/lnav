@@ -133,3 +133,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT group_concat(log_line) FROM access_log WHERE log_level >= 'deprecation') AS pushed_ge, (SELECT group_concat(log_line) FROM access_log WHERE (log_level || '') >= 'deprecation' COLLATE loglevel) AS collation_ge, (SELECT group_concat(log_line) FROM access_log WHERE log_level = 'fail') AS pushed_eq, (SELECT group_concat(log_line) FROM access_log WHERE (log_level || '') = 'fail' COLLATE loglevel) AS collation_eq" \
     ${test_dir}/logfile_access_log.0
+
+# A time range narrows the scan even when the c_ip index isn't built yet:
+# the scan covers the window instead of the whole log to fill the index, and
+# leaves the index alone, so the later count still sees every row.  Pushed
+# down or not, and with the index built or not, the rows are the same.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS timed, (SELECT group_concat(log_line) FROM access_log WHERE (c_ip || '') = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS unpushed, (SELECT count(*) FROM access_log WHERE c_ip = '66.249.66.194') AS total, (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS indexed" \
+    ${test_dir}/logfile_shop_access_log.0

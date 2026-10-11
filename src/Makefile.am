@@ -254,6 +254,7 @@ noinst_HEADERS = \
     third-party/lnav-rs-ext/rust/cxx.h \
     third-party/rapidyaml/ryml_all.hpp \
 	all_ids_vtabs.hh \
+	log_stmt_stats.hh \
 	all_logs_vtab.hh \
 	apps.cfg.hh \
 	apps.hh \
@@ -548,6 +549,7 @@ libdiag_a_SOURCES = \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
 	grep_proc.cc \
+	hasher.cc \
 	help_text.cc \
 	help_text_formatter.cc \
 	highlighter.cc \
@@ -645,6 +647,7 @@ PLUGIN_SRCS = \
 	all_ids_vtabs.cc \
 	breakpoint_vtab.cc \
 	file_vtab.cc \
+	log_stmt_stats.cc \
 	metrics_vtab.cc
 
 if HAVE_WINDRES

@@ -5202,6 +5202,8 @@ For support questions, email:
   [4mpattern[0m          The pattern used to match log
                    messages from this log statement
   [4mpath[0m             The path to the source file
+  [4mschema[0m           The log_msg_schema of the
+                   messages logged by this statement
 
 
 [1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m

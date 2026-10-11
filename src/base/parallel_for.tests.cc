@@ -31,11 +31,17 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <mutex>
 #include <numeric>
 #include <ostream>
+#include <set>
 #include <stdexcept>
 #include <thread>
 #include <vector>
+
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "parallel_for.hh"
 
@@ -190,3 +196,170 @@ TEST_CASE("parallel_for_each: a tick means a worker, even at zero width")
     CHECK(body_thread != caller);
     CHECK(ticks.load() > 0);
 }
+
+TEST_CASE("parallel_for_each: workers are reused from call to call")
+{
+    auto caller = std::this_thread::get_id();
+    std::mutex ids_mutex;
+    std::set<std::thread::id> ids;
+
+    for (int call = 0; call < 50; call++) {
+        lnav::parallel_for_each(16, 4, [&](size_t) {
+            std::lock_guard<std::mutex> lg(ids_mutex);
+            ids.insert(std::this_thread::get_id());
+        });
+    }
+
+    CHECK(ids.count(caller) == 0);
+    // Other cases may have grown the pool, but never past the widest call (8),
+    // and starting threads per call would give up to 200 here.
+    CHECK(ids.size() <= 8);
+}
+
+TEST_CASE("parallel_for_each: a call from a body completes")
+{
+    std::atomic<int> inner{0};
+
+    lnav::parallel_for_each(4, 2, [&inner](size_t) {
+        lnav::parallel_for_each(
+            4, 2, [&inner](size_t) { inner.fetch_add(1); });
+    });
+
+    CHECK(16 == inner.load());
+}
+
+TEST_CASE("parallel_for_each: a call from a tick completes")
+{
+    std::atomic<int> outer{0};
+    std::atomic<int> inner{0};
+
+    lnav::parallel_for_each(
+        2,
+        2,
+        [&outer](size_t) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{30});
+            outer.fetch_add(1);
+        },
+        [&inner]() {
+            lnav::parallel_for_each(
+                3, 2, [&inner](size_t) { inner.fetch_add(1); });
+        },
+        std::chrono::milliseconds{5});
+
+    CHECK(2 == outer.load());
+    CHECK(inner.load() > 0);
+    CHECK(inner.load() % 3 == 0);
+}
+
+TEST_CASE("parallel_for_each: two threads can call it at once")
+{
+    constexpr size_t COUNT = 100;
+    std::vector<std::atomic<int>> hits_a(COUNT);
+    std::vector<std::atomic<int>> hits_b(COUNT);
+    for (size_t lpc = 0; lpc < COUNT; lpc++) {
+        hits_a[lpc].store(0);
+        hits_b[lpc].store(0);
+    }
+
+    auto fan_out = [](std::vector<std::atomic<int>>& hits) {
+        for (int round = 0; round < 20; round++) {
+            lnav::parallel_for_each(
+                hits.size(), 4, [&hits](size_t index) { hits[index].fetch_add(1); });
+        }
+    };
+    std::thread a(fan_out, std::ref(hits_a));
+    std::thread b(fan_out, std::ref(hits_b));
+    a.join();
+    b.join();
+
+    for (size_t lpc = 0; lpc < COUNT; lpc++) {
+        CHECK(20 == hits_a[lpc].load());
+        CHECK(20 == hits_b[lpc].load());
+    }
+}
+
+TEST_CASE("parallel_for_each: idle workers exit, and the next call starts new ones")
+{
+    // Put back the default even if a check below fails, so later cases don't
+    // run with workers that leave after 50ms.
+    struct restore_timeout {
+        ~restore_timeout()
+        {
+            lnav::set_parallel_worker_idle_timeout(std::chrono::seconds{10});
+        }
+    } restore;
+    lnav::set_parallel_worker_idle_timeout(std::chrono::milliseconds{50});
+
+    auto wait_for_no_workers = []() {
+        // A worker already waiting under the 10s default leaves on that
+        // timeout, not this one, so allow for it.
+        auto deadline
+            = std::chrono::steady_clock::now() + std::chrono::seconds{15};
+        while (lnav::parallel_worker_count() > 0
+               && std::chrono::steady_clock::now() < deadline)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds{10});
+        }
+        return lnav::parallel_worker_count();
+    };
+
+    // Counted from inside the bodies, once all four are running: a worker
+    // can't leave while it's running a body, but after the call returns they
+    // may all have timed out before the count is read.
+    auto fan_out = []() {
+        std::atomic<size_t> arrived{0};
+        std::atomic<size_t> fewest_live{SIZE_MAX};
+        lnav::parallel_for_each(4, 4, [&](size_t) {
+            arrived.fetch_add(1);
+            while (arrived.load() < 4) {
+                std::this_thread::yield();
+            }
+            auto live = lnav::parallel_worker_count();
+            auto prev = fewest_live.load();
+            while (live < prev
+                   && !fewest_live.compare_exchange_weak(prev, live))
+            {
+            }
+        });
+        return fewest_live.load();
+    };
+
+    CHECK(fan_out() >= 4);
+    CHECK(0 == wait_for_no_workers());
+
+    CHECK(fan_out() >= 4);
+    CHECK(0 == wait_for_no_workers());
+}
+
+#if defined(__has_feature)
+#    if __has_feature(thread_sanitizer)
+#        define PARALLEL_FOR_TSAN 1
+#    endif
+#endif
+#if defined(__SANITIZE_THREAD__)
+#    define PARALLEL_FOR_TSAN 1
+#endif
+
+// ThreadSanitizer doesn't let the child of a multithreaded process start
+// threads (die_after_fork).
+#ifndef PARALLEL_FOR_TSAN
+TEST_CASE("parallel_for_each: a forked child can fan out")
+{
+    // Start the pool in the parent first; its workers don't exist in the
+    // child, so the child has to get a pool of its own.
+    lnav::parallel_for_each(4, 4, [](size_t) {});
+
+    auto pid = fork();
+    REQUIRE(pid >= 0);
+    if (pid == 0) {
+        std::atomic<int> ran{0};
+        lnav::parallel_for_each(8, 4, [&ran](size_t) { ran.fetch_add(1); });
+        _exit(ran.load() == 8 ? 0 : 1);
+    }
+
+    int status = 0;
+    REQUIRE(waitpid(pid, &status, 0) == pid);
+    CHECK(WIFEXITED(status));
+    CHECK(0 == WEXITSTATUS(status));
+}
+#endif

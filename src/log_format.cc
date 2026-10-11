@@ -790,6 +790,7 @@ logline_value_vector::shift_origins_by(const line_range& cover, int32_t amount)
 void
 logline_value_vector::clear()
 {
+    this->lvv_allocator.reset();
     this->lvv_values.clear();
     this->lvv_sbr.disown();
     this->lvv_time_value = std::nullopt;
@@ -1906,7 +1907,6 @@ external_log_format::scan_json(std::vector<logline>& dst,
     if (is_probe) {
         probe_scratch.ensure_parser();
         probe_scratch.jss_line_values.clear();
-        probe_scratch.jss_line_values.lvv_allocator.reset();
         // The read order is a positional memo keyed on nothing but the field
         // name, and two formats routinely share names ("ts", "msg"), so it
         // cannot be carried from one candidate to the next -- doing so hands
@@ -1914,6 +1914,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
         // lines, so rebuilding it per probed line costs little.
         probe_scratch.jss_read_order.clear();
         probe_scratch.jss_field_allocator.reset();
+    } else {
+        // Start each line with empty values, so the arena doesn't keep every
+        // line's copies until the next render.  That overwrites what the
+        // render pass parked, so its cached subline has to be parsed again.
+        this->jlf_line_values.clear();
+        this->jlf_cached_offset = -1;
     }
     auto& line_values = is_probe ? probe_scratch.jss_line_values
                                  : this->jlf_line_values;
@@ -2297,15 +2303,6 @@ external_log_format::finalize_line(logline& new_line,
             = sbc.sbc_tids.insert_tid(sbc.sbc_allocator, tid_hf, log_us);
         tid_iter->second.titr_level_stats.update_msg_count(level);
         new_line.merge_bloom_bits(tid_hf.bloom_bits());
-    }
-
-    if (in.lfi_src_file_cap && in.lfi_src_line_cap) {
-        auto h = hasher();
-        h.update(this->get_name().c_str());
-        h.update(in.lfi_src_file_cap.value());
-        h.update(in.lfi_src_line_cap.value());
-        new_line.merge_bloom_bits(h.to_bloom_bits());
-        new_line.set_schema_computed(true);
     }
 
     return opid_iter;

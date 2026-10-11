@@ -41,7 +41,7 @@ static constexpr size_t CHUNK = 16;
 static utf8_scan_result
 scan(const std::string& s, std::optional<unsigned char> term = std::nullopt)
 {
-    return is_utf8(string_fragment::from_bytes(s.data(), s.size()), term);
+    return is_utf8(string_fragment::from(s), term);
 }
 
 TEST_CASE("is_utf8: empty and short ascii")
@@ -237,7 +237,7 @@ TEST_CASE("is_utf8: ansi and tabs")
 TEST_CASE("is_utf8: fragment that does not start at zero")
 {
     const std::string s = "skipme\xFF" "tail";
-    auto whole = string_fragment::from_bytes(s.data(), s.size());
+    auto whole = string_fragment::from(s);
     auto tail = whole.substr(6);
 
     REQUIRE(tail.sf_begin == 6);

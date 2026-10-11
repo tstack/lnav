@@ -1083,3 +1083,19 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT name, files, count, text_count FROM lnav_format_value_stats WHERE format = 'access_log' AND (count > 0 OR text_count > 0)" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
+
+# Messages with source file/line fields still go in a logline table.
+for i in 1 2 3 4 5; do
+    echo "2026-10-08T23:20:2$i.572088-07:00 I t0 [34898::execute_sql-1] log_vtab_impl.cc:2238 table knows the $i lines for column 4"
+done > logline-src-fields.0
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":create-logline-table src_fields" \
+    -c ";SELECT count(*) AS n FROM src_fields" \
+    -c ":write-csv-to -" \
+    logline-src-fields.0
+
+check_output "logline table misses messages with source fields?" <<EOF
+n
+5
+EOF

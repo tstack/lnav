@@ -74,7 +74,7 @@ exec_context INIT_EXEC_CONTEXT;
 static sig_atomic_t sql_counter = 0;
 
 int
-sql_progress(const log_cursor& lc)
+sql_progress(const log_cursor_summary& lc)
 {
     if (lnav_data.ld_window == nullptr) {
         return 0;
@@ -91,7 +91,7 @@ sql_progress(const log_cursor& lc)
         lnav_data.ld_view_stack.top() |
             [](auto* tc) { tc->set_enabled(false); };
         ssize_t total = lnav_data.ld_log_source.text_line_count();
-        off_t off = lc.lc_curr_line;
+        off_t off = lc.lcs_curr_line;
 
         if (off >= 0 && off <= total) {
             lnav_data.ld_bottom_source.update_loading(off, total);

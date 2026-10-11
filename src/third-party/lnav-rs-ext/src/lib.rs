@@ -25,11 +25,13 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{channel, Sender};
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex, RwLock};
 use std::time::Duration;
 use uuid::Uuid;
 
-static LOG_MATCHER: LazyLock<Mutex<LogMatcher>> = LazyLock::new(|| LogMatcher::new().into());
+// Matching only reads the matcher (its match cache has its own lock), so
+// messages can be matched from several threads at once; the source scan writes.
+static LOG_MATCHER: LazyLock<RwLock<LogMatcher>> = LazyLock::new(|| LogMatcher::new().into());
 static TRACKER: LazyLock<Mutex<ProgressTracker>> = LazyLock::new(|| ProgressTracker::new().into());
 static EXT_PROGRESS: LazyLock<Mutex<ExtProgress>> = LazyLock::new(|| {
     ExtProgress {
@@ -50,7 +52,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
                     ext_prog.status = Status::working;
                     ext_prog.version += 1;
                 }
-                let mut matcher = LOG_MATCHER.lock().unwrap();
+                let mut matcher = LOG_MATCHER.write().unwrap();
                 let mut errs: Vec<LogError> = vec![];
                 if let Ok(cache) = &cache_open_res {
                     errs.extend(matcher.load_from_cache(cache, &tracker));
@@ -229,6 +231,8 @@ mod ffi {
 
     struct FindLogResult {
         pub src: SourceDetails,
+        /// `src` as `find_log_statement_json()` gives it, which the schema hashes.
+        pub src_json: String,
         pub pattern: String,
         pub variables: Vec<VarPair>,
     }
@@ -545,7 +549,7 @@ pub fn compile_tree(
 }
 
 pub fn add_src_root(path: String) -> UniquePtr<ExtError> {
-    match LOG_MATCHER.lock().unwrap().add_root(&PathBuf::from(path)) {
+    match LOG_MATCHER.write().unwrap().add_root(&PathBuf::from(path)) {
         Ok(_) => UniquePtr::null(),
         Err(err) => UniquePtr::new(err.into()),
     }
@@ -576,6 +580,7 @@ impl From<&SourceRef> for FindLogResult {
                 block_id: value.block_id,
                 language: value.language.as_str(),
             },
+            src_json: src_json(value),
             pattern: value.pattern_str.to_string(),
             variables: vec![],
         }
@@ -593,7 +598,7 @@ impl FindLogResult {
 }
 
 fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResult> {
-    let log_matcher = LOG_MATCHER.lock().unwrap();
+    let log_matcher = LOG_MATCHER.read().unwrap();
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
@@ -625,13 +630,28 @@ pub struct SourceDetailsBorrowed<'a> {
     pub language: &'static str,
 }
 
+/// The statement's source details as JSON, the same everywhere they are
+/// given out, since `log_msg_schema` is a hash of this text.
+fn src_json(src_ref: &SourceRef) -> String {
+    serde_json::to_string(&SourceDetailsBorrowed {
+        file: src_ref.source_path.as_str(),
+        begin_line: src_ref.line_no,
+        end_line: src_ref.end_line_no,
+        name: src_ref.name.as_str(),
+        qualified_name: src_ref.qualified_name.as_str(),
+        block_id: src_ref.block_id,
+        language: src_ref.language.as_str(),
+    })
+    .unwrap()
+}
+
 fn find_log_statement_json(
     file: &str,
     lineno: usize,
     body: &str,
     options: &FindLogOptions,
 ) -> UniquePtr<FindLogResultJson> {
-    let log_matcher = LOG_MATCHER.lock().unwrap();
+    let log_matcher = LOG_MATCHER.read().unwrap();
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
@@ -650,22 +670,13 @@ fn find_log_statement_json(
             extract_variables: options.extract_variables,
         },
     ) {
-        let src_details = SourceDetailsBorrowed {
-            file: src_ref.source_path.as_str(),
-            begin_line: src_ref.line_no,
-            end_line: src_ref.end_line_no,
-            name: src_ref.name.as_str(),
-            qualified_name: src_ref.qualified_name.as_str(),
-            block_id: src_ref.block_id,
-            language: src_ref.language.as_str(),
-        };
         let stack_trace = if exception_trace.is_empty() {
             "".to_string()
         } else {
             serde_json::to_string(&exception_trace).unwrap()
         };
         UniquePtr::new(FindLogResultJson {
-            src: serde_json::to_string(&src_details).unwrap(),
+            src: src_json(src_ref),
             pattern: src_ref.pattern_str.clone(),
             variables: serde_json::to_string(&variables).unwrap(),
             stack_trace,
@@ -693,7 +704,7 @@ fn stop_ext_access() {
 }
 
 fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
-    let matcher = LOG_MATCHER.lock().unwrap();
+    let matcher = LOG_MATCHER.read().unwrap();
     let path = Path::new(path_str);
     let mut retval = vec![];
 

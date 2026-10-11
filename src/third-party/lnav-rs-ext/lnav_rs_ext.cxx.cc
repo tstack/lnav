@@ -999,6 +999,8 @@ struct SourceDetails final {
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogResult
 struct FindLogResult final {
   ::lnav_rs_ext::SourceDetails src;
+  // `src` as `find_log_statement_json()` gives it, which the schema hashes.
+  ::rust::String src_json;
   ::rust::String pattern;
   ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 

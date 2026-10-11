@@ -2407,7 +2407,8 @@ reset_config(const std::string& path)
     reload_config(errors);
 
     for (const auto& err : errors) {
-        log_debug("reset %s", err.um_message.get_string().c_str());
+        log_warning("reset message %s",
+                    err.to_attr_line().get_string().c_str());
     }
 }
 
