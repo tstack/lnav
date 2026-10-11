@@ -114,6 +114,7 @@ private:
     logline_value_meta alv_values_meta;
     logline_value_meta alv_src_meta;
     logline_value_meta alv_stacktrace_meta;
+    logline_value_meta alv_format_values_meta;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH

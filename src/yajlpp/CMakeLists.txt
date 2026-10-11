@@ -3,11 +3,13 @@ add_library(
         ../config.h.in
         json_op.hh
         json_ptr.hh
+        json_schema_builder.hh
         yajlpp.hh
         yajlpp_def.hh
 
         json_op.cc
         json_ptr.cc
+        json_schema_builder.cc
         yajlpp.cc
 )
 
@@ -16,6 +18,7 @@ target_include_directories(yajlpp PUBLIC . .. ../fmtlib
         ../third-party
 )
 target_link_libraries(yajlpp
+        base
         pcrepp
         yajl
         ${CURSES_LIBRARIES}

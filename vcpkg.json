@@ -5,7 +5,10 @@
     "libarchive",
     "libunistring",
     "pcre2",
-    "sqlite3",
+    {
+      "name": "sqlite3",
+      "features": ["math"]
+    },
     "zlib"
   ]
 }

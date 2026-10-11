@@ -33,6 +33,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "log_stmt_stats.hh"
@@ -52,6 +53,8 @@
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
 #include "vtab_module.hh"
+#include "yajlpp/json_schema_builder.hh"
+#include "yajlpp/yajlpp.hh"
 
 #ifdef HAVE_RUST_DEPS
 #    include "lnav_rs_ext.cxx.hh"
@@ -73,17 +76,73 @@ constexpr int64_t MAX_BUCKETS = 32;
 /** Bucket keys are log_time_msecs shifted right by this, about 4 seconds. */
 constexpr int BASE_SHIFT = 12;
 
+/** How many of a statement's messages var_schema is derived from. */
+constexpr uint32_t VAR_SAMPLES = 32;
+
 struct statement {
     /** log2src's source details, as JSON, like all_logs.log_msg_src. */
     std::string s_src;
     /** hash(src, pattern), like all_logs.log_msg_schema. */
     std::string s_schema;
+    /**
+     * The argument values of sampled messages, from log2src's variables:
+     * [{"expr": ..., "value": ...}, ...].  The values are always text.
+     */
+    json_schema_builder s_vars{{true, true}};
+
+    /**
+     * A JSON Schema (2020-12) for the statement's argument values, as a tuple
+     * in call order, derived from the sampled messages; or nullopt before any
+     * were sampled.  Each item's title is the source expression and its type
+     * the narrowest that covers the samples.
+     */
+    std::optional<std::string> var_schema() const
+    {
+        auto samples = this->s_vars.sample_count();
+        if (samples == 0) {
+            return std::nullopt;
+        }
+
+        yajlpp_gen gen;
+        yajl_gen_config(gen, yajl_gen_beautify, false);
+        {
+            yajlpp_map root(gen);
+            root.gen("$schema");
+            root.gen(json_schema_builder::SCHEMA_URI);
+            root.gen("description");
+            root.gen(fmt::format(FMT_STRING("Derived from {} sampled {}"),
+                                 samples,
+                                 samples == 1 ? "message" : "messages"));
+            root.gen("type");
+            root.gen("array");
+            root.gen("prefixItems");
+            {
+                yajlpp_array items(gen);
+                for (const auto& var : this->s_vars.root().n_prefix_items) {
+                    const auto* expr = var.property("expr"_frag);
+                    const auto* value = var.property("value"_frag);
+
+                    yajlpp_map item(gen);
+                    if (expr != nullptr && expr->n_example) {
+                        item.gen("title");
+                        item.gen(expr->n_example.value());
+                    }
+                    if (value != nullptr) {
+                        this->s_vars.gen_keywords(gen, *value);
+                    }
+                }
+            }
+            root.gen("items");
+            root.gen(false);
+        }
+        return gen.to_string_fragment().to_string();
+    }
 };
 
 struct stmt_map {
     /** Set by the first query of the summary table. */
     bool sm_active{false};
-    std::vector<statement> sm_statements{statement{}, statement{}};
+    std::vector<statement> sm_statements = std::vector<statement>(2);
 #ifdef HAVE_RUST_DEPS
     /** The source scan version the statements are from. */
     std::optional<size_t> sm_scan_version;
@@ -224,7 +283,50 @@ struct stmt_map {
         ArenaAlloc::Alloc<char> ms_arena{4 * 1024};
         string_attrs_t ms_sa;
         logline_value_vector ms_values;
+        /** Statements this worker has seen with all of their samples. */
+        std::unordered_set<uint32_t> ms_sampled;
     };
+
+    /**
+     * Folds the message's variables into its statement's samples, until it has
+     * VAR_SAMPLES of them.  Extracting the variables is a second, slower match,
+     * so it's only done for those few messages per statement.
+     */
+    void sample_vars(uint32_t id,
+                     const shared_buffer_ref& sbr,
+                     const string_attrs_t& sa,
+                     const logline_value_vector& values,
+                     match_scratch& ms)
+    {
+#ifdef HAVE_RUST_DEPS
+        if (id < FIRST_STATEMENT || ms.ms_sampled.count(id) > 0) {
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
+            if (this->sm_statements[id].s_vars.sample_count() >= VAR_SAMPLES) {
+                ms.ms_sampled.insert(id);
+                return;
+            }
+        }
+
+        auto res = all_logs_vtab::find_statement(sbr, sa, values, true);
+        if (res == nullptr) {
+            return;
+        }
+        auto variables = (std::string) res->variables;
+
+        std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
+        auto& st = this->sm_statements[id];
+        if (st.s_vars.sample_count() < VAR_SAMPLES) {
+            // A sample that is not valid JSON is just not counted.
+            (void) st.s_vars.add_sample(string_fragment::from_str(variables));
+        }
+        if (st.s_vars.sample_count() >= VAR_SAMPLES) {
+            ms.ms_sampled.insert(id);
+        }
+#endif
+    }
 
     /** The statement for the message starting at line_number of lf. */
     uint32_t match_line(logfile* lf, size_t line_number, match_scratch& ms)
@@ -258,8 +360,10 @@ struct stmt_map {
             return NO_STATEMENT;
         }
 
-        return this->intern_cached(
+        auto id = this->intern_cached(
             ms.ms_cache, ms.ms_arena, find_res->src, find_res->pattern);
+        this->sample_vars(id, sbr, sa, values, ms);
+        return id;
 #else
         return NO_STATEMENT;
 #endif
@@ -332,6 +436,11 @@ CREATE TABLE lnav_db.log_stmt_stats (
                          -- are at most 32 buckets.
     bucket_shift INTEGER,-- How far the keys were merged: each bucket covers
                          -- 4096 << bucket_shift milliseconds.
+    var_schema TEXT,     -- A JSON Schema for the statement's argument values
+                         -- (log_msg_values), a tuple in call order, derived
+                         -- from up to 32 sampled messages: each item's title
+                         -- is the source expression and its type the
+                         -- narrowest that covers the samples.
     mapped INTEGER HIDDEN, -- The messages in the LOG view mapped so far.
     total INTEGER HIDDEN   -- The messages in the LOG view.
 );
@@ -514,10 +623,20 @@ CREATE TABLE lnav_db.log_stmt_stats (
             case 6:
                 to_sqlite(ctx, (int64_t) r.r_bucket_shift);
                 break;
-            case 7:
+            case 7: {
+                auto schema = stmt.var_schema();
+                if (schema) {
+                    to_sqlite(ctx, schema.value());
+                    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            case 8:
                 to_sqlite(ctx, this->lss_mapped);
                 break;
-            case 8:
+            case 9:
                 to_sqlite(ctx, this->lss_total);
                 break;
         }

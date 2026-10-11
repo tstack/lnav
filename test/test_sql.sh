@@ -1099,3 +1099,17 @@ check_output "logline table misses messages with source fields?" <<EOF
 n
 5
 EOF
+
+# all_logs.log_format_values has the format's non-null values as JSON, with
+# numbers as numbers.  (It's hidden, so the SELECT * outputs above don't have it.)
+FORMAT_VALUES_CHECK=";SELECT jget(log_format_values, '/c_ip') AS c_ip, typeof(jget(log_format_values, '/sc_status')) AS status_type, json_type(log_format_values, '\$.cs_username') IS NULL AS no_null_user FROM all_logs WHERE log_line = 0"
+run_test ${lnav_test} -n \
+    -c "${FORMAT_VALUES_CHECK}" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "log_format_values does not have the format's values?" <<EOF
+c_ip,status_type,no_null_user
+192.168.202.254,integer,1
+EOF
+

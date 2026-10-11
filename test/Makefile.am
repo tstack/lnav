@@ -334,6 +334,7 @@ dist_noinst_DATA = \
 	listview_output_cursor.5 \
 	listview_output_cursor.6 \
 	log.clog \
+	log2src/java/com/example/net/Meter.java \
 	log2src/java/com/example/net/Server.java \
 	log2src/java/java-example.0 \
 	log2src/java-multiline/com/example/Job.java \

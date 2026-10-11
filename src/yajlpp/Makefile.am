@@ -28,12 +28,14 @@ noinst_LIBRARIES = libyajlpp.a
 noinst_HEADERS = \
     json_op.hh \
     json_ptr.hh \
+    json_schema_builder.hh \
 	yajlpp.hh \
 	yajlpp_def.hh
 
 libyajlpp_a_SOURCES = \
     json_op.cc \
     json_ptr.cc \
+    json_schema_builder.cc \
 	yajlpp.cc
 
 check_PROGRAMS = \

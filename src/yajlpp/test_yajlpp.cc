@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include "base/is_utf8.hh"
+#include "json_schema_builder.hh"
 #include "yajlpp.hh"
 #include "yajlpp_def.hh"
 
@@ -262,5 +263,44 @@ main(int argc, char* argv[])
         assert(EXPECTED_OUTPUT == actual);
 
         yajl_tree_free(tree);
+    }
+
+    {
+        json_schema_builder jsb;
+
+        assert(jsb.add_sample(R"({"id": 1, "tags": ["a"], "x": null})"_frag)
+                   .isOk());
+        assert(jsb.add_sample(R"({"id": 2.5, "tags": []})"_frag).isOk());
+        assert(jsb.add_sample(R"({"id": )"_frag).isErr());
+        assert(jsb.sample_count() == 2);
+
+        const std::string EXPECTED_OUTPUT
+            = R"({"$schema":"https://json-schema.org/draft/2020-12/schema",)"
+              R"("type":"object","properties":{)"
+              R"("id":{"type":"number"},)"
+              R"("tags":{"type":"array","items":{"type":"string"}},)"
+              R"("x":{"type":"null"}}})";
+        auto actual = jsb.to_string();
+        assert(EXPECTED_OUTPUT == actual);
+    }
+
+    {
+        json_schema_builder jsb({true, true});
+
+        assert(jsb.add_sample(R"(["5ms", "1.5 KiB", "12", "a", "true"])"_frag)
+                   .isOk());
+        assert(jsb.add_sample(R"(["2 s", "12", "null", "4.5ms", "x"])"_frag)
+                   .isOk());
+
+        const std::string EXPECTED_OUTPUT
+            = R"({"$schema":"https://json-schema.org/draft/2020-12/schema",)"
+              R"("type":"array","prefixItems":[)"
+              R"({"type":"string","format":"measure"},)"
+              R"({"type":"string","format":"measure"},)"
+              R"({"type":["number","null"]},)"
+              R"({"type":"string"},)"
+              R"({"type":"string"}],"items":false})";
+        auto actual = jsb.to_string();
+        assert(EXPECTED_OUTPUT == actual);
     }
 }

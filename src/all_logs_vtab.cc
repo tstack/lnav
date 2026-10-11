@@ -36,6 +36,7 @@
 #include "elem_to_json.hh"
 #include "hasher.hh"
 #include "scn/scan.h"
+#include "yajlpp/yajlpp.hh"
 
 #ifdef HAVE_RUST_DEPS
 #    include "lnav_rs_ext.cxx.hh"
@@ -52,9 +53,11 @@ all_logs_vtab::lines_for_value(int col,
                                logfile_sub_source& lss)
 {
     if (alv_schema_lines == nullptr
-        || col != VT_COL_MAX + (int) this->alv_schema_meta.lvm_column
-                                   .get<logline_value_meta::table_column>()
-                                   .value)
+        || col
+            != VT_COL_MAX
+                + (int) this->alv_schema_meta.lvm_column
+                      .get<logline_value_meta::table_column>()
+                      .value)
     {
         return nullptr;
     }
@@ -78,7 +81,10 @@ all_logs_vtab::all_logs_vtab()
                    logline_value_meta::table_column{3}),
       alv_stacktrace_meta(intern_string::lookup("log_stack_trace"),
                           value_kind_t::VALUE_TEXT,
-                          logline_value_meta::table_column{4})
+                          logline_value_meta::table_column{4}),
+      alv_format_values_meta(intern_string::lookup("log_format_values"),
+                             value_kind_t::VALUE_JSON,
+                             logline_value_meta::table_column{5})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
@@ -111,6 +117,57 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
                       intern_string_t{},
                       false,
                       "If found, the stack trace details"_frag);
+    // Hidden, so SELECT * isn't widened by a copy of every message's values.
+    cols.emplace_back(
+        this->alv_format_values_meta.lvm_name,
+        SQLITE3_TEXT,
+        intern_string_t{},
+        true,
+        "The non-null values the message's log format extracted, as a JSON object"_frag);
+}
+
+/**
+ * The values the format extracted from a message, as a JSON object of the
+ * non-null ones, the way :write-json-to writes them: numbers and booleans keep
+ * their type, JSON values go in as JSON, and hidden values are left out.
+ */
+static std::string
+format_values_json(const logline_value_vector& values)
+{
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+    {
+        yajlpp_map obj(gen);
+        for (const auto& lv : values.lvv_values) {
+            if (lv.lv_meta.lvm_hidden
+                || lv.lv_meta.lvm_column
+                       .is<logline_value_meta::internal_column>()
+                || lv.lv_meta.lvm_kind == value_kind_t::VALUE_NULL)
+            {
+                continue;
+            }
+
+            obj.gen(lv.lv_meta.lvm_name.get());
+            switch (lv.lv_meta.lvm_kind) {
+                case value_kind_t::VALUE_BOOLEAN:
+                    obj.gen(lv.lv_value.i ? true : false);
+                    break;
+                case value_kind_t::VALUE_INTEGER:
+                    obj.gen(lv.lv_value.i);
+                    break;
+                case value_kind_t::VALUE_FLOAT:
+                    obj.gen(lv.lv_value.d);
+                    break;
+                case value_kind_t::VALUE_JSON:
+                    yajl_gen_number(gen, lv.text_value(), lv.text_length());
+                    break;
+                default:
+                    obj.gen(lv.text_value(), lv.text_length());
+                    break;
+            }
+        }
+    }
+    return gen.to_string_fragment().to_string();
 }
 
 void
@@ -138,6 +195,11 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
     values.lvv_src_line_value
         = to_owned(sub_values.lvv_src_line_value, values.lvv_allocator);
     values.lvv_duration_value = sub_values.lvv_duration_value;
+
+    if (ec.is_column_used(this->alv_format_values_meta)) {
+        values.lvv_values.emplace_back(this->alv_format_values_meta,
+                                       format_values_json(sub_values));
+    }
 
     if (!ec.are_columns_used(this->alv_msg_meta,
                              this->alv_schema_meta,
@@ -178,14 +240,14 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
         char schema_buf[hasher::STRING_SIZE];
-        statement_schema(
-            string_fragment::from(find_res->src),
-            string_fragment::from(find_res->pattern),
-            schema_buf);
+        statement_schema(string_fragment::from(find_res->src),
+                         string_fragment::from(find_res->pattern),
+                         schema_buf);
         values.lvv_values.emplace_back(this->alv_msg_meta,
                                        (std::string) find_res->pattern);
         values.lvv_values.emplace_back(
-            this->alv_schema_meta, string_fragment::from(schema_buf).to_string());
+            this->alv_schema_meta,
+            string_fragment::from(schema_buf).to_string());
         values.lvv_values.emplace_back(this->alv_values_meta,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,

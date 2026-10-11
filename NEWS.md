@@ -255,6 +255,11 @@ Features:
   can put its SQL results in the regular DB view, instead of
   a view of its own, with an `X-Lnav-Db-View: shared`
   header, so a client can show them with `:spectrogram`.
+* The `all_logs` table has a hidden `log_format_values` column
+  with the values the message's log format extracted, as a
+  JSON object of the non-null ones, so a query over messages
+  from several formats can still get at their fields (e.g.
+  `jget(log_format_values, '/xid')`).
 * Added the `log_stmt_stats` table to get, for each log
   statement found by log2src (see `:add-source-path`), the
   number of messages it produced in the LOG view, the times of
@@ -263,7 +268,12 @@ Features:
   that maps every message to its statement once; after that,
   the counts follow the LOG view's filters and new lines
   without matching the messages again, which makes them fast
-  enough for logs with millions of messages.
+  enough for logs with millions of messages.  The `var_schema`
+  column is a JSON Schema for each statement's argument values,
+  derived from a sample of its messages: the source expression,
+  the narrowest type that covers the values (`number` or
+  `string`), and a `format` of `measure` for strings that
+  are numbers with units, like `4.5ms`.
 * The `source_log_stmt()` table-valued function has a new
   `schema` column with the `log_msg_schema` of the messages
   logged by each statement, so they can be found with a
