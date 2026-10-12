@@ -22,6 +22,7 @@
 #include "base/string_util.hh"
 #include "column_namer.hh"
 #include "config.h"
+#include "curl_looper.hh"
 #include "data_parser.hh"
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
@@ -38,7 +39,6 @@
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
 #include "view_curses.hh"
-#include "curl_looper.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajl/api/yajl_gen.h"
@@ -219,9 +219,8 @@ mapbox::util::
             if (!cap) {
                 yajl_gen_null(gen);
             } else {
-                static const auto JSON_NUMBER_RE
-                    = lnav::pcre2pp::code::from_const(
-                        R"(\A-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\z)");
+                static const auto JSON_NUMBER_RE = lnav::pcre2pp::code::from_const(
+                    R"(\A-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\z)");
 
                 auto num = capture_to_number(cap.value());
                 if (!num) {
@@ -742,6 +741,26 @@ sql_humanize_file_size(file_ssize_t value)
     return humanize::file_size(value, humanize::alignment::columnar);
 }
 
+std::optional<double>
+sql_measure_value(string_fragment value)
+{
+    auto res = humanize::try_from<double>(value.trim());
+    if (!res) {
+        return std::nullopt;
+    }
+    return res->value;
+}
+
+std::optional<string_fragment>
+sql_measure_unit(string_fragment value)
+{
+    auto res = humanize::try_from<double>(value.trim());
+    if (!res) {
+        return std::nullopt;
+    }
+    return res->unit_suffix;
+}
+
 std::string
 sql_anonymize(string_fragment frag)
 {
@@ -881,10 +900,9 @@ sql_parse_url(std::string url)
                 auto kv_pair_encoded = split_res.first;
                 // Split before decoding so an encoded '=' stays in the key
                 // or value it belongs to.
-                auto eq_split = kv_pair_encoded.split_pair(
-                    string_fragment::tag1{'='});
-                auto key_encoded
-                    = eq_split ? eq_split->first : kv_pair_encoded;
+                auto eq_split
+                    = kv_pair_encoded.split_pair(string_fragment::tag1{'='});
+                auto key_encoded = eq_split ? eq_split->first : kv_pair_encoded;
                 auto_mem<char> key_buf(curl_free);
                 auto key_sf = unescape(key_encoded, key_buf);
 
@@ -1149,6 +1167,47 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     "To wrap alphanumeric words with angle brackets",
                     "SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')",
                 })),
+
+        sqlite_func_adapter<decltype(&sql_measure_value), sql_measure_value>::
+            builder(
+                help_text("measure_value",
+                          "Parse a number with an optional unit, like '4.5ms' "
+                          "or '2 KiB', and return it in the unit's base "
+                          "(seconds, bytes, ...).  Returns NULL if the value "
+                          "is not a number.")
+                    .sql_function()
+                    .with_prql_path({"humanize", "measure_value"})
+                    .with_parameter({"value", "The string to parse"})
+                    .with_tags({"string"})
+                    .with_example({
+                        "To get a duration in seconds",
+                        "SELECT measure_value('4.5ms')",
+                    })
+                    .with_example({
+                        "To get a size in bytes",
+                        "SELECT measure_value('2 KiB')",
+                    })),
+
+        sqlite_func_adapter<decltype(&sql_measure_unit), sql_measure_unit>::
+            builder(
+                help_text("measure_unit",
+                          "Parse a number with an optional unit, like '4.5ms' "
+                          "or '2 KiB', and return the base unit it was "
+                          "recognized as ('s', 'B', ...), or an empty string "
+                          "for a plain number.  Returns NULL if the value is "
+                          "not a number.")
+                    .sql_function()
+                    .with_prql_path({"humanize", "measure_unit"})
+                    .with_parameter({"value", "The string to parse"})
+                    .with_tags({"string"})
+                    .with_example({
+                        "To get the unit of a duration",
+                        "SELECT measure_unit('4.5ms')",
+                    })
+                    .with_example({
+                        "To get the unit of a plain number",
+                        "SELECT measure_unit('42')",
+                    })),
 
         sqlite_func_adapter<decltype(&sql_humanize_file_size),
                             sql_humanize_file_size>::

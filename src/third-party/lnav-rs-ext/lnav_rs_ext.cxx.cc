@@ -82,6 +82,8 @@ public:
   explicit operator std::string() const;
 
   const char *data() const noexcept;
+  char *data() noexcept;
+
   std::size_t size() const noexcept;
   std::size_t length() const noexcept;
   bool empty() const noexcept;
@@ -597,11 +599,6 @@ Vec<T> &Vec<T>::operator=(const Vec &other) & {
 template <typename T>
 bool Vec<T>::empty() const noexcept {
   return this->size() == 0;
-}
-
-template <typename T>
-T *Vec<T>::data() noexcept {
-  return const_cast<T *>(const_cast<const Vec<T> *>(this)->data());
 }
 
 template <typename T>
@@ -1143,121 +1140,121 @@ struct StartExtResult final {
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$StartExtResult
 
 extern "C" {
-void lnav_rs_ext$cxxbridge1$202$version_info(::rust::String *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$205$version_info(::rust::String *return$) noexcept {
   ::rust::String (*version_info$)() = ::lnav_rs_ext::version_info;
   new (return$) ::rust::String(version_info$());
 }
 
-void lnav_rs_ext$cxxbridge1$202$longpoll(::lnav_rs_ext::PollInput const &poll_inpout, ::lnav_rs_ext::PollResult *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$205$longpoll(::lnav_rs_ext::PollInput const &poll_inpout, ::lnav_rs_ext::PollResult *return$) noexcept {
   ::lnav_rs_ext::PollResult (*longpoll$)(::lnav_rs_ext::PollInput const &) = ::lnav_rs_ext::longpoll;
   new (return$) ::lnav_rs_ext::PollResult(longpoll$(poll_inpout));
 }
 
-void lnav_rs_ext$cxxbridge1$202$notify_pollers() noexcept {
+void lnav_rs_ext$cxxbridge1$205$notify_pollers() noexcept {
   void (*notify_pollers$)() = ::lnav_rs_ext::notify_pollers;
   notify_pollers$();
 }
 
-void lnav_rs_ext$cxxbridge1$202$notify_completion() noexcept {
+void lnav_rs_ext$cxxbridge1$205$notify_completion() noexcept {
   void (*notify_completion$)() = ::lnav_rs_ext::notify_completion;
   notify_completion$();
 }
 
-void lnav_rs_ext$cxxbridge1$202$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::rust::Vec<::lnav_rs_ext::VarPair> const *vars, ::lnav_rs_ext::ExecResult *return$) noexcept {
+void lnav_rs_ext$cxxbridge1$205$execute_external_command(::rust::String const *src, ::rust::String const *cmd, ::rust::String const *hdrs, ::rust::Vec<::lnav_rs_ext::VarPair> const *vars, ::lnav_rs_ext::ExecResult *return$) noexcept {
   ::lnav_rs_ext::ExecResult (*execute_external_command$)(::rust::String, ::rust::String, ::rust::String, ::rust::Vec<::lnav_rs_ext::VarPair>) = ::lnav_rs_ext::execute_external_command;
   new (return$) ::lnav_rs_ext::ExecResult(execute_external_command$(::rust::String(::rust::unsafe_bitcopy, *src), ::rust::String(::rust::unsafe_bitcopy, *cmd), ::rust::String(::rust::unsafe_bitcopy, *hdrs), ::rust::Vec<::lnav_rs_ext::VarPair>(::rust::unsafe_bitcopy, *vars)));
 }
 
-void lnav_rs_ext$cxxbridge1$202$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {
+void lnav_rs_ext$cxxbridge1$205$get_static_file(::rust::Str path, ::rust::Vec<::std::uint8_t> &dst) noexcept {
   void (*get_static_file$)(::rust::Str, ::rust::Vec<::std::uint8_t> &) = ::lnav_rs_ext::get_static_file;
   get_static_file$(path, dst);
 }
 
-::lnav_rs_ext::LnavLogLevel lnav_rs_ext$cxxbridge1$202$get_lnav_log_level() noexcept {
+::lnav_rs_ext::LnavLogLevel lnav_rs_ext$cxxbridge1$205$get_lnav_log_level() noexcept {
   ::lnav_rs_ext::LnavLogLevel (*get_lnav_log_level$)() = ::lnav_rs_ext::get_lnav_log_level;
   return get_lnav_log_level$();
 }
 
-void lnav_rs_ext$cxxbridge1$202$log_msg(::lnav_rs_ext::LnavLogLevel level, ::rust::Str file, ::std::uint32_t line, ::rust::Str msg) noexcept {
+void lnav_rs_ext$cxxbridge1$205$log_msg(::lnav_rs_ext::LnavLogLevel level, ::rust::Str file, ::std::uint32_t line, ::rust::Str msg) noexcept {
   void (*log_msg$)(::lnav_rs_ext::LnavLogLevel, ::rust::Str, ::std::uint32_t, ::rust::Str) = ::lnav_rs_ext::log_msg;
   log_msg$(level, file, line, msg);
 }
 
-void lnav_rs_ext$cxxbridge1$202$init_ext() noexcept;
+void lnav_rs_ext$cxxbridge1$205$init_ext() noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$205$compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options, ::lnav_rs_ext::CompileResult2 *return$) noexcept;
 
-::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$202$add_src_root(::rust::String *path) noexcept;
+::lnav_rs_ext::ExtError *lnav_rs_ext$cxxbridge1$205$add_src_root(::rust::String *path) noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$discover_srcs() noexcept;
+void lnav_rs_ext$cxxbridge1$205$discover_srcs() noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$205$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
 
-::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$202$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
+::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$205$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
 
-::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$202$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
+::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$205$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$205$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$205$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$set_one_time_password(::rust::String *return$) noexcept;
+void lnav_rs_ext$cxxbridge1$205$set_one_time_password(::rust::String *return$) noexcept;
 
-void lnav_rs_ext$cxxbridge1$202$stop_ext_access() noexcept;
+void lnav_rs_ext$cxxbridge1$205$stop_ext_access() noexcept;
 } // extern "C"
 
 void init_ext() noexcept {
-  lnav_rs_ext$cxxbridge1$202$init_ext();
+  lnav_rs_ext$cxxbridge1$205$init_ext();
 }
 
 ::lnav_rs_ext::CompileResult2 compile_tree(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const &tree, ::lnav_rs_ext::Options const &options) noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::CompileResult2> return$;
-  lnav_rs_ext$cxxbridge1$202$compile_tree(tree, options, &return$.value);
+  lnav_rs_ext$cxxbridge1$205$compile_tree(tree, options, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::std::unique_ptr<::lnav_rs_ext::ExtError> add_src_root(::rust::String path) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::ExtError>(lnav_rs_ext$cxxbridge1$202$add_src_root(&path));
+  return ::std::unique_ptr<::lnav_rs_ext::ExtError>(lnav_rs_ext$cxxbridge1$205$add_src_root(&path));
 }
 
 void discover_srcs() noexcept {
-  lnav_rs_ext$cxxbridge1$202$discover_srcs();
+  lnav_rs_ext$cxxbridge1$205$discover_srcs();
 }
 
 ::lnav_rs_ext::ExtProgress get_status() noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::ExtProgress> return$;
-  lnav_rs_ext$cxxbridge1$202$get_status(&return$.value);
+  lnav_rs_ext$cxxbridge1$205$get_status(&return$.value);
   return ::std::move(return$.value);
 }
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$202$find_log_statement(file, line, body));
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$205$find_log_statement(file, line, body));
 }
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$202$find_log_statement_json(file, line, body, options));
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$205$find_log_statement_json(file, line, body, options));
 }
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {
   ::rust::MaybeUninit<::rust::Vec<::lnav_rs_ext::FindLogResult>> return$;
-  lnav_rs_ext$cxxbridge1$202$get_log_statements_for(file, &return$.value);
+  lnav_rs_ext$cxxbridge1$205$get_log_statements_for(file, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {
   ::rust::MaybeUninit<::lnav_rs_ext::StartExtResult> return$;
-  lnav_rs_ext$cxxbridge1$202$start_ext_access(port, &api_key, &return$.value);
+  lnav_rs_ext$cxxbridge1$205$start_ext_access(port, &api_key, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::rust::String set_one_time_password() noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  lnav_rs_ext$cxxbridge1$202$set_one_time_password(&return$.value);
+  lnav_rs_ext$cxxbridge1$205$set_one_time_password(&return$.value);
   return ::std::move(return$.value);
 }
 
 void stop_ext_access() noexcept {
-  lnav_rs_ext$cxxbridge1$202$stop_ext_access();
+  lnav_rs_ext$cxxbridge1$205$stop_ext_access();
 }
 } // namespace lnav_rs_ext
 
@@ -1266,7 +1263,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$new(::rust::Vec<::lnav_rs_ext::Ext
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$drop(::rust::Vec<::lnav_rs_ext::ExtError> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtError$len(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtError$capacity(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
-::lnav_rs_ext::ExtError const *cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+::lnav_rs_ext::ExtError const *cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data_const(::rust::Vec<::lnav_rs_ext::ExtError> const *ptr) noexcept;
+::lnav_rs_ext::ExtError *cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data_mut(::rust::Vec<::lnav_rs_ext::ExtError> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$reserve_total(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$set_len(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtError$truncate(::rust::Vec<::lnav_rs_ext::ExtError> *ptr, ::std::size_t len) noexcept;
@@ -1275,7 +1273,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$Message$new(::rust::Vec<::lnav_rs_ext::Mess
 void cxxbridge1$rust_vec$lnav_rs_ext$Message$drop(::rust::Vec<::lnav_rs_ext::Message> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$Message$len(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$Message$capacity(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
-::lnav_rs_ext::Message const *cxxbridge1$rust_vec$lnav_rs_ext$Message$data(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+::lnav_rs_ext::Message const *cxxbridge1$rust_vec$lnav_rs_ext$Message$data_const(::rust::Vec<::lnav_rs_ext::Message> const *ptr) noexcept;
+::lnav_rs_ext::Message *cxxbridge1$rust_vec$lnav_rs_ext$Message$data_mut(::rust::Vec<::lnav_rs_ext::Message> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$Message$reserve_total(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$Message$set_len(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$Message$truncate(::rust::Vec<::lnav_rs_ext::Message> *ptr, ::std::size_t len) noexcept;
@@ -1284,7 +1283,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$new(::rust::Vec<::lnav_rs_ext::VarP
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$drop(::rust::Vec<::lnav_rs_ext::VarPair> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$VarPair$len(::rust::Vec<::lnav_rs_ext::VarPair> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$VarPair$capacity(::rust::Vec<::lnav_rs_ext::VarPair> const *ptr) noexcept;
-::lnav_rs_ext::VarPair const *cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data(::rust::Vec<::lnav_rs_ext::VarPair> const *ptr) noexcept;
+::lnav_rs_ext::VarPair const *cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data_const(::rust::Vec<::lnav_rs_ext::VarPair> const *ptr) noexcept;
+::lnav_rs_ext::VarPair *cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data_mut(::rust::Vec<::lnav_rs_ext::VarPair> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$reserve_total(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$set_len(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$VarPair$truncate(::rust::Vec<::lnav_rs_ext::VarPair> *ptr, ::std::size_t len) noexcept;
@@ -1293,7 +1293,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$new(::rust::Vec<::lnav_rs_ex
 void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$drop(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$len(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$capacity(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
-::lnav_rs_ext::LogIndexChange const *cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+::lnav_rs_ext::LogIndexChange const *cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data_const(::rust::Vec<::lnav_rs_ext::LogIndexChange> const *ptr) noexcept;
+::lnav_rs_ext::LogIndexChange *cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data_mut(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$reserve_total(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$set_len(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$truncate(::rust::Vec<::lnav_rs_ext::LogIndexChange> *ptr, ::std::size_t len) noexcept;
@@ -1302,7 +1303,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$new(::rust::Vec<::lnav_rs_ext::
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$drop(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$len(::rust::Vec<::lnav_rs_ext::ExtProgress> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$capacity(::rust::Vec<::lnav_rs_ext::ExtProgress> const *ptr) noexcept;
-::lnav_rs_ext::ExtProgress const *cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data(::rust::Vec<::lnav_rs_ext::ExtProgress> const *ptr) noexcept;
+::lnav_rs_ext::ExtProgress const *cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data_const(::rust::Vec<::lnav_rs_ext::ExtProgress> const *ptr) noexcept;
+::lnav_rs_ext::ExtProgress *cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data_mut(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$reserve_total(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$set_len(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$truncate(::rust::Vec<::lnav_rs_ext::ExtProgress> *ptr, ::std::size_t len) noexcept;
@@ -1311,7 +1313,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$new(::rust::Vec<::lnav_rs_ext::
 void cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$drop(::rust::Vec<::lnav_rs_ext::OpenRequest> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$len(::rust::Vec<::lnav_rs_ext::OpenRequest> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$capacity(::rust::Vec<::lnav_rs_ext::OpenRequest> const *ptr) noexcept;
-::lnav_rs_ext::OpenRequest const *cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data(::rust::Vec<::lnav_rs_ext::OpenRequest> const *ptr) noexcept;
+::lnav_rs_ext::OpenRequest const *cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data_const(::rust::Vec<::lnav_rs_ext::OpenRequest> const *ptr) noexcept;
+::lnav_rs_ext::OpenRequest *cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data_mut(::rust::Vec<::lnav_rs_ext::OpenRequest> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$reserve_total(::rust::Vec<::lnav_rs_ext::OpenRequest> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$set_len(::rust::Vec<::lnav_rs_ext::OpenRequest> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$truncate(::rust::Vec<::lnav_rs_ext::OpenRequest> *ptr, ::std::size_t len) noexcept;
@@ -1320,7 +1323,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$new(::rust::Vec<::lnav_rs
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$drop(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$len(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$capacity(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
-::lnav_rs_ext::SourceTreeElement const *cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+::lnav_rs_ext::SourceTreeElement const *cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data_const(::rust::Vec<::lnav_rs_ext::SourceTreeElement> const *ptr) noexcept;
+::lnav_rs_ext::SourceTreeElement *cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data_mut(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$reserve_total(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$set_len(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$truncate(::rust::Vec<::lnav_rs_ext::SourceTreeElement> *ptr, ::std::size_t len) noexcept;
@@ -1401,7 +1405,8 @@ void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$new(::rust::Vec<::lnav_rs_ext
 void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$drop(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$len(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
 ::std::size_t cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$capacity(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
-::lnav_rs_ext::FindLogResult const *cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+::lnav_rs_ext::FindLogResult const *cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data_const(::rust::Vec<::lnav_rs_ext::FindLogResult> const *ptr) noexcept;
+::lnav_rs_ext::FindLogResult *cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data_mut(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$reserve_total(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t new_cap) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$set_len(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t len) noexcept;
 void cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$truncate(::rust::Vec<::lnav_rs_ext::FindLogResult> *ptr, ::std::size_t len) noexcept;
@@ -1427,7 +1432,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::ExtError const *Vec<::lnav_rs_ext::ExtError>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data_const(this);
+}
+template <>
+::lnav_rs_ext::ExtError *Vec<::lnav_rs_ext::ExtError>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtError$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::ExtError>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1459,7 +1468,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::Message const *Vec<::lnav_rs_ext::Message>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$Message$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$data_const(this);
+}
+template <>
+::lnav_rs_ext::Message *Vec<::lnav_rs_ext::Message>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$Message$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::Message>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1491,7 +1504,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::VarPair const *Vec<::lnav_rs_ext::VarPair>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data_const(this);
+}
+template <>
+::lnav_rs_ext::VarPair *Vec<::lnav_rs_ext::VarPair>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$VarPair$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::VarPair>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1523,7 +1540,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::LogIndexChange const *Vec<::lnav_rs_ext::LogIndexChange>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data_const(this);
+}
+template <>
+::lnav_rs_ext::LogIndexChange *Vec<::lnav_rs_ext::LogIndexChange>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$LogIndexChange$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::LogIndexChange>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1555,7 +1576,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::ExtProgress const *Vec<::lnav_rs_ext::ExtProgress>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data_const(this);
+}
+template <>
+::lnav_rs_ext::ExtProgress *Vec<::lnav_rs_ext::ExtProgress>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$ExtProgress$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::ExtProgress>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1587,7 +1612,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::OpenRequest const *Vec<::lnav_rs_ext::OpenRequest>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data_const(this);
+}
+template <>
+::lnav_rs_ext::OpenRequest *Vec<::lnav_rs_ext::OpenRequest>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$OpenRequest$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::OpenRequest>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1619,7 +1648,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::SourceTreeElement const *Vec<::lnav_rs_ext::SourceTreeElement>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data_const(this);
+}
+template <>
+::lnav_rs_ext::SourceTreeElement *Vec<::lnav_rs_ext::SourceTreeElement>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$SourceTreeElement$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::SourceTreeElement>::reserve_total(::std::size_t new_cap) noexcept {
@@ -1651,7 +1684,11 @@ template <>
 }
 template <>
 ::lnav_rs_ext::FindLogResult const *Vec<::lnav_rs_ext::FindLogResult>::data() const noexcept {
-  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data(this);
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data_const(this);
+}
+template <>
+::lnav_rs_ext::FindLogResult *Vec<::lnav_rs_ext::FindLogResult>::data() noexcept {
+  return cxxbridge1$rust_vec$lnav_rs_ext$FindLogResult$data_mut(this);
 }
 template <>
 void Vec<::lnav_rs_ext::FindLogResult>::reserve_total(::std::size_t new_cap) noexcept {

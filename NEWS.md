@@ -274,6 +274,13 @@ Features:
   the narrowest type that covers the values (`number` or
   `string`), and a `format` of `measure` for strings that
   are numbers with units, like `4.5ms`.
+* Added the `measure_value()` and `measure_unit()` SQL
+  functions to read numbers with units, like `4.5ms` or
+  `2 KiB`: `measure_value()` returns the number in the unit's
+  base (`0.0045` seconds, `2048` bytes) and `measure_unit()`
+  the base unit (`s`, `B`, or an empty string for a plain
+  number), so values with mixed units can be compared,
+  aggregated, and grouped into ranges in SQL.
 * The `source_log_stmt()` table-valued function has a new
   `schema` column with the `log_msg_schema` of the messages
   logged by each statement, so they can be found with a

@@ -14,6 +14,22 @@ run_cap_test ./drive_sql "select humanize_file_size(1, 2)"
 
 run_cap_test ./drive_sql "select humanize_file_size(10 * 1000 * 1000)"
 
+run_cap_test ./drive_sql "select measure_value('4.5ms')"
+
+run_cap_test ./drive_sql "select measure_value('2 KiB')"
+
+run_cap_test ./drive_sql "select measure_value('42')"
+
+run_cap_test ./drive_sql "select measure_value('fast')"
+
+run_cap_test ./drive_sql "select measure_unit('4.5ms')"
+
+run_cap_test ./drive_sql "select measure_unit('2 KiB')"
+
+run_cap_test ./drive_sql "select measure_unit('42')"
+
+run_cap_test ./drive_sql "select measure_unit('fast')"
+
 run_cap_test ./drive_sql "select startswith('.foo', '.')"
 
 run_cap_test ./drive_sql "select startswith('foo', '.')"
