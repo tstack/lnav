@@ -3307,6 +3307,13 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
                 ll->get_time<std::chrono::milliseconds>().count());
             continue;
         }
+        if (strcmp(name, ":log_time_usecs") == 0) {
+            sqlite3_bind_int64(
+                stmt,
+                lpc + 1,
+                ll->get_time<std::chrono::microseconds>().count());
+            continue;
+        }
         if (strcmp(name, ":log_mark") == 0) {
             sqlite3_bind_int(stmt, lpc + 1, ll->is_marked());
             continue;

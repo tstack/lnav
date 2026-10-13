@@ -205,6 +205,8 @@ public:
     std::vector<std::chrono::microseconds> dls_time_column;
     std::vector<size_t> dls_cell_width;
     size_t dls_time_column_index{SIZE_MAX};
+    /** Whether the time column's integers are microseconds (log_time_usecs). */
+    bool dls_time_column_usecs{false};
     std::optional<size_t> dls_time_column_invalidated_at;
     std::optional<size_t> dls_level_column;
     std::vector<row_style> dls_row_styles;

@@ -362,6 +362,13 @@ eval_impl(logfile& lf,
                     ll->get_time<std::chrono::milliseconds>().count());
                 continue;
             }
+            if (strcmp(name, ":log_time_usecs") == 0) {
+                sqlite3_bind_int64(
+                    stmt,
+                    lpc + 1,
+                    ll->get_time<std::chrono::microseconds>().count());
+                continue;
+            }
             if (strcmp(name, ":log_format") == 0) {
                 const auto format_name = format->get_name();
                 sqlite3_bind_text(stmt,

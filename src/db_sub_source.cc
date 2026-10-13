@@ -378,9 +378,10 @@ db_label_source::push_header(const std::string& colstr, int type)
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
     if (colstr == "log_time" || colstr == "min(log_time)"
-        || colstr == "log_time_msecs")
+        || colstr == "log_time_msecs" || colstr == "log_time_usecs")
     {
         this->dls_time_column_index = this->dls_headers.size() - 1;
+        this->dls_time_column_usecs = colstr == "log_time_usecs";
     }
     if (colstr == "__lnav_style__") {
         this->dls_row_style_column = this->dls_headers.size() - 1;
@@ -482,9 +483,10 @@ db_label_source::push_column(const column_value_t& sv)
             width = count_digits(i);
             this->dls_cell_container.push_int_cell(i);
             if (col == this->dls_time_column_index) {
-                auto ms = std::chrono::milliseconds{i};
-                auto us
-                    = std::chrono::duration_cast<std::chrono::microseconds>(ms);
+                auto us = this->dls_time_column_usecs
+                    ? std::chrono::microseconds{i}
+                    : std::chrono::duration_cast<std::chrono::microseconds>(
+                          std::chrono::milliseconds{i});
 
                 this->update_time_column(us);
             }
@@ -698,6 +700,7 @@ db_label_source::clear()
     this->dls_cell_container.reset();
     this->dls_time_column.clear();
     this->dls_time_column_index = SIZE_MAX;
+    this->dls_time_column_usecs = false;
     this->dls_cell_width.clear();
     this->dls_row_styles.clear();
     this->dls_row_styles_have_errors = false;

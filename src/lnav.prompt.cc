@@ -252,6 +252,7 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
         ":log_level",
         ":log_time",
         ":log_time_msecs",
+        ":log_time_usecs",
         ":log_mark",
         ":log_comment",
         ":log_annotations",
@@ -366,6 +367,7 @@ prompt::refresh_sql_completions(textview_curses& tc)
     static auto& ec = injector::get<exec_context&>();
     static constexpr const char* hidden_table_columns[] = {
         "log_time_msecs",
+        "log_time_usecs",
         "log_path",
         "log_text",
         "log_body",

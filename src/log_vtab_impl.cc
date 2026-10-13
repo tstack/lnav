@@ -94,6 +94,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_duration"_frag,
         "log_named_searches"_frag,
         "log_msg_line_count"_frag,
+        "log_time_usecs"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -132,7 +133,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_thread_id    TEXT HIDDEN,                       -- The ID of the thread that generated this message
   log_duration     REAL HIDDEN,                       -- The duration associated with this log message
   log_named_searches TEXT HIDDEN,                     -- A JSON list of the named searches that matched this message
-  log_msg_line_count INTEGER HIDDEN                   -- The number of lines in the log message
+  log_msg_line_count INTEGER HIDDEN,                  -- The number of lines in the log message
+  log_time_usecs   INTEGER HIDDEN                     -- The adjusted timestamp for the log message as the number of microseconds from the epoch
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -164,6 +166,7 @@ enum class log_footer_columns : uint32_t {
     duration,
     named_searches,
     msg_line_count,
+    time_usecs,
 };
 
 std::string
@@ -279,6 +282,7 @@ log_vtab_impl::get_foreign_keys(
     keys_inout.emplace("min(log_line)");
     keys_inout.emplace("log_mark");
     keys_inout.emplace("log_time_msecs");
+    keys_inout.emplace("log_time_usecs");
     keys_inout.emplace("log_top_line()");
     keys_inout.emplace("log_msg_line()");
     keys_inout.emplace("log_src_line");
@@ -1418,6 +1422,12 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                   (int64_t) lf->message_line_count(ll));
                         break;
                     }
+                    case log_footer_columns::time_usecs: {
+                        sqlite3_result_int64(
+                            ctx,
+                            ll->get_time<std::chrono::microseconds>().count());
+                        break;
+                    }
                 }
             } else {
                 if (!vc->is_msg_cached()) {
@@ -1966,30 +1976,36 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1);
 
                     switch (footer_column) {
-                        case log_footer_columns::time_msecs: {
-                            auto msecs = std::chrono::milliseconds{
-                                sqlite3_value_int64(argv[lpc])};
+                        case log_footer_columns::time_msecs:
+                        case log_footer_columns::time_usecs: {
+                            auto value = sqlite3_value_int64(argv[lpc]);
+                            auto us = footer_column
+                                    == log_footer_columns::time_msecs
+                                ? std::chrono::duration_cast<
+                                      std::chrono::microseconds>(
+                                      std::chrono::milliseconds{value})
+                                : std::chrono::microseconds{value};
                             switch (op) {
                                 case SQLITE_INDEX_CONSTRAINT_EQ:
                                 case SQLITE_INDEX_CONSTRAINT_IS:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->add(msecs);
+                                    log_time_range->add(us);
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_GT:
                                 case SQLITE_INDEX_CONSTRAINT_GE:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->vtr_begin = msecs;
+                                    log_time_range->vtr_begin = us;
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_LT:
                                 case SQLITE_INDEX_CONSTRAINT_LE:
                                     if (!log_time_range) {
                                         log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->vtr_end = msecs;
+                                    log_time_range->vtr_end = us;
                                     break;
                             }
                             break;
@@ -2649,13 +2665,17 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1);
 
                     switch (footer_column) {
-                        case log_footer_columns::time_msecs: {
+                        case log_footer_columns::time_msecs:
+                        case log_footer_columns::time_usecs: {
                             argvInUse += 1;
                             indexes.push_back(p_info->aConstraint[lpc]);
                             p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
-                            index_desc.emplace_back(
-                                fmt::format(FMT_STRING("log_time_msecs {} ?"),
-                                            sql_constraint_op_name(op)));
+                            index_desc.emplace_back(fmt::format(
+                                FMT_STRING("{} {} ?"),
+                                footer_column == log_footer_columns::time_msecs
+                                    ? "log_time_msecs"
+                                    : "log_time_usecs",
+                                sql_constraint_op_name(op)));
                             break;
                         }
                         case log_footer_columns::format: {

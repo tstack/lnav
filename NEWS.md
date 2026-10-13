@@ -224,6 +224,14 @@ Features:
   including any continuation lines.  The value is also
   available as the `:log_msg_line_count` variable in
   filter expressions.
+* Added the hidden `log_time_usecs` column to the log tables:
+  the message's timestamp as microseconds from the epoch, like
+  `log_time_msecs` but without dropping the sub-millisecond
+  part, so gaps between messages can be computed exactly.
+  Constraints on it narrow the scan like ones on
+  `log_time_msecs`, it is available as the `:log_time_usecs`
+  variable in filter expressions, and a query result with a
+  `log_time_usecs` column can be shown in a spectrogram.
 * Added the `:write-html-to` command to write the top view
   (or the one given with `--view`) as an HTML fragment, a
   `<pre>` element that can be put in a larger document.
