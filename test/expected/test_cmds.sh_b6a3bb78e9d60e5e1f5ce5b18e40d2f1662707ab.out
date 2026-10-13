@@ -2420,7 +2420,8 @@ For support questions, email:
 [4mSee Also[0m
   [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the absolute value of -1:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mabs[0m[37m[40m([0m[1m[37m[40m-1[0m[37m[40m)                                    [0m
@@ -2435,7 +2436,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arccosine of 0.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'%.3f'[0m[37m[40m, [0m[1m[37m[40macos[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m))                  [0m
@@ -2450,7 +2452,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arccosine of 1.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macosh[0m[37m[40m([0m[1m[37m[40m1.2[0m[37m[40m)                                 [0m
@@ -2488,7 +2491,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arcsine of 0.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masin[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
@@ -2503,7 +2507,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arcsine of 0.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40masinh[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                 [0m
@@ -2518,7 +2523,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan2()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arctangent of 0.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matan[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
@@ -2535,7 +2541,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matanh()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matan2[0m[37m[40m([0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m))                       [0m
@@ -2550,7 +2557,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matn2()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the hyperbolic arctangent of 0.2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40matanh[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                 [0m
@@ -2567,7 +2575,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the angle, in degrees, for the point at (5, 5):
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40matn2[0m[37m[40m([0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m))                        [0m
@@ -2582,8 +2591,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, 
-  [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExamples[0m
 #1 To get the average of the column 'ex_duration' from the table 'lnav_example_log':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
@@ -2638,7 +2647,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the ceiling of 1.23:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mceil[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m)                                 [0m
@@ -2803,7 +2813,7 @@ For support questions, email:
                value to the left.
 [4mSee Also[0m
   [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the date portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
@@ -2828,7 +2838,7 @@ For support questions, email:
                value to the left.
 [4mSee Also[0m
   [1mdate()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the date and time portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)            [0m
@@ -2877,7 +2887,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To convert PI to degrees:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdegrees[0m[37m[40m([0m[1m[37m[40mpi[0m[37m[40m())                              [0m
@@ -3002,8 +3013,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, 
-  [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To raise e to 2:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mexp[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m)                                     [0m
@@ -3055,7 +3066,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mlog()[0m, [1mlog10()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the floor of 1.23:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfloor[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m)                                [0m
@@ -3322,9 +3334,9 @@ For support questions, email:
   [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
   [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
   [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, 
-  [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
-  [1mxpath()[0m
+  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To format a duration:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m15[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m60[0m[37m[40m)                 [0m
@@ -3945,7 +3957,7 @@ For support questions, email:
                value to the left.
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the julian day from the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)           [0m
@@ -4255,8 +4267,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog10()[0m, [1mmax()[0m, 
-  [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the natual logarithm of 8:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog[0m[37m[40m([0m[1m[37m[40m8[0m[37m[40m)                                     [0m
@@ -4271,7 +4283,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mmax()[0m, [1mmin()[0m, 
-  [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the logarithm of 100:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlog10[0m[37m[40m([0m[1m[37m[40m100[0m[37m[40m)                                 [0m
@@ -4379,8 +4392,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExamples[0m
 #1 To get the largest value from the parameters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                               [0m
@@ -4460,8 +4473,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExamples[0m
 #1 To get the smallest value from the parameters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                               [0m
@@ -4688,14 +4701,37 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mrank()[0m, [1mrow_number()[0m
 
+[1m[4mpercentile_disc[0m[4m([0m[4mvalue[0m[4m, [0m[4mp[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the value at the given percentile of the numeric values,
+  by the nearest-rank method: the value at rank ceil(p / 100 * count)
+  in order, so it is always one of the values.  Unlike SQLite's
+  percentile(), it does not interpolate between values
+[4mParameters[0m
+  [4mvalue[0m   The numeric value
+  [4mp[0m       The percentile, a number from 0 to 100.  Only the
+          first row's value is used
+[4mSee Also[0m
+  [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
+  [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
+  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
+  [1msum()[0m, [1mtotal()[0m
+[4mExample[0m
+#1 To get the median and 90th percentile of some numbers:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpercentile_disc[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m, [0m[1m[37m[40m50[0m[37m[40m), [0m[1m[37m[40mpercentile_disc[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m, [0m[1m[37m[40m90[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[1,[0m
+   [35m[40m   [0m[35m[40m2, 3, 4, 5, 6, 7, 8, 9, 10]'[0m[37m[40m)[0m
+   [1m[4m[7mpercent⋯ue, 50)[0m[1m[4m [0m[1m[4m[7mpercent⋯ue, 90)[0m[1m[4m [0m
+   [1m[7m              5[0m [7m              9[0m 
+
+
 [1m[4mpi[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the value of PI
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the value of PI:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpi[0m[37m[40m()                                       [0m
@@ -4711,8 +4747,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To raise two to the power of three:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpower[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)                                [0m
@@ -4828,7 +4864,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mround()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To convert 180 degrees to radians:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mradians[0m[37m[40m([0m[1m[37m[40m180[0m[37m[40m)                               [0m
@@ -5168,8 +5205,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1msign()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExamples[0m
 #1 To round the number 123.456 to an integer:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mround[0m[37m[40m([0m[1m[37m[40m123.456[0m[37m[40m)                             [0m
@@ -5253,8 +5290,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msquare()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, 
+  [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExamples[0m
 #1 To get the sign of 10:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m)                                   [0m
@@ -5404,8 +5441,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msum()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, 
+  [1msign()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the square of two:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msquare[0m[37m[40m([0m[1m[37m[40m2[0m[37m[40m)                                  [0m
@@ -5478,7 +5515,7 @@ For support questions, email:
                value to the left.
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the year from the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[35m[40m'%Y'[0m[37m[40m, [0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)      [0m
@@ -5550,8 +5587,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
-  [1mtotal()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, 
+  [1msign()[0m, [1msquare()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To sum all of the values in the column 'ex_duration' from the table
    'lnav_example_log':
@@ -5568,7 +5605,7 @@ For support questions, email:
                value to the left.
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the time portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
@@ -5583,6 +5620,40 @@ For support questions, email:
    21:37:22
 
 
+[1m[4mtime_buckets[0m[4m([0m[4mt[0m[4m, [0m[4mvalue[0m[4m, [0m[4mmax_buckets[0m[4m, [[0m[4mlo[0m[4m], [[0m[4mhi[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the values over time as a JSON array with an object for
+  each time bucket that has values, in time order: its start and stop
+  in milliseconds, the count, and the p10, median, p90, and max of the
+  values.  The percentiles use the nearest-rank method for a bucket
+  with up to 1024 values and are estimated with a t-digest past that,
+  so memory does not grow with the number of rows.  The buckets are a
+  power of two of milliseconds wide, the narrowest that fits the time
+  span in max_buckets buckets.  The max_buckets, lo, and hi arguments
+  are read from the first row
+[4mParameters[0m
+  [4mt[0m             The time, in milliseconds (e.g.
+                log_time_msecs)
+  [4mvalue[0m         The numeric value
+  [4mmax_buckets[0m   The most buckets to use for the span,
+                at least 2
+  [4mlo[0m            The start of the span, in
+                milliseconds, so several groups get the same buckets.
+                Rows before it are skipped.  Defaults to the group's
+                first time
+  [4mhi[0m            The end of the span, in milliseconds.
+                Rows after it are skipped.  Defaults to the group's
+                last time
+[4mSee Also[0m
+  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
+  [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+[4mExample[0m
+#1 To get the values over time in at most 4 buckets:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime_buckets[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[37m[40m0[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m), ([0m[1m[37m[40m7[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m), ([0m[1m[37m[40m9[0m[37m[40m,[0m
+   [37m[40m   [0m[1m[37m[40m2[0m[37m[40m))[0m
+   [{"start":0,"stop":4,"count":2,"p10":1,"median":1,"p90":5,"max":5},{"start":4,"stop":8,"count":1,"p10":3,"median":3,"p90":3,"max":3},{"start":8,"stop":12,"count":1,"p10":2,"median":2,"p90":2,"max":2}]
+
+
 [1m[4mtimediff[0m[4m([0m[4mtime1[0m[4m, [0m[4mtime2[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Compute the difference between two timestamps in seconds
@@ -5591,7 +5662,7 @@ For support questions, email:
   [4mtime2[0m   The timestamp to subtract from the first
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1mtime()[0m, [1mtime_buckets()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the difference between two timestamps:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[35m[40m'2017-02-03T04:05:06'[0m[37m[40m, [0m[35m[40m'2017-02-03T04:05:00'[0m[37m[40m)[0m
@@ -5613,7 +5684,7 @@ For support questions, email:
   [4mslice[0m   The size of the time slices
 [4mSee Also[0m
   [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime()[0m, [1mtimediff()[0m, [1mtimezone()[0m
+  [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the timestamp rounded down to the start of the ten minute slice:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[35m[40m'2017-01-01T05:05:00'[0m[37m[40m, [0m[35m[40m'10m'[0m[37m[40m)    [0m
@@ -5652,8 +5723,8 @@ For support questions, email:
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, 
+  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To convert a time to America/Los_Angeles:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimezone[0m[37m[40m([0m[35m[40m'America/Los_Angeles'[0m[37m[40m, [0m[35m[40m'2022-03-02T10:00'[0m[37m[40m)[0m
@@ -5668,8 +5739,8 @@ For support questions, email:
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
-  [1mmax()[0m, [1mmin()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, 
-  [1msum()[0m
+  [1mmax()[0m, [1mmin()[0m, [1mpercentile_disc()[0m, [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, 
+  [1msign()[0m, [1msquare()[0m, [1msum()[0m
 [4mExample[0m
 #1 To total all of the values in the column 'ex_duration' from the table
    'lnav_example_log':

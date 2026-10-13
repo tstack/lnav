@@ -1,0 +1,3 @@
+Row 0:
+  Column percentile_disc(value, 50): 2.5
+  Column typeof(percentile_disc(value, 50)): real

@@ -30,6 +30,7 @@
 #ifndef lnav_math_util_hh
 #define lnav_math_util_hh
 
+#include <algorithm>
 #include <cmath>
 
 #include <sys/types.h>
@@ -163,6 +164,29 @@ count_digits(T n)
 }
 
 namespace lnav::math {
+
+/**
+ * The 1-based rank of the p-th percentile (0-100) among n sorted values, by
+ * the nearest-rank method: ceil(p / 100 * n), and at least 1.  The result is
+ * always one of the values, never an interpolation.  Whole percentiles are
+ * computed with integers, since 0.9 * 10 is 9.000000000000002 in doubles.
+ * Returns 0 when there are no values.
+ */
+inline size_t
+nearest_rank(double p, size_t n)
+{
+    if (n == 0) {
+        return 0;
+    }
+
+    size_t rank;
+    if (p == std::floor(p)) {
+        rank = (static_cast<size_t>(p) * n + 99) / 100;
+    } else {
+        rank = static_cast<size_t>(std::ceil(p * n / 100.0 - 1e-9));
+    }
+    return std::clamp<size_t>(rank, 1, n);
+}
 
 template<typename T>
 T

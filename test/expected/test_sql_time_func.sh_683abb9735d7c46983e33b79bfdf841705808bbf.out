@@ -1,0 +1,2 @@
+Row 0:
+  Column time_buckets(5001 - x, x, 4): [{"start":0,"stop":2048,"count":2047,"p10":3165,"median":3988,"p90":4812,"max":5000},{"start":2048,"stop":4096,"count":2048,"p10":1124,"median":1928,"p90":2765,"max":2953},{"start":4096,"stop":6144,"count":905,"p10":91,"median":453,"p90":815,"max":905}]

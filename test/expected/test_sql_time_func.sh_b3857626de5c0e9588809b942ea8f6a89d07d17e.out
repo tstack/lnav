@@ -1,0 +1,2 @@
+Row 0:
+  Column (SELECT group_concat(json_extract(value, '$.count') || ': ' || round(json_extract(value, '$.p10'), 1) || ' ' || round(json_extract(value, '$.median'), 1) || ' ' || round(json_extract(value, '$.p90'), 1), ', ') FROM json_each(tb)): 2047: 317.3 1552.5 2788.7, 2048: 3387.8 4624.5 5860.7, 905: 6279.0 6822.0 7365.0

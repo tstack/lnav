@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- time_buckets: max_buckets must be an integer of at least 2

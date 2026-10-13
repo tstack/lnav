@@ -263,3 +263,16 @@ run_cap_test ${lnav_test} -nN \
 run_cap_test ./drive_sql "SELECT sparkline(value, 0, 100), sparkline(value, 100, 0) FROM json_each('[10, 50, 90]')"
 
 run_cap_test ./drive_sql "SELECT sparkline(value) FROM json_each('[10, 50, 90]')"
+
+# percentile_disc() is nearest-rank: always one of the values
+run_cap_test ./drive_sql "SELECT percentile_disc(value, 50), percentile_disc(value, 90), percentile_disc(value, 10), percentile_disc(value, 0), percentile_disc(value, 100) FROM json_each('[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]')"
+
+# integers stay integers, a double makes the result a double, and
+# non-numbers are skipped
+run_cap_test ./drive_sql "SELECT percentile_disc(value, 50), typeof(percentile_disc(value, 50)) FROM json_each('[1, 2.5, null, \"x\", 4]')"
+
+run_cap_test ./drive_sql "SELECT percentile_disc(value, 50) FROM json_each('[1791597600123456, 1791597600123457, 3]')"
+
+run_cap_test ./drive_sql "SELECT percentile_disc(value, 50) FROM json_each('[]')"
+
+run_cap_test ./drive_sql "SELECT percentile_disc(value, 120) FROM json_each('[1]')"

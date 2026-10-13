@@ -29,11 +29,15 @@
  * @file time-extension-functions.cc
  */
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <string.h>
 
@@ -41,11 +45,15 @@
 #include "base/date_time_scanner.hh"
 #include "base/humanize.time.hh"
 #include "base/lnav.tz.hh"
+#include "base/math_util.hh"
 #include "base/relative_time.hh"
 #include "config.h"
+#include "digestible/digestible.h"
 #include "ptimec.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
+#include "yajlpp/yajlpp.hh"
 
 /**
  * Scan a timestamp passed to a SQL function.  The arguments are unrelated to
@@ -312,6 +320,397 @@ sql_timezone(string_fragment tz_str, string_fragment ts_str)
     return retval;
 }
 
+/**
+ * time_buckets(t_msecs, value, max_buckets [, lo_msecs, hi_msecs]): the values
+ * over time, in buckets a power of two of milliseconds wide, the narrowest
+ * that fits the span (lo to hi, or the group's own first to last time) in
+ * max_buckets.  Several groups given the same span get the same buckets, and
+ * rows outside of the span are skipped.  max_buckets, lo, and hi are read
+ * from the first row.  Each bucket is an object ({"start", "stop", "count",
+ * "p10", "median", "p90", "max"}), so members can be added without breaking
+ * readers.
+ *
+ * The rows are bucketed as they come in, widening the buckets as the span
+ * grows.  Since the widths are powers of two, doubling the width merges each
+ * pair of neighboring buckets.  A bucket keeps its values for exact
+ * percentiles until it has more than EXACT_LIMIT, then estimates them with a
+ * t-digest, so the memory used is bounded by max_buckets and not the number
+ * of rows.
+ */
+struct time_bucket {
+    /**
+     * The most values kept for exact percentiles.  They take less memory
+     * than a t-digest, which reserves about 800 centroids of 16 bytes.
+     */
+    static constexpr size_t EXACT_LIMIT = 1024;
+    /** The compression factor for the t-digest. */
+    static constexpr size_t TDIGEST_SIZE = 200;
+
+    int64_t tb_count{0};
+    int64_t tb_max_int{std::numeric_limits<int64_t>::min()};
+    double tb_max_double{-std::numeric_limits<double>::infinity()};
+    /** The values, while every value is an integer and there are few. */
+    std::vector<int64_t> tb_ints;
+    /** The values, once one is a double, while there are few. */
+    std::vector<double> tb_doubles;
+    /**
+     * Held by pointer, since moving a tdigest allocates a new one, and
+     * buckets are moved whenever they are widened.
+     */
+    std::unique_ptr<digestible::tdigest<double>> tb_digest;
+
+    void add_int(int64_t v)
+    {
+        this->tb_count += 1;
+        this->tb_max_int = std::max(this->tb_max_int, v);
+        this->tb_max_double
+            = std::max(this->tb_max_double, static_cast<double>(v));
+        if (this->tb_digest) {
+            this->tb_digest->insert(static_cast<double>(v));
+        } else {
+            this->tb_ints.push_back(v);
+            this->spill();
+        }
+    }
+
+    void add_double(double v)
+    {
+        this->tb_count += 1;
+        this->tb_max_double = std::max(this->tb_max_double, v);
+        if (this->tb_digest) {
+            this->tb_digest->insert(v);
+        } else {
+            this->tb_doubles.push_back(v);
+            this->spill();
+        }
+    }
+
+    void to_doubles()
+    {
+        this->tb_doubles.insert(
+            this->tb_doubles.end(), this->tb_ints.begin(), this->tb_ints.end());
+        this->tb_ints = std::vector<int64_t>();
+    }
+
+    void merge(time_bucket& other)
+    {
+        this->tb_count += other.tb_count;
+        this->tb_max_int = std::max(this->tb_max_int, other.tb_max_int);
+        this->tb_max_double
+            = std::max(this->tb_max_double, other.tb_max_double);
+        if (other.tb_digest) {
+            if (this->tb_digest) {
+                this->tb_digest->insert(*other.tb_digest);
+            } else {
+                this->tb_digest = std::move(other.tb_digest);
+            }
+        }
+        this->tb_ints.insert(
+            this->tb_ints.end(), other.tb_ints.begin(), other.tb_ints.end());
+        this->tb_doubles.insert(this->tb_doubles.end(),
+                                other.tb_doubles.begin(),
+                                other.tb_doubles.end());
+        this->spill();
+    }
+
+    /**
+     * Moves the exact values into the t-digest, once there are too many or
+     * there is already a t-digest.
+     */
+    void spill()
+    {
+        if (!this->tb_digest
+            && this->tb_ints.size() + this->tb_doubles.size() <= EXACT_LIMIT)
+        {
+            return;
+        }
+        if (!this->tb_digest) {
+            this->tb_digest
+                = std::make_unique<digestible::tdigest<double>>(TDIGEST_SIZE);
+        }
+        for (const auto v : this->tb_ints) {
+            this->tb_digest->insert(static_cast<double>(v));
+        }
+        for (const auto v : this->tb_doubles) {
+            this->tb_digest->insert(v);
+        }
+        // Assigning {} would clear them but keep their capacity.
+        this->tb_ints = std::vector<int64_t>();
+        this->tb_doubles = std::vector<double>();
+    }
+
+    /** Readies the values for gen_percentile(). */
+    void finish()
+    {
+        if (this->tb_digest) {
+            this->tb_digest->merge();
+        } else {
+            std::sort(this->tb_ints.begin(), this->tb_ints.end());
+            std::sort(this->tb_doubles.begin(), this->tb_doubles.end());
+        }
+    }
+
+    void gen_percentile(yajlpp_generator& gen, double p, bool all_ints) const
+    {
+        if (this->tb_digest) {
+            const auto q = this->tb_digest->quantile(p);
+            if (all_ints) {
+                gen(round_to_int64(q));
+            } else {
+                gen(q);
+            }
+        } else if (all_ints) {
+            gen(this->tb_ints[lnav::math::nearest_rank(p, this->tb_ints.size())
+                              - 1]);
+        } else {
+            gen(this->tb_doubles
+                    [lnav::math::nearest_rank(p, this->tb_doubles.size()) - 1]);
+        }
+    }
+
+    void gen_max(yajlpp_generator& gen, bool all_ints) const
+    {
+        if (all_ints) {
+            gen(this->tb_max_int);
+        } else {
+            gen(this->tb_max_double);
+        }
+    }
+
+    static int64_t round_to_int64(double d)
+    {
+        // 2^63 is the nearest double to INT64_MAX, and is out of range.
+        if (d >= 9223372036854775808.0) {
+            return std::numeric_limits<int64_t>::max();
+        }
+        if (d <= -9223372036854775808.0) {
+            return std::numeric_limits<int64_t>::min();
+        }
+        return std::llround(d);
+    }
+};
+
+struct time_buckets_context {
+    using bucket_map = std::map<int64_t, time_bucket>;
+
+    bool tbc_initialized{true};
+    bool tbc_all_ints{true};
+    int64_t tbc_max_buckets{0};
+    std::optional<int64_t> tbc_lo;
+    std::optional<int64_t> tbc_hi;
+    std::optional<int64_t> tbc_min_time;
+    std::optional<int64_t> tbc_max_time;
+    /** The log2 of the bucket width. */
+    int tbc_shift{0};
+    /** The buckets, by their start time shifted right by tbc_shift. */
+    bucket_map tbc_buckets;
+    /** The last bucket added to, since rows usually come in time order. */
+    bucket_map::iterator tbc_last{tbc_buckets.end()};
+
+    void add_time(int64_t t)
+    {
+        if (!this->tbc_min_time || t < *this->tbc_min_time) {
+            this->tbc_min_time = t;
+        }
+        if (!this->tbc_max_time || t > *this->tbc_max_time) {
+            this->tbc_max_time = t;
+        }
+
+        const auto lo = this->tbc_lo.value_or(*this->tbc_min_time);
+        const auto hi = this->tbc_hi.value_or(*this->tbc_max_time);
+        // hi >= lo, so the difference fits in a uint64_t even when the
+        // int64_t one would overflow.  By a shift of 63 every key is -1 or
+        // 0, which fits since max_buckets is at least 2.
+        auto key_span = [lo, hi](int shift) {
+            return static_cast<uint64_t>(hi >> shift)
+                - static_cast<uint64_t>(lo >> shift);
+        };
+        const auto max_buckets = static_cast<uint64_t>(this->tbc_max_buckets);
+        auto shift = this->tbc_shift;
+        while (shift < 63 && key_span(shift) >= max_buckets) {
+            shift += 1;
+        }
+        if (shift == this->tbc_shift) {
+            return;
+        }
+
+        const auto widen_by = shift - this->tbc_shift;
+        bucket_map wider;
+        for (auto& [key, bucket] : this->tbc_buckets) {
+            // try_emplace() only moves from the bucket when it inserts.
+            auto [iter, inserted]
+                = wider.try_emplace(key >> widen_by, std::move(bucket));
+            if (!inserted) {
+                iter->second.merge(bucket);
+            }
+        }
+        this->tbc_buckets = std::move(wider);
+        this->tbc_shift = shift;
+        this->tbc_last = this->tbc_buckets.end();
+    }
+
+    time_bucket& bucket_for(int64_t t)
+    {
+        const auto key = t >> this->tbc_shift;
+        if (this->tbc_last == this->tbc_buckets.end()
+            || this->tbc_last->first != key)
+        {
+            this->tbc_last = this->tbc_buckets.try_emplace(key).first;
+        }
+        return this->tbc_last->second;
+    }
+};
+
+static bool
+is_sql_number(sqlite3_value* val)
+{
+    auto type = sqlite3_value_numeric_type(val);
+
+    return type == SQLITE_INTEGER || type == SQLITE_FLOAT;
+}
+
+static void
+time_buckets_step(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    auto* tbc = (time_buckets_context*) sqlite3_aggregate_context(
+        context, sizeof(time_buckets_context));
+    if (tbc == nullptr) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    if (!tbc->tbc_initialized) {
+        new (tbc) time_buckets_context;
+    }
+
+    if (argc != 3 && argc != 5) {
+        sqlite3_result_error(
+            context, "time_buckets: expecting 3 or 5 arguments", -1);
+        return;
+    }
+    if (tbc->tbc_max_buckets == 0) {
+        auto max_buckets = sqlite3_value_int64(argv[2]);
+        if (sqlite3_value_numeric_type(argv[2]) != SQLITE_INTEGER
+            || max_buckets < 2)
+        {
+            sqlite3_result_error(
+                context,
+                "time_buckets: max_buckets must be an integer of at least 2",
+                -1);
+            return;
+        }
+        if (argc == 5) {
+            if (sqlite3_value_type(argv[3]) != SQLITE_NULL) {
+                if (!is_sql_number(argv[3])) {
+                    sqlite3_result_error(
+                        context,
+                        "time_buckets: lo must be a time in milliseconds",
+                        -1);
+                    return;
+                }
+                tbc->tbc_lo = sqlite3_value_int64(argv[3]);
+            }
+            if (sqlite3_value_type(argv[4]) != SQLITE_NULL) {
+                if (!is_sql_number(argv[4])) {
+                    sqlite3_result_error(
+                        context,
+                        "time_buckets: hi must be a time in milliseconds",
+                        -1);
+                    return;
+                }
+                tbc->tbc_hi = sqlite3_value_int64(argv[4]);
+            }
+            if (tbc->tbc_lo && tbc->tbc_hi && *tbc->tbc_lo > *tbc->tbc_hi) {
+                sqlite3_result_error(
+                    context, "time_buckets: lo must not be after hi", -1);
+                return;
+            }
+        }
+        tbc->tbc_max_buckets = max_buckets;
+    }
+
+    if (!is_sql_number(argv[0])) {
+        return;
+    }
+    const auto t = sqlite3_value_int64(argv[0]);
+    if ((tbc->tbc_lo && t < *tbc->tbc_lo) || (tbc->tbc_hi && t > *tbc->tbc_hi))
+    {
+        return;
+    }
+
+    const auto v_type = sqlite3_value_numeric_type(argv[1]);
+    if (v_type != SQLITE_INTEGER && v_type != SQLITE_FLOAT) {
+        return;
+    }
+    if (v_type == SQLITE_FLOAT && tbc->tbc_all_ints) {
+        tbc->tbc_all_ints = false;
+        for (auto& [key, bucket] : tbc->tbc_buckets) {
+            bucket.to_doubles();
+        }
+    }
+
+    tbc->add_time(t);
+    auto& bucket = tbc->bucket_for(t);
+    if (tbc->tbc_all_ints) {
+        bucket.add_int(sqlite3_value_int64(argv[1]));
+    } else {
+        bucket.add_double(sqlite3_value_double(argv[1]));
+    }
+}
+
+static void
+time_buckets_final(sqlite3_context* context)
+{
+    auto* tbc = (time_buckets_context*) sqlite3_aggregate_context(context, 0);
+    if (tbc == nullptr || !tbc->tbc_initialized) {
+        sqlite3_result_null(context);
+        return;
+    }
+
+    if (tbc->tbc_buckets.empty()) {
+        sqlite3_result_null(context);
+    } else {
+        const auto shift = tbc->tbc_shift;
+        // Shift as unsigned, since left-shifting a negative key is undefined.
+        auto key_time = [shift](int64_t key) {
+            return static_cast<int64_t>(static_cast<uint64_t>(key) << shift);
+        };
+        const auto max_key = std::numeric_limits<int64_t>::max() >> shift;
+        const auto all_ints = tbc->tbc_all_ints;
+
+        yajlpp_gen gen;
+        yajl_gen_config(gen, yajl_gen_beautify, false);
+        {
+            yajlpp_array buckets(gen);
+
+            for (auto& [key, bucket] : tbc->tbc_buckets) {
+                bucket.finish();
+
+                yajlpp_map entry(gen);
+                entry.gen("start");
+                entry.gen(key_time(key));
+                entry.gen("stop");
+                entry.gen(key == max_key
+                                   ? std::numeric_limits<int64_t>::max()
+                                   : key_time(key + 1));
+                entry.gen("count");
+                entry.gen(bucket.tb_count);
+                entry.gen("p10");
+                bucket.gen_percentile(entry.gen, 10, all_ints);
+                entry.gen("median");
+                bucket.gen_percentile(entry.gen, 50, all_ints);
+                entry.gen("p90");
+                bucket.gen_percentile(entry.gen, 90, all_ints);
+                entry.gen("max");
+                bucket.gen_max(entry.gen, all_ints);
+            }
+        }
+
+        to_sqlite(context, json_string(gen));
+    }
+
+    tbc->~time_buckets_context();
+}
+
 int
 time_extension_functions(struct FuncDef** basic_funcs,
                          struct FuncDefAgg** agg_funcs)
@@ -405,8 +804,65 @@ time_extension_functions(struct FuncDef** basic_funcs,
         {nullptr},
     };
 
+    static struct FuncDefAgg time_agg_funcs[] = {
+        {
+            "time_buckets",
+            -1,
+            SQLITE_UTF8
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
+            0,
+            time_buckets_step,
+            time_buckets_final,
+            help_text("time_buckets")
+                .sql_agg_function()
+                .with_summary(
+                    "Returns the values over time as a JSON array with an "
+                    "object for each time bucket that has values, in time "
+                    "order: its start and stop in milliseconds, the count, "
+                    "and the p10, median, p90, and max of the values.  The "
+                    "percentiles use the nearest-rank method for a bucket "
+                    "with up to 1024 values and are estimated with a "
+                    "t-digest past that, so memory does not grow with the "
+                    "number of rows.  The buckets "
+                    "are a power of two of milliseconds wide, the narrowest "
+                    "that fits the time span in max_buckets buckets.  The "
+                    "max_buckets, lo, and hi arguments are read from the "
+                    "first row")
+                .with_parameter(
+                    {"t", "The time, in milliseconds (e.g. log_time_msecs)"})
+                .with_parameter({"value", "The numeric value"})
+                .with_parameter(
+                    {"max_buckets",
+                     "The most buckets to use for the span, at least 2"})
+                .with_parameter(
+                    help_text("lo",
+                              "The start of the span, in milliseconds, so "
+                              "several groups get the same buckets.  Rows "
+                              "before it are skipped.  Defaults to the "
+                              "group's first time")
+                        .optional())
+                .with_parameter(help_text("hi",
+                                          "The end of the span, in "
+                                          "milliseconds.  Rows after it are "
+                                          "skipped.  Defaults to the group's "
+                                          "last time")
+                                    .optional())
+                .with_tags({"datetime"})
+                .with_example({
+                    "To get the values over time in at most 4 buckets",
+                    "SELECT time_buckets(column1, column2, 4) FROM (VALUES "
+                    "(0, 1), (1, 5), (7, 3), (9, 2))",
+                }),
+        },
+
+        {nullptr},
+    };
+
     *basic_funcs = time_funcs;
-    *agg_funcs = nullptr;
+    *agg_funcs = time_agg_funcs;
 
     return SQLITE_OK;
 }

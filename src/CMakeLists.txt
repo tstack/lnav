@@ -809,10 +809,15 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_compile_options(diag PRIVATE ${CURSES_CFLAGS})
 
+file(GLOB LNAV_RS_EXT_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/lnav-rs-ext/src/*.rs)
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/target/release/liblnav_rs_ext.a
         COMMAND env CARGO_TARGET_DIR=target cargo build --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/third-party/lnav-rs-ext/Cargo.toml --package lnav-rs-ext --release
-        DEPENDS third-party/lnav-rs-ext/src/lib.rs third-party/lnav-rs-ext/src/ext_access.rs
+        DEPENDS
+                third-party/lnav-rs-ext/Cargo.toml
+                third-party/lnav-rs-ext/Cargo.lock
+                ${LNAV_RS_EXT_SOURCES}
 )
 add_custom_target(
         lnav_rs_ext

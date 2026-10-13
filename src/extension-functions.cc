@@ -144,6 +144,11 @@ SQLITE_EXTENSION_INIT1
 #    include <inttypes.h>
 #    include <stdint.h>
 
+#    include <algorithm>
+#    include <optional>
+#    include <vector>
+
+#    include "base/math_util.hh"
 #    include "sqlite-extension-func.hh"
 
 /*
@@ -1999,6 +2004,99 @@ upper_quartileFinalize(sqlite3_context* context)
     }
 }
 
+/**
+ * percentile_disc(value, p): the p-th percentile (0-100) of the non-null
+ * numeric values by the nearest-rank method (see lnav::math::nearest_rank()),
+ * so the result is one of the values.  An integer while every value is one.
+ * p is read from the first row.
+ */
+struct percentile_disc_context {
+    bool pc_initialized{true};
+    bool pc_all_ints{true};
+    std::optional<double> pc_p;
+    std::vector<int64_t> pc_ints;
+    std::vector<double> pc_doubles;
+};
+
+static void
+percentileDiscStep(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+    auto* pc = (percentile_disc_context*) sqlite3_aggregate_context(
+        context, sizeof(percentile_disc_context));
+    if (pc == nullptr) {
+        sqlite3_result_error_nomem(context);
+        return;
+    }
+    if (!pc->pc_initialized) {
+        new (pc) percentile_disc_context;
+    }
+
+    if (!pc->pc_p) {
+        auto p_type = sqlite3_value_numeric_type(argv[1]);
+        auto p = sqlite3_value_double(argv[1]);
+        if ((p_type != SQLITE_INTEGER && p_type != SQLITE_FLOAT) || p < 0.0
+            || p > 100.0)
+        {
+            sqlite3_result_error(
+                context,
+                "percentile_disc: p must be a number from 0 to 100",
+                -1);
+            return;
+        }
+        pc->pc_p = p;
+    }
+
+    switch (sqlite3_value_numeric_type(argv[0])) {
+        case SQLITE_INTEGER:
+            if (pc->pc_all_ints) {
+                pc->pc_ints.push_back(sqlite3_value_int64(argv[0]));
+            } else {
+                pc->pc_doubles.push_back(sqlite3_value_double(argv[0]));
+            }
+            break;
+        case SQLITE_FLOAT:
+            if (pc->pc_all_ints) {
+                pc->pc_all_ints = false;
+                pc->pc_doubles.assign(pc->pc_ints.begin(), pc->pc_ints.end());
+                pc->pc_ints.clear();
+            }
+            pc->pc_doubles.push_back(sqlite3_value_double(argv[0]));
+            break;
+        default:
+            break;
+    }
+}
+
+static void
+percentileDiscFinalize(sqlite3_context* context)
+{
+    auto* pc = (percentile_disc_context*) sqlite3_aggregate_context(context, 0);
+    if (pc == nullptr || !pc->pc_initialized) {
+        sqlite3_result_null(context);
+        return;
+    }
+
+    const auto p = pc->pc_p.value_or(50.0);
+    if (pc->pc_all_ints) {
+        auto& vals = pc->pc_ints;
+        auto rank = lnav::math::nearest_rank(p, vals.size());
+        if (rank == 0) {
+            sqlite3_result_null(context);
+        } else {
+            std::nth_element(
+                vals.begin(), vals.begin() + (rank - 1), vals.end());
+            sqlite3_result_int64(context, vals[rank - 1]);
+        }
+    } else {
+        auto& vals = pc->pc_doubles;
+        auto rank = lnav::math::nearest_rank(p, vals.size());
+        std::nth_element(vals.begin(), vals.begin() + (rank - 1), vals.end());
+        sqlite3_result_double(context, vals[rank - 1]);
+    }
+
+    pc->~percentile_disc_context();
+}
+
 /*
 ** Returns the stdev value
 */
@@ -2681,6 +2779,34 @@ common_extension_functions(struct FuncDef** basic_funcs,
         {"median", 1, SQLITE_UTF8, 0, modeStep, medianFinalize},
         {"lower_quartile", 1, SQLITE_UTF8, 0, modeStep, lower_quartileFinalize},
         {"upper_quartile", 1, SQLITE_UTF8, 0, modeStep, upper_quartileFinalize},
+        {
+            "percentile_disc",
+            2,
+            SQLITE_UTF8,
+            0,
+            percentileDiscStep,
+            percentileDiscFinalize,
+            help_text("percentile_disc")
+                .sql_agg_function()
+                .with_summary(
+                    "Returns the value at the given percentile of the "
+                    "numeric values, by the nearest-rank method: the value "
+                    "at rank ceil(p / 100 * count) in order, so it is always "
+                    "one of the values.  Unlike SQLite's percentile(), it "
+                    "does not interpolate between values")
+                .with_parameter({"value", "The numeric value"})
+                .with_parameter(
+                    {"p",
+                     "The percentile, a number from 0 to 100.  Only the "
+                     "first row's value is used"})
+                .with_tags({"math"})
+                .with_example({
+                    "To get the median and 90th percentile of some numbers",
+                    "SELECT percentile_disc(value, 50), "
+                    "percentile_disc(value, 90) FROM "
+                    "json_each('[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]')",
+                }),
+        },
 
         {nullptr},
     };

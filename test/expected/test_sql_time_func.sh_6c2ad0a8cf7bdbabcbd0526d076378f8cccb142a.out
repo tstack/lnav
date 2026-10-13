@@ -1,0 +1,2 @@
+Row 0:
+  Column time_buckets(column1, column2, 2, 0, 10): [{"start":0,"stop":8,"count":2,"p10":1,"median":1,"p90":4,"max":4}]

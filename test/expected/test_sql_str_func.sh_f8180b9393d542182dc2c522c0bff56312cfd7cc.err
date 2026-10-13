@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- percentile_disc: p must be a number from 0 to 100

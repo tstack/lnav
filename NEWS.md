@@ -282,6 +282,20 @@ Features:
   the narrowest type that covers the values (`number` or
   `string`), and a `format` of `measure` for strings that
   are numbers with units, like `4.5ms`.
+* Added the `percentile_disc(value, p)` SQL aggregate function,
+  which returns the value at the p-th percentile by the
+  nearest-rank method, so the result is always one of the
+  values (unlike `median()` and SQLite's `percentile()`, which
+  interpolate between values).
+* Added the `time_buckets(t, value, max_buckets)` SQL aggregate
+  function, which returns the values over time as a JSON array
+  with an object per bucket (`start`, `stop`, `count`, `p10`,
+  `median`, `p90`, and `max`), with buckets a power of two of
+  milliseconds wide.  Optional `lo` and `hi` arguments give
+  several groups the same buckets; rows outside of them are
+  skipped.  The percentiles are exact for buckets with up to
+  1024 values and estimated past that, so the memory used
+  does not grow with the number of rows.
 * Added the `measure_value()` and `measure_unit()` SQL
   functions to read numbers with units, like `4.5ms` or
   `2 KiB`: `measure_value()` returns the number in the unit's

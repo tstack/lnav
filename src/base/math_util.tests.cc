@@ -38,3 +38,20 @@ TEST_CASE("count_digits")
     auto width = count_digits(v);
     CHECK(width == 3);
 }
+
+TEST_CASE("nearest_rank")
+{
+    CHECK(lnav::math::nearest_rank(50, 0) == 0);
+    CHECK(lnav::math::nearest_rank(50, 1) == 1);
+    CHECK(lnav::math::nearest_rank(0, 10) == 1);
+    CHECK(lnav::math::nearest_rank(100, 10) == 10);
+    // (n + 1) / 2, ceil(9n / 10), and ceil(n / 10) for whole percentiles.
+    CHECK(lnav::math::nearest_rank(50, 10) == 5);
+    CHECK(lnav::math::nearest_rank(50, 11) == 6);
+    CHECK(lnav::math::nearest_rank(90, 10) == 9);
+    CHECK(lnav::math::nearest_rank(90, 11) == 10);
+    CHECK(lnav::math::nearest_rank(10, 10) == 1);
+    CHECK(lnav::math::nearest_rank(10, 11) == 2);
+    CHECK(lnav::math::nearest_rank(99.9, 1000) == 999);
+    CHECK(lnav::math::nearest_rank(12.5, 8) == 1);
+}

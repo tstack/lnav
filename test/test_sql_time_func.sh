@@ -110,3 +110,37 @@ run_cap_test ${lnav_test} -nN -c ";SELECT timeslice(-1500, '1s')"
 run_cap_test ${lnav_test} -nN -c ";SELECT timeslice(1e300, '1s')"
 
 run_cap_test ./drive_sql "SELECT timeslice(1500, '1s')"
+
+# time_buckets() fits the span in at most max_buckets power-of-two buckets
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 4) FROM (VALUES (0, 1), (1, 5), (7, 3), (9, 2))"
+
+# a given span gives every group the same buckets; doubles stay doubles
+run_cap_test ./drive_sql "SELECT column3, time_buckets(column1, column2, 4, 0, 100) FROM (VALUES (0, 1.5, 'a'), (30, 2, 'a'), (90, 3, 'b')) GROUP BY column3"
+
+# rows with a null time or value are skipped; no rows is null
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 4) FROM (VALUES (5, null), (null, 3), (6, 2))"
+
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 4) FROM (VALUES (1, 1)) WHERE 0"
+
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 0) FROM (VALUES (1, 1))"
+
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 1) FROM (VALUES (1, 1))"
+
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 4, 100, 0) FROM (VALUES (1, 1))"
+
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 4, '2026-10-13', null) FROM (VALUES (1, 1))"
+
+# rows outside of the given span are skipped
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 2, 0, 10) FROM (VALUES (-5, 9), (0, 1), (5, 4), (1000, 2))"
+
+# the whole range of times fits without overflowing
+run_cap_test ./drive_sql "SELECT time_buckets(column1, column2, 2) FROM (VALUES (-9223372036854775808, 1), (9223372036854775807, 9223372036854775807))"
+
+# buckets with more than 1024 values estimate the percentiles, and
+# merging buckets as they widen works in either time order
+run_cap_test ./drive_sql "WITH RECURSIVE s(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM s WHERE x < 5000) SELECT time_buckets(x, x, 4) FROM s"
+
+run_cap_test ./drive_sql "WITH RECURSIVE s(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM s WHERE x < 5000) SELECT time_buckets(5001 - x, x, 4) FROM s"
+
+# rounded, since the last digits of estimated doubles can vary by platform
+run_cap_test ./drive_sql "WITH RECURSIVE s(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM s WHERE x < 5000) SELECT (SELECT group_concat(json_extract(value, '\$.count') || ': ' || round(json_extract(value, '\$.p10'), 1) || ' ' || round(json_extract(value, '\$.median'), 1) || ' ' || round(json_extract(value, '\$.p90'), 1), ', ') FROM json_each(tb)) FROM (SELECT time_buckets(x, x * 1.5, 4) AS tb FROM s)"
