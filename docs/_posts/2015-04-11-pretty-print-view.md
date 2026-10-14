@@ -22,13 +22,13 @@ leading or trailing garbage shouldn't confuse things.
 As an example, here is a screenshot of the log message with the unformatted XML
 text with word-wrapping turned on:
 
-![Screenshot of raw XML](/assets/images/lnav-before-pretty.png)
+![Screenshot of raw XML](/assets/images/lnav-before-pretty.svg)
 
 That's not very easy to read and it's hard to figure out the structure of the
 message. Now, here is that same message after pressing SHIFT+P to switch to the
 pretty-print view of lnav:
 
-![Screenshot of pretty-printed XML](/assets/images/lnav-after-pretty.png)
+![Screenshot of pretty-printed XML](/assets/images/lnav-after-pretty.svg)
 
 The XML text is indented nicely and the usual syntax highlighting is applied.
 Also notice that lnav will automatically try to lookup the DNS name for IP
