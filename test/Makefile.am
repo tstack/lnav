@@ -519,6 +519,7 @@ dist_noinst_DATA = \
 	UTF-8-test.txt \
 	view_colors_output.0 \
 	xpath_tui.0 \
+	goto_tui.0 \
 	configs/installed/anno-test.json \
 	configs/installed/anno-test.sh \
 	configs/installed/hw-url-handler.json \

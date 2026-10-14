@@ -1201,6 +1201,7 @@ usage()
           "  -h         Print this message, then exit.\n"
           "  -n         Do not pass the output to the console.\n"
           "  -X         Set TERM to xterm-256color.\n"
+          "  -r         Replay input without comparing the terminal output.\n"
           "  -i         Pass stdin to the child process instead of connecting\n"
           "             the child to the tty.\n"
           "  -a <file>  The file where the actual I/O from/to the child "
@@ -1225,14 +1226,14 @@ int
 main(int argc, char* argv[])
 {
     int c, fd, retval = EXIT_SUCCESS;
-    bool passout = true, prompt = false;
+    bool passout = true, prompt = false, compare_output = true;
     const char* term_type = "xterm";
     auto force_update = getenv("SCRIPTY_FORCE_UPDATE") != nullptr;
 
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
 
-    while ((c = getopt(argc, argv, "ha:e:nipSX")) != -1) {
+    while ((c = getopt(argc, argv, "ha:e:nipSXr")) != -1) {
         switch (c) {
             case 'h':
                 usage();
@@ -1266,6 +1267,9 @@ main(int argc, char* argv[])
             }
             case 'n':
                 passout = false;
+                break;
+            case 'r':
+                compare_output = false;
                 break;
             case 'p':
                 prompt = true;
@@ -1521,7 +1525,9 @@ main(int argc, char* argv[])
     }
 
     fprintf(stderr, "%s:done!\n", tstamp());
-    if (retval == EXIT_SUCCESS && !scripty_data.sd_expected_name.empty()) {
+    if (retval == EXIT_SUCCESS && compare_output
+        && !scripty_data.sd_expected_name.empty())
+    {
         auto cmd = fmt::format("diff -ua {} {}",
                                scripty_data.sd_expected_name.string(),
                                scripty_data.sd_actual_name.string());
