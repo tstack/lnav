@@ -2674,7 +2674,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     lnav_data.ld_files_view.set_selection(0_vl);
                 }
             }
-            lnav_data.ld_views[LNV_LOG].set_top_for_last_row();
+            if (!lnav_data.ld_views[LNV_LOG].get_selection().has_value()) {
+                lnav_data.ld_views[LNV_LOG].set_top_for_last_row();
+            }
             lnav::session::restore_view_states();
             lnav_data.ld_active_files.fc_files
                 | lnav::itertools::for_each(&logfile::dump_stats);
