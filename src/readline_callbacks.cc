@@ -760,11 +760,12 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                 if (!is_req && attr_iter->sa_type == &SQL_HEX_LIT_ATTR
                     && attr_iter->sa_range.length() == 2)
                 {
-                } else if (is_req
-                           || (attr_iter->sa_type != &SQL_NUMBER_ATTR
-                               && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
-                           || rc.tc_popup_type
-                               == textinput_curses::popup_type_t::completion)
+                } else if (attr_iter->sa_type != &SQL_GARBAGE_ATTR
+                           && (is_req
+                               || (attr_iter->sa_type != &SQL_NUMBER_ATTR
+                                   && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
+                               || rc.tc_popup_type
+                                   == textinput_curses::popup_type_t::completion))
                 {
                     auto to_complete_sf
                         = anno_line.to_string_fragment(attr_iter);

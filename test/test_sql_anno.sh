@@ -124,3 +124,8 @@ take 10
 run_cap_test ./drive_sql_anno "SELECT * FROM customers LIMIT 1"
 
 run_cap_test ./drive_sql_anno "SELECT * FROM customers FULL JOIN all_logs pg_stmt_log ON (pg_stmt_log.log_text LIKE '%STATEMENT:%') LIMIT 1"
+
+# the trailing ';' must be annotated as garbage so that the SQL completion
+# trigger in rl_sql_change() does not offer suggestions at the statement
+# terminator (see #1751)
+run_cap_test ./drive_sql_anno "SELECT * FROM caddy_log WHERE 1=1;"
