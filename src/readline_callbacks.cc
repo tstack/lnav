@@ -761,7 +761,10 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     && attr_iter->sa_range.length() == 2)
                 {
                 } else if (is_req
-                           || (attr_iter->sa_type != &SQL_NUMBER_ATTR
+                           || (attr_iter->sa_type != &SQL_GARBAGE_ATTR
+                               && attr_iter->sa_type != &SQL_OPERATOR_ATTR
+                               && attr_iter->sa_type != &SQL_COMMENT_ATTR
+                               && attr_iter->sa_type != &SQL_NUMBER_ATTR
                                && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
                            || rc.tc_popup_type
                                == textinput_curses::popup_type_t::completion)
