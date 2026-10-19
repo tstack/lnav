@@ -32,6 +32,8 @@ Then, in the **lnav** TUI, you can:
 - view a histogram of messages over time ([press `i`](https://docs.lnav.org/en/latest/ui.html#hist));
 - analyze messages using SQLite ([press `;`](https://docs.lnav.org/en/latest/sqlext.html))
 
+[![Live demo by Demoshell](https://build.demoshell.com/v1/embed/badge.svg)](https://build.demoshell.com/launch?snapshot=demoshell%2Ftui%3Alnav&utm_source=badge)
+
 ## Screenshot
 
 The following screenshot shows a mix of syslog and web access log
