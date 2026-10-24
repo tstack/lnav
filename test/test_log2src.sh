@@ -105,6 +105,30 @@ run_cap_test ${lnav_test} -n \
     -c ":write-csv-to -" \
     log2src-unmatched.0
 
+# log_msg_schema_kind says where log_msg_schema comes from: 'statement' for the
+# messages the statement map knows, 'message' (the text) for the unmatched one,
+# since this format has no source fields.  The statement map answers both
+# without reading the message; they're the same as when it's read
+# (log_format_values reads it first).
+SCHEMA_KIND_CHECK=";SELECT c.k AS kind, count(*) AS n, sum(c.k IS f.k) AS same_kind, sum((c.k = 'statement') = (f.src IS NOT NULL)) AS statement_iff_src FROM (SELECT log_line, log_msg_schema_kind AS k FROM all_logs) c JOIN (SELECT log_line, length(log_format_values) AS x, log_msg_schema_kind AS k, log_msg_src AS src FROM all_logs) f USING (log_line) GROUP BY 1 ORDER BY 1"
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT count(*) FROM log_stmt_stats" \
+    -c "${SCHEMA_KIND_CHECK}" \
+    -c ":write-csv-to -" \
+    log2src-unmatched.0
+
+# 'src_location' for unmatched messages of a format with source fields, whose
+# kind depends on whether the message has both, so it's read even though the
+# statement map knows the messages are unmatched.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT count(*) FROM log_stmt_stats" \
+    -c "${SCHEMA_KIND_CHECK}" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_tabular.csv
+
 # A time range with no rows leaves nothing for the statement map's rows to
 # be taken from, in either direction.
 EMPTY_TIME_CHECK=";SELECT (SELECT count(*) FROM all_logs WHERE log_msg_schema = s.schema AND log_time > '2026-01-01') AS asc_rows, (SELECT count(*) FROM (SELECT log_line FROM all_logs WHERE log_msg_schema = s.schema AND log_time > '2026-01-01' ORDER BY log_line DESC)) AS desc_rows FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java') s LIMIT 1"

@@ -1,0 +1,6 @@
+Row 0:
+  Column percentile(value, 50): 5
+  Column percentile(value, 90): 9
+  Column percentile(value, 10): 1
+  Column percentile(value, 0): 1
+  Column percentile(value, 100): 10

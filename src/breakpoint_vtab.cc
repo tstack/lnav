@@ -36,16 +36,16 @@
 #include "pcrepp/pcre2pp.hh"
 #include "vtab_module.hh"
 
-static const char*
+static permanent_fragment
 source_type_to_string(breakpoint_info::source_type st)
 {
     switch (st) {
         case breakpoint_info::source_type::src_location:
-            return "src_location";
+            return permanent_fragment::from_const("src_location");
         case breakpoint_info::source_type::message_schema:
-            return "message_schema";
+            return permanent_fragment::from_const("message_schema");
     }
-    return "src_location";
+    return permanent_fragment::from_const("src_location");
 }
 
 static breakpoint_info::source_type

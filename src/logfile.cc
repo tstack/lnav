@@ -339,11 +339,114 @@ logfile::file_options_have_changed()
 static_assert(logfile::MAX_LINES == lnav::logfile::MAX_LINES);
 
 void
+logfile::line_id_runs::truncate(size_t size)
+{
+    while (!this->ir_runs.empty() && this->ir_runs.back().r_start >= size) {
+        this->ir_runs.pop_back();
+    }
+    this->ir_end = std::min(this->ir_end, static_cast<uint32_t>(size));
+}
+
+uint32_t
+logfile::line_id_runs::id_for(const std::optional<string_fragment>& sf)
+{
+    if (!sf) {
+        return 1;
+    }
+
+    // Consecutive lines mostly have the value of the last run.
+    if (!this->ir_runs.empty() && this->ir_runs.back().r_id > 1) {
+        const auto& last = this->ir_values[this->ir_runs.back().r_id - 1];
+        if (last.data() == sf->data() && last.length() == sf->length()) {
+            return this->ir_runs.back().r_id;
+        }
+    }
+
+    auto iter = this->ir_ids.find(sf.value());
+    if (iter != this->ir_ids.end()) {
+        return iter->second;
+    }
+    this->ir_values.emplace_back(sf.value());
+    auto id = static_cast<uint32_t>(this->ir_values.size());
+    this->ir_ids.emplace(sf.value(), id);
+    return id;
+}
+
+void
+logfile::line_id_runs::push_run(uint32_t start, uint32_t id)
+{
+    if (!this->ir_runs.empty() && this->ir_runs.back().r_id == id) {
+        return;
+    }
+    this->ir_runs.push_back({start, id});
+}
+
+void
+logfile::line_id_runs::record(size_t from, size_t to, uint32_t id)
+{
+    if (this->ir_end < from) {
+        this->push_run(this->ir_end, 0);
+    }
+    this->push_run(static_cast<uint32_t>(from), id);
+    this->ir_end = static_cast<uint32_t>(to);
+}
+
+void
+logfile::line_id_runs::continue_to(size_t from, size_t to)
+{
+    if (this->ir_end == from) {
+        this->ir_end = static_cast<uint32_t>(to);
+    } else {
+        this->record(from, to, 0);
+    }
+}
+
+const string_fragment*
+logfile::line_id_runs::get(size_t line) const
+{
+    if (line >= this->ir_end || this->ir_runs.empty()) {
+        return nullptr;
+    }
+
+    const auto in_run = [this, line](size_t index) {
+        return this->ir_runs[index].r_start <= line
+            && (index + 1 == this->ir_runs.size()
+                || line < this->ir_runs[index + 1].r_start);
+    };
+    auto index = this->ir_hint;
+    if (index >= this->ir_runs.size() || !in_run(index)) {
+        // Scans go in line order, so the run is usually next to the last.
+        if (index + 1 < this->ir_runs.size() && in_run(index + 1)) {
+            index += 1;
+        } else if (index > 0 && index - 1 < this->ir_runs.size()
+                   && in_run(index - 1))
+        {
+            index -= 1;
+        } else {
+            auto iter = std::upper_bound(
+                this->ir_runs.begin(),
+                this->ir_runs.end(),
+                line,
+                [](size_t l, const run& r) { return l < r.r_start; });
+            index = std::distance(this->ir_runs.begin(), iter) - 1;
+        }
+        this->ir_hint = index;
+    }
+
+    const auto id = this->ir_runs[index].r_id;
+    if (id == 0) {
+        return nullptr;
+    }
+    return &this->ir_values[id - 1];
+}
+
+void
 logfile::reset_internal_state_for_reindex()
 {
     log_debug("resetting internal state for reindex");
     this->lf_index.clear();
     this->lf_stmt_ids.clear();
+    this->lf_line_ids.clear();
     this->reset_time_order();
     this->lf_index_base = 0;
     this->lf_input_lines = 0;
@@ -395,6 +498,8 @@ logfile::discard_index_before(size_t index)
     this->lf_index.erase(this->lf_index.begin(),
                          this->lf_index.begin() + count);
     this->lf_stmt_ids.discard_front(count);
+    // Its pairs point into the arena, which is reset below.
+    this->lf_line_ids.clear();
     this->reset_time_order();
     this->lf_index_base += count;
 
@@ -774,6 +879,7 @@ logfile::build_content_map()
         this->lf_index_size = first_line_offset;
         this->lf_index.clear();
         this->lf_stmt_ids.clear();
+        this->lf_line_ids.clear();
         retval = rebuild_result_t::NEW_ORDER;
     }
 
@@ -792,6 +898,7 @@ logfile::build_content_map()
             log_info("  lower bound is past content");
             this->lf_index.clear();
             this->lf_stmt_ids.clear();
+            this->lf_line_ids.clear();
             retval = rebuild_result_t::NEW_ORDER;
         }
         this->lf_file_size_at_map_time = full_size;
@@ -858,6 +965,7 @@ logfile::build_content_map()
         this->lf_value_stats.clear();
         this->lf_index.clear();
         this->lf_stmt_ids.clear();
+        this->lf_line_ids.clear();
         this->reset_time_order();
         this->lf_upper_bound_size = std::nullopt;
     }
@@ -1189,6 +1297,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     size_t prescan_size = this->lf_index.size();
     auto prescan_time = std::chrono::microseconds{0};
     bool retval = false;
+    // Lines from here on are about to be scanned (again); only the scan below
+    // can record them.
+    this->lf_line_ids.truncate(prescan_size);
+    // Only the locked-on format's scan records the line's thread and opid; the
+    // candidates tried while detecting the format don't.
+    auto record_line_ids = false;
 
     {
         log_level_t last_level = LEVEL_UNKNOWN;
@@ -1688,7 +1802,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             prescan_time = this->lf_index[prescan_size - 1].get_time<>();
         }
         /* We've locked onto a format, just use that scanner. */
+        sbc.sbc_line_ids_set = false;
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
+        record_line_ids = found.is<log_format::scan_match>()
+            && sbc.sbc_line_ids_set;
     }
 
     if (found.is<log_format::scan_match>()) {
@@ -1773,6 +1890,24 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                       this->lf_upper_bound_size.value());
         }
         this->lf_index.pop_back();
+    }
+
+    if (prescan_size < this->lf_index.size()) {
+        if (record_line_ids) {
+            // Every entry the message added (a JSON message's rendered
+            // lines) belongs to it.
+            this->lf_line_ids.record(prescan_size,
+                                     this->lf_index.size(),
+                                     sbc.sbc_line_tid,
+                                     sbc.sbc_line_opid);
+        } else if (found.is<log_format::scan_no_match>()
+                   && this->lf_index.back().is_continued())
+        {
+            this->lf_line_ids.continue_to(prescan_size, this->lf_index.size());
+        } else {
+            this->lf_line_ids.record_unknown(prescan_size,
+                                             this->lf_index.size());
+        }
     }
 
     return retval;
@@ -1967,6 +2102,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 stmt_msg_start -= 1;
             }
             this->lf_stmt_ids.truncate(stmt_msg_start);
+            this->lf_line_ids.truncate(rollback_index_start);
 
             if (!this->lf_index.empty()) {
                 auto last_line = std::prev(this->lf_index.end());
@@ -3332,9 +3468,12 @@ logfile::dump_stats()
     log_info("  used_preloads=%u", buf_stats.s_used_preloads);
 }
 
+std::atomic<uint64_t> logfile::ID_EDITS{0};
+
 void
 logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 {
+    ID_EDITS += 1;
     if (line_number >= this->lf_index.size()) {
         log_error("invalid line number: %u", line_number);
         return;
@@ -3376,6 +3515,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 void
 logfile::set_opid_description(string_fragment opid, string_fragment desc)
 {
+    ID_EDITS += 1;
     auto opid_guard = this->lf_opids.writeAccess();
 
     auto opid_iter = opid_guard->los_opid_ranges.find(opid);
@@ -3390,6 +3530,7 @@ logfile::set_opid_description(string_fragment opid, string_fragment desc)
 void
 logfile::clear_logline_opid(uint32_t line_number)
 {
+    ID_EDITS += 1;
     if (line_number >= this->lf_index.size()) {
         return;
     }

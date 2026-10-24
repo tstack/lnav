@@ -36,6 +36,7 @@
 #include "elem_to_json.hh"
 #include "hasher.hh"
 #include "scn/scan.h"
+#include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
 #ifdef HAVE_RUST_DEPS
@@ -44,8 +45,28 @@
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
+/**
+ * log_msg_schema_kind's values, interned so vt_column() hands them to SQLite
+ * without a copy.
+ */
+static const intern_string_t KIND_STATEMENT
+    = intern_string::lookup("statement");
+static const intern_string_t KIND_SRC_LOCATION
+    = intern_string::lookup("src_location");
+static const intern_string_t KIND_MESSAGE
+    = intern_string::lookup("message");
+
 all_logs_vtab::schema_lines_t all_logs_vtab::alv_schema_lines = nullptr;
 all_logs_vtab::line_stmt_t all_logs_vtab::alv_line_stmt = nullptr;
+all_logs_vtab::scan_started_t all_logs_vtab::alv_scan_started = nullptr;
+
+void
+all_logs_vtab::filter(log_cursor& lc, logfile_sub_source& lss)
+{
+    if (alv_scan_started != nullptr) {
+        alv_scan_started();
+    }
+}
 
 void
 all_logs_vtab::lines_for_values(int col,
@@ -73,6 +94,67 @@ all_logs_vtab::knows_lines_for(int col) const
                   .value;
 }
 
+bool
+all_logs_vtab::cached_column(int col,
+                             logfile* lf,
+                             uint64_t line_number,
+                             sqlite3_context* ctx)
+{
+    if (alv_line_stmt == nullptr) {
+        return false;
+    }
+
+    const auto table_col = [](const logline_value_meta& lvm) {
+        return VT_COL_MAX
+            + (int) lvm.lvm_column.get<logline_value_meta::table_column>()
+                  .value;
+    };
+    const auto is_src = col == table_col(this->alv_src_meta);
+    const auto is_kind = col == table_col(this->alv_schema_kind_meta);
+    if (!is_src && !is_kind && col != table_col(this->alv_schema_meta)) {
+        return false;
+    }
+
+    // What the statement map knows, as extract() takes it.
+    auto stmt = alv_line_stmt(lf, line_number);
+    if (is_kind) {
+        const auto set_kind = [ctx](const intern_string_t& kind) {
+            sqlite3_result_text(ctx, kind.get(), kind.size(), SQLITE_STATIC);
+            return true;
+        };
+        if (stmt.is<line_stmt_mapped>()) {
+            return set_kind(KIND_STATEMENT);
+        }
+        // Without source fields in the format, an unmatched message's schema
+        // comes from its text; with them, it depends on whether this message
+        // has both, which takes reading it.
+        if (stmt.is<line_stmt_unmatched>()
+            && !lf->get_format_ptr()->lf_has_src_location)
+        {
+            return set_kind(KIND_MESSAGE);
+        }
+        return false;
+    }
+    if (stmt.is<line_stmt_mapped>()) {
+        // The statement map's strings are never freed or changed, so SQLite
+        // can take them without a copy.
+        const auto& mapped = stmt.get<line_stmt_mapped>();
+        const auto& str = is_src ? *mapped.lsm_src : *mapped.lsm_schema;
+        sqlite3_result_text(ctx, str.data(), str.size(), SQLITE_STATIC);
+        if (is_src) {
+            sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+        }
+        return true;
+    }
+    if (is_src && stmt.is<line_stmt_unmatched>()) {
+        // No statement.  The schema of such a message comes from its text.
+        sqlite3_result_null(ctx);
+        return true;
+    }
+
+    return false;
+}
+
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
       alv_msg_meta(intern_string::lookup("log_msg_format"),
@@ -92,7 +174,10 @@ all_logs_vtab::all_logs_vtab()
                           logline_value_meta::table_column{4}),
       alv_format_values_meta(intern_string::lookup("log_format_values"),
                              value_kind_t::VALUE_JSON,
-                             logline_value_meta::table_column{5})
+                             logline_value_meta::table_column{5}),
+      alv_schema_kind_meta(intern_string::lookup("log_msg_schema_kind"),
+                           value_kind_t::VALUE_TEXT,
+                           logline_value_meta::table_column{6})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
@@ -132,6 +217,13 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
         intern_string_t{},
         true,
         "The non-null values the message's log format extracted, as a JSON object"_frag);
+    // Hidden like log_msg_schema.
+    cols.emplace_back(
+        this->alv_schema_kind_meta.lvm_name,
+        SQLITE3_TEXT,
+        intern_string_t{},
+        true,
+        "Where log_msg_schema comes from: 'statement' (a log statement in the source), 'src_location' (the format's source file and line), or 'message' (the message's text)"_frag);
 }
 
 /**
@@ -213,10 +305,17 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
                              this->alv_schema_meta,
                              this->alv_values_meta,
                              this->alv_src_meta,
-                             this->alv_stacktrace_meta))
+                             this->alv_stacktrace_meta,
+                             this->alv_schema_kind_meta))
     {
         return;
     }
+    // Without a statement, the schema comes from the format's source file
+    // and line, when the message has both, else from its text.
+    const auto unmatched_kind = sub_values.lvv_src_file_value
+            && sub_values.lvv_src_line_value
+        ? KIND_SRC_LOCATION
+        : KIND_MESSAGE;
 
     // The statement map already matched most messages, so take what it knows
     // instead of matching the message again.  The pattern, the variables, and
@@ -229,10 +328,15 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
                                 this->alv_stacktrace_meta))
     {
         const auto& mapped = stmt.get<line_stmt_mapped>();
+        // The statement map's strings are never freed or changed.
         values.lvv_values.emplace_back(
-            this->alv_schema_meta, string_fragment::from(*mapped.lsm_schema));
-        values.lvv_values.emplace_back(this->alv_src_meta,
-                                       string_fragment::from(*mapped.lsm_src));
+            this->alv_schema_meta,
+            permanent_fragment{string_fragment::from(*mapped.lsm_schema)});
+        values.lvv_values.emplace_back(
+            this->alv_src_meta,
+            permanent_fragment{string_fragment::from(*mapped.lsm_src)});
+        values.lvv_values.emplace_back(this->alv_schema_kind_meta,
+                                       KIND_STATEMENT);
         return;
     }
     const auto unmatched = stmt.is<line_stmt_unmatched>();
@@ -241,6 +345,8 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
             this->alv_msg_meta, this->alv_schema_meta, this->alv_values_meta))
     {
         // No statement, so no log_msg_src or stack trace.
+        values.lvv_values.emplace_back(this->alv_schema_kind_meta,
+                                       unmatched_kind);
         return;
     }
 
@@ -272,6 +378,8 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
                                        (std::string) find_res->variables);
         values.lvv_values.emplace_back(this->alv_src_meta,
                                        (std::string) find_res->src);
+        values.lvv_values.emplace_back(this->alv_schema_kind_meta,
+                                       KIND_STATEMENT);
         if (!find_res->stack_trace.empty()) {
             values.lvv_values.emplace_back(this->alv_stacktrace_meta,
                                            (std::string) find_res->stack_trace);
@@ -301,6 +409,8 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
             : dp.dp_schema_id.to_string();
         values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
         values.lvv_values.emplace_back(this->alv_schema_meta, schema_id);
+        values.lvv_values.emplace_back(this->alv_schema_kind_meta,
+                                       unmatched_kind);
         values.lvv_values.emplace_back(
             this->alv_values_meta,
             json_string(gen).to_string_fragment().to_string());

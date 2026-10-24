@@ -596,7 +596,7 @@ logline_value::to_string() const
                 return this->lv_str.value();
             }
             if (this->lv_frag.empty()) {
-                return this->lv_intern_string.to_string();
+                return this->lv_permanent_frag.pf_frag.to_string();
             }
             return this->lv_frag.to_string();
 
@@ -685,8 +685,7 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
                     .to_owned(alloc);
             }
             if (this->lv_frag.empty()) {
-                return this->lv_intern_string.to_string_fragment().to_owned(
-                    alloc);
+                return this->lv_permanent_frag.pf_frag.to_owned(alloc);
             }
             return this->lv_frag.to_owned(alloc);
 
@@ -750,10 +749,10 @@ logline_value::text_value() const
         return this->lv_str->c_str();
     }
     if (this->lv_frag.empty()) {
-        if (this->lv_intern_string.empty()) {
+        if (this->lv_permanent_frag.pf_frag.empty()) {
             return "";
         }
-        return this->lv_intern_string.get();
+        return this->lv_permanent_frag.pf_frag.data();
     }
     return this->lv_frag.data();
 }
@@ -765,7 +764,7 @@ logline_value::text_length() const
         return this->lv_str->size();
     }
     if (this->lv_frag.empty()) {
-        return this->lv_intern_string.size();
+        return this->lv_permanent_frag.pf_frag.length();
     }
     return this->lv_frag.length();
 }
@@ -2103,6 +2102,15 @@ external_log_format::scan_json(std::vector<logline>& dst,
             line_values.lvv_opid_value = std::nullopt;
         }
 
+        // What annotate() gives for the line, for the file's per-line cache.
+        sbc.sbc_line_ids_set = true;
+        sbc.sbc_line_tid = jlu.jlu_tid_frag
+            ? std::make_optional(jlu.jlu_tid_frag->hf_frag)
+            : std::nullopt;
+        sbc.sbc_line_opid = jlu.jlu_opid_frag
+            ? std::make_optional(jlu.jlu_opid_frag->hf_frag)
+            : std::nullopt;
+
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
         ll.set_has_ansi(jlu.jlu_has_ansi);
         ll.set_valid_utf(jlu.jlu_valid_utf);
@@ -2293,6 +2301,14 @@ external_log_format::finalize_line(logline& new_line,
         new_line.merge_bloom_bits(opid_hf.bloom_bits());
     }
 
+    // What annotate() gives for the line, for the file's per-line cache: the
+    // keys the line was filed under, whose text the batch's allocator owns
+    // (the captures and a synthesized opid's buffer don't outlive the scan).
+    sbc.sbc_line_ids_set = true;
+    sbc.sbc_line_tid = std::nullopt;
+    sbc.sbc_line_opid = opid_iter
+        ? std::make_optional(opid_iter.value()->first)
+        : std::nullopt;
     if (this->elf_thread_id_field.empty()) {
         if (in.lfi_terminated) {
             sbc.sbc_tids.add_no_tid(log_us, level);
@@ -2303,6 +2319,7 @@ external_log_format::finalize_line(logline& new_line,
             = sbc.sbc_tids.insert_tid(sbc.sbc_allocator, tid_hf, log_us);
         tid_iter->second.titr_level_stats.update_msg_count(level);
         new_line.merge_bloom_bits(tid_hf.bloom_bits());
+        sbc.sbc_line_tid = tid_iter->first;
     }
 
     return opid_iter;
@@ -5180,6 +5197,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_internal = true;
     }
 
+    this->lf_has_src_location = !this->elf_src_file_field.empty()
+        && !this->elf_src_line_field.empty();
     if (!this->elf_src_file_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_src_file_field];
         if (vd.get() == nullptr) {

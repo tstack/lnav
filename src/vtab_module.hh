@@ -345,7 +345,8 @@ struct from_column<std::optional<T>> {
 };
 
 template<typename T>
-T from_stmt(sqlite3_stmt* stmt, int index)
+T
+from_stmt(sqlite3_stmt* stmt, int index)
 {
     auto argc = sqlite3_column_count(stmt);
     if (index < 0 || index >= argc) {
@@ -366,13 +367,43 @@ to_sqlite(sqlite3_context* ctx, null_value_t)
     sqlite3_result_null(ctx);
 }
 
-inline void
-to_sqlite(sqlite3_context* ctx, const char* str)
+/*
+ * A template so that string literals prefer the array overload below; a
+ * non-template overload would win the tie against it.
+ */
+template<
+    typename T,
+    std::enable_if_t<std::is_same_v<T, const char*> || std::is_same_v<T, char*>,
+                     int> = 0>
+void
+to_sqlite(sqlite3_context* ctx, T str)
 {
     if (str == nullptr) {
         sqlite3_result_null(ctx);
     } else {
-        sqlite3_result_text(ctx, str, -1, SQLITE_STATIC);
+        sqlite3_result_text(ctx, str, -1, SQLITE_TRANSIENT);
+    }
+}
+
+template<std::size_t N>
+void
+to_sqlite(sqlite3_context* ctx, const char (&str)[N])
+{
+    sqlite3_result_text(ctx, str, N - 1, SQLITE_STATIC);
+}
+
+/* Mutable arrays are usually stack buffers: not static, not full-length. */
+template<std::size_t N>
+void to_sqlite(sqlite3_context* ctx, char (&str)[N]) = delete;
+
+inline void
+to_sqlite(sqlite3_context* ctx, const permanent_fragment& pf)
+{
+    if (pf.pf_frag.is_valid()) {
+        sqlite3_result_text(
+            ctx, pf.pf_frag.data(), pf.pf_frag.length(), SQLITE_STATIC);
+    } else {
+        sqlite3_result_null(ctx);
     }
 }
 
@@ -774,10 +805,8 @@ template<typename C>
 struct vtab_cursor_has_filter<
     C,
     std::void_t<decltype(std::declval<C&>().filter(
-        0,
-        std::declval<const char*>(),
-        0,
-        std::declval<sqlite3_value**>()))>> : std::true_type {};
+        0, std::declval<const char*>(), 0, std::declval<sqlite3_value**>()))>>
+    : std::true_type {};
 
 struct vtab_module_base {
     virtual int create(sqlite3* db) = 0;

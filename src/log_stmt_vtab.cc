@@ -197,6 +197,17 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
         return SQLITE_OK;
     }
 
+    // While log2src scans the source, it holds its statements' lock to write
+    // them, so reading them here would block lnav's main loop until the scan is
+    // done (3.7s, when a client asked right after :add-source-path).  Say so
+    // instead; the statements can be asked for again once the scan is done.
+    if (lnav_rs_ext::get_status().status == lnav_rs_ext::Status::working) {
+        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+            "the source is being scanned (:add-source-path); its log statements "
+            "are available once that's done");
+        return SQLITE_ERROR;
+    }
+
     const char* path = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_path = path;
     pCur->c_index = 0;

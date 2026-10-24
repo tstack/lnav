@@ -1005,6 +1005,8 @@ public:
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }
 
+    std::function<void()> push_default_display();
+
     logline* text_accel_get_line(vis_line_t vl)
     {
         return this->find_line(this->at(vl));
@@ -1109,6 +1111,8 @@ private:
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
     std::map<std::string, breakpoint_info> lss_breakpoints;
+    /** Rendering for push_default_display(): leave out display-only state. */
+    bool lss_default_display{false};
     bookmarks<content_line_t>::type lss_user_marks{
         bookmarks<content_line_t>::create_array()};
     auto_mem<sqlite3_stmt> lss_marker_stmt{sqlite3_finalize};

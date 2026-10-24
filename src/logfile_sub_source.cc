@@ -896,7 +896,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
         this->lss_token_al.al_attrs.emplace_back(lr, VC_GRAPHIC.value(graph));
 
-        if (!(this->lss_token_flags & RF_FULL)) {
+        if (!(this->lss_token_flags & RF_FULL) && !this->lss_default_display) {
             const auto& bv_search = bm[&textview_curses::BM_SEARCH];
 
             if (bv_search.bv_tree.exists(vis_line_t(row))) {
@@ -4676,6 +4676,31 @@ logfile_sub_source::decrease_line_context()
     }
 
     return false;
+}
+
+std::function<void()>
+logfile_sub_source::push_default_display()
+{
+    // The members are set directly: the setters clear caches and schedule a
+    // redraw, and the screen keeps these options.
+    auto saved_context = this->lss_line_context;
+    auto saved_time_offset = this->tas_display_time_offset;
+    auto saved_breakpoints
+        = std::make_shared<std::map<std::string, breakpoint_info>>();
+
+    this->lss_line_context = line_context_t::none;
+    this->tas_display_time_offset = false;
+    // lnav's own breakpoints insert an icon into the line.
+    saved_breakpoints->swap(this->lss_breakpoints);
+    // No search-hit marker on the file bracket.
+    this->lss_default_display = true;
+
+    return [this, saved_context, saved_time_offset, saved_breakpoints] {
+        this->lss_line_context = saved_context;
+        this->tas_display_time_offset = saved_time_offset;
+        this->lss_breakpoints.swap(*saved_breakpoints);
+        this->lss_default_display = false;
+    };
 }
 
 size_t

@@ -422,6 +422,30 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_view_lines('log', 0, 1, 'xml')" \
     ${test_dir}/logfile_multiline.0
 
+# By default, the lines are rendered as if the view's display options were at
+# their defaults: no time column (the message keeps its timestamp and level),
+# no time offsets, hidden fields shown, and no search hits or cursor.
+# 'screen' renders them as the screen draws them, and a default render
+# leaves the screen's options as they were.
+run_cap_test ${lnav_test} -n \
+    -c ":config /ui/views/log/time-column default" \
+    -c ";UPDATE lnav_views SET options = json_object('row-time-offset', 'show') WHERE name = 'log'" \
+    -c ":hide-fields access_log.c_ip" \
+    -c "/vmk" \
+    -c ":goto 1" \
+    -c ";SELECT line, display, content FROM lnav_view_lines('log', 0, 1, 'html')" \
+    -c ":write-raw-to -" \
+    -c ";SELECT line, display, content FROM lnav_view_lines('log', 0, 1, 'html', 'screen')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_access_log.0
+
+# :config is saved, so put the time column back for the tests after this one.
+${lnav_test} -nN -c ':reset-config /ui/views/log/time-column'
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_view_lines('log', 0, 1, 'text', 'nope')" \
+    ${test_dir}/logfile_multiline.0
+
 run_cap_test ${lnav_test} -n \
     -c ":filter-context 2 1" \
     -c ";SELECT name, options ->> '\$.filter-context' AS fc FROM lnav_views" \

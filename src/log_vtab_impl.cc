@@ -1114,6 +1114,36 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::opid: {
+                        // What the scan recorded, unless the message was read
+                        // for this row anyway; a user's opid (bookmark
+                        // metadata) is left to annotate().
+                        const auto* cached_id = vc->is_msg_cached()
+                            ? nullptr
+                            : lf->get_line_ids().li_opids.get(line_number);
+                        if (cached_id != nullptr) {
+                            const auto& bm = lf->get_bookmark_metadata();
+                            auto bm_iter = bm.find(line_number);
+                            if (bm_iter != bm.end()
+                                && !bm_iter->second.bm_opid.empty())
+                            {
+                                cached_id = nullptr;
+                            }
+                        }
+                        if (cached_id != nullptr) {
+                            if (!cached_id->is_valid()) {
+                                sqlite3_result_null(ctx);
+                            } else {
+                                // An empty fragment may have no data, which
+                                // SQLite would take for NULL.
+                                const auto& sf = *cached_id;
+                                sqlite3_result_text(
+                                    ctx,
+                                    sf.empty() ? "" : sf.data(),
+                                    sf.length(),
+                                    SQLITE_TRANSIENT);
+                            }
+                            break;
+                        }
                         if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
@@ -1349,6 +1379,26 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::thread_id: {
+                        // What the scan recorded, unless the message was read
+                        // for this row anyway.
+                        const auto* cached_id = vc->is_msg_cached()
+                            ? nullptr
+                            : lf->get_line_ids().li_tids.get(line_number);
+                        if (cached_id != nullptr) {
+                            if (!cached_id->is_valid()) {
+                                sqlite3_result_null(ctx);
+                            } else {
+                                // An empty fragment may have no data, which
+                                // SQLite would take for NULL.
+                                const auto& sf = *cached_id;
+                                sqlite3_result_text(
+                                    ctx,
+                                    sf.empty() ? "" : sf.data(),
+                                    sf.length(),
+                                    SQLITE_TRANSIENT);
+                            }
+                            break;
+                        }
                         if (!vc->is_msg_cached()) {
                             vc->cache_msg(lf, ll);
                             require(vc->line_values.lvv_sbr.get_data()
@@ -1438,6 +1488,13 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                 }
             } else {
+                // A table can answer some columns from what lnav keeps per
+                // line, without reading the message (all_logs' log_msg_src).
+                if (!vc->is_msg_cached()
+                    && vt->vi->cached_column(col, lf, line_number, ctx))
+                {
+                    break;
+                }
                 if (!vc->is_msg_cached()) {
                     vc->cache_msg(lf, ll);
                     require(vc->line_values.lvv_sbr.get_data() != nullptr);
@@ -1539,7 +1596,9 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 sqlite3_result_text(ctx,
                                                     lv_iter->text_value(),
                                                     lv_iter->text_length(),
-                                                    SQLITE_TRANSIENT);
+                                                    lv_iter->has_permanent_text()
+                                                        ? SQLITE_STATIC
+                                                        : SQLITE_TRANSIENT);
                                 sqlite3_result_subtype(ctx, JSON_SUBTYPE);
                                 break;
                             }
@@ -1547,10 +1606,13 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             case value_kind_t::VALUE_STRUCT:
                             case value_kind_t::VALUE_TEXT:
                             case value_kind_t::VALUE_XML: {
+                                // Permanent text outlives the statement.
                                 sqlite3_result_text(ctx,
                                                     lv_iter->text_value(),
                                                     lv_iter->text_length(),
-                                                    SQLITE_TRANSIENT);
+                                                    lv_iter->has_permanent_text()
+                                                        ? SQLITE_STATIC
+                                                        : SQLITE_TRANSIENT);
                                 break;
                             }
                             case value_kind_t::VALUE_TIMESTAMP: {

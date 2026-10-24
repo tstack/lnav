@@ -98,6 +98,9 @@ public:
 
     bool is_looping() const { return this->s_looping; }
 
+    /** True once a supervisor has started the workers, until it stops them. */
+    bool is_started() const { return this->s_started; }
+
     using queue_item_id = uint64_t;
 
     queue_item_id run_after(std::chrono::milliseconds rel_time,

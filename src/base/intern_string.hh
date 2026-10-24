@@ -86,7 +86,8 @@ struct string_fragment {
         return string_fragment{str, 0, (int) N - 1};
     }
 
-    /** A char array holding a string that fills it up to its last byte, a NUL. */
+    /** A char array holding a string that fills it up to its last byte, a NUL.
+     */
     template<std::size_t N>
     static string_fragment from(const char (&buf)[N])
     {
@@ -271,8 +272,17 @@ struct string_fragment {
             == 0;
     }
 
+    /**
+     * Equal when both are invalid, or both are valid with the same text: an
+     * invalid fragment (no value) isn't equal to a valid empty one.
+     */
     bool operator==(const string_fragment& sf) const
     {
+        // Equal only if both are invalid; and data() of an invalid fragment
+        // isn't safe to read.
+        if (!this->is_valid() || !sf.is_valid()) {
+            return this->is_valid() == sf.is_valid();
+        }
         if (this->length() != sf.length()) {
             return false;
         }
@@ -788,9 +798,13 @@ struct string_fragment {
         return retval;
     }
 
+    /** A copy in the allocator's memory; an invalid fragment stays invalid. */
     template<typename A>
     string_fragment to_owned(A allocator) const
     {
+        if (!this->is_valid()) {
+            return *this;
+        }
         return string_fragment{
             this->to_c_str(allocator),
             0,
@@ -844,8 +858,7 @@ struct string_fragment {
         friend string_fragment;
 
         explicit cursor_impl(const string_fragment& parent)
-            : ci_string(parent.sf_string),
-              ci_end(parent.sf_end),
+            : ci_string(parent.sf_string), ci_end(parent.sf_end),
               ci_next_index(parent.sf_begin)
         {
         }
@@ -895,6 +908,23 @@ operator<<(std::ostream& os, const string_fragment& sf)
     os.write(sf.data(), sf.length());
     return os;
 }
+
+/**
+ * A fragment of text that lasts as long as lnav and never changes (an
+ * interned string, the statement map's descriptions of statements), so it can
+ * be handed to SQLite without a copy (SQLITE_STATIC).  The type is the
+ * promise: make one only for text that is never freed or modified.
+ */
+struct permanent_fragment {
+    template<typename T, std::size_t N>
+    static constexpr permanent_fragment from_const(const T (&str)[N])
+    {
+        return permanent_fragment{string_fragment::from_const(str)};
+    }
+
+    /** Empty by default, as a literal so its data is never null. */
+    string_fragment pf_frag{string_fragment::from_const("")};
+};
 
 class string_fragment_producer {
 public:
@@ -968,6 +998,13 @@ public:
     string_fragment to_string_fragment() const
     {
         return string_fragment::from_bytes(this->is_data, this->is_len);
+    }
+
+    /** The text, which lasts as long as lnav: interned strings are never freed.
+     */
+    permanent_fragment to_permanent_fragment() const
+    {
+        return {this->to_string_fragment()};
     }
 
     bool startswith(const char* prefix) const;

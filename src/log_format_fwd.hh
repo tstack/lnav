@@ -351,6 +351,17 @@ struct scan_batch_context {
     std::vector<time_rollover> sbc_time_rollovers;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
+    /**
+     * The thread id and opid the format's scan settled on for the line it
+     * just matched (the opid it filed the line under in sbc_opids, after any
+     * synthesized one replaced the line's own), for the file's per-line cache
+     * (logfile::line_ids).  Only formats that fill them in set
+     * sbc_line_ids_set; logfile::process_prefix() clears it before the scan.
+     * The fragments only need to last until the scan returns.
+     */
+    bool sbc_line_ids_set{false};
+    std::optional<string_fragment> sbc_line_tid;
+    std::optional<string_fragment> sbc_line_opid;
     lnav::small_string_map sbc_level_cache;
 
     /**
@@ -837,7 +848,14 @@ public:
     }
 
     logline_value(logline_value_meta lvm, const intern_string_t val)
-        : lv_meta(std::move(lvm)), lv_intern_string(val)
+        : lv_meta(std::move(lvm)),
+          lv_permanent_frag(val.empty() ? permanent_fragment{}
+                                        : val.unwrap()->to_permanent_fragment())
+    {
+    }
+
+    logline_value(logline_value_meta lvm, permanent_fragment pf)
+        : lv_meta(std::move(lvm)), lv_permanent_frag(pf)
     {
     }
 
@@ -860,6 +878,16 @@ public:
 
     const char* text_value() const;
 
+    /**
+     * Whether the text lasts as long as lnav does (lv_permanent_frag), so
+     * SQLite can take it without a copy (SQLITE_STATIC).
+     */
+    bool has_permanent_text() const
+    {
+        return !this->lv_str && this->lv_frag.empty()
+            && !this->lv_permanent_frag.pf_frag.empty();
+    }
+
     size_t text_length() const;
 
     string_fragment text_value_fragment() const;
@@ -878,7 +906,11 @@ public:
     std::optional<std::string> lv_str;
     string_fragment lv_frag;
     int lv_sub_offset{0};
-    intern_string_t lv_intern_string;
+    /**
+     * Text that lasts as long as lnav (an interned string, the statement
+     * map's), used when there's no lv_str or lv_frag.
+     */
+    permanent_fragment lv_permanent_frag;
     line_range lv_origin;
     bool lv_highlighted{false};
 };

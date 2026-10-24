@@ -443,6 +443,12 @@ public:
     // view, fold sibling rows that share a timestamp, and drive the
     // stem-labeled overlay above the focused row.
     bool lf_is_metric{false};
+    /**
+     * Whether the format declares both a source file and a source line
+     * field, which give an unmatched message's log_msg_schema
+     * (all_logs_vtab).  Without them, it's the message's text.
+     */
+    bool lf_has_src_location{false};
     std::optional<uint64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;

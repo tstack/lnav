@@ -80,6 +80,12 @@ constexpr int BASE_SHIFT = 12;
 /** How many of a statement's messages var_schema is derived from. */
 constexpr uint32_t VAR_SAMPLES = 32;
 
+/**
+ * How many lines a worker maps between looks at the clock in a slice (see
+ * step()): a line can take a millisecond, and the slice is 20ms.
+ */
+constexpr size_t STEP_CLOCK_LINES = 16;
+
 struct statement {
     /** log2src's source details, as JSON, like all_logs.log_msg_src. */
     std::string s_src;
@@ -143,9 +149,12 @@ struct statement {
 struct stmt_map {
     /** Set by the first query of the summary table. */
     bool sm_active{false};
-    // A deque, so a statement never moves: all_logs hands out fragments of
-    // s_src and s_schema (line_stmt()), and statements can be interned while
-    // a cursor still holds them (schema_lines() steps the map in xFilter).
+    // Statements are only ever appended: none is removed, and a statement's
+    // s_src and s_schema never change once it's interned, so they last as
+    // long as lnav.  all_logs and log_stmt_stats hand them to SQLite without
+    // a copy (SQLITE_STATIC, permanent_fragment).  A deque, so a statement
+    // never moves either: statements can be interned while a cursor still
+    // holds them (schema_lines() steps the map in xFilter).
     std::deque<statement> sm_statements = std::deque<statement>(2);
 #ifdef HAVE_RUST_DEPS
     /** The source scan version the statements are from. */
@@ -165,6 +174,8 @@ struct stmt_map {
      * re-scan), unlike lines mapped for the first time.
      */
     size_t sm_remaps{0};
+    /** How many slices step() has run, to rotate which file goes first. */
+    size_t sm_slices{0};
 
     /**
      * Statement ids by log_msg_schema.  The schema covers the pattern as well
@@ -604,12 +615,18 @@ CREATE TABLE lnav_db.log_stmt_stats (
         const auto& stmt = get_map().sm_statements[r.r_id];
 
         switch (col) {
+            // A statement's strings are never freed or changed (see
+            // sm_statements), so SQLite can take them without a copy.
             case 0:
-                to_sqlite(ctx, stmt.s_src);
+                sqlite3_result_text(
+                    ctx, stmt.s_src.data(), stmt.s_src.size(), SQLITE_STATIC);
                 sqlite3_result_subtype(ctx, JSON_SUBTYPE);
                 break;
             case 1:
-                to_sqlite(ctx, stmt.s_schema);
+                sqlite3_result_text(ctx,
+                                    stmt.s_schema.data(),
+                                    stmt.s_schema.size(),
+                                    SQLITE_STATIC);
                 break;
             case 2:
                 to_sqlite(ctx, r.r_hits);
@@ -769,28 +786,30 @@ schema_lines(const std::vector<std::string>& schemas,
 
 /**
  * Whether the mapped statements are the current ones: no source scan running
- * or finished since the lines were last checked.  log2src's status is only
- * read every so often, since this is asked for every row.
+ * or finished since the lines were last checked.  Checked once per all_logs
+ * scan (check_statements(), as the scan starts), not per row, since this is
+ * asked for every row: a scan that starts while a query runs is noticed by
+ * the next query.
  */
+static bool s_statements_current = false;
+
+static void
+check_statements()
+{
+#ifdef HAVE_RUST_DEPS
+    auto& sm = get_map();
+    auto ext = lnav_rs_ext::get_status();
+    s_statements_current = ext.status != lnav_rs_ext::Status::working
+        && sm.sm_scan_version == ext.version;
+#else
+    s_statements_current = true;
+#endif
+}
+
 static bool
 statements_current()
 {
-#ifdef HAVE_RUST_DEPS
-    static std::chrono::steady_clock::time_point last_check;
-    static bool last_result = false;
-
-    auto now = std::chrono::steady_clock::now();
-    if (now - last_check > std::chrono::milliseconds(50)) {
-        auto& sm = get_map();
-        auto ext = lnav_rs_ext::get_status();
-        last_result = ext.status != lnav_rs_ext::Status::working
-            && sm.sm_scan_version == ext.version;
-        last_check = now;
-    }
-    return last_result;
-#else
-    return true;
-#endif
+    return s_statements_current;
 }
 
 /** What the statement map knows about the message at a line. */
@@ -817,6 +836,7 @@ line_stmt(const logfile* lf, uint64_t line_number)
 static const auto REGISTER_SCHEMA_LINES = []() {
     all_logs_vtab::alv_schema_lines = schema_lines;
     all_logs_vtab::alv_line_stmt = line_stmt;
+    all_logs_vtab::alv_scan_started = check_statements;
     return true;
 }();
 
@@ -871,9 +891,21 @@ step(std::chrono::steady_clock::time_point deadline)
         }
     }
 
+    // A different file goes first each slice, so the ones at the end of the
+    // list aren't always the ones a slice runs out of time for.
+    if (work.size() > 1) {
+        std::rotate(work.begin(),
+                    work.begin() + (sm.sm_slices % work.size()),
+                    work.end());
+    }
+    sm.sm_slices += 1;
+
     std::vector<char> unfinished(work.size(), 0);
     std::vector<char> changed(work.size(), 0);
     std::vector<char> remapped(work.size(), 0);
+    // Whether this slice has mapped anything yet: past the deadline, a worker
+    // only starts another file while nothing has been.
+    std::atomic<bool> progressed{false};
     if (!work.empty()) {
         lnav::parallel_for_each(
             work.size(),
@@ -884,12 +916,22 @@ step(std::chrono::steady_clock::time_point deadline)
                 stmt_map::match_scratch ms;
                 auto start = si.si_verified;
 
+                // Out of time already (the workers went through the other
+                // files): leave this one for the next slice.  Each file used
+                // to map a first batch whatever the time, so with 77 files a
+                // 20ms slice held the main loop for 300ms.
+                if (progressed.load(std::memory_order_relaxed)
+                    && std::chrono::steady_clock::now() >= deadline)
+                {
+                    unfinished[index] = 1;
+                    return;
+                }
                 while (si.si_verified < si.si_ids.size()) {
-                    // Check the clock every so often instead of for every
-                    // line, starting after the first batch, so a slice maps
-                    // some lines even if the deadline has already passed.
+                    // Check the clock every few lines: a line can take a
+                    // millisecond (a JSON message parsed, then matched by
+                    // log2src), so every 256 overran the slice by ~250ms.
                     auto done = si.si_verified - start;
-                    if (done > 0 && done % 256 == 0
+                    if (done > 0 && done % STEP_CLOCK_LINES == 0
                         && std::chrono::steady_clock::now() >= deadline)
                     {
                         unfinished[index] = 1;
@@ -905,6 +947,7 @@ step(std::chrono::steady_clock::time_point deadline)
                         }
                     }
                     si.si_verified += 1;
+                    progressed.store(true, std::memory_order_relaxed);
                 }
             });
     }

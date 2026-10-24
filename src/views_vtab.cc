@@ -281,9 +281,8 @@ struct timeline_row_type_options {
 
     bool empty() const
     {
-        return !this->trto_logfile.has_value()
-            && !this->trto_thread.has_value() && !this->trto_opid.has_value()
-            && !this->trto_tag.has_value()
+        return !this->trto_logfile.has_value() && !this->trto_thread.has_value()
+            && !this->trto_opid.has_value() && !this->trto_tag.has_value()
             && !this->trto_partition.has_value()
             && !this->trto_search.has_value();
     }
@@ -656,9 +655,8 @@ CREATE TABLE lnav_db.lnav_views (
 
                     for (const auto rt : timeline_source::ALL_ROW_TYPES) {
                         vo.vo_row_types.for_type(rt)
-                            = ts->is_row_type_visible(rt)
-                            ? row_details_t::show
-                            : row_details_t::hide;
+                            = ts->is_row_type_visible(rt) ? row_details_t::show
+                                                          : row_details_t::hide;
                     }
                 }
 
@@ -777,16 +775,17 @@ CREATE TABLE lnav_db.lnav_views (
                 const auto* fc_tss = tc.get_sub_source();
 
                 if (fc_tss == nullptr || !fc_tss->tss_supports_filtering) {
-                    auto um = lnav::console::user_message::error(
-                                  attr_line_t("Invalid ")
-                                      .append_quoted("filter-context"_symbol)
-                                      .append(" option"))
-                                  .with_reason(attr_line_t("The ")
-                                                   .append(lnav::roles::symbol(
-                                                       lnav_view_strings[index]))
-                                                   .append(" view does not "
-                                                           "support filtering"))
-                                  .move();
+                    auto um
+                        = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("filter-context"_symbol)
+                                  .append(" option"))
+                              .with_reason(attr_line_t("The ")
+                                               .append(lnav::roles::symbol(
+                                                   lnav_view_strings[index]))
+                                               .append(" view does not "
+                                                       "support filtering"))
+                              .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
@@ -797,8 +796,9 @@ CREATE TABLE lnav_db.lnav_views (
                                   attr_line_t("Invalid ")
                                       .append_quoted("filter-context"_symbol)
                                       .append(" option"))
-                                  .with_reason("The number of lines of context "
-                                               "cannot be negative")
+                                  .with_reason(
+                                      "The number of lines of context "
+                                      "cannot be negative")
                                   .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
@@ -974,11 +974,11 @@ CREATE TABLE lnav_db.lnav_views (
         }
         if (!vo.vo_filter_context.empty()) {
             auto* fc_tss = tc.get_sub_source();
-            const auto before = static_cast<size_t>(
-                vo.vo_filter_context.fco_before.value_or(
+            const auto before
+                = static_cast<size_t>(vo.vo_filter_context.fco_before.value_or(
                     fc_tss->tss_context_before));
-            const auto after = static_cast<size_t>(
-                vo.vo_filter_context.fco_after.value_or(
+            const auto after
+                = static_cast<size_t>(vo.vo_filter_context.fco_after.value_or(
                     fc_tss->tss_context_after));
 
             // The current values come back from an UPDATE that sets the
@@ -1854,7 +1854,6 @@ CREATE TABLE lnav_db.lnav_view_files (
     }
 };
 
-
 enum class view_lines_col : int {
     line,
     content,
@@ -1862,12 +1861,22 @@ enum class view_lines_col : int {
     first_line,
     last_line,
     format,
+    display,
 };
 
 enum class view_lines_format {
     ansi,
     html,
     text,
+};
+
+/** Which display options a rendered line reflects. */
+enum class view_lines_display {
+    /** The view's display options at their defaults (no cursor, searches, line
+     * context, ...). */
+    defaults,
+    /** The lines as the screen draws them. */
+    screen,
 };
 
 struct lnav_view_lines {
@@ -1880,7 +1889,8 @@ CREATE TABLE lnav_db.lnav_view_lines (
     view_name TEXT HIDDEN,
     first_line INTEGER HIDDEN,
     last_line INTEGER HIDDEN,
-    format TEXT HIDDEN
+    format TEXT HIDDEN,     -- 'ansi', 'html', or 'text'.
+    display TEXT HIDDEN     -- 'default' renders the lines with the view's display options at their defaults, 'screen' as the screen draws them.
 );
 )";
 
@@ -1894,6 +1904,7 @@ CREATE TABLE lnav_db.lnav_view_lines (
         std::optional<int64_t> c_first_arg;
         std::optional<int64_t> c_last_arg;
         view_lines_format c_format{view_lines_format::ansi};
+        view_lines_display c_display{view_lines_display::defaults};
         std::vector<attr_line_t> c_header;
         size_t c_header_index{0};
         vis_line_t c_line{0};
@@ -1916,7 +1927,10 @@ CREATE TABLE lnav_db.lnav_view_lines (
             return SQLITE_OK;
         }
 
-        int reset() { return SQLITE_OK; }
+        int filter(int idxNum,
+                   const char* idxStr,
+                   int argc,
+                   sqlite3_value** argv);
 
         int eof() const
         {
@@ -1943,8 +1957,7 @@ CREATE TABLE lnav_db.lnav_view_lines (
             }
 
             if (this->c_batch_start < 0_vl || this->c_line < this->c_batch_start
-                || this->c_line
-                    >= this->c_batch_start
+                || this->c_line >= this->c_batch_start
                         + vis_line_t(static_cast<int>(this->c_batch.size())))
             {
                 auto count = std::min(BATCH_SIZE, this->c_end - this->c_line);
@@ -1952,8 +1965,13 @@ CREATE TABLE lnav_db.lnav_view_lines (
                 this->c_batch.clear();
                 this->c_batch.resize(count);
                 this->c_batch_start = this->c_line;
-                this->c_tc->listview_value_for_rows(
-                    *this->c_tc, this->c_line, this->c_batch);
+                if (this->c_display == view_lines_display::screen) {
+                    this->c_tc->listview_value_for_rows(
+                        *this->c_tc, this->c_line, this->c_batch);
+                } else {
+                    this->c_tc->default_value_for_rows(this->c_line,
+                                                       this->c_batch);
+                }
             }
 
             return this->c_batch[this->c_line - this->c_batch_start];
@@ -2008,10 +2026,24 @@ CREATE TABLE lnav_db.lnav_view_lines (
                         break;
                 }
                 break;
+            case view_lines_col::display: {
+                static const auto display_screen
+                    = permanent_fragment::from_const("screen");
+                static const auto display_default
+                    = permanent_fragment::from_const("default");
+
+                to_sqlite(ctx,
+                          vc.c_display == view_lines_display::screen
+                              ? display_screen
+                              : display_default);
+                break;
+            }
         }
 
         return SQLITE_OK;
     }
+
+    int best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info);
 };
 
 /**
@@ -2020,14 +2052,14 @@ CREATE TABLE lnav_db.lnav_view_lines (
  * recorded in idxNum so the filter can tell which value is which.
  */
 int
-vlBestIndex(sqlite3_vtab* tab, sqlite3_index_info* p_info)
+lnav_view_lines::best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
 {
     auto argv_index = 0;
     auto has_view_name = false;
 
     p_info->idxNum = 0;
-    for (int lpc = 0; lpc < lnav::enums::to_underlying(view_lines_col::format)
-                                + 1;
+    for (int lpc = 0;
+         lpc < lnav::enums::to_underlying(view_lines_col::display) + 1;
          lpc++)
     {
         for (int cons_index = 0; cons_index < p_info->nConstraint; cons_index++)
@@ -2065,16 +2097,15 @@ vlBestIndex(sqlite3_vtab* tab, sqlite3_index_info* p_info)
 }
 
 int
-vlFilter(sqlite3_vtab_cursor* p_vtab_cursor,
-         int idxNum,
-         const char* idxStr,
-         int argc,
-         sqlite3_value** argv)
+lnav_view_lines::cursor::filter(int idxNum,
+                                const char* idxStr,
+                                int argc,
+                                sqlite3_value** argv)
 {
-    auto* p_cur = (lnav_view_lines::cursor*) p_vtab_cursor;
-    auto set_error = [p_vtab_cursor](const std::string& msg) {
-        sqlite3_free(p_vtab_cursor->pVtab->zErrMsg);
-        p_vtab_cursor->pVtab->zErrMsg = sqlite3_mprintf("%s", msg.c_str());
+    auto* p_cur = this;
+    auto set_error = [this](const std::string& msg) {
+        sqlite3_free(this->base.pVtab->zErrMsg);
+        this->base.pVtab->zErrMsg = sqlite3_mprintf("%s", msg.c_str());
         return SQLITE_ERROR;
     };
 
@@ -2089,11 +2120,13 @@ vlFilter(sqlite3_vtab_cursor* p_vtab_cursor,
     p_cur->c_first_arg = std::nullopt;
     p_cur->c_last_arg = std::nullopt;
     p_cur->c_format = view_lines_format::ansi;
+    p_cur->c_display = view_lines_display::defaults;
 
     std::optional<lnav_view_t> view_index;
     auto argi = 0;
     for (int col = lnav::enums::to_underlying(view_lines_col::view_name);
-         col <= lnav::enums::to_underlying(view_lines_col::format) && argi < argc;
+         col <= lnav::enums::to_underlying(view_lines_col::display)
+         && argi < argc;
          col++)
     {
         if (!(idxNum & (1 << col))) {
@@ -2144,6 +2177,24 @@ vlFilter(sqlite3_vtab_cursor* p_vtab_cursor,
                                    "format: {} (expecting 'ansi', 'html', "
                                    "or 'text')"),
                         fmt_sf));
+                }
+                break;
+            }
+            case view_lines_col::display: {
+                const auto* disp_name = (const char*) sqlite3_value_text(val);
+                auto disp_sf = string_fragment::from_c_str(
+                    disp_name == nullptr ? "" : disp_name);
+
+                if (disp_sf == "default") {
+                    p_cur->c_display = view_lines_display::defaults;
+                } else if (disp_sf == "screen") {
+                    p_cur->c_display = view_lines_display::screen;
+                } else {
+                    return set_error(fmt::format(
+                        FMT_STRING("lnav_view_lines() was given an invalid "
+                                   "display: {} (expecting 'default' or "
+                                   "'screen')"),
+                        disp_sf));
                 }
                 break;
             }
@@ -2207,10 +2258,12 @@ CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
     static vtab_module<tvt_no_update<lnav_view_lines>> VIEW_LINES_MODULE;
     static auto view_lines_help
         = help_text("lnav_view_lines",
-                    "A table-valued function that renders the lines of a view "
-                    "as they are shown on the screen.  The view's header "
-                    "lines, like the column names in the DB view, come first "
-                    "with a NULL line number.")
+                    "A table-valued function that renders the lines of a view, "
+                    "as the screen shows them but, by default, with the view's "
+                    "display options at their defaults (see the display "
+                    "parameter).  The view's header lines, like the column "
+                    "names in the DB view, come first with a NULL line "
+                    "number.")
               .sql_table_valued_function()
               .with_parameter({"view_name", "The name of the view."})
               .with_parameter(
@@ -2233,6 +2286,20 @@ CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
                             "tooltips, or 'text' for plain text.  Defaults "
                             "to 'ansi'."}
                       .optional())
+              .with_parameter(
+                  help_text{"display",
+                            "Which display options to render the lines "
+                            "with: 'default' for the view's defaults, so "
+                            "the lines don't change with how the view is "
+                            "set up (no cursor, search hits, or bookmark "
+                            "styles, hidden fields shown, and in the log "
+                            "view, no file-name, time, or time-offset "
+                            "columns, so each message keeps its own "
+                            "timestamp and level), or 'screen' for the "
+                            "lines as the screen draws them.  Highlights "
+                            "and time conversions apply either way.  "
+                            "Defaults to 'default'."}
+                      .optional())
               .with_result({"line",
                             "The number of the line in the view, or NULL for "
                             "a header line."})
@@ -2244,9 +2311,6 @@ CREATE VIEW lnav_db.lnav_view_filters_and_stats AS
                   "lnav_view_lines(name, top, top + height - 1, 'html') "
                   "WHERE name = 'log'",
               });
-
-    VIEW_LINES_MODULE.vm_module.xBestIndex = vlBestIndex;
-    VIEW_LINES_MODULE.vm_module.xFilter = vlFilter;
 
     auto rc = VIEW_LINES_MODULE.create(db, lnav_view_lines::NAME);
     ensure(rc == SQLITE_OK);

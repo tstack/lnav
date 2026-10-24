@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "auto_mem.hh"
 #include "intern_string.hh"
@@ -71,7 +72,8 @@ struct cell_chunk {
 
     void load() const;
 
-    void evict() const { this->cc_data.reset(); }
+    /** Drops the uncompressed data, unless the looper still needs it. */
+    void evict() const;
 
     cell_container* cc_parent;
     std::unique_ptr<cell_chunk> cc_next;
@@ -80,10 +82,17 @@ struct cell_chunk {
     size_t cc_size{0};
     std::unique_ptr<const unsigned char[]> cc_compressed;
     size_t cc_compressed_size{0};
+    /**
+     * Full and handed to the compression looper, whose result hasn't been
+     * collected, so cc_data has to stay.  Only touched by the thread that
+     * owns the container.
+     */
+    bool cc_pending{false};
 };
 
 struct cell_container {
     cell_container();
+    ~cell_container();
 
     static constexpr uint8_t SHORT_TEXT_LENGTH = 0xff >> 2;
 
@@ -163,10 +172,45 @@ struct cell_container {
 
     std::unique_ptr<cell_chunk> cc_first;
     cell_chunk* cc_last;
-    auto_buffer cc_compress_buffer;
 
     static constexpr size_t CHUNK_CACHE_SIZE = 3;
     std::array<const cell_chunk*, CHUNK_CACHE_SIZE> cc_chunk_cache;
+
+    /**
+     * Buffers no chunk is using, kept for new chunks and for chunks that
+     * are decompressed.
+     */
+    std::vector<std::unique_ptr<unsigned char[]>> cc_spare_buffers;
+
+    /**
+     * The jobs this container sent to the compression looper and their
+     * results.  Shared with the jobs, so a job that runs after the
+     * container is gone finds its generation is stale and does nothing.
+     */
+    struct compress_state;
+    std::shared_ptr<compress_state> cc_compress_state;
+
+    std::unique_ptr<unsigned char[]> take_buffer(size_t capacity);
+
+    void give_buffer(std::unique_ptr<unsigned char[]> buf, size_t capacity);
+
+private:
+    bool in_cache(const cell_chunk* cc) const;
+
+    /**
+     * Hands a full chunk to the compression looper, or compresses it here
+     * when the looper isn't running.
+     */
+    void compress_chunk(cell_chunk* cc);
+
+    /** Applies the looper's finished chunks and frees their data. */
+    void collect_compressed();
+
+    /**
+     * Makes the queued jobs do nothing and waits for the ones reading a
+     * chunk.
+     */
+    void cancel_compression();
 };
 
 }  // namespace lnav

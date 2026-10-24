@@ -2942,16 +2942,17 @@ lnav_version()
 
 .. _lnav_view_lines:
 
-lnav_view_lines(*view_name*, *\[first_line\]*, *\[last_line\]*, *\[format\]*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lnav_view_lines(*view_name*, *\[first_line\]*, *\[last_line\]*, *\[format\]*, *\[display\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  A table-valued function that renders the lines of a view as they are shown on the screen.  The view's header lines, like the column names in the DB view, come first with a NULL line number.
+  A table-valued function that renders the lines of a view, as the screen shows them but, by default, with the view's display options at their defaults (see the display parameter).  The view's header lines, like the column names in the DB view, come first with a NULL line number.
 
   **Parameters**
     * **view_name\*** --- The name of the view.
     * **first_line** --- The number of the first line to render, starting from zero.  Defaults to zero.
     * **last_line** --- The number of the last line to render.  Defaults to the last line in the view.
     * **format** --- The output format: 'ansi' for text with ANSI escape sequences that use the theme's colors, 'html' for HTML that uses the CSS classes from the theme (see lnav_theme_css()) and has the line's file, format, and any errors in tooltips, or 'text' for plain text.  Defaults to 'ansi'.
+    * **display** --- Which display options to render the lines with: 'default' for the view's defaults, so the lines don't change with how the view is set up (no cursor, search hits, or bookmark styles, hidden fields shown, and in the log view, no file-name, time, or time-offset columns, so each message keeps its own timestamp and level), or 'screen' for the lines as the screen draws them.  Highlights and time conversions apply either way.  Defaults to 'default'.
 
   **Examples**
     To get the lines displayed in the log view as HTML:

@@ -28,24 +28,133 @@
  */
 
 #include <algorithm>
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 
 #include "cell_container.hh"
 
 #include <zlib.h>
 
+#include "auto_mem.hh"
+#include "injector.bind.hh"
+#include "isc.hh"
+
+/** Compresses the containers' full chunks off the thread that fills them. */
+class compression_looper : public isc::service<compression_looper, 2> {
+protected:
+    std::optional<std::chrono::milliseconds> compute_timeout(
+        mstime_t current_time) const override
+    {
+        return std::nullopt;
+    }
+};
+
+struct compression_looper_tag {};
+
+static auto bound_compression
+    = injector::bind_multiple<isc::service_base>()
+          .add_singleton<compression_looper, compression_looper_tag>();
+
+namespace injector {
+template<>
+void
+force_linking(compression_looper_tag anno)
+{
+}
+}  // namespace injector
+
 namespace lnav {
 
 static constexpr auto DEFAULT_CHUNK_SIZE = size_t{32 * 1024};
 static constexpr auto NULL_CELL_SUB = 0x1;
+static constexpr auto COMPRESSION_LEVEL = 2;
+/**
+ * How many of a container's full chunks can wait for the compression looper
+ * before a push waits for it, which bounds the uncompressed data held for a
+ * large result.
+ */
+static constexpr size_t MAX_CHUNKS_IN_FLIGHT = 8;
+static constexpr size_t MAX_SPARE_BUFFERS = 4;
+
+namespace {
+
+struct compressed_data {
+    std::unique_ptr<const unsigned char[]> cd_data;
+    size_t cd_size;
+};
+
+/** A deflate stream that's reset for each chunk instead of set up again. */
+struct deflater {
+    z_stream d_strm{};
+    auto_buffer d_buf{auto_buffer::alloc(compressBound(DEFAULT_CHUNK_SIZE))};
+
+    deflater()
+    {
+        auto rc = deflateInit(&this->d_strm, COMPRESSION_LEVEL);
+        require(rc == Z_OK);
+    }
+
+    deflater(const deflater&) = delete;
+    deflater& operator=(const deflater&) = delete;
+
+    ~deflater() { deflateEnd(&this->d_strm); }
+
+    compressed_data compress(const unsigned char* data, size_t size)
+    {
+        auto buflen = compressBound(size);
+        this->d_buf.expand_to(buflen);
+        auto rc = deflateReset(&this->d_strm);
+        require(rc == Z_OK);
+        this->d_strm.next_in = const_cast<unsigned char*>(data);
+        this->d_strm.avail_in = size;
+        this->d_strm.next_out = this->d_buf.u_in();
+        this->d_strm.avail_out = buflen;
+        rc = deflate(&this->d_strm, Z_FINISH);
+        require(rc == Z_STREAM_END);
+        this->d_buf.resize(this->d_strm.total_out);
+
+        return {this->d_buf.to_unique(), this->d_strm.total_out};
+    }
+};
+
+compressed_data
+compress_data(const unsigned char* data, size_t size)
+{
+    thread_local deflater DEFLATER;
+
+    return DEFLATER.compress(data, size);
+}
+
+}  // namespace
 
 static uint8_t
 combine_type_value(uint8_t type, uint8_t subvalue)
 {
     return type | subvalue << 2U;
 }
+
+struct cell_container::compress_state {
+    struct result {
+        cell_chunk* r_chunk;
+        compressed_data r_data;
+    };
+
+    std::mutex cs_mutex;
+    std::condition_variable cs_cond;
+    /** Bumped by a cancel, so the jobs queued before it do nothing. */
+    uint64_t cs_generation{0};
+    /** The current generation's jobs that are queued or running. */
+    size_t cs_in_flight{0};
+    /** The jobs reading a chunk, of any generation. */
+    size_t cs_running{0};
+    std::vector<result> cs_results;
+    /** Set with cs_results, so a check for them needn't take the lock. */
+    std::atomic<bool> cs_have_results{false};
+};
 
 cell_chunk::cell_chunk(cell_container* parent,
                        std::unique_ptr<unsigned char[]> data,
@@ -60,9 +169,10 @@ cell_chunk::reset()
     this->cc_next.reset();
     this->cc_size = 0;
     if (this->cc_data == nullptr) {
-        this->cc_data = std::make_unique<unsigned char[]>(this->cc_capacity);
+        this->cc_data = this->cc_parent->take_buffer(this->cc_capacity);
     }
     this->cc_compressed.reset();
+    this->cc_pending = false;
 }
 
 void
@@ -72,7 +182,7 @@ cell_chunk::load() const
         return;
     }
 
-    this->cc_data = std::make_unique<unsigned char[]>(this->cc_capacity);
+    this->cc_data = this->cc_parent->take_buffer(this->cc_capacity);
     uLongf cap = this->cc_capacity;
     auto rc = uncompress(this->cc_data.get(),
                          &cap,
@@ -81,16 +191,163 @@ cell_chunk::load() const
     ensure(rc == Z_OK);
 }
 
+void
+cell_chunk::evict() const
+{
+    if (!this->cc_pending && this->cc_data != nullptr) {
+        this->cc_parent->give_buffer(std::move(this->cc_data),
+                                     this->cc_capacity);
+    }
+}
+
 cell_container::cell_container()
     : cc_first(std::make_unique<cell_chunk>(
           this,
           std::make_unique<unsigned char[]>(DEFAULT_CHUNK_SIZE),
           DEFAULT_CHUNK_SIZE)),
-      cc_last(cc_first.get()),
-      cc_compress_buffer(auto_buffer::alloc(compressBound(DEFAULT_CHUNK_SIZE))),
-      cc_chunk_cache({})
+      cc_last(cc_first.get()), cc_chunk_cache({})
 {
     // log_debug("cell container %p  chunk %p", this, this->cc_last);
+}
+
+cell_container::~cell_container()
+{
+    this->cancel_compression();
+}
+
+std::unique_ptr<unsigned char[]>
+cell_container::take_buffer(size_t capacity)
+{
+    if (capacity == DEFAULT_CHUNK_SIZE && !this->cc_spare_buffers.empty()) {
+        auto retval = std::move(this->cc_spare_buffers.back());
+        this->cc_spare_buffers.pop_back();
+        return retval;
+    }
+
+    return std::make_unique<unsigned char[]>(capacity);
+}
+
+void
+cell_container::give_buffer(std::unique_ptr<unsigned char[]> buf,
+                            size_t capacity)
+{
+    if (capacity == DEFAULT_CHUNK_SIZE
+        && this->cc_spare_buffers.size() < MAX_SPARE_BUFFERS)
+    {
+        this->cc_spare_buffers.emplace_back(std::move(buf));
+    }
+}
+
+bool
+cell_container::in_cache(const cell_chunk* cc) const
+{
+    return std::find(
+               this->cc_chunk_cache.begin(), this->cc_chunk_cache.end(), cc)
+        != this->cc_chunk_cache.end();
+}
+
+void
+cell_container::compress_chunk(cell_chunk* cc)
+{
+    auto& looper = injector::get<compression_looper&, compression_looper_tag>();
+    if (!looper.is_started() || !looper.is_looping()) {
+        auto res = compress_data(cc->cc_data.get(), cc->cc_size);
+        cc->cc_compressed = std::move(res.cd_data);
+        cc->cc_compressed_size = res.cd_size;
+        this->give_buffer(std::move(cc->cc_data), cc->cc_capacity);
+        return;
+    }
+
+    if (this->cc_compress_state == nullptr) {
+        this->cc_compress_state = std::make_shared<compress_state>();
+    }
+    auto& state = *this->cc_compress_state;
+    uint64_t gen;
+    {
+        std::unique_lock<std::mutex> lk(state.cs_mutex);
+        // The looper is only stopped at exit, but don't wait on one that is.
+        while (state.cs_in_flight >= MAX_CHUNKS_IN_FLIGHT
+               && looper.is_looping())
+        {
+            state.cs_cond.wait_for(lk, std::chrono::milliseconds{100});
+        }
+        state.cs_in_flight += 1;
+        gen = state.cs_generation;
+    }
+    cc->cc_pending = true;
+
+    looper.send([state_ptr = this->cc_compress_state,
+                 cc,
+                 data = static_cast<const unsigned char*>(cc->cc_data.get()),
+                 size = cc->cc_size,
+                 gen](auto& looper) {
+        auto& state = *state_ptr;
+        {
+            std::lock_guard<std::mutex> lk(state.cs_mutex);
+            if (state.cs_generation != gen) {
+                return;
+            }
+            state.cs_running += 1;
+        }
+
+        auto res = compress_data(data, size);
+
+        std::lock_guard<std::mutex> lk(state.cs_mutex);
+        state.cs_running -= 1;
+        if (state.cs_generation == gen) {
+            state.cs_results.emplace_back(
+                compress_state::result{cc, std::move(res)});
+            state.cs_in_flight -= 1;
+            state.cs_have_results.store(true, std::memory_order_release);
+        }
+        state.cs_cond.notify_all();
+    });
+}
+
+void
+cell_container::collect_compressed()
+{
+    if (this->cc_compress_state == nullptr
+        || !this->cc_compress_state->cs_have_results.load(
+            std::memory_order_acquire))
+    {
+        return;
+    }
+
+    std::vector<compress_state::result> results;
+    {
+        std::lock_guard<std::mutex> lk(this->cc_compress_state->cs_mutex);
+        results.swap(this->cc_compress_state->cs_results);
+        this->cc_compress_state->cs_have_results.store(
+            false, std::memory_order_relaxed);
+    }
+    for (auto& res : results) {
+        auto* cc = res.r_chunk;
+        cc->cc_compressed = std::move(res.r_data.cd_data);
+        cc->cc_compressed_size = res.r_data.cd_size;
+        cc->cc_pending = false;
+        // A chunk that was read while it waited is in the cache, and what
+        // was read from it stays valid until the cache evicts it.
+        if (!this->in_cache(cc)) {
+            this->give_buffer(std::move(cc->cc_data), cc->cc_capacity);
+        }
+    }
+}
+
+void
+cell_container::cancel_compression()
+{
+    if (this->cc_compress_state == nullptr) {
+        return;
+    }
+
+    auto& state = *this->cc_compress_state;
+    std::unique_lock<std::mutex> lk(state.cs_mutex);
+    state.cs_generation += 1;
+    state.cs_in_flight = 0;
+    state.cs_results.clear();
+    state.cs_have_results.store(false, std::memory_order_relaxed);
+    state.cs_cond.wait(lk, [&state]() { return state.cs_running == 0; });
 }
 
 unsigned char*
@@ -99,27 +356,14 @@ cell_container::alloc(size_t amount)
     if (this->cc_last->available() < amount) {
         auto last = this->cc_last;
 
-        auto buflen = compressBound(last->cc_size);
-        if (this->cc_compress_buffer.capacity() < buflen) {
-            this->cc_compress_buffer.expand_to(buflen);
-        }
-
-        auto rc = compress2(this->cc_compress_buffer.u_in(),
-                            &buflen,
-                            last->cc_data.get(),
-                            last->cc_size,
-                            2);
-        require(rc == Z_OK);
-        this->cc_compress_buffer.resize(buflen);
-        last->cc_compressed = this->cc_compress_buffer.to_unique();
-        last->cc_compressed_size = buflen;
+        this->compress_chunk(last);
+        // After the wait in compress_chunk(), so the chunks that finished
+        // during it free their data before the new chunk takes a buffer.
+        this->collect_compressed();
 
         auto chunk_size = std::max(amount, DEFAULT_CHUNK_SIZE);
-        if (chunk_size > last->cc_capacity) {
-            last->cc_data = std::make_unique<unsigned char[]>(chunk_size);
-        }
         last->cc_next = std::make_unique<cell_chunk>(
-            this, std::move(last->cc_data), chunk_size);
+            this, this->take_buffer(chunk_size), chunk_size);
         this->cc_last = last->cc_next.get();
         // log_debug("allocating chunk with %lu %p", chunk_size, this->cc_last);
 
@@ -132,8 +376,14 @@ cell_container::alloc(size_t amount)
 void
 cell_container::load_chunk_into_cache(const cell_chunk* cc)
 {
+    this->collect_compressed();
     if (cc->cc_data != nullptr) {
-        return;
+        // A chunk waiting for the looper still has its data, but goes in
+        // the cache like a loaded one so that its data stays until it's
+        // evicted.
+        if (!cc->cc_pending || this->in_cache(cc)) {
+            return;
+        }
     }
 
     if (this->cc_chunk_cache[2] != nullptr) {
@@ -148,6 +398,7 @@ cell_container::load_chunk_into_cache(const cell_chunk* cc)
 void
 cell_container::reset()
 {
+    this->cancel_compression();
     this->cc_last = this->cc_first.get();
     this->cc_first->reset();
     this->cc_chunk_cache = {};

@@ -52,6 +52,21 @@ TEST_CASE("string_fragment::lt")
     CHECK_FALSE(sf2 < sf1);
 }
 
+TEST_CASE("string_fragment::eq")
+{
+    auto empty = string_fragment::from_const("");
+    auto invalid = string_fragment::invalid();
+
+    // An invalid fragment has no value, so it isn't equal to an empty one.
+    CHECK(empty == string_fragment::from_const(""));
+    CHECK(invalid == string_fragment::invalid());
+    CHECK_FALSE(invalid == empty);
+    CHECK_FALSE(empty == invalid);
+    CHECK(invalid != empty);
+    CHECK(string_fragment::from_const("abc") == string_fragment::from_const("abc"));
+    CHECK_FALSE(string_fragment::from_const("abc") == string_fragment::from_const("abd"));
+}
+
 TEST_CASE("split_lines")
 {
     std::string in1 = "Hello, World!";

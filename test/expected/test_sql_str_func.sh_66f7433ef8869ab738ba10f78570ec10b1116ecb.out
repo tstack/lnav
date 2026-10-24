@@ -1,0 +1,3 @@
+Row 0:
+  Column percentile(value, 50): 2.5
+  Column typeof(percentile(value, 50)): real

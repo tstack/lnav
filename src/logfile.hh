@@ -34,8 +34,11 @@
 
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -311,6 +314,122 @@ public:
     stmt_ids& get_stmt_ids() { return this->lf_stmt_ids; }
 
     const stmt_ids& get_stmt_ids() const { return this->lf_stmt_ids; }
+
+    /**
+     * One of the values the format's scan settled on for each line (its
+     * thread id or its opid, scan_batch_context::sbc_line_ids_set), so the
+     * log tables can answer log_thread_id and log_opid without reading and
+     * parsing the message again.  The scan works both out anyway, for the
+     * thread and opid time ranges and the bloom bits.
+     *
+     * Kept as runs of lines with the same value: each run lasts until the
+     * next one starts, and lines from ir_end on aren't known.  A run's id is
+     * the value's index in ir_values plus one, or 0 when the scan didn't
+     * record the lines (lines read while the format was being detected,
+     * formats that don't fill it in), which means: read the message.  Kept
+     * in step with lf_index like lf_stmt_ids.  Written only while the file
+     * is being indexed.
+     *
+     * The values point into lf_allocator, where the scan keeps its copies of
+     * thread ids and opids, so this is cleared whenever the arena is reset.
+     */
+    struct line_id_runs {
+        struct run {
+            uint32_t r_start;
+            uint32_t r_id;
+        };
+
+        std::vector<run> ir_runs;
+        uint32_t ir_end{0};
+        /** The values by id minus one; [0] is invalid, for "no value". */
+        std::vector<string_fragment> ir_values{string_fragment::invalid()};
+        std::unordered_map<string_fragment, uint32_t, frag_hasher, frag_equal>
+            ir_ids;
+        /** The run of the last get(), since lookups mostly go in order. */
+        mutable size_t ir_hint{0};
+
+        void clear()
+        {
+            this->ir_runs.clear();
+            this->ir_end = 0;
+            this->ir_values.resize(1);
+            this->ir_ids.clear();
+            this->ir_hint = 0;
+        }
+
+        /** Forgets the lines from [size] on. */
+        void truncate(size_t size);
+
+        /**
+         * The id for a value (nullopt for none).  The fragment must be in
+         * lf_allocator.
+         */
+        uint32_t id_for(const std::optional<string_fragment>& sf);
+
+        /**
+         * Records lines [from, to) as having the value with the id (0 for
+         * not recorded).  Lines between the last recorded one and [from]
+         * are not recorded.
+         */
+        void record(size_t from, size_t to, uint32_t id);
+
+        /**
+         * Records lines [from, to), continuations of the message before
+         * them, as having its value.
+         */
+        void continue_to(size_t from, size_t to);
+
+        /**
+         * The line's value, an invalid fragment when it has none, or nullptr
+         * when it wasn't recorded.
+         */
+        const string_fragment* get(size_t line) const;
+
+    private:
+        void push_run(uint32_t start, uint32_t id);
+    };
+
+    struct line_ids {
+        line_id_runs li_tids;
+        line_id_runs li_opids;
+
+        void clear()
+        {
+            this->li_tids.clear();
+            this->li_opids.clear();
+        }
+
+        void truncate(size_t size)
+        {
+            this->li_tids.truncate(size);
+            this->li_opids.truncate(size);
+        }
+
+        /** Records lines [from, to) as having the thread id and opid. */
+        void record(size_t from,
+                    size_t to,
+                    const std::optional<string_fragment>& tid,
+                    const std::optional<string_fragment>& opid)
+        {
+            this->li_tids.record(from, to, this->li_tids.id_for(tid));
+            this->li_opids.record(from, to, this->li_opids.id_for(opid));
+        }
+
+        /** Records lines [from, to) as not recorded. */
+        void record_unknown(size_t from, size_t to)
+        {
+            this->li_tids.record(from, to, 0);
+            this->li_opids.record(from, to, 0);
+        }
+
+        void continue_to(size_t from, size_t to)
+        {
+            this->li_tids.continue_to(from, to);
+            this->li_opids.continue_to(from, to);
+        }
+    };
+
+    const line_ids& get_line_ids() const { return this->lf_line_ids; }
 
     file_ssize_t get_content_size() const
     {
@@ -769,6 +888,13 @@ public:
 
     void set_opid_description(string_fragment opid, string_fragment desc);
 
+    /**
+     * Bumped when a file's opid map is changed outside of indexing (a line's
+     * opid or an opid's description set by the user), which the LOG view's
+     * index doesn't record.  The all_opids table keys its cache on it.
+     */
+    static std::atomic<uint64_t> ID_EDITS;
+
     void clear_logline_opid(uint32_t line_number);
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
@@ -957,6 +1083,7 @@ private:
     size_t lf_input_lines{0};
     int lf_index_generation{0};
     stmt_ids lf_stmt_ids;
+    line_ids lf_line_ids;
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};

@@ -1050,11 +1050,100 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT count(*) FROM all_thread_ids WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) AS eq_rows, (SELECT total FROM all_thread_ids WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) = (SELECT total FROM (SELECT * FROM all_thread_ids) WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) AS eq_same, (SELECT count(*) FROM all_thread_ids WHERE thread_id = 'no-such-thread') AS missing_rows, (SELECT count(*) FROM all_thread_ids WHERE thread_id IN (SELECT thread_id FROM all_thread_ids LIMIT 2)) AS in_rows, (SELECT sum(total) FROM all_thread_ids WHERE thread_id IN (SELECT thread_id FROM all_thread_ids)) = (SELECT sum(total) FROM all_thread_ids) AS in_same" \
     ${test_dir}/logfile_vpxd.0
 
+# all_thread_ids' hidden earliest_usecs/latest_usecs are earliest/latest in
+# microseconds.  A query with an ORDER BY skips the table's own sort by time
+# (SQLite sorts it anyway) and still comes out in its order.
+run_test ${lnav_test} -n \
+    -c ";SELECT count(*) AS n, sum(earliest_usecs = CAST(strftime('%s', earliest) AS INTEGER) * 1000000 + CAST(substr(earliest, 21, 6) AS INTEGER)) AS same_earliest, sum(latest_usecs = CAST(strftime('%s', latest) AS INTEGER) * 1000000 + CAST(substr(latest, 21, 6) AS INTEGER)) AS same_latest, (SELECT group_concat(thread_id) FROM (SELECT thread_id FROM all_thread_ids ORDER BY total DESC, thread_id)) IS (SELECT group_concat(thread_id) FROM (SELECT thread_id FROM (SELECT * FROM all_thread_ids LIMIT -1) ORDER BY total DESC, thread_id)) AS same_order FROM all_thread_ids" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_vpxd.0
+
+check_output "all_thread_ids' microsecond columns or ordered rows differ?" <<EOF
+n,same_earliest,same_latest,same_order
+7,7,7,1
+EOF
+
+# all_opids' hidden earliest_usecs/latest_usecs are earliest/latest in
+# microseconds.  A query with an ORDER BY skips the table's own sort by time
+# and still comes out in its order, and descriptions (made into text only when
+# read) are the same either way.
+run_test ${lnav_test} -n \
+    -c ";SELECT count(*) AS n, sum(earliest_usecs = CAST(strftime('%s', earliest) AS INTEGER) * 1000000 + CAST(substr(earliest, 21, 6) AS INTEGER)) AS same_earliest, sum(latest_usecs = CAST(strftime('%s', latest) AS INTEGER) * 1000000 + CAST(substr(latest, 21, 6) AS INTEGER)) AS same_latest, (SELECT group_concat(opid || ':' || coalesce(description, '')) FROM (SELECT opid, description FROM all_opids ORDER BY total DESC, opid)) IS (SELECT group_concat(opid || ':' || coalesce(description, '')) FROM (SELECT opid, description FROM (SELECT * FROM all_opids LIMIT -1) ORDER BY total DESC, opid)) AS same_order, count(description) AS described FROM all_opids" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_vpxd.0
+
+check_output "all_opids' microsecond columns, ordered rows, or descriptions differ?" <<EOF
+n,same_earliest,same_latest,same_order,described
+7,7,7,1,5
+EOF
+
 # An opid constraint looks the opids up instead of listing them all; the
 # rows match the unconstrained table's.
 run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT count(*) FROM all_opids WHERE opid = (SELECT min(opid) FROM all_opids)) AS eq_rows, (SELECT total FROM all_opids WHERE opid = (SELECT min(opid) FROM all_opids)) = (SELECT total FROM (SELECT * FROM all_opids) WHERE opid = (SELECT min(opid) FROM all_opids)) AS eq_same, (SELECT count(*) FROM all_opids WHERE opid = 'no-such-opid') AS missing_rows, (SELECT count(*) FROM all_opids WHERE opid IN (SELECT opid FROM all_opids LIMIT 3)) AS in_rows, (SELECT sum(total) FROM all_opids WHERE opid IN (SELECT opid FROM all_opids)) = (SELECT sum(total) FROM all_opids) AS in_same" \
     ${test_dir}/logfile_vpxd.0
+
+# all_thread_opids has a row per thread and opid with the same counts and
+# times as grouping all_logs by both, and looks threads up with = and IN.
+run_test ${lnav_test} -n \
+    -c ";CREATE TEMP TABLE a AS SELECT log_thread_id AS th, log_opid AS op, count(*) AS n, min(log_time_usecs) AS lo, max(log_time_usecs) AS hi, sum(log_level IN ('error', 'critical', 'fatal')) AS e, sum(log_level = 'warning') AS w FROM all_logs GROUP BY 1, 2" \
+    -c ";CREATE TEMP TABLE b AS SELECT thread_id AS th, opid AS op, total AS n, earliest_usecs AS lo, latest_usecs AS hi, errors AS e, warnings AS w FROM all_thread_opids" \
+    -c ";SELECT (SELECT count(*) FROM b) AS pairs, (SELECT count(*) FROM (SELECT * FROM a EXCEPT SELECT * FROM b)) AS only_logs, (SELECT count(*) FROM (SELECT * FROM b EXCEPT SELECT * FROM a)) AS only_table, (SELECT count(*) FROM all_thread_opids WHERE thread_id = (SELECT min(th) FROM b)) = (SELECT count(*) FROM b WHERE th = (SELECT min(th) FROM b)) AS eq_same, (SELECT count(*) FROM all_thread_opids WHERE thread_id IN (SELECT th FROM b WHERE th IS NOT NULL LIMIT 3)) = (SELECT count(*) FROM b WHERE th IN (SELECT th FROM b WHERE th IS NOT NULL LIMIT 3)) AS in_same, (SELECT count(*) FROM all_thread_opids WHERE thread_id = 'no-such-thread') AS missing, (SELECT count(description) FROM all_thread_opids) AS described" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_vpxd.0 \
+    ${test_dir}/logfile_glog.0
+
+check_output "all_thread_opids differs from grouping all_logs?" <<EOF
+pairs,only_logs,only_table,eq_same,in_same,missing,described
+14,0,0,1,1,0,5
+EOF
+
+# all_thread_ids and all_opids keep their rows merged across files between
+# queries, until the LOG view's index or the id maps change: appended lines,
+# an opid's description, and a line's opid set by hand all show up.
+head -6 ${test_dir}/logfile_vpxd.0 > all_ids_cache.log
+tail -n +7 ${test_dir}/logfile_vpxd.0 > all_ids_cache.rest
+run_test ${lnav_test} -n \
+    -c ";SELECT 'before' AS step, (SELECT count(*) FROM all_thread_ids) AS threads, (SELECT sum(total) FROM all_thread_ids) AS thread_total, (SELECT count(*) FROM all_opids) AS opids, (SELECT sum(total) FROM all_opids) AS opid_total, (SELECT sum(total) FROM all_thread_opids) AS pair_total" \
+    -c ":write-csv-to -" \
+    -c ":sh cat all_ids_cache.rest >> all_ids_cache.log" \
+    -c ":rebuild" \
+    -c ":rebuild" \
+    -c ";SELECT 'appended' AS step, (SELECT count(*) FROM all_thread_ids) AS threads, (SELECT sum(total) FROM all_thread_ids) AS thread_total, (SELECT count(*) FROM all_opids) AS opids, (SELECT sum(total) FROM all_opids) AS opid_total, (SELECT sum(total) FROM all_thread_opids) AS pair_total" \
+    -c ":write-csv-to -" \
+    -c ";UPDATE all_opids SET description = 'changed' WHERE opid = (SELECT min(opid) FROM all_opids)" \
+    -c ";SELECT (SELECT description FROM all_opids ORDER BY opid LIMIT 1) AS first_description" \
+    -c ":write-csv-to -" \
+    all_ids_cache.log
+
+check_output "all_thread_ids or all_opids kept stale rows?" <<EOF
+step,threads,thread_total,opids,opid_total,pair_total
+before,3,6,3,6,6
+step,threads,thread_total,opids,opid_total,pair_total
+appended,7,12,7,12,12
+first_description
+changed
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT count(*) AS opids FROM all_opids" \
+    -c ":write-csv-to -" \
+    -c ";UPDATE all_logs SET log_opid = 'user-op' WHERE log_line = 0" \
+    -c ";SELECT count(*) AS opids, sum(opid = 'user-op') AS user_op, (SELECT count(*) FROM all_thread_opids WHERE opid = 'user-op') AS user_pairs FROM all_opids" \
+    -c ":write-csv-to -" \
+    -c ";UPDATE all_logs SET log_opid = NULL WHERE log_line = 0" \
+    -c ";SELECT count(*) AS opids FROM all_opids" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_generic.0
+
+check_output "all_opids missed an opid set by hand?" <<EOF
+opids
+0
+opids,user_op,user_pairs
+1,1,1
+opids
+0
+EOF
 
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_format_values WHERE format = 'access_log'" \
@@ -1125,3 +1214,30 @@ c_ip,status_type,no_null_user
 192.168.202.254,integer,1
 EOF
 
+
+# The scan records each line's thread id and opid, so log_thread_id and
+# log_opid don't read the message again.  They're the same as what reading it
+# gives (log_format_values reads it first in the second subquery), for a text
+# and a JSON format, past the lines read while the format is detected.
+LINE_IDS_CHECK=";SELECT count(*) AS n, sum(c.th IS f.th) AS same_th, sum(c.op IS f.op) AS same_op, sum(c.th IS NOT NULL) AS th_set, sum(c.op IS NOT NULL) AS op_set FROM (SELECT log_line, log_thread_id AS th, log_opid AS op FROM all_logs) c JOIN (SELECT log_line, length(log_format_values) AS x, log_thread_id AS th, log_opid AS op FROM all_logs) f USING (log_line)"
+for i in $(seq 40); do cat ${test_dir}/logfile_asterisk.0; done > line-ids-text.0
+run_test ${lnav_test} -n \
+    -c "${LINE_IDS_CHECK}" \
+    -c ":write-csv-to -" \
+    line-ids-text.0
+
+check_output "cached thread ids or opids differ for a text format?" <<EOF
+n,same_th,same_op,th_set,op_set
+720,720,720,720,440
+EOF
+
+for i in $(seq 60); do cat ${test_dir}/logfile_postgres_json.json; done > line-ids-json.json
+run_test ${lnav_test} -n \
+    -c "${LINE_IDS_CHECK}" \
+    -c ":write-csv-to -" \
+    line-ids-json.json
+
+check_output "cached thread ids or opids differ for a JSON format?" <<EOF
+n,same_th,same_op,th_set,op_set
+360,360,360,360,300
+EOF

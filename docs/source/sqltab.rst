@@ -29,6 +29,7 @@ the following tables/views:
 * `all_metrics`_
 * `all_opids`_
 * `all_thread_ids`_
+* `all_thread_opids`_
 * `lnav_focused_msg`_
 * `http_status_codes`_
 * `regexp_capture(<string>, <regex>)`_
@@ -499,6 +500,24 @@ all_thread_ids
 The :code:`all_thread_ids` table contains information about all the thread
 identifiers that were found in logs.  Log formats can specify which field
 is a thread identifier with the :code:`thread-id-field` property.
+
+all_thread_opids
+----------------
+
+The :code:`all_thread_opids` table has a row for each thread and operation ID
+pair found in the logs: the operations each thread logged messages for, with the
+first and last time it did and how many messages, errors, and warnings it
+logged in each.  A thread's messages without an operation ID have a row with a
+:code:`NULL` opid.  It's built from the thread and operation IDs recorded when
+the logs were indexed, so it's quick to query even for large logs, and the
+rows for given threads can be looked up with :code:`thread_id = ?` or
+:code:`thread_id IN (...)`.  Like :code:`all_thread_ids`, it doesn't follow
+the filters.  For example, to find the operations a thread took part in:
+
+.. code-block:: custsqlite
+
+    ;SELECT opid, earliest, duration, total FROM all_thread_opids
+         WHERE thread_id = 'worker-1' ORDER BY earliest
 
 lnav_focused_msg
 ----------------

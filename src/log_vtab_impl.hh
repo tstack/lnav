@@ -428,6 +428,19 @@ public:
      */
     virtual bool knows_lines_for(int col) const { return false; }
 
+    /**
+     * Sets the column's value for the message at the line, if the table
+     * knows it without reading the message, and says whether it did.  Asked
+     * only when the message hasn't been read for the row.
+     */
+    virtual bool cached_column(int col,
+                               logfile* lf,
+                               uint64_t line_number,
+                               sqlite3_context* ctx)
+    {
+        return false;
+    }
+
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column>& cols) const {}

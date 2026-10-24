@@ -519,6 +519,17 @@ public:
 
     virtual void register_view(textview_curses* tc) { this->tss_view = tc; }
 
+    /**
+     * Resets this source's display options (the LOG view's line context,
+     * time offsets, ...) to their defaults so that lines can be rendered
+     * without them.  The returned function puts them back as they were.
+     * The caller must not let the screen be redrawn in between.
+     */
+    virtual std::function<void()> push_default_display()
+    {
+        return [] {};
+    }
+
     textview_curses* get_view() const { return this->tss_view; }
 
     virtual bool empty() const = 0;
@@ -899,6 +910,16 @@ public:
                                  std::vector<attr_line_t>& rows_out) override;
 
     void textview_value_for_row(vis_line_t line, attr_line_t& value_out);
+
+    /**
+     * Like listview_value_for_rows(), but as if the view's display options
+     * were at their defaults: no cursor, search hits, marks, or hidden
+     * fields, and the sub-source's own options reset (see
+     * text_sub_source::push_default_display()).  The options are restored
+     * before returning.
+     */
+    void default_value_for_rows(vis_line_t row,
+                                std::vector<attr_line_t>& rows_out);
 
     bool listview_is_row_selectable(const listview_curses& lv,
                                     vis_line_t row) override;

@@ -38,6 +38,7 @@
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
+#include "base/guard_util.hh"
 #include "base/time_util.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -1541,6 +1542,38 @@ textview_curses::apply_highlights(attr_line_t& al,
         // lines that are inserted at the beginning of the log view).
         auto lr = internal_hl ? body : orig_line;
         tc_highlight.second.annotate(al, lr);
+    }
+}
+
+void
+textview_curses::default_value_for_rows(vis_line_t row,
+                                        std::vector<attr_line_t>& rows_out)
+{
+    auto restore_sub = this->tc_sub_source == nullptr
+        ? std::function<void()>([] {})
+        : this->tc_sub_source->push_default_display();
+    auto saved_hide_fields = this->tc_hide_fields;
+    auto saved_mark_style = this->tc_mark_style;
+    // The raw bits: the bitset's variadic constructor would take a copy's
+    // argument as a flag.
+    auto saved_disabled = this->tc_disabled_highlights.bs_data;
+    auto restore = lnav::finally([&] {
+        this->tc_hide_fields = saved_hide_fields;
+        this->tc_mark_style = saved_mark_style;
+        this->tc_disabled_highlights.bs_data = saved_disabled;
+        restore_sub();
+    });
+
+    // Set the members directly: the setters would schedule a redraw.
+    this->tc_hide_fields = false;
+    this->tc_mark_style = std::nullopt;
+    // Searches are display state; user and configured highlights are kept.
+    this->tc_disabled_highlights.set(highlight_source_t::PREVIEW);
+    this->tc_disabled_highlights.set(highlight_source_t::NAMED_SEARCH);
+
+    for (auto& al : rows_out) {
+        this->textview_value_for_row(row, al);
+        ++row;
     }
 }
 

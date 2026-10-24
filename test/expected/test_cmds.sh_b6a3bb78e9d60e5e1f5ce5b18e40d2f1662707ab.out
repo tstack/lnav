@@ -4217,11 +4217,14 @@ For support questions, email:
   Return the current version of lnav
 
 
-[1m[4mlnav_view_lines[0m[4m([0m[4mview_name[0m[4m, [[0m[4mfirst_line[0m[4m], [[0m[4mlast_line[0m[4m], [[0m[4mformat[0m[4m])[0m
+[1mlnav_view_lines[0m([4mview_name[0m, [[4mfirst_line[0m], [[4mlast_line[0m], [[4mformat[0m], 
+[4m                  [0m[4m[[0m[4mdisplay[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  A table-valued function that renders the lines of a view as they
-  are shown on the screen.  The view's header lines, like the column
-  names in the DB view, come first with a NULL line number.
+                  A table-valued function that renders the lines of
+  a view, as the screen shows them but, by default, with the view's
+  display options at their defaults (see the display parameter).  The
+  view's header lines, like the column names in the DB view, come
+  first with a NULL line number.
 [4mParameters[0m
   [4mview_name[0m    The name of the view.
   [4mfirst_line[0m   The number of the first line to render,
@@ -4234,6 +4237,15 @@ For support questions, email:
                theme (see lnav_theme_css()) and has the line's file,
                format, and any errors in tooltips, or 'text' for plain
                text.  Defaults to 'ansi'.
+  [4mdisplay[0m      Which display options to render the
+               lines with: 'default' for the view's defaults, so the
+               lines don't change with how the view is set up (no
+               cursor, search hits, or bookmark styles, hidden fields
+               shown, and in the log view, no file-name, time, or
+               time-offset columns, so each message keeps its own
+               timestamp and level), or 'screen' for the lines as the
+               screen draws them.  Highlights and time conversions
+               apply either way.  Defaults to 'default'.
 [4mResults[0m
   [4mline[0m      The number of the line in the view, or NULL
             for a header line.

@@ -61,10 +61,10 @@ namespace {
 // vtab_module_json.hh's to_sqlite overload.
 const typed_json_path_container<logfile_activity::index_stats>
     index_stats_handlers = {
-        yajlpp::property_handler("wall-us")
-            .for_field(&logfile_activity::index_stats::is_wall_us),
-        yajlpp::property_handler("cpu-us")
-            .for_field(&logfile_activity::index_stats::is_cpu_us),
+        yajlpp::property_handler("wall-us").for_field(
+            &logfile_activity::index_stats::is_wall_us),
+        yajlpp::property_handler("cpu-us").for_field(
+            &logfile_activity::index_stats::is_cpu_us),
         yajlpp::property_handler("memory-bytes")
             .for_field(&logfile_activity::index_stats::is_memory_bytes),
 };
@@ -113,9 +113,11 @@ CREATE TABLE lnav_db.lnav_file (
         auto lf = *vc.iter;
         const struct stat& st = lf->get_stat();
         const auto& name = lf->get_filename();
-        auto format = lf->get_format();
-        const char* format_name = format != nullptr ? format->get_name().get()
-                                                    : nullptr;
+        const auto* format = lf->get_format_ptr();
+        std::optional<intern_string_t> format_name;
+        if (format != nullptr) {
+            format_name = format->get_name();
+        }
 
         switch (col) {
             case 0:
@@ -626,8 +628,8 @@ value_stats_to_sqlite(sqlite3_context* ctx,
             quantile(99);
             break;
         case value_stats_col::distinct_estimate: {
-            auto est
-                = stats != nullptr ? stats->distinct_estimate() : std::nullopt;
+            auto est = stats != nullptr ? stats->distinct_estimate()
+                                        : std::nullopt;
             if (est) {
                 to_sqlite(ctx, (int64_t) std::llround(est.value()));
             } else {
@@ -672,12 +674,12 @@ CREATE TABLE lnav_db.lnav_file_value_stats (
         std::vector<stats_row>::iterator c_iter;
         std::vector<stats_row> c_rows;
 
-        cursor(sqlite3_vtab* vt)
-            : base({vt})
+        cursor(sqlite3_vtab* vt) : base({vt})
         {
-            const auto& fc = ((vtab_module<tvt_no_update<lnav_file_value_stats>>::
-                                   vtab*) vt)
-                                 ->v_impl.lfvs_collection;
+            const auto& fc
+                = ((vtab_module<tvt_no_update<lnav_file_value_stats>>::vtab*)
+                       vt)
+                      ->v_impl.lfvs_collection;
 
             for (const auto& lf : fc.fc_files) {
                 const auto* format = lf->get_format_ptr();
@@ -725,9 +727,7 @@ CREATE TABLE lnav_db.lnav_file_value_stats (
         }
     };
 
-    explicit lnav_file_value_stats(file_collection& fc) : lfvs_collection(fc)
-    {
-    }
+    explicit lnav_file_value_stats(file_collection& fc) : lfvs_collection(fc) {}
 
     int get_column(const cursor& vc, sqlite3_context* ctx, int col)
     {
@@ -821,8 +821,8 @@ CREATE TABLE lnav_db.lnav_format_value_stats (
                         continue;
                     }
 
-                    const auto key = std::make_pair(
-                        format->get_name().unwrap(), meta.lvm_name.unwrap());
+                    const auto key = std::make_pair(format->get_name().unwrap(),
+                                                    meta.lvm_name.unwrap());
                     auto iter = row_indexes.find(key);
                     if (iter == row_indexes.end()) {
                         iter = row_indexes.emplace(key, this->c_rows.size())

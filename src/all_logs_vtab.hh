@@ -73,6 +73,14 @@ public:
 
     bool knows_lines_for(int col) const override;
 
+    /** Has the statement map check its statements for the scan (alv_scan_started). */
+    void filter(log_cursor& lc, logfile_sub_source& lss) override;
+
+    bool cached_column(int col,
+                       logfile* lf,
+                       uint64_t line_number,
+                       sqlite3_context* ctx) override;
+
     /**
      * Appends the rows logged by the statements with the log_msg_schemas,
      * from lnav's per-line statement map (log_stmt_stats.cc), and appends
@@ -84,6 +92,14 @@ public:
                                     std::vector<vis_line_t>& lines_out,
                                     std::vector<std::string>& unknown_out);
     static schema_lines_t alv_schema_lines;
+
+    /**
+     * Called as a scan starts (each cursor's xFilter, after any lookup in
+     * the statement map), so the map checks once per scan, not once per row,
+     * whether its statements are still current.  Set by the lnav binary.
+     */
+    using scan_started_t = void (*)();
+    static scan_started_t alv_scan_started;
 
     /** The statement map hasn't matched the line yet, or its answer is stale. */
     struct line_stmt_unmapped {};
@@ -139,6 +155,7 @@ private:
     logline_value_meta alv_src_meta;
     logline_value_meta alv_stacktrace_meta;
     logline_value_meta alv_format_values_meta;
+    logline_value_meta alv_schema_kind_meta;
 };
 
 #endif  // LNAV_ALL_LOGS_VTAB_HH
