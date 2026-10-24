@@ -2,6 +2,18 @@
 ## lnav v0.15.0
 
 Features:
+* The source locations in stack trace frames are now underlined
+  in the LOG view and clicking one opens the file at that line
+  in your editor.  Java/Kotlin, Python, Rust, Go, Node.js, .NET,
+  Ruby, PHP, and C/C++ sanitizer/gdb traces are recognized, and
+  patterns for other languages can be added under the
+  `/log/stack-frames` configuration property.  Relative paths
+  are looked for in the directories given to `:add-source-path`.
+  The new `source_find_file()` SQL function does the same
+  lookup.  In the HTML from `lnav_view_lines()`, each location is
+  an `<a class="-lnav_stack-frame">` whose `data-lnav-frame`
+  attribute has the path, line, and column as JSON, with an
+  `href` to the file when it exists on this machine.
 * File patterns given on the command-line or to the `:open`
   command can now contain a `**` component to do a hierarchical
   glob search.  For example, the pattern `/var/log/**/*.log`

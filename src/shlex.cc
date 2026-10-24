@@ -41,15 +41,18 @@ using namespace lnav::roles::literals;
 std::string
 shlex::escape(std::string s)
 {
+#if defined(__MSYS__)
     static const auto SH_CHARS = lnav::pcre2pp::code::from_const("'");
 
-    return SH_CHARS.replace(s,
-#if defined(__MSYS__)
-                            "`'"
+    return SH_CHARS.replace(s, "`'");
 #else
-                            "\\'"
+    // The tokenizer reads a backslash as an escape everywhere, even in single
+    // quotes, so a backslash has to be escaped too (a Windows path in a stack
+    // trace lost its backslashes).
+    static const auto SH_CHARS = lnav::pcre2pp::code::from_const(R"([\\'])");
+
+    return SH_CHARS.replace(s, R"(\\\0)");
 #endif
-    );
 }
 
 attr_line_t

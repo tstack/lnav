@@ -170,6 +170,38 @@ const xml_entity_map& get_xml_entity_map();
 
 const emoji_map& get_emoji_map();
 
+/**
+ * Appends [content] to [out], an std::string or auto_buffer, with the
+ * characters that are special in HTML replaced by entities.
+ */
+template<typename T>
+void
+append_escaped_html(T& out, string_fragment content)
+{
+    for (const auto ch : content) {
+        switch (ch) {
+            case '"':
+                out.append("&quot;");
+                break;
+            case '\'':
+                out.append("&apos;");
+                break;
+            case '<':
+                out.append("&lt;");
+                break;
+            case '>':
+                out.append("&gt;");
+                break;
+            case '&':
+                out.append("&amp;");
+                break;
+            default:
+                out.push_back(ch);
+                break;
+        }
+    }
+}
+
 text_auto_buffer escape_html(string_fragment content);
 
 /**

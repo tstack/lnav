@@ -340,6 +340,42 @@ so the content can be styled as desired.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
 
+.. _config_stack_frames:
+
+Stack Frames (v0.15.0+)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The source locations in the frames of stack traces are underlined in the
+LOG view and clicking one opens the source file at that line in your
+editor.  The frames are found with the regular expressions in the
+:code:`/log/stack-frames` configuration tree.  Patterns for Java and
+Kotlin, Python, Rust, Go, Node.js, .NET, Ruby, PHP, and C/C++ sanitizer
+and gdb traces are built in.  A pattern has the following capture names:
+
+:file: The path to the source file.  Required.
+:line: The line number.  Required.
+:col: The column number, which is included in the underlined text.
+:pkg: A dotted package name, like :code:`com.example.`, that is turned
+  into the directories that contain :code:`file`.  Java frames only name
+  the file, so this is needed to tell apart files with the same name in
+  different packages.
+
+When clicked, a path is resolved with the
+:ref:`source_find_file()<source_find_file>` SQL function.  An
+absolute path to a file that exists is used as-is.  Otherwise, the file
+is looked for in the directories given to the
+:ref:`:add-source-path<add_source_path>` command.  The file's whole path
+is tried first, then shorter and shorter suffixes of it, so relative
+paths and paths from the machine that produced the trace are found too.
+
+For example, to add a pattern for Elixir stack traces, you would run:
+
+.. code-block:: lnav
+
+   :config /log/stack-frames/elixir/pattern ^\s+\([\w.]+(?: [\d.]+)?\) (?<file>[^\s:]+\.exs?):(?<line>\d+):
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/stack-frames/patternProperties/^([\w\-\.]+)$
+
 Demultiplexing (v0.12.3+)
 -------------------------
 

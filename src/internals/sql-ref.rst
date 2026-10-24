@@ -844,7 +844,7 @@ basename(*path*)
       bar
 
   **See Also**
-    :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
+    :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`, :ref:`source_find_file`
 
 ----
 
@@ -1244,7 +1244,7 @@ dirname(*path*)
       .
 
   **See Also**
-    :ref:`basename`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
+    :ref:`basename`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`, :ref:`source_find_file`
 
 ----
 
@@ -1943,7 +1943,7 @@ joinpath(*path*)
       /bar
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
+    :ref:`basename`, :ref:`dirname`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`, :ref:`source_find_file`
 
 ----
 
@@ -3540,7 +3540,7 @@ path_match(*pattern*, *path*)
       1
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`, :ref:`source_find_file`
 
 ----
 
@@ -3853,7 +3853,7 @@ readlink(*path*)
     * **path\*** --- The path to the symbolic link.
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`realpath`
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`realpath`, :ref:`source_find_file`
 
 ----
 
@@ -3871,7 +3871,7 @@ realpath(*path*)
     * **path\*** --- The path to resolve.
 
   **See Also**
-    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`source_find_file`
 
 ----
 
@@ -4294,6 +4294,24 @@ sign(*num*)
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`percentile_disc_agg`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`square`, :ref:`sum`, :ref:`total`
+
+----
+
+
+.. _source_find_file:
+
+source_find_file(*path*)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Finds a source file, like one named in a stack trace.  An absolute path to an existing file is returned as-is.  Otherwise, the file with the same name in the source paths given to :add-source-path that shares the most trailing directories with the path is returned.  A relative path, like a Java package's, has to match at least the file and its directory, and a Windows path is read with '\' as the separator.  Returns NULL if the file could not be found or the match is ambiguous, and an error while the source paths are being scanned.
+
+  **PRQL Name**: fs.source_find_file
+
+  **Parameters**
+    * **path\*** --- The path to find.
+
+  **See Also**
+    :ref:`basename`, :ref:`dirname`, :ref:`joinpath`, :ref:`path_match`, :ref:`readlink`, :ref:`realpath`
 
 ----
 

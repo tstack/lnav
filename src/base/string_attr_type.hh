@@ -454,6 +454,15 @@ extern const string_attr_type<std::string> SAT_UNSUPPORTED;
 extern const string_attr_type<int64_t> SA_LEVEL;
 extern const string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 extern const string_attr_type<text_format_t> SA_QUOTED_TEXT;
+/**
+ * A source location in a stack frame, as JSON: {"path": ..., "line": ...,
+ * "col": ...}, the path as the trace gives it (with a Java package's
+ * directories).  The HTML output carries it for clients that open the
+ * source themselves.
+ */
+extern const string_attr_type<std::string> SA_STACK_FRAME;
+/** A file:// link for a stack frame whose path is a file on this machine. */
+extern const string_attr_type<std::string> SA_STACK_FRAME_HREF;
 
 extern const string_attr_type<std::string> VC_ANCHOR;
 extern const string_attr_type<role_t> VC_ROLE;

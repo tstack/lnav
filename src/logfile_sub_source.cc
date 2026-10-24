@@ -28,7 +28,9 @@
  */
 
 #include <algorithm>
+#include <charconv>
 #include <chrono>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <optional>
@@ -543,6 +545,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             }
         }
     }
+
+    this->add_stack_frame_links();
 
     value_out = this->lss_token_al.al_string;
 
@@ -5080,6 +5084,190 @@ logfile_sub_source::reload_config(error_reporter& reporter)
         case logfile_sub_source_ns::time_column_feature_t::Enabled:
             break;
     }
+
+    auto* mut_cfg = injector::get<logfile_sub_source_ns::config*>();
+    for (auto& [name, sfd] : mut_cfg->c_stack_frames) {
+        sfd.sfd_valid = false;
+        if (sfd.sfd_pattern.pp_value == nullptr) {
+            continue;
+        }
+
+        const auto& pat = sfd.sfd_pattern.pp_value;
+        sfd.sfd_file_index = pat->name_index("file");
+        sfd.sfd_line_index = pat->name_index("line");
+        sfd.sfd_col_index = pat->name_index("col");
+        sfd.sfd_pkg_index = pat->name_index("pkg");
+        if (sfd.sfd_file_index < 0) {
+            reporter(&sfd.sfd_pattern,
+                     lnav::console::user_message::error(
+                         "'file' capture not found in stack frame pattern"));
+            continue;
+        }
+        if (sfd.sfd_line_index < 0) {
+            reporter(&sfd.sfd_pattern,
+                     lnav::console::user_message::error(
+                         "'line' capture not found in stack frame pattern"));
+            continue;
+        }
+        sfd.sfd_valid = true;
+    }
+}
+
+void
+logfile_sub_source::add_stack_frame_links()
+{
+    static const auto& cfg
+        = injector::get<const logfile_sub_source_ns::config&>();
+    // Bounds the cost for very long lines, which aren't stack frames.
+    static constexpr auto MAX_SCAN_LENGTH = 8 * 1024;
+
+    auto& al = this->lss_token_al;
+    auto body = find_string_attr_range(al.al_attrs, &SA_BODY);
+    if (!body.is_valid()) {
+        // The value in a JSON log's detail line, like "  exc: <value>", so
+        // that the patterns can be anchored to the start of it.
+        body = find_string_attr_range(al.al_attrs, &SA_EXTRA_CONTENT);
+    }
+    if (!body.is_valid()) {
+        body = line_range{0, static_cast<int>(al.al_string.size())};
+    }
+    if (body.length() > MAX_SCAN_LENGTH) {
+        return;
+    }
+
+    auto body_sf = string_fragment::from_str_range(
+        al.al_string, body.lr_start, body.lr_end);
+    struct frame_link {
+        line_range fl_range;
+        std::string fl_command;
+        /** The location as JSON, for SA_STACK_FRAME. */
+        std::string fl_frame;
+        /** A file:// link, when the path is a file on this machine. */
+        std::string fl_href;
+    };
+    std::vector<frame_link> links;
+    for (const auto& [name, sfd] : cfg.c_stack_frames) {
+        if (!sfd.sfd_enabled || !sfd.sfd_valid) {
+            continue;
+        }
+
+        auto res = sfd.sfd_pattern.pp_value->capture_from(body_sf).for_each(
+            [this, &sfd, &links](const lnav::pcre2pp::match_data& md) {
+                auto file_sf = md[sfd.sfd_file_index];
+                auto line_sf = md[sfd.sfd_line_index];
+                if (!file_sf || !line_sf || file_sf->empty()) {
+                    return;
+                }
+
+                auto end = line_sf->sf_end;
+                std::optional<string_fragment> col_sf;
+                if (sfd.sfd_col_index >= 0) {
+                    col_sf = md[sfd.sfd_col_index];
+                    if (col_sf) {
+                        end = col_sf->sf_end;
+                    }
+                }
+                auto lr = line_range{file_sf->sf_begin, end};
+                for (const auto& link : links) {
+                    if (link.fl_range.intersects(lr)) {
+                        return;
+                    }
+                }
+
+                std::string path;
+                if (sfd.sfd_pkg_index >= 0) {
+                    auto pkg_sf = md[sfd.sfd_pkg_index];
+                    if (pkg_sf) {
+                        path = pkg_sf->to_string();
+                        std::replace(path.begin(), path.end(), '.', '/');
+                    }
+                }
+                path.append(file_sf->data(), file_sf->length());
+
+                // As numbers, when a pattern's captures are digits.
+                auto gen_number = [](yajlpp_map& root,
+                                     const char* key,
+                                     const string_fragment& sf) {
+                    int64_t num = 0;
+                    auto [ptr, ec] = std::from_chars(sf.begin(), sf.end(), num);
+                    if (ec == std::errc{} && ptr == sf.end()) {
+                        root.gen(key);
+                        root.gen(num);
+                    }
+                };
+                yajlpp_gen gen;
+                {
+                    yajlpp_map root(gen);
+                    root.gen("path");
+                    root.gen(path);
+                    gen_number(root, "line", line_sf.value());
+                    if (col_sf) {
+                        gen_number(root, "col", col_sf.value());
+                    }
+                }
+                auto href = std::string();
+                if (this->is_local_source_file(path)) {
+                    href = fmt::format(FMT_STRING("file://{}#L{}"),
+                                       path,
+                                       line_sf->to_string_view());
+                }
+                links.emplace_back(frame_link{
+                    lr,
+                    fmt::format(FMT_STRING("|lnav-stack-frame-handler "
+                                           "$mouse_button '{}' {}"),
+                                shlex::escape(path),
+                                line_sf->to_string_view()),
+                    gen.to_string_fragment().to_string(),
+                    std::move(href),
+                });
+            });
+        if (res.isErr()) {
+            auto err = res.unwrapErr();
+            log_error("stack frame pattern %s failed: %s",
+                      name.c_str(),
+                      err.get_message().c_str());
+        }
+    }
+
+    for (auto& link : links) {
+        al.with_attr({link.fl_range, VC_STYLE.value(text_attrs::with_underline())})
+            .with_attr({link.fl_range,
+                        VC_COMMAND.value(ui_command{
+                            source_location{},
+                            std::move(link.fl_command),
+                        })})
+            .with_attr(
+                {link.fl_range, SA_STACK_FRAME.value(std::move(link.fl_frame))});
+        if (!link.fl_href.empty()) {
+            al.with_attr({link.fl_range,
+                          SA_STACK_FRAME_HREF.value(std::move(link.fl_href))});
+        }
+    }
+}
+
+bool
+logfile_sub_source::is_local_source_file(const std::string& path)
+{
+    // Only absolute paths: a relative one is relative to wherever the
+    // program ran, not here.
+    if (path.empty() || path[0] != '/') {
+        return false;
+    }
+
+    // Lines are drawn over and over, so the answers are kept.  The cache is
+    // dropped when it gets big, rather than tracking what's in use.
+    static constexpr size_t MAX_CACHED = 1024;
+    auto iter = this->lss_local_source_files.find(path);
+    if (iter != this->lss_local_source_files.end()) {
+        return iter->second;
+    }
+    if (this->lss_local_source_files.size() >= MAX_CACHED) {
+        this->lss_local_source_files.clear();
+    }
+    std::error_code ec;
+    auto exists = std::filesystem::is_regular_file(path, ec);
+    this->lss_local_source_files.emplace(path, exists);
+    return exists;
 }
 
 void

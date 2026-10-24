@@ -1,0 +1,9 @@
+[
+    {
+        "abs_path": "{test_dir}/log2src/python/log_example.py",
+        "rel_path": "{test_dir}/log2src/java/com/example/net/Server.java",
+        "foreign_path": "{test_dir}/log2src/java/com/example/net/Server.java",
+        "go_path": "{test_dir}/log2src/go/cmd/server/main.go",
+        "missing_path": null
+    }
+]

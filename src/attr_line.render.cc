@@ -327,6 +327,7 @@ for_each_run(const attr_line_t& al,
         run.sr_parts.clear();
         run.sr_href = nullptr;
         run.sr_id = nullptr;
+        run.sr_frame = nullptr;
         run.sr_notes.clear();
         run.sr_text.clear();
 
@@ -429,6 +430,12 @@ for_each_run(const attr_line_t& al,
                 add_attrs(style_part::kind_t::bg, ta);
             } else if (attr.sa_type == &VC_HYPERLINK) {
                 run.sr_href = &attr.sa_value.get<std::string>();
+            } else if (attr.sa_type == &SA_STACK_FRAME_HREF) {
+                if (run.sr_href == nullptr) {
+                    run.sr_href = &attr.sa_value.get<std::string>();
+                }
+            } else if (attr.sa_type == &SA_STACK_FRAME) {
+                run.sr_frame = &attr.sa_value.get<std::string>();
             } else if (attr.sa_type == &VC_ANCHOR) {
                 if (start == static_cast<size_t>(attr_range.lr_start)) {
                     run.sr_id = &attr.sa_value.get<std::string>();

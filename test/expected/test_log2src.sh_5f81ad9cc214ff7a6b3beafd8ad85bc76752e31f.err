@@ -1,0 +1,7 @@
+[1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/log/stack-frames/no-line/pattern[0m”
+ [1m[31mreason[0m: 'line' capture not found in stack frame pattern
+[36m --> [0m[1m{test_dir}/bad-config-stack-frame/configs/invalid-stack-frame/config.json[0m:6
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/no-line/pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.

@@ -59,6 +59,10 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
+
 extern char** environ;
 
 static std::optional<bool>
@@ -206,6 +210,40 @@ sql_realpath(const char* path)
     resolved_path.resize(strlen(resolved_path.in()));
 
     return text_auto_buffer{std::move(resolved_path)};
+}
+
+static std::optional<std::string>
+sql_source_find_file(const char* path)
+{
+    if (path == nullptr || path[0] == '\0') {
+        return std::nullopt;
+    }
+
+    auto fs_path = std::filesystem::path(path);
+    std::error_code ec;
+    if (fs_path.is_absolute() && std::filesystem::is_regular_file(fs_path, ec))
+    {
+        return fs_path.string();
+    }
+
+#ifdef HAVE_RUST_DEPS
+    // While log2src scans the source, it holds the lock on its source tree, so
+    // looking the file up would block lnav's main loop until the scan is done
+    // (a click on a stack frame right after a save, when an editor re-sends
+    // :add-source-path).  Say so instead, like source_log_stmt().
+    if (lnav_rs_ext::get_status().status == lnav_rs_ext::Status::working) {
+        throw sqlite_func_error(
+            "the source is being scanned (:add-source-path); files can be "
+            "found once that's done");
+    }
+
+    auto found = static_cast<std::string>(lnav_rs_ext::find_src_file(path));
+    if (!found.empty()) {
+        return found;
+    }
+#endif
+
+    return std::nullopt;
 }
 
 struct shell_exec_options {
@@ -525,6 +563,26 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                 .with_prql_path({"fs", "realpath"})
                 .with_parameter({"path", "The path to resolve."})
                 .with_tags({"filename"})),
+
+        sqlite_func_adapter<decltype(&sql_source_find_file),
+                            sql_source_find_file>::
+            builder(
+                help_text("source_find_file",
+                          "Finds a source file, like one named in a stack "
+                          "trace.  An absolute path to an existing file is "
+                          "returned as-is.  Otherwise, the file with the same "
+                          "name in the source paths given to :add-source-path "
+                          "that shares the most trailing directories with the "
+                          "path is returned.  A relative path, like a Java "
+                          "package's, has to match at least the file and its "
+                          "directory, and a Windows path is read with '\\' as "
+                          "the separator.  Returns NULL if the file could not "
+                          "be found or the match is ambiguous, and an error "
+                          "while the source paths are being scanned.")
+                    .sql_function()
+                    .with_prql_path({"fs", "source_find_file"})
+                    .with_parameter({"path", "The path to find."})
+                    .with_tags({"filename"})),
 
         sqlite_func_adapter<decltype(&sql_shell_exec), sql_shell_exec>::builder(
             help_text("shell_exec",

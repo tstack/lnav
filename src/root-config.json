@@ -36,6 +36,38 @@
                 "handler": "|pg-annotate-errors"
             }
         },
+        "stack-frames": {
+            "java": {
+                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)[\\w$]+\\.[\\w$<>]+\\((?<file>[^:()]+):(?<line>\\d+)\\)"
+            },
+            "python": {
+                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)"
+            },
+            "rust": {
+                "pattern": "(?:panicked at (?:'.*', )?|^\\s+at )(?<file>[^\\s:'\"()]+\\.rs):(?<line>\\d+)(?::(?<col>\\d+))?"
+            },
+            "go": {
+                "pattern": "^\\s+(?<file>/\\S+\\.go):(?<line>\\d+)"
+            },
+            "node": {
+                "pattern": "^\\s+at (?:.+ \\()?(?:file://)?(?<file>[^\\s()]+\\.[cm]?[jt]sx?):(?<line>\\d+):(?<col>\\d+)\\)?"
+            },
+            "dotnet": {
+                "pattern": "^\\s+at .+ in (?<file>.+\\.(?:cs|fs|vb)):line (?<line>\\d+)"
+            },
+            "ruby": {
+                "pattern": "(?<file>[^\\s:]+\\.rb):(?<line>\\d+):in\\b"
+            },
+            "php": {
+                "pattern": "#\\d+ (?<file>[^\\s()]+\\.php)\\((?<line>\\d+)\\)"
+            },
+            "php-error": {
+                "pattern": " in (?<file>/\\S+\\.php)(?: on line |:)(?<line>\\d+)"
+            },
+            "cxx": {
+                "pattern": "^\\s*#\\d+\\s.*?\\s(?<file>[^\\s:()]+\\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|m|mm)):(?<line>\\d+)(?::(?<col>\\d+))?"
+            }
+        },
         "demux": {
             "container": {
                 "pattern": "^(?:\\x1b\\[\\d*K)?(?<mux_id>[a-zA-Z0-9][\\@a-zA-Z0-9_\\.\\-]*)\\s+\\| (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{9}Z )?(?<body>.*)"

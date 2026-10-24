@@ -222,3 +222,48 @@ run_cap_test ${lnav_test} -n \
     -c "${MEASURE_CHECK}" \
     -c ":write-csv-to -" \
     log2src-meter.1
+
+# The source locations in stack frames are underlined.  Frames without a
+# file, like "Unknown Source" and "Native Method", and text that only looks
+# like a location are not.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, 40, 'html') WHERE content LIKE '%underline%'" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_stack_frames.0
+
+# In the HTML, each frame is an anchor with its location as JSON
+# (data-lnav-frame), for clients that open the source themselves, and a
+# file:// link when its path is a file here.
+printf '2024-03-01T10:00:03.000Z ERROR go server panicked\n\t%s:7 +0x1d\n\t/nope/main.go:9 +0x2a\n' \
+    "${test_dir}/log2src/go/cmd/server/main.go" > stack-frame-local.log
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, 5, 'html') WHERE content LIKE '%stack-frame%'" \
+    -c ":write-raw-to -" \
+    stack-frame-local.log
+
+# In a JSON log, a trace in a field is shown on detail lines, like
+# "  exc: <frame>", and the patterns are matched against the value.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, 10, 'html') WHERE content LIKE '%underline%'" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_stack_frames.json
+
+# source_find_file() takes an existing absolute path as-is and looks for
+# others in the source paths, by their full path and then by their suffixes,
+# for any language.
+run_cap_test ${lnav_test} -nN \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ":add-source-path ${test_dir}/log2src/go" \
+    -c ";SELECT source_find_file('${test_dir}/log2src/python/log_example.py') AS abs_path, source_find_file('com/example/net/Server.java') AS rel_path, source_find_file('/build/agent/work/com/example/net/Server.java') AS foreign_path, source_find_file('./cmd/server/main.go') AS go_path, source_find_file('nope/Missing.java') AS missing_path" \
+    -c ":write-json-to -"
+
+run_cap_test ${lnav_test} -nN \
+    -c "|lnav-stack-frame-handler right 'com/example/net/Server.java' 10"
+
+run_cap_test ${lnav_test} -nN \
+    -c "|lnav-stack-frame-handler left 'nope/Missing.java' 10"
+
+# A stack frame pattern needs the 'file' and 'line' captures.
+run_cap_test ${lnav_test} -W -n \
+    -I ${test_dir}/bad-config-stack-frame \
+    ${test_dir}/logfile_stack_frames.0

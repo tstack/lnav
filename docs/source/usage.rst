@@ -419,6 +419,18 @@ Context lines are visually distinguished from matched lines using the
 Log-oriented Debugging
 ----------------------
 
+Stack Traces
+^^^^^^^^^^^^
+
+The source locations in the frames of stack traces, like
+:code:`at com.example.Server.run(Server.java:42)` or
+:code:`File "/app/main.py", line 26`, are underlined in the LOG view.
+Clicking one opens the source file at that line in your editor.  Relative
+paths, like those in Java and Rust traces, are looked for in the
+directories added with :ref:`:add-source-path<add_source_path>`.  See
+:ref:`config_stack_frames` for the supported languages and how to add
+others.
+
 Breakpoints
 ^^^^^^^^^^^
 

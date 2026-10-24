@@ -1,0 +1,10 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "log": {
+        "stack-frames": {
+            "no-line": {
+                "pattern": "^\\s+at (?<file>\\S+\\.foo)"
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+2024-03-01T10:00:00.000Z ERROR java worker failed
+java.lang.IllegalStateException: boom
+	at com.foo.Bar$1.run(Bar.java:42)
+	at com.foo.Bar$Inner$2.call(Bar.java:55)
+	at com.foo.Bar.lambda$main$0(Bar.java:12)
+	at app//com.foo.Bar$1.<init>(Bar.java:40)
+	at com.foo.Bar$$Lambda$14/0x0000000800c03000.run(Unknown Source)
+	at jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+2024-03-01T10:00:01.000Z ERROR python handler failed
+Traceback (most recent call last):
+  File "/app/svc/handler.py", line 26, in main
+    helper.fail_now()
+ZeroDivisionError: division by zero
+2024-03-01T10:00:02.000Z ERROR rust worker panicked
+thread 'main' panicked at src/main.rs:2:5:
+stack backtrace:
+   0: std::panicking::begin_panic
+             at ./src/lib.rs:10:5
+2024-03-01T10:00:03.000Z ERROR go server panicked
+goroutine 1 [running]:
+main.main()
+	/home/user/go/src/app/main.go:12 +0x1d
+2024-03-01T10:00:04.000Z ERROR node request failed
+TypeError: Cannot read properties of undefined
+    at Object.<anonymous> (/app/index.js:3:9)
+    at Module._compile (node:internal/modules/cjs/loader:1105:14)
+2024-03-01T10:00:05.000Z ERROR dotnet job failed
+System.InvalidOperationException: boom
+   at App.Worker.Run() in /src/App/Worker.cs:line 42
+2024-03-01T10:00:06.000Z ERROR ruby task failed
+/app/lib/foo.rb:10:in 'Foo#bar': boom (RuntimeError)
+	from /app/lib/main.rb:3:in `<main>'
+2024-03-01T10:00:07.000Z ERROR php request failed
+#0 /var/www/src/Controller.php(12): App\Svc->run()
+2024-03-01T10:00:08.000Z ERROR asan report
+    #0 0x4a4f2d in main /src/test.cc:5:3
+2024-03-01T10:00:09.000Z INFO connected to db at 10.0.0.1:5432 in 3ms

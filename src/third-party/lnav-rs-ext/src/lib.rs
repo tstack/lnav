@@ -379,6 +379,8 @@ mod ffi {
 
         fn get_log_statements_for(file: &str) -> Vec<FindLogResult>;
 
+        fn find_src_file(path: &str) -> String;
+
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
 
         fn set_one_time_password() -> String;
@@ -712,6 +714,17 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
         retval.extend(stmts.statements().map(|src_ref| src_ref.into()));
     }
     retval
+}
+
+/// Find a file under the source roots, like one named in a stack trace.  The result is
+/// empty if the file could not be found.
+fn find_src_file(path_str: &str) -> String {
+    let matcher = LOG_MATCHER.read().unwrap();
+
+    matcher
+        .find_file(Path::new(path_str))
+        .map(|path| path.to_string_lossy().to_string())
+        .unwrap_or_default()
 }
 
 fn init_ext() {

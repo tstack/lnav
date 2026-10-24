@@ -1,0 +1,13 @@
+[1m[31m✘[0m [1m[31merror[0m: Unable to locate source file: nope/Missing.java
+ [1m[31mreason[0m: The file does not exist and was not found in the source paths
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m|lnav-stack-frame-handler left 'nope/Missing.java' 10[0m
+[36m --> [0m[1m../test/cfg/test_log2src.sh/.lnav/formats/default/lnav-stack-frame-handler.lnav[0m:11
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'Unable to locate source file: '[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40m$frame_path[0m[37m[40m,                [0m
+[36m | [0m[37m[40m                    [0m[35m[40m'The file does not exist and was not found in the source paths'[0m[37m[40m,[0m
+[36m | [0m[37m[40m                    [0m[35m[40m'Use :add-source-path to add a path to search for source code.'[0m[37m[40m)[0m
+[36m | [0m[37m[40m  [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40m$src_path[0m[37m[40m [0m[1m[36m[40mIS[0m[37m[40m [0m[1m[36m[40mNULL[0m[37m[40m                                                           [0m
+[36m =[0m [36mnote[0m: the bound parameters are set as follows:
+           [4m$frame_path[0m:TEXT = “nope/Missing.java”
+           [4m$src_path[0m:NULL = “<NULL>”
+[36m =[0m [36mhelp[0m: Use :add-source-path to add a path to search for source code.

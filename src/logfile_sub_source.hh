@@ -1110,6 +1110,18 @@ private:
 
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
 
+    /**
+     * Underline the source locations in the stack frames found in the line
+     * being rendered and make clicking them open the source.
+     */
+    void add_stack_frame_links();
+
+    /** Whether a stack frame's path is a file here, for its file:// link. */
+    bool is_local_source_file(const std::string& path);
+
+    /** is_local_source_file()'s answers, by path. */
+    std::unordered_map<std::string, bool> lss_local_source_files;
+
     std::map<std::string, breakpoint_info> lss_breakpoints;
     /** Rendering for push_default_display(): leave out display-only state. */
     bool lss_default_display{false};

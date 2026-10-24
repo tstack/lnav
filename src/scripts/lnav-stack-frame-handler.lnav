@@ -1,0 +1,17 @@
+#
+# @synopsis: lnav-stack-frame-handler <mouse-button> <path> <line>
+# @description: Handle a mouse button click on a source location in a stack trace.
+#
+
+;SELECT $1 AS mouse_button, $2 AS frame_path, $3 AS frame_line
+;SELECT raise_error($mouse_button || ' click not supported')
+  WHERE $mouse_button != 'left'
+
+;SELECT source_find_file($frame_path) AS src_path
+;SELECT raise_error('Unable to locate source file: ' || $frame_path,
+                    'The file does not exist and was not found in the source paths',
+                    'Use :add-source-path to add a path to search for source code.')
+  WHERE $src_path IS NULL
+
+;SELECT unparse_url(json_object('scheme', 'file', 'path', $src_path, 'fragment', format('L%d', $frame_line))) AS url
+:xopen $url

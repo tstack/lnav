@@ -41,6 +41,7 @@
 #include "base/log_level_enum.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "md4cpp.hh"
 #include "view_curses.hh"
 
 namespace lnav::html {
@@ -102,36 +103,10 @@ reversed_colors(const text_attrs& ta)
     return retval;
 }
 
-void
-append_escaped(std::string& out, string_fragment sf)
-{
-    for (const auto ch : sf) {
-        switch (ch) {
-            case '"':
-                out.append("&quot;");
-                break;
-            case '\'':
-                out.append("&apos;");
-                break;
-            case '<':
-                out.append("&lt;");
-                break;
-            case '>':
-                out.append("&gt;");
-                break;
-            case '&':
-                out.append("&amp;");
-                break;
-            default:
-                out.push_back(ch);
-                break;
-        }
-    }
-}
-
 /**
- * Like append_escaped(), but for an attribute value, so line breaks and tabs
- * are escaped too.  That keeps a multi-line note on the same output line.
+ * Like md4cpp::append_escaped_html(), but for an attribute value, so line
+ * breaks and tabs are escaped too.  That keeps a multi-line note on the same
+ * output line.
  */
 void
 append_escaped_attr(std::string& out, string_fragment sf)
@@ -145,7 +120,8 @@ append_escaped_attr(std::string& out, string_fragment sf)
                 out.append("&#9;");
                 break;
             default:
-                append_escaped(out, string_fragment::from_bytes(&ch, 1));
+                md4cpp::append_escaped_html(
+                    out, string_fragment::from_bytes(&ch, 1));
                 break;
         }
     }
@@ -240,6 +216,7 @@ struct html_style {
     text_attrs hs_attrs;
     const std::string* hs_href{nullptr};
     const std::string* hs_id{nullptr};
+    const std::string* hs_frame{nullptr};
     std::vector<std::string> hs_notes;
 
     void add_class(const intern_string_t& cls)
@@ -266,6 +243,7 @@ struct html_style {
         return this->hs_classes == other.hs_classes
             && this->hs_attrs == other.hs_attrs
             && lnav::render::same_str(this->hs_href, other.hs_href)
+            && lnav::render::same_str(this->hs_frame, other.hs_frame)
             && this->hs_notes == other.hs_notes;
     }
 };
@@ -369,6 +347,7 @@ to_html_style(const lnav::render::styled_run& sr, html_style& out)
         ? sr.sr_href
         : nullptr;
     out.hs_id = sr.sr_id;
+    out.hs_frame = sr.sr_frame;
     out.hs_notes = sr.sr_notes;
 }
 
@@ -396,7 +375,7 @@ open_span(std::string& out, const html_style& hs)
         out.append(" class=\"");
         for (const auto& cls : hs.hs_classes) {
             out.append(sep);
-            append_escaped(out, cls.to_string_fragment());
+            md4cpp::append_escaped_html(out, cls.to_string_fragment());
             sep = " ";
         }
         out.append("\"");
@@ -429,6 +408,8 @@ to_html(const attr_line_t& al)
     auto have_curr = false;
     auto span_open = false;
     const std::string* open_href = nullptr;
+    const std::string* open_frame = nullptr;
+    auto anchor_open = false;
     // An empty line has nothing to show a tooltip for.
     const auto notes = al.empty() ? std::vector<std::string>{}
                                   : lnav::render::line_notes(al);
@@ -450,28 +431,46 @@ to_html(const attr_line_t& al)
             if (span_open) {
                 retval.append("</span>");
             }
-            if (!lnav::render::same_str(next.hs_href, open_href)) {
-                if (open_href != nullptr) {
+            if (!lnav::render::same_str(next.hs_href, open_href)
+                || !lnav::render::same_str(next.hs_frame, open_frame))
+            {
+                if (anchor_open) {
                     retval.append("</a>");
                 }
-                if (next.hs_href != nullptr) {
-                    retval.append("<a href=\"");
-                    append_escaped_attr(
-                        retval, string_fragment::from_str(*next.hs_href));
-                    retval.append("\">");
+                anchor_open = next.hs_href != nullptr || next.hs_frame != nullptr;
+                if (anchor_open) {
+                    retval.append("<a");
+                    if (next.hs_href != nullptr) {
+                        retval.append(" href=\"");
+                        append_escaped_attr(
+                            retval, string_fragment::from_str(*next.hs_href));
+                        retval.append("\"");
+                    }
+                    // A stack frame's location, for clients that open the
+                    // source themselves, like an IDE.
+                    if (next.hs_frame != nullptr) {
+                        retval.append(
+                            " class=\"-lnav_stack-frame\" data-lnav-frame=\"");
+                        append_escaped_attr(
+                            retval, string_fragment::from_str(*next.hs_frame));
+                        retval.append("\"");
+                    }
+                    retval.append(">");
                 }
                 open_href = next.hs_href;
+                open_frame = next.hs_frame;
             }
             span_open = open_span(retval, next);
             std::swap(curr, next);
             have_curr = true;
         }
-        append_escaped(retval, string_fragment::from_str(sr.sr_text));
+        md4cpp::append_escaped_html(retval,
+                                    string_fragment::from_str(sr.sr_text));
     });
     if (span_open) {
         retval.append("</span>");
     }
-    if (open_href != nullptr) {
+    if (anchor_open) {
         retval.append("</a>");
     }
     if (!notes.empty()) {

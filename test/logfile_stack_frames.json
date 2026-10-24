@@ -1,0 +1,1 @@
+{"name":"worker","hostname":"host1","pid":7,"level":50,"msg":"job failed","time":"2024-03-01T10:00:00.000Z","v":0,"exc":"java.lang.IllegalStateException: boom\n\tat com.foo.Bar$1.run(Bar.java:42)\n\tat com.foo.Bar$$Lambda$14/0x0000000800c03000.run(Unknown Source)\n\tat java.base/java.lang.Thread.run(Thread.java:833)"}

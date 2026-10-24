@@ -163,6 +163,15 @@ The following routes are available:
   rendered from Markdown, including apps, already link to this stylesheet.
   The same rules are returned by the :code:`lnav_theme_css()` SQL function.
 
+  In that HTML, the source location in a stack trace's frame is an
+  :code:`<a class="-lnav_stack-frame" data-lnav-frame="...">` element.  The
+  :code:`data-lnav-frame` attribute is a JSON object with the :code:`path` as
+  the trace gives it (a Java frame's with its package's directories), the
+  :code:`line`, and the :code:`col` when the trace has one, so that a client,
+  like an IDE, can find and open the file itself.  When the path is a file on
+  this machine, the element also has an :code:`href` with a :code:`file://`
+  link to that line.
+
 Apps
 ----
 

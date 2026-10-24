@@ -174,6 +174,28 @@ TEST_CASE("lnav::command::parse_for_prompt")
     }
 }
 
+#if !defined(__MSYS__)
+TEST_CASE("shlex::escape")
+{
+    // What escape() returns reads back as the original inside single quotes,
+    // backslashes (a Windows path) and quotes included.
+    for (const std::string orig : {
+             std::string(R"(C:\src\App\Program.cs)"),
+             std::string("it's"),
+             std::string(R"(a\'b)"),
+         })
+    {
+        auto cmdline = "x '" + shlex::escape(orig) + "'";
+        shlex lexer(cmdline);
+        auto split_res = lexer.split(scoped_resolver{});
+        REQUIRE(split_res.isOk());
+        auto args = split_res.unwrap();
+        REQUIRE(args.size() == 2);
+        CHECK(args[1].se_value == orig);
+    }
+}
+#endif
+
 TEST_CASE("shlex::split")
 {
     {

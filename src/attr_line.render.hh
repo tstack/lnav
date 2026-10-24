@@ -83,6 +83,8 @@ struct styled_run {
     const std::string* sr_href{nullptr};
     /** The anchor name, pointing into the attr_line_t, or nullptr. */
     const std::string* sr_id{nullptr};
+    /** A stack frame's location as JSON (SA_STACK_FRAME), or nullptr. */
+    const std::string* sr_frame{nullptr};
     /**
      * Notes from the attributes that are not drawn, like the file a line
      * came from, but only the ones that do not cover the whole line.  Those

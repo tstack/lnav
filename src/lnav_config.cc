@@ -1771,6 +1771,30 @@ static const struct json_path_container log_source_watch_handlers = {
         .with_children(log_source_watch_expr_handlers),
 };
 
+static const typed_json_path_container<logfile_sub_source_ns::stack_frame_def>
+    stack_frame_def_handlers = {
+        yajlpp::property_handler("enabled")
+            .with_description("Indicates whether this pattern is used to find "
+                              "stack frames (defaults to 'true')")
+            .for_field(&logfile_sub_source_ns::stack_frame_def::sfd_enabled),
+        yajlpp::property_handler("pattern")
+            .with_synopsis("<regex>")
+            .with_description(
+                "A regular expression that matches a frame in a stack trace.  "
+                "The 'file' and 'line' captures are required, and 'col' is "
+                "optional.  A 'pkg' capture, like a Java package, is "
+                "turned into the directories that 'file' is in.")
+            .for_field(&logfile_sub_source_ns::stack_frame_def::sfd_pattern),
+};
+
+static const json_path_container stack_frames_handlers = {
+    yajlpp::pattern_property_handler("(?<name>[\\w\\-\\.]+)")
+        .with_description("The definition of a stack frame pattern")
+        .with_children(stack_frame_def_handlers)
+        .for_field(&_lnav_config::lc_log_source,
+                   &logfile_sub_source_ns::config::c_stack_frames),
+};
+
 static const struct json_path_container annotation_handlers = {
     yajlpp::property_handler("description")
         .with_synopsis("<text>")
@@ -1827,6 +1851,11 @@ static const struct json_path_container log_source_handlers = {
         .with_description("Log message watch expressions")
         .with_children(log_source_watch_handlers),
     yajlpp::property_handler("annotations").with_children(annotations_handlers),
+    yajlpp::property_handler("stack-frames")
+        .with_description(
+            "Patterns for the frames in stack traces, so that the source "
+            "locations in them can be opened")
+        .with_children(stack_frames_handlers),
     yajlpp::property_handler("demux")
         .with_description("Demultiplexer definitions")
         .with_children(demux_defs_handlers),

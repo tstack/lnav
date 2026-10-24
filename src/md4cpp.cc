@@ -144,29 +144,7 @@ escape_html(string_fragment content)
 {
     auto retval = auto_buffer::alloc(content.length());
 
-    for (const auto ch : content) {
-        switch (ch) {
-            case '"':
-                retval.append("&quot;");
-                break;
-            case '\'':
-                retval.append("&apos;");
-                break;
-            case '<':
-                retval.append("&lt;");
-                break;
-            case '>':
-                retval.append("&gt;");
-                break;
-            case '&':
-                retval.append("&amp;");
-                break;
-            default:
-                retval.push_back(ch);
-                break;
-        }
-    }
-
+    append_escaped_html(retval, content);
     return text_auto_buffer{std::move(retval)};
 }
 

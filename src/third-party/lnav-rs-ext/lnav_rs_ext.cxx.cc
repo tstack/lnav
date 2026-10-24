@@ -1196,6 +1196,8 @@ void lnav_rs_ext$cxxbridge1$205$get_status(::lnav_rs_ext::ExtProgress *return$) 
 
 void lnav_rs_ext$cxxbridge1$205$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
+void lnav_rs_ext$cxxbridge1$205$find_src_file(::rust::Str path, ::rust::String *return$) noexcept;
+
 void lnav_rs_ext$cxxbridge1$205$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$set_one_time_password(::rust::String *return$) noexcept;
@@ -1238,6 +1240,12 @@ void discover_srcs() noexcept {
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {
   ::rust::MaybeUninit<::rust::Vec<::lnav_rs_ext::FindLogResult>> return$;
   lnav_rs_ext$cxxbridge1$205$get_log_statements_for(file, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String find_src_file(::rust::Str path) noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  lnav_rs_ext$cxxbridge1$205$find_src_file(path, &return$.value);
   return ::std::move(return$.value);
 }
 

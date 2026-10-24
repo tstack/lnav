@@ -270,6 +270,7 @@ dist_noinst_DATA = \
 	bad-config/formats/invalid-sql/init2.sql \
 	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
+	bad-config-stack-frame/configs/invalid-stack-frame/config.json \
 	bad-config2/configs/invalid-annotation/config.json \
 	bad-config2/configs/invalid-theme/config.json \
 	bad-config2/formats/invalid-config/config.json \
@@ -334,6 +335,7 @@ dist_noinst_DATA = \
 	listview_output_cursor.5 \
 	listview_output_cursor.6 \
 	log.clog \
+	log2src/go/cmd/server/main.go \
 	log2src/java/com/example/net/Meter.java \
 	log2src/java/com/example/net/Server.java \
 	log2src/java/java-example.0 \
@@ -456,6 +458,8 @@ dist_noinst_DATA = \
 	logfile_spark.0 \
 	logfile_spark_dupe.0 \
 	logfile_spectro_humanized.0 \
+	logfile_stack_frames.0 \
+	logfile_stack_frames.json \
 	logfile_strace_log.0 \
 	logfile_strace_log.1 \
 	logfile_strace_log.2 \

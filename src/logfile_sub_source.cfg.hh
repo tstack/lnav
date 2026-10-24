@@ -33,6 +33,9 @@
 #include <map>
 #include <string>
 
+#include "pcrepp/pcre2pp.hh"
+#include "yajlpp/yajlpp.hh"
+
 namespace logfile_sub_source_ns {
 
 enum class time_column_feature_t {
@@ -46,8 +49,26 @@ struct watch_expression {
     bool we_enabled{true};
 };
 
+/**
+ * A pattern for a frame in a stack trace.  The "file" and "line" captures
+ * are required, "col" and "pkg" (a dotted package that is turned into a
+ * directory prefix of the file) are optional.
+ */
+struct stack_frame_def {
+    bool sfd_enabled{true};
+    factory_container<lnav::pcre2pp::code> sfd_pattern;
+
+    /** Set when the pattern has passed the checks in reload_config(). */
+    bool sfd_valid{false};
+    int sfd_file_index{-1};
+    int sfd_line_index{-1};
+    int sfd_col_index{-1};
+    int sfd_pkg_index{-1};
+};
+
 struct config {
     std::map<std::string, watch_expression> c_watch_exprs;
+    std::map<std::string, stack_frame_def> c_stack_frames;
     time_column_feature_t c_time_column{time_column_feature_t::Disabled};
 };
 

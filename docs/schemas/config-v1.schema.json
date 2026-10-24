@@ -1287,6 +1287,32 @@
                     },
                     "additionalProperties": false
                 },
+                "stack-frames": {
+                    "description": "Patterns for the frames in stack traces, so that the source locations in them can be opened",
+                    "title": "/log/stack-frames",
+                    "type": "object",
+                    "patternProperties": {
+                        "^([\\w\\-\\.]+)$": {
+                            "description": "The definition of a stack frame pattern",
+                            "title": "/log/stack-frames/<name>",
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "title": "/log/stack-frames/<name>/enabled",
+                                    "description": "Indicates whether this pattern is used to find stack frames (defaults to 'true')",
+                                    "type": "boolean"
+                                },
+                                "pattern": {
+                                    "title": "/log/stack-frames/<name>/pattern",
+                                    "description": "A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "demux": {
                     "description": "Demultiplexer definitions",
                     "title": "/log/demux",

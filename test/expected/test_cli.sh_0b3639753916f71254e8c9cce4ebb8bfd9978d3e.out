@@ -9963,6 +9963,48 @@
                 "handler": "|pg-annotate-errors"
             }
         },
+        "stack-frames": {
+            "cxx": {
+                "enabled": true,
+                "pattern": "^\\s*#\\d+\\s.*?\\s(?<file>[^\\s:()]+\\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|m|mm)):(?<line>\\d+)(?::(?<col>\\d+))?"
+            },
+            "dotnet": {
+                "enabled": true,
+                "pattern": "^\\s+at .+ in (?<file>.+\\.(?:cs|fs|vb)):line (?<line>\\d+)"
+            },
+            "go": {
+                "enabled": true,
+                "pattern": "^\\s+(?<file>/\\S+\\.go):(?<line>\\d+)"
+            },
+            "java": {
+                "enabled": true,
+                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)[\\w$]+\\.[\\w$<>]+\\((?<file>[^:()]+):(?<line>\\d+)\\)"
+            },
+            "node": {
+                "enabled": true,
+                "pattern": "^\\s+at (?:.+ \\()?(?:file://)?(?<file>[^\\s()]+\\.[cm]?[jt]sx?):(?<line>\\d+):(?<col>\\d+)\\)?"
+            },
+            "php": {
+                "enabled": true,
+                "pattern": "#\\d+ (?<file>[^\\s()]+\\.php)\\((?<line>\\d+)\\)"
+            },
+            "php-error": {
+                "enabled": true,
+                "pattern": " in (?<file>/\\S+\\.php)(?: on line |:)(?<line>\\d+)"
+            },
+            "python": {
+                "enabled": true,
+                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)"
+            },
+            "ruby": {
+                "enabled": true,
+                "pattern": "(?<file>[^\\s:]+\\.rb):(?<line>\\d+):in\\b"
+            },
+            "rust": {
+                "enabled": true,
+                "pattern": "(?:panicked at (?:'.*', )?|^\\s+at )(?<file>[^\\s:'\"()]+\\.rs):(?<line>\\d+)(?::(?<col>\\d+))?"
+            }
+        },
         "demux": {
             "container": {
                 "enabled": true,

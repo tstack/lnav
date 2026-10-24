@@ -1119,6 +1119,8 @@ void discover_srcs() noexcept;
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept;
 
+::rust::String find_src_file(::rust::Str path) noexcept;
+
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept;
 
 ::rust::String set_one_time_password() noexcept;

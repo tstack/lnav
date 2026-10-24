@@ -2612,7 +2612,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path
 [4mSee Also[0m
-  [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m, 
+  [1msource_find_file()[0m
 [4mExamples[0m
 #1 To get the base of a plain file name:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mbasename[0m[37m[40m([0m[35m[40m'foobar'[0m[37m[40m)                         [0m
@@ -2909,7 +2910,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path
 [4mSee Also[0m
-  [1mbasename()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m, 
+  [1msource_find_file()[0m
 [4mExamples[0m
 #1 To get the directory of a relative file path:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdirname[0m[37m[40m([0m[35m[40m'foo/bar'[0m[37m[40m)                         [0m
@@ -3468,7 +3470,8 @@ For support questions, email:
          considered an absolute path and any preceding elements will
          be ignored.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mpath_match()[0m, [1mreadlink()[0m, [1mrealpath()[0m, 
+  [1msource_find_file()[0m
 [4mExamples[0m
 #1 To join a directory and file name into a relative path:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjoinpath[0m[37m[40m([0m[35m[40m'foo'[0m[37m[40m, [0m[35m[40m'bar'[0m[37m[40m)                     [0m
@@ -4691,7 +4694,8 @@ For support questions, email:
   [4mpattern[0m   The glob pattern
   [4mpath[0m      The path to match
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mreadlink()[0m, [1mrealpath()[0m, 
+  [1msource_find_file()[0m
 [4mExamples[0m
 #1 To test if a path is anywhere under /var/log:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpath_match[0m[37m[40m([0m[35m[40m'/var/log/**/*.log'[0m[37m[40m, [0m[35m[40m'/var/log/nginx/access.log'[0m[37m[40m)[0m
@@ -4929,7 +4933,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the symbolic link.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mrealpath()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mrealpath()[0m, 
+  [1msource_find_file()[0m
 
 [1m[4mrealpath[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -4938,7 +4943,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to resolve.
 [4mSee Also[0m
-  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, 
+  [1msource_find_file()[0m
 
 [1m[4mregexp[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -5317,6 +5323,22 @@ For support questions, email:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msign[0m[37m[40m([0m[1m[37m[40m-10[0m[37m[40m)                                  [0m
    -1
 
+
+[1m[4msource_find_file[0m[4m([0m[4mpath[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Finds a source file, like one named in a stack trace.  An absolute
+  path to an existing file is returned as-is.  Otherwise, the file
+  with the same name in the source paths given to :add-source-path
+  that shares the most trailing directories with the path is returned.
+  A relative path, like a Java package's, has to match at least the
+  file and its directory, and a Windows path is read with '\' as the
+  separator.  Returns NULL if the file could not be found or the match
+  is ambiguous, and an error while the source paths are being scanned.
+[4mParameter[0m
+  [4mpath[0m   The path to find.
+[4mSee Also[0m
+  [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, 
+  [1mrealpath()[0m
 
 [1m[4msource_log_stmt[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
