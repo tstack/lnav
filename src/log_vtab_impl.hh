@@ -245,8 +245,22 @@ struct log_cursor {
         {
         }
 
+        column_constraint(int32_t col, std::vector<std::string> in_values)
+            : cc_column(col),
+              cc_constraint(SQLITE_INDEX_CONSTRAINT_EQ, std::string{}),
+              cc_in_values(std::move(in_values)), cc_in(true)
+        {
+        }
+
         int32_t cc_column;
         string_constraint cc_constraint;
+        /**
+         * For `col IN (...)`: the list's values, taken all at once (see
+         * LNAV_INDEX_CONSTRAINT_IN).  Once vt_filter() has the rows the
+         * table knows, only the values left for the column index.
+         */
+        std::vector<std::string> cc_in_values;
+        bool cc_in{false};
     };
 
     vis_line_t lc_curr_line;
@@ -392,16 +406,27 @@ public:
     virtual void filter(log_cursor& lc, logfile_sub_source& lss) {}
 
     /**
-     * The rows (LOG view lines, in ascending order) where the column equals
-     * the value, when the table knows them without scanning, or nullptr to
-     * use a scan and the column's value index.  The rows must stay valid
-     * until the next call.
+     * Appends the rows (LOG view lines) where the column has one of the
+     * values, for the values the table knows without scanning, and appends
+     * the rest of the values to unknown_out, for a scan and the column's
+     * value index to find.  Each value's rows are in ascending order.
      */
-    virtual const std::vector<vis_line_t>* lines_for_value(
-        int col, const std::string& value, logfile_sub_source& lss)
+    virtual void lines_for_values(int col,
+                                  const std::vector<std::string>& values,
+                                  logfile_sub_source& lss,
+                                  std::vector<vis_line_t>& lines_out,
+                                  std::vector<std::string>& unknown_out)
     {
-        return nullptr;
+        unknown_out.insert(unknown_out.end(), values.begin(), values.end());
     }
+
+    /**
+     * Whether lines_for_values() can answer for the column, so that a
+     * `col IN (...)` constraint can be taken as a whole list of values (one
+     * lookup each, the rows merged) instead of SQLite asking once per value
+     * and reading every row of each before it can sort and LIMIT.
+     */
+    virtual bool knows_lines_for(int col) const { return false; }
 
     virtual bool next(log_cursor& lc, logfile_sub_source& lss) = 0;
 

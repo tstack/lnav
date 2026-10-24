@@ -34,6 +34,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <deque>
 #include <vector>
 
 #include "log_stmt_stats.hh"
@@ -142,7 +143,10 @@ struct statement {
 struct stmt_map {
     /** Set by the first query of the summary table. */
     bool sm_active{false};
-    std::vector<statement> sm_statements = std::vector<statement>(2);
+    // A deque, so a statement never moves: all_logs hands out fragments of
+    // s_src and s_schema (line_stmt()), and statements can be interned while
+    // a cursor still holds them (schema_lines() steps the map in xFilter).
+    std::deque<statement> sm_statements = std::deque<statement>(2);
 #ifdef HAVE_RUST_DEPS
     /** The source scan version the statements are from. */
     std::optional<size_t> sm_scan_version;
@@ -655,17 +659,25 @@ DIST_SLICE(prog_reps)
 lnav::progress_reporter_t LOG_STMT_MAP_PROG_REP = stmt_map_progress;
 
 /**
- * The LOG view rows logged by the statement with the schema, for all_logs'
- * log_msg_schema constraints, or nullptr if the map can't say: it hasn't
- * been started, it's behind, or the schema isn't a statement's (messages
- * log2src didn't match can have a schema from the format's source fields).
+ * The LOG view rows logged by the statements with the schemas, for all_logs'
+ * log_msg_schema constraints.  A schema the map can't say for goes to
+ * unknown_out: all of them when the map hasn't been started or is behind,
+ * otherwise the ones that aren't a statement's (messages log2src didn't
+ * match can have a schema from the format's source fields).
  */
-static const std::vector<vis_line_t>*
-schema_lines(const std::string& schema, logfile_sub_source& lss)
+static void
+schema_lines(const std::vector<std::string>& schemas,
+             logfile_sub_source& lss,
+             std::vector<vis_line_t>& lines_out,
+             std::vector<std::string>& unknown_out)
 {
     auto& sm = get_map();
+    const auto all_unknown = [&]() {
+        unknown_out.insert(unknown_out.end(), schemas.begin(), schemas.end());
+    };
     if (!sm.sm_active) {
-        return nullptr;
+        all_unknown();
+        return;
     }
 
     // This is called for every xFilter, so only step when there is something
@@ -673,7 +685,8 @@ schema_lines(const std::string& schema, logfile_sub_source& lss)
 #ifdef HAVE_RUST_DEPS
     auto ext = lnav_rs_ext::get_status();
     if (ext.status == lnav_rs_ext::Status::working) {
-        return nullptr;
+        all_unknown();
+        return;
     }
     const auto statements_changed = sm.sm_scan_version != ext.version;
 #else
@@ -684,13 +697,9 @@ schema_lines(const std::string& schema, logfile_sub_source& lss)
                                + std::chrono::milliseconds(100));
         if (stmt_map::is_behind(lss)) {
             log_debug("schema_lines: the statement map is behind");
-            return nullptr;
+            all_unknown();
+            return;
         }
-    }
-
-    auto id_iter = sm.sm_schema_ids.find(schema);
-    if (id_iter == sm.sm_schema_ids.end()) {
-        return nullptr;
     }
 
     auto& sr = sm.sm_rows;
@@ -747,7 +756,15 @@ schema_lines(const std::string& schema, logfile_sub_source& lss)
     sr.sr_index_generation = lss.lss_index_generation;
     sr.sr_remaps = sm.sm_remaps;
 
-    return &sr.sr_rows[id_iter->second];
+    for (const auto& schema : schemas) {
+        auto id_iter = sm.sm_schema_ids.find(schema);
+        if (id_iter == sm.sm_schema_ids.end()) {
+            unknown_out.emplace_back(schema);
+            continue;
+        }
+        const auto& rows = sr.sr_rows[id_iter->second];
+        lines_out.insert(lines_out.end(), rows.begin(), rows.end());
+    }
 }
 
 /**
@@ -776,24 +793,30 @@ statements_current()
 #endif
 }
 
-/** The schema of the statement for the message at a line, if mapped. */
-static const std::string*
-line_schema(const logfile* lf, uint64_t line_number)
+/** What the statement map knows about the message at a line. */
+static all_logs_vtab::line_stmt
+line_stmt(const logfile* lf, uint64_t line_number)
 {
     const auto& sm = get_map();
     const auto& si = lf->get_stmt_ids();
     if (!sm.sm_active || line_number >= si.si_verified
-        || si.si_ids[line_number] < FIRST_STATEMENT || !statements_current())
+        || si.si_ids[line_number] == UNMAPPED || !statements_current())
     {
-        return nullptr;
+        return all_logs_vtab::line_stmt_unmapped{};
     }
 
-    return &sm.sm_statements[si.si_ids[line_number]].s_schema;
+    const auto id = si.si_ids[line_number];
+    if (id < FIRST_STATEMENT) {
+        return all_logs_vtab::line_stmt_unmatched{};
+    }
+
+    const auto& st = sm.sm_statements[id];
+    return all_logs_vtab::line_stmt_mapped{&st.s_src, &st.s_schema};
 }
 
 static const auto REGISTER_SCHEMA_LINES = []() {
     all_logs_vtab::alv_schema_lines = schema_lines;
-    all_logs_vtab::alv_line_schema = line_schema;
+    all_logs_vtab::alv_line_stmt = line_stmt;
     return true;
 }();
 

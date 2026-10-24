@@ -27,9 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "lnav.exec-phase.hh"
 #include "lnav.hh"
 #include "service_tags.hh"
 #include "spectro_source.hh"
@@ -80,6 +82,8 @@ wait_for_pipers(std::optional<ui_clock::time_point>)
 }
 
 lnav::commands::command_map_t lnav_commands;
+
+static auto bound_exec_phase = injector::bind<lnav::exec_phase>::to_singleton();
 
 namespace injector {
 

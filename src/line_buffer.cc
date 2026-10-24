@@ -688,10 +688,13 @@ line_buffer::load_next_buffer()
     static auto op = lnav_operation{"load_next_buffer"};
     auto op_guard = lnav_opid_guard::internal(op);
 
-    // log_debug("loader here!");
     auto retval = false;
     const auto start = this->lb_loader_file_offset.value();
     ssize_t rc = 0;
+
+    log_debug(
+        "BEGIN load_next_buffer fd(%d) at %lld", this->lb_fd.get(), start);
+
     safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
 
 #if 0
@@ -707,22 +710,39 @@ line_buffer::load_next_buffer()
         {
             rc = 0;
         } else {
-            // log_debug("async decomp start");
+            if (this->lb_file_size == -1) {
+                log_debug("fd(%d): preload read of %zu at %lld",
+                          this->lb_fd.get(),
+                          this->lb_alt_buffer.value().available(),
+                          start + this->lb_alt_buffer->size());
+            }
             rc = gi->read(this->lb_alt_buffer.value().end(),
                           start + this->lb_alt_buffer.value().size(),
                           this->lb_alt_buffer.value().available());
             this->lb_compressed_offset = gi->get_source_offset();
             ensure(this->lb_compressed_offset >= 0);
-            if (rc != -1
-                && rc < (ssize_t) this->lb_alt_buffer.value().available()
-                && (start + (ssize_t) this->lb_alt_buffer.value().size() + rc
-                    > this->lb_file_size))
+            if (rc == -1) {
+                log_error("fd(%d): preload read of %zu at %lld failed: %s",
+                          this->lb_fd.get(),
+                          this->lb_alt_buffer.value().available(),
+                          start + this->lb_alt_buffer->size(),
+                          strerror(errno));
+            } else if (rc < (ssize_t) this->lb_alt_buffer.value().available()
+                       && (start + (ssize_t) this->lb_alt_buffer.value().size()
+                               + rc
+                           > this->lb_file_size))
             {
                 this->lb_file_size
-                    = (start + this->lb_alt_buffer.value().size() + rc);
-                log_info("fd(%d): set file size to %llu",
-                         this->lb_fd.get(),
-                         this->lb_file_size.load());
+                    = start + this->lb_alt_buffer.value().size() + rc;
+                log_debug("fd(%d): set file size to %llu",
+                          this->lb_fd.get(),
+                          this->lb_file_size.load());
+            } else if (this->lb_file_size == -1) {
+                log_debug("fd(%d): preload read of %zu at %lld returned %zd",
+                          this->lb_fd.get(),
+                          this->lb_alt_buffer.value().available(),
+                          start + this->lb_alt_buffer->size(),
+                          rc);
             }
 #if 0
             log_debug("async decomp end  %d+%d:%d",
@@ -868,8 +888,16 @@ line_buffer::load_next_buffer()
             line_start = lf;
         } while (line_start != nullptr
                  && line_start < this->lb_alt_buffer->end());
+    } else {
+        log_debug("fd(%d) skipping line start scan for %lld",
+                  this->lb_fd.get(),
+                  start);
     }
-    // log_debug("END preload read");
+    log_debug("END load_next_buffer fd(%d) at %lld: %zd; lines=%zu",
+              this->lb_fd.get(),
+              start,
+              rc,
+              this->lb_alt_line_starts.size());
 
     return retval;
 }
@@ -910,8 +938,8 @@ line_buffer::fill_range(file_off_t start,
         retval = this->lb_loader_future.get();
         if (wait_start) {
             auto diff = std::chrono::system_clock::now() - wait_start.value();
-            this->lb_stats.s_preload_wait_time +=
-                std::chrono::duration_cast<std::chrono::milliseconds>(diff);
+            this->lb_stats.s_preload_wait_time
+                += std::chrono::duration_cast<std::chrono::milliseconds>(diff);
         }
         // log_debug("got preload");
         this->lb_loader_future = {};

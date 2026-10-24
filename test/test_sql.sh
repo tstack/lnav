@@ -1044,6 +1044,18 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM all_opids" \
     ${test_dir}/logfile_vpxd.0
 
+# A thread_id constraint looks the threads up instead of listing them all;
+# the rows match the unconstrained table's.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT count(*) FROM all_thread_ids WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) AS eq_rows, (SELECT total FROM all_thread_ids WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) = (SELECT total FROM (SELECT * FROM all_thread_ids) WHERE thread_id = (SELECT min(thread_id) FROM all_thread_ids)) AS eq_same, (SELECT count(*) FROM all_thread_ids WHERE thread_id = 'no-such-thread') AS missing_rows, (SELECT count(*) FROM all_thread_ids WHERE thread_id IN (SELECT thread_id FROM all_thread_ids LIMIT 2)) AS in_rows, (SELECT sum(total) FROM all_thread_ids WHERE thread_id IN (SELECT thread_id FROM all_thread_ids)) = (SELECT sum(total) FROM all_thread_ids) AS in_same" \
+    ${test_dir}/logfile_vpxd.0
+
+# An opid constraint looks the opids up instead of listing them all; the
+# rows match the unconstrained table's.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT count(*) FROM all_opids WHERE opid = (SELECT min(opid) FROM all_opids)) AS eq_rows, (SELECT total FROM all_opids WHERE opid = (SELECT min(opid) FROM all_opids)) = (SELECT total FROM (SELECT * FROM all_opids) WHERE opid = (SELECT min(opid) FROM all_opids)) AS eq_same, (SELECT count(*) FROM all_opids WHERE opid = 'no-such-opid') AS missing_rows, (SELECT count(*) FROM all_opids WHERE opid IN (SELECT opid FROM all_opids LIMIT 3)) AS in_rows, (SELECT sum(total) FROM all_opids WHERE opid IN (SELECT opid FROM all_opids)) = (SELECT sum(total) FROM all_opids) AS in_same" \
+    ${test_dir}/logfile_vpxd.0
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_format_values WHERE format = 'access_log'" \
     ${test_dir}/logfile_access_log.0

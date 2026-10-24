@@ -749,6 +749,36 @@ private:
     int viu_max_column{0};
 };
 
+/**
+ * Whether a table implementation has a best_index(sqlite3_vtab*,
+ * sqlite3_index_info*) method, which vtab_module then uses for xBestIndex.
+ */
+template<typename U, typename = void>
+struct vtab_has_best_index : std::false_type {};
+
+template<typename U>
+struct vtab_has_best_index<
+    U,
+    std::void_t<decltype(std::declval<U&>().best_index(
+        std::declval<sqlite3_vtab*>(), std::declval<sqlite3_index_info*>()))>>
+    : std::true_type {};
+
+/**
+ * Whether a cursor has a filter(idxNum, idxStr, argc, argv) method, which
+ * vtab_module then calls for xFilter instead of reset().
+ */
+template<typename C, typename = void>
+struct vtab_cursor_has_filter : std::false_type {};
+
+template<typename C>
+struct vtab_cursor_has_filter<
+    C,
+    std::void_t<decltype(std::declval<C&>().filter(
+        0,
+        std::declval<const char*>(),
+        0,
+        std::declval<sqlite3_value**>()))>> : std::true_type {};
+
 struct vtab_module_base {
     virtual int create(sqlite3* db) = 0;
 
@@ -891,7 +921,13 @@ struct vtab_module : vtab_module_base {
 
     static int vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     {
-        return SQLITE_OK;
+        if constexpr (vtab_has_best_index<T>::value) {
+            auto* vt = (vtab*) tab;
+
+            return vt->v_impl.best_index(tab, p_info);
+        } else {
+            return SQLITE_OK;
+        }
     }
 
     static int vt_filter(sqlite3_vtab_cursor* p_vtc,
@@ -902,7 +938,11 @@ struct vtab_module : vtab_module_base {
     {
         auto* p_cur = (typename T::cursor*) p_vtc;
 
-        return p_cur->reset();
+        if constexpr (vtab_cursor_has_filter<typename T::cursor>::value) {
+            return p_cur->filter(idxNum, idxStr, argc, argv);
+        } else {
+            return p_cur->reset();
+        }
     }
 
     static int tvt_update(sqlite3_vtab* tab,

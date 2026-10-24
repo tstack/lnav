@@ -65,27 +65,51 @@ public:
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
-    const std::vector<vis_line_t>* lines_for_value(
-        int col, const std::string& value, logfile_sub_source& lss) override;
+    void lines_for_values(int col,
+                          const std::vector<std::string>& values,
+                          logfile_sub_source& lss,
+                          std::vector<vis_line_t>& lines_out,
+                          std::vector<std::string>& unknown_out) override;
+
+    bool knows_lines_for(int col) const override;
 
     /**
-     * Gives the rows logged by the statement with a log_msg_schema, from
-     * lnav's per-line statement map (log_stmt_stats.cc), or nullptr when the
-     * map can't answer.  Set by the lnav binary; unset, schema constraints
-     * use the column index.
+     * Appends the rows logged by the statements with the log_msg_schemas,
+     * from lnav's per-line statement map (log_stmt_stats.cc), and appends
+     * the schemas the map can't answer for to unknown_out.  Set by the lnav
+     * binary; unset, schema constraints use the column index.
      */
-    using schema_lines_t = const std::vector<vis_line_t>* (*) (
-        const std::string& schema, logfile_sub_source& lss);
+    using schema_lines_t = void (*)(const std::vector<std::string>& schemas,
+                                    logfile_sub_source& lss,
+                                    std::vector<vis_line_t>& lines_out,
+                                    std::vector<std::string>& unknown_out);
     static schema_lines_t alv_schema_lines;
 
+    /** The statement map hasn't matched the line yet, or its answer is stale. */
+    struct line_stmt_unmapped {};
+    /** The statement map matched the line and log2src found no statement. */
+    struct line_stmt_unmatched {};
+    /** The statement map's answer for a line: the statement's details. */
+    struct line_stmt_mapped {
+        /**
+         * log2src's description of the statement, like log_msg_src.  The
+         * statement map keeps both strings for good, in place, so all_logs
+         * passes them on as fragments, without copying.
+         */
+        const std::string* lsm_src;
+        /** Like log_msg_schema. */
+        const std::string* lsm_schema;
+    };
+    using line_stmt = mapbox::util::
+        variant<line_stmt_unmapped, line_stmt_unmatched, line_stmt_mapped>;
+
     /**
-     * Gives the log_msg_schema of the message at a line from the statement
-     * map, or nullptr when the map doesn't know it (not mapped yet, no
-     * statement, or the statements changed since).
+     * Gives what the statement map knows about the message at a line, so
+     * log_msg_src and log_msg_schema don't need log2src to match the message
+     * again.  Set by the lnav binary; unset, every message is matched.
      */
-    using line_schema_t = const std::string* (*) (const logfile* lf,
-                                                   uint64_t line_number);
-    static line_schema_t alv_line_schema;
+    using line_stmt_t = line_stmt (*)(const logfile* lf, uint64_t line_number);
+    static line_stmt_t alv_line_stmt;
 
     /**
      * Writes the log_msg_schema of messages logged by a statement, given the

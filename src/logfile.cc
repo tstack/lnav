@@ -63,6 +63,7 @@
 #include "config.h"
 #include "file_options.hh"
 #include "hasher.hh"
+#include "lnav.exec-phase.hh"
 #include "lnav_util.hh"
 #include "log.watch.hh"
 #include "log_format.hh"
@@ -1782,6 +1783,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
     static const auto& dts_cfg
         = injector::get<const date_time_scanner_ns::config&>();
+    static auto& exec_phase = injector::get<lnav::exec_phase&>();
 
     static auto op = lnav_operation{"rebuild_file_index"};
     auto op_guard = lnav_opid_guard::internal(op);
@@ -2051,7 +2053,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (this->lf_options.loo_streaming) {
             limit = std::min(limit, this->lf_options.loo_stream_batch_lines);
         }
-        if (!has_format) {
+        if (!has_format || exec_phase.spinning_up()) {
             log_debug("loading file... %s:%zu",
                       this->lf_filename_as_string.c_str(),
                       begin_size);
@@ -2955,8 +2957,7 @@ logfile::reobserve_from(iterator iter)
         // going to look at it, but the observer is still told about the line.
         shared_buffer_ref sbr;
         if (observer_wants_text) {
-            auto read_res
-                = this->read_range(this->get_file_range(iter, false));
+            auto read_res = this->read_range(this->get_file_range(iter, false));
             if (read_res.isErr()) {
                 continue;
             }

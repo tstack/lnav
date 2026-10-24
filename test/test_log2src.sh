@@ -73,6 +73,38 @@ run_cap_test ${lnav_test} -n \
     -c ":write-csv-to -" \
     ${test_dir}/log2src/java/java-example.0
 
+# A log_msg_schema IN (...) list is taken whole when the statement map can
+# answer: each statement's rows are looked up and merged in order, so ORDER BY
+# log_line ... LIMIT stops early instead of SQLite reading every row of each
+# statement.  The rows match SQLite's own check (the unary +), in either
+# direction, with a LIMIT, and after a filter.
+SCHEMA_IN_CHECK=";SELECT (SELECT group_concat(r) FROM (SELECT log_line AS r FROM all_logs WHERE log_msg_schema IN (SELECT schema FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java')) ORDER BY log_line)) IS (SELECT group_concat(r) FROM (SELECT log_line AS r FROM all_logs WHERE +log_msg_schema IN (SELECT schema FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java')) ORDER BY log_line)) AS same_rows, (SELECT group_concat(r) FROM (SELECT log_line AS r FROM all_logs WHERE log_msg_schema IN (SELECT schema FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java')) ORDER BY log_line DESC LIMIT 3)) IS (SELECT group_concat(r) FROM (SELECT log_line AS r FROM all_logs WHERE +log_msg_schema IN (SELECT schema FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java')) ORDER BY log_line DESC LIMIT 3)) AS same_last3, (SELECT count(*) FROM all_logs WHERE log_msg_schema IN (SELECT schema FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java'))) AS msgs"
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT count(*) FROM log_stmt_stats" \
+    -c "${SCHEMA_IN_CHECK}" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":filter-out is slow" \
+    -c "${SCHEMA_IN_CHECK}" \
+    -c ":write-csv-to -" \
+    ${test_dir}/log2src/java/java-example.0
+
+# With the statement map running, all_logs takes log_msg_src and
+# log_msg_schema from it when nothing else needs log2src (no pattern, values,
+# or stack trace), and knows which messages have no statement.  Both give
+# the same answers as matching every message (log_msg_values forces that).
+SRC_MAP_CHECK=";SELECT count(*) AS msgs, sum(m.src IS f.src) AS same_src, sum(m.schema IS f.schema) AS same_schema, sum(f.src IS NULL) AS unmatched FROM (SELECT log_line, log_msg_src AS src, log_msg_schema AS schema FROM all_logs) m JOIN (SELECT log_line, log_msg_src AS src, log_msg_schema AS schema, log_msg_values AS v FROM all_logs) f USING (log_line)"
+cp ${test_dir}/log2src/java/java-example.0 log2src-unmatched.0
+printf '2025-09-26 21:12:40,001 [main] INFO com.example.net.Server - no statement logs this\n' \
+    >> log2src-unmatched.0
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT count(*) FROM log_stmt_stats" \
+    -c "${SRC_MAP_CHECK}" \
+    -c ":write-csv-to -" \
+    log2src-unmatched.0
+
 # A time range with no rows leaves nothing for the statement map's rows to
 # be taken from, in either direction.
 EMPTY_TIME_CHECK=";SELECT (SELECT count(*) FROM all_logs WHERE log_msg_schema = s.schema AND log_time > '2026-01-01') AS asc_rows, (SELECT count(*) FROM (SELECT log_line FROM all_logs WHERE log_msg_schema = s.schema AND log_time > '2026-01-01' ORDER BY log_line DESC)) AS desc_rows FROM source_log_stmt('${test_dir}/log2src/java/com/example/net/Server.java') s LIMIT 1"

@@ -79,46 +79,98 @@ CREATE TABLE lnav_db.all_opids (
         std::vector<opid_time_pair> c_opids;
         std::vector<opid_time_pair>::const_iterator c_iter;
 
-        explicit cursor(sqlite3_vtab* vt)
+        explicit cursor(sqlite3_vtab* vt) { this->base.pVtab = vt; }
+
+        /**
+         * Merges a file's range for the opid [key] into [gather_map], with
+         * the description from the earliest file that has one.
+         */
+        static void gather(pair_map& gather_map,
+                           const std::shared_ptr<logfile>& lf,
+                           const string_fragment& key,
+                           const opid_time_range& om)
+        {
+            auto key_str = key.to_string();
+            auto gather_iter = gather_map.find(key_str);
+            auto earlier_desc = false;
+            if (gather_iter == gather_map.end()) {
+                auto emplace_res
+                    = gather_map.emplace(key_str, opid_time_pair{key_str, om});
+                gather_iter = emplace_res.first;
+            } else {
+                if (om.otr_range < gather_iter->second.otp_range.otr_range) {
+                    earlier_desc = true;
+                }
+                gather_iter->second.otp_range |= om;
+            }
+            if (earlier_desc || gather_iter->second.otp_description.empty()) {
+                auto format = lf->get_format();
+                if (om.otr_description.lod_index.has_value()) {
+                    auto desc_iter = format->lf_opid_description_def_vec->at(
+                        om.otr_description.lod_index.value());
+                    gather_iter->second.otp_name = desc_iter->od_name;
+                    gather_iter->second.otp_description
+                        = desc_iter->to_string(om.otr_description.lod_elements);
+                } else if (!om.otr_description.lod_elements.empty()) {
+                    gather_iter->second.otp_description
+                        = om.otr_description.lod_elements.entries()
+                              .front()
+                              .second;
+                }
+            }
+        }
+
+        /**
+         * Collects the rows: every opid in every file, or with an `opid = ?`
+         * (OPID_EQ) or `opid IN (...)` (OPID_IN) constraint, just those,
+         * looked up in each file's opid map instead of copying all of them.
+         */
+        int filter(int idxNum,
+                   const char* idxStr,
+                   int argc,
+                   sqlite3_value** argv)
         {
             const auto& active_files = injector::get<file_collection&>();
             pair_map gather_map;
 
-            for (const auto& lf : active_files.fc_files) {
-                auto lf_opids = lf->get_opids().readAccess();
-                for (const auto& [key, om] : lf_opids->los_opid_ranges) {
-                    auto key_str = key.to_string();
-                    auto gather_iter = gather_map.find(key_str);
-                    auto earlier_desc = false;
-                    if (gather_iter == gather_map.end()) {
-                        auto emplace_res = gather_map.emplace(
-                            key_str, opid_time_pair{key_str, om});
-                        gather_iter = emplace_res.first;
-                    } else {
-                        if (om.otr_range
-                            < gather_iter->second.otp_range.otr_range)
-                        {
-                            earlier_desc = true;
-                        }
-                        gather_iter->second.otp_range |= om;
+            this->c_opids.clear();
+            if (idxNum == OPID_ALL || argc < 1) {
+                for (const auto& lf : active_files.fc_files) {
+                    auto lf_opids = lf->get_opids().readAccess();
+                    for (const auto& [key, om] : lf_opids->los_opid_ranges) {
+                        gather(gather_map, lf, key, om);
                     }
-                    if (earlier_desc
-                        || gather_iter->second.otp_description.empty())
+                }
+            } else {
+                std::vector<std::string> keys;
+                auto add_key = [&keys](sqlite3_value* val) {
+                    if (val == nullptr
+                        || sqlite3_value_type(val) == SQLITE_NULL)
                     {
-                        auto format = lf->get_format();
-                        if (om.otr_description.lod_index.has_value()) {
-                            auto desc_iter
-                                = format->lf_opid_description_def_vec->at(
-                                    om.otr_description.lod_index.value());
-                            gather_iter->second.otp_name = desc_iter->od_name;
-                            gather_iter->second.otp_description
-                                = desc_iter->to_string(
-                                    om.otr_description.lod_elements);
-                        } else if (!om.otr_description.lod_elements.empty()) {
-                            gather_iter->second.otp_description
-                                = om.otr_description.lod_elements.entries()
-                                      .front()
-                                      .second;
+                        return;
+                    }
+                    const auto* text = sqlite3_value_text(val);
+                    keys.emplace_back((const char*) text,
+                                      sqlite3_value_bytes(val));
+                };
+                if (idxNum == OPID_IN) {
+                    sqlite3_value* val = nullptr;
+                    for (auto rc = sqlite3_vtab_in_first(argv[0], &val);
+                         rc == SQLITE_OK && val != nullptr;
+                         rc = sqlite3_vtab_in_next(argv[0], &val))
+                    {
+                        add_key(val);
+                    }
+                } else {
+                    add_key(argv[0]);
+                }
+                for (const auto& lf : active_files.fc_files) {
+                    auto lf_opids = lf->get_opids().readAccess();
+                    for (const auto& key : keys) {
+                        auto key_sf = string_fragment::from_str(key);
+                        auto iter = lf_opids->los_opid_ranges.find(key_sf);
+                        if (iter != lf_opids->los_opid_ranges.end()) {
+                            gather(gather_map, lf, iter->first, iter->second);
                         }
                     }
                 }
@@ -128,7 +180,7 @@ CREATE TABLE lnav_db.all_opids (
             }
             std::stable_sort(this->c_opids.begin(), this->c_opids.end());
 
-            this->base.pVtab = vt;
+            return this->reset();
         }
 
         int reset()
@@ -156,6 +208,43 @@ CREATE TABLE lnav_db.all_opids (
             return SQLITE_OK;
         }
     };
+
+    static constexpr int OPID_ALL = 0;
+    static constexpr int OPID_EQ = 1;
+    static constexpr int OPID_IN = 2;
+
+    /**
+     * Uses an `opid = ?` or `opid IN (...)` constraint (the whole IN list at
+     * once) to look the opids up instead of listing them all.
+     */
+    int best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
+    {
+        p_info->idxNum = OPID_ALL;
+        p_info->estimatedCost = 1000000.0;
+        for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
+            const auto& cons = p_info->aConstraint[lpc];
+            if (!cons.usable || cons.iColumn != 0
+                || cons.op != SQLITE_INDEX_CONSTRAINT_EQ)
+            {
+                continue;
+            }
+            p_info->aConstraintUsage[lpc].argvIndex = 1;
+            p_info->aConstraintUsage[lpc].omit = 1;
+            if (sqlite3_vtab_in(p_info, lpc, -1)) {
+                sqlite3_vtab_in(p_info, lpc, 1);
+                p_info->idxNum = OPID_IN;
+                p_info->estimatedCost = 100.0;
+            } else {
+                p_info->idxNum = OPID_EQ;
+                p_info->estimatedCost = 10.0;
+                p_info->estimatedRows = 1;
+                p_info->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
+            }
+            break;
+        }
+
+        return SQLITE_OK;
+    }
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
@@ -279,21 +368,76 @@ CREATE TABLE lnav_db.all_thread_ids (
         std::vector<thread_id_time_pair> c_thread_ids;
         std::vector<thread_id_time_pair>::const_iterator c_iter;
 
-        explicit cursor(sqlite3_vtab* vt)
+        explicit cursor(sqlite3_vtab* vt) { this->base.pVtab = vt; }
+
+        /** Merges a file's range for the thread [key] into [gather_map]. */
+        static void gather(pair_map& gather_map,
+                           const string_fragment& key,
+                           const thread_id_time_range& om)
+        {
+            auto key_str = key.to_string();
+            auto gather_iter = gather_map.find(key_str);
+            if (gather_iter == gather_map.end()) {
+                gather_map[key_str].titp_thread_id = key_str;
+                gather_map[key_str].titp_range = om;
+            } else {
+                gather_iter->second.titp_range |= om;
+            }
+        }
+
+        /**
+         * Collects the rows: every thread in every file, or with a
+         * `thread_id = ?` (TID_EQ) or `thread_id IN (...)` (TID_IN)
+         * constraint, just those, looked up in each file's thread map.
+         */
+        int filter(int idxNum,
+                   const char* idxStr,
+                   int argc,
+                   sqlite3_value** argv)
         {
             const auto& active_files = injector::get<file_collection&>();
             pair_map gather_map;
 
-            for (const auto& lf : active_files.fc_files) {
-                auto lf_thread_ids = lf->get_thread_ids().readAccess();
-                for (const auto& [key, om] : lf_thread_ids->ltis_tid_ranges) {
-                    auto key_str = key.to_string();
-                    auto gather_iter = gather_map.find(key_str);
-                    if (gather_iter == gather_map.end()) {
-                        gather_map[key_str].titp_thread_id = key_str;
-                        gather_map[key_str].titp_range = om;
-                    } else {
-                        gather_iter->second.titp_range |= om;
+            this->c_thread_ids.clear();
+            if (idxNum == TID_ALL || argc < 1) {
+                for (const auto& lf : active_files.fc_files) {
+                    auto lf_thread_ids = lf->get_thread_ids().readAccess();
+                    for (const auto& [key, om] : lf_thread_ids->ltis_tid_ranges)
+                    {
+                        gather(gather_map, key, om);
+                    }
+                }
+            } else {
+                std::vector<std::string> keys;
+                auto add_key = [&keys](sqlite3_value* val) {
+                    if (val == nullptr
+                        || sqlite3_value_type(val) == SQLITE_NULL)
+                    {
+                        return;
+                    }
+                    const auto* text = sqlite3_value_text(val);
+                    keys.emplace_back((const char*) text,
+                                      sqlite3_value_bytes(val));
+                };
+                if (idxNum == TID_IN) {
+                    sqlite3_value* val = nullptr;
+                    for (auto rc = sqlite3_vtab_in_first(argv[0], &val);
+                         rc == SQLITE_OK && val != nullptr;
+                         rc = sqlite3_vtab_in_next(argv[0], &val))
+                    {
+                        add_key(val);
+                    }
+                } else {
+                    add_key(argv[0]);
+                }
+                for (const auto& lf : active_files.fc_files) {
+                    auto lf_thread_ids = lf->get_thread_ids().readAccess();
+                    for (const auto& key : keys) {
+                        auto key_sf = string_fragment::from_str(key);
+                        auto iter = lf_thread_ids->ltis_tid_ranges.find(key_sf);
+                        if (iter != lf_thread_ids->ltis_tid_ranges.end()) {
+                            gather(gather_map, iter->first, iter->second);
+                        }
                     }
                 }
             }
@@ -303,7 +447,7 @@ CREATE TABLE lnav_db.all_thread_ids (
             std::stable_sort(this->c_thread_ids.begin(),
                              this->c_thread_ids.end());
 
-            this->base.pVtab = vt;
+            return this->reset();
         }
 
         int reset()
@@ -331,6 +475,43 @@ CREATE TABLE lnav_db.all_thread_ids (
             return SQLITE_OK;
         }
     };
+
+    static constexpr int TID_ALL = 0;
+    static constexpr int TID_EQ = 1;
+    static constexpr int TID_IN = 2;
+
+    /**
+     * Uses a `thread_id = ?` or `thread_id IN (...)` constraint (the whole
+     * IN list at once) to look the threads up instead of listing them all.
+     */
+    int best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
+    {
+        p_info->idxNum = TID_ALL;
+        p_info->estimatedCost = 1000000.0;
+        for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
+            const auto& cons = p_info->aConstraint[lpc];
+            if (!cons.usable || cons.iColumn != 0
+                || cons.op != SQLITE_INDEX_CONSTRAINT_EQ)
+            {
+                continue;
+            }
+            p_info->aConstraintUsage[lpc].argvIndex = 1;
+            p_info->aConstraintUsage[lpc].omit = 1;
+            if (sqlite3_vtab_in(p_info, lpc, -1)) {
+                sqlite3_vtab_in(p_info, lpc, 1);
+                p_info->idxNum = TID_IN;
+                p_info->estimatedCost = 100.0;
+            } else {
+                p_info->idxNum = TID_EQ;
+                p_info->estimatedCost = 10.0;
+                p_info->estimatedRows = 1;
+                p_info->idxFlags = SQLITE_INDEX_SCAN_UNIQUE;
+            }
+            break;
+        }
+
+        return SQLITE_OK;
+    }
 
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {

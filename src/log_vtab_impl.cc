@@ -55,6 +55,14 @@
 
 using namespace lnav::roles::literals;
 
+
+/**
+ * The op vt_best_index stores (in its copy of the constraints for vt_filter)
+ * for a `col IN (...)` constraint taken as a whole list with
+ * sqlite3_vtab_in().  Above SQLite's own constraint ops.
+ */
+static constexpr unsigned char LNAV_INDEX_CONSTRAINT_IN = 200;
+
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static log_cursor_summary log_cursor_latest;
@@ -2198,6 +2206,25 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             break;
                         }
                     }
+                } else if (op == LNAV_INDEX_CONSTRAINT_IN) {
+                    // The whole IN list at once (vt_best_index asked for it
+                    // with sqlite3_vtab_in()): each value's rows are looked
+                    // up and merged below.
+                    std::vector<std::string> in_values;
+                    sqlite3_value* in_val = nullptr;
+                    for (auto rc = sqlite3_vtab_in_first(argv[lpc], &in_val);
+                         rc == SQLITE_OK && in_val != nullptr;
+                         rc = sqlite3_vtab_in_next(argv[lpc], &in_val))
+                    {
+                        const auto* text
+                            = (const char*) sqlite3_value_text(in_val);
+                        if (text != nullptr) {
+                            in_values.emplace_back(
+                                text, (size_t) sqlite3_value_bytes(in_val));
+                        }
+                    }
+                    p_cur->log_cursor.lc_indexed_columns.emplace_back(
+                        col, std::move(in_values));
                 } else {
                     const auto* value
                         = (const char*) sqlite3_value_text(argv[lpc]);
@@ -2225,8 +2252,11 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         }
     }
 
-    // Rows a table gave for an indexed column (see lines_for_value()).
+    // Rows a table gave for an indexed column (see lines_for_values()), in
+    // order, when it knew all of the column's values.
     const std::vector<vis_line_t>* known_lines = nullptr;
+    // The rows the table gave, for some or all of the values.
+    std::vector<vis_line_t> table_lines;
     if (p_cur->log_cursor.lc_curr_line == p_cur->log_cursor.lc_end_line) {
     } else if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
         auto min_index_range = msg_range::invalid();
@@ -2240,12 +2270,37 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                   .value();
         // A table may already know the rows with a value (all_logs knows a
         // log statement's rows from the statement map), which saves scanning
-        // to fill the column's index.
+        // to fill the column's index.  The values it doesn't know are left
+        // for the column index.
         if (p_cur->log_cursor.lc_indexed_columns.size() == 1) {
-            const auto& icol = p_cur->log_cursor.lc_indexed_columns.front();
-            if (icol.cc_constraint.sc_op == SQLITE_INDEX_CONSTRAINT_EQ) {
-                known_lines = vt->vi->lines_for_value(
-                    icol.cc_column, icol.cc_constraint.sc_value, *vt->lss);
+            auto& icol = p_cur->log_cursor.lc_indexed_columns.front();
+            std::vector<std::string> unknown;
+            if (icol.cc_in) {
+                vt->vi->lines_for_values(icol.cc_column,
+                                         icol.cc_in_values,
+                                         *vt->lss,
+                                         table_lines,
+                                         unknown);
+                if (icol.cc_in_values.size() > 1) {
+                    std::sort(table_lines.begin(), table_lines.end());
+                    table_lines.erase(
+                        std::unique(table_lines.begin(), table_lines.end()),
+                        table_lines.end());
+                }
+                icol.cc_in_values = std::move(unknown);
+                if (icol.cc_in_values.empty()) {
+                    known_lines = &table_lines;
+                }
+            } else if (icol.cc_constraint.sc_op == SQLITE_INDEX_CONSTRAINT_EQ)
+            {
+                vt->vi->lines_for_values(icol.cc_column,
+                                         {icol.cc_constraint.sc_value},
+                                         *vt->lss,
+                                         table_lines,
+                                         unknown);
+                if (unknown.empty()) {
+                    known_lines = &table_lines;
+                }
             }
         }
         if (known_lines != nullptr) {
@@ -2277,38 +2332,52 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                 min_index_range.intersect(coli.ci_indexed_range);
             }
 
+            auto add_indexed_lines = [&](const auto& lines) {
+                for (auto vl : lines) {
+                    if (!scan_range.contains(vl)) {
+#ifdef DEBUG_INDEXING
+                        log_debug(
+                            "indexed line %d is outside of scan range [%d:%d)",
+                            vl,
+                            scan_range.v_min_line,
+                            scan_range.v_max_line);
+#endif
+                        continue;
+                    }
+
+                    if (!min_index_range.contains(vl)) {
+#ifdef DEBUG_INDEXING
+                        log_debug(
+                            "indexed line %d is outside of the min index range",
+                            vl);
+#endif
+                        continue;
+                    }
+
+#ifdef DEBUG_INDEXING
+                    log_debug("adding indexed line %d", vl);
+#endif
+                    p_cur->log_cursor.lc_indexed_lines.push_back(vl);
+                }
+            };
+            // The rows the table knew for some of an IN list's values, the
+            // same as the column index's rows for the others.
+            add_indexed_lines(table_lines);
             for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
                 const auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
-
-                auto iter
-                    = coli.ci_value_to_lines.find(icol.cc_constraint.sc_value);
-                if (iter != coli.ci_value_to_lines.end()) {
-                    for (auto vl : iter->second) {
-                        if (!scan_range.contains(vl)) {
-    #ifdef DEBUG_INDEXING
-                            log_debug(
-                                "indexed line %d is outside of scan range [%d:%d)",
-                                vl,
-                                scan_range.v_min_line,
-                                scan_range.v_max_line);
-    #endif
-                            continue;
-                        }
-
-                        if (!min_index_range.contains(vl)) {
-    #ifdef DEBUG_INDEXING
-                            log_debug(
-                                "indexed line %d is outside of the min index range",
-                                vl);
-    #endif
-                            continue;
-                        }
-
-    #ifdef DEBUG_INDEXING
-                        log_debug("adding indexed line %d", vl);
-    #endif
-                        p_cur->log_cursor.lc_indexed_lines.push_back(vl);
+                auto add_value = [&](const std::string& value) {
+                    auto iter = coli.ci_value_to_lines.find(value);
+                    if (iter != coli.ci_value_to_lines.end()) {
+                        add_indexed_lines(iter->second);
                     }
+                };
+
+                if (icol.cc_in) {
+                    for (const auto& value : icol.cc_in_values) {
+                        add_value(value);
+                    }
+                } else {
+                    add_value(icol.cc_constraint.sc_value);
                 }
             }
             p_cur->log_cursor.lc_indexed_lines_range = min_index_range;
@@ -2767,12 +2836,28 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                     }
                 } else if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
                     argvInUse += 1;
-                    indexes.push_back(constraint);
                     p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
-                    index_desc.emplace_back(
-                        fmt::format(FMT_STRING("col({}) {} ?"),
-                                    col,
-                                    sql_constraint_op_name(op)));
+                    // An IN list on a column the table can look up (all_logs'
+                    // log_msg_schema, from the statement map): the whole
+                    // list in one xFilter, the values' rows merged in order,
+                    // so ORDER BY log_line ... LIMIT stops early.  Asked one
+                    // value at a time, every row of each was read first.
+                    if (vt->vi->knows_lines_for(col)
+                        && sqlite3_vtab_in(p_info, lpc, -1))
+                    {
+                        sqlite3_vtab_in(p_info, lpc, 1);
+                        auto in_cons = constraint;
+                        in_cons.op = LNAV_INDEX_CONSTRAINT_IN;
+                        indexes.push_back(in_cons);
+                        index_desc.emplace_back(
+                            fmt::format(FMT_STRING("col({}) IN (?)"), col));
+                    } else {
+                        indexes.push_back(constraint);
+                        index_desc.emplace_back(
+                            fmt::format(FMT_STRING("col({}) {} ?"),
+                                        col,
+                                        sql_constraint_op_name(op)));
+                    }
                 }
                 break;
             }

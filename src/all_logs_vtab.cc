@@ -45,24 +45,32 @@
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 all_logs_vtab::schema_lines_t all_logs_vtab::alv_schema_lines = nullptr;
-all_logs_vtab::line_schema_t all_logs_vtab::alv_line_schema = nullptr;
+all_logs_vtab::line_stmt_t all_logs_vtab::alv_line_stmt = nullptr;
 
-const std::vector<vis_line_t>*
-all_logs_vtab::lines_for_value(int col,
-                               const std::string& value,
-                               logfile_sub_source& lss)
+void
+all_logs_vtab::lines_for_values(int col,
+                                const std::vector<std::string>& values,
+                                logfile_sub_source& lss,
+                                std::vector<vis_line_t>& lines_out,
+                                std::vector<std::string>& unknown_out)
 {
-    if (alv_schema_lines == nullptr
-        || col
-            != VT_COL_MAX
-                + (int) this->alv_schema_meta.lvm_column
-                      .get<logline_value_meta::table_column>()
-                      .value)
-    {
-        return nullptr;
+    if (!this->knows_lines_for(col)) {
+        unknown_out.insert(unknown_out.end(), values.begin(), values.end());
+        return;
     }
 
-    return alv_schema_lines(value, lss);
+    alv_schema_lines(values, lss, lines_out, unknown_out);
+}
+
+bool
+all_logs_vtab::knows_lines_for(int col) const
+{
+    return alv_schema_lines != nullptr
+        && col
+        == VT_COL_MAX
+            + (int) this->alv_schema_meta.lvm_column
+                  .get<logline_value_meta::table_column>()
+                  .value;
 }
 
 all_logs_vtab::all_logs_vtab()
@@ -210,20 +218,30 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         return;
     }
 
-    // When only the schema is needed (e.g. SQLite checking a log_msg_schema
-    // constraint on the rows the statement map gave), take it from the map
-    // instead of matching the message again.
-    if (alv_line_schema != nullptr
+    // The statement map already matched most messages, so take what it knows
+    // instead of matching the message again.  The pattern, the variables, and
+    // the stack trace aren't kept there, so they still need log2src.
+    auto stmt = alv_line_stmt != nullptr ? alv_line_stmt(lf, line_number)
+                                         : line_stmt{line_stmt_unmapped{}};
+    if (stmt.is<line_stmt_mapped>()
         && !ec.are_columns_used(this->alv_msg_meta,
                                 this->alv_values_meta,
-                                this->alv_src_meta,
                                 this->alv_stacktrace_meta))
     {
-        const auto* schema = alv_line_schema(lf, line_number);
-        if (schema != nullptr) {
-            values.lvv_values.emplace_back(this->alv_schema_meta, *schema);
-            return;
-        }
+        const auto& mapped = stmt.get<line_stmt_mapped>();
+        values.lvv_values.emplace_back(
+            this->alv_schema_meta, string_fragment::from(*mapped.lsm_schema));
+        values.lvv_values.emplace_back(this->alv_src_meta,
+                                       string_fragment::from(*mapped.lsm_src));
+        return;
+    }
+    const auto unmatched = stmt.is<line_stmt_unmatched>();
+    if (unmatched
+        && !ec.are_columns_used(
+            this->alv_msg_meta, this->alv_schema_meta, this->alv_values_meta))
+    {
+        // No statement, so no log_msg_src or stack trace.
+        return;
     }
 
     auto body = find_string_attr_range(sa, &SA_BODY);
@@ -236,8 +254,10 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
     auto src_line_sf = sub_values.lvv_src_line_value;
     auto h = hasher();
 #ifdef HAVE_RUST_DEPS
-    auto find_res = find_statement(
-        line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
+    auto find_res = unmatched
+        ? nullptr
+        : find_statement(
+              line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
         char schema_buf[hasher::STRING_SIZE];
         statement_schema(string_fragment::from(find_res->src),

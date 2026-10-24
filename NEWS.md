@@ -281,7 +281,10 @@ Features:
   derived from a sample of its messages: the source expression,
   the narrowest type that covers the values (`number` or
   `string`), and a `format` of `measure` for strings that
-  are numbers with units, like `4.5ms`.
+  are numbers with units, like `4.5ms`.  Once the messages are
+  mapped, `all_logs` reads `log_msg_src` and `log_msg_schema`
+  from that map instead of matching each message again, unless
+  the query also needs `log_msg_format` or `log_msg_values`.
 * Added the `percentile_disc(value, p)` SQL aggregate function,
   which returns the value at the p-th percentile by the
   nearest-rank method, so the result is always one of the
