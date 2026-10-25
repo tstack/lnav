@@ -52,6 +52,33 @@
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 
+#if SQLITE_VERSION_NUMBER < 3038000
+/*
+ * Fallbacks for SQLite versions before 3.38, which can't hand a virtual
+ * table a whole IN list.  sqlite3_vtab_in() always says no, so the IN list
+ * is passed one value at a time and the other two are never reached.
+ */
+inline int
+sqlite3_vtab_in(sqlite3_index_info*, int, int)
+{
+    return 0;
+}
+
+inline int
+sqlite3_vtab_in_first(sqlite3_value*, sqlite3_value** pp_out)
+{
+    *pp_out = nullptr;
+    return SQLITE_ERROR;
+}
+
+inline int
+sqlite3_vtab_in_next(sqlite3_value*, sqlite3_value** pp_out)
+{
+    *pp_out = nullptr;
+    return SQLITE_ERROR;
+}
+#endif
+
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
 
 struct from_sqlite_conversion_error : std::exception {
