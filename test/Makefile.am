@@ -709,6 +709,13 @@ DISTCLEANFILES = \
 	logfile_w3c_append.0 \
 	logfile_w3c_append.tail \
 	textfile_long_lines.0 \
+	all_ids_cache.log \
+	all_ids_cache.rest \
+	line-ids-json.json \
+	line-ids-text.0 \
+	log2src-* \
+	logline-src-fields.0 \
+	stack-frame-local.log \
 	not:a:remote:file \
 	rollover_in.0 \
 	since-partial-line.log \
