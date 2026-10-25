@@ -19,9 +19,11 @@ run_cap_test ${lnav_test} -n \
     -c ":write-jsonlines-to -" \
     ${test_dir}/log2src/python/python-example.0
 
+# The schema column is left out since it hashes the source file's full path,
+# which differs from one checkout to another.
 run_cap_test ${lnav_test} -nN \
     -c ":add-source-path ${test_dir}/log2src/python" \
-    -c ";SELECT * FROM source_log_stmt('log_example.py')" \
+    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, pattern, path FROM source_log_stmt('log_example.py')" \
     -c ":write-jsonlines-to -"
 
 run_cap_test ${lnav_test} -n \
@@ -32,7 +34,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -nN \
     -c ":add-source-path ${test_dir}/log2src/java" \
-    -c ";SELECT * FROM source_log_stmt('Server.java')" \
+    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, pattern, path FROM source_log_stmt('Server.java')" \
     -c ":write-jsonlines-to -"
 
 # log_stmt_stats counts the same messages per statement as grouping
@@ -96,6 +98,7 @@ run_cap_test ${lnav_test} -n \
 # the same answers as matching every message (log_msg_values forces that).
 SRC_MAP_CHECK=";SELECT count(*) AS msgs, sum(m.src IS f.src) AS same_src, sum(m.schema IS f.schema) AS same_schema, sum(f.src IS NULL) AS unmatched FROM (SELECT log_line, log_msg_src AS src, log_msg_schema AS schema FROM all_logs) m JOIN (SELECT log_line, log_msg_src AS src, log_msg_schema AS schema, log_msg_values AS v FROM all_logs) f USING (log_line)"
 cp ${test_dir}/log2src/java/java-example.0 log2src-unmatched.0
+chmod ug+w log2src-unmatched.0
 printf '2025-09-26 21:12:40,001 [main] INFO com.example.net.Server - no statement logs this\n' \
     >> log2src-unmatched.0
 run_cap_test ${lnav_test} -n \
