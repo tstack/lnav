@@ -30,6 +30,7 @@
  */
 
 #include <algorithm>
+#include <cinttypes>
 #include <mutex>
 
 #include "config.h"
@@ -207,14 +208,14 @@ curl_request::complete(CURLcode result)
     log_debug("%s: total_time=%f", this->cr_name.c_str(), total_time);
     curl_easy_getinfo(
         this->cr_handle, CURLINFO_SIZE_DOWNLOAD_T, &download_size);
-    log_debug("%s: download_size=%" CURL_FORMAT_CURL_OFF_T,
+    log_debug("%s: download_size=%" PRId64,
               this->cr_name.c_str(),
-              download_size);
+              (int64_t) download_size);
     curl_easy_getinfo(
         this->cr_handle, CURLINFO_SPEED_DOWNLOAD_T, &download_speed);
-    log_debug("%s: download_speed=%" CURL_FORMAT_CURL_OFF_T,
+    log_debug("%s: download_speed=%" PRId64,
               this->cr_name.c_str(),
-              download_speed);
+              (int64_t) download_speed);
 
     return -1;
 }

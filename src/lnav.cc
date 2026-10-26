@@ -4426,8 +4426,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             && verbosity == verbosity_t::quiet
             && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
         {
-            log_debug("pager mode, but output is redirected")
-                lnav_data.ld_flags.set<lnav_flags::headless>();
+            log_debug("pager mode, but output is redirected");
+            lnav_data.ld_flags.set<lnav_flags::headless>();
             verbosity = verbosity_t::standard;
         } else {
             lnav::console::print(
