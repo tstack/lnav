@@ -14,7 +14,7 @@
         },
         "level-field": "body",
         "level": {
-            "error": "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
+            "error": "(?:(?:(?<![a-zA-Z]))(?:(?i)err(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
             "warning": "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
         "opid-field": "log_syslog_tag",
