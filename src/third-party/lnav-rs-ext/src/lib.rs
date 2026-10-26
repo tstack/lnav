@@ -593,7 +593,7 @@ impl FindLogResult {
     pub fn with_variables(mut self, variables: Vec<VariablePair>) -> Self {
         self.variables = variables
             .into_iter()
-            .map(|VariablePair { expr, value }| VarPair { expr, value })
+            .map(|VariablePair { expr, value, .. }| VarPair { expr, value })
             .collect();
         self
     }
