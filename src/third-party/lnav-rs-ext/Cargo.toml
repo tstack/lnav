@@ -27,7 +27,7 @@ prqlc = "0.13.10"
 cxx = "1.0"
 log = "0.4"
 miette = "7.6.0"
-log2src = {git = "https://github.com/tstack/log2src.git", branch = "claude/project-thread-dj3xkq"}
+log2src = {git = "https://github.com/tstack/log2src.git", branch = "caching1"}
 # log2src = {path = "/Users/tstack/github/log2src"}
 rouille = "3.6.2"
 cookie = "0.18.1"
