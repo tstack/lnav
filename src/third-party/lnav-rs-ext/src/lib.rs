@@ -637,17 +637,17 @@ impl From<LogLevel> for StmtLevel {
     }
 }
 
-/// The level of a message in the form log2src parses, so that statements
-/// with the same level are preferred.
-fn log2src_level_text(level: StmtLevel) -> Option<&'static str> {
-    match level {
-        StmtLevel::trace => Some("trace"),
-        StmtLevel::debug => Some("debug"),
-        StmtLevel::info => Some("info"),
-        StmtLevel::warning => Some("warn"),
-        StmtLevel::error => Some("error"),
-        StmtLevel::fatal => Some("fatal"),
-        _ => None,
+impl From<StmtLevel> for LogLevel {
+    fn from(value: StmtLevel) -> Self {
+        match value {
+            StmtLevel::trace => LogLevel::Trace,
+            StmtLevel::debug => LogLevel::Debug,
+            StmtLevel::info => LogLevel::Info,
+            StmtLevel::warning => LogLevel::Warn,
+            StmtLevel::error => LogLevel::Error,
+            StmtLevel::fatal => LogLevel::Fatal,
+            _ => LogLevel::Unknown,
+        }
     }
 }
 
@@ -661,7 +661,7 @@ fn find_log_statement(
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
-        .with_level(log2src_level_text(level))
+        .with_log_level(Some(level.into()))
         .with_body(Some(body))
         .build(body);
 
@@ -716,7 +716,7 @@ fn find_log_statement_json(
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
-        .with_level(log2src_level_text(level))
+        .with_log_level(Some(level.into()))
         .with_body(Some(body))
         .build(body);
 
