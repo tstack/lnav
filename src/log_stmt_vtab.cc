@@ -135,10 +135,14 @@ CREATE TABLE lnav_db.source_log_stmt (
                 to_sqlite(ctx, (int64_t) stmt.src.block_id);
                 break;
             case log_stmt_col::level:
-                if (stmt.level.empty()) {
+                if (stmt.level == lnav_rs_ext::StmtLevel::unknown) {
                     sqlite3_result_null(ctx);
                 } else {
-                    to_sqlite(ctx, (std::string) stmt.level);
+                    const auto& name
+                        = level_names[all_logs_vtab::from_stmt_level(
+                            stmt.level)];
+                    sqlite3_result_text(
+                        ctx, name.data(), name.length(), SQLITE_STATIC);
                 }
                 break;
             case log_stmt_col::pattern:

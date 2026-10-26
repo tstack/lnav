@@ -33,6 +33,8 @@
 
 #include "log_data_helper.hh"
 
+#include "all_logs_vtab.hh"
+
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.builder.hh"
 #include "config.h"
@@ -268,11 +270,10 @@ log_data_helper::parse_body()
     }
     this->ldh_src_ref = std::nullopt;
     this->ldh_src_vars.clear();
-    const auto& level_name = level_names[this->ldh_line->get_msg_level()];
     auto find_res = lnav_rs_ext::find_log_statement(
         file_rust_str,
         lineno,
-        rust::Str(level_name.data(), level_name.length()),
+        all_logs_vtab::to_stmt_level(this->ldh_line->get_msg_level()),
         body_rust_str);
     if (find_res != nullptr) {
         this->ldh_src_ref = lnav::src_ref{

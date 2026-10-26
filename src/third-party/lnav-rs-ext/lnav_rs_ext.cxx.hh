@@ -817,6 +817,7 @@ namespace lnav_rs_ext {
   struct PollResult;
   struct ExecError;
   struct ExecResult;
+  enum class StmtLevel : ::std::uint8_t;
   enum class LnavLogLevel : ::std::uint8_t;
   struct StartExtResult;
 }
@@ -963,9 +964,9 @@ struct FindLogResult final {
   // `src` as `find_log_statement_json()` gives it, which the schema hashes.
   ::rust::String src_json;
   ::rust::String pattern;
-  // The statement's level, as lnav names it, or empty if log2src
-  // could not tell, like for a `printf()`.
-  ::rust::String level;
+  // The statement's level, or `unknown` if log2src could not tell,
+  // like for a `printf()`.
+  ::lnav_rs_ext::StmtLevel level;
   ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 
   using IsRelocatable = ::std::true_type;
@@ -1085,6 +1086,21 @@ struct ExecResult final {
 };
 #endif // CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 
+#ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$StmtLevel
+#define CXXBRIDGE1_ENUM_lnav_rs_ext$StmtLevel
+// The level of a log statement or message, as far as log2src can
+// tell them apart.
+enum class StmtLevel : ::std::uint8_t {
+  unknown = 0,
+  trace = 1,
+  debug = 2,
+  info = 3,
+  warning = 4,
+  error = 5,
+  fatal = 6,
+};
+#endif // CXXBRIDGE1_ENUM_lnav_rs_ext$StmtLevel
+
 #ifndef CXXBRIDGE1_ENUM_lnav_rs_ext$LnavLogLevel
 #define CXXBRIDGE1_ENUM_lnav_rs_ext$LnavLogLevel
 enum class LnavLogLevel : ::std::uint8_t {
@@ -1116,9 +1132,9 @@ void discover_srcs() noexcept;
 
 ::lnav_rs_ext::ExtProgress get_status() noexcept;
 
-::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body) noexcept;
+::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::lnav_rs_ext::StmtLevel level, ::rust::Str body) noexcept;
 
-::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::lnav_rs_ext::StmtLevel level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept;
 

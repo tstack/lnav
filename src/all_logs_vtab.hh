@@ -43,6 +43,7 @@
 #ifdef HAVE_RUST_DEPS
 namespace lnav_rs_ext {
 struct FindLogResultJson;
+enum class StmtLevel : std::uint8_t;
 }
 #endif
 
@@ -148,6 +149,15 @@ public:
         const logline_value_vector& values,
         log_level_t level,
         bool extract_variables);
+
+    /**
+     * The level of a message as log2src tells them apart.  The levels it
+     * doesn't have are folded into the nearest one it does.
+     */
+    static lnav_rs_ext::StmtLevel to_stmt_level(log_level_t level);
+
+    /** The level of a log statement found by log2src. */
+    static log_level_t from_stmt_level(lnav_rs_ext::StmtLevel level);
 #endif
 
 private:

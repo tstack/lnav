@@ -6,7 +6,8 @@ mod ext_access;
 use crate::ext_access::{set_login_otp, start_server, stop_server};
 use crate::ffi::{
     get_lnav_log_level, notify_completion, notify_pollers, ExtError, ExtProgress, FindLogOptions,
-    FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
+    FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status,
+    StmtLevel, VarPair,
 };
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
@@ -234,9 +235,9 @@ mod ffi {
         /// `src` as `find_log_statement_json()` gives it, which the schema hashes.
         pub src_json: String,
         pub pattern: String,
-        /// The statement's level, as lnav names it, or empty if log2src
-        /// could not tell, like for a `printf()`.
-        pub level: String,
+        /// The statement's level, or `unknown` if log2src could not tell,
+        /// like for a `printf()`.
+        pub level: StmtLevel,
         pub variables: Vec<VarPair>,
     }
 
@@ -323,6 +324,19 @@ mod ffi {
         pub error: ExecError,
     }
 
+    /// The level of a log statement or message, as far as log2src can
+    /// tell them apart.
+    #[derive(Debug)]
+    enum StmtLevel {
+        unknown,
+        trace,
+        debug,
+        info,
+        warning,
+        error,
+        fatal,
+    }
+
     enum LnavLogLevel {
         trace,
         debug,
@@ -375,13 +389,13 @@ mod ffi {
         fn find_log_statement(
             file: &str,
             line: usize,
-            level: &str,
+            level: StmtLevel,
             body: &str,
         ) -> UniquePtr<FindLogResult>;
         fn find_log_statement_json(
             file: &str,
             line: usize,
-            level: &str,
+            level: StmtLevel,
             body: &str,
             options: &FindLogOptions,
         ) -> UniquePtr<FindLogResultJson>;
@@ -593,7 +607,7 @@ impl From<&SourceRef> for FindLogResult {
             },
             src_json: src_json(value),
             pattern: value.pattern_str.to_string(),
-            level: lnav_level_name(value.level).to_string(),
+            level: value.level.into(),
             variables: vec![],
         }
     }
@@ -609,35 +623,38 @@ impl FindLogResult {
     }
 }
 
-/// The name lnav uses for a statement's level.
-fn lnav_level_name(level: LogLevel) -> &'static str {
-    match level {
-        LogLevel::Trace => "trace",
-        LogLevel::Debug => "debug",
-        LogLevel::Info => "info",
-        LogLevel::Warn => "warning",
-        LogLevel::Error => "error",
-        LogLevel::Fatal => "fatal",
-        LogLevel::Unknown => "",
+impl From<LogLevel> for StmtLevel {
+    fn from(value: LogLevel) -> Self {
+        match value {
+            LogLevel::Trace => StmtLevel::trace,
+            LogLevel::Debug => StmtLevel::debug,
+            LogLevel::Info => StmtLevel::info,
+            LogLevel::Warn => StmtLevel::warning,
+            LogLevel::Error => StmtLevel::error,
+            LogLevel::Fatal => StmtLevel::fatal,
+            LogLevel::Unknown => StmtLevel::unknown,
+        }
     }
 }
 
-/// The level of a message, as lnav names it, in the form log2src parses, so
-/// that statements with the same level are preferred.  The levels that
-/// log2src doesn't have are folded into the nearest one it does.
-fn log2src_level_text(level: &str) -> Option<&str> {
+/// The level of a message in the form log2src parses, so that statements
+/// with the same level are preferred.
+fn log2src_level_text(level: StmtLevel) -> Option<&'static str> {
     match level {
-        "" | "unknown" | "invalid" | "header" => None,
-        "stats" => Some("info"),
-        _ if level.starts_with("debug") => Some("debug"),
-        _ => Some(level),
+        StmtLevel::trace => Some("trace"),
+        StmtLevel::debug => Some("debug"),
+        StmtLevel::info => Some("info"),
+        StmtLevel::warning => Some("warn"),
+        StmtLevel::error => Some("error"),
+        StmtLevel::fatal => Some("fatal"),
+        _ => None,
     }
 }
 
 fn find_log_statement(
     file: &str,
     lineno: usize,
-    level: &str,
+    level: StmtLevel,
     body: &str,
 ) -> UniquePtr<FindLogResult> {
     let log_matcher = LOG_MATCHER.read().unwrap();
@@ -691,7 +708,7 @@ fn src_json(src_ref: &SourceRef) -> String {
 fn find_log_statement_json(
     file: &str,
     lineno: usize,
-    level: &str,
+    level: StmtLevel,
     body: &str,
     options: &FindLogOptions,
 ) -> UniquePtr<FindLogResultJson> {
@@ -703,7 +720,6 @@ fn find_log_statement_json(
         .with_body(Some(body))
         .build(body);
 
-    
     if let Some(LogMapping {
         variables,
         src_ref: Some(src_ref),
