@@ -268,8 +268,12 @@ log_data_helper::parse_body()
     }
     this->ldh_src_ref = std::nullopt;
     this->ldh_src_vars.clear();
-    auto find_res
-        = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
+    const auto& level_name = level_names[this->ldh_line->get_msg_level()];
+    auto find_res = lnav_rs_ext::find_log_statement(
+        file_rust_str,
+        lineno,
+        rust::Str(level_name.data(), level_name.length()),
+        body_rust_str);
     if (find_res != nullptr) {
         this->ldh_src_ref = lnav::src_ref{
             std::filesystem::path((std::string) find_res->src.file),

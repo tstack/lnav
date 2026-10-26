@@ -139,12 +139,14 @@ public:
     /**
      * Finds the source statement that logged a message, or nullptr.  The
      * sbr is the message, sa and values are what the format's annotate()
-     * gave for it.
+     * gave for it, and level is the message's level, which breaks ties
+     * between statements that match equally well.
      */
     static std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_statement(
         const shared_buffer_ref& sbr,
         const string_attrs_t& sa,
         const logline_value_vector& values,
+        log_level_t level,
         bool extract_variables);
 #endif
 

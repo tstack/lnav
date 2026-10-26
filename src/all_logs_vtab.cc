@@ -362,8 +362,11 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
 #ifdef HAVE_RUST_DEPS
     auto find_res = unmatched
         ? nullptr
-        : find_statement(
-              line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
+        : find_statement(line,
+                         sa,
+                         sub_values,
+                         lf->begin()[line_number].get_msg_level(),
+                         ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
         char schema_buf[hasher::STRING_SIZE];
         statement_schema(string_fragment::from(find_res->src),
@@ -433,6 +436,7 @@ std::unique_ptr<lnav_rs_ext::FindLogResultJson>
 all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
                               const string_attrs_t& sa,
                               const logline_value_vector& values,
+                              log_level_t level,
                               bool extract_variables)
 {
     if (!sbr.get_metadata().m_valid_utf) {
@@ -463,9 +467,11 @@ all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
     auto find_options = lnav_rs_ext::FindLogOptions{
         .extract_variables = extract_variables,
     };
+    const auto& level_name = level_names[level];
     return lnav_rs_ext::find_log_statement_json(
         file_rust_str,
         lineno,
+        rust::Str(level_name.data(), level_name.length()),
         rust::Str(body_sf.data(), body_sf.length()),
         find_options);
 }

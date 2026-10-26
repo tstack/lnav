@@ -11,8 +11,8 @@ use crate::ffi::{
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
-    Cache, LogError, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder, ProgressTracker,
-    ProgressUpdate, SourceRef, VariablePair, WorkInfo,
+    Cache, LogError, LogLevel, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder,
+    ProgressTracker, ProgressUpdate, SourceRef, VariablePair, WorkInfo,
 };
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
@@ -234,6 +234,9 @@ mod ffi {
         /// `src` as `find_log_statement_json()` gives it, which the schema hashes.
         pub src_json: String,
         pub pattern: String,
+        /// The statement's level, as lnav names it, or empty if log2src
+        /// could not tell, like for a `printf()`.
+        pub level: String,
         pub variables: Vec<VarPair>,
     }
 
@@ -369,10 +372,16 @@ mod ffi {
 
         fn get_status() -> ExtProgress;
 
-        fn find_log_statement(file: &str, line: usize, body: &str) -> UniquePtr<FindLogResult>;
+        fn find_log_statement(
+            file: &str,
+            line: usize,
+            level: &str,
+            body: &str,
+        ) -> UniquePtr<FindLogResult>;
         fn find_log_statement_json(
             file: &str,
             line: usize,
+            level: &str,
             body: &str,
             options: &FindLogOptions,
         ) -> UniquePtr<FindLogResultJson>;
@@ -584,6 +593,7 @@ impl From<&SourceRef> for FindLogResult {
             },
             src_json: src_json(value),
             pattern: value.pattern_str.to_string(),
+            level: lnav_level_name(value.level).to_string(),
             variables: vec![],
         }
     }
@@ -599,11 +609,42 @@ impl FindLogResult {
     }
 }
 
-fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResult> {
+/// The name lnav uses for a statement's level.
+fn lnav_level_name(level: LogLevel) -> &'static str {
+    match level {
+        LogLevel::Trace => "trace",
+        LogLevel::Debug => "debug",
+        LogLevel::Info => "info",
+        LogLevel::Warn => "warning",
+        LogLevel::Error => "error",
+        LogLevel::Fatal => "fatal",
+        LogLevel::Unknown => "",
+    }
+}
+
+/// The level of a message, as lnav names it, in the form log2src parses, so
+/// that statements with the same level are preferred.  The levels that
+/// log2src doesn't have are folded into the nearest one it does.
+fn log2src_level_text(level: &str) -> Option<&str> {
+    match level {
+        "" | "unknown" | "invalid" | "header" => None,
+        "stats" => Some("info"),
+        _ if level.starts_with("debug") => Some("debug"),
+        _ => Some(level),
+    }
+}
+
+fn find_log_statement(
+    file: &str,
+    lineno: usize,
+    level: &str,
+    body: &str,
+) -> UniquePtr<FindLogResult> {
     let log_matcher = LOG_MATCHER.read().unwrap();
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_level(log2src_level_text(level))
         .with_body(Some(body))
         .build(body);
 
@@ -650,6 +691,7 @@ fn src_json(src_ref: &SourceRef) -> String {
 fn find_log_statement_json(
     file: &str,
     lineno: usize,
+    level: &str,
     body: &str,
     options: &FindLogOptions,
 ) -> UniquePtr<FindLogResultJson> {
@@ -657,6 +699,7 @@ fn find_log_statement_json(
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_level(log2src_level_text(level))
         .with_body(Some(body))
         .build(body);
 

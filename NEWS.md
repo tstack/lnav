@@ -322,6 +322,13 @@ Features:
   `schema` column with the `log_msg_schema` of the messages
   logged by each statement, so they can be found with a
   `log_msg_schema = …` constraint.
+* The `source_log_stmt()` table-valued function has a new
+  `level` column with the level of the messages logged by
+  each statement, as log2src determined it from the logging
+  call (e.g. `warning` for `log.warn(...)`), or NULL when it
+  could not tell, like for a `printf()`.  When a message
+  matches more than one statement equally well, the one with
+  the same level as the message is now chosen.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

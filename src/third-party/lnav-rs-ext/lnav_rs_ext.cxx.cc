@@ -999,6 +999,9 @@ struct FindLogResult final {
   // `src` as `find_log_statement_json()` gives it, which the schema hashes.
   ::rust::String src_json;
   ::rust::String pattern;
+  // The statement's level, as lnav names it, or empty if log2src
+  // could not tell, like for a `printf()`.
+  ::rust::String level;
   ::rust::Vec<::lnav_rs_ext::VarPair> variables;
 
   using IsRelocatable = ::std::true_type;
@@ -1190,9 +1193,9 @@ void lnav_rs_ext$cxxbridge1$205$discover_srcs() noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$get_status(::lnav_rs_ext::ExtProgress *return$) noexcept;
 
-::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$205$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept;
+::lnav_rs_ext::FindLogResult *lnav_rs_ext$cxxbridge1$205$find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body) noexcept;
 
-::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$205$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
+::lnav_rs_ext::FindLogResultJson *lnav_rs_ext$cxxbridge1$205$find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$get_log_statements_for(::rust::Str file, ::rust::Vec<::lnav_rs_ext::FindLogResult> *return$) noexcept;
 
@@ -1229,12 +1232,12 @@ void discover_srcs() noexcept {
   return ::std::move(return$.value);
 }
 
-::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str body) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$205$find_log_statement(file, line, body));
+::std::unique_ptr<::lnav_rs_ext::FindLogResult> find_log_statement(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body) noexcept {
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResult>(lnav_rs_ext$cxxbridge1$205$find_log_statement(file, line, level, body));
 }
 
-::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept {
-  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$205$find_log_statement_json(file, line, body, options));
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::rust::Str level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept {
+  return ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson>(lnav_rs_ext$cxxbridge1$205$find_log_statement_json(file, line, level, body, options));
 }
 
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept {
