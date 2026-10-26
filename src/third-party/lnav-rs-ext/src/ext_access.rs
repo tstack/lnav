@@ -41,9 +41,7 @@ fn do_login(request: &Request) -> Response {
                 let session_cookie = Cookie::build(("lnav_session_id", session_id))
                     .path("/")
                     .build();
-                let target = request
-                    .get_param("target")
-                    .unwrap_or_else(|| "/".to_string());
+                let target = request.get_param("target").unwrap_or_else(|| "/".to_string());
                 return Response::redirect_302(target)
                     .with_additional_header("Set-Cookie", session_cookie.to_string());
             } else {
@@ -195,7 +193,8 @@ fn do_exec(request: &Request) -> Response {
 }
 
 fn do_poll(request: &Request) -> Response {
-    let mut body = try_or_400!(input::json_input::<Option<PollInput>>(request)).unwrap_or_default();
+    let mut body =
+        try_or_400!(input::json_input::<Option<PollInput>>(request)).unwrap_or_default();
     // A request has no lasting connection, so lnav tells pollers apart by
     // what the request carries: the browser session, the editor's client ID,
     // or, failing those, the user agent.
@@ -315,7 +314,9 @@ pub fn stop_server() {
         // after the server is dropped, so wait for the port to be released
         // to let the caller bind to it again.
         let deadline = Instant::now() + Duration::from_secs(1);
-        while TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_err() && Instant::now() < deadline {
+        while TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_err()
+            && Instant::now() < deadline
+        {
             thread::sleep(Duration::from_millis(10));
         }
     }
