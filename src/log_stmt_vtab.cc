@@ -48,6 +48,7 @@ enum class log_stmt_col : uint8_t {
     function_name,
     qualified_name,
     block_id,
+    level,
     pattern,
     path,
     schema,
@@ -67,6 +68,7 @@ CREATE TABLE lnav_db.source_log_stmt (
     function_name TEXT,
     qualified_name TEXT,
     block_id INTEGER,
+    level TEXT,
     pattern TEXT,
     path TEXT,
     schema TEXT,
@@ -131,6 +133,17 @@ CREATE TABLE lnav_db.source_log_stmt (
                 break;
             case log_stmt_col::block_id:
                 to_sqlite(ctx, (int64_t) stmt.src.block_id);
+                break;
+            case log_stmt_col::level:
+                if (stmt.level == lnav_rs_ext::StmtLevel::unknown) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    const auto& name
+                        = level_names[all_logs_vtab::from_stmt_level(
+                            stmt.level)];
+                    sqlite3_result_text(
+                        ctx, name.data(), name.length(), SQLITE_STATIC);
+                }
                 break;
             case log_stmt_col::pattern:
                 to_sqlite(ctx, (std::string) stmt.pattern);
@@ -247,6 +260,10 @@ register_log_stmt_vtab(sqlite3* db)
                             "An ID for the innermost block containing the "
                             "statement.  Statements in the same file with the "
                             "same ID are in the same block."})
+              .with_result({"level",
+                            "The level of the messages logged by this "
+                            "statement, or NULL if it could not be "
+                            "determined, like for a printf()"})
               .with_result({"pattern",
                             "The pattern used to match log messages from this "
                             "log statement"})

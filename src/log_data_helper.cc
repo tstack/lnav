@@ -33,6 +33,8 @@
 
 #include "log_data_helper.hh"
 
+#include "all_logs_vtab.hh"
+
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.builder.hh"
 #include "config.h"
@@ -268,8 +270,11 @@ log_data_helper::parse_body()
     }
     this->ldh_src_ref = std::nullopt;
     this->ldh_src_vars.clear();
-    auto find_res
-        = lnav_rs_ext::find_log_statement(file_rust_str, lineno, body_rust_str);
+    auto find_res = lnav_rs_ext::find_log_statement(
+        file_rust_str,
+        lineno,
+        all_logs_vtab::to_stmt_level(this->ldh_line->get_msg_level()),
+        body_rust_str);
     if (find_res != nullptr) {
         this->ldh_src_ref = lnav::src_ref{
             std::filesystem::path((std::string) find_res->src.file),

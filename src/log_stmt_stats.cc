@@ -311,6 +311,7 @@ struct stmt_map {
                      const shared_buffer_ref& sbr,
                      const string_attrs_t& sa,
                      const logline_value_vector& values,
+                     log_level_t level,
                      match_scratch& ms)
     {
 #ifdef HAVE_RUST_DEPS
@@ -325,7 +326,7 @@ struct stmt_map {
             }
         }
 
-        auto res = all_logs_vtab::find_statement(sbr, sa, values, true);
+        auto res = all_logs_vtab::find_statement(sbr, sa, values, level, true);
         if (res == nullptr) {
             return;
         }
@@ -370,14 +371,15 @@ struct stmt_map {
 
         format->annotate(lf, line_number, sa, values);
 
-        auto find_res = all_logs_vtab::find_statement(sbr, sa, values, false);
+        auto find_res = all_logs_vtab::find_statement(
+            sbr, sa, values, ll->get_msg_level(), false);
         if (find_res == nullptr) {
             return NO_STATEMENT;
         }
 
         auto id = this->intern_cached(
             ms.ms_cache, ms.ms_arena, find_res->src, find_res->pattern);
-        this->sample_vars(id, sbr, sa, values, ms);
+        this->sample_vars(id, sbr, sa, values, ll->get_msg_level(), ms);
         return id;
 #else
         return NO_STATEMENT;

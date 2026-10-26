@@ -6,13 +6,14 @@ mod ext_access;
 use crate::ext_access::{set_login_otp, start_server, stop_server};
 use crate::ffi::{
     get_lnav_log_level, notify_completion, notify_pollers, ExtError, ExtProgress, FindLogOptions,
-    FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status, VarPair,
+    FindLogResult, FindLogResultJson, LnavLogLevel, SourceDetails, StartExtResult, Status,
+    StmtLevel, VarPair,
 };
 use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
-    Cache, LogError, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder, ProgressTracker,
-    ProgressUpdate, SourceRef, VariablePair, WorkInfo,
+    Cache, LogError, LogLevel, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder,
+    ProgressTracker, ProgressUpdate, SourceRef, VariablePair, WorkInfo,
 };
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
@@ -234,6 +235,9 @@ mod ffi {
         /// `src` as `find_log_statement_json()` gives it, which the schema hashes.
         pub src_json: String,
         pub pattern: String,
+        /// The statement's level, or `unknown` if log2src could not tell,
+        /// like for a `printf()`.
+        pub level: StmtLevel,
         pub variables: Vec<VarPair>,
     }
 
@@ -320,6 +324,19 @@ mod ffi {
         pub error: ExecError,
     }
 
+    /// The level of a log statement or message, as far as log2src can
+    /// tell them apart.
+    #[derive(Debug)]
+    enum StmtLevel {
+        unknown,
+        trace,
+        debug,
+        info,
+        warning,
+        error,
+        fatal,
+    }
+
     enum LnavLogLevel {
         trace,
         debug,
@@ -369,10 +386,16 @@ mod ffi {
 
         fn get_status() -> ExtProgress;
 
-        fn find_log_statement(file: &str, line: usize, body: &str) -> UniquePtr<FindLogResult>;
+        fn find_log_statement(
+            file: &str,
+            line: usize,
+            level: StmtLevel,
+            body: &str,
+        ) -> UniquePtr<FindLogResult>;
         fn find_log_statement_json(
             file: &str,
             line: usize,
+            level: StmtLevel,
             body: &str,
             options: &FindLogOptions,
         ) -> UniquePtr<FindLogResultJson>;
@@ -584,6 +607,7 @@ impl From<&SourceRef> for FindLogResult {
             },
             src_json: src_json(value),
             pattern: value.pattern_str.to_string(),
+            level: value.level.into(),
             variables: vec![],
         }
     }
@@ -599,11 +623,45 @@ impl FindLogResult {
     }
 }
 
-fn find_log_statement(file: &str, lineno: usize, body: &str) -> UniquePtr<FindLogResult> {
+impl From<LogLevel> for StmtLevel {
+    fn from(value: LogLevel) -> Self {
+        match value {
+            LogLevel::Trace => StmtLevel::trace,
+            LogLevel::Debug => StmtLevel::debug,
+            LogLevel::Info => StmtLevel::info,
+            LogLevel::Warn => StmtLevel::warning,
+            LogLevel::Error => StmtLevel::error,
+            LogLevel::Fatal => StmtLevel::fatal,
+            LogLevel::Unknown => StmtLevel::unknown,
+        }
+    }
+}
+
+impl From<StmtLevel> for LogLevel {
+    fn from(value: StmtLevel) -> Self {
+        match value {
+            StmtLevel::trace => LogLevel::Trace,
+            StmtLevel::debug => LogLevel::Debug,
+            StmtLevel::info => LogLevel::Info,
+            StmtLevel::warning => LogLevel::Warn,
+            StmtLevel::error => LogLevel::Error,
+            StmtLevel::fatal => LogLevel::Fatal,
+            _ => LogLevel::Unknown,
+        }
+    }
+}
+
+fn find_log_statement(
+    file: &str,
+    lineno: usize,
+    level: StmtLevel,
+    body: &str,
+) -> UniquePtr<FindLogResult> {
     let log_matcher = LOG_MATCHER.read().unwrap();
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_log_level(Some(level.into()))
         .with_body(Some(body))
         .build(body);
 
@@ -650,6 +708,7 @@ fn src_json(src_ref: &SourceRef) -> String {
 fn find_log_statement_json(
     file: &str,
     lineno: usize,
+    level: StmtLevel,
     body: &str,
     options: &FindLogOptions,
 ) -> UniquePtr<FindLogResultJson> {
@@ -657,10 +716,10 @@ fn find_log_statement_json(
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
+        .with_log_level(Some(level.into()))
         .with_body(Some(body))
         .build(body);
 
-    
     if let Some(LogMapping {
         variables,
         src_ref: Some(src_ref),

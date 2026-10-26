@@ -362,8 +362,11 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
 #ifdef HAVE_RUST_DEPS
     auto find_res = unmatched
         ? nullptr
-        : find_statement(
-              line, sa, sub_values, ec.is_column_used(this->alv_values_meta));
+        : find_statement(line,
+                         sa,
+                         sub_values,
+                         lf->begin()[line_number].get_msg_level(),
+                         ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
         char schema_buf[hasher::STRING_SIZE];
         statement_schema(string_fragment::from(find_res->src),
@@ -433,6 +436,7 @@ std::unique_ptr<lnav_rs_ext::FindLogResultJson>
 all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
                               const string_attrs_t& sa,
                               const logline_value_vector& values,
+                              log_level_t level,
                               bool extract_variables)
 {
     if (!sbr.get_metadata().m_valid_utf) {
@@ -466,8 +470,58 @@ all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
     return lnav_rs_ext::find_log_statement_json(
         file_rust_str,
         lineno,
+        to_stmt_level(level),
         rust::Str(body_sf.data(), body_sf.length()),
         find_options);
+}
+
+lnav_rs_ext::StmtLevel
+all_logs_vtab::to_stmt_level(log_level_t level)
+{
+    switch (level) {
+        case LEVEL_TRACE:
+            return lnav_rs_ext::StmtLevel::trace;
+        case LEVEL_DEBUG5:
+        case LEVEL_DEBUG4:
+        case LEVEL_DEBUG3:
+        case LEVEL_DEBUG2:
+        case LEVEL_DEBUG:
+            return lnav_rs_ext::StmtLevel::debug;
+        case LEVEL_INFO:
+        case LEVEL_STATS:
+        case LEVEL_NOTICE:
+            return lnav_rs_ext::StmtLevel::info;
+        case LEVEL_WARNING:
+            return lnav_rs_ext::StmtLevel::warning;
+        case LEVEL_ERROR:
+            return lnav_rs_ext::StmtLevel::error;
+        case LEVEL_CRITICAL:
+        case LEVEL_FATAL:
+            return lnav_rs_ext::StmtLevel::fatal;
+        default:
+            return lnav_rs_ext::StmtLevel::unknown;
+    }
+}
+
+log_level_t
+all_logs_vtab::from_stmt_level(lnav_rs_ext::StmtLevel level)
+{
+    switch (level) {
+        case lnav_rs_ext::StmtLevel::trace:
+            return LEVEL_TRACE;
+        case lnav_rs_ext::StmtLevel::debug:
+            return LEVEL_DEBUG;
+        case lnav_rs_ext::StmtLevel::info:
+            return LEVEL_INFO;
+        case lnav_rs_ext::StmtLevel::warning:
+            return LEVEL_WARNING;
+        case lnav_rs_ext::StmtLevel::error:
+            return LEVEL_ERROR;
+        case lnav_rs_ext::StmtLevel::fatal:
+            return LEVEL_FATAL;
+        default:
+            return LEVEL_UNKNOWN;
+    }
 }
 #endif
 

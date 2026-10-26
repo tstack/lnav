@@ -5360,6 +5360,9 @@ For support questions, email:
   [4mblock_id[0m         An ID for the innermost block
                    containing the statement.  Statements in the same
                    file with the same ID are in the same block.
+  [4mlevel[0m            The level of the messages logged
+                   by this statement, or NULL if it could not be
+                   determined, like for a printf()
   [4mpattern[0m          The pattern used to match log
                    messages from this log statement
   [4mpath[0m             The path to the source file

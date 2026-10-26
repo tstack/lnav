@@ -23,7 +23,7 @@ run_cap_test ${lnav_test} -n \
 # which differs from one checkout to another.
 run_cap_test ${lnav_test} -nN \
     -c ":add-source-path ${test_dir}/log2src/python" \
-    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, pattern, path FROM source_log_stmt('log_example.py')" \
+    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, level, pattern, path FROM source_log_stmt('log_example.py')" \
     -c ":write-jsonlines-to -"
 
 run_cap_test ${lnav_test} -n \
@@ -34,7 +34,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -nN \
     -c ":add-source-path ${test_dir}/log2src/java" \
-    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, pattern, path FROM source_log_stmt('Server.java')" \
+    -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, level, pattern, path FROM source_log_stmt('Server.java')" \
     -c ":write-jsonlines-to -"
 
 # log_stmt_stats counts the same messages per statement as grouping
