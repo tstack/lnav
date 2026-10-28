@@ -40,6 +40,12 @@
                     "command": ":toggle-breakpoint",
                     "alt-msg": "${keymap_def_breakpoint}"
                 },
+                "x4f": {
+                    "command": "|lnav-moveto-opid prev"
+                },
+                "x6f": {
+                    "command": "|lnav-moveto-opid next"
+                },
                 "x13": {
                     "command": ":toggle-sticky-header"
                 },

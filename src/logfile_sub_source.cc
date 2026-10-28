@@ -3548,7 +3548,8 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
         case SQLITE_ROW:
             return Ok(true);
         default:
-            return Err(sqlite3_error_to_user_message(sqlite3_db_handle(stmt)));
+            return Err(sqlite3_error_to_user_message(sqlite3_db_handle(stmt),
+                                                     attr_line_t()));
     }
 }
 

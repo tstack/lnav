@@ -2271,8 +2271,9 @@ timeline_source::collect_metric_samples_via_sql(metric_state& ms)
     // query validated at command time, so any error here means
     // something about the underlying tables has since changed.
     auto capture_err = [&ms] {
-        ms.ms_error = sqlite3_error_to_user_message(lnav_data.ld_db.in())
-                          .um_message.get_string();
+        ms.ms_error
+            = sqlite3_error_to_user_message(lnav_data.ld_db.in(), attr_line_t())
+                  .um_message.get_string();
     };
 
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);

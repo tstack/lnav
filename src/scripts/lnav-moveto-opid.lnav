@@ -1,0 +1,49 @@
+#
+# @synopsis: lnav-moveto-opid next|prev
+# @description: Move to the prev/next opid
+#
+
+;SELECT
+    CASE
+      WHEN name != 'log' THEN
+        raise_error('Cannot move by opid',
+                    NULL,
+                    'Only log messages have an OP ID')
+      ELSE 1
+    END
+  FROM lnav_top_view
+
+;SELECT
+    CASE
+      WHEN log_opid IS NULL THEN
+        raise_error('Cannot move by opid',
+                    'No log messages have an OP ID')
+      ELSE log_opid
+    END AS curr_opid
+  FROM (SELECT log_opid FROM lnav_focused_msg)
+
+;SELECT
+    CASE $1
+      WHEN 'next' THEN '>'
+      WHEN 'prev' THEN '<'
+      ELSE raise_error('invalid direction "' || $1 || '", expecting "next" or "prev"')
+    END AS line_cmp,
+    CASE $1
+      WHEN 'next' THEN 'ASC'
+      WHEN 'prev' THEN 'DESC'
+    END AS line_order
+
+:eval ;SELECT
+    log_line
+  FROM all_logs
+  WHERE
+    log_line $line_cmp log_msg_line() AND
+    log_opid = \$curr_opid
+  ORDER BY log_line $line_order
+  LIMIT 1
+
+;SELECT raise_error('No more log messages with OP ID: ' || $curr_opid)
+  WHERE $log_line IS NULL
+
+:switch-to-view log
+:eval :goto $log_line

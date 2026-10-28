@@ -4,5 +4,3 @@
 [36m --> [0m[1m../test/cfg/test_log2src.sh/.lnav/formats/default/lnav-stack-frame-handler.lnav[0m:7
 [36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mraise_error[0m[37m[40m([0m[37m[40m$mouse_button[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m' click not supported'[0m[37m[40m)[0m
 [36m | [0m[37m[40m  [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40m$mouse_button[0m[37m[40m [0m[1m[37m[40m!=[0m[37m[40m [0m[35m[40m'left'[0m[37m[40m                             [0m
-[36m =[0m [36mnote[0m: the bound parameters are set as follows:
-           [4m$mouse_button[0m:TEXT = “right”

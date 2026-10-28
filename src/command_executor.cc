@@ -33,7 +33,6 @@
 
 #include "command_executor.hh"
 
-#include "CLI/App.hpp"
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
@@ -47,6 +46,7 @@
 #include "base/time_util.hh"
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
+#include "CLI/App.hpp"
 #include "config.h"
 #include "curl_looper.hh"
 #include "db_sub_source.hh"
@@ -556,8 +556,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     }
 
                     log_error("sqlite3_step error code: %d", retcode);
-                    auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
-                                  .with_note(bound_note)
+                    auto um = sqlite3_error_to_user_message(lnav_data.ld_db,
+                                                            bound_note)
                                   .move();
 
                     if (ec.get_provenance<exec_context::keyboard_input>()

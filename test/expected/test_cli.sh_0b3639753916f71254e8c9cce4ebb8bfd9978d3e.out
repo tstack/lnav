@@ -9628,6 +9628,11 @@
                     "command": ":prev-search-hit",
                     "alt-msg": "${keymap_def_focus_search}"
                 },
+                "x4f": {
+                    "id": "",
+                    "command": "|lnav-moveto-opid prev",
+                    "alt-msg": ""
+                },
                 "x50": {
                     "id": "",
                     "command": ":toggle-view pretty",
@@ -9692,6 +9697,11 @@
                     "id": "",
                     "command": ":next-search-hit",
                     "alt-msg": "${keymap_def_focus_search}"
+                },
+                "x6f": {
+                    "id": "",
+                    "command": "|lnav-moveto-opid next",
+                    "alt-msg": ""
                 },
                 "x70": {
                     "id": "",

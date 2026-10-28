@@ -7,7 +7,4 @@
 [36m | [0m[37m[40m                    [0m[35m[40m'The file does not exist and was not found in the source paths'[0m[37m[40m,[0m
 [36m | [0m[37m[40m                    [0m[35m[40m'Use :add-source-path to add a path to search for source code.'[0m[37m[40m)[0m
 [36m | [0m[37m[40m  [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40m$src_path[0m[37m[40m [0m[1m[36m[40mIS[0m[37m[40m [0m[1m[36m[40mNULL[0m[37m[40m                                                           [0m
-[36m =[0m [36mnote[0m: the bound parameters are set as follows:
-           [4m$frame_path[0m:TEXT = “nope/Missing.java”
-           [4m$src_path[0m:NULL = “<NULL>”
 [36m =[0m [36mhelp[0m: Use :add-source-path to add a path to search for source code.

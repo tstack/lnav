@@ -9,6 +9,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/lnav-copy-text.lnav \
     $(srcdir)/scripts/lnav-link-callback.lnav \
     $(srcdir)/scripts/lnav-moveto-breakpoint.lnav \
+    $(srcdir)/scripts/lnav-moveto-opid.lnav \
     $(srcdir)/scripts/lnav-open-source.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
     $(srcdir)/scripts/lnav-src-loc-handler.lnav \

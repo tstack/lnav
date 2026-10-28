@@ -79,7 +79,8 @@ sqlite3_vtab_in_next(sqlite3_value*, sqlite3_value** pp_out)
 }
 #endif
 
-lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
+lnav::console::user_message sqlite3_error_to_user_message(
+    sqlite3*, const attr_line_t& note);
 
 struct from_sqlite_conversion_error : std::exception {
     from_sqlite_conversion_error(const char* type, int argi)

@@ -1,8 +1,3 @@
 [1m[31m✘[0m [1m[31merror[0m: oops!
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m$inum[0m[37m[40m, [0m[37m[40m$nul[0m[37m[40m, [0m[37m[40m$fnum[0m[37m[40m, [0m[37m[40m$str[0m[37m[40m, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'oops!'[0m[37m[40m)[0m
-[36m =[0m [36mnote[0m: the bound parameters are set as follows:
-           [4m$fnum[0m:FLOAT = “2”
-           [4m$inum[0m:INTEGER = “1”
-           [4m$nul[0m:NULL = “<NULL>”
-           [4m$str[0m:TEXT = “abc”

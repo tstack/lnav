@@ -54,7 +54,7 @@ set_vtable_errmsg(sqlite3_vtab* vtab, const lnav::console::user_message& um)
 }
 
 lnav::console::user_message
-sqlite3_error_to_user_message(sqlite3* db)
+sqlite3_error_to_user_message(sqlite3* db, const attr_line_t& note)
 {
     const auto* errmsg = sqlite3_errmsg(db);
     if (startswith(errmsg, sqlitepp::ERROR_PREFIX)) {
@@ -67,11 +67,13 @@ sqlite3_error_to_user_message(sqlite3* db)
 
         log_error("unable to parse error message: %s", errmsg);
         return lnav::console::user_message::error("internal error")
-            .with_reason(from_res.unwrapErr()[0].um_message.get_string());
+            .with_reason(from_res.unwrapErr()[0].um_message.get_string())
+            .with_note(note);
     }
 
     return lnav::console::user_message::error("SQL statement failed")
-        .with_reason(errmsg);
+        .with_reason(errmsg)
+        .with_note(note);
 }
 
 void
