@@ -30,16 +30,22 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <condition_variable>
+#include <mutex>
+#include <random>
+#include <set>
+#include <thread>
+
 #include <data_parser.hh>
 
 #include "attr_line.ansi.hh"
 #include "attr_line.html.hh"
 #include "attr_line.render.hh"
-#include "base/injector.bind.hh"
-#include "base/relative_time.hh"
 #include "base/from_trait.hh"
 #include "base/fts_fuzzy_match.hh"
+#include "base/injector.bind.hh"
 #include "base/itertools.similar.hh"
+#include "base/relative_time.hh"
 #include "breadcrumb.hh"
 #include "byte_array.hh"
 #include "cmd.parser.hh"
@@ -62,12 +68,6 @@
 #include "unique_path.hh"
 #include "view_curses.hh"
 #include "vtab_module.hh"
-
-#include <condition_variable>
-#include <random>
-#include <set>
-#include <mutex>
-#include <thread>
 
 using namespace std;
 
@@ -179,7 +179,8 @@ TEST_CASE("shlex::escape")
 {
     // What escape() returns reads back as the original inside single quotes,
     // backslashes (a Windows path) and quotes included.
-    for (const std::string orig : {
+    for (const auto& orig :
+         {
              std::string(R"(C:\src\App\Program.cs)"),
              std::string("it's"),
              std::string(R"(a\'b)"),
@@ -485,8 +486,7 @@ TEST_CASE("possibility_collector")
         pc.add("a"_frag);
         pc.add("c"_frag);
         pc.add("d"_frag);
-        CHECK(keys_of(pc.release())
-              == std::vector<std::string>{"b", "a", "c"});
+        CHECK(keys_of(pc.release()) == std::vector<std::string>{"b", "a", "c"});
     }
 
     SUBCASE("duplicates are returned once")
@@ -521,8 +521,7 @@ TEST_CASE("possibility_collector")
         }
         auto actual = keys_of(pc.release());
         REQUIRE(actual.size() == 10);
-        CHECK(std::set<std::string>(actual.begin(), actual.end()).size()
-              == 10);
+        CHECK(std::set<std::string>(actual.begin(), actual.end()).size() == 10);
         for (size_t lpc = 1; lpc < actual.size(); lpc++) {
             CHECK(score_of(actual[lpc - 1]) >= score_of(actual[lpc]));
         }
@@ -612,8 +611,13 @@ TEST_CASE("lnav::sql::thread_local_db")
     size_t open_count = 0;
 
     for (size_t lpc = 0; lpc < THREAD_COUNT; lpc++) {
-        threads.emplace_back([lpc, &dbs, &matched, &same_twice,
-                              &state_func_prepared, &open_lock, &open_cond,
+        threads.emplace_back([lpc,
+                              &dbs,
+                              &matched,
+                              &same_twice,
+                              &state_func_prepared,
+                              &open_lock,
+                              &open_cond,
                               &open_count]() {
             auto* db = lnav::sql::thread_local_db();
 
@@ -868,7 +872,8 @@ TEST_CASE("md2attr_line inline HTML")
 
 TEST_CASE("md2attr_line HTML block span with an entity")
 {
-    auto str = render_md("<div>\n<span style=\"color: red\">a &amp; b</span>\n</div>\n");
+    auto str = render_md(
+        "<div>\n<span style=\"color: red\">a &amp; b</span>\n</div>\n");
 
     CHECK(str.find("a & b") != std::string::npos);
 }
@@ -876,7 +881,8 @@ TEST_CASE("md2attr_line HTML block span with an entity")
 TEST_CASE("md2attr_line table header wider than the column")
 {
     auto str = render_md(
-        "| https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        "| "
+        "https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         " | b |\n"
         "|---|---|\n"
         "| x | y |\n");
@@ -970,9 +976,9 @@ TEST_CASE("html::to_html inline styles and links")
 
     al.al_attrs.emplace_back(line_range{0, 4},
                              VC_STYLE.value(text_attrs::with_bold()));
-    al.al_attrs.emplace_back(
-        line_range{5, 8},
-        VC_FOREGROUND.value(styling::color_unit::from_rgb(rgb_color{255, 0, 0})));
+    al.al_attrs.emplace_back(line_range{5, 8},
+                             VC_FOREGROUND.value(styling::color_unit::from_rgb(
+                                 rgb_color{255, 0, 0})));
     al.al_attrs.emplace_back(line_range{9, 13},
                              VC_HYPERLINK.value("https://a.example/?x=1&y=2"));
 
@@ -993,8 +999,10 @@ TEST_CASE("html::to_html only links to safe schemes")
         return lnav::html::to_html(al);
     };
 
-    CHECK(link_html("https://a.example/") == "<a href=\"https://a.example/\">x</a>");
-    CHECK(link_html("HTTP://a.example/") == "<a href=\"HTTP://a.example/\">x</a>");
+    CHECK(link_html("https://a.example/")
+          == "<a href=\"https://a.example/\">x</a>");
+    CHECK(link_html("HTTP://a.example/")
+          == "<a href=\"HTTP://a.example/\">x</a>");
     CHECK(link_html("file:///tmp/a.log#L1")
           == "<a href=\"file:///tmp/a.log#L1\">x</a>");
     CHECK(link_html("mailto:a@example.com")
@@ -1021,7 +1029,8 @@ TEST_CASE("html::to_html drops an unsafe link but keeps its style")
     al.al_attrs.emplace_back(line_range{0, 1},
                              VC_STYLE.value(text_attrs::with_bold()));
 
-    CHECK(lnav::html::to_html(al) == "<span style=\"font-weight: bold\">x</span>");
+    CHECK(lnav::html::to_html(al)
+          == "<span style=\"font-weight: bold\">x</span>");
 }
 
 TEST_CASE("render::to_text shows each invalid byte as a replacement")
@@ -1030,7 +1039,10 @@ TEST_CASE("render::to_text shows each invalid byte as a replacement")
 
     // Two bad bytes, then a lead byte that is missing its continuation,
     // which must not swallow the "x" after it.
-    auto al = attr_line_t("a\xff\xfe" "b\xe2" "x");
+    auto al = attr_line_t(
+        "a\xff\xfe"
+        "b\xe2"
+        "x");
 
     CHECK(lnav::render::to_text(al) == "a\ufffd\ufffdb\ufffdx");
 }
@@ -1042,12 +1054,13 @@ TEST_CASE("html::to_html marks invalid bytes with the non-ASCII role")
     const auto non_ascii_class = html_class_for(role_t::VCR_NON_ASCII);
     REQUIRE(!non_ascii_class.empty());
 
-    auto al = attr_line_t("a\xff" "b");
+    auto al = attr_line_t(
+        "a\xff"
+        "b");
 
     CHECK(lnav::html::to_html(al)
-          == fmt::format(
-              FMT_STRING("a<span class=\"{}\">\ufffd</span>b"),
-              non_ascii_class));
+          == fmt::format(FMT_STRING("a<span class=\"{}\">\ufffd</span>b"),
+                         non_ascii_class));
 }
 
 TEST_CASE("html::to_html invalid byte inside a role keeps the role")
@@ -1056,7 +1069,9 @@ TEST_CASE("html::to_html invalid byte inside a role keeps the role")
 
     const auto err_class = html_class_for(role_t::VCR_ERROR);
     const auto non_ascii_class = html_class_for(role_t::VCR_NON_ASCII);
-    auto al = attr_line_t("a\xff" "b");
+    auto al = attr_line_t(
+        "a\xff"
+        "b");
 
     al.al_attrs.emplace_back(line_range{0, 3},
                              VC_ROLE.value(role_t::VCR_ERROR));
@@ -1066,12 +1081,11 @@ TEST_CASE("html::to_html invalid byte inside a role keeps the role")
 
     auto html = lnav::html::to_html(al);
 
-    CHECK(html.find(fmt::format(FMT_STRING("<span class=\"{}\">a</span>"),
-                                err_class))
+    CHECK(html.find(
+              fmt::format(FMT_STRING("<span class=\"{}\">a</span>"), err_class))
           == 0);
-    CHECK(html.find(fmt::format(FMT_STRING("<span class=\"{} {}\""),
-                                classes[0],
-                                classes[1]))
+    CHECK(html.find(fmt::format(
+              FMT_STRING("<span class=\"{} {}\""), classes[0], classes[1]))
           != std::string::npos);
     CHECK(html.find("\ufffd") != std::string::npos);
     CHECK(html.find("\xff") == std::string::npos);
@@ -1183,7 +1197,10 @@ TEST_CASE("html::to_html control characters become glyphs")
 {
     init_html_theme();
 
-    auto al = attr_line_t("a\x1b" "b\x01" "c\td");
+    auto al = attr_line_t(
+        "a\x1b"
+        "b\x01"
+        "c\td");
 
     CHECK(lnav::html::to_html(al) == "a⎋b␁c\td");
 }
@@ -1265,7 +1282,8 @@ TEST_CASE("ansi::to_ansi role uses the theme's RGB colors")
 
     // error is bold Maroon in the default theme.
     CHECK(lnav::ansi::to_ansi(al)
-          == "\x1b[" ANSI_TEXT_COLORS "mx \x1b[0m"
+          == "\x1b[" ANSI_TEXT_COLORS
+             "mx \x1b[0m"
              "\x1b[1;38;2;128;0;0;48;2;0;0;0mbad\x1b[0m");
 }
 
@@ -1297,8 +1315,10 @@ TEST_CASE("ansi::to_ansi styles and links")
                              VC_HYPERLINK.value("https://a.example/"));
 
     CHECK(lnav::ansi::to_ansi(al)
-          == "\x1b[4;" ANSI_TEXT_COLORS "mu\x1b[0m"
-             "\x1b[" ANSI_TEXT_COLORS "m "
+          == "\x1b[4;" ANSI_TEXT_COLORS
+             "mu\x1b[0m"
+             "\x1b[" ANSI_TEXT_COLORS
+             "m "
              "\x1b]8;;https://a.example/\x1b\\link\x1b]8;;\x1b\\\x1b[0m");
 }
 
@@ -1397,7 +1417,8 @@ TEST_CASE("file_split::policy")
         pol.add(at(70min));
         CHECK_FALSE(pol.should_cut_before(at(110min)));
         pol.add(at(110min));
-        CHECK_FALSE(pol.should_cut_before(message_info{10, 1, 1, std::nullopt}));
+        CHECK_FALSE(
+            pol.should_cut_before(message_info{10, 1, 1, std::nullopt}));
         CHECK(pol.should_cut_before(at(120min)));
 
         pol.start_piece();
@@ -1423,8 +1444,7 @@ TEST_CASE("file_split::limits::defaults")
 
     CHECK(limits::defaults(100 * MiB, 8, max_lines).l_bytes.value()
           == 256 * MiB);
-    CHECK(limits::defaults(100 * GiB, 8, max_lines).l_bytes.value()
-          == 2 * GiB);
+    CHECK(limits::defaults(100 * GiB, 8, max_lines).l_bytes.value() == 2 * GiB);
     CHECK(limits::defaults(std::nullopt, 8, max_lines).l_bytes.value()
           == 1 * GiB);
 }
@@ -1519,4 +1539,3 @@ TEST_CASE("tdigest copy keeps the compression")
     CHECK(assigned.centroid_count() == fresh.centroid_count());
     CHECK(copy.quantile(99) == fresh.quantile(99));
 }
-

@@ -932,8 +932,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         lr.lr_start = 0;
         lr.lr_end = file_offset_end + 1;
         this->lss_token_al.al_attrs.emplace_back(
-            lr,
-            VC_STYLE.value(vc.attrs_for_ident(file_ident)));
+            lr, VC_STYLE.value(vc.attrs_for_ident(file_ident)));
     } else if (this->lss_time_column_size > 0) {
         shift_string_attrs(
             this->lss_token_al.al_attrs, 1, this->lss_time_column_size);
@@ -1339,16 +1338,16 @@ struct logline_cmp {
     logfile_sub_source& llss_controller;
 };
 
-bool
+lnav::progress_result_t
 logfile_sub_source::tick_scan_progress(
     const std::vector<logfile*>& work,
-    std::vector<index_progress_report>& in_flight)
+    std::vector<index_progress_report>& in_flight) const
 {
     file_off_t off = 0;
     file_ssize_t total = 0;
 
     in_flight.clear();
-    for (auto* lf : work) {
+    for (const auto* lf : work) {
         const auto& prog = lf->indexing_progress();
         // Read each field once.  The scan publishes the offset and the total
         // as two separate stores, so the pair seen here can be a fresh offset
@@ -1369,9 +1368,11 @@ logfile_sub_source::tick_scan_progress(
         }
     }
 
-    return this->lss_scan_progress
-        && this->lss_scan_progress(off, total, in_flight)
-        == lnav::progress_result_t::interrupt;
+    if (!this->lss_scan_progress) {
+        return lnav::progress_result_t::ok;
+    }
+
+    return this->lss_scan_progress(off, total, in_flight);
 }
 
 logfile_sub_source::prescan_map
@@ -1454,7 +1455,9 @@ logfile_sub_source::prescan_files(const std::vector<size_t>& file_order,
         },
         [&]() {
             ticked = true;
-            if (this->tick_scan_progress(work, in_flight)) {
+            if (this->tick_scan_progress(work, in_flight)
+                == lnav::progress_result_t::interrupt)
+            {
                 for (auto* lf : work) {
                     lf->abort_indexing();
                 }
@@ -1535,9 +1538,9 @@ struct sort_input {
         // The bound is by time alone, so walk over the lines that share the
         // limit's timestamp but still sort before it.
         if (this->si_order == nullptr) {
-            auto iter = lnav::gallop_lower_bound(
-                begin + this->next_pos(), this->si_file_ptr->end(),
-                limit.get_time());
+            auto iter = lnav::gallop_lower_bound(begin + this->next_pos(),
+                                                 this->si_file_ptr->end(),
+                                                 limit.get_time());
             while (iter != this->si_file_ptr->end() && *iter < limit) {
                 ++iter;
             }
@@ -1720,7 +1723,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                         ? (uint64_t) -1
                                         : last_indexed_line->get_time<>()
                                               .count());
-                                if (retval <= rebuild_result::rr_partial_rebuild)
+                                if (retval
+                                    <= rebuild_result::rr_partial_rebuild)
                                 {
                                     retval = rebuild_result::rr_partial_rebuild;
                                     if (!lowest_us
@@ -1957,11 +1961,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         // Appends the lines at merge positions [start, end) of a file.  The
         // caller picks index_of once per run, so a file whose lf_index is
         // already in time order does not pay for the lookup on every line.
-        auto append_run = [this, &index_off, index_size](
-                              logfile_data& ld,
-                              size_t start,
-                              size_t end,
-                              auto index_of) {
+        auto append_run = [this, &index_off, index_size](logfile_data& ld,
+                                                         size_t start,
+                                                         size_t end,
+                                                         auto index_of) {
             auto* lf = ld.get_file_ptr();
             const auto lf_begin = lf->begin();
             const auto file_base = ld.ld_file_index * MAX_LINES_PER_FILE;
@@ -2030,8 +2033,9 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             ld->ld_lines_indexed = run_end;
 
             if (run_end == next_si.end_pos()) {
-                log_debug("fully consumed %s",
-                          next_si.si_file_ptr->get_filename_as_string().c_str());
+                log_debug(
+                    "fully consumed %s",
+                    next_si.si_file_ptr->get_filename_as_string().c_str());
                 sort_inputs.pop_back();
             } else {
                 for (auto si_iter = std::next(sort_inputs.rbegin());
@@ -4093,7 +4097,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
 {
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
-    if (this->lss_filtered_index.empty()) {
+    if (this->lss_filtered_index.empty() || this->lss_indexing_in_progress) {
         return;
     }
 
@@ -4269,8 +4273,9 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 .append(" ")
                 .append(tid_display),
             [this,
-             curr_tid = values.lvv_thread_id_value.value_or(""_frag)
-                            .to_string()](string_fragment search)
+             curr_tid
+             = values.lvv_thread_id_value.value_or(""_frag).to_string()](
+                string_fragment search)
                 -> std::vector<breadcrumb::possibility> {
                 breadcrumb::possibility_collector collector(search);
 
@@ -5146,7 +5151,8 @@ logfile_sub_source::add_stack_frame_links()
         std::string fl_href;
     };
     std::vector<frame_link> links;
-    for (const auto& [name, sfd] : cfg.c_stack_frames) {
+    for (const auto& sf : cfg.c_stack_frames) {
+        const auto& sfd = sf.second;
         if (!sfd.sfd_enabled || !sfd.sfd_valid) {
             continue;
         }
@@ -5224,20 +5230,21 @@ logfile_sub_source::add_stack_frame_links()
         if (res.isErr()) {
             auto err = res.unwrapErr();
             log_error("stack frame pattern %s failed: %s",
-                      name.c_str(),
+                      sf.first.c_str(),
                       err.get_message().c_str());
         }
     }
 
     for (auto& link : links) {
-        al.with_attr({link.fl_range, VC_STYLE.value(text_attrs::with_underline())})
+        al.with_attr(
+              {link.fl_range, VC_STYLE.value(text_attrs::with_underline())})
             .with_attr({link.fl_range,
                         VC_COMMAND.value(ui_command{
                             source_location{},
                             std::move(link.fl_command),
                         })})
-            .with_attr(
-                {link.fl_range, SA_STACK_FRAME.value(std::move(link.fl_frame))});
+            .with_attr({link.fl_range,
+                        SA_STACK_FRAME.value(std::move(link.fl_frame))});
         if (!link.fl_href.empty()) {
             al.with_attr({link.fl_range,
                           SA_STACK_FRAME_HREF.value(std::move(link.fl_href))});

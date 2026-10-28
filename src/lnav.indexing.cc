@@ -137,9 +137,7 @@ indexing_scan_progress(file_off_t off,
         fss.text_selection_changed(lnav_data.ld_files_view);
         lnav_data.ld_file_details_view.reload_data();
     }
-    lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
-
-    return lnav::progress_result_t::ok;
+    return lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
 }
 
 lnav::progress_result_t

@@ -66,7 +66,6 @@
 #endif
 
 #include "all_logs_vtab.hh"
-#include "log_stmt_stats.hh"
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
@@ -115,6 +114,7 @@
 #include "log_format_loader.hh"
 #include "log_gutter_source.hh"
 #include "log_search_table.hh"
+#include "log_stmt_stats.hh"
 #include "log_stmt_vtab.hh"
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
@@ -1132,9 +1132,6 @@ struct refresh_status_bars {
             sc.do_update();
         }
         if (!workers_own_files) {
-            // Same reasoning as the view stack above: the crumbs that
-            // describe the current message are built by reading it back out
-            // of the file, through the line buffer a worker is filling.
             breadcrumb_view->do_update();
         }
         lnav::prompt::get().p_editor.do_update();

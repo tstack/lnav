@@ -958,8 +958,7 @@ public:
         return this->find_mark(from, dir, region_mark_for(bt).value());
     }
 
-    bool text_mark_at_row(const bookmark_type_t* bt,
-                          vis_line_t vl) const
+    bool text_mark_at_row(const bookmark_type_t* bt, vis_line_t vl) const
     {
         return this->row_has_mark(vl, region_mark_for(bt).value());
     }
@@ -1054,8 +1053,9 @@ private:
      *
      * @return True if the callback asked for the scan to stop.
      */
-    bool tick_scan_progress(const std::vector<logfile*>& work,
-                            std::vector<index_progress_report>& in_flight);
+    lnav::progress_result_t tick_scan_progress(
+        const std::vector<logfile*>& work,
+        std::vector<index_progress_report>& in_flight) const;
 
     /** Re-run the filters over every file from where each one left off. */
     void reobserve_files();
