@@ -123,8 +123,9 @@ public:
         const auto prefix_len = this->plf_cached_line.size();
         this->plf_cached_line.resize(this->plf_cached_line.size()
                                      + sbr.length());
-        memcpy(
-            &this->plf_cached_line[prefix_len], sbr.get_data(), sbr.length());
+        memcpy(this->plf_cached_line.data() + prefix_len,
+               sbr.get_data(),
+               sbr.length());
 
         sbr.share(this->plf_share_manager,
                   this->plf_cached_line.data(),
