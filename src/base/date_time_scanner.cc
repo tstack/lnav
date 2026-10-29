@@ -471,7 +471,12 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
         return;
     }
 
-    if (t < this->dts_local_offset_valid || t >= this->dts_local_offset_expiry)
+    if (t >= MAX_LOCAL_TIME) {
+        this->dts_local_offset_cache = 0;
+        this->dts_local_offset_valid = MAX_LOCAL_TIME;
+        this->dts_local_offset_expiry = std::numeric_limits<time_t>::max();
+    } else if (t < this->dts_local_offset_valid
+               || t >= this->dts_local_offset_expiry)
     {
         // localtime_r() is not used here because, on macOS, it reloads the
         // zone file on every call in a forked process, like a grep child,

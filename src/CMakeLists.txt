@@ -100,6 +100,7 @@ set(FORMAT_FILES
         formats/asterisk_log.json
         formats/block_log.json
         formats/bunyan_log.json
+        formats/caddy_log.json
         formats/candlepin_log.json
         formats/choose_repo_log.json
         formats/cloudflare_log.json
@@ -109,35 +110,46 @@ set(FORMAT_FILES
         formats/ecs_log.json
         formats/elb_log.json
         formats/engine_log.json
+        formats/env_logger_log.json
         formats/error_log.json
         formats/esx_syslog_log.json
         formats/fsck_log.json
         formats/github_events_log.json
         formats/glog_log.json
         formats/haproxy_log.json
+        formats/idea_log.json
         formats/java_log.json
         formats/journald_json_log.json
         formats/katello_log.json
         formats/laravel_log.json
         formats/lnav_debug_log.json
+        formats/logcat_log.json
         formats/macosuni_log.json
         formats/mongodb_json_log.json
         formats/mysql_error_log.json
+        formats/mysql_gen_log.json
         formats/mysql_slow_log.json
         formats/nextcloud_log.json
         formats/nextflow_log.json
         formats/openam_log.json
         formats/openamdb_log.json
         formats/openstack_log.json
+        formats/otel_collector_log.json
+        formats/otlp_python_log.json
         formats/page_log.json
         formats/pcap_log.json
+        formats/pino_log.json
         formats/postgres_json_log.json
         formats/postgres_log.json
         formats/procstate_log.json
         formats/proxifier_log.json
+        formats/rails_log.json
         formats/redis_log.json
+        formats/robot_fwk_log.json
         formats/rust_tracing_log.json
+        formats/simple_rs_log.json
         formats/snaplogic_log.json
+        formats/spdlog_log.json
         formats/sssd_log.json
         formats/strace_log.json
         formats/syslog_log.json
@@ -152,8 +164,11 @@ set(FORMAT_FILES
         formats/vmw_vc_svc_log.json
         formats/vmw_py_log.json
         formats/vpostgres_log.json
+        formats/web_robot_log.json
         formats/windows_event_log.json
         formats/xmlrpc_log.json
+        formats/zap_console_log.json
+        formats/zellij_log.json
         formats/zookeeper_log.json
 )
 

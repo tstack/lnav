@@ -49,12 +49,12 @@
 
 #ifndef HAS_REMOTE_API
 #  if USE_OS_TZDB == 0
-#    ifdef _WIN32
+#    if defined _WIN32 || defined __ANDROID__
 #      define HAS_REMOTE_API 0
 #    else
 #      define HAS_REMOTE_API 1
 #    endif
-#  else  // HAS_REMOTE_API makes no since when using the OS timezone database
+#  else  // HAS_REMOTE_API makes no sense when using the OS timezone database
 #    define HAS_REMOTE_API 0
 #  endif
 #endif
@@ -138,6 +138,13 @@ namespace date
 {
 
 enum class choose {earliest, latest};
+
+#if defined(BUILD_TZ_LIB)
+# if defined(ANDROID) || defined(__ANDROID__)
+struct tzdb;
+static std::unique_ptr<tzdb> init_tzdb();
+# endif // defined(ANDROID) || defined(__ANDROID__)
+#endif // defined(BUILD_TZ_LIB)
 
 namespace detail
 {
@@ -231,8 +238,8 @@ nonexistent_local_time::make_msg(local_time<Duration> tp, const local_info& i)
        << i.first.abbrev << " and\n"
        << local_seconds{i.second.begin.time_since_epoch()} + i.second.offset << ' '
        << i.second.abbrev
-       << " which are both equivalent to\n"
-       << i.first.end << " UTC";
+       << " which are both equivalent to\n";
+    date::operator<<(os, i.first.end) << " UTC";
     return os.str();
 }
 
@@ -782,6 +789,7 @@ private:
 #if USE_OS_TZDB
     std::vector<detail::transition>      transitions_;
     std::vector<detail::expanded_ttinfo> ttinfos_;
+    std::string                          posix_tz_;
 #else  // !USE_OS_TZDB
     std::vector<detail::zonelet>         zonelets_;
 #endif  // !USE_OS_TZDB
@@ -821,6 +829,12 @@ public:
 
 #if !USE_OS_TZDB
     DATE_API void add(const std::string& s);
+#else
+# if defined(BUILD_TZ_LIB)
+#  if defined(ANDROID) || defined(__ANDROID__)
+    friend std::unique_ptr<tzdb> init_tzdb();
+#  endif // defined(ANDROID) || defined(__ANDROID__)
+# endif // defined(BUILD_TZ_LIB)
 #endif  // !USE_OS_TZDB
 
 private:
@@ -844,8 +858,11 @@ private:
     DATE_API void
     load_data(std::istream& inf, std::int32_t tzh_leapcnt, std::int32_t tzh_timecnt,
                                  std::int32_t tzh_typecnt, std::int32_t tzh_charcnt);
+# if defined(ANDROID) || defined(__ANDROID__)
+    void parse_from_android_tzdata(std::ifstream& inf, const std::size_t off);
+# endif // defined(ANDROID) || defined(__ANDROID__)
 #else  // !USE_OS_TZDB
-    DATE_API sys_info   get_info_impl(sys_seconds tp, int timezone) const;
+    DATE_API sys_info   get_info_impl(sys_seconds tp, int tz_int) const;
     DATE_API void adjust_infos(const std::vector<detail::Rule>& rules);
     DATE_API void parse_info(std::istream& in);
 #endif  // !USE_OS_TZDB
@@ -998,7 +1015,8 @@ public:
     DATE_API explicit leap_second(const std::string& s, detail::undocumented);
 #endif
 
-    sys_seconds date() const {return date_;}
+    constexpr sys_seconds date() const noexcept {return date_;}
+    constexpr std::chrono::seconds value() const noexcept {return std::chrono::seconds{1};}
 
     friend bool operator==(const leap_second& x, const leap_second& y) {return x.date_ == y.date_;}
     friend bool operator< (const leap_second& x, const leap_second& y) {return x.date_ < y.date_;}
@@ -1190,11 +1208,11 @@ struct tzdb
 #endif  // defined(_MSC_VER) && (_MSC_VER < 1900)
 
 #if HAS_STRING_VIEW
-    const time_zone* locate_zone(std::string_view tz_name) const;
+    DATE_API const time_zone* locate_zone(std::string_view tz_name) const;
 #else
-    const time_zone* locate_zone(const std::string& tz_name) const;
+    DATE_API const time_zone* locate_zone(const std::string& tz_name) const;
 #endif
-    const time_zone* current_zone() const;
+    DATE_API const time_zone* current_zone() const;
 };
 
 using TZ_DB = tzdb;
@@ -1209,9 +1227,9 @@ class tzdb_list
     std::atomic<tzdb*> head_{nullptr};
 
 public:
-    ~tzdb_list();
+    DATE_API ~tzdb_list();
     tzdb_list() = default;
-    tzdb_list(tzdb_list&& x) NOEXCEPT;
+    DATE_API tzdb_list(tzdb_list&& x) NOEXCEPT;
 
     const tzdb& front() const NOEXCEPT {return *head_;}
           tzdb& front()       NOEXCEPT {return *head_;}
@@ -1224,7 +1242,7 @@ public:
     const_iterator cbegin() const NOEXCEPT;
     const_iterator cend() const NOEXCEPT;
 
-    const_iterator erase_after(const_iterator p) NOEXCEPT;
+    DATE_API const_iterator erase_after(const_iterator p) NOEXCEPT;
 
     struct undocumented_helper;
 private:

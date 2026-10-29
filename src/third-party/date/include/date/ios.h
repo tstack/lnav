@@ -36,10 +36,10 @@
     {
     namespace iOSUtils
     {
-    
+
     std::string get_tzdata_path();
     std::string get_current_timezone();
-    
+
     }  // namespace iOSUtils
     }  // namespace date
 

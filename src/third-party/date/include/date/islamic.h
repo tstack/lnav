@@ -758,8 +758,8 @@ operator<<(std::basic_ostream<CharT, Traits>& os, const year_month_weekday_last&
 inline namespace literals
 {
 
-CONSTCD11 islamic::day  operator "" _d(unsigned long long d) NOEXCEPT;
-CONSTCD11 islamic::year operator "" _y(unsigned long long y) NOEXCEPT;
+CONSTCD11 islamic::day  operator ""_d(unsigned long long d) NOEXCEPT;
+CONSTCD11 islamic::year operator ""_y(unsigned long long y) NOEXCEPT;
 
 }  // inline namespace literals
 #endif // !defined(_MSC_VER) || (_MSC_VER >= 1900)
@@ -1339,7 +1339,7 @@ inline namespace literals
 CONSTCD11
 inline
 islamic::day
-operator "" _d(unsigned long long d) NOEXCEPT
+operator ""_d(unsigned long long d) NOEXCEPT
 {
     return islamic::day{static_cast<unsigned>(d)};
 }
@@ -1347,7 +1347,7 @@ operator "" _d(unsigned long long d) NOEXCEPT
 CONSTCD11
 inline
 islamic::year
-operator "" _y(unsigned long long y) NOEXCEPT
+operator ""_y(unsigned long long y) NOEXCEPT
 {
     return islamic::year(static_cast<int>(y));
 }

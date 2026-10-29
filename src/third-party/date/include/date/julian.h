@@ -758,8 +758,8 @@ operator<<(std::basic_ostream<CharT, Traits>& os, const year_month_weekday_last&
 inline namespace literals
 {
 
-CONSTCD11 julian::day  operator "" _d(unsigned long long d) NOEXCEPT;
-CONSTCD11 julian::year operator "" _y(unsigned long long y) NOEXCEPT;
+CONSTCD11 julian::day  operator ""_d(unsigned long long d) NOEXCEPT;
+CONSTCD11 julian::year operator ""_y(unsigned long long y) NOEXCEPT;
 
 // CONSTDATA julian::month jan{1};
 // CONSTDATA julian::month feb{2};
@@ -1333,7 +1333,7 @@ inline namespace literals
 CONSTCD11
 inline
 julian::day
-operator "" _d(unsigned long long d) NOEXCEPT
+operator ""_d(unsigned long long d) NOEXCEPT
 {
     return julian::day{static_cast<unsigned>(d)};
 }
@@ -1341,7 +1341,7 @@ operator "" _d(unsigned long long d) NOEXCEPT
 CONSTCD11
 inline
 julian::year
-operator "" _y(unsigned long long y) NOEXCEPT
+operator ""_y(unsigned long long y) NOEXCEPT
 {
     return julian::year(static_cast<int>(y));
 }
@@ -1655,10 +1655,10 @@ inline
 bool
 month_day::ok() const NOEXCEPT
 {
-    CONSTDATA julian::day d[] = { 
-        julian::day(31), julian::day(29), julian::day(31), julian::day(30), 
-        julian::day(31), julian::day(30), julian::day(31), julian::day(31), 
-        julian::day(30), julian::day(31), julian::day(30), julian::day(31) 
+    CONSTDATA julian::day d[] = {
+        julian::day(31), julian::day(29), julian::day(31), julian::day(30),
+        julian::day(31), julian::day(30), julian::day(31), julian::day(31),
+        julian::day(30), julian::day(31), julian::day(30), julian::day(31)
     };
     return m_.ok() && julian::day(1) <= d_ && d_ <= d[static_cast<unsigned>(m_)-1];
 }
@@ -1949,10 +1949,10 @@ inline
 day
 year_month_day_last::day() const NOEXCEPT
 {
-    CONSTDATA julian::day d[] = { 
-        julian::day(31), julian::day(28), julian::day(31), julian::day(30), 
-        julian::day(31), julian::day(30), julian::day(31), julian::day(31), 
-        julian::day(30), julian::day(31), julian::day(30), julian::day(31) 
+    CONSTDATA julian::day d[] = {
+        julian::day(31), julian::day(28), julian::day(31), julian::day(30),
+        julian::day(31), julian::day(30), julian::day(31), julian::day(31),
+        julian::day(30), julian::day(31), julian::day(30), julian::day(31)
     };
     return month() != feb || !y_.is_leap() ? d[static_cast<unsigned>(month())-1] : julian::day(29);
 }

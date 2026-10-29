@@ -119,6 +119,12 @@ struct date_time_scanner {
      */
     static constexpr time_t MIN_LOCAL_TIME = 300000000;
 
+    /**
+     * Times at or after this (10000-01-01) are treated as UTC.  No zone has
+     * rules this far out and the date library cannot represent the year.
+     */
+    static constexpr time_t MAX_LOCAL_TIME = 253402300800;
+
     const char* scan(const char* time_src,
                      size_t time_len,
                      const char* const time_fmt[],
