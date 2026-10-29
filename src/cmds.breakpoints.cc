@@ -38,6 +38,7 @@
 #include "base/result.h"
 #include "command_executor.hh"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "lnav.hh"
 #include "cmds.hh"
 #include "log_data_helper.hh"

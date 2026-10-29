@@ -1,4 +1,4 @@
-[1m[4m  name   [0m[1m[4m [0m[1m[4m          fc          [0m[1m[4m [0m
+[1;4m  name   [0m[1;4m [0m[1;4m          fc          [0m[1;4m [0m
 log       [7m{"before":2,"af[0m[7mter":1}[0m 
 text      {"before":0,"after":0} 
 [1mhelp     [0m[1m [0m[1m[36m<NULL>                [0m[1m [0m

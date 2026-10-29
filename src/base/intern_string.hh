@@ -1159,7 +1159,7 @@ struct formatter<string_fragment> : formatter<string_view> {
 template<>
 struct formatter<intern_string_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(const intern_string_t& is, FormatContext& ctx)
+    auto format(const intern_string_t& is, FormatContext& ctx) const
     {
         return formatter<string_view>::format(string_view{is.get(), is.size()},
                                               ctx);
@@ -1169,7 +1169,7 @@ struct formatter<intern_string_t> : formatter<string_view> {
 template<>
 struct formatter<std::error_code> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(const std::error_code& ec, FormatContext& ctx)
+    auto format(const std::error_code& ec, FormatContext& ctx) const
     {
         return formatter<string_view>::format(ec.message(), ctx);
     }

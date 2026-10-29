@@ -70,6 +70,7 @@
 #include "base/intern_string.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "styling.hh"
 #include "termios_guard.hh"
 #include "ww898/cp_utf8.hpp"

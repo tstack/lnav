@@ -50,6 +50,7 @@
 #include "base/paths.hh"
 #include "base/result.h"
 #include "config.h"
+#include "fmt/ranges.h"
 #include "line_buffer.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"

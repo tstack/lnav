@@ -228,7 +228,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         str[fill_index++] = ch;
                     });
                 } else if (lhs_pair.first == rhs_pair.first
-                           && !fmt::v10::detail::needs_escape(lhs_pair.first))
+                           && !fmt::detail::needs_escape(lhs_pair.first))
                 {
                     if (sa != nullptr && ul_range.is_valid()) {
                         shift_string_attrs(

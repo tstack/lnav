@@ -39,6 +39,7 @@
 #include "config.h"
 #include "data_parser.hh"
 #include "data_scanner.hh"
+#include "fmt/ranges.h"
 #include "readline_highlighters.hh"
 #include "sysclip.hh"
 #include "unicase.h"

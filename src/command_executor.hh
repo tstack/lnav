@@ -105,19 +105,20 @@ struct exec_context {
         CLI::App& app, std::vector<std::string> args) const;
 
     template<typename... Args>
-    lnav::console::user_message make_error_msg(fmt::string_view format_str,
-                                               const Args&... args) const
+    lnav::console::user_message make_error_msg(
+        fmt::format_string<Args...> format_str, Args&&... args) const
     {
-        auto str = fmt::vformat(format_str, fmt::make_format_args(args...));
+        auto str = fmt::format(format_str, std::forward<Args>(args)...);
 
         return this->make_error_from_str(std::move(str));
     }
 
     template<typename... Args>
     Result<std::string, lnav::console::user_message> make_error(
-        fmt::string_view format_str, const Args&... args) const
+        fmt::format_string<Args...> format_str, Args&&... args) const
     {
-        return Err(this->make_error_msg(format_str, args...));
+        return Err(
+            this->make_error_msg(format_str, std::forward<Args>(args)...));
     }
 
     std::optional<FILE*> get_output() const

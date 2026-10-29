@@ -1,2 +1,2 @@
-[1m[4m[7m eq_rows  [0m[1m[4m [0m[1m[4m[7m eq_same  [0m[1m[4m [0m[1m[4m[7mmissing_rows[0m[1m[4m [0m[1m[4m[7m in_rows  [0m[1m[4m [0m[1m[4m[7m in_same  [0m[1m[4m [0m
-[1m[7m         1[0m [1m[7m         1[0m [1m           0[0m [1m[7m         3[0m [7m         1[0m 
+[1;4;7m eq_rows  [0m[1;4m [0m[1;4;7m eq_same  [0m[1;4m [0m[1;4;7mmissing_rows[0m[1;4m [0m[1;4;7m in_rows  [0m[1;4m [0m[1;4;7m in_same  [0m[1;4m [0m
+[1;7m         1[0m [1;7m         1[0m [1m           0[0m [1;7m         3[0m [7m         1[0m 

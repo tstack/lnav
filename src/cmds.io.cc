@@ -46,6 +46,7 @@
 #include "field_overlay_source.hh"
 #include "fmt/color.h"
 #include "fmt/printf.h"
+#include "fmt/ranges.h"
 #include "lnav.hh"
 #include "cmds.hh"
 #include "lnav_util.hh"

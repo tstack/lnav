@@ -131,7 +131,7 @@ The following alternatives are also available:
 [1mLinks[0m
 
  [33m•[0m ]8;;https://lnav.org\[4mMain Site[0m]8;;\¹
- [33m•[0m ]8;;https://docs.lnav.org\[1m[4mDocumentation[0m]8;;\² on Read the Docs
+ [33m•[0m ]8;;https://docs.lnav.org\[1;4mDocumentation[0m]8;;\² on Read the Docs
  [33m•[0m ]8;;file://{top_srcdir}/ARCHITECTURE.md\[4mInternal Architecture[0m]8;;\³
 
  [34m▌[0m[1] - https://lnav.org                                 

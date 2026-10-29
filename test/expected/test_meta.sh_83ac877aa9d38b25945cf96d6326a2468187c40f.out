@@ -1,7 +1,7 @@
 [2020-12-10 06:56:41,061] INFO [[35mm[0m:108] Calling 'x' with params:
  
 [2020-12-10 06:56:41,092] DEBUG [connect.client:69] Full request text:
-[4m▌ Line [0m[1m[4m2[0m[4m metadata[0m
+[4m▌ Line [0m[1;4m2[0m[4m metadata[0m
  └ #xml-req
 <?xml version='1.0' encoding='iso-8859-2'?>
 <a-request>

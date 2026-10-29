@@ -55,7 +55,7 @@ struct formatter<network::locality> {
     }
 
     template<typename FormatContext>
-    auto format(const network::locality& l, FormatContext& ctx)
+    auto format(const network::locality& l, FormatContext& ctx) const
     {
         bool is_ipv6 = l.l_hostname.find(':') != std::string::npos;
 
@@ -86,7 +86,7 @@ struct formatter<network::path> {
     }
 
     template<typename FormatContext>
-    auto format(const network::path& p, FormatContext& ctx)
+    auto format(const network::path& p, FormatContext& ctx) const
     {
         return format_to(
             ctx.out(), "{}:{}", p.p_locality, p.p_path == "." ? "" : p.p_path);

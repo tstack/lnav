@@ -306,7 +306,7 @@ namespace fmt {
 template<>
 struct formatter<lnav::tainted_string> : formatter<string_view> {
     auto format(const lnav::tainted_string& ts, format_context& ctx)
-        -> decltype(ctx.out()) const;
+        const -> decltype(ctx.out());
 };
 }  // namespace fmt
 

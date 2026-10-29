@@ -399,7 +399,7 @@ public:
 template<>
 struct fmt::formatter<std::filesystem::path> : formatter<string_view> {
     auto format(const std::filesystem::path& p, format_context& ctx)
-        -> decltype(ctx.out()) const;
+        const -> decltype(ctx.out());
 };
 
 #endif

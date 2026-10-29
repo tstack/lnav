@@ -50,6 +50,7 @@
 #include "config.h"
 #include "data_scanner.hh"
 #include "file_collection.hh"
+#include "fmt/ranges.h"
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
 #include "log.watch.hh"

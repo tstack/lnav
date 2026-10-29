@@ -2,6 +2,6 @@
  [1m[31mreason[0m: Unknown color: 'blah'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mhighlight-field[0m[37m[40m --color=blah sc_status [0m[1m[36m[40m^[0m[37m[40m4[0m[1m[36m[40m.[0m[1m[36m[40m*[0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mhighlight-field[0m[4m [[0m[4m--color[0m[4m] [[0m[4m--bold[0m[4m] [[0m[4m--underline[0m[4m] [[0m[4m--italic[0m[4m] [[0m[4m--strike[0m[4m] [[0m[4m--blink[0m[4m] [0m[4mfield[0m[4m [[0m[4mpattern[0m[4m][0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1;4mhighlight-field[0m[4m [[0m[4m--color[0m[4m] [[0m[4m--bold[0m[4m] [[0m[4m--underline[0m[4m] [[0m[4m--italic[0m[4m] [[0m[4m--strike[0m[4m] [[0m[4m--blink[0m[4m] [0m[4mfield[0m[4m [[0m[4mpattern[0m[4m][0m
          ══════════════════════════════════════════════════════════════════════
            Highlight a field that matches the given pattern

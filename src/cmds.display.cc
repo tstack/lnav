@@ -29,6 +29,7 @@
 
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
+#include "fmt/ranges.h"
 #include "lnav.hh"
 #include "cmds.hh"
 #include "lnav.commands.hh"

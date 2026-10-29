@@ -39,6 +39,7 @@
 
 #include "base/lnav_log.hh"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {

@@ -922,9 +922,9 @@ namespace fmt {
 auto
 formatter<std::filesystem::path>::format(const std::filesystem::path& p,
                                          format_context& ctx)
-    -> decltype(ctx.out()) const
+    const -> decltype(ctx.out())
 {
-    auto esc_res = fmt::v10::detail::find_escape(
+    auto esc_res = fmt::detail::find_escape(
         p.native().data(), p.native().data() + p.native().size());
     if (esc_res.end == nullptr) {
         return formatter<string_view>::format(p.native(), ctx);

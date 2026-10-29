@@ -954,7 +954,7 @@ namespace fmt {
 auto
 formatter<lnav::document::section_key_t>::format(
     const lnav::document::section_key_t& key, fmt::format_context& ctx)
-    -> decltype(ctx.out()) const
+    const -> decltype(ctx.out())
 {
     return key.match(
         [this, &ctx](const std::string& str) {
@@ -968,7 +968,7 @@ formatter<lnav::document::section_key_t>::format(
 auto
 formatter<std::vector<lnav::document::section_key_t>>::format(
     const std::vector<lnav::document::section_key_t>& path,
-    fmt::format_context& ctx) -> decltype(ctx.out()) const
+    fmt::format_context& ctx) const -> decltype(ctx.out())
 {
     for (const auto& part : path) {
         format_to(ctx.out(), FMT_STRING("\uff1a"));

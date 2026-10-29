@@ -48,7 +48,7 @@ extern const string_fragment TEXT_FORMAT_STRINGS[text_format_count];
 template<>
 struct fmt::formatter<text_format_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(text_format_t tf, FormatContext& ctx)
+    auto format(text_format_t tf, FormatContext& ctx) const
     {
         string_view name = "unknown";
         if (lnav::enums::to_underlying(tf)

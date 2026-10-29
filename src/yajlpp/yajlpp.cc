@@ -39,6 +39,7 @@
 #include "base/relative_time.hh"
 #include "config.h"
 #include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 

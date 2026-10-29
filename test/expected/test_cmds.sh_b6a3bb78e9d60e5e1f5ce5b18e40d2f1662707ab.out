@@ -709,7 +709,7 @@ For support questions, email:
 
 [1mCommand Reference[0m
 
-[4m:[0m[1m[4madd-source-path[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+[4m:[0m[1;4madd-source-path[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Add a path to the source code that generated log messages.  Adding
   source allows lnav to more accurately extract values from log
@@ -718,7 +718,7 @@ For support questions, email:
   [4mpath[0m   The path to the source code to index
 
 
-[4m:[0m[1m[4madjust-log-time[0m[4m [0m[4mtimestamp[0m
+[4m:[0m[1;4madjust-log-time[0m[4m [0m[4mtimestamp[0m
 ══════════════════════════════════════════════════════════════════════
   Change the timestamps of the focused file to be relative to the
   given date
@@ -736,7 +736,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4malt-msg[0m[4m [0m[4mmsg[0m
+[4m:[0m[1;4malt-msg[0m[4m [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
   Display a message in the alternate command position
 [4mParameter[0m
@@ -753,13 +753,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mannotate[0m
+[4m:[0m[1;4mannotate[0m
 ══════════════════════════════════════════════════════════════════════
   Analyze the focused log message and attach annotations
 [4mSee Also[0m
   [1m:comment[0m, [1m:partition-name[0m, [1m:tag[0m
 
-[4m:[0m[1m[4mappend-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mappend-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Append marked lines in the current view to the given file
 [4mParameter[0m
@@ -776,7 +776,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mbreakpoint[0m[4m [0m[4mpoint[0m
+[4m:[0m[1;4mbreakpoint[0m[4m [0m[4mpoint[0m
 ══════════════════════════════════════════════════════════════════════
   Set a breakpoint for the given [<format>:]<file>:<line> tuples or
   the current line
@@ -791,7 +791,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mcd[0m[4m [0m[4mdir[0m
+[4m:[0m[1;4mcd[0m[4m [0m[4mdir[0m
 ══════════════════════════════════════════════════════════════════════
   Change the current directory
 [4mParameter[0m
@@ -803,19 +803,19 @@ For support questions, email:
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
-[4m:[0m[1m[4mclear-adjusted-log-time[0m
+[4m:[0m[1;4mclear-adjusted-log-time[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the adjusted time for the focused line in the view
 
 
-[4m:[0m[1m[4mclear-all-sticky-headers[0m
+[4m:[0m[1;4mclear-all-sticky-headers[0m
 ══════════════════════════════════════════════════════════════════════
   Clear all sticky header bookmarks in the current view
 [4mSee Also[0m
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
   [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Clear the breakpoints that match the given glob pattern
 [4mParameter[0m
@@ -828,13 +828,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mclear-comment[0m
+[4m:[0m[1;4mclear-comment[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the comment attached to the focused log line
 [4mSee Also[0m
   [1m:annotate[0m, [1m:comment[0m, [1m:partition-name[0m, [1m:tag[0m
 
-[4m:[0m[1m[4mclear-file-timezone[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mclear-file-timezone[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the timezone setting for the given glob pattern or all files
   whose message timestamps do not have a timezone.
@@ -844,7 +844,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:set-file-timezone[0m
 
-[4m:[0m[1m[4mclear-filter-expr[0m
+[4m:[0m[1;4mclear-filter-expr[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the filter expression
 [4mSee Also[0m
@@ -852,7 +852,7 @@ For support questions, email:
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
   [1m:toggle-filtering[0m
 
-[4m:[0m[1m[4mclear-highlight[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mclear-highlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Remove a previously set highlight regular expression
 [4mParameter[0m
@@ -867,7 +867,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mclear-highlight-field[0m[4m [0m[4mfield[0m
+[4m:[0m[1;4mclear-highlight-field[0m[4m [0m[4mfield[0m
 ══════════════════════════════════════════════════════════════════════
   Remove a field highlight
 [4mParameter[0m
@@ -881,20 +881,20 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mclear-mark-expr[0m
+[4m:[0m[1;4mclear-mark-expr[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the mark expression
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:mark-expr[0m, 
   [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mclear-partition[0m
+[4m:[0m[1;4mclear-partition[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the partition the focused line is a part of
 [4mSee Also[0m
   [1m:annotate[0m, [1m:comment[0m, [1m:partition-name[0m, [1m:tag[0m
 
-[4m:[0m[1m[4mclear-timeline-metric[0m[4m [0m[4mlabel[0m
+[4m:[0m[1;4mclear-timeline-metric[0m[4m [0m[4mlabel[0m
 ══════════════════════════════════════════════════════════════════════
   Remove a sparkline from the timeline view header
 [4mParameter[0m
@@ -904,7 +904,7 @@ For support questions, email:
   [1m:set-text-view-mode[0m, [1m:timeline-metric[0m, [1m:timeline-metric-sql[0m, 
   [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mclose[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mclose[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Close the given file(s) or the focused file in the view
 [4mParameter[0m
@@ -917,7 +917,7 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
-[4m:[0m[1m[4mcomment[0m[4m [0m[4mtext[0m
+[4m:[0m[1;4mcomment[0m[4m [0m[4mtext[0m
 ══════════════════════════════════════════════════════════════════════
   Attach a comment to the focused log line.  The comment will be
   displayed right below the log message it is associated with. The
@@ -932,7 +932,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mconfig[0m[4m [0m[4moption[0m[4m [[0m[4mvalue[0m[4m][0m
+[4m:[0m[1;4mconfig[0m[4m [0m[4moption[0m[4m [[0m[4mvalue[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Read or write a configuration option
 [4mParameters[0m
@@ -951,14 +951,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mconvert-time-to[0m[4m [0m[4mzone[0m
+[4m:[0m[1;4mconvert-time-to[0m[4m [0m[4mzone[0m
 ══════════════════════════════════════════════════════════════════════
   Convert the focused timestamp to the given timezone
 [4mParameter[0m
   [4mzone[0m   The timezone name
 
 
-[4m:[0m[1m[4mcreate-logline-table[0m[4m [0m[4mtable-name[0m
+[4m:[0m[1;4mcreate-logline-table[0m[4m [0m[4mtable-name[0m
 ══════════════════════════════════════════════════════════════════════
   Create an SQL table using the focused line of the log view as a
   template
@@ -974,7 +974,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mcreate-named-search[0m[4m [0m[4mname[0m[4m [[0m[4mpattern[0m[4m][0m
+[4m:[0m[1;4mcreate-named-search[0m[4m [0m[4mname[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Give a name to a search so that it stays active and highlighted
   while other searches are run
@@ -991,7 +991,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mcreate-search-table[0m[4m [0m[4mtable-name[0m[4m [[0m[4mpattern[0m[4m][0m
+[4m:[0m[1;4mcreate-search-table[0m[4m [0m[4mtable-name[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Create an SQL table based on a regex search
 [4mParameters[0m
@@ -1010,13 +1010,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mcurrent-time[0m
+[4m:[0m[1;4mcurrent-time[0m
 ══════════════════════════════════════════════════════════════════════
   Print the current time in human-readable form and seconds since
   the epoch
 
 
-[4m:[0m[1m[4mdelete-filter[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mdelete-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Delete the filter created with ':filter-in' or ':filter-out'
 [4mParameter[0m
@@ -1030,7 +1030,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdelete-logline-table[0m[4m [0m[4mtable-name[0m
+[4m:[0m[1;4mdelete-logline-table[0m[4m [0m[4mtable-name[0m
 ══════════════════════════════════════════════════════════════════════
   Delete a table created with create-logline-table
 [4mParameter[0m
@@ -1045,7 +1045,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdelete-named-search[0m[4m [0m[4mname[0m
+[4m:[0m[1;4mdelete-named-search[0m[4m [0m[4mname[0m
 ══════════════════════════════════════════════════════════════════════
   Delete a search created with create-named-search
 [4mParameter[0m
@@ -1058,7 +1058,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdelete-search-table[0m[4m [0m[4mtable-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtable-name[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mdelete-search-table[0m[4m [0m[4mtable-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtable-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Delete a search table
 [4mParameter[0m
@@ -1073,7 +1073,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdelete-tags[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mdelete-tags[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Remove the given tags from all log lines
 [4mParameter[0m
@@ -1086,7 +1086,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdisable-breakpoint[0m[4m [0m[4mpoint[0m
+[4m:[0m[1;4mdisable-breakpoint[0m[4m [0m[4mpoint[0m
 ══════════════════════════════════════════════════════════════════════
   Disable a breakpoint for the given [<format>:]<file>:<line> tuples
   or the current line
@@ -1094,7 +1094,7 @@ For support questions, email:
   [4mpoint[0m   The file and line number of the breakpoint
 
 
-[4m:[0m[1m[4mdisable-filter[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mdisable-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Disable a filter created with filter-in/filter-out
 [4mParameter[0m
@@ -1110,7 +1110,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdisable-named-search[0m[4m [0m[4mname[0m
+[4m:[0m[1;4mdisable-named-search[0m[4m [0m[4mname[0m
 ══════════════════════════════════════════════════════════════════════
   Stop highlighting the hits of a named search without deleting it
 [4mParameter[0m
@@ -1123,14 +1123,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdisable-word-wrap[0m
+[4m:[0m[1;4mdisable-word-wrap[0m
 ══════════════════════════════════════════════════════════════════════
   Disable word-wrapping for the current view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
+[4m:[0m[1;4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
   Echo the given message to the screen or, if :redirect-to has been
   called, to output file specified in the redirect.  Variable
@@ -1152,7 +1152,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4menable-breakpoint[0m[4m [0m[4mpoint[0m
+[4m:[0m[1;4menable-breakpoint[0m[4m [0m[4mpoint[0m
 ══════════════════════════════════════════════════════════════════════
   Enable or create a breakpoint for the given
   [<format>:]<file>:<line> tuples or the current line
@@ -1160,7 +1160,7 @@ For support questions, email:
   [4mpoint[0m   The file and line number of the breakpoint
 
 
-[4m:[0m[1m[4menable-filter[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4menable-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Enable a previously created and disabled filter
 [4mParameter[0m
@@ -1175,7 +1175,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4menable-named-search[0m[4m [0m[4mname[0m
+[4m:[0m[1;4menable-named-search[0m[4m [0m[4mname[0m
 ══════════════════════════════════════════════════════════════════════
   Enable a named search that was disabled with disable-named-search
 [4mParameter[0m
@@ -1188,14 +1188,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4menable-word-wrap[0m
+[4m:[0m[1;4menable-word-wrap[0m
 ══════════════════════════════════════════════════════════════════════
   Enable word-wrapping for the current view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:disable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4meval[0m[4m [0m[4mcommand[0m
+[4m:[0m[1;4meval[0m[4m [0m[4mcommand[0m
 ══════════════════════════════════════════════════════════════════════
   Evaluate the given command/query after doing environment variable
   substitution
@@ -1214,7 +1214,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mexport-session-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mexport-session-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Export the current lnav state to an executable lnav script file
   that contains the commands needed to restore the current session
@@ -1228,7 +1228,7 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
-[4m:[0m[1m[4mexternal-access[0m[4m [[0m[4m--name[0m[4m] [[0m[4mport[0m[4m] [[0m[4mapi-key[0m[4m][0m
+[4m:[0m[1;4mexternal-access[0m[4m [[0m[4m--name[0m[4m] [[0m[4mport[0m[4m] [[0m[4mapi-key[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Open a port to give remote access to this lnav instance.  This is
   done automatically when lnav starts in the TUI.
@@ -1251,7 +1251,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mexternal-access-login[0m[4m [[0m[4mapp[0m[4m][0m
+[4m:[0m[1;4mexternal-access-login[0m[4m [[0m[4mapp[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Use the external-opener to open a URL that refers to lnav's
   external-access server
@@ -1264,7 +1264,7 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m
 
-[4m:[0m[1m[4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
+[4m:[0m[1;4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Show extra lines around filtered-in lines, similar to grep's -C
   option
@@ -1286,7 +1286,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
+[4m:[0m[1;4mfilter-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
   Set the filter expression
 [4mParameter[0m
@@ -1308,7 +1308,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mfilter-in[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mfilter-in[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Only show lines that match the given regular expression in the
   current view
@@ -1324,7 +1324,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mfilter-out[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mfilter-out[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Remove lines that match the given regular expression in the
   current view
@@ -1340,7 +1340,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mfocus-next-search[0m
+[4m:[0m[1;4mfocus-next-search[0m
 ══════════════════════════════════════════════════════════════════════
   Focus the search after the one that is focused now, wrapping
   around to all of them
@@ -1349,7 +1349,7 @@ For support questions, email:
   [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
   [1m:relative-goto[0m
 
-[4m:[0m[1m[4mfocus-prev-search[0m
+[4m:[0m[1;4mfocus-prev-search[0m
 ══════════════════════════════════════════════════════════════════════
   Focus the search before the one that is focused now, wrapping
   around to all of them
@@ -1358,7 +1358,7 @@ For support questions, email:
   [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
   [1m:relative-goto[0m
 
-[4m:[0m[1m[4mfocus-search[0m[4m [[0m[4mname[0m[4m][0m
+[4m:[0m[1;4mfocus-search[0m[4m [[0m[4mname[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Narrow the search hotkeys to a single search so that only its hits
   are moved through
@@ -1374,7 +1374,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mgoto[0m[4m [0m[4mline#|N%|timestamp|#anchor[0m
+[4m:[0m[1;4mgoto[0m[4m [0m[4mline#|N%|timestamp|#anchor[0m
 ══════════════════════════════════════════════════════════════════════
   Go to the given location in the top view
 [4mParameter[0m
@@ -1402,12 +1402,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhelp[0m
+[4m:[0m[1;4mhelp[0m
 ══════════════════════════════════════════════════════════════════════
   Open the help text view
 
 
-[4m:[0m[1m[4mhide-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mhide-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Hide log message fields by replacing them with an ellipsis
 [4mParameter[0m
@@ -1428,7 +1428,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhide-file[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mhide-file[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Hide the given file(s) and skip indexing until it is shown again.
   If no path is given, the current file in the view is hidden
@@ -1437,7 +1437,7 @@ For support questions, email:
          hide
 
 
-[4m:[0m[1m[4mhide-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mhide-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Hide rows of the given type(s) in the timeline view
 [4mParameter[0m
@@ -1452,7 +1452,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhide-lines-after[0m[4m [0m[4mdate[0m
+[4m:[0m[1;4mhide-lines-after[0m[4m [0m[4mdate[0m
 ══════════════════════════════════════════════════════════════════════
   Hide lines that come after the given date
 [4mParameter[0m
@@ -1470,7 +1470,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhide-lines-before[0m[4m [0m[4mdate[0m
+[4m:[0m[1;4mhide-lines-before[0m[4m [0m[4mdate[0m
 ══════════════════════════════════════════════════════════════════════
   Hide lines that come before the given date
 [4mParameter[0m
@@ -1488,7 +1488,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhide-unmarked-lines[0m
+[4m:[0m[1;4mhide-unmarked-lines[0m
 ══════════════════════════════════════════════════════════════════════
   Hide lines that have not been bookmarked
 [4mSee Also[0m
@@ -1496,7 +1496,7 @@ For support questions, email:
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
   [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mhighlight[0m[4m [0m[4mpattern[0m
+[4m:[0m[1;4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Add coloring to log messages fragments that match the given
   regular expression
@@ -1511,7 +1511,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mhighlight-field[0m[4m [[0m[4m--color[0m[4m] [[0m[4m--bold[0m[4m] [[0m[4m--underline[0m[4m] [[0m[4m--italic[0m[4m] [[0m[4m--strike[0m[4m] [[0m[4m--blink[0m[4m] [0m[4mfield[0m[4m [[0m[4mpattern[0m[4m][0m
+[4m:[0m[1;4mhighlight-field[0m[4m [[0m[4m--color[0m[4m] [[0m[4m--bold[0m[4m] [[0m[4m--underline[0m[4m] [[0m[4m--italic[0m[4m] [[0m[4m--strike[0m[4m] [[0m[4m--blink[0m[4m] [0m[4mfield[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Highlight a field that matches the given pattern
 [4mParameters[0m
@@ -1532,19 +1532,19 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mload-session[0m
+[4m:[0m[1;4mload-session[0m
 ══════════════════════════════════════════════════════════════════════
   Load the latest session state
 
 
-[4m:[0m[1m[4mmark[0m
+[4m:[0m[1;4mmark[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle the bookmark state for the focused line in the current view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:hide-unmarked-lines[0m, [1m:next-mark[0m, 
   [1m:prev-mark[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mmark-expr[0m[4m [0m[4mexpr[0m
+[4m:[0m[1;4mmark-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
   Set the bookmark expression
 [4mParameter[0m
@@ -1560,14 +1560,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mnext-location[0m
+[4m:[0m[1;4mnext-location[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the next position in the location history
 [4mSee Also[0m
   [1m:focus-search[0m, [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
   [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
-[4m:[0m[1m[4mnext-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mnext-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Move to the next bookmark of the given type in the current view
 [4mParameter[0m
@@ -1584,7 +1584,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mnext-search-hit[0m[4m [[0m[4mname[0m[4m][0m
+[4m:[0m[1;4mnext-search-hit[0m[4m [[0m[4mname[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Move to the next hit of the focused search, or of all of the
   searches when none is focused
@@ -1601,14 +1601,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mnext-section[0m
+[4m:[0m[1;4mnext-section[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the next section in the document
 [4mSee Also[0m
   [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, 
   [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
-[4m:[0m[1m[4mopen[0m[4m [[0m[4m--since[0m[4m] [[0m[4m--until[0m[4m] [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mopen[0m[4m [[0m[4m--since[0m[4m] [[0m[4m--until[0m[4m] [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Open the given file(s) in lnav.  Opening files on machines
   accessible via SSH can be done using the syntax:
@@ -1633,7 +1633,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mpartition-name[0m[4m [0m[4mname[0m
+[4m:[0m[1;4mpartition-name[0m[4m [0m[4mname[0m
 ══════════════════════════════════════════════════════════════════════
   Mark the focused line in the log view as the start of a new
   partition with the given name
@@ -1647,7 +1647,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mpipe-line-to[0m[4m [0m[4mshell-cmd[0m
+[4m:[0m[1;4mpipe-line-to[0m[4m [0m[4mshell-cmd[0m
 ══════════════════════════════════════════════════════════════════════
   Pipe the focused line to the given shell command.  Any fields
   defined by the format will be set as environment variables.
@@ -1665,7 +1665,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mpipe-to[0m[4m [0m[4mshell-cmd[0m
+[4m:[0m[1;4mpipe-to[0m[4m [0m[4mshell-cmd[0m
 ══════════════════════════════════════════════════════════════════════
   Pipe the marked lines to the given shell command
 [4mParameter[0m
@@ -1682,14 +1682,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mprev-location[0m
+[4m:[0m[1;4mprev-location[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous position in the location history
 [4mSee Also[0m
   [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
   [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 
-[4m:[0m[1m[4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous bookmark of the given type in the current
   view
@@ -1707,7 +1707,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mprev-search-hit[0m[4m [[0m[4mname[0m[4m][0m
+[4m:[0m[1;4mprev-search-hit[0m[4m [[0m[4mname[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous hit of the focused search, or of all of the
   searches when none is focused
@@ -1724,14 +1724,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mprev-section[0m
+[4m:[0m[1;4mprev-section[0m
 ══════════════════════════════════════════════════════════════════════
   Move to the previous section in the document
 [4mSee Also[0m
   [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
   [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
 
-[4m:[0m[1m[4mprompt[0m[4m [0m[4mtype[0m[4m [[0m[4m--alt[0m[4m] [[0m[4mprompt[0m[4m] [[0m[4minitial-value[0m[4m][0m
+[4m:[0m[1;4mprompt[0m[4m [0m[4mtype[0m[4m [[0m[4m--alt[0m[4m] [[0m[4mprompt[0m[4m] [[0m[4minitial-value[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Open the given prompt
 [4mParameters[0m
@@ -1753,12 +1753,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mquit[0m
+[4m:[0m[1;4mquit[0m
 ══════════════════════════════════════════════════════════════════════
   Quit lnav
 
 
-[4m:[0m[1m[4mrebuild[0m
+[4m:[0m[1;4mrebuild[0m
 ══════════════════════════════════════════════════════════════════════
   Forcefully rebuild file indexes
 [4mSee Also[0m
@@ -1768,7 +1768,7 @@ For support questions, email:
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
-[4m:[0m[1m[4mredirect-to[0m[4m [[0m[4mpath[0m[4m][0m
+[4m:[0m[1;4mredirect-to[0m[4m [[0m[4mpath[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Redirect the output of commands that write to stdout to the given
   file
@@ -1788,12 +1788,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mredraw[0m
+[4m:[0m[1;4mredraw[0m
 ══════════════════════════════════════════════════════════════════════
   Do a full redraw of the screen
 
 
-[4m:[0m[1m[4mrelative-goto[0m[4m [0m[4mline-count|N%[0m
+[4m:[0m[1;4mrelative-goto[0m[4m [0m[4mline-count|N%[0m
 ══════════════════════════════════════════════════════════════════════
   Move the current view up or down by the given amount
 [4mParameter[0m
@@ -1811,13 +1811,13 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mreload-view[0m
+[4m:[0m[1;4mreload-view[0m
 ══════════════════════════════════════════════════════════════════════
   Re-run the operation that populated the current view
 [4mSee Also[0m
   
 
-[4m:[0m[1m[4mreset-config[0m[4m [0m[4moption[0m
+[4m:[0m[1;4mreset-config[0m[4m [0m[4moption[0m
 ══════════════════════════════════════════════════════════════════════
   Reset the configuration option to its default value
 [4mParameter[0m
@@ -1830,18 +1830,18 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mreset-session[0m
+[4m:[0m[1;4mreset-session[0m
 ══════════════════════════════════════════════════════════════════════
   Reset the session state, clearing all filters, highlights, and
   bookmarks
 
 
-[4m:[0m[1m[4msave-session[0m
+[4m:[0m[1;4msave-session[0m
 ══════════════════════════════════════════════════════════════════════
   Save the current state as a session
 
 
-[4m:[0m[1m[4msession[0m[4m [0m[4mlnav-command[0m
+[4m:[0m[1;4msession[0m[4m [0m[4mlnav-command[0m
 ══════════════════════════════════════════════════════════════════════
   Add the given command to the session file (~/.lnav/session)
 [4mParameter[0m
@@ -1853,7 +1853,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mset-file-timezone[0m[4m [0m[4mzone[0m[4m [[0m[4mpattern[0m[4m][0m
+[4m:[0m[1;4mset-file-timezone[0m[4m [0m[4mzone[0m[4m [[0m[4mpattern[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Set the timezone to use for log messages that do not include a
   timezone.  The timezone is applied to the given glob pattern or all
@@ -1865,7 +1865,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-file-timezone[0m
 
-[4m:[0m[1m[4mset-min-log-level[0m[4m [0m[4mlog-level[0m
+[4m:[0m[1;4mset-min-log-level[0m[4m [0m[4mlog-level[0m
 ══════════════════════════════════════════════════════════════════════
   Set the minimum log level to display in the log view
 [4mParameter[0m
@@ -1878,7 +1878,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mset-text-view-mode[0m[4m [0m[4mmode[0m
+[4m:[0m[1;4mset-text-view-mode[0m[4m [0m[4mmode[0m
 ══════════════════════════════════════════════════════════════════════
   Set the display mode for text files
 [4mParameter[0m
@@ -1888,7 +1888,7 @@ For support questions, email:
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
+[4m:[0m[1;4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
   Execute the given command-line and display the captured output
 [4mParameters[0m
@@ -1902,7 +1902,7 @@ For support questions, email:
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
-[4m:[0m[1m[4mshow-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mshow-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Show log message fields that were previously hidden
 [4mParameter[0m
@@ -1916,7 +1916,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mshow-file[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mshow-file[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Show the given file(s) and resume indexing.
 [4mParameter[0m
@@ -1924,7 +1924,7 @@ For support questions, email:
          show
 
 
-[4m:[0m[1m[4mshow-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mshow-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Show rows of the given type(s) that were previously hidden in the
   timeline view
@@ -1941,14 +1941,14 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mshow-lines-before-and-after[0m
+[4m:[0m[1;4mshow-lines-before-and-after[0m
 ══════════════════════════════════════════════════════════════════════
   Show lines that were hidden by the 'hide-lines' commands
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 
-[4m:[0m[1m[4mshow-only-in-timeline[0m[4m [0m[4mrow-type[0m
+[4m:[0m[1;4mshow-only-in-timeline[0m[4m [0m[4mrow-type[0m
 ══════════════════════════════════════════════════════════════════════
   Show only rows of the given type(s) in the timeline view, hiding
   all of the others.  With no arguments, only the type of the focused
@@ -1965,12 +1965,12 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mshow-only-this-file[0m
+[4m:[0m[1;4mshow-only-this-file[0m
 ══════════════════════════════════════════════════════════════════════
   Show only the file for the focused line in the view
 
 
-[4m:[0m[1m[4mshow-unmarked-lines[0m
+[4m:[0m[1;4mshow-unmarked-lines[0m
 ══════════════════════════════════════════════════════════════════════
   Show lines that have not been bookmarked
 [4mSee Also[0m
@@ -1978,7 +1978,7 @@ For support questions, email:
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
   [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
-[4m:[0m[1m[4mspectrogram[0m[4m [0m[4mfield-name[0m
+[4m:[0m[1;4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
   Visualize the given message field or database column using a
   spectrogram
@@ -1992,7 +1992,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4msummarize[0m[4m [0m[4mcolumn-name[0m
+[4m:[0m[1;4msummarize[0m[4m [0m[4mcolumn-name[0m
 ══════════════════════════════════════════════════════════════════════
   Execute a SQL query that computes the characteristics of the
   values in the given column
@@ -2005,7 +2005,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mswitch-to-view[0m[4m [0m[4mview-name[0m
+[4m:[0m[1;4mswitch-to-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
   Switch to the given view
 [4mParameter[0m
@@ -2018,7 +2018,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mtag[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mtag[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Attach tags to the focused log line
 [4mParameter[0m
@@ -2031,7 +2031,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mtimeline-metric[0m[4m [0m[4mname[0m
+[4m:[0m[1;4mtimeline-metric[0m[4m [0m[4mname[0m
 ══════════════════════════════════════════════════════════════════════
   Add a sparkline to the timeline view header for the given metric
 [4mParameter[0m
@@ -2047,7 +2047,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mtimeline-metric-sql[0m[4m [0m[4mlabel[0m[4m [0m[4mquery[0m
+[4m:[0m[1;4mtimeline-metric-sql[0m[4m [0m[4mlabel[0m[4m [0m[4mquery[0m
 ══════════════════════════════════════════════════════════════════════
   Add a sparkline driven by a SQL query. The query must return two
   columns named log_time and value; it is wrapped as SELECT * FROM
@@ -2064,19 +2064,19 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mtoggle-breakpoint[0m
+[4m:[0m[1;4mtoggle-breakpoint[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle a breakpoint for the focused line in the LOG view
 
 
-[4m:[0m[1m[4mtoggle-filtering[0m
+[4m:[0m[1;4mtoggle-filtering[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle the filtering flag for the current view
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m
 
-[4m:[0m[1m[4mtoggle-sticky-header[0m
+[4m:[0m[1;4mtoggle-sticky-header[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle the sticky header state for the focused line in the current
   view
@@ -2085,7 +2085,7 @@ For support questions, email:
   [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
   [1m:set-text-view-mode[0m
 
-[4m:[0m[1m[4mtoggle-view[0m[4m [0m[4mview-name[0m
+[4m:[0m[1;4mtoggle-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
   Switch to the given view or, if it is already displayed, switch to
   the previous view
@@ -2101,7 +2101,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4munix-time[0m[4m [0m[4mseconds[0m
+[4m:[0m[1;4munix-time[0m[4m [0m[4mseconds[0m
 ══════════════════════════════════════════════════════════════════════
   Convert epoch time to a human-readable form
 [4mParameter[0m
@@ -2113,7 +2113,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4muntag[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
+[4m:[0m[1;4muntag[0m[4m [0m[4mtag[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtag[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Detach tags from the focused log line
 [4mParameter[0m
@@ -2126,7 +2126,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-csv-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-csv-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in CSV format
 [4mParameters[0m
@@ -2146,7 +2146,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-debug-log-to[0m[4m [0m[4mpath[0m
+[4m:[0m[1;4mwrite-debug-log-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write lnav's internal debug log to the given path.  This can be
   useful if the `-d` flag was not passed on the command line
@@ -2154,7 +2154,7 @@ For support questions, email:
   [4mpath[0m   The destination path for the debug log
 
 
-[4m:[0m[1m[4mwrite-html-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-html-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write the text in the top view to the given file as an HTML
   fragment that is styled with the classes from lnav_theme_css()
@@ -2176,7 +2176,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-json-cols-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-json-cols-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in a column-oriented JSON
   format.  In addition, columns that contain JSON values will be
@@ -2200,7 +2200,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-json-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-json-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in JSON format
 [4mParameters[0m
@@ -2220,7 +2220,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-jsonlines-to[0m[4m [[0m[4m--all[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-jsonlines-to[0m[4m [[0m[4m--all[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results or log lines to the given file in JSON Lines
   format
@@ -2242,7 +2242,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-raw-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-raw-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   In the log view, write the original log file content of the marked
   messages to the file.  In the DB view, the contents of the cells are
@@ -2266,7 +2266,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-screen-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-screen-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write the displayed text or SQL results to the given file without
   any formatting
@@ -2287,7 +2287,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-table-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-table-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in a tabular format
 [4mParameters[0m
@@ -2307,7 +2307,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Overwrite the given file with any marked lines in the current view
 [4mParameters[0m
@@ -2326,7 +2326,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-view-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1;4mwrite-view-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write the text in the top view to the given file without any
   formatting
@@ -2347,7 +2347,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mxopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+[4m:[0m[1;4mxopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Use an external command to open the given file(s)
 [4mParameter[0m
@@ -2364,7 +2364,7 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mzoom-to[0m[4m [0m[4mzoom-level[0m
+[4m:[0m[1;4mzoom-to[0m[4m [0m[4mzoom-level[0m
 ══════════════════════════════════════════════════════════════════════
   Zoom the current view to the given level
 [4mParameter[0m
@@ -2383,7 +2383,7 @@ For support questions, email:
 
 [1mSQL Reference[0m
 
-[1m[4mCAST[0m[4m([0m[4mexpr[0m[4m [0m[1m[4mAS[0m[4m [0m[4mtype-name[0m[4m)[0m
+[1;4mCAST[0m[4m([0m[4mexpr[0m[4m [0m[1;4mAS[0m[4m [0m[4mtype-name[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Convert the value of the given expression to a different storage
   class specified by type-name.
@@ -2412,7 +2412,7 @@ For support questions, email:
                      are read by an aggregate window function
 
 
-[1m[4mabs[0m[4m([0m[4mx[0m[4m)[0m
+[1;4mabs[0m[4m([0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Return the absolute value of the argument
 [4mParameter[0m
@@ -2428,7 +2428,7 @@ For support questions, email:
    1
 
 
-[1m[4macos[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4macos[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the arccosine of a number, in radians
 [4mParameter[0m
@@ -2444,7 +2444,7 @@ For support questions, email:
    1.369
 
 
-[1m[4macosh[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4macosh[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the hyperbolic arccosine of a number
 [4mParameter[0m
@@ -2460,7 +2460,7 @@ For support questions, email:
    0.6223625037147786
 
 
-[1m[4manonymize[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4manonymize[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Replace identifying information with random values.
 [4mParameter[0m
@@ -2483,7 +2483,7 @@ For support questions, email:
    Aback, 10.0.0.1
 
 
-[1m[4masin[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4masin[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the arcsine of a number, in radians
 [4mParameter[0m
@@ -2499,7 +2499,7 @@ For support questions, email:
    0.2013579207903308
 
 
-[1m[4masinh[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4masinh[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the hyperbolic arcsine of a number
 [4mParameter[0m
@@ -2515,7 +2515,7 @@ For support questions, email:
    0.19869011034924142
 
 
-[1m[4matan[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4matan[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the arctangent of a number, in radians
 [4mParameter[0m
@@ -2531,7 +2531,7 @@ For support questions, email:
    0.19739555984988078
 
 
-[1m[4matan2[0m[4m([0m[4my[0m[4m, [0m[4mx[0m[4m)[0m
+[1;4matan2[0m[4m([0m[4my[0m[4m, [0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the angle in the plane between the positive X axis and the
   ray from (0, 0) to the point (x, y)
@@ -2549,7 +2549,7 @@ For support questions, email:
    45
 
 
-[1m[4matanh[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4matanh[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the hyperbolic arctangent of a number
 [4mParameter[0m
@@ -2565,7 +2565,7 @@ For support questions, email:
    0.2027325540540822
 
 
-[1m[4matn2[0m[4m([0m[4my[0m[4m, [0m[4mx[0m[4m)[0m
+[1;4matn2[0m[4m([0m[4my[0m[4m, [0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the angle in the plane between the positive X axis and the
   ray from (0, 0) to the point (x, y)
@@ -2583,7 +2583,7 @@ For support questions, email:
    45
 
 
-[1m[4mavg[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mavg[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the average value of all non-NULL numbers within a group.
 [4mParameter[0m
@@ -2601,12 +2601,12 @@ For support questions, email:
 #2 To get the average of the column 'ex_duration' from the table 'lnav_example_log'
    when grouped by 'ex_procname':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m, [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m
-   [1m[4mex_procname[0m[1m[4m [0m[1m[4m[7mavg(ex_⋯ration)[0m[1m[4m [0m
+   [1;4mex_procname[0m[1;4m [0m[1;4;7mavg(ex_⋯ration)[0m[1;4m [0m
    gw          [7m              5[0m 
    hw          [7m [0m             2 
 
 
-[1m[4mbasename[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4mbasename[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Extract the base portion of a pathname.
 [4mParameter[0m
@@ -2640,7 +2640,7 @@ For support questions, email:
    /
 
 
-[1m[4mceil[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4mceil[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the smallest integer that is not less than the argument
 [4mParameter[0m
@@ -2656,13 +2656,13 @@ For support questions, email:
    2
 
 
-[1m[4mchanges[0m[4m()[0m
+[1;4mchanges[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   The number of database rows that were changed, inserted, or
   deleted by the most recent statement.
 
 
-[1m[4mchar[0m[4m([0m[4mX[0m[4m, ...)[0m
+[1;4mchar[0m[4m([0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string composed of characters having the given unicode
   code point values
@@ -2686,7 +2686,7 @@ For support questions, email:
    HI
 
 
-[1m[4mcharindex[0m[4m([0m[4mneedle[0m[4m, [0m[4mhaystack[0m[4m, [[0m[4mstart[0m[4m])[0m
+[1;4mcharindex[0m[4m([0m[4mneedle[0m[4m, [0m[4mhaystack[0m[4m, [[0m[4mstart[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Finds the first occurrence of the needle within the haystack and
   returns the number of prior characters plus 1, or 0 if Y is nowhere
@@ -2718,7 +2718,7 @@ For support questions, email:
    0
 
 
-[1m[4mcoalesce[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m, ...)[0m
+[1;4mcoalesce[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a copy of its first non-NULL argument, or NULL if all
   arguments are NULL
@@ -2732,7 +2732,7 @@ For support questions, email:
    0
 
 
-[1m[4mconcat[0m[4m([0m[4mX[0m[4m, ...)[0m
+[1;4mconcat[0m[4m([0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string that is the concatenation of all non-NULL
   arguments
@@ -2756,7 +2756,7 @@ For support questions, email:
    Size: 1234
 
 
-[1m[4mconcat_ws[0m[4m([0m[4msep[0m[4m, [0m[4mX[0m[4m, ...)[0m
+[1;4mconcat_ws[0m[4m([0m[4msep[0m[4m, [0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string that is the concatenation of all non-NULL
   arguments separated by the first argument
@@ -2781,7 +2781,7 @@ For support questions, email:
    1,2,3,4
 
 
-[1m[4mcount[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mcount[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   If the argument is '*', the total number of rows in the group is
   returned.  Otherwise, the number of times the argument is non-NULL.
@@ -2798,14 +2798,14 @@ For support questions, email:
    2
 
 
-[1m[4mcume_dist[0m[4m()[0m
+[1;4mcume_dist[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the cumulative distribution
 [4mSee Also[0m
   [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, [1mnth_value()[0m, 
   [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mdate[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
+[1;4mdate[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the date in this format: YYYY-MM-DD.
 [4mParameters[0m
@@ -2829,7 +2829,7 @@ For support questions, email:
    2017-04-04
 
 
-[1m[4mdatetime[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
+[1;4mdatetime[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the date and time in this format: YYYY-MM-DD HH:MM:SS.
 [4mParameters[0m
@@ -2855,7 +2855,7 @@ For support questions, email:
    2017-04-04 21:37:22
 
 
-[1m[4mdecode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
+[1;4mdecode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Decode the value using the given algorithm
 [4mParameters[0m
@@ -2880,7 +2880,7 @@ For support questions, email:
    curl
 
 
-[1m[4mdegrees[0m[4m([0m[4mradians[0m[4m)[0m
+[1;4mdegrees[0m[4m([0m[4mradians[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Converts radians to degrees
 [4mParameter[0m
@@ -2896,7 +2896,7 @@ For support questions, email:
    180
 
 
-[1m[4mdense_rank[0m[4m()[0m
+[1;4mdense_rank[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the row_number() of the first peer in each group without
   gaps
@@ -2904,7 +2904,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, [1mnth_value()[0m, 
   [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mdirname[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4mdirname[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Extract the directory portion of a pathname.
 [4mParameter[0m
@@ -2934,7 +2934,7 @@ For support questions, email:
    .
 
 
-[1m[4mecholn[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mecholn[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Echo the argument to the current output file and return it
 [4mParameter[0m
@@ -2946,7 +2946,7 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1m:xopen[0m
 
-[1m[4mencode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
+[1;4mencode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Encode the value using the given algorithm
 [4mParameters[0m
@@ -2979,7 +2979,7 @@ For support questions, email:
    Hello%2C%20World%21
 
 
-[1m[4mendswith[0m[4m([0m[4mstr[0m[4m, [0m[4msuffix[0m[4m)[0m
+[1;4mendswith[0m[4m([0m[4mstr[0m[4m, [0m[4msuffix[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Test if a string ends with the given suffix
 [4mParameters[0m
@@ -3007,7 +3007,7 @@ For support questions, email:
    0
 
 
-[1m[4mexp[0m[4m([0m[4mx[0m[4m)[0m
+[1;4mexp[0m[4m([0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the value of e raised to the power of x
 [4mParameter[0m
@@ -3023,7 +3023,7 @@ For support questions, email:
    7.38905609893065
 
 
-[1m[4mextract[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mextract[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Automatically Parse and extract data from a string
 [4mParameter[0m
@@ -3050,7 +3050,7 @@ For support questions, email:
    {"col_0":1.0,"col_1":2.0}
 
 
-[1m[4mfirst_value[0m[4m([0m[4mexpr[0m[4m)[0m
+[1;4mfirst_value[0m[4m([0m[4mexpr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the result of evaluating the expression against the first
   row in the window frame.
@@ -3060,7 +3060,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, [1mnth_value()[0m, 
   [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mfloor[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4mfloor[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the largest integer that is not greater than the argument
 [4mParameter[0m
@@ -3076,7 +3076,7 @@ For support questions, email:
    1
 
 
-[1m[4mfstat[0m[4m([0m[4mpattern[0m[4m)[0m
+[1;4mfstat[0m[4m([0m[4mpattern[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function for getting information about file
   paths/globs
@@ -3116,7 +3116,7 @@ For support questions, email:
 
 
 
-[1m[4mfuzzy_match[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m)[0m
+[1;4mfuzzy_match[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Perform a fuzzy match of a pattern against a string and return a
   score or NULL if the pattern was not matched
@@ -3140,7 +3140,7 @@ For support questions, email:
    137
 
 
-[1m[4mgenerate_series[0m[4m([0m[4mstart[0m[4m, [0m[4mstop[0m[4m, [[0m[4mstep[0m[4m])[0m
+[1;4mgenerate_series[0m[4m([0m[4mstart[0m[4m, [0m[4mstop[0m[4m, [[0m[4mstep[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued-function that returns the whole numbers between a
   lower and upper bound, inclusive
@@ -3154,31 +3154,31 @@ For support questions, email:
 [4mExamples[0m
 #1 To generate the numbers in the range [10, 14]:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m)         [0m
-   [1m[4m[7m  value   [0m[1m[4m [0m
+   [1;4;7m  value   [0m[1;4m [0m
    [7m [0m       10 
    [7m  [0m      11 
-   [1m[7m     [0m[1m   12 [0m
-   [1m[7m        [0m[1m13 [0m
+   [1;7m     [0m[1m   12 [0m
+   [1;7m        [0m[1m13 [0m
    [7m        14[0m 
 
 #2 To generate every other number in the range [10, 14]:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)      [0m
-   [1m[4m[7m  value   [0m[1m[4m [0m
+   [1;4;7m  value   [0m[1;4m [0m
    [7m [0m       10 
    [7m     [0m   12 
-   [1m[7m        14[0m[1m [0m
+   [1;7m        14[0m[1m [0m
 
 #3 To count down from five to 1:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)       [0m
-   [1m[4m[7m  value   [0m[1m[4m [0m
+   [1;4;7m  value   [0m[1;4m [0m
    [7m         5[0m 
    [7m        [0m 4 
-   [1m[7m     [0m[1m    3 [0m
-   [1m[7m  [0m[1m       2 [0m
+   [1;7m     [0m[1m    3 [0m
+   [1;7m  [0m[1m       2 [0m
    [7m [0m        1 
 
 
-[1m[4mgethostbyaddr[0m[4m([0m[4mhostname[0m[4m)[0m
+[1;4mgethostbyaddr[0m[4m([0m[4mhostname[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Get the hostname for the given IP address
 [4mParameter[0m
@@ -3191,7 +3191,7 @@ For support questions, email:
    localhost
 
 
-[1m[4mgethostbyname[0m[4m([0m[4mhostname[0m[4m)[0m
+[1;4mgethostbyname[0m[4m([0m[4mhostname[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Get the IP address for the given hostname
 [4mParameter[0m
@@ -3204,7 +3204,7 @@ For support questions, email:
    127.0.0.1
 
 
-[1m[4mglob[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m)[0m
+[1;4mglob[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Match a string against Unix glob pattern
 [4mParameters[0m
@@ -3217,7 +3217,7 @@ For support questions, email:
    1
 
 
-[1m[4mgroup_concat[0m[4m([0m[4mX[0m[4m, [[0m[4msep[0m[4m])[0m
+[1;4mgroup_concat[0m[4m([0m[4mX[0m[4m, [[0m[4msep[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string which is the concatenation of all non-NULL values
   of X separated by a comma or the given separator.
@@ -3251,7 +3251,7 @@ For support questions, email:
    hw,gw
 
 
-[1m[4mgroup_spooky_hash[0m[4m([0m[4mstr[0m[4m, ...)[0m
+[1;4mgroup_spooky_hash[0m[4m([0m[4mstr[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Compute the hash value for the given arguments
 [4mParameter[0m
@@ -3273,7 +3273,7 @@ For support questions, email:
    4e7a190aead058cb123c94290f29c34a
 
 
-[1m[4mgunzip[0m[4m([0m[4mb[0m[4m, ...)[0m
+[1;4mgunzip[0m[4m([0m[4mb[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Decompress a gzip file
 [4mParameter[0m
@@ -3290,7 +3290,7 @@ For support questions, email:
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
   [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 
-[1m[4mgzip[0m[4m([0m[4mvalue[0m[4m, ...)[0m
+[1;4mgzip[0m[4m([0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Compress a string into a gzip file
 [4mParameter[0m
@@ -3308,7 +3308,7 @@ For support questions, email:
   [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, 
   [1mupper()[0m, [1mxpath()[0m
 
-[1m[4mhex[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mhex[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string which is the upper-case hexadecimal rendering of
   the content of its argument.
@@ -3321,7 +3321,7 @@ For support questions, email:
    616263
 
 
-[1m[4mhumanize_duration[0m[4m([0m[4msecs[0m[4m)[0m
+[1;4mhumanize_duration[0m[4m([0m[4msecs[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Format the given seconds value as an abbreviated duration string
 [4mParameter[0m
@@ -3349,7 +3349,7 @@ For support questions, email:
    1s500ms
 
 
-[1m[4mhumanize_file_size[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mhumanize_file_size[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Format the given file size as a human-friendly string
 [4mParameter[0m
@@ -3371,7 +3371,7 @@ For support questions, email:
    10.5MB
 
 
-[1m[4mhumanize_id[0m[4m([0m[4mid[0m[4m)[0m
+[1;4mhumanize_id[0m[4m([0m[4mid[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Colorize the given ID using ANSI escape codes.
 [4mParameter[0m
@@ -3394,7 +3394,7 @@ For support questions, email:
    [36mcluster1[0m
 
 
-[1m[4mifnull[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m)[0m
+[1;4mifnull[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a copy of its first non-NULL argument, or NULL if both
   arguments are NULL
@@ -3408,7 +3408,7 @@ For support questions, email:
    0
 
 
-[1m[4minstr[0m[4m([0m[4mhaystack[0m[4m, [0m[4mneedle[0m[4m)[0m
+[1;4minstr[0m[4m([0m[4mhaystack[0m[4m, [0m[4mneedle[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Finds the first occurrence of the needle within the haystack and
   returns the number of prior characters plus 1, or 0 if the needle
@@ -3434,7 +3434,7 @@ For support questions, email:
    2
 
 
-[1m[4mjget[0m[4m([0m[4mjson[0m[4m, [0m[4mptr[0m[4m, [[0m[4mdefault[0m[4m])[0m
+[1;4mjget[0m[4m([0m[4mjson[0m[4m, [0m[4mptr[0m[4m, [[0m[4mdefault[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Get the value from a JSON object using a JSON-Pointer.
 [4mParameters[0m
@@ -3461,7 +3461,7 @@ For support questions, email:
    Hello
 
 
-[1m[4mjoinpath[0m[4m([0m[4mpath[0m[4m, ...)[0m
+[1;4mjoinpath[0m[4m([0m[4mpath[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Join components of a path together.
 [4mParameter[0m
@@ -3490,7 +3490,7 @@ For support questions, email:
    /bar
 
 
-[1m[4mjson[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mjson[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Verifies that its argument is valid JSON and returns a minified
   version or throws an error.
@@ -3503,7 +3503,7 @@ For support questions, email:
   [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
   [1mjson_valid()[0m, [1myaml_to_json()[0m
 
-[1m[4mjson_array[0m[4m([0m[4mX[0m[4m, ...)[0m
+[1;4mjson_array[0m[4m([0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Constructs a JSON array from its arguments.
 [4mParameter[0m
@@ -3524,7 +3524,7 @@ For support questions, email:
    []
 
 
-[1m[4mjson_array_length[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+[1;4mjson_array_length[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the length of a JSON array.
 [4mParameters[0m
@@ -3546,7 +3546,7 @@ For support questions, email:
    3
 
 
-[1m[4mjson_concat[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
+[1;4mjson_concat[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns an array with the given values concatenated onto the end.
   If the initial value is null, the result will be an array with the
@@ -3577,7 +3577,7 @@ For support questions, email:
    [1,2,3,4,5]
 
 
-[1m[4mjson_contains[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m)[0m
+[1;4mjson_contains[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Check if a JSON value contains the given element.
 [4mParameters[0m
@@ -3599,7 +3599,7 @@ For support questions, email:
    1
 
 
-[1m[4mjson_each[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+[1;4mjson_each[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued-function that returns the children of the top-level
   JSON value
@@ -3623,14 +3623,14 @@ For support questions, email:
 [4mExample[0m
 #1 To iterate over an array:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
-   [1m[4mkey[0m[1m[4m [0m[1m[4m    value    [0m[1m[4m [0m[1m[4m type  [0m[1m[4m [0m[1m[4m atom [0m[1m[4m [0m[1m[4mid[0m[1m[4m [0m[1m[4mparent[0m[1m[4m [0m[1m[4mfullkey[0m[1m[4m [0m[1m[4mpath[0m[1m[4m [0m
+   [1;4mkey[0m[1;4m [0m[1;4m    value    [0m[1;4m [0m[1;4m type  [0m[1;4m [0m[1;4m atom [0m[1;4m [0m[1;4mid[0m[1;4m [0m[1;4mparent[0m[1;4m [0m[1;4mfullkey[0m[1;4m [0m[1;4mpath[0m[1;4m [0m
      0 [1m[36m       <NULL>[0m null    [1m[36m<NULL>[0m  2 [1m[36m<NULL>[0m $[0]    $    
      1             1 integer      1  3 [1m[36m<NULL>[0m $[1]    $    
    [1m  2[0m[1m [0m[1m          two[0m[1m [0m[1mtext   [0m[1m [0m[1m   two[0m[1m [0m[1m 5[0m[1m [0m[1m[36m<NULL>[0m[1m [0m[1m$[2]   [0m[1m [0m[1m$    [0m
-   [1m  3[0m[1m [0m[1m[7m{"three":4.5}[0m[1m [0m[1mobject [0m[1m [0m[1m[36m<NULL>[0m[1m [0m[1m 9[0m[1m [0m[1m[36m<NULL>[0m[1m [0m[1m$[3]   [0m[1m [0m[1m$    [0m
+   [1m  3[0m[1m [0m[1;7m{"three":4.5}[0m[1m [0m[1mobject [0m[1m [0m[1m[36m<NULL>[0m[1m [0m[1m 9[0m[1m [0m[1m[36m<NULL>[0m[1m [0m[1m$[3]   [0m[1m [0m[1m$    [0m
 
 
-[1m[4mjson_extract[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
+[1;4mjson_extract[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the value(s) from the given JSON at the given path(s).
 [4mParameters[0m
@@ -3656,7 +3656,7 @@ For support questions, email:
    {"sub":1}
 
 
-[1m[4mjson_group_array[0m[4m([0m[4mvalue[0m[4m, ...)[0m
+[1;4mjson_group_array[0m[4m([0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Collect the given values from a query into a JSON array
 [4mParameter[0m
@@ -3677,7 +3677,7 @@ For support questions, email:
    [1,2,3]
 
 
-[1m[4mjson_group_object[0m[4m([0m[4mname[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
+[1;4mjson_group_object[0m[4m([0m[4mname[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Collect the given values from a query into a JSON object
 [4mParameters[0m
@@ -3699,7 +3699,7 @@ For support questions, email:
    {"a":1,"b":2}
 
 
-[1m[4mjson_insert[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+[1;4mjson_insert[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Inserts values into a JSON object/array at the given locations, if
   it does not already exist
@@ -3732,7 +3732,7 @@ For support questions, email:
    {"a":1,"b":2,"c":3}
 
 
-[1m[4mjson_object[0m[4m([0m[4mN[0m[4m, [0m[4mV[0m[4m)[0m
+[1;4mjson_object[0m[4m([0m[4mN[0m[4m, [0m[4mV[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Create a JSON object from the given arguments
 [4mParameters[0m
@@ -3754,7 +3754,7 @@ For support questions, email:
    {}
 
 
-[1m[4mjson_object_count_of[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mjson_object_count_of[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Count the number of times the argument has been seen
 [4mParameter[0m
@@ -3766,7 +3766,7 @@ For support questions, email:
    {"debug":1,"error":1,"info":1,"warn":1}
 
 
-[1m[4mjson_object_sum_of[0m[4m([0m[4mid[0m[4m, [0m[4mvalue[0m[4m)[0m
+[1;4mjson_object_sum_of[0m[4m([0m[4mid[0m[4m, [0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Sum values for an associated identifier
 [4mParameters[0m
@@ -3774,7 +3774,7 @@ For support questions, email:
   [4mvalue[0m   The value to sum
 
 
-[1m[4mjson_quote[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mjson_quote[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the JSON representation of the given value, if it is not
   already JSON
@@ -3796,7 +3796,7 @@ For support questions, email:
    "Hello, World!"
 
 
-[1m[4mjson_remove[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
+[1;4mjson_remove[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Removes paths from a JSON value
 [4mParameters[0m
@@ -3818,7 +3818,7 @@ For support questions, email:
    {"a":1}
 
 
-[1m[4mjson_replace[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+[1;4mjson_replace[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Replaces existing values in a JSON object/array at the given
   locations
@@ -3842,7 +3842,7 @@ For support questions, email:
    {"a":2}
 
 
-[1m[4mjson_set[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+[1;4mjson_set[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Inserts or replaces existing values in a JSON object/array at the
   given locations
@@ -3867,7 +3867,7 @@ For support questions, email:
    {"a":2,"b":3}
 
 
-[1m[4mjson_tree[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+[1;4mjson_tree[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued-function that recursively descends through a JSON
   value
@@ -3893,7 +3893,7 @@ For support questions, email:
 #1 To iterate over an array:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
-   [1m[4m key  [0m[1m[4m [0m[1m[4m     value     [0m[1m[4m [0m[1m[4m type  [0m[1m[4m [0m[1m[4m atom [0m[1m[4m [0m[1m[4m fullkey  [0m[1m[4m [0m[1m[4mpath[0m[1m[4m [0m
+   [1;4m key  [0m[1;4m [0m[1;4m     value     [0m[1;4m [0m[1;4m type  [0m[1;4m [0m[1;4m atom [0m[1;4m [0m[1;4m fullkey  [0m[1;4m [0m[1;4mpath[0m[1;4m [0m
    [1m[36m<NULL>[0m [7m[[0m[7mnull,1[0m[7m[33m⋯[0m[7m":4.[0m5}] array   [1m[36m<NULL>[0m $          $    
         0 [1m[36m         <NULL>[0m null    [1m[36m<NULL>[0m $[0]       $    
    [1m     1[0m[1m [0m[1m              1[0m[1m [0m[1minteger[0m[1m [0m[1m     1[0m[1m [0m[1m$[1]      [0m[1m [0m[1m$    [0m
@@ -3902,7 +3902,7 @@ For support questions, email:
     three             4.5 real       4.5 $[3].three $[3] 
 
 
-[1m[4mjson_type[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+[1;4mjson_type[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the type of a JSON value
 [4mParameters[0m
@@ -3928,7 +3928,7 @@ For support questions, email:
    text
 
 
-[1m[4mjson_valid[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mjson_valid[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Tests if the given value is valid JSON
 [4mParameter[0m
@@ -3949,7 +3949,7 @@ For support questions, email:
    1
 
 
-[1m[4mjulianday[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
+[1;4mjulianday[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of days since noon in Greenwich on November 24,
   4714 B.C.
@@ -3975,7 +3975,7 @@ For support questions, email:
    2457848.400949074
 
 
-[1m[4mlag[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
+[1;4mlag[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the result of evaluating the expression against the
   previous row in the partition.
@@ -3990,13 +3990,13 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mlast_insert_rowid[0m[4m()[0m
+[1;4mlast_insert_rowid[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the ROWID of the last row insert from the database
   connection which invoked the function
 
 
-[1m[4mlast_value[0m[4m([0m[4mexpr[0m[4m)[0m
+[1;4mlast_value[0m[4m([0m[4mexpr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the result of evaluating the expression against the last
   row in the window frame.
@@ -4006,7 +4006,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlead()[0m, [1mnth_value()[0m, 
   [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mlead[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
+[1;4mlead[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the result of evaluating the expression against the next
   row in the partition.
@@ -4020,7 +4020,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mleftstr[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
+[1;4mleftstr[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the N leftmost (UTF-8) characters in the given string.
 [4mParameters[0m
@@ -4049,7 +4049,7 @@ For support questions, email:
    abc
 
 
-[1m[4mlength[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mlength[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of characters (not bytes) in the given string
   prior to the first NUL character
@@ -4073,7 +4073,7 @@ For support questions, email:
    3
 
 
-[1m[4mlike[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m, [[0m[4mescape[0m[4m])[0m
+[1;4mlike[0m[4m([0m[4mpattern[0m[4m, [0m[4mstr[0m[4m, [[0m[4mescape[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Match a string against a pattern
 [4mParameters[0m
@@ -4094,7 +4094,7 @@ For support questions, email:
    1
 
 
-[1m[4mlikelihood[0m[4m([0m[4mvalue[0m[4m, [0m[4mprobability[0m[4m)[0m
+[1;4mlikelihood[0m[4m([0m[4mvalue[0m[4m, [0m[4mprobability[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Provides a hint to the query planner that the first argument is a
   boolean that is true with the given probability
@@ -4104,14 +4104,14 @@ For support questions, email:
                 and 1.0
 
 
-[1m[4mlikely[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mlikely[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Short-hand for likelihood(X,0.9375)
 [4mParameter[0m
   [4mvalue[0m   The boolean value to return
 
 
-[1m[4mlnav_theme_css[0m[4m()[0m
+[1;4mlnav_theme_css[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the CSS rules for the classes used in the 'html' output of
   lnav_view_lines(), generated from the current theme.
@@ -4209,13 +4209,13 @@ For support questions, email:
 
 
 
-[1m[4mlnav_top_file[0m[4m()[0m
+[1;4mlnav_top_file[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the name of the file that the top line in the current view
   came from.
 
 
-[1m[4mlnav_version[0m[4m()[0m
+[1;4mlnav_version[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the current version of lnav
 
@@ -4259,13 +4259,13 @@ For support questions, email:
 #1 To get the lines displayed in the log view as HTML:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcontent[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_views[0m[37m[40m, [0m[1m[37m[40mlnav_view_lines[0m[37m[40m([0m[37m[40mname[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m [0m[1m[37m[40m+[0m[37m[40m [0m[37m[40mheight[0m[37m[40m [0m[1m[37m[40m-[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m,[0m
    [37m[40m   [0m[35m[40m'html'[0m[37m[40m) [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[35m[40m'log'[0m
-   [1m[4m    content    [0m[1m[4m [0m
+   [1;4m    content    [0m[1;4m [0m
    <span t[33m⋯[0m</span> 
    <span t[33m⋯[0m</span> 
    [1m<span t[0m[1m[33m⋯[0m[1m</span> [0m
 
 
-[1m[4mload_extension[0m[4m([0m[4mpath[0m[4m, [[0m[4mentry-point[0m[4m])[0m
+[1;4mload_extension[0m[4m([0m[4mpath[0m[4m, [[0m[4mentry-point[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Loads SQLite extensions out of the given shared library file using
   the given entry point.
@@ -4274,7 +4274,7 @@ For support questions, email:
                 containing the extension.
 
 
-[1m[4mlog[0m[4m([0m[4mx[0m[4m)[0m
+[1;4mlog[0m[4m([0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the natural logarithm of x
 [4mParameter[0m
@@ -4290,7 +4290,7 @@ For support questions, email:
    2.0794415416798357
 
 
-[1m[4mlog10[0m[4m([0m[4mx[0m[4m)[0m
+[1;4mlog10[0m[4m([0m[4mx[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the base-10 logarithm of X
 [4mParameter[0m
@@ -4306,22 +4306,22 @@ For support questions, email:
    2
 
 
-[1m[4mlog_msg_line[0m[4m()[0m
+[1;4mlog_msg_line[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the starting line number of the focused log message.
 
 
-[1m[4mlog_top_datetime[0m[4m()[0m
+[1;4mlog_top_datetime[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the timestamp of the line at the top of the log view.
 
 
-[1m[4mlog_top_line[0m[4m()[0m
+[1;4mlog_top_line[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the number of the focused line of the log view.
 
 
-[1m[4mlogfmt2json[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mlogfmt2json[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Convert a logfmt-encoded string into JSON
 [4mParameter[0m
@@ -4344,7 +4344,7 @@ For support questions, email:
    {"foo":1,"bar":2,"name":"Rolo Tomassi"}
 
 
-[1m[4mlower[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mlower[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a copy of the given string with all ASCII characters
   converted to lower case.
@@ -4368,7 +4368,7 @@ For support questions, email:
    abc
 
 
-[1m[4mltrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
+[1;4mltrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string formed by removing any and all characters that
   appear in the second argument from the left side of the first.
@@ -4397,7 +4397,7 @@ For support questions, email:
    c
 
 
-[1m[4mmax[0m[4m([0m[4mX[0m[4m, ...)[0m
+[1;4mmax[0m[4m([0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the argument with the maximum value, or return NULL if any
   argument is NULL.
@@ -4419,7 +4419,7 @@ For support questions, email:
    511
 
 
-[1m[4mmeasure_unit[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mmeasure_unit[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Parse a number with an optional unit, like '4.5ms' or '2 KiB', and
   return the base unit it was recognized as ('s', 'B', ...), or an
@@ -4449,7 +4449,7 @@ For support questions, email:
    
 
 
-[1m[4mmeasure_value[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4mmeasure_value[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Parse a number with an optional unit, like '4.5ms' or '2 KiB', and
   return it in the unit's base (seconds, bytes, ...).  Returns NULL if
@@ -4478,7 +4478,7 @@ For support questions, email:
    2048
 
 
-[1m[4mmin[0m[4m([0m[4mX[0m[4m, ...)[0m
+[1;4mmin[0m[4m([0m[4mX[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the argument with the minimum value, or return NULL if any
   argument is NULL.
@@ -4500,7 +4500,7 @@ For support questions, email:
    100
 
 
-[1m[4mnth_value[0m[4m([0m[4mexpr[0m[4m, [0m[4mN[0m[4m)[0m
+[1;4mnth_value[0m[4m([0m[4mexpr[0m[4m, [0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the result of evaluating the expression against the nth
   row in the window frame.
@@ -4511,7 +4511,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mntile[0m[4m([0m[4mgroups[0m[4m)[0m
+[1;4mntile[0m[4m([0m[4mgroups[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of the group that the current row is a part of
 [4mParameter[0m
@@ -4520,7 +4520,7 @@ For support questions, email:
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mnullif[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m)[0m
+[1;4mnullif[0m[4m([0m[4mX[0m[4m, [0m[4mY[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns its first argument if the arguments are different and NULL
   if the arguments are the same.
@@ -4538,7 +4538,7 @@ For support questions, email:
    1
 
 
-[1m[4moctet_length[0m[4m([0m[4mX[0m[4m)[0m
+[1;4moctet_length[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of bytes in the given string as encoded in the
   database
@@ -4555,7 +4555,7 @@ For support questions, email:
    2
 
 
-[1m[4mpadc[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
+[1;4mpadc[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Pad the given string with enough spaces to make it centered within
   the given length
@@ -4584,7 +4584,7 @@ For support questions, email:
     abcdef ghi
 
 
-[1m[4mpadl[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
+[1;4mpadl[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Pad the given string with leading spaces until it reaches the
   desired length
@@ -4613,7 +4613,7 @@ For support questions, email:
    abcdef
 
 
-[1m[4mpadr[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
+[1;4mpadr[0m[4m([0m[4mstr[0m[4m, [0m[4mlen[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Pad the given string with trailing spaces until it reaches the
   desired length
@@ -4642,7 +4642,7 @@ For support questions, email:
    abcdefghi
 
 
-[1m[4mparse_url[0m[4m([0m[4murl[0m[4m)[0m
+[1;4mparse_url[0m[4m([0m[4murl[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Parse a URL and return the components in a JSON object.
   Limitations: not all URL schemes are supported and repeated query
@@ -4683,7 +4683,7 @@ For support questions, email:
    {"scheme":"https","username":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
 
 
-[1m[4mpath_match[0m[4m([0m[4mpattern[0m[4m, [0m[4mpath[0m[4m)[0m
+[1;4mpath_match[0m[4m([0m[4mpattern[0m[4m, [0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Match a path against a glob pattern where a '**' component matches
   zero or more directories.  Unlike glob(), a '*', '?', or bracket
@@ -4710,14 +4710,14 @@ For support questions, email:
    0
 
 
-[1m[4mpercent_rank[0m[4m()[0m
+[1;4mpercent_rank[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns (rank - 1) / (partition-rows - 1)
 [4mSee Also[0m
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mrank()[0m, [1mrow_number()[0m
 
-[1m[4mpercentile_disc[0m[4m([0m[4mvalue[0m[4m, [0m[4mp[0m[4m)[0m
+[1;4mpercentile_disc[0m[4m([0m[4mvalue[0m[4m, [0m[4mp[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the value at the given percentile of the numeric values,
   by the nearest-rank method: the value at rank ceil(p / 100 * count)
@@ -4736,11 +4736,11 @@ For support questions, email:
 #1 To get the median and 90th percentile of some numbers:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpercentile_disc[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m, [0m[1m[37m[40m50[0m[37m[40m), [0m[1m[37m[40mpercentile_disc[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m, [0m[1m[37m[40m90[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[1,[0m
    [35m[40m   [0m[35m[40m2, 3, 4, 5, 6, 7, 8, 9, 10]'[0m[37m[40m)[0m
-   [1m[4m[7mpercent⋯ue, 50)[0m[1m[4m [0m[1m[4m[7mpercent⋯ue, 90)[0m[1m[4m [0m
-   [1m[7m              5[0m [7m              9[0m 
+   [1;4;7mpercent⋯ue, 50)[0m[1;4m [0m[1;4;7mpercent⋯ue, 90)[0m[1;4m [0m
+   [1;7m              5[0m [7m              9[0m 
 
 
-[1m[4mpi[0m[4m()[0m
+[1;4mpi[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the value of PI
 [4mSee Also[0m
@@ -4754,7 +4754,7 @@ For support questions, email:
    3.141592653589793
 
 
-[1m[4mpower[0m[4m([0m[4mbase[0m[4m, [0m[4mexp[0m[4m)[0m
+[1;4mpower[0m[4m([0m[4mbase[0m[4m, [0m[4mexp[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the base to the given exponent
 [4mParameters[0m
@@ -4771,7 +4771,7 @@ For support questions, email:
    8
 
 
-[1m[4mpretty_print[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mpretty_print[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Pretty-print the given string
 [4mParameter[0m
@@ -4797,7 +4797,7 @@ For support questions, email:
    }
 
 
-[1m[4mprintf[0m[4m([0m[4mformat[0m[4m, [0m[4mX[0m[4m)[0m
+[1;4mprintf[0m[4m([0m[4mformat[0m[4m, [0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string with this functions arguments substituted into
   the given format.  Substitution points are specified using percent
@@ -4832,7 +4832,7 @@ For support questions, email:
    value: 00011
 
 
-[1m[4mproper[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mproper[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Capitalize the first character of words in the given string
 [4mParameter[0m
@@ -4855,7 +4855,7 @@ For support questions, email:
    Hello, World!
 
 
-[1m[4mquote[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mquote[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the text of an SQL literal which is the value of its
   argument suitable for inclusion into an SQL statement.
@@ -4872,7 +4872,7 @@ For support questions, email:
    'abc''123'
 
 
-[1m[4mradians[0m[4m([0m[4mdegrees[0m[4m)[0m
+[1;4mradians[0m[4m([0m[4mdegrees[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Converts degrees to radians
 [4mParameter[0m
@@ -4888,7 +4888,7 @@ For support questions, email:
    3.141592653589793
 
 
-[1m[4mraise_error[0m[4m([0m[4mmsg[0m[4m, [[0m[4mreason[0m[4m], [[0m[4mhelp[0m[4m])[0m
+[1;4mraise_error[0m[4m([0m[4mmsg[0m[4m, [[0m[4mreason[0m[4m], [[0m[4mhelp[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Raises an error with the given message when executed
 [4mParameters[0m
@@ -4906,27 +4906,27 @@ For support questions, email:
 
 
 
-[1m[4mrandom[0m[4m()[0m
+[1;4mrandom[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a pseudo-random integer between -9223372036854775808 and
   +9223372036854775807.
 
 
-[1m[4mrandomblob[0m[4m([0m[4mN[0m[4m)[0m
+[1;4mrandomblob[0m[4m([0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Return an N-byte blob containing pseudo-random bytes.
 [4mParameter[0m
   [4mN[0m   The size of the blob in bytes.
 
 
-[1m[4mrank[0m[4m()[0m
+[1;4mrank[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the row_number() of the first peer in each group with gaps
 [4mSee Also[0m
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrow_number()[0m
 
-[1m[4mreadlink[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4mreadlink[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Read the target of a symbolic link.  If the path is not a symbolic
   link, it is returned unchanged.
@@ -4936,7 +4936,7 @@ For support questions, email:
   [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mrealpath()[0m, 
   [1msource_find_file()[0m
 
-[1m[4mrealpath[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4mrealpath[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the resolved version of the given path, expanding symbolic
   links and resolving '.' and '..' references.
@@ -4946,7 +4946,7 @@ For support questions, email:
   [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, 
   [1msource_find_file()[0m
 
-[1m[4mregexp[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
+[1;4mregexp[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Test if a string matches a regular expression
 [4mParameters[0m
@@ -4954,7 +4954,7 @@ For support questions, email:
   [4mstr[0m   The string to test against the regular expression
 
 
-[1m[4mregexp_capture[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m)[0m
+[1;4mregexp_capture[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that executes a regular-expression over a
   string and returns the captured values.  If the regex only matches a
@@ -4993,7 +4993,7 @@ For support questions, email:
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
-   [1m[4mmatch_index[0m[1m[4m [0m[1m[4mcapture_index[0m[1m[4m [0m[1m[4mcapture_name[0m[1m[4m [0m[1m[4mcapture_count[0m[1m[4m [0m[1m[4mrange_start[0m[1m[4m [0m[1m[4mrange_stop[0m[1m[4m [0m[1m[4mcontent[0m[1m[4m [0m
+   [1;4mmatch_index[0m[1;4m [0m[1;4mcapture_index[0m[1;4m [0m[1;4mcapture_name[0m[1;4m [0m[1;4mcapture_count[0m[1;4m [0m[1;4mrange_start[0m[1;4m [0m[1;4mrange_stop[0m[1;4m [0m[1;4mcontent[0m[1;4m [0m
              0             0 [1m[36m<NULL>      [0m             3           1          4     a=1 
              0             1 [1m[36m<NULL>      [0m             3           1          2       a 
    [1m          0[0m[1m [0m[1m            2[0m[1m [0m[1m[36m<NULL>      [0m[1m [0m[1m            3[0m[1m [0m[1m          3[0m[1m [0m[1m         4[0m[1m [0m[1m      1 [0m
@@ -5002,7 +5002,7 @@ For support questions, email:
              1             2 [1m[36m<NULL>      [0m             3           8          9       2 
 
 
-[1m[4mregexp_capture_into_json[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m, [[0m[4moptions[0m[4m])[0m
+[1;4mregexp_capture_into_json[0m[4m([0m[4mstring[0m[4m, [0m[4mpattern[0m[4m, [[0m[4moptions[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that executes a regular-expression over a
   string and returns the captured values as a JSON object.  If the
@@ -5034,12 +5034,12 @@ For support questions, email:
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
-   [1m[4mmatch_index[0m[1m[4m [0m[1m[4m    content    [0m[1m[4m [0m
+   [1;4mmatch_index[0m[1;4m [0m[1;4m    content    [0m[1;4m [0m
              0 [7m{[0m"col_0[33m⋯[0ml_1":1} 
              1 [7m{"col_0[0m[7m[33m⋯[0m[7ml_1":2}[0m 
 
 
-[1m[4mregexp_match[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
+[1;4mregexp_match[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Match a string against a regular expression and return the capture
   groups as JSON.
@@ -5074,7 +5074,7 @@ For support questions, email:
    {"num":123,"str":"four"}
 
 
-[1m[4mregexp_replace[0m[4m([0m[4mstr[0m[4m, [0m[4mre[0m[4m, [0m[4mrepl[0m[4m)[0m
+[1;4mregexp_replace[0m[4m([0m[4mstr[0m[4m, [0m[4mre[0m[4m, [0m[4mrepl[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Replace the parts of a string that match a regular expression.
 [4mParameters[0m
@@ -5104,7 +5104,7 @@ For support questions, email:
    <123> <abc>
 
 
-[1m[4mreplace[0m[4m([0m[4mstr[0m[4m, [0m[4mold[0m[4m, [0m[4mreplacement[0m[4m)[0m
+[1;4mreplace[0m[4m([0m[4mstr[0m[4m, [0m[4mold[0m[4m, [0m[4mreplacement[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string formed by substituting the replacement string for
   every occurrence of the old string in the given string.
@@ -5136,7 +5136,7 @@ For support questions, email:
    zbc
 
 
-[1m[4mreplicate[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
+[1;4mreplicate[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the given string concatenated N times.
 [4mParameters[0m
@@ -5160,7 +5160,7 @@ For support questions, email:
    abcabcabc
 
 
-[1m[4mreverse[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mreverse[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the reverse of the given string.
 [4mParameter[0m
@@ -5183,7 +5183,7 @@ For support questions, email:
    cba
 
 
-[1m[4mrightstr[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
+[1;4mrightstr[0m[4m([0m[4mstr[0m[4m, [0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the N rightmost (UTF-8) characters in the given string.
 [4mParameters[0m
@@ -5212,7 +5212,7 @@ For support questions, email:
    abc
 
 
-[1m[4mround[0m[4m([0m[4mnum[0m[4m, [[0m[4mdigits[0m[4m])[0m
+[1;4mround[0m[4m([0m[4mnum[0m[4m, [[0m[4mdigits[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a floating-point value rounded to the given number of
   digits to the right of the decimal point.
@@ -5239,7 +5239,7 @@ For support questions, email:
    123.456
 
 
-[1m[4mrow_number[0m[4m()[0m
+[1;4mrow_number[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of the row within the current partition,
   starting from 1.
@@ -5250,14 +5250,14 @@ For support questions, email:
 #1 To number messages from a process:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrow_number[0m[37m[40m() [0m[1m[36m[40mOVER[0m[37m[40m ([0m[1m[36m[40mPARTITION[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mmsg_num[0m[37m[40m,[0m
    [37m[40m   [0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
-   [1m[4m[7m msg_num  [0m[1m[4m [0m[1m[4mex_procname[0m[1m[4m [0m[1m[4m   log_body    [0m[1m[4m [0m
-   [1m[7m [0m[1m        1[0m gw          Goodbye, World! 
-   [1m[7m     [0m[1m    2[0m gw          Goodbye, World! 
-   [1m[7m         3[0m[1m [0m[1mgw         [0m[1m [0m[1mGoodbye, World! [0m
-   [1m[7m [0m[1m        1[0m[1m [0m[1mhw         [0m[1m [0m[1mHello, World!   [0m
+   [1;4;7m msg_num  [0m[1;4m [0m[1;4mex_procname[0m[1;4m [0m[1;4m   log_body    [0m[1;4m [0m
+   [1;7m [0m[1m        1[0m gw          Goodbye, World! 
+   [1;7m     [0m[1m    2[0m gw          Goodbye, World! 
+   [1;7m         3[0m[1m [0m[1mgw         [0m[1m [0m[1mGoodbye, World! [0m
+   [1;7m [0m[1m        1[0m[1m [0m[1mhw         [0m[1m [0m[1mHello, World!   [0m
 
 
-[1m[4mrtrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
+[1;4mrtrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string formed by removing any and all characters that
   appear in the second argument from the right side of the first.
@@ -5286,7 +5286,7 @@ For support questions, email:
    a
 
 
-[1m[4mshell_exec[0m[4m([0m[4mcmd[0m[4m, [[0m[4minput[0m[4m], [[0m[4moptions[0m[4m])[0m
+[1;4mshell_exec[0m[4m([0m[4mcmd[0m[4m, [[0m[4minput[0m[4m], [[0m[4moptions[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Executes a shell command and returns its output.
 [4mParameters[0m
@@ -5300,7 +5300,7 @@ For support questions, email:
 [4mSee Also[0m
   
 
-[1m[4msign[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4msign[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the sign of the given number as -1, 0, or 1
 [4mParameter[0m
@@ -5324,7 +5324,7 @@ For support questions, email:
    -1
 
 
-[1m[4msource_find_file[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4msource_find_file[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Finds a source file, like one named in a stack trace.  An absolute
   path to an existing file is returned as-is.  Otherwise, the file
@@ -5340,7 +5340,7 @@ For support questions, email:
   [1mbasename()[0m, [1mdirname()[0m, [1mjoinpath()[0m, [1mpath_match()[0m, [1mreadlink()[0m, 
   [1mrealpath()[0m
 
-[1m[4msource_log_stmt[0m[4m([0m[4mpath[0m[4m)[0m
+[1;4msource_log_stmt[0m[4m([0m[4mpath[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function for getting information about log
   statements that were found in source code added by the
@@ -5370,7 +5370,7 @@ For support questions, email:
                    messages logged by this statement
 
 
-[1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m
+[1;4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mbound_a[0m[4m], [[0m[4mbound_b[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Aggregate function that returns a sparkline bar chart with a bar
   character for every numeric input
@@ -5404,7 +5404,7 @@ For support questions, email:
    ▁▄█
 
 
-[1m[4mspooky_hash[0m[4m([0m[4mstr[0m[4m, ...)[0m
+[1;4mspooky_hash[0m[4m([0m[4mstr[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Compute the hash value for the given arguments.
 [4mParameter[0m
@@ -5438,7 +5438,7 @@ For support questions, email:
    f96b3d9c1a19f4394c97a1b79b1880df
 
 
-[1m[4msqlite_compileoption_get[0m[4m([0m[4mN[0m[4m)[0m
+[1;4msqlite_compileoption_get[0m[4m([0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the N-th compile-time option used to build SQLite or NULL
   if N is out of range.
@@ -5446,7 +5446,7 @@ For support questions, email:
   [4mN[0m   The option number to get
 
 
-[1m[4msqlite_compileoption_used[0m[4m([0m[4moption[0m[4m)[0m
+[1;4msqlite_compileoption_used[0m[4m([0m[4moption[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns true (1) or false (0) depending on whether or not that
   compile-time option was used during the build.
@@ -5459,18 +5459,18 @@ For support questions, email:
    1
 
 
-[1m[4msqlite_source_id[0m[4m()[0m
+[1;4msqlite_source_id[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string that identifies the specific version of the
   source code that was used to build the SQLite library.
 
 
-[1m[4msqlite_version[0m[4m()[0m
+[1;4msqlite_version[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the version string for the SQLite library that is running.
 
 
-[1m[4msquare[0m[4m([0m[4mnum[0m[4m)[0m
+[1;4msquare[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the square of the argument
 [4mParameter[0m
@@ -5486,7 +5486,7 @@ For support questions, email:
    4
 
 
-[1m[4mstartswith[0m[4m([0m[4mstr[0m[4m, [0m[4mprefix[0m[4m)[0m
+[1;4mstartswith[0m[4m([0m[4mstr[0m[4m, [0m[4mprefix[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Test if a string begins with the given prefix
 [4mParameters[0m
@@ -5513,7 +5513,7 @@ For support questions, email:
    0
 
 
-[1m[4mstrfilter[0m[4m([0m[4msource[0m[4m, [0m[4minclude[0m[4m)[0m
+[1;4mstrfilter[0m[4m([0m[4msource[0m[4m, [0m[4minclude[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the source string with only the characters given in the
   second parameter
@@ -5538,7 +5538,7 @@ For support questions, email:
    bcbc
 
 
-[1m[4mstrftime[0m[4m([0m[4mformat[0m[4m, [0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
+[1;4mstrftime[0m[4m([0m[4mformat[0m[4m, [0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the date formatted according to the format string
   specified as the first argument.
@@ -5568,7 +5568,7 @@ For support questions, email:
    Julian day: 2457848.400949074
 
 
-[1m[4msubstr[0m[4m([0m[4mstr[0m[4m, [0m[4mstart[0m[4m, [[0m[4msize[0m[4m])[0m
+[1;4msubstr[0m[4m([0m[4mstr[0m[4m, [0m[4mstart[0m[4m, [[0m[4msize[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a substring of input string X that begins with the Y-th
   character and which is Z characters long.
@@ -5616,7 +5616,7 @@ For support questions, email:
    b
 
 
-[1m[4msum[0m[4m([0m[4mX[0m[4m)[0m
+[1;4msum[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the sum of the values in the group as an integer.
 [4mParameter[0m
@@ -5633,7 +5633,7 @@ For support questions, email:
    17
 
 
-[1m[4mtime[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
+[1;4mtime[0m[4m([0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the time in this format: HH:MM:SS.
 [4mParameters[0m
@@ -5657,7 +5657,7 @@ For support questions, email:
    21:37:22
 
 
-[1m[4mtime_buckets[0m[4m([0m[4mt[0m[4m, [0m[4mvalue[0m[4m, [0m[4mmax_buckets[0m[4m, [[0m[4mlo[0m[4m], [[0m[4mhi[0m[4m])[0m
+[1;4mtime_buckets[0m[4m([0m[4mt[0m[4m, [0m[4mvalue[0m[4m, [0m[4mmax_buckets[0m[4m, [[0m[4mlo[0m[4m], [[0m[4mhi[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the values over time as a JSON array with an object for
   each time bucket that has values, in time order: its start and stop
@@ -5691,7 +5691,7 @@ For support questions, email:
    [{"start":0,"stop":4,"count":2,"p10":1,"median":1,"p90":5,"max":5},{"start":4,"stop":8,"count":1,"p10":3,"median":3,"p90":3,"max":3},{"start":8,"stop":12,"count":1,"p10":2,"median":2,"p90":2,"max":2}]
 
 
-[1m[4mtimediff[0m[4m([0m[4mtime1[0m[4m, [0m[4mtime2[0m[4m)[0m
+[1;4mtimediff[0m[4m([0m[4mtime1[0m[4m, [0m[4mtime2[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Compute the difference between two timestamps in seconds
 [4mParameters[0m
@@ -5710,7 +5710,7 @@ For support questions, email:
    86400
 
 
-[1m[4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m
+[1;4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Return the start of the slice of time that the given timestamp
   falls in.  If the time falls outside of the slice, NULL is returned.
@@ -5730,20 +5730,20 @@ For support questions, email:
 #2 To group log messages into five minute buckets and count them:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
    [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
-   [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
+   [1;4m     slice     [0m[1;4m [0m[1;4;7m count(1) [0m[1;4m [0m
    2017-02[33m⋯[0m.000000 [7m         2[0m 
    2017-02[33m⋯[0m.000000 [7m [0m        1 
-   [1m2017-02[0m[1m[33m⋯[0m[1m.000000[0m[1m [0m[1m[7m [0m[1m        1 [0m
+   [1m2017-02[0m[1m[33m⋯[0m[1m.000000[0m[1m [0m[1;7m [0m[1m        1 [0m
 
 #3 To group log messages by those before 4:30am and after:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
-   [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
+   [1;4m     slice     [0m[1;4m [0m[1;4;7m count(1) [0m[1;4m [0m
    [1m[36m         <NULL>[0m [7m [0m        1 
    2017-02[33m⋯[0m.000000 [7m         3[0m 
 
 
-[1m[4mtimezone[0m[4m([0m[4mtz[0m[4m, [0m[4mts[0m[4m)[0m
+[1;4mtimezone[0m[4m([0m[4mtz[0m[4m, [0m[4mts[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Convert a timestamp to the given timezone
 [4mParameters[0m
@@ -5768,7 +5768,7 @@ For support questions, email:
    2022-03-02T02:00:00.000000-0800
 
 
-[1m[4mtotal[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mtotal[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the sum of the values in the group as a floating-point.
 [4mParameter[0m
@@ -5785,13 +5785,13 @@ For support questions, email:
    17
 
 
-[1m[4mtotal_changes[0m[4m()[0m
+[1;4mtotal_changes[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the number of row changes caused by INSERT, UPDATE or
   DELETE statements since the current database connection was opened.
 
 
-[1m[4mtrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
+[1;4mtrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string formed by removing any and all characters that
   appear in the second argument from the left and right sides of the
@@ -5822,7 +5822,7 @@ For support questions, email:
    abc
 
 
-[1m[4mtypeof[0m[4m([0m[4mX[0m[4m)[0m
+[1;4mtypeof[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a string that indicates the datatype of the expression X:
   "null", "integer", "real", "text", or "blob".
@@ -5839,7 +5839,7 @@ For support questions, email:
    text
 
 
-[1m[4munhex[0m[4m([0m[4mX[0m[4m)[0m
+[1;4munhex[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a blob value that is a decoding of the given hex string
 [4mParameter[0m
@@ -5862,7 +5862,7 @@ For support questions, email:
    Hello
 
 
-[1m[4municode[0m[4m([0m[4mX[0m[4m)[0m
+[1;4municode[0m[4m([0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the numeric unicode code point corresponding to the first
   character of the string X.
@@ -5885,14 +5885,14 @@ For support questions, email:
    97
 
 
-[1m[4munlikely[0m[4m([0m[4mvalue[0m[4m)[0m
+[1;4munlikely[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Short-hand for likelihood(X, 0.0625)
 [4mParameter[0m
   [4mvalue[0m   The boolean value to return
 
 
-[1m[4munparse_url[0m[4m([0m[4mobj[0m[4m)[0m
+[1;4munparse_url[0m[4m([0m[4mobj[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Convert a JSON object containing the parts of a URL into a URL
   string
@@ -5915,7 +5915,7 @@ For support questions, email:
    https://example.com/
 
 
-[1m[4mupper[0m[4m([0m[4mstr[0m[4m)[0m
+[1;4mupper[0m[4m([0m[4mstr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a copy of the given string with all ASCII characters
   converted to upper case.
@@ -5939,7 +5939,7 @@ For support questions, email:
    ABC
 
 
-[1m[4mxpath[0m[4m([0m[4mxpath[0m[4m, [0m[4mxmldoc[0m[4m)[0m
+[1;4mxpath[0m[4m([0m[4mxpath[0m[4m, [0m[4mxmldoc[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that executes an xpath expression over an
   XML string and returns the selected values.
@@ -5969,24 +5969,24 @@ For support questions, email:
 [4mExamples[0m
 #1 To select the XML nodes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
-   [1m[4m    result     [0m[1m[4m [0m[1m[4m node_path [0m[1m[4m [0m[1m[4mnode_attr[0m[1m[4m [0m[1m[4mnode_text[0m[1m[4m [0m
+   [1;4m    result     [0m[1;4m [0m[1;4m node_path [0m[1;4m [0m[1;4mnode_attr[0m[1;4m [0m[1;4mnode_text[0m[1;4m [0m
    <def a=[33m⋯[0m</def>[33m␊[0m /abc/def[1] {"a":"b"} Hello     
    <def>Bye</def>[33m␊[0m /abc/def[2] {}        Bye       
 
 #2 To select all 'a' attributes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<abc><def[0m
    [35m[40m   [0m[35m[40ma="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
-   [1m[4mresult[0m[1m[4m [0m[1m[4m  node_path   [0m[1m[4m [0m[1m[4mnode_attr[0m[1m[4m [0m[1m[4mnode_text[0m[1m[4m [0m
+   [1;4mresult[0m[1;4m [0m[1;4m  node_path   [0m[1;4m [0m[1;4mnode_attr[0m[1;4m [0m[1;4mnode_text[0m[1;4m [0m
    b      /abc/def[1]/@a {"a":"b"} Hello     
 
 #3 To select the text nodes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello[0m
    [35m[40m   [0m[35m[40m&#x2605;</def></abc>'[0m[37m[40m)[0m
-   [1m[4mresult [0m[1m[4m [0m[1m[4m   node_path   [0m[1m[4m [0m[1m[4mnode_attr[0m[1m[4m [0m[1m[4mnode_text[0m[1m[4m [0m
+   [1;4mresult [0m[1;4m [0m[1;4m   node_path   [0m[1;4m [0m[1;4mnode_attr[0m[1;4m [0m[1;4mnode_text[0m[1;4m [0m
    Hello ★ /abc/def/text() {}        Hello ★   
 
 
-[1m[4myaml_to_json[0m[4m([0m[4myaml[0m[4m)[0m
+[1;4myaml_to_json[0m[4m([0m[4myaml[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Convert a YAML document to a JSON-encoded string
 [4mParameter[0m
@@ -6003,14 +6003,14 @@ For support questions, email:
    {"abc": "def"}
 
 
-[1m[4mzeroblob[0m[4m([0m[4mN[0m[4m)[0m
+[1;4mzeroblob[0m[4m([0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns a BLOB consisting of N bytes of 0x00.
 [4mParameter[0m
   [4mN[0m   The size of the BLOB.
 
 
-[1m[4m[36mATTACH[0m[4m [0m[1m[4m[36mDATABASE[0m[4m [0m[4mfilename[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mschema-name[0m
+[1;4m[36mATTACH[0m[4m [0m[1;4m[36mDATABASE[0m[4m [0m[4mfilename[0m[4m [0m[1;4m[36mAS[0m[4m [0m[4mschema-name[0m
 ══════════════════════════════════════════════════════════════════════
   Attach a database file to the current connection.
 [4mParameters[0m
@@ -6024,7 +6024,7 @@ For support questions, email:
    
 
 
-[1m[4m[36mCASE[0m[4m [[0m[4mbase-expr[0m[4m] [0m[1m[4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4m1[0m[4m [0m[1m[4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4m1[0m[4m [... [0m[1m[4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4mN[0m[4m [0m[1m[4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4mN[0m[4m] [[0m[1m[4m[36mELSE[0m[4m [0m[4melse-expr[0m[4m] [0m[1m[4m[36mEND[0m
+[1;4m[36mCASE[0m[4m [[0m[4mbase-expr[0m[4m] [0m[1;4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4m1[0m[4m [0m[1;4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4m1[0m[4m [... [0m[1;4m[36mWHEN[0m[4m [0m[4mcmp-expr[0m[4mN[0m[4m [0m[1;4m[36mTHEN[0m[4m [0m[4mthen-expr[0m[4mN[0m[4m] [[0m[1;4m[36mELSE[0m[4m [0m[4melse-expr[0m[4m] [0m[1;4m[36mEND[0m
 ══════════════════════════════════════════════════════════════════════
   Evaluate a series of expressions in order until one evaluates to
   true and then return it's result.  Similar to an IF-THEN-ELSE
@@ -6044,7 +6044,7 @@ For support questions, email:
    one
 
 
-[1m[4m[36mCREATE[0m[4m [[0m[4mTEMP[0m[4m] [0m[1m[4m[36mVIEW[0m[4m [[0m[4mIF NOT EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mselect-stmt[0m
+[1;4m[36mCREATE[0m[4m [[0m[4mTEMP[0m[4m] [0m[1;4m[36mVIEW[0m[4m [[0m[4mIF NOT EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m[4m [0m[1;4m[36mAS[0m[4m [0m[4mselect-stmt[0m
 ══════════════════════════════════════════════════════════════════════
   Assign a name to a SELECT statement
 [4mParameters[0m
@@ -6056,7 +6056,7 @@ For support questions, email:
                   represents
 
 
-[1m[4m[36mDELETE[0m[4m [0m[1m[4m[36mFROM[0m[4m [0m[4mtable-name[0m[4m [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
+[1;4m[36mDELETE[0m[4m [0m[1;4m[36mFROM[0m[4m [0m[4mtable-name[0m[4m [[0m[1;4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Delete rows from a table
 [4mParameters[0m
@@ -6064,7 +6064,7 @@ For support questions, email:
   [4mcond[0m         The conditions used to delete the rows.
 
 
-[1m[4m[36mDETACH[0m[4m [0m[1m[4m[36mDATABASE[0m[4m [0m[4mschema-name[0m
+[1;4m[36mDETACH[0m[4m [0m[1;4m[36mDATABASE[0m[4m [0m[4mschema-name[0m
 ══════════════════════════════════════════════════════════════════════
   Detach a database from the current connection.
 [4mParameter[0m
@@ -6077,13 +6077,13 @@ For support questions, email:
    
 
 
-[1m[4m[36mDROP[0m[4m [0m[1m[4m[36mVIEW[0m[4m [[0m[4mIF EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m
+[1;4m[36mDROP[0m[4m [0m[1;4m[36mVIEW[0m[4m [[0m[4mIF EXISTS[0m[4m] [[0m[4mschema-name.[0m[4m] [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
   Drop a view
 [4mParameters[0m
 
 
-[1m[4m[36mINSERT[0m[4m [0m[1m[4m[36mINTO[0m[4m [[0m[4mschema-name.[0m[4m] [0m[4mtable-name[0m[4m [[0m[1m[4m[36m([0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [, ... [0m[4mcolumn-name[0m[4mN[0m[4m] [0m[1m[4m[36m)[0m[4m] [0m[1m[4m[36mVALUES[0m[4m [0m[1m[4m[36m([0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ... [0m[4mexpr[0m[4mN[0m[4m] [0m[1m[4m[36m)[0m
+[1;4m[36mINSERT[0m[4m [0m[1;4m[36mINTO[0m[4m [[0m[4mschema-name.[0m[4m] [0m[4mtable-name[0m[4m [[0m[1;4m[36m([0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [, ... [0m[4mcolumn-name[0m[4mN[0m[4m] [0m[1;4m[36m)[0m[4m] [0m[1;4m[36mVALUES[0m[4m [0m[1;4m[36m([0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ... [0m[4mexpr[0m[4mN[0m[4m] [0m[1;4m[36m)[0m
 ══════════════════════════════════════════════════════════════════════
   Insert rows into a table
 [4mParameters[0m
@@ -6095,14 +6095,14 @@ For support questions, email:
    
 
 
-[1m[4m[36mOVER[0m[4m [0m[4mwindow-name[0m
+[1;4m[36mOVER[0m[4m [0m[4mwindow-name[0m
 ══════════════════════════════════════════════════════════════════════
   Executes the preceding function over a window
 [4mParameter[0m
   [4mwindow-name[0m   The name of the window definition
 
 
-[1m[4m[36mSELECT[0m[4m [[0m[1m[4m[36mDISTINCT[0m[4m|[0m[1m[4m[36mALL[0m[4m] [0m[4mresult-column[0m[4m1[0m[4m [, ... [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1m[4m[36mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ... [0m[4mtable[0m[4mN[0m[4m]] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1m[4m[36mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ... [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1m[4m[36mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [, ... [0m[4mordering-term[0m[4mN[0m[4m]] [[0m[1m[4m[36mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ... [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
+[1;4m[36mSELECT[0m[4m [[0m[1;4m[36mDISTINCT[0m[4m|[0m[1;4m[36mALL[0m[4m] [0m[4mresult-column[0m[4m1[0m[4m [, ... [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1;4m[36mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ... [0m[4mtable[0m[4mN[0m[4m]] [[0m[1;4m[36mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1;4m[36mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ... [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1;4m[36mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [, ... [0m[4mordering-term[0m[4mN[0m[4m]] [[0m[1;4m[36mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ... [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
 ══════════════════════════════════════════════════════════════════════
   Query the database and return zero or more rows of data.
 [4mParameters[0m
@@ -6123,14 +6123,14 @@ For support questions, email:
 [4mExample[0m
 #1 To select all of the columns from the table 'lnav_example_log':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m                    [0m
-   [1m[4m[7m log_line [0m[1m[4m [0m[1m[4mlog_part[0m[1m[4m [0m[1m[4m   log_time    [0m[1m[4m [0m[1m[4mlog_actual_time[0m[1m[4m [0m[1m[4m[7mlog_idle_msecs[0m[1m[4m [0m[1m[4mlog_level[0m[1m[4m [0m[1m[4m[7m log_mark [0m[1m[4m [0m[1m[4mlog_comment[0m[1m[4m [0m[1m[4mlog_tags[0m[1m[4m [0m[1m[4mlog_filters[0m[1m[4m [0m[1m[4mex_procname[0m[1m[4m [0m[1m[4m[7mex_duration[0m[1m[4m [0m[1m[4m[7mlog_time_msecs[0m[1m[4m [0m[1m[4mlog_path[0m[1m[4m [0m[1m[4m   log_text    [0m[1m[4m [0m[1m[4m   log_body    [0m[1m[4m [0m
-   [1m         0[0m [1m[36m<NULL>  [0m 2017-02[33m⋯[0m:06.100 2017-02[33m⋯[0m:06.100 [1m             0[0m info      [1m         0[0m [1m[36m<NULL>     [0m [1m[36m<NULL>  [0m [1m[36m<NULL>     [0m hw          [1m[7m [0m[1m         2[0m [1m[7m [0m[1m1486094706000[0m {TMPDIR}log 2017-02[33m⋯[0m World! Hello, World!   
-   [1m[7m[31m   [0m[1m[31m      1[0m[31m [0m[31m<NULL>  [0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[1m[7m[31m [0m[1m[31m          100[0m[31m [0m[31merror    [0m[31m [0m[1m[31m         0[0m[31m [0m[31m<NULL>     [0m[31m [0m[31m<NULL>  [0m[31m [0m[31m<NULL>     [0m[31m [0m[31mgw         [0m[31m [0m[1m[7m[31m    [0m[1m[31m      4[0m[31m [0m[1m[7m[31m [0m[1m[31m1486094706000[0m[31m [0m[31m{TMPDIR}log[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m World![0m[31m [0m[31mGoodbye, World! [0m
-   [1m[7m[33m       [0m[1m[33m  2[0m[1m[33m [0m[1m[33mnew     [0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1m[7m[33m       12[0m[1m[33m00000[0m[1m[33m [0m[1m[33mwarn     [0m[1m[33m [0m[1m[33m         0[0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33m<NULL>  [0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33mgw         [0m[1m[33m [0m[1m[7m[33m [0m[1m[33m         1[0m[1m[33m [0m[1m[7m[33m 14860[0m[1m[33m95906000[0m[1m[33m [0m[1m[33m{TMPDIR}log[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m World![0m[1m[33m [0m[1m[33mGoodbye, World! [0m
-   [1m[7m         3[0m[1m [0m[1mnew     [0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1m[7m       1800000[0m[1m [0m[1mdebug    [0m[1m [0m[1m         0[0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[36m<NULL>  [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1mgw         [0m[1m [0m[1m[7m         10[0m[1m [0m[1m[7m 1486097706000[0m[1m [0m[1m{TMPDIR}log[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m World![0m[1m [0m[1mGoodbye, World! [0m
+   [1;4;7m log_line [0m[1;4m [0m[1;4mlog_part[0m[1;4m [0m[1;4m   log_time    [0m[1;4m [0m[1;4mlog_actual_time[0m[1;4m [0m[1;4;7mlog_idle_msecs[0m[1;4m [0m[1;4mlog_level[0m[1;4m [0m[1;4;7m log_mark [0m[1;4m [0m[1;4mlog_comment[0m[1;4m [0m[1;4mlog_tags[0m[1;4m [0m[1;4mlog_filters[0m[1;4m [0m[1;4mex_procname[0m[1;4m [0m[1;4;7mex_duration[0m[1;4m [0m[1;4;7mlog_time_msecs[0m[1;4m [0m[1;4mlog_path[0m[1;4m [0m[1;4m   log_text    [0m[1;4m [0m[1;4m   log_body    [0m[1;4m [0m
+   [1m         0[0m [1m[36m<NULL>  [0m 2017-02[33m⋯[0m:06.100 2017-02[33m⋯[0m:06.100 [1m             0[0m info      [1m         0[0m [1m[36m<NULL>     [0m [1m[36m<NULL>  [0m [1m[36m<NULL>     [0m hw          [1;7m [0m[1m         2[0m [1;7m [0m[1m1486094706000[0m {TMPDIR}log 2017-02[33m⋯[0m World! Hello, World!   
+   [1;7m[31m   [0m[1m[31m      1[0m[31m [0m[31m<NULL>  [0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[1;7m[31m [0m[1m[31m          100[0m[31m [0m[31merror    [0m[31m [0m[1m[31m         0[0m[31m [0m[31m<NULL>     [0m[31m [0m[31m<NULL>  [0m[31m [0m[31m<NULL>     [0m[31m [0m[31mgw         [0m[31m [0m[1;7m[31m    [0m[1m[31m      4[0m[31m [0m[1;7m[31m [0m[1m[31m1486094706000[0m[31m [0m[31m{TMPDIR}log[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m World![0m[31m [0m[31mGoodbye, World! [0m
+   [1;7m[33m       [0m[1m[33m  2[0m[1m[33m [0m[1m[33mnew     [0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1;7m[33m       12[0m[1m[33m00000[0m[1m[33m [0m[1m[33mwarn     [0m[1m[33m [0m[1m[33m         0[0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33m<NULL>  [0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33mgw         [0m[1m[33m [0m[1;7m[33m [0m[1m[33m         1[0m[1m[33m [0m[1;7m[33m 14860[0m[1m[33m95906000[0m[1m[33m [0m[1m[33m{TMPDIR}log[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m World![0m[1m[33m [0m[1m[33mGoodbye, World! [0m
+   [1;7m         3[0m[1m [0m[1mnew     [0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1;7m       1800000[0m[1m [0m[1mdebug    [0m[1m [0m[1m         0[0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1m[36m<NULL>  [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1mgw         [0m[1m [0m[1;7m         10[0m[1m [0m[1;7m 1486097706000[0m[1m [0m[1m{TMPDIR}log[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m World![0m[1m [0m[1mGoodbye, World! [0m
 
 
-[1m[4m[36mUPDATE[0m[4m [0m[4mtable[0m[4m [0m[1m[4m[36mSET[0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ... [0m[4mcolumn-name[0m[4mN[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
+[1;4m[36mUPDATE[0m[4m [0m[4mtable[0m[4m [0m[1;4m[36mSET[0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [0m[1;4m[36m=[0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ... [0m[4mcolumn-name[0m[4mN[0m[4m [0m[1;4m[36m=[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [[0m[1;4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
   Modify a subset of values in zero or more rows of the given table
 [4mParameters[0m
@@ -6147,7 +6147,7 @@ For support questions, email:
    
 
 
-[1m[4m[36mWITH[0m[4m [[0m[1m[4m[36mRECURSIVE[0m[4m] [0m[4mcte-table-name[0m[4m [0m[1m[4m[36mAS[0m[4m [0m[4mselect-stmt[0m
+[1;4m[36mWITH[0m[4m [[0m[1;4m[36mRECURSIVE[0m[4m] [0m[4mcte-table-name[0m[4m [0m[1;4m[36mAS[0m[4m [0m[4mselect-stmt[0m
 ══════════════════════════════════════════════════════════════════════
   Create a temporary view that exists only for the duration of a SQL
   statement.

@@ -40,6 +40,7 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "fmt/printf.h"
+#include "fmt/ranges.h"
 #include "readline_highlighters.hh"
 
 using namespace lnav::roles::literals;

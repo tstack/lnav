@@ -34,6 +34,7 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "document.sections.hh"
+#include "fmt/ranges.h"
 #include "scn/scan.h"
 
 plain_text_source::plain_text_source(const string_fragment& text)

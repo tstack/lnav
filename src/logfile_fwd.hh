@@ -92,7 +92,7 @@ enum class logfile_name_source : uint8_t {
 template<>
 struct fmt::formatter<logfile_name_source> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(logfile_name_source lns, FormatContext& ctx)
+    auto format(logfile_name_source lns, FormatContext& ctx) const
     {
         string_view name = "unknown";
         switch (lns) {

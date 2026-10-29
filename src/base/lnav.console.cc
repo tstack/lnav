@@ -775,10 +775,10 @@ println(FILE* file, const attr_line_t& al)
         }
 
         if (line_style.has_foreground() && line_style.has_background()
-            && !line_style.get_foreground().is_rgb
-            && !line_style.get_background().is_rgb
-            && line_style.get_foreground().value.term_color
-                == line_style.get_background().value.term_color)
+            && line_style.get_foreground().is_terminal_color()
+            && line_style.get_background().is_terminal_color()
+            && line_style.get_foreground().value()
+                == line_style.get_background().value())
         {
             auto new_style = fmt::text_style{};
 
@@ -786,7 +786,7 @@ println(FILE* file, const attr_line_t& al)
                 new_style |= line_style.get_emphasis();
             }
             new_style |= fmt::fg(line_style.get_foreground());
-            if (line_style.get_background().value.term_color
+            if (line_style.get_background().value()
                 == lnav::enums::to_underlying(fmt::terminal_color::black))
             {
                 new_style |= fmt::bg(fmt::terminal_color::white);

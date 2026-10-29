@@ -33,6 +33,7 @@
 #include "base/itertools.hh"
 #include "base/result.h"
 #include "command_executor.hh"
+#include "fmt/ranges.h"
 #include "lnav.hh"
 #include "cmds.hh"
 

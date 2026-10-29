@@ -418,9 +418,9 @@ namespace fmt {
 auto
 formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,
                                         format_context& ctx)
-    -> decltype(ctx.out()) const
+    const -> decltype(ctx.out())
 {
-    auto esc_res = fmt::v10::detail::find_escape(
+    auto esc_res = fmt::detail::find_escape(
         ts.ts_str.data(), ts.ts_str.data() + ts.ts_str.size());
     if (esc_res.end == nullptr) {
         return formatter<string_view>::format(ts.ts_str, ctx);

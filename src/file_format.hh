@@ -81,7 +81,7 @@ namespace fmt {
 template<>
 struct formatter<file_format_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(file_format_t ff, FormatContext& ctx)
+    auto format(file_format_t ff, FormatContext& ctx) const
     {
         using namespace md4cpp::literals;
 

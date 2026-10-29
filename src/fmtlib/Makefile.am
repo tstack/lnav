@@ -1,13 +1,13 @@
 
 noinst_HEADERS = \
     fmt/args.h \
+    fmt/base.h \
     fmt/chrono.h \
     fmt/color.h \
     fmt/compile.h \
     fmt/core.h \
     fmt/format-inl.h \
     fmt/format.h \
-    fmt/locale.h \
     fmt/os.h \
     fmt/ostream.h \
     fmt/printf.h \

@@ -42,6 +42,7 @@
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
 #include "config.h"
+#include "fmt/ranges.h"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
 #include "logline_window.hh"

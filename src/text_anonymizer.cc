@@ -39,6 +39,7 @@
 #include "config.h"
 #include "data_scanner.hh"
 #include "diseases-json.h"
+#include "fmt/ranges.h"
 #include "hasher.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "words-json.h"

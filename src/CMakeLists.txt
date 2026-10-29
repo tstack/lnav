@@ -300,13 +300,13 @@ add_library(
         fmtlib/format.cc
         fmtlib/os.cc
         fmtlib/fmt/args.h
+        fmtlib/fmt/base.h
         fmtlib/fmt/chrono.h
         fmtlib/fmt/color.h
         fmtlib/fmt/compile.h
         fmtlib/fmt/core.h
         fmtlib/fmt/format-inl.h
         fmtlib/fmt/format.h
-        fmtlib/fmt/locale.h
         fmtlib/fmt/os.h
         fmtlib/fmt/ostream.h
         fmtlib/fmt/printf.h

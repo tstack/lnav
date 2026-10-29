@@ -46,6 +46,7 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "file_converter_manager.hh"
+#include "fmt/ranges.h"
 #include "logfile.hh"
 #include "service_tags.hh"
 #include "tailer/tailer.looper.hh"

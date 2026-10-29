@@ -40,6 +40,7 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "fmt/ranges.h"
 #include "help_text.hh"
 #include "sql_help.hh"
 

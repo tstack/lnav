@@ -39,7 +39,6 @@
 
 #include "base/attr_line.hh"
 #include "fmt/format.h"
-#include "fmt/std.h"
 #include "log_format_fwd.hh"
 #include "logfile.hh"
 
