@@ -105,8 +105,7 @@ size_t logfile_indexing_width(size_t file_count);
  */
 bool logfile_enable_caches(
     const std::vector<::logfile*>& files,
-    const std::function<progress_result_t(file_off_t, file_off_t)>&
-        on_progress
+    const std::function<progress_result_t(file_off_t, file_off_t)>& on_progress
     = {});
 
 /**
@@ -342,8 +341,8 @@ public:
         std::vector<run> ir_runs;
         uint32_t ir_end{0};
         /** The values by id minus one; [0] is invalid, for "no value". */
-        std::vector<string_fragment> ir_values{string_fragment::invalid()};
-        std::unordered_map<string_fragment, uint32_t, frag_hasher, frag_equal>
+        std::vector<string_key> ir_values{string_key::invalid()};
+        std::unordered_map<string_key, uint32_t, frag_hasher, frag_equal>
             ir_ids;
         /** The run of the last get(), since lookups mostly go in order. */
         mutable size_t ir_hint{0};
@@ -361,10 +360,10 @@ public:
         void truncate(size_t size);
 
         /**
-         * The id for a value (nullopt for none).  The fragment must be in
+         * The id for a value (nullopt for none).  The key's bytes must be in
          * lf_allocator.
          */
-        uint32_t id_for(const std::optional<string_fragment>& sf);
+        uint32_t id_for(const std::optional<string_key>& key);
 
         /**
          * Records lines [from, to) as having the value with the id (0 for
@@ -380,10 +379,10 @@ public:
         void continue_to(size_t from, size_t to);
 
         /**
-         * The line's value, an invalid fragment when it has none, or nullptr
+         * The line's value, an invalid key when it has none, or nullptr
          * when it wasn't recorded.
          */
-        const string_fragment* get(size_t line) const;
+        const string_key* get(size_t line) const;
 
     private:
         void push_run(uint32_t start, uint32_t id);
@@ -408,8 +407,8 @@ public:
         /** Records lines [from, to) as having the thread id and opid. */
         void record(size_t from,
                     size_t to,
-                    const std::optional<string_fragment>& tid,
-                    const std::optional<string_fragment>& opid)
+                    const std::optional<string_key>& tid,
+                    const std::optional<string_key>& opid)
         {
             this->li_tids.record(from, to, this->li_tids.id_for(tid));
             this->li_opids.record(from, to, this->li_opids.id_for(opid));
@@ -914,6 +913,13 @@ public:
         return this->lf_bookmark_metadata;
     }
 
+    /**
+     * False if no line has been given a user's opid, so the bookmark
+     * metadata doesn't need to be checked for one.  It is not reset when
+     * the opids are cleared.
+     */
+    bool may_have_user_opids() const { return this->lf_may_have_user_opids; }
+
     std::map<std::string, metadata>& get_embedded_metadata()
     {
         return this->lf_embedded_metadata;
@@ -1092,10 +1098,9 @@ private:
     bool lf_indexing{true};
     line_info lf_last_line_info;
     bool lf_zoned_to_local_state{true};
-    robin_hood::unordered_set<string_fragment,
-                              frag_hasher,
-                              std::equal_to<string_fragment>>
+    robin_hood::unordered_set<string_key, frag_hasher, frag_equal>
         lf_invalidated_opids;
+    bool lf_may_have_user_opids{false};
     logline_observer* lf_logline_observer{nullptr};
     index_progress lf_index_progress;
     size_t lf_longest_line{0};

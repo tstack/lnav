@@ -46,10 +46,10 @@
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "lnav.commands.hh"
 #include "lnav_util.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "prql-modules.h"
-#include "lnav.commands.hh"
 #include "readline_highlighters.hh"
 #include "sql_execute.hh"
 #include "sql_help.hh"
@@ -857,6 +857,7 @@ const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
 #if defined(SQLITE_INDEX_CONSTRAINT_FUNCTION)
     {SQLITE_INDEX_CONSTRAINT_FUNCTION, "function"},
 #endif
+    {LNAV_INDEX_CONSTRAINT_IN, "IN"},
 };
 
 std::multimap<std::string, const help_text*> sqlite_function_help;

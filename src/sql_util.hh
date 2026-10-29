@@ -55,6 +55,13 @@ extern const std::unordered_map<unsigned char, const char*>
     sql_constraint_names;
 extern const char* const LNAV_ATTACH_DB;
 
+/**
+ * The op vt_best_index stores (in its copy of the constraints for vt_filter)
+ * for a `col IN (...)` constraint taken as a whole list with
+ * sqlite3_vtab_in().  Above SQLite's own constraint ops.
+ */
+static constexpr unsigned char LNAV_INDEX_CONSTRAINT_IN = 200;
+
 inline const char*
 sql_constraint_op_name(unsigned char op)
 {

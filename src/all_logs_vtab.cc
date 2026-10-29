@@ -88,7 +88,7 @@ all_logs_vtab::knows_lines_for(int col) const
 {
     return alv_schema_lines != nullptr
         && col
-        == VT_COL_MAX
+        == VT_COL_COUNT
             + (int) this->alv_schema_meta.lvm_column
                   .get<logline_value_meta::table_column>()
                   .value;
@@ -105,7 +105,7 @@ all_logs_vtab::cached_column(int col,
     }
 
     const auto table_col = [](const logline_value_meta& lvm) {
-        return VT_COL_MAX
+        return VT_COL_COUNT
             + (int) lvm.lvm_column.get<logline_value_meta::table_column>()
                   .value;
     };
@@ -288,7 +288,8 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
 
     values.lvv_thread_id_value
         = to_owned(sub_values.lvv_thread_id_value, values.lvv_allocator);
-    values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
+    values.lvv_opid_value
+        = to_owned(sub_values.lvv_opid_value, values.lvv_allocator);
     values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
     values.lvv_src_file_value
         = to_owned(sub_values.lvv_src_file_value, values.lvv_allocator);

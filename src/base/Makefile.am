@@ -80,6 +80,7 @@ noinst_HEADERS = \
     result.h \
     separated_string.hh \
     short_alloc.h \
+    simple_bloom_set.hh \
     small_string_map.hh \
     snippet_highlighters.hh \
     sparse_cursor_container.hh \
@@ -120,6 +121,7 @@ libbase_a_SOURCES = \
     progress.cc \
     relative_time.cc \
     separated_string.cc \
+    simple_bloom_set.cc \
     small_string_map.cc \
     snippet_highlighters.cc \
     string_attr_type.cc \
@@ -149,6 +151,7 @@ test_base_SOURCES = \
     lnav.gzip.tests.cc \
     math_util.tests.cc \
     separated_string.tests.cc \
+    simple_bloom_set.tests.cc \
     small_string_map.tests.cc \
     snippet_highlighters.tests.cc \
     sparse_cursor_container.tests.cc \

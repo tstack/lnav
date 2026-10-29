@@ -505,8 +505,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     if (this->fos_log_helper.ldh_line_values.lvv_opid_value) {
         auto opid_al = attr_line_t(" ").append("Operation ID:"_h2).append(" ");
 
-        auto opid_str
-            = this->fos_log_helper.ldh_line_values.lvv_opid_value.value();
+        auto opid_str = this->fos_log_helper.ldh_line_values.lvv_opid_value
+                            ->to_string();
         opid_al.append(opid_str);
         switch (this->fos_log_helper.ldh_line_values.lvv_opid_provenance) {
             case logline_value_vector::opid_provenance::none:

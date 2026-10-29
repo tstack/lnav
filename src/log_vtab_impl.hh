@@ -44,6 +44,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/log_level_enum.hh"
 #include "base/progress.hh"
+#include "base/simple_bloom_set.hh"
 #include "base/string_attr_type.hh"
 #include "log_format_fwd.hh"
 #include "pcrepp/pcre2pp.hh"
@@ -57,7 +58,7 @@ enum {
     VT_COL_LINE_NUMBER,
     VT_COL_LOG_TIME,
     VT_COL_LEVEL,
-    VT_COL_MAX
+    VT_COL_COUNT,
 };
 
 class logfile;
@@ -274,8 +275,11 @@ struct log_cursor {
     std::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
     intern_string_t lc_pattern_name;
-    std::optional<uint64_t> lc_opid_bloom_bits;
-    std::optional<uint64_t> lc_tid_bloom_bits;
+    std::optional<simple_bloom_set> lc_opid_bloom_set;
+    std::optional<simple_bloom_set> lc_tid_bloom_set;
+    /** From `IS NULL` (true) or `IS NOT NULL` (false) constraints. */
+    std::optional<bool> lc_opid_is_null;
+    std::optional<bool> lc_tid_is_null;
     std::vector<string_constraint> lc_log_path;
     logfile* lc_last_log_path_match{nullptr};
     logfile* lc_last_log_path_mismatch{nullptr};
@@ -299,6 +303,12 @@ struct log_cursor {
         unique,
     };
 
+    /**
+     * Drops the constraints from the last filter and sets the range back to
+     * all of the view's lines, in lc_direction.
+     */
+    void reset(vis_line_t line_count);
+
     void update(unsigned char op, vis_line_t vl, constraint_t cons);
 
     /**
@@ -319,8 +329,9 @@ struct log_cursor {
     bool has_row_constraints() const
     {
         return this->lc_level_constraint || !this->lc_format_name.empty()
-            || !this->lc_pattern_name.empty() || this->lc_opid_bloom_bits
-            || this->lc_tid_bloom_bits || !this->lc_log_path.empty()
+            || !this->lc_pattern_name.empty() || this->lc_opid_bloom_set
+            || this->lc_tid_bloom_set || this->lc_opid_is_null
+            || this->lc_tid_is_null || !this->lc_log_path.empty()
             || !this->lc_unique_path.empty();
     }
 
@@ -382,11 +393,7 @@ public:
     static std::pair<int, unsigned int> logline_value_to_sqlite_type(
         value_kind_t kind);
 
-    log_vtab_impl(const intern_string_t name)
-        : vi_name(name), vi_tags_name(intern_string::lookup(
-                             fmt::format(FMT_STRING("{}.log_tags"), name)))
-    {
-    }
+    explicit log_vtab_impl(intern_string_t name);
 
     virtual ~log_vtab_impl() = default;
 
@@ -398,6 +405,8 @@ public:
     {
         return std::nullopt;
     }
+
+    void init();
 
     std::string get_table_statement();
 
@@ -415,10 +424,7 @@ public:
                                   const std::vector<std::string>& values,
                                   logfile_sub_source& lss,
                                   std::vector<vis_line_t>& lines_out,
-                                  std::vector<std::string>& unknown_out)
-    {
-        unknown_out.insert(unknown_out.end(), values.begin(), values.end());
-    }
+                                  std::vector<std::string>& unknown_out);
 
     /**
      * Whether lines_for_values() can answer for the column, so that a
@@ -485,7 +491,10 @@ public:
 
     provenance_t vi_provenance{provenance_t::format};
     bool vi_supports_indexes{true};
+    std::vector<intern_string_t> vi_column_names;
     int vi_column_count{0};
+
+    string_fragment get_column_name(int col) const;
 
 protected:
     const intern_string_t vi_name;

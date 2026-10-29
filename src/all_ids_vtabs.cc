@@ -152,7 +152,7 @@ CREATE TABLE lnav_db.all_opids (
 
     struct cursor {
         struct opid_time_pair {
-            string_fragment otp_opid;
+            string_key otp_opid;
             /**
              * The opid's range and level counts, merged across the files.  Not
              * the whole opid_time_range: its description elements (strings)
@@ -213,10 +213,8 @@ CREATE TABLE lnav_db.all_opids (
             return {};
         }
 
-        using pair_map = robin_hood::unordered_map<string_fragment,
-                                                   opid_time_pair,
-                                                   frag_hasher,
-                                                   frag_equal>;
+        using pair_map = robin_hood::
+            unordered_map<string_key, opid_time_pair, frag_hasher, frag_equal>;
 
         sqlite3_vtab_cursor base{};
         /** The rows: the shared merged ones, or a lookup's own. */
@@ -239,7 +237,7 @@ CREATE TABLE lnav_db.all_opids (
          */
         static void gather(pair_map& gather_map,
                            const std::shared_ptr<logfile>& lf,
-                           const string_fragment& key,
+                           const string_key& key,
                            const opid_time_range& om)
         {
             auto [gather_iter, inserted] = gather_map.try_emplace(
@@ -550,7 +548,7 @@ CREATE TABLE lnav_db.all_thread_ids (
 
     struct cursor {
         struct thread_id_time_pair {
-            string_fragment titp_thread_id;
+            string_key titp_thread_id;
             thread_id_time_range titp_range;
 
             bool operator<(const thread_id_time_pair& rhs) const
@@ -559,7 +557,7 @@ CREATE TABLE lnav_db.all_thread_ids (
             }
         };
 
-        using pair_map = robin_hood::unordered_map<string_fragment,
+        using pair_map = robin_hood::unordered_map<string_key,
                                                    thread_id_time_pair,
                                                    frag_hasher,
                                                    frag_equal>;
@@ -588,7 +586,7 @@ CREATE TABLE lnav_db.all_thread_ids (
          * key points into the file's thread map, which outlives the query.
          */
         static void gather(pair_map& gather_map,
-                           const string_fragment& key,
+                           const string_key& key,
                            const thread_id_time_range& om)
         {
             auto [gather_iter, inserted]
@@ -830,8 +828,8 @@ CREATE TABLE lnav_db.all_thread_opids (
 
     struct row {
         /** Invalid fragments for "none". */
-        string_fragment r_thread;
-        string_fragment r_opid;
+        string_key r_thread;
+        string_key r_opid;
         time_range r_time;
         log_level_stats r_stats;
 
@@ -846,7 +844,7 @@ CREATE TABLE lnav_db.all_thread_opids (
         std::vector<row> rs_rows;
         /** Holds the rows' ids, so they don't depend on the files. */
         ArenaAlloc::Alloc<char> rs_allocator{4096};
-        robin_hood::unordered_map<string_fragment,
+        robin_hood::unordered_map<string_key,
                                   std::vector<uint32_t>,
                                   frag_hasher,
                                   frag_equal>
@@ -854,8 +852,7 @@ CREATE TABLE lnav_db.all_thread_opids (
     };
 
     struct pair_hasher {
-        size_t operator()(
-            const std::pair<string_fragment, string_fragment>& p) const
+        size_t operator()(const std::pair<string_key, string_key>& p) const
         {
             auto h1 = p.first.is_valid() ? frag_hasher{}(p.first) : 0x9e37;
             auto h2 = p.second.is_valid() ? frag_hasher{}(p.second) : 0x7f4a;
@@ -867,7 +864,7 @@ CREATE TABLE lnav_db.all_thread_opids (
     {
         const auto& active_files = injector::get<file_collection&>();
         auto retval = std::make_shared<row_set>();
-        robin_hood::unordered_map<std::pair<string_fragment, string_fragment>,
+        robin_hood::unordered_map<std::pair<string_key, string_key>,
                                   uint32_t,
                                   pair_hasher>
             pair_rows;
@@ -907,22 +904,20 @@ CREATE TABLE lnav_db.all_thread_opids (
                     format->annotate(lf.get(), line, sa, values);
                     tid = values.lvv_thread_id_value.value_or(
                         string_fragment::invalid());
-                    opid = values.lvv_opid_value
-                        ? string_fragment::from_str(
-                              values.lvv_opid_value.value())
-                        : string_fragment::invalid();
+                    opid = values.lvv_opid_value.value_or(
+                        string_fragment::invalid());
                 } else {
-                    tid = *tid_p;
-                    opid = *opid_p;
-                    if (!bm.empty()) {
-                        auto bm_iter = bm.find(line);
-                        if (bm_iter != bm.end()
-                            && !bm_iter->second.bm_opid.empty())
-                        {
-                            // The user's opid, which the scan didn't see.
-                            opid = string_fragment::from_str(
-                                bm_iter->second.bm_opid);
-                        }
+                    tid = tid_p->to_frag();
+                    opid = opid_p->to_frag();
+                }
+                if (lf->may_have_user_opids()) {
+                    auto bm_iter = bm.find(line);
+                    if (bm_iter != bm.end()
+                        && !bm_iter->second.bm_opid.empty())
+                    {
+                        // The user's opid wins over the format's.
+                        opid = string_fragment::from_str(
+                            bm_iter->second.bm_opid);
                     }
                 }
 
@@ -930,14 +925,18 @@ CREATE TABLE lnav_db.all_thread_opids (
                 if (last_row && tid == last_tid && opid == last_opid) {
                     row_index = last_row.value();
                 } else {
-                    auto iter = pair_rows.find(std::make_pair(tid, opid));
+                    auto tid_sk = string_key::from(tid);
+                    auto opid_sk = string_key::from(opid);
+                    auto iter = pair_rows.find(std::make_pair(tid_sk, opid_sk));
                     if (iter == pair_rows.end()) {
                         // tid and opid may point into the message buffer,
                         // so the key and the row get copies.
-                        row r{tid.to_owned(retval->rs_allocator),
-                              opid.to_owned(retval->rs_allocator),
-                              {},
-                              {}};
+                        auto r = row{
+                            tid_sk.to_owned(retval->rs_allocator),
+                            opid_sk.to_owned(retval->rs_allocator),
+                            {},
+                            {},
+                        };
                         r.r_time.invalidate();
                         iter
                             = pair_rows
@@ -948,8 +947,8 @@ CREATE TABLE lnav_db.all_thread_opids (
                     }
                     row_index = iter->second;
                     last_row = row_index;
-                    last_tid = iter->first.first;
-                    last_opid = iter->first.second;
+                    last_tid = iter->first.first.to_frag();
+                    last_opid = iter->first.second.to_frag();
                 }
 
                 auto& r = retval->rs_rows[row_index];
@@ -1108,22 +1107,8 @@ CREATE TABLE lnav_db.all_thread_opids (
         return SQLITE_OK;
     }
 
-    static void to_sqlite_id(sqlite3_context* ctx, const string_fragment& sf)
-    {
-        if (!sf.is_valid()) {
-            sqlite3_result_null(ctx);
-        } else {
-            // An empty fragment may have no data, which SQLite would take
-            // for NULL.
-            sqlite3_result_text(ctx,
-                                sf.empty() ? "" : sf.data(),
-                                sf.length(),
-                                SQLITE_TRANSIENT);
-        }
-    }
-
     /** The opid's description, as all_opids shows it. */
-    static std::string description(const string_fragment& opid)
+    static std::string description(const string_key& opid)
     {
         if (!opid.is_valid()) {
             return {};
@@ -1145,10 +1130,10 @@ CREATE TABLE lnav_db.all_thread_opids (
         const auto& r = vc.current();
         switch (col) {
             case 0:
-                to_sqlite_id(ctx, r.r_thread);
+                to_sqlite(ctx, r.r_thread);
                 break;
             case 1:
-                to_sqlite_id(ctx, r.r_opid);
+                to_sqlite(ctx, r.r_opid);
                 break;
             case 2:
                 to_sqlite(ctx, r.r_time.tr_begin);

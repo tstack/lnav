@@ -1241,3 +1241,62 @@ check_output "cached thread ids or opids differ for a JSON format?" <<EOF
 n,same_th,same_op,th_set,op_set
 360,360,360,360,300
 EOF
+
+# Constraints on log_opid and log_thread_id are given to the log tables,
+# which skip rows using the per-line ids.  Each count is paired with the
+# same constraint on `+col`, which SQLite evaluates itself, so the two
+# have to agree.
+idx_scan_counts() {
+    echo "(SELECT count(*) FROM all_logs WHERE $1 $2) AS $3, (SELECT count(*) FROM all_logs WHERE +$1 $2) AS $3_scan"
+}
+
+# vmw_log is a text format and bro a builtin one; both files are shorter
+# than the number of lines that are checked against every format.
+run_test ${lnav_test} -n \
+    -c ";SELECT $(idx_scan_counts log_opid "= '7e1280cf'" eq), $(idx_scan_counts log_opid "IN ('7e1280cf', 'CmWpC33jXuKpXNLcie', 'nope')" in_list), $(idx_scan_counts log_opid "IN (NULL, 'SWI-66b629ff')" in_null), $(idx_scan_counts log_opid "IN (NULL)" only_null)" \
+    -c ":write-csv-to -" \
+    -c ";SELECT $(idx_scan_counts log_opid "IS NULL" is_null), $(idx_scan_counts log_opid "IS NOT NULL" not_null)" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_vmw_log.0 \
+    ${test_dir}/logfile_bro_http.log.0 \
+    ${test_dir}/logfile_java.0
+
+check_output "log_opid constraints do not match the rows?" <<EOF
+eq,eq_scan,in_list,in_list_scan,in_null,in_null_scan,only_null,only_null_scan
+2,2,13,13,1,1,0,0
+is_null,is_null_scan,not_null,not_null_scan
+20,20,200,200
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT $(idx_scan_counts log_thread_id "= 'Thread-6'" eq), $(idx_scan_counts log_thread_id "IN ('main', 'Thread-6', 'nope')" in_list), $(idx_scan_counts log_thread_id "IN (NULL, 'main')" in_null)" \
+    -c ":write-csv-to -" \
+    -c ";SELECT $(idx_scan_counts log_thread_id "IS NULL" is_null), $(idx_scan_counts log_thread_id "IS NOT NULL" not_null)" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_java.0 \
+    ${test_dir}/logfile_bro_http.log.0
+
+check_output "log_thread_id constraints do not match the rows?" <<EOF
+eq,eq_scan,in_list,in_list_scan,in_null,in_null_scan
+3,3,14,14,11,11
+is_null,is_null_scan,not_null,not_null_scan
+197,197,20,20
+EOF
+
+# An opid set by hand is in the bookmark metadata rather than the line ids.
+# Clearing it from one of its two lines leaves the other line's range.
+run_test ${lnav_test} -n \
+    -c ";UPDATE all_logs SET log_opid = 'myop' WHERE log_line IN (2, 5)" \
+    -c ";SELECT $(idx_scan_counts log_opid "= 'myop'" eq), $(idx_scan_counts log_opid "IN ('myop', 'nope')" in_list), $(idx_scan_counts log_opid "IS NULL" is_null), $(idx_scan_counts log_opid "IS NOT NULL" not_null)" \
+    -c ":write-csv-to -" \
+    -c ";UPDATE all_logs SET log_opid = NULL WHERE log_line = 2" \
+    -c ";SELECT $(idx_scan_counts log_opid "= 'myop'" eq), (SELECT total FROM all_opids WHERE opid = 'myop') AS total, (SELECT earliest = latest FROM all_opids WHERE opid = 'myop') AS one_line" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_java.0
+
+check_output "log_opid constraints do not match an opid set by hand?" <<EOF
+eq,eq_scan,in_list,in_list_scan,is_null,is_null_scan,not_null,not_null_scan
+2,2,2,2,18,18,2,2
+eq,eq_scan,total,one_line
+1,1,1,1
+EOF

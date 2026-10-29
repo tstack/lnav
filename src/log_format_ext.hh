@@ -454,7 +454,7 @@ public:
                                        timeval& log_tv,
                                        scan_batch_context& sbc);
 
-    log_opid_map::iterator record_opid(const hashed_frag& opid_cap,
+    log_opid_map::iterator record_opid(const string_key& opid_cap,
                                        std::chrono::microseconds duration,
                                        std::chrono::microseconds log_us,
                                        log_level_t level,

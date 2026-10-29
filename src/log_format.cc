@@ -230,12 +230,12 @@ scan_batch_context::seed_for(const log_format* format)
 
 log_thread_id_map::iterator
 log_thread_id_state::insert_tid(ArenaAlloc::Alloc<char>& alloc,
-                                const hashed_frag& tid,
+                                const string_key& tid,
                                 const std::chrono::microseconds& us)
 {
     auto retval = this->ltis_tid_ranges.find(tid);
     if (retval == this->ltis_tid_ranges.end()) {
-        auto tid_copy = tid.hf_frag.to_owned(alloc);
+        auto tid_copy = tid.to_owned(alloc);
         auto titr = thread_id_time_range{time_range{us, us}};
         auto emplace_res = this->ltis_tid_ranges.emplace(tid_copy, titr);
         retval = emplace_res.first;
@@ -254,7 +254,7 @@ log_thread_id_state::flush_no_tid(ArenaAlloc::Alloc<char>& alloc)
     }
 
     auto tid_iter = this->insert_tid(alloc,
-                                     hashed_frag::from(string_fragment{}),
+                                     string_key::from(string_fragment{}),
                                      this->ltis_no_tid->titr_range.tr_begin);
     tid_iter->second |= this->ltis_no_tid.value();
     this->ltis_no_tid.reset();
@@ -262,14 +262,14 @@ log_thread_id_state::flush_no_tid(ArenaAlloc::Alloc<char>& alloc)
 
 log_opid_map::iterator
 log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
-                          const hashed_frag& opid,
+                          const string_key& opid,
                           const std::chrono::microseconds& us,
                           timestamp_point_of_reference_t poref,
                           std::chrono::microseconds duration)
 {
     auto retval = this->los_opid_ranges.find(opid);
     if (retval == this->los_opid_ranges.end()) {
-        auto opid_copy = opid.hf_frag.to_owned(alloc);
+        auto opid_copy = opid.to_owned(alloc);
         auto otr = opid_time_range{time_range{us, us}};
         auto emplace_res = this->los_opid_ranges.emplace(opid_copy, otr);
         retval = emplace_res.first;
@@ -806,7 +806,7 @@ logline_value_vector::logline_value_vector(const logline_value_vector& other)
     : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
       lvv_time_value(other.lvv_time_value),
       lvv_time_exttm(other.lvv_time_exttm),
-      lvv_opid_value(other.lvv_opid_value),
+      lvv_opid_value(to_owned(other.lvv_opid_value, this->lvv_allocator)),
       lvv_opid_provenance(other.lvv_opid_provenance),
       lvv_thread_id_value(
           to_owned(other.lvv_thread_id_value, this->lvv_allocator)),
@@ -825,7 +825,8 @@ logline_value_vector::operator=(const logline_value_vector& other)
     this->lvv_values = other.lvv_values;
     this->lvv_time_value = other.lvv_time_value;
     this->lvv_time_exttm = other.lvv_time_exttm;
-    this->lvv_opid_value = other.lvv_opid_value;
+    this->lvv_opid_value
+        = to_owned(other.lvv_opid_value, this->lvv_allocator);
     this->lvv_opid_provenance = other.lvv_opid_provenance;
     this->lvv_thread_id_value
         = to_owned(other.lvv_thread_id_value, this->lvv_allocator);
@@ -1141,7 +1142,9 @@ log_format::annotate(logfile* lf,
         const auto& bm = lf->get_bookmark_metadata();
         auto bm_iter = bm.find(line_number);
         if (bm_iter != bm.end() && !bm_iter->second.bm_opid.empty()) {
-            values.lvv_opid_value = bm_iter->second.bm_opid;
+            values.lvv_opid_value
+                = string_fragment::from_str(bm_iter->second.bm_opid)
+                      .to_owned(values.lvv_allocator);
             values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::user;
         }
@@ -1342,9 +1345,9 @@ struct json_log_userdata {
     std::vector<std::pair<string_fragment, external_log_format::value_def*>>&
         jlu_read_order;
     ArenaAlloc::Alloc<char>& jlu_field_allocator;
-    std::optional<hashed_frag> jlu_opid_frag;
+    std::optional<string_key> jlu_opid_frag;
     std::optional<string_fragment> jlu_opid_desc_frag;
-    std::optional<hashed_frag> jlu_tid_frag;
+    std::optional<string_key> jlu_tid_frag;
     std::optional<int64_t> jlu_tid_number;
     std::optional<std::string> jlu_subid;
     std::optional<log_format::scan_error> jlu_scan_error;
@@ -1519,12 +1522,12 @@ read_json_number(yajlpp_parse_context* ypc,
     } else if (vd != nullptr) {
         if (jlu->jlu_format->elf_thread_id_field == field_name) {
             auto& sbc = *jlu->jlu_batch_context;
-            auto tid_hf = hashed_frag::from(number_frag);
-            auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_hf);
-            tid_hf.hf_frag = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
-                ? number_frag.to_owned(sbc.sbc_allocator)
+            auto tid_sk = string_key::from(number_frag);
+            auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_sk);
+            tid_sk = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
+                ? tid_sk.to_owned(sbc.sbc_allocator)
                 : tid_iter->first;
-            jlu->jlu_tid_frag = tid_hf;
+            jlu->jlu_tid_frag = tid_sk;
         }
         if ((vd->vd_meta.lvm_kind == value_kind_t::VALUE_INTEGER
              || vd->vd_meta.lvm_kind == value_kind_t::VALUE_FLOAT)
@@ -1995,7 +1998,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         if (jlu.jlu_tid_frag) {
             line_values.lvv_thread_id_value
-                = jlu.jlu_tid_frag->hf_frag.to_owned(line_values.lvv_allocator);
+                = jlu.jlu_tid_frag->to_frag().to_owned(
+                    line_values.lvv_allocator);
             auto tid_iter = sbc.sbc_tids.insert_tid(
                 sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
@@ -2043,18 +2047,19 @@ external_log_format::scan_json(std::vector<logline>& dst,
         {
             char buf[hasher::STRING_SIZE];
             jlu.jlu_opid_hasher.to_string(buf);
-            auto opid_frag = string_fragment::from_bytes(buf, sizeof(buf) - 1);
-            auto opid_hf = hashed_frag::from(opid_frag);
-            auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_hf);
-            opid_hf.hf_frag = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
-                ? opid_frag.to_owned(sbc.sbc_allocator)
+            auto opid_sk = string_key::from(buf, sizeof(buf) - 1);
+            auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_sk);
+            opid_sk = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
+                ? opid_sk.to_owned(sbc.sbc_allocator)
                 : opid_iter->first;
-            jlu.jlu_opid_frag = opid_hf;
+            jlu.jlu_opid_frag = opid_sk;
         }
 
         if (jlu.jlu_opid_frag) {
             ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
-            line_values.lvv_opid_value = jlu.jlu_opid_frag->hf_frag.to_string();
+            line_values.lvv_opid_value
+                = jlu.jlu_opid_frag->to_frag().to_owned(
+                    line_values.lvv_allocator);
             line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
@@ -2104,12 +2109,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         // What annotate() gives for the line, for the file's per-line cache.
         sbc.sbc_line_ids_set = true;
-        sbc.sbc_line_tid = jlu.jlu_tid_frag
-            ? std::make_optional(jlu.jlu_tid_frag->hf_frag)
-            : std::nullopt;
-        sbc.sbc_line_opid = jlu.jlu_opid_frag
-            ? std::make_optional(jlu.jlu_opid_frag->hf_frag)
-            : std::nullopt;
+        sbc.sbc_line_tid = jlu.jlu_tid_frag;
+        sbc.sbc_line_opid = jlu.jlu_opid_frag;
 
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
         ll.set_has_ansi(jlu.jlu_has_ansi);
@@ -2230,7 +2231,7 @@ ingest_numeric_value(const external_log_format::value_def& vd,
 }
 
 log_opid_map::iterator
-external_log_format::record_opid(const hashed_frag& opid_cap,
+external_log_format::record_opid(const string_key& opid_cap,
                                  std::chrono::microseconds duration,
                                  std::chrono::microseconds log_us,
                                  log_level_t level,
@@ -2269,6 +2270,7 @@ external_log_format::finalize_line(logline& new_line,
     }
 
     std::optional<log_opid_map::iterator> opid_iter;
+    std::optional<string_key> line_opid;
     if (in.lfi_opid_cap && !in.lfi_opid_cap->empty()) {
         auto duration = std::chrono::microseconds::zero();
         if (in.lfi_duration_cap) {
@@ -2296,9 +2298,10 @@ external_log_format::finalize_line(logline& new_line,
             }
         }
 
-        const auto opid_hf = hashed_frag::from(in.lfi_opid_cap.value());
+        const auto opid_hf = string_key::from(in.lfi_opid_cap.value());
         opid_iter = this->record_opid(opid_hf, duration, log_us, level, sbc);
         new_line.merge_bloom_bits(opid_hf.bloom_bits());
+        line_opid = opid_iter.value()->first;
     }
 
     // What annotate() gives for the line, for the file's per-line cache: the
@@ -2306,15 +2309,13 @@ external_log_format::finalize_line(logline& new_line,
     // (the captures and a synthesized opid's buffer don't outlive the scan).
     sbc.sbc_line_ids_set = true;
     sbc.sbc_line_tid = std::nullopt;
-    sbc.sbc_line_opid = opid_iter
-        ? std::make_optional(opid_iter.value()->first)
-        : std::nullopt;
+    sbc.sbc_line_opid = line_opid;
     if (this->elf_thread_id_field.empty()) {
         if (in.lfi_terminated) {
             sbc.sbc_tids.add_no_tid(log_us, level);
         }
     } else if (in.lfi_tid_cap) {
-        const auto tid_hf = hashed_frag::from(in.lfi_tid_cap.value());
+        const auto tid_hf = string_key::from(in.lfi_tid_cap.value());
         auto tid_iter
             = sbc.sbc_tids.insert_tid(sbc.sbc_allocator, tid_hf, log_us);
         tid_iter->second.titr_level_stats.update_msg_count(level);
@@ -2993,7 +2994,8 @@ external_log_format::annotate(logfile* lf,
                         -this->jlf_cached_sub_range.lr_start);
                 }
             }
-            values.lvv_opid_value = this->jlf_line_values.lvv_opid_value;
+            values.lvv_opid_value = to_owned(
+                this->jlf_line_values.lvv_opid_value, values.lvv_allocator);
             values.lvv_opid_provenance
                 = this->jlf_line_values.lvv_opid_provenance;
             values.lvv_thread_id_value
@@ -3078,7 +3080,7 @@ external_log_format::annotate(logfile* lf,
     }
     if (opid_cap && !opid_cap->empty()) {
         sa.emplace_back(to_line_range(opid_cap.value()), L_OPID.value());
-        values.lvv_opid_value = opid_cap->to_string();
+        values.lvv_opid_value = opid_cap->to_owned(values.lvv_allocator);
         values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
     }
@@ -3398,26 +3400,26 @@ read_json_field(yajlpp_parse_context* ypc,
     }
     if (!field_name.empty() && jlu->jlu_format->elf_opid_field == field_name) {
         auto& sbc = *jlu->jlu_batch_context;
-        auto opid_hf = hashed_frag::from(frag);
+        auto opid_sk = string_key::from(frag);
         // Merged here as well as when the line is finished since a duration
         // replaces this opid with a synthesized one before then.
-        jlu->jlu_base_line->merge_bloom_bits(opid_hf.bloom_bits());
-        auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_hf);
-        opid_hf.hf_frag = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
-            ? frag.to_owned(sbc.sbc_allocator)
+        jlu->jlu_base_line->merge_bloom_bits(opid_sk.bloom_bits());
+        auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_sk);
+        opid_sk = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
+            ? opid_sk.to_owned(sbc.sbc_allocator)
             : opid_iter->first;
-        jlu->jlu_opid_frag = opid_hf;
+        jlu->jlu_opid_frag = opid_sk;
     }
     if (!field_name.empty()
         && jlu->jlu_format->elf_thread_id_field == field_name)
     {
         auto& sbc = *jlu->jlu_batch_context;
-        auto tid_hf = hashed_frag::from(frag);
-        auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_hf);
-        tid_hf.hf_frag = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
-            ? frag.to_owned(sbc.sbc_allocator)
+        auto tid_sk = string_key::from(frag);
+        auto tid_iter = sbc.sbc_tids.ltis_tid_ranges.find(tid_sk);
+        tid_sk = tid_iter == sbc.sbc_tids.ltis_tid_ranges.end()
+            ? tid_sk.to_owned(sbc.sbc_allocator)
             : tid_iter->first;
-        jlu->jlu_tid_frag = tid_hf;
+        jlu->jlu_tid_frag = tid_sk;
     }
     if (!jlu->jlu_format->elf_subid_field.empty()
         && jlu->jlu_format->elf_subid_field == field_name)
@@ -3478,7 +3480,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     }
 
     if (jlu->jlu_format->elf_opid_field == field_name) {
-        jlu->jlu_line_values.lvv_opid_value = frag.to_string();
+        jlu->jlu_line_values.lvv_opid_value
+            = frag.to_owned(jlu->jlu_line_values.lvv_allocator);
         jlu->jlu_line_values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
     }
@@ -3689,7 +3692,7 @@ external_log_format::process_csv_cell(logline_value_vector& values,
 
     if (name == this->elf_opid_field) {
         if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
-            values.lvv_opid_value = canon_sf.to_string();
+            values.lvv_opid_value = canon_sf.to_owned(values.lvv_allocator);
             values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             if (sa != nullptr) {
@@ -3762,7 +3765,9 @@ external_log_format::synthesize_tabular_opid(logline_value_vector& values,
         && opid_desc.oda_any)
     {
         opid_desc.oda_hash.to_string(buf);
-        values.lvv_opid_value = std::string(buf, sizeof(buf) - 1);
+        values.lvv_opid_value
+            = string_fragment::from_bytes(buf, sizeof(buf) - 1)
+                  .to_owned(values.lvv_allocator);
         values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
     }
@@ -3776,7 +3781,9 @@ external_log_format::synthesize_tabular_opid(logline_value_vector& values,
 
         h.update(row_sf);
         h.to_string(buf);
-        values.lvv_opid_value = std::string(buf, sizeof(buf) - 1);
+        values.lvv_opid_value
+            = string_fragment::from_bytes(buf, sizeof(buf) - 1)
+                  .to_owned(values.lvv_allocator);
         values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;
     }
@@ -4490,7 +4497,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                         this->jlf_line_values.lvv_allocator);
             } else if (jlu.jlu_tid_frag) {
                 this->jlf_line_values.lvv_thread_id_value
-                    = jlu.jlu_tid_frag->hf_frag.to_owned(
+                    = jlu.jlu_tid_frag->to_frag().to_owned(
                         this->jlf_line_values.lvv_allocator);
             }
 
@@ -4528,15 +4535,21 @@ external_log_format::get_subline(const log_format_file_state& lffs,
                 use_opid_hasher = true;
             } else if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
-                    = jlu.jlu_opid_frag->hf_frag.to_string();
+                    = jlu.jlu_opid_frag->to_frag().to_owned(
+                        this->jlf_line_values.lvv_allocator);
                 this->jlf_line_values.lvv_opid_provenance
                     = logline_value_vector::opid_provenance::file;
             } else if (jlu.jlu_opid_desc_frag) {
                 use_opid_hasher = true;
             }
             if (use_opid_hasher) {
+                char opid_buf[hasher::STRING_SIZE];
+
+                jlu.jlu_opid_hasher.to_string(opid_buf);
                 this->jlf_line_values.lvv_opid_value
-                    = jlu.jlu_opid_hasher.to_string();
+                    = string_fragment::from_bytes(opid_buf,
+                                                  sizeof(opid_buf) - 1)
+                          .to_owned(this->jlf_line_values.lvv_allocator);
                 this->jlf_line_values.lvv_opid_provenance
                     = logline_value_vector::opid_provenance::file;
             }

@@ -75,6 +75,7 @@ public:
             auto& ll = dst.back();
             ll.set_time(li.li_timestamp);
             ll.set_level(li.li_level);
+            sbc.set_line_ids(std::nullopt, std::nullopt);
             return scan_match{1};
         }
 
@@ -209,6 +210,7 @@ public:
                        scan_batch_context& sbc) override
     {
         sbc.seed_for(this);
+        sbc.set_line_ids(std::nullopt, std::nullopt);
 
         exttm log_time;
         timeval log_tv;
@@ -614,6 +616,7 @@ public:
                        scan_batch_context& sbc) override
     {
         sbc.seed_for(this);
+        sbc.set_line_ids(std::nullopt, std::nullopt);
 
         auto& st = this->state_for(sbc);
 
@@ -1164,7 +1167,7 @@ public:
         log_level_t level = LEVEL_INFO;
         uint64_t opid_bloom = 0;
         auto opid_cap = string_fragment::invalid();
-        hashed_frag opid_hf;
+        string_key opid_hf;
         auto host_cap = string_fragment::invalid();
         auto duration = std::chrono::microseconds{0};
 
@@ -1203,7 +1206,7 @@ public:
                 }
             } else if (UID == fd.fd_meta.lvm_name) {
                 opid_cap = *iter;
-                opid_hf = hashed_frag::from(opid_cap);
+                opid_hf = string_key::from(opid_cap);
                 opid_bloom = opid_hf.bloom_bits();
             } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
                 host_cap = *iter;
@@ -1251,6 +1254,7 @@ public:
                     this->lf_timestamp_point_of_reference,
                     duration);
                 opid_iter->second.otr_level_stats.update_msg_count(level);
+                sbc.sbc_line_opid = opid_iter->first;
 
                 auto& otr = opid_iter->second;
                 if (!otr.otr_description.lod_index && host_cap.is_valid()
@@ -1279,6 +1283,7 @@ public:
                        scan_batch_context& sbc) override
     {
         sbc.seed_for(this);
+        sbc.set_line_ids(std::nullopt, std::nullopt);
 
         static const auto SEP_RE
             = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
@@ -1482,7 +1487,7 @@ public:
                 sa.emplace_back(lr, L_TIMESTAMP.value());
             } else if (fd.fd_meta.lvm_name == UID) {
                 sa.emplace_back(lr, L_OPID.value());
-                values.lvv_opid_value = sf.to_string();
+                values.lvv_opid_value = sf.to_owned(values.lvv_allocator);
                 values.lvv_opid_provenance
                     = logline_value_vector::opid_provenance::file;
             }
@@ -2136,6 +2141,7 @@ public:
                        scan_batch_context& sbc) override
     {
         sbc.seed_for(this);
+        sbc.set_line_ids(std::nullopt, std::nullopt);
 
         auto& st = this->state_for(sbc);
 
@@ -2579,6 +2585,7 @@ public:
                        scan_batch_context& sbc) override
     {
         sbc.seed_for(this);
+        sbc.set_line_ids(std::nullopt, std::nullopt);
 
         auto p = logfmt::parser(sbr.to_string_fragment());
         scan_result_t retval = scan_no_match{};

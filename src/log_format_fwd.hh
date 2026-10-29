@@ -131,17 +131,17 @@ struct opid_time_range {
 };
 
 using log_opid_map = robin_hood::
-    unordered_map<string_fragment, opid_time_range, frag_hasher, frag_equal>;
+    unordered_map<string_key, opid_time_range, frag_hasher, frag_equal>;
 
 using sub_opid_map = robin_hood::
-    unordered_map<string_fragment, string_fragment, frag_hasher, frag_equal>;
+    unordered_map<string_fragment, string_key, frag_hasher, frag_equal>;
 
 struct log_opid_state {
     log_opid_map los_opid_ranges;
     sub_opid_map los_sub_in_use;
 
     log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
-                                     const hashed_frag& opid,
+                                     const string_key& opid,
                                      const std::chrono::microseconds& us,
                                      timestamp_point_of_reference_t poref,
                                      std::chrono::microseconds duration
@@ -174,7 +174,7 @@ struct thread_id_time_range {
     thread_id_time_range& operator|=(const thread_id_time_range& rhs);
 };
 
-using log_thread_id_map = robin_hood::unordered_map<string_fragment,
+using log_thread_id_map = robin_hood::unordered_map<string_key,
                                                     thread_id_time_range,
                                                     frag_hasher,
                                                     frag_equal>;
@@ -189,7 +189,7 @@ struct log_thread_id_state {
     std::optional<thread_id_time_range> ltis_no_tid;
 
     log_thread_id_map::iterator insert_tid(ArenaAlloc::Alloc<char>& alloc,
-                                           const hashed_frag& tid,
+                                           const string_key& tid,
                                            const std::chrono::microseconds& us);
 
     void add_no_tid(std::chrono::microseconds us, log_level_t level)
@@ -357,12 +357,21 @@ struct scan_batch_context {
      * synthesized one replaced the line's own), for the file's per-line cache
      * (logfile::line_ids).  Only formats that fill them in set
      * sbc_line_ids_set; logfile::process_prefix() clears it before the scan.
-     * The fragments only need to last until the scan returns.
+     * The keys only need to last until the scan returns.
      */
     bool sbc_line_ids_set{false};
-    std::optional<string_fragment> sbc_line_tid;
-    std::optional<string_fragment> sbc_line_opid;
+    std::optional<string_key> sbc_line_tid;
+    std::optional<string_key> sbc_line_opid;
     lnav::small_string_map sbc_level_cache;
+
+    /** Fills in the line's ids for the per-line cache (nullopt for none). */
+    void set_line_ids(std::optional<string_key> tid,
+                      std::optional<string_key> opid)
+    {
+        this->sbc_line_ids_set = true;
+        this->sbc_line_tid = tid;
+        this->sbc_line_opid = opid;
+    }
 
     /**
      * Configure this context for the given format, if it is not already.
@@ -937,7 +946,7 @@ struct logline_value_vector {
     std::vector<logline_value> lvv_values;
     std::optional<string_fragment> lvv_time_value;
     std::optional<exttm> lvv_time_exttm;
-    std::optional<std::string> lvv_opid_value;
+    std::optional<string_fragment> lvv_opid_value;
     opid_provenance lvv_opid_provenance{opid_provenance::none};
     std::optional<string_fragment> lvv_thread_id_value;
     std::optional<string_fragment> lvv_src_file_value;

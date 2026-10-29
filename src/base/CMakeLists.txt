@@ -30,6 +30,7 @@ add_library(
         progress.cc
         relative_time.cc
         separated_string.cc
+        simple_bloom_set.cc
         small_string_map.cc
         snippet_highlighters.cc
         string_attr_type.cc
@@ -88,6 +89,7 @@ add_library(
         result.h
         separated_string.hh
         short_alloc.h
+        simple_bloom_set.hh
         small_string_map.hh
         sparse_cursor_container.hh
         snippet_highlighters.hh
@@ -143,6 +145,7 @@ add_executable(
         lnav.gzip.tests.cc
         math_util.tests.cc
         separated_string.tests.cc
+        simple_bloom_set.tests.cc
         small_string_map.tests.cc
         snippet_highlighters.tests.cc
         sparse_cursor_container.tests.cc

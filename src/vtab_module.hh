@@ -197,6 +197,24 @@ struct from_sqlite<string_fragment> {
 };
 
 template<>
+struct from_sqlite<string_key> {
+    string_key operator()(int argc, sqlite3_value** val, int argi) const
+    {
+        const auto len = sqlite3_value_bytes(val[argi]);
+        if (len == 0) {
+            return string_key::from("", 0);
+        }
+
+        const auto ptr = (const char*) sqlite3_value_blob(val[argi]);
+
+        if (ptr == nullptr) {
+            return string_key::invalid();
+        }
+        return string_key::from(ptr, len);
+    }
+};
+
+template<>
 struct from_sqlite<std::string> {
     std::string operator()(int argc, sqlite3_value** val, int argi) const
     {
@@ -467,6 +485,16 @@ to_sqlite(sqlite3_context* ctx, const string_fragment& sf)
     if (sf.is_valid()) {
         sqlite3_result_text(
             ctx, &sf.sf_string[sf.sf_begin], sf.length(), SQLITE_TRANSIENT);
+    } else {
+        sqlite3_result_null(ctx);
+    }
+}
+
+inline void
+to_sqlite(sqlite3_context* ctx, const string_key& sk)
+{
+    if (sk.is_valid()) {
+        sqlite3_result_text(ctx, sk.data(), sk.length(), SQLITE_TRANSIENT);
     } else {
         sqlite3_result_null(ctx);
     }

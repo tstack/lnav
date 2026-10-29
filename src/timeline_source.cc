@@ -71,6 +71,52 @@ static constexpr size_t MAX_OPID_WIDTH = 80;
 static constexpr size_t MAX_DESC_WIDTH = 256;
 static constexpr int CHART_INDENT = 24;
 
+enum class msg_id_type {
+    opid,
+    thread_id,
+};
+
+/**
+ * The message's opid or thread id, taken from the ids recorded while the
+ * file was indexed so that the message doesn't have to be read and
+ * annotated, unless they weren't recorded for it.  The key points into the
+ * file or the message, so it's only good while they are.
+ */
+static std::optional<string_key>
+msg_id(const logline_window::logmsg_info& msg_line, msg_id_type type)
+{
+    auto* lf = msg_line.get_file_ptr();
+    const auto& line_ids = lf->get_line_ids();
+    const auto& runs = type == msg_id_type::opid ? line_ids.li_opids
+                                                 : line_ids.li_tids;
+    const auto* key = runs.get(msg_line.get_file_line_number());
+
+    if (key != nullptr) {
+        if (key->is_valid()) {
+            return *key;
+        }
+        if (type == msg_id_type::opid && lf->may_have_user_opids()) {
+            // The format's opid wins over the user's, as in get_values().
+            auto bm_opt = msg_line.get_metadata();
+            if (bm_opt && !bm_opt.value()->bm_opid.empty()) {
+                return string_key::from(
+                    string_fragment::from_str(bm_opt.value()->bm_opid));
+            }
+        }
+        return std::nullopt;
+    }
+
+    const auto& lvv = msg_line.get_values();
+    if (type == msg_id_type::opid) {
+        if (lvv.lvv_opid_value) {
+            return string_key::from(lvv.lvv_opid_value.value());
+        }
+    } else if (lvv.lvv_thread_id_value) {
+        return string_key::from(lvv.lvv_thread_id_value.value());
+    }
+    return std::nullopt;
+}
+
 size_t
 abbrev_ftime(char* datebuf, size_t db_size, const tm& lb_tm, const tm& dt)
 {
@@ -801,8 +847,8 @@ timeline_source::text_value_for_line(textview_curses& tc,
         this->ts_rendered_line.clear();
 
         auto total_msgs = row.or_value.otr_level_stats.lls_total_count;
-        auto truncated_name
-            = attr_line_t::from_table_cell_content(row.or_name, MAX_OPID_WIDTH);
+        auto truncated_name = attr_line_t::from_table_cell_content(
+            row.or_name.to_frag(), MAX_OPID_WIDTH);
         auto truncated_desc = attr_line_t::from_table_cell_content(
             row.or_description, MAX_DESC_WIDTH);
         std::optional<ui_icon_t> icon;
@@ -1056,10 +1102,9 @@ timeline_source::rebuild_indexes()
                                                entry.te_tag,
                                                lf->get_unique_path(),
                                                line_time.count());
-                    auto tag_key_sf
-                        = string_fragment::from_str(tag_key).to_owned(
-                            this->ts_allocator);
-                    auto tag_name_sf = string_fragment::from_str(entry.te_tag)
+                    auto tag_key_sf = string_key::from(tag_key).to_owned(
+                        this->ts_allocator);
+                    auto tag_name_sf = string_key::from(entry.te_tag)
                                            .to_owned(this->ts_allocator);
                     auto tag_otr = opid_time_range{};
                     tag_otr.otr_range.tr_begin = line_time;
@@ -1078,7 +1123,7 @@ timeline_source::rebuild_indexes()
             }
         }
 
-        auto path = string_fragment::from_str(lf->get_unique_path())
+        auto path = string_key::from(lf->get_unique_path().string())
                         .to_owned(this->ts_allocator);
         auto lf_otr = opid_time_range{};
         lf_otr.otr_range = lf->get_content_time_range();
@@ -1222,9 +1267,9 @@ timeline_source::rebuild_indexes()
         auto first = true;
         auto last_base = std::optional<content_line_t>{};
         for (const auto& vl : matches.bv_tree) {
-            // Fold a multi-line message down to its first line so that its
-            // level is only counted once, no matter how many of its lines
-            // the search matched.
+            // Fold a multi-line message down to its first line so that
+            // its level is only counted once, no matter how many of its
+            // lines the search matched.
             auto base_cl = this->ts_lss.at_base(vl);
             const auto* ll = this->ts_lss.find_line(base_cl);
 
@@ -1251,18 +1296,17 @@ timeline_source::rebuild_indexes()
             return;
         }
 
-        auto search_key_sf
-            = string_fragment::from_str(key).to_owned(this->ts_allocator);
-        auto search_name_sf
-            = string_fragment::from_str(name).to_owned(this->ts_allocator);
+        auto search_key_sk = string_key::from(key).to_owned(this->ts_allocator);
+        auto search_name_sk
+            = string_key::from(name).to_owned(this->ts_allocator);
         auto search_row = opid_row{
             row_type::search,
-            search_name_sf,
+            search_name_sk,
             search_otr,
             string_fragment::invalid(),
         };
         search_row.or_search_slot = slot;
-        this->ts_active_opids.emplace(search_key_sf, search_row);
+        this->ts_active_opids.emplace(search_key_sk, search_row);
     };
 
     for (const auto& ns : this->ts_log_view.get_named_searches()) {
@@ -1289,7 +1333,7 @@ timeline_source::rebuild_indexes()
                        "search: current");
     }
 
-    std::set<string_fragment> consumed_tag_keys;
+    std::set<string_key> consumed_tag_keys;
     {
         static const auto START_PREFIX_RE = lnav::pcre2pp::code::from_const(
             R"(^#(?:start(?:ed)?|begin)[-_:.]?(.*)$)", PCRE2_CASELESS);
@@ -1306,7 +1350,7 @@ timeline_source::rebuild_indexes()
             bool se_is_start;
             std::chrono::microseconds se_time;
             opid_row* se_row;
-            string_fragment se_key;
+            string_key se_key;
         };
         std::map<string_fragment, std::vector<span_event>> events_by_base;
         thread_local auto md = lnav::pcre2pp::match_data::unitialized();
@@ -1317,16 +1361,26 @@ timeline_source::rebuild_indexes()
             auto tag = pair.second.or_name;
             std::optional<bool> is_start;
             std::optional<string_fragment> base;
-            if (START_PREFIX_RE.capture_from(tag).into(md).found_p()) {
+            if (START_PREFIX_RE.capture_from(tag.to_frag()).into(md).found_p())
+            {
                 is_start = true;
                 base = md[1];
-            } else if (START_SUFFIX_RE.capture_from(tag).into(md).found_p()) {
+            } else if (START_SUFFIX_RE.capture_from(tag.to_frag())
+                           .into(md)
+                           .found_p())
+            {
                 is_start = true;
                 base = md[1];
-            } else if (STOP_PREFIX_RE.capture_from(tag).into(md).found_p()) {
+            } else if (STOP_PREFIX_RE.capture_from(tag.to_frag())
+                           .into(md)
+                           .found_p())
+            {
                 is_start = false;
                 base = md[1];
-            } else if (STOP_SUFFIX_RE.capture_from(tag).into(md).found_p()) {
+            } else if (STOP_SUFFIX_RE.capture_from(tag.to_frag())
+                           .into(md)
+                           .found_p())
+            {
                 is_start = false;
                 base = md[1];
             }
@@ -1384,10 +1438,10 @@ timeline_source::rebuild_indexes()
 
         auto part_key
             = fmt::format(FMT_STRING("{}@{}"), part_name, begin_time.count());
-        auto part_key_sf
-            = string_fragment::from_str(part_key).to_owned(this->ts_allocator);
-        auto part_name_sf
-            = string_fragment::from_str(part_name).to_owned(this->ts_allocator);
+        auto part_key_sk
+            = string_key::from(part_key).to_owned(this->ts_allocator);
+        auto part_name_sk
+            = string_key::from(part_name).to_owned(this->ts_allocator);
         auto part_otr = opid_time_range{};
         part_otr.otr_range.tr_begin = begin_time;
         if (next_iter != part_map.end()) {
@@ -1395,10 +1449,10 @@ timeline_source::rebuild_indexes()
         } else {
             part_otr.otr_range.tr_end = last_log_time;
         }
-        this->ts_active_opids.emplace(part_key_sf,
+        this->ts_active_opids.emplace(part_key_sk,
                                       opid_row{
                                           row_type::partition,
-                                          part_name_sf,
+                                          part_name_sk,
                                           part_otr,
                                           string_fragment::invalid(),
                                       });
@@ -1564,8 +1618,8 @@ timeline_source::rebuild_indexes()
 
         auto* row_ptr = cand.rc_row;
         row_ptr->or_is_context = cand.rc_is_context;
-        if (row_ptr->or_name.column_width() > this->ts_opid_width) {
-            this->ts_opid_width = row_ptr->or_name.column_width();
+        if (row_ptr->or_name.to_frag().column_width() > this->ts_opid_width) {
+            this->ts_opid_width = row_ptr->or_name.to_frag().column_width();
         }
         if (cand.rc_full_desc.size() > max_desc_width) {
             max_desc_width = cand.rc_full_desc.size();
@@ -1679,11 +1733,10 @@ timeline_source::row_for(const row_info& ri)
     auto vl = vl_opt.value();
     auto win = this->ts_lss.window_at(vl);
     for (const auto& msg_line : *win) {
-        const auto& lvv = msg_line.get_values();
+        auto opid = msg_id(msg_line, msg_id_type::opid);
 
-        if (lvv.lvv_opid_value) {
-            auto opid_iter
-                = this->ts_active_opids.find(lvv.lvv_opid_value.value());
+        if (opid) {
+            auto opid_iter = this->ts_active_opids.find(opid.value());
             if (opid_iter != this->ts_active_opids.end()) {
                 for (const auto& [index, oprow] :
                      lnav::itertools::enumerate(this->ts_time_order))
@@ -1757,7 +1810,7 @@ timeline_source::text_selection_changed(textview_curses& tc)
     auto ov_sel = tc.get_overlay_selection();
     if (ov_sel) {
         const auto& sub = row.or_value.otr_sub_ops[ov_sel.value()];
-        id_sf = sub.ostr_subid;
+        id_sf = string_key::from(sub.ostr_subid);
         low_us = sub.ostr_range.tr_begin;
         high_us = sub.ostr_range.tr_end;
         level_stats = sub.ostr_level_stats;
@@ -1888,12 +1941,8 @@ timeline_source::text_selection_changed(textview_curses& tc)
                     {
                         continue;
                     }
-                    const auto& lvv = msg_line.get_values();
-                    if (!lvv.lvv_thread_id_value) {
-                        continue;
-                    }
-                    auto tid_sf = lvv.lvv_thread_id_value.value();
-                    if (!(tid_sf == row.or_name)) {
+                    auto tid = msg_id(msg_line, msg_id_type::thread_id);
+                    if (!tid || !(tid.value() == row.or_name)) {
                         continue;
                     }
                     break;
@@ -1904,13 +1953,8 @@ timeline_source::text_selection_changed(textview_curses& tc)
                         continue;
                     }
 
-                    const auto& lvv = msg_line.get_values();
-                    if (!lvv.lvv_opid_value) {
-                        continue;
-                    }
-                    auto opid_sf = lvv.lvv_opid_value.value();
-
-                    if (!(opid_sf == row.or_name)) {
+                    auto opid = msg_id(msg_line, msg_id_type::opid);
+                    if (!opid || !(opid.value() == row.or_name)) {
                         continue;
                     }
                     break;
@@ -2460,10 +2504,10 @@ timeline_source::apply_pending_bookmarks()
 
     auto* tc = this->tss_view;
     for (const auto& pb : this->ts_pending_bookmarks) {
-        auto row_name_sf = string_fragment::from_str(pb.pb_row_name);
+        auto row_name_sk = string_key::from(pb.pb_row_name);
         for (size_t lpc = 0; lpc < this->ts_time_order.size(); lpc++) {
             const auto& row = *this->ts_time_order[lpc];
-            if (row.or_name == row_name_sf && row.or_type == pb.pb_row_type) {
+            if (row.or_name == row_name_sk && row.or_type == pb.pb_row_type) {
                 tc->set_user_mark(pb.pb_mark_type, vis_line_t(lpc), true);
                 break;
             }

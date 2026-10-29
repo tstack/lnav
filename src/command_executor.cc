@@ -628,6 +628,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             cached_chunks);
     }
     gettimeofday(&end_tv, nullptr);
+    {
+        timeval diff_tv;
+
+        timersub(&end_tv, &start_tv, &diff_tv);
+        log_info("SQL execution took %ld.%06ld seconds",
+                 (long) diff_tv.tv_sec,
+                 (long) diff_tv.tv_usec);
+    }
     lnav_data.ld_mode = old_mode;
     if (retcode == SQLITE_DONE) {
         if (lnav_data.ld_log_source.is_line_meta_changed()) {

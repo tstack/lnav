@@ -2135,7 +2135,8 @@ com_pipe_to(exec_context& ec,
         extra_env["log_path"] = ldh.ldh_file->get_filename();
         extra_env["log_level"] = ldh.ldh_line->get_level_name().to_string();
         if (ldh.ldh_line_values.lvv_opid_value) {
-            extra_env["log_opid"] = ldh.ldh_line_values.lvv_opid_value.value();
+            extra_env["log_opid"]
+                = ldh.ldh_line_values.lvv_opid_value->to_string();
         }
         auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
         if (read_res.isOk()) {

@@ -2334,7 +2334,7 @@ json_object_count_of(*value*)
     .. code-block::  custsqlite
 
       ;SELECT json_object_count_of(log_level) FROM lnav_example_log
-      {"info":1,"error":1,"debug":1,"warn":1}
+      {"debug":1,"error":1,"info":1,"warn":1}
 
 
 ----

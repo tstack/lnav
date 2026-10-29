@@ -188,7 +188,7 @@ public:
 
     struct opid_row {
         row_type or_type;
-        string_fragment or_name;
+        string_key or_name;
         opid_time_range or_value;
         string_fragment or_description;
         opid_description_defs or_description_defs;
@@ -218,10 +218,10 @@ public:
     };
 
     using timeline_opid_row_map
-        = robin_hood::unordered_map<string_fragment,
+        = robin_hood::unordered_map<string_key,
                                     opid_row,
                                     frag_hasher,
-                                    std::equal_to<string_fragment>>;
+                                    frag_equal>;
     using timeline_desc_map
         = robin_hood::unordered_set<string_fragment,
                                     frag_hasher,

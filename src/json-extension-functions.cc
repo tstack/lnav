@@ -657,8 +657,7 @@ gen_sql_value(yajl_gen gen, sqlite3_value* val)
                 return;
             }
 #endif
-            yajl_gen_string(
-                gen, (const unsigned char*) value, strlen(value));
+            yajl_gen_string(gen, (const unsigned char*) value, strlen(value));
             return;
         }
         case SQLITE_INTEGER: {
@@ -794,14 +793,13 @@ struct json_object_num_context {
         bool nv_is_real{false};
     };
 
-    using obj_map
-        = robin_hood::unordered_map<string_fragment, num_value, frag_hasher>;
+    using obj_map = std::map<string_key, num_value>;
 
     bool initialized{true};
     obj_map counts;
     ArenaAlloc::Alloc<char> alloc;
 
-    num_value& operator[](string_fragment key)
+    num_value& operator[](string_key key)
     {
         auto iter = this->counts.find(key);
         if (iter == this->counts.end()) {
@@ -845,7 +843,7 @@ sql_json_object_count_of_step(sqlite3_context* ctx,
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         return;
     }
-    auto str = from_sqlite<string_fragment>()(argc, argv, 0);
+    auto str = from_sqlite<string_key>()(argc, argv, 0);
     jctx[str].nv_int += 1;
 }
 
@@ -877,7 +875,7 @@ sql_json_object_sum_of_step(sqlite3_context* ctx,
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         return;
     }
-    auto str = from_sqlite<string_fragment>()(argc, argv, 0);
+    auto str = from_sqlite<string_key>()(argc, argv, 0);
     auto& nv = jctx[str];
     // Keep an integer sum until a real shows up, then report the real sum.
     switch (sqlite3_value_numeric_type(argv[1])) {

@@ -49,6 +49,7 @@
 #include "fmt/format.h"
 #include "mapbox/variant.hpp"
 #include "result.h"
+#include "spookyhash/SpookyV2.h"
 #include "strnatcmp.h"
 
 unsigned long hash_str(const char* str, size_t len);
@@ -297,6 +298,10 @@ struct string_fragment {
 
     bool operator<(const string_fragment& rhs) const
     {
+        if (!this->is_valid() || !rhs.is_valid()) {
+            return this->is_valid() < rhs.is_valid();
+        }
+
         auto rc = strncmp(
             this->data(), rhs.data(), std::min(this->length(), rhs.length()));
         if (rc < 0 || (rc == 0 && this->length() < rhs.length())) {
@@ -841,7 +846,7 @@ struct string_fragment {
      * The bloom bits for a fragment whose hash() is already known, so the
      * data does not have to be hashed again.
      */
-    static uint64_t bloom_bits_from_hash(uint64_t a);
+    static uint64_t bloom_bits_from_hash(uint32_t a);
 
     class cursor_impl {
     public:
@@ -1293,34 +1298,132 @@ to_owned(std::optional<string_fragment> sf, A allocator)
  * A fragment along with its hash(), for a value that is used for more than
  * one table lookup or for its bloom bits, so it is only hashed once.
  */
-struct hashed_frag {
-    string_fragment hf_frag;
-    unsigned long hf_hash{0};
-
-    static hashed_frag from(const string_fragment& sf)
+class string_key {
+public:
+    /** The hash used for fragments that are keys: the low 32 bits of hash(). */
+    static uint32_t hash_of(const string_fragment& sf)
     {
-        return {sf, sf.hash()};
+        return static_cast<uint32_t>(sf.hash());
+    }
+
+    static string_key from(const string_fragment& sf)
+    {
+        if (!sf.is_valid()) {
+            return invalid();
+        }
+
+        return string_key{sf.data(), (uint32_t) sf.length(), hash_of(sf)};
+    }
+
+    static string_key from(const char* data, uint32_t len)
+    {
+        return string_key{
+            data, len, static_cast<uint32_t>(hash_str(data, len))};
+    }
+
+    /** A key for no value, distinct from the key for an empty value. */
+    static string_key invalid() { return string_key{}; }
+
+    string_key() = default;
+
+    bool is_valid() const { return this->sk_length != INVALID_LENGTH; }
+
+    template<typename Alloc>
+    string_key to_owned(Alloc alloc) const
+    {
+        if (!this->is_valid()) {
+            return *this;
+        }
+
+        auto* new_data = alloc.allocate(this->sk_length + 1);
+        memcpy(new_data, this->sk_data, this->sk_length);
+        new_data[this->sk_length] = '\0';
+        return string_key{new_data, this->sk_length, this->sk_hash};
+    }
+
+    string_fragment to_frag() const
+    {
+        if (!this->is_valid()) {
+            return string_fragment::invalid();
+        }
+        return string_fragment::from_bytes(this->sk_data, this->sk_length);
+    }
+
+    std::string to_string() const
+    {
+        if (!this->is_valid()) {
+            return "";
+        }
+        return std::string{this->sk_data, this->sk_length};
+    }
+
+    uint32_t hash() const { return this->sk_hash; }
+
+    bool operator==(const string_key& rhs) const
+    {
+        return this->sk_hash == rhs.sk_hash && this->sk_length == rhs.sk_length
+            && this->to_frag() == rhs.to_frag();
+    }
+
+    bool operator!=(const string_key& rhs) const { return !(*this == rhs); }
+
+    bool operator<(const string_key& rhs) const
+    {
+        if (!this->is_valid() || !rhs.is_valid()) {
+            return this->is_valid() < rhs.is_valid();
+        }
+
+        auto rc = memcmp(
+            this->sk_data, rhs.sk_data, std::min(this->length(), rhs.length()));
+        if (rc < 0 || (rc == 0 && this->length() < rhs.length())) {
+            return true;
+        }
+
+        return false;
     }
 
     uint64_t bloom_bits() const
     {
-        return string_fragment::bloom_bits_from_hash(this->hf_hash);
+        return string_fragment::bloom_bits_from_hash(this->sk_hash);
     }
+
+    const char* data() const { return this->sk_data; }
+
+    const unsigned char* udata() const
+    {
+        return reinterpret_cast<const unsigned char*>(this->sk_data);
+    }
+
+    uint32_t length() const { return this->sk_length; }
+
+private:
+    static constexpr uint32_t INVALID_LENGTH = UINT32_MAX;
+
+    string_key(const char* data, uint32_t len, uint32_t hash)
+        : sk_data(data), sk_length(len), sk_hash(hash)
+    {
+    }
+
+    const char* sk_data{nullptr};
+    uint32_t sk_length{INVALID_LENGTH};
+    uint32_t sk_hash{0};
 };
+
+static_assert(sizeof(string_key) == 16);
 
 /**
  * Hashes fragments for unordered maps.  Together with frag_equal, a map
- * can also be searched with a hashed_frag, which reuses its hash.
+ * can also be searched with a string_key, which reuses its hash.
  */
 struct frag_hasher {
     using is_transparent = void;
 
     size_t operator()(const string_fragment& sf) const
     {
-        return hash_str(sf.data(), sf.length());
+        return string_key::hash_of(sf);
     }
 
-    size_t operator()(const hashed_frag& hf) const { return hf.hf_hash; }
+    size_t operator()(const string_key& hf) const { return hf.hash(); }
 };
 
 struct frag_equal {
@@ -1332,14 +1435,19 @@ struct frag_equal {
         return lhs == rhs;
     }
 
-    bool operator()(const hashed_frag& lhs, const string_fragment& rhs) const
+    bool operator()(const string_key& lhs, const string_key& rhs) const
     {
-        return lhs.hf_frag == rhs;
+        return lhs == rhs;
     }
 
-    bool operator()(const string_fragment& lhs, const hashed_frag& rhs) const
+    bool operator()(const string_key& lhs, const string_fragment& rhs) const
     {
-        return lhs == rhs.hf_frag;
+        return lhs.to_frag() == rhs;
+    }
+
+    bool operator()(const string_fragment& lhs, const string_key& rhs) const
+    {
+        return lhs == rhs.to_frag();
     }
 };
 

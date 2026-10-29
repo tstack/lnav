@@ -4292,7 +4292,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         file_data->get_file_ptr()->get_thread_ids());
 
                     for (const auto& pair : r_tid_map->ltis_tid_ranges) {
-                        collector.add(pair.first);
+                        collector.add(pair.first.to_frag());
                     }
                 }
 
@@ -4314,19 +4314,17 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 'The corresponding log messages might have been filtered out')))
           WHERE name = 'log'
         )";
-        // std::string, not a fragment: lvv_opid_value is an
-        // optional<std::string>, and a conditional with mismatched branches
-        // converts that one to a fragment over a temporary.
-        static const std::string ELLIPSIS = "\u22ef";
+        static constexpr auto ELLIPSIS = "\u22ef"_frag;
 
+        // A copy, since the possibilities are gathered after values is gone.
+        auto curr_opid = values.lvv_opid_value.value_or(""_frag).to_string();
         auto opid_display = values.lvv_opid_value.has_value()
             ? lnav::roles::identifier(values.lvv_opid_value.value())
             : lnav::roles::hidden(ELLIPSIS);
         crumbs.emplace_back(
-            values.lvv_opid_value.has_value() ? values.lvv_opid_value.value()
-                                              : "",
+            curr_opid,
             attr_line_t().append(opid_display),
-            [this, curr_opid = values.lvv_opid_value.value_or("")](
+            [this, curr_opid](
                 string_fragment search)
                 -> std::vector<breadcrumb::possibility> {
                 breadcrumb::possibility_collector collector(search);
@@ -4343,7 +4341,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         file_data->get_file_ptr()->get_opids());
 
                     for (const auto& pair : r_opid_map->los_opid_ranges) {
-                        collector.add(pair.first);
+                        collector.add(pair.first.to_frag());
                     }
                 }
 

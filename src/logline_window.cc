@@ -255,7 +255,9 @@ logline_window::logmsg_info::load_msg() const
     if (!this->li_line_values.lvv_opid_value) {
         auto bm_opt = this->get_metadata();
         if (bm_opt && !bm_opt.value()->bm_opid.empty()) {
-            this->li_line_values.lvv_opid_value = bm_opt.value()->bm_opid;
+            this->li_line_values.lvv_opid_value
+                = string_fragment::from_str(bm_opt.value()->bm_opid)
+                      .to_owned(this->li_line_values.lvv_allocator);
             this->li_line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::user;
         }

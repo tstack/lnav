@@ -407,18 +407,20 @@ string_fragment::to_string_with_case_style(case_style style) const
 uint64_t
 string_fragment::bloom_bits() const
 {
-    return bloom_bits_from_hash(this->hash());
+    return bloom_bits_from_hash(string_key::hash_of(*this));
 }
 
 uint64_t
-string_fragment::bloom_bits_from_hash(uint64_t a)
+string_fragment::bloom_bits_from_hash(uint32_t a)
 {
     auto b = a >> 8;
     if ((b & 0x3f) == (a & 0x3f)) {
         b = b >> 8;
     }
     auto c = b >> 8;
-    if ((c & 0x3f) == (a & 0x3f) || (c & 0x3f) == (b & 0x3f)) {
+    if (c > 0xff
+        && ((c & 0x3f) == (a & 0x3f) || (c & 0x3f) == (b & 0x3f)))
+    {
         c = c >> 8;
     }
 

@@ -348,27 +348,29 @@ logfile::line_id_runs::truncate(size_t size)
 }
 
 uint32_t
-logfile::line_id_runs::id_for(const std::optional<string_fragment>& sf)
+logfile::line_id_runs::id_for(const std::optional<string_key>& key)
 {
-    if (!sf) {
+    if (!key) {
         return 1;
     }
 
     // Consecutive lines mostly have the value of the last run.
     if (!this->ir_runs.empty() && this->ir_runs.back().r_id > 1) {
-        const auto& last = this->ir_values[this->ir_runs.back().r_id - 1];
-        if (last.data() == sf->data() && last.length() == sf->length()) {
+        const auto last = this->ir_values[this->ir_runs.back().r_id - 1]
+                              .to_frag();
+        const auto sf = key->to_frag();
+        if (last.data() == sf.data() && last.length() == sf.length()) {
             return this->ir_runs.back().r_id;
         }
     }
 
-    auto iter = this->ir_ids.find(sf.value());
+    auto iter = this->ir_ids.find(key.value());
     if (iter != this->ir_ids.end()) {
         return iter->second;
     }
-    this->ir_values.emplace_back(sf.value());
+    this->ir_values.emplace_back(key.value());
     auto id = static_cast<uint32_t>(this->ir_values.size());
-    this->ir_ids.emplace(sf.value(), id);
+    this->ir_ids.emplace(key.value(), id);
     return id;
 }
 
@@ -401,7 +403,7 @@ logfile::line_id_runs::continue_to(size_t from, size_t to)
     }
 }
 
-const string_fragment*
+const string_key*
 logfile::line_id_runs::get(size_t line) const
 {
     if (line >= this->ir_end || this->ir_runs.empty()) {
@@ -1351,6 +1353,19 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         // later candidates would scribble over it.
         std::unique_ptr<format_scan_state> best_format_state;
         std::optional<uint32_t> best_timestamp_flags;
+        // The thread id and opid that best_match's scan settled on, for
+        // lf_line_ids, when the format filled them in.
+        struct scanned_ids {
+            std::optional<string_key> si_tid;
+            std::optional<string_key> si_opid;
+        };
+        std::optional<scanned_ids> best_line_ids;
+        const auto ids_from = [](const scan_batch_context& ctx) {
+            return ctx.sbc_line_ids_set
+                ? std::make_optional(
+                      scanned_ids{ctx.sbc_line_tid, ctx.sbc_line_opid})
+                : std::nullopt;
+        };
         size_t scan_count = 0;
         size_t pruned_count = 0;
 
@@ -1471,10 +1486,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             if (this->lf_format != nullptr
                 && this->lf_format->lf_root_format == curr.get())
             {
+                sbc.sbc_line_ids_set = false;
                 scan_res = this->lf_format->scan(
                     *this, this->lf_index, li, sbr, sbc);
             } else {
                 scanned_with = &sbc_tmp;
+                sbc_tmp.sbc_line_ids_set = false;
                 sbc_tmp.sbc_pattern_locks.pl_lines.clear();
                 sbc_tmp.sbc_value_stats.clear();
                 sbc_tmp.sbc_opids.los_opid_ranges.clear();
@@ -1517,6 +1534,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         this->lf_format_match.merge_best(sm);
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;
+                        best_line_ids = ids_from(sbc);
                         base_ll.set_time(this->lf_index.back().get_time());
                     } else if (!best_match
                                || sm.is_better_than(best_match->second))
@@ -1584,6 +1602,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                   .move();
                         this->lf_format_match_messages.emplace_back(match_um);
                         best_match = std::make_pair(curr.get(), sm);
+                        best_line_ids = ids_from(*scanned_with);
                         prev_index_size = this->lf_index.size();
                         base_ll.set_time(this->lf_index.back().get_time());
                     } else {
@@ -1765,6 +1784,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc.sbc_opids.clear();
                 sbc.sbc_tids.clear();
                 sbc.sbc_value_stats.clear();
+                // Its keys pointed into the arena that was just reset.
+                best_line_ids = std::nullopt;
                 retval = true;
             } else {
                 /*
@@ -1791,6 +1812,17 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             found = best_match->second;
         }
 
+        // The ids are only what annotate() gives for the line when they came
+        // from the format the file is using.
+        if (best_line_ids && found.is<log_format::scan_match>()
+            && this->lf_format != nullptr
+            && best_match->first->lf_root_format
+                == this->lf_format->lf_root_format)
+        {
+            sbc.set_line_ids(best_line_ids->si_tid, best_line_ids->si_opid);
+            record_line_ids = true;
+        }
+
         // The scanner holds what the winning candidate worked out, but a
         // candidate that lost may have left its own format on the context.
         // Point it at the format that will actually be scanning from here on
@@ -1804,8 +1836,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         /* We've locked onto a format, just use that scanner. */
         sbc.sbc_line_ids_set = false;
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
-        record_line_ids = found.is<log_format::scan_match>()
-            && sbc.sbc_line_ids_set;
+        record_line_ids
+            = found.is<log_format::scan_match>() && sbc.sbc_line_ids_set;
     }
 
     if (found.is<log_format::scan_match>()) {
@@ -1944,15 +1976,19 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 continue;
             }
 
+            const auto& ll = this->lf_index[bm_pair.first];
+            const auto log_us = ll.get_time<>();
             auto opid_iter
                 = writeOpids->los_opid_ranges.find(bm_pair.second.bm_opid);
             if (opid_iter == writeOpids->los_opid_ranges.end()) {
-                writeOpids->los_opid_ranges.emplace(*inv_iter,
-                                                    opid_time_range{});
+                opid_iter = writeOpids->los_opid_ranges
+                                .emplace(*inv_iter,
+                                         opid_time_range{
+                                             time_range{log_us, log_us}})
+                                .first;
             }
 
-            auto& ll = this->lf_index[bm_pair.first];
-            opid_iter->second.otr_range.extend_to(ll.get_time<>());
+            opid_iter->second.otr_range.extend_to(log_us);
             opid_iter->second.otr_level_stats.update_msg_count(
                 ll.get_msg_level());
         }
@@ -2114,7 +2150,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
                     auto read_result = this->lf_line_buffer.read_range({
                         prev_line->get_offset(),
-                        prev_len_res.mlr_length + 1,
+                        std::min(prev_len_res.mlr_length + 1,
+                                 line_buffer::MAX_LINE_BUFFER_SIZE),
                     });
                     if (read_result.isErr()) {
                         log_info(
@@ -3491,7 +3528,9 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     if (bm_iter != this->lf_bookmark_metadata.end()
         && !bm_iter->second.bm_opid.empty())
     {
-        auto old_opid_iter = write_opids->los_opid_ranges.find(opid);
+        // The range to invalidate is the one for the opid being replaced.
+        auto old_opid_iter = write_opids->los_opid_ranges.find(
+            string_fragment::from_str(bm_iter->second.bm_opid));
         if (old_opid_iter != write_opids->los_opid_ranges.end()) {
             this->lf_invalidated_opids.insert(old_opid_iter->first);
         }
@@ -3499,7 +3538,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
 
     auto& ll = this->lf_index[line_number];
     auto log_us = ll.get_time<>();
-    const auto opid_hf = hashed_frag::from(opid);
+    const auto opid_hf = string_key::from(opid);
     auto opid_iter
         = write_opids->insert_op(this->lf_allocator,
                                  opid_hf,
@@ -3510,6 +3549,7 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
     ll.merge_bloom_bits(opid_hf.bloom_bits());
     this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
+    this->lf_may_have_user_opids = true;
 }
 
 void

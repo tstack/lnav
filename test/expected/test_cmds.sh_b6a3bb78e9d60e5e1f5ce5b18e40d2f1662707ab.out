@@ -3763,7 +3763,7 @@ For support questions, email:
 [4mExample[0m
 #1 To count the number of message for each level:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_object_count_of[0m[37m[40m([0m[37m[40mlog_level[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
-   {"info":1,"error":1,"debug":1,"warn":1}
+   {"debug":1,"error":1,"info":1,"warn":1}
 
 
 [1m[4mjson_object_sum_of[0m[4m([0m[4mid[0m[4m, [0m[4mvalue[0m[4m)[0m

@@ -77,8 +77,8 @@ struct line_info {
  */
 class line_buffer {
 public:
-    static const ssize_t DEFAULT_LINE_BUFFER_SIZE;
-    static const ssize_t MAX_LINE_BUFFER_SIZE;
+    static const file_ssize_t DEFAULT_LINE_BUFFER_SIZE;
+    static const file_ssize_t MAX_LINE_BUFFER_SIZE;
     class error : public std::exception {
     public:
         explicit error(int err) : e_err(err) {}
