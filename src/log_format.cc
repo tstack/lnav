@@ -3938,9 +3938,21 @@ external_log_format::emit_overflow(const log_format_file_state& lffs,
                                    const value_def* vd,
                                    std::string& str)
 {
-    if ((int) str.size() <= jfe.jfe_max_width) {
+    const auto str_sf = string_fragment::from_str(str);
+    const auto str_width = str_sf.column_width();
+    if ((int) str_width <= jfe.jfe_max_width) {
         return false;
     }
+    // The byte length of the longest prefix that fits in the given number of
+    // columns, so a cut never splits a character or overruns the width with
+    // a wide one.
+    const auto prefix_within = [&str_sf](size_t cols) {
+        auto retval = str_sf.column_to_byte_index(cols);
+        if (retval > 0 && str_sf.sub_range(0, retval).column_width() > cols) {
+            retval = str_sf.start_of_codepoint(retval - 1);
+        }
+        return retval;
+    };
     switch (jfe.jfe_overflow) {
         case json_format_element::overflow_t::ABBREV: {
             size_t new_size
@@ -3950,14 +3962,20 @@ external_log_format::emit_overflow(const log_format_file_state& lffs,
             break;
         }
         case json_format_element::overflow_t::TRUNCATE:
-            this->json_append_to_cache(str.c_str(), jfe.jfe_max_width);
+            this->json_append_to_cache(str.c_str(),
+                                       prefix_within(jfe.jfe_max_width));
             break;
         case json_format_element::overflow_t::DOTDOT: {
             size_t middle = (jfe.jfe_max_width / 2) - 1;
-            this->json_append_to_cache(str.c_str(), middle);
+            this->json_append_to_cache(str.c_str(), prefix_within(middle));
             this->json_append_to_cache("..", 2);
             size_t rest = (jfe.jfe_max_width - middle - 2);
-            this->json_append_to_cache(str.c_str() + str.size() - rest, rest);
+            // The tail starts at the first character that leaves no more
+            // than rest columns after it.
+            const auto tail_start
+                = str_sf.column_to_byte_index(str_width - rest);
+            this->json_append_to_cache(str.c_str() + tail_start,
+                                       str.size() - tail_start);
             break;
         }
         case json_format_element::overflow_t::LASTWORD: {

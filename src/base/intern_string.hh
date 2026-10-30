@@ -33,6 +33,7 @@
 #define intern_string_hh
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <string>

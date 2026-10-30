@@ -249,22 +249,37 @@ last_word_str(char* str, size_t len, size_t max_len)
 size_t
 abbreviate_str(char* str, size_t len, size_t max_len)
 {
-    size_t last_start = 1;
+    // The index just past the character that starts at index, so a
+    // segment's first character is kept whole.
+    const auto end_of_char = [&str, &len](size_t index) {
+        if (index >= len) {
+            return len;
+        }
+        index += 1;
+        while (index < len && (((unsigned char) str[index]) & 0xc0) == 0x80) {
+            index += 1;
+        }
+        return index;
+    };
 
     if (len < max_len) {
         return len;
     }
 
+    size_t last_start = end_of_char(0);
     for (size_t index = 0; index < len; index++) {
         switch (str[index]) {
             case '.':
             case '-':
             case '/':
             case ':':
+                if (index < last_start) {
+                    break;
+                }
                 memmove(&str[last_start], &str[index], len - index);
                 len -= (index - last_start);
-                index = last_start + 1;
-                last_start = index + 1;
+                last_start = end_of_char(last_start + 1);
+                index = last_start - 1;
 
                 if (len < max_len) {
                     return len;

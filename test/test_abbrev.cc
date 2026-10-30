@@ -41,6 +41,7 @@ static struct test_data {
     {"com.example.foo.bar", "c.e.f.bar", 5},
     {"com.example.foo.bar", "c.e.foo.bar", 15},
     {"no dots in here", "no dots in here", 5},
+    {"\xc3\xa9.\xc3\xb1x.foo", "\xc3\xa9.\xc3\xb1.foo", 5},
 };
 
 int
