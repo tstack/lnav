@@ -1,0 +1,10 @@
+[1;4mlog_line[0m[1;4m [0m[1;4m                                            log_body                                            [0m[1;4m [0m[1;4mlog_filters[0m[1;4m [0m
+       0 started, version 2.68 cachesize 150                                                              [7m[[0m1]         
+       1 compile time options: IPv6 GNU-getopt DBus i18n IDN DHCP DHCPv6 no-Lua TFTP conntrack ipset auth [7m[[0m[7m1,9]      [0m 
+[1m       2[0m[1m [0m[1mDHCP, IP range 192.168.122.2 -- 192.168.122.254, lease time 1h                                  [0m[1m [0m[1;7m[[0m[1;7m1,9]      [0m[1m [0m
+[1m       3[0m[1m [0m[1mDHCP, sockets bound exclusively to interface virbr0                                             [0m[1m [0m[1;7m[[0m[1;7m1,9]      [0m[1m [0m
+       4 reading /etc/resolv.conf                                                                         [7m[[0m1]         
+       5 using nameserver 192.168.1.1#53                                                                  [7m[[0m1]         
+[1m       6[0m[1m [0m[1mread /etc/hosts - 5 addresses                                                                   [0m[1m [0m[1;7m[[0m[1m1]         [0m
+[1m       7[0m[1m [0m[1mread /var/lib/libvirt/dnsmasq/default.addnhosts - 0 addresses                                   [0m[1m [0m[1;7m[[0m[1m1]         [0m
+       8 read /var/lib/libvirt/dnsmasq/default.hostsfile                                                  [7m[[0m[7m1,9]      [0m 

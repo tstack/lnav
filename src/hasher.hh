@@ -87,18 +87,6 @@ public:
         return retval;
     }
 
-    uint64_t to_bloom_bits() const
-    {
-        uint64_t h1;
-        uint64_t h2;
-        uint64_t retval = 0;
-
-        this->h_context.Final(&h1, &h2);
-        retval |= 1UL << (h1 % 56);
-        retval |= 1UL << (h2 % 56);
-        return retval;
-    }
-
     void to_string(auto_buffer& buf) const
     {
         buf.expand_to(buf.size() + STRING_SIZE);

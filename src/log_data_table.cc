@@ -33,6 +33,9 @@
 #include "config.h"
 #include "scn/scan.h"
 
+log_data_table::check_schema_t log_data_table::ldt_check_schema = nullptr;
+log_data_table::start_map_t log_data_table::ldt_start_map = nullptr;
+
 log_data_table::log_data_table(logfile_sub_source& lss,
                                log_vtab_manager& lvm,
                                content_line_t template_line,
@@ -46,6 +49,9 @@ log_data_table::log_data_table(logfile_sub_source& lss,
     this->vi_supports_indexes = false;
     this->ldt_format_impl = lvm.lookup_impl(format->get_name());
     this->get_columns_int();
+    if (ldt_start_map != nullptr) {
+        ldt_start_map();
+    }
 }
 
 void
@@ -69,7 +75,7 @@ log_data_table::get_columns_int()
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         this->ldt_schema_id.clear();
-        this->ldt_bloom_bits = 0;
+        this->ldt_schema_str.clear();
         return;
     }
 
@@ -112,8 +118,7 @@ log_data_table::get_columns_int()
             intern_string::lookup(colname), sql_type, intern_string::lookup(collator));
     }
     this->ldt_schema_id = dp.dp_schema_id;
-    this->ldt_bloom_bits = 1UL << (dp.dp_schema_id.in()[0] % 56);
-    this->ldt_bloom_bits |= 1UL << (dp.dp_schema_id.in()[1] % 56);
+    this->ldt_schema_str = dp.dp_schema_id.to_string();
 }
 
 bool
@@ -136,8 +141,9 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
-    if (lf_iter->has_schema()
-        && !lf_iter->match_bloom_bits(this->ldt_bloom_bits))
+    if (ldt_check_schema != nullptr
+        && ldt_check_schema(lf, cl, this->ldt_schema_str)
+            == schema_check::different)
     {
         return false;
     }
@@ -158,13 +164,6 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
     data_parser dp(&ds);
     dp.parse();
 
-    uint64_t bloom_bits = 1UL << (dp.dp_schema_id.in()[0] % 56);
-    bloom_bits |= 1UL << (dp.dp_schema_id.in()[1] % 56);
-    lf_iter->merge_bloom_bits(bloom_bits);
-    lf_iter->set_schema_computed(true);
-
-    /* The cached schema ID in the log line is not complete, so we still */
-    /* need to check for a full match. */
     if (dp.dp_schema_id != this->ldt_schema_id) {
         return false;
     }

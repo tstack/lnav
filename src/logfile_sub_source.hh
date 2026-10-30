@@ -523,8 +523,29 @@ public:
 
     content_line_t at_base(vis_line_t vl)
     {
+        auto cl = this->at(vl);
+        auto line = cl;
+        const auto* lf = this->find_file_ptr(line);
+        if (lf != nullptr) {
+            const auto sub_line = lf->sub_line_index(lf->begin() + line);
+            if (sub_line == 0) {
+                return cl;
+            }
+
+            // A message's lines aren't split up in the view, so its first
+            // line should be that many rows up.  Checked, in case the view
+            // doesn't have all of them, and then the rows are stepped
+            // through.
+            const auto base_vl = vl - vis_line_t(sub_line);
+            if (vl >= vis_line_t(sub_line)
+                && this->at(base_vl) == content_line_t(cl - sub_line))
+            {
+                return this->at(base_vl);
+            }
+        }
+
         while (vl > 0_vl
-               && this->find_line(this->at(vl))->get_sub_offset() != 0)
+               && this->find_line(this->at(vl))->is_sub_line())
         {
             --vl;
         }

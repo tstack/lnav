@@ -404,34 +404,6 @@ string_fragment::to_string_with_case_style(case_style style) const
     return retval;
 }
 
-uint64_t
-string_fragment::bloom_bits() const
-{
-    return bloom_bits_from_hash(string_key::hash_of(*this));
-}
-
-uint64_t
-string_fragment::bloom_bits_from_hash(uint32_t a)
-{
-    auto b = a >> 8;
-    if ((b & 0x3f) == (a & 0x3f)) {
-        b = b >> 8;
-    }
-    auto c = b >> 8;
-    if (c > 0xff
-        && ((c & 0x3f) == (a & 0x3f) || (c & 0x3f) == (b & 0x3f)))
-    {
-        c = c >> 8;
-    }
-
-    uint64_t retval = 0;
-    retval |= 1ULL << (a % 56);
-    retval |= 1ULL << (b % 56);
-    retval |= 1ULL << (c % 56);
-
-    return retval;
-}
-
 std::string
 string_fragment::to_unquoted_string() const
 {

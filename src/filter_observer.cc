@@ -60,12 +60,17 @@ line_filter_observer::logline_new_lines(const logfile& lf,
         return retval;
     }
 
-    for (; ll_begin != ll_end; ++ll_begin) {
+    // Counted along instead of looked up for each line, which walks back.
+    auto sub_line = lf.sub_line_index(ll_begin);
+    for (; ll_begin != ll_end; ++ll_begin, ++sub_line) {
+        if (!ll_begin->is_sub_line()) {
+            sub_line = 0;
+        }
         auto sbr_copy = sbr.clone();
         auto* format = lf.get_format_ptr();
         if (format != nullptr) {
             format->get_subline(
-                lf.get_format_file_state(), *ll_begin, sbr_copy);
+                lf.get_format_file_state(), *ll_begin, sub_line, sbr_copy);
         }
         sbr_copy.erase_ansi();
         for (const auto& filter : this->lfo_filter_stack) {

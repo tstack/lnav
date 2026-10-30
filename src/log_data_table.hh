@@ -68,11 +68,38 @@ public:
                  string_attrs_t& sa,
                  logline_value_vector& values) override;
 
+    /** What the statement map knows about a message's data_parser schema. */
+    enum class schema_check {
+        /** Not mapped yet, or mapped to a schema that isn't its text's. */
+        unknown,
+        same,
+        different,
+    };
+
+    /**
+     * Checks the message at a line against a data_parser schema, given as
+     * text, using lnav's per-line statement map (log_stmt_stats.cc), so
+     * messages with another schema aren't read and parsed again.  Set by
+     * the lnav binary; unset, every message is parsed.
+     */
+    using check_schema_t = schema_check (*)(const logfile* lf,
+                                            uint64_t line_number,
+                                            const std::string& schema);
+    static check_schema_t ldt_check_schema;
+
+    /**
+     * Starts the statement map, which then maps the messages in the
+     * background.  Set by the lnav binary.
+     */
+    using start_map_t = void (*)();
+    static start_map_t ldt_start_map;
+
 private:
     logfile_sub_source& ldt_log_source;
     const content_line_t ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
-    uint64_t ldt_bloom_bits{0};
+    /** ldt_schema_id as text, as the statement map keeps it. */
+    std::string ldt_schema_str;
     data_parser::element_list_t ldt_pairs;
     std::shared_ptr<log_vtab_impl> ldt_format_impl;
     std::vector<vtab_column> ldt_cols;

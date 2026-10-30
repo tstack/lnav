@@ -56,6 +56,20 @@ static const intern_string_t KIND_SRC_LOCATION
 static const intern_string_t KIND_MESSAGE
     = intern_string::lookup("message");
 
+static const intern_string_t&
+kind_name(all_logs_vtab::schema_kind kind)
+{
+    switch (kind) {
+        case all_logs_vtab::schema_kind::statement:
+            return KIND_STATEMENT;
+        case all_logs_vtab::schema_kind::src_location:
+            return KIND_SRC_LOCATION;
+        case all_logs_vtab::schema_kind::message:
+            break;
+    }
+    return KIND_MESSAGE;
+}
+
 all_logs_vtab::schema_lines_t all_logs_vtab::alv_schema_lines = nullptr;
 all_logs_vtab::line_stmt_t all_logs_vtab::alv_line_stmt = nullptr;
 all_logs_vtab::scan_started_t all_logs_vtab::alv_scan_started = nullptr;
@@ -123,7 +137,7 @@ all_logs_vtab::cached_column(int col,
             return true;
         };
         if (stmt.is<line_stmt_mapped>()) {
-            return set_kind(KIND_STATEMENT);
+            return set_kind(kind_name(stmt.get<line_stmt_mapped>().lsm_kind));
         }
         // Without source fields in the format, an unmatched message's schema
         // comes from its text; with them, it depends on whether this message
@@ -139,6 +153,11 @@ all_logs_vtab::cached_column(int col,
         // The statement map's strings are never freed or changed, so SQLite
         // can take them without a copy.
         const auto& mapped = stmt.get<line_stmt_mapped>();
+        if (is_src && mapped.lsm_src == nullptr) {
+            // Not a statement, so there's no source to describe.
+            sqlite3_result_null(ctx);
+            return true;
+        }
         const auto& str = is_src ? *mapped.lsm_src : *mapped.lsm_schema;
         sqlite3_result_text(ctx, str.data(), str.size(), SQLITE_STATIC);
         if (is_src) {
@@ -319,28 +338,35 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         : KIND_MESSAGE;
 
     // The statement map already matched most messages, so take what it knows
-    // instead of matching the message again.  The pattern, the variables, and
-    // the stack trace aren't kept there, so they still need log2src.
+    // instead of matching the message again.  A statement's pattern,
+    // variables, and stack trace, and a message's format and values, aren't
+    // kept there, so they still need the message read again.
     auto stmt = alv_line_stmt != nullptr ? alv_line_stmt(lf, line_number)
                                          : line_stmt{line_stmt_unmapped{}};
-    if (stmt.is<line_stmt_mapped>()
-        && !ec.are_columns_used(this->alv_msg_meta,
-                                this->alv_values_meta,
-                                this->alv_stacktrace_meta))
-    {
+    auto is_statement = false;
+    if (stmt.is<line_stmt_mapped>()) {
         const auto& mapped = stmt.get<line_stmt_mapped>();
-        // The statement map's strings are never freed or changed.
-        values.lvv_values.emplace_back(
-            this->alv_schema_meta,
-            permanent_fragment{string_fragment::from(*mapped.lsm_schema)});
-        values.lvv_values.emplace_back(
-            this->alv_src_meta,
-            permanent_fragment{string_fragment::from(*mapped.lsm_src)});
-        values.lvv_values.emplace_back(this->alv_schema_kind_meta,
-                                       KIND_STATEMENT);
-        return;
+        is_statement = mapped.lsm_kind == schema_kind::statement;
+        if (!ec.are_columns_used(this->alv_msg_meta, this->alv_values_meta)
+            && (!is_statement || !ec.is_column_used(this->alv_stacktrace_meta)))
+        {
+            // The statement map's strings are never freed or changed.
+            values.lvv_values.emplace_back(
+                this->alv_schema_meta,
+                permanent_fragment{string_fragment::from(*mapped.lsm_schema)});
+            if (is_statement) {
+                values.lvv_values.emplace_back(
+                    this->alv_src_meta,
+                    permanent_fragment{string_fragment::from(*mapped.lsm_src)});
+            }
+            values.lvv_values.emplace_back(this->alv_schema_kind_meta,
+                                           kind_name(mapped.lsm_kind));
+            return;
+        }
     }
-    const auto unmatched = stmt.is<line_stmt_unmatched>();
+    // The map knows log2src has no statement for these.
+    const auto unmatched = stmt.is<line_stmt_unmatched>()
+        || (stmt.is<line_stmt_mapped>() && !is_statement);
     if (unmatched
         && !ec.are_columns_used(
             this->alv_msg_meta, this->alv_schema_meta, this->alv_values_meta))
@@ -351,15 +377,7 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         return;
     }
 
-    auto body = find_string_attr_range(sa, &SA_BODY);
-    if (!body.is_valid()) {
-        body.lr_start = 0;
-        body.lr_end = line.length();
-    }
-    auto body_sf = line.to_string_fragment(body);
-    auto src_file_sf = sub_values.lvv_src_file_value;
-    auto src_line_sf = sub_values.lvv_src_line_value;
-    auto h = hasher();
+    auto body_sf = schema_body(line, sa);
 #ifdef HAVE_RUST_DEPS
     auto find_res = unmatched
         ? nullptr
@@ -403,16 +421,11 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
 
         elements_to_json(gen, dp, &dp.dp_pairs);
 
-        if (src_file_sf && src_line_sf) {
-            h.update(format->get_name().c_str());
-            h.update(src_file_sf.value());
-            h.update(src_line_sf.value());
-        }
-        auto schema_id = (src_file_sf && src_line_sf)
-            ? h.to_string()
-            : dp.dp_schema_id.to_string();
+        auto schema_id = src_location_schema(format, sub_values)
+                             .value_or(dp.dp_schema_id.to_string());
         values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
-        values.lvv_values.emplace_back(this->alv_schema_meta, schema_id);
+        values.lvv_values.emplace_back(this->alv_schema_meta,
+                                       std::move(schema_id));
         values.lvv_values.emplace_back(this->alv_schema_kind_meta,
                                        unmatched_kind);
         values.lvv_values.emplace_back(
@@ -432,6 +445,33 @@ all_logs_vtab::statement_schema(const string_fragment& src_json,
     h.to_string(buf);
 }
 
+std::optional<std::string>
+all_logs_vtab::src_location_schema(const log_format* format,
+                                   const logline_value_vector& values)
+{
+    if (!values.lvv_src_file_value || !values.lvv_src_line_value) {
+        return std::nullopt;
+    }
+
+    auto h = hasher();
+    h.update(format->get_name().c_str());
+    h.update(values.lvv_src_file_value.value());
+    h.update(values.lvv_src_line_value.value());
+    return h.to_string();
+}
+
+string_fragment
+all_logs_vtab::schema_body(const shared_buffer_ref& sbr,
+                           const string_attrs_t& sa)
+{
+    auto body = find_string_attr_range(sa, &SA_BODY);
+    if (!body.is_valid()) {
+        body.lr_start = 0;
+        body.lr_end = sbr.length();
+    }
+    return sbr.to_string_fragment(body);
+}
+
 #ifdef HAVE_RUST_DEPS
 std::unique_ptr<lnav_rs_ext::FindLogResultJson>
 all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
@@ -444,12 +484,7 @@ all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
         return nullptr;
     }
 
-    auto body = find_string_attr_range(sa, &SA_BODY);
-    if (!body.is_valid()) {
-        body.lr_start = 0;
-        body.lr_end = sbr.length();
-    }
-    auto body_sf = sbr.to_string_fragment(body);
+    auto body_sf = schema_body(sbr, sa);
 
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;

@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -43,6 +44,7 @@
 
 #include <algorithm>
 #include <set>
+#include <vector>
 
 #include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
@@ -69,7 +71,7 @@ static const ssize_t GZ_MIN_MEMBER_SIZE = 18;
 static const ssize_t INITIAL_REQUEST_SIZE = 16 * 1024;
 static const ssize_t DEFAULT_INCREMENT = 128 * 1024;
 static const ssize_t INITIAL_COMPRESSED_BUFFER_SIZE = 5 * 1024 * 1024;
-static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
+static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 16 * 1024 * 1024;
 
 const file_ssize_t line_buffer::DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
 const file_ssize_t line_buffer::MAX_LINE_BUFFER_SIZE
@@ -560,6 +562,69 @@ line_buffer::set_fd(auto_fd& fd)
     this->lb_fd = std::move(fd);
 
     ensure(this->invariant());
+}
+
+#ifndef MINCORE_INCORE
+#    define MINCORE_INCORE 0x1
+#endif
+
+static line_buffer::buffer_residency
+residency_of(const char* data, size_t capacity)
+{
+    line_buffer::buffer_residency retval;
+
+    retval.br_addr = data;
+    retval.br_capacity = capacity;
+    if (data == nullptr || capacity == 0) {
+        return retval;
+    }
+
+    // Whole pages, so the pages at either end may be shared with other
+    // allocations; that's noise next to a buffer of megabytes.
+    const auto page = static_cast<uintptr_t>(getpagesize());
+    const auto begin = reinterpret_cast<uintptr_t>(data) & ~(page - 1);
+    const auto end
+        = (reinterpret_cast<uintptr_t>(data) + capacity + page - 1)
+        & ~(page - 1);
+#ifdef __APPLE__
+    std::vector<char> vec((end - begin) / page);
+#else
+    std::vector<unsigned char> vec((end - begin) / page);
+#endif
+    if (mincore(reinterpret_cast<void*>(begin), end - begin, vec.data()) != 0)
+    {
+        return retval;
+    }
+    for (const auto v : vec) {
+        if (v & MINCORE_INCORE) {
+            retval.br_resident += page;
+        }
+#ifdef MINCORE_PAGED_OUT
+        else if (v & MINCORE_PAGED_OUT)
+        {
+            retval.br_paged_out += page;
+        }
+#endif
+    }
+
+    return retval;
+}
+
+line_buffer::buffer_residency
+line_buffer::get_buffer_residency() const
+{
+    return residency_of(this->lb_buffer.data(), this->lb_buffer.capacity());
+}
+
+std::optional<line_buffer::buffer_residency>
+line_buffer::get_alt_buffer_residency() const
+{
+    if (this->lb_loader_future.valid() || !this->lb_alt_buffer) {
+        return std::nullopt;
+    }
+
+    return residency_of(this->lb_alt_buffer->data(),
+                        this->lb_alt_buffer->capacity());
 }
 
 void

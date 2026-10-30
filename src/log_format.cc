@@ -2004,7 +2004,6 @@ external_log_format::scan_json(std::vector<logline>& dst,
                 sbc.sbc_allocator, jlu.jlu_tid_frag.value(), ll.get_time<>());
             tid_iter->second.titr_level_stats.update_msg_count(
                 ll.get_msg_level());
-            ll.merge_bloom_bits(jlu.jlu_tid_frag->bloom_bits());
         } else {
             sbc.sbc_tids.add_no_tid(ll.get_time<>(), ll.get_msg_level());
         }
@@ -2056,7 +2055,6 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (jlu.jlu_opid_frag) {
-            ll.merge_bloom_bits(jlu.jlu_opid_frag->bloom_bits());
             line_values.lvv_opid_value
                 = jlu.jlu_opid_frag->to_frag().to_owned(
                     line_values.lvv_allocator);
@@ -2118,7 +2116,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         auto sub_ll = ll.clone();
         sub_ll.set_continued(true);
         for (int lpc = 1; lpc < jlu.jlu_sub_line_count; lpc++) {
-            sub_ll.set_sub_offset(lpc);
+            sub_ll.set_sub_line(lpc);
             dst.emplace_back(std::move(sub_ll));
         }
         this->timestamp_flags_for(sbc) = jlu.jlu_exttm.et_flags;
@@ -2170,7 +2168,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         auto sub_ll = ll.clone();
         sub_ll.set_continued(true);
         for (int lpc = 1; lpc < line_count; lpc++) {
-            sub_ll.set_sub_offset(lpc);
+            sub_ll.set_sub_line(lpc);
             dst.emplace_back(std::move(sub_ll));
         }
     }
@@ -2300,7 +2298,6 @@ external_log_format::finalize_line(logline& new_line,
 
         const auto opid_hf = string_key::from(in.lfi_opid_cap.value());
         opid_iter = this->record_opid(opid_hf, duration, log_us, level, sbc);
-        new_line.merge_bloom_bits(opid_hf.bloom_bits());
         line_opid = opid_iter.value()->first;
     }
 
@@ -2319,7 +2316,6 @@ external_log_format::finalize_line(logline& new_line,
         auto tid_iter
             = sbc.sbc_tids.insert_tid(sbc.sbc_allocator, tid_hf, log_us);
         tid_iter->second.titr_level_stats.update_msg_count(level);
-        new_line.merge_bloom_bits(tid_hf.bloom_bits());
         sbc.sbc_line_tid = tid_iter->first;
     }
 
@@ -2589,7 +2585,7 @@ external_log_format::scan_tabular(logfile& lf,
                 sub_ll.set_continued(true);
                 sub_ll.set_ignore(false);
                 for (int lpc = 1; lpc < this->tlf_sub_lines; lpc++) {
-                    sub_ll.set_sub_offset(lpc);
+                    sub_ll.set_sub_line(lpc);
                     dst.emplace_back(std::move(sub_ll));
                 }
             }
@@ -2609,7 +2605,7 @@ external_log_format::scan_tabular(logfile& lf,
     auto header_state = tabular_header_state::reading_metadata;
     std::optional<char> sep;
     for (auto ll_iter = lf.begin(); ll_iter != lf.end(); ++ll_iter) {
-        if (ll_iter->get_sub_offset() != 0) {
+        if (ll_iter->is_sub_line()) {
             continue;
         }
         auto read_res = lf.read_raw_message(ll_iter);
@@ -3401,9 +3397,6 @@ read_json_field(yajlpp_parse_context* ypc,
     if (!field_name.empty() && jlu->jlu_format->elf_opid_field == field_name) {
         auto& sbc = *jlu->jlu_batch_context;
         auto opid_sk = string_key::from(frag);
-        // Merged here as well as when the line is finished since a duration
-        // replaces this opid with a synthesized one before then.
-        jlu->jlu_base_line->merge_bloom_bits(opid_sk.bloom_bits());
         auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_sk);
         opid_sk = opid_iter == sbc.sbc_opids.los_opid_ranges.end()
             ? opid_sk.to_owned(sbc.sbc_allocator)
@@ -3866,17 +3859,18 @@ external_log_format::compute_subline_offsets()
 
 void
 external_log_format::share_rewritten_subline(const logline& ll,
+                                             size_t sub_line,
                                              shared_buffer_ref& sbr,
                                              subline_options opts)
 {
     off_t this_off = 0, next_off = 0;
 
     if (!this->jlf_line_offsets.empty()
-        && ll.get_sub_offset() < (int) this->jlf_line_offsets.size())
+        && sub_line < this->jlf_line_offsets.size())
     {
-        this_off = this->jlf_line_offsets[ll.get_sub_offset()];
-        if ((ll.get_sub_offset() + 1) < (int) this->jlf_line_offsets.size()) {
-            next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        this_off = this->jlf_line_offsets[sub_line];
+        if ((sub_line + 1) < this->jlf_line_offsets.size()) {
+            next_off = this->jlf_line_offsets[sub_line + 1];
         } else {
             next_off = this->jlf_attr_line.al_string.size();
         }
@@ -4362,6 +4356,7 @@ external_log_format::has_cached_subline(const logline& ll,
 void
 external_log_format::get_subline(const log_format_file_state& lffs,
                                  const logline& ll,
+                                 size_t sub_line,
                                  shared_buffer_ref& sbr,
                                  subline_options opts)
 {
@@ -4383,7 +4378,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
             this->jlf_cached_offset = ll.get_offset();
             this->jlf_cached_opts = opts;
         }
-        this->share_rewritten_subline(ll, sbr, opts);
+        this->share_rewritten_subline(ll, sub_line, sbr, opts);
         return;
     }
 
@@ -4575,7 +4570,7 @@ external_log_format::get_subline(const log_format_file_state& lffs,
         this->jlf_cached_opts = opts;
     }
 
-    this->share_rewritten_subline(ll, sbr, opts);
+    this->share_rewritten_subline(ll, sub_line, sbr, opts);
 }
 
 struct compiled_header_expr {

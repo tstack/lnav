@@ -1826,7 +1826,6 @@ timeline_source::text_selection_changed(textview_curses& tc)
 
     auto preview_content = attr_line_t();
     auto lines_remaining = size_t{MAX_PREVIEW_LINES};
-    auto id_bloom_bits = row.or_name.bloom_bits();
     auto msg_count = 0;
 
     // Add a message to the preview.  @return false when the preview is full.
@@ -1937,10 +1936,6 @@ timeline_source::text_selection_changed(textview_curses& tc)
                     }
                     break;
                 case row_type::thread: {
-                    if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits))
-                    {
-                        continue;
-                    }
                     auto tid = msg_id(msg_line, msg_id_type::thread_id);
                     if (!tid || !(tid.value() == row.or_name)) {
                         continue;
@@ -1948,11 +1943,6 @@ timeline_source::text_selection_changed(textview_curses& tc)
                     break;
                 }
                 case row_type::opid: {
-                    if (!msg_line.get_logline().match_bloom_bits(id_bloom_bits))
-                    {
-                        continue;
-                    }
-
                     auto opid = msg_id(msg_line, msg_id_type::opid);
                     if (!opid || !(opid.value() == row.or_name)) {
                         continue;

@@ -1166,10 +1166,11 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::filters: {
-                        const auto& filter_mask
-                            = (*ld)->ld_filter_state.lfo_filter_state.tfs_mask;
+                        const auto filter_mask
+                            = (*ld)->ld_filter_state.lfo_filter_state.mask_at(
+                                line_number);
 
-                        if (!filter_mask[line_number]) {
+                        if (!filter_mask) {
                             sqlite3_result_null(ctx);
                         } else {
                             const auto& filters = vt->lss->get_filters();
@@ -1188,7 +1189,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                     uint32_t mask
                                         = (1UL << filter->get_index());
 
-                                    if (filter_mask[line_number] & mask) {
+                                    if (filter_mask & mask) {
                                         arr.gen(filter->get_index());
                                     }
                                 }

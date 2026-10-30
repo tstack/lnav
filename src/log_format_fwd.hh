@@ -422,24 +422,44 @@ public:
      * @param l The logging level.
      */
     logline(file_off_t off, std::chrono::microseconds t, log_level_t lev)
-        : ll_time(t), ll_offset(off), ll_sub_offset(0), ll_valid_utf(1),
-          ll_has_ansi(false), ll_ignore(false), ll_continued(false),
-          ll_time_skew(false), ll_bloom_bits(0), ll_mark(false),
-          ll_meta_mark(0), ll_expr_mark(0), ll_has_schema(false), ll_level(lev)
+        : ll_time(t), ll_offset(off), ll_sub_line(false),
+          ll_far_sub_line(false), ll_valid_utf(1), ll_has_ansi(false),
+          ll_ignore(false), ll_continued(false), ll_time_skew(false),
+          ll_mark(false), ll_meta_mark(0), ll_expr_mark(0), ll_level(lev),
+          ll_filter_bits(0)
     {
     }
 
     logline(logline&&) = default;
     logline& operator=(logline&&) = default;
 
+    /** The largest offset a line can start at, so files up to 4 TiB. */
+    static constexpr file_off_t MAX_OFFSET = (file_off_t{1} << 42) - 1;
+
     /** @return The offset of the line in the file. */
     file_off_t get_offset() const { return this->ll_offset; }
 
-    uint16_t get_sub_offset() const { return this->ll_sub_offset; }
+    /**
+     * A sub-line at or past this index in its message is marked "far", so a
+     * search back for the message's first line can skip this many lines at
+     * a time from it (see logfile::line_base()).
+     */
+    static constexpr size_t SUB_LINE_STRIDE = 64;
 
-    logline& set_sub_offset(uint16_t suboff)
+    /**
+     * True if this is one of the extra lines a message was rendered into
+     * (a JSON or tabular message), which share the first line's offset.
+     */
+    bool is_sub_line() const { return this->ll_sub_line; }
+
+    /** True if this sub-line's index is at least SUB_LINE_STRIDE. */
+    bool is_far_sub_line() const { return this->ll_far_sub_line; }
+
+    /** Sets which of its message's rendered lines this is, 0 for the first. */
+    logline& set_sub_line(size_t index)
     {
-        this->ll_sub_offset = suboff;
+        this->ll_sub_line = index > 0;
+        this->ll_far_sub_line = index >= SUB_LINE_STRIDE;
         return *this;
     }
 
@@ -562,7 +582,7 @@ public:
     bool is_message() const
     {
         return !this->ll_ignore && !this->ll_continued
-            && this->ll_sub_offset == 0 && this->ll_level != LEVEL_HEADER;
+            && !this->ll_sub_line && this->ll_level != LEVEL_HEADER;
     }
 
     logline& set_continued(bool val)
@@ -574,14 +594,33 @@ public:
     bool is_continued() const { return this->ll_continued; }
 
     /**
+     * The number of filters, by index, whose results for this line are kept
+     * here; logfile_filter_state keeps the rest.
+     */
+    static constexpr size_t FILTER_BITS = 8;
+
+    /** Bit N is set if filter N matched this line's message. */
+    uint8_t get_filter_bits() const { return this->ll_filter_bits; }
+
+    void set_filter_bit(size_t index, bool val)
+    {
+        const auto mask = uint8_t(1U << index);
+        if (val) {
+            this->ll_filter_bits |= mask;
+        } else {
+            this->ll_filter_bits &= ~mask;
+        }
+    }
+
+    void keep_filter_bits(uint8_t mask) { this->ll_filter_bits &= mask; }
+
+    /**
      * Compare loglines based on their timestamp.
      */
     bool operator<(const logline& rhs) const
     {
         return (this->ll_time < rhs.ll_time)
-            || (this->ll_time == rhs.ll_time && this->ll_offset < rhs.ll_offset)
-            || (this->ll_time == rhs.ll_time && this->ll_offset == rhs.ll_offset
-                && this->ll_sub_offset < rhs.ll_sub_offset);
+            || (this->ll_time == rhs.ll_time && this->ll_offset < rhs.ll_offset);
     }
 
     bool operator<(const std::chrono::microseconds& rhs) const
@@ -604,22 +643,6 @@ public:
         return this->get_timeval() <= rhs;
     }
 
-    void set_schema_computed(bool val) { this->ll_has_schema = val; }
-
-    bool has_schema() const { return this->ll_has_schema; }
-
-    void merge_bloom_bits(uint64_t bloom_bits)
-    {
-        this->ll_bloom_bits |= bloom_bits;
-    }
-
-    bool match_bloom_bits(uint64_t bloom_bits) const
-    {
-        return (this->ll_bloom_bits & bloom_bits) == bloom_bits;
-    }
-
-    static constexpr size_t BLOOM_BITS_SIZE = 56;
-
     logline clone() const { return *this; }
 
     void replace(const logline& ll) { *this = ll; }
@@ -629,24 +652,24 @@ private:
     logline& operator=(const logline&) = default;
 
     std::chrono::microseconds ll_time;
-    file_off_t ll_offset : 44;
-    unsigned int ll_sub_offset : 15;
+    uint64_t ll_offset : 42;
+    uint8_t ll_sub_line : 1;
+    uint8_t ll_far_sub_line : 1;
     uint8_t ll_valid_utf : 1;
     uint8_t ll_has_ansi : 1;
     uint8_t ll_ignore : 1;
     uint8_t ll_continued : 1;
     uint8_t ll_time_skew : 1;
-    uint64_t ll_bloom_bits : 56;
     uint8_t ll_mark : 1;
     uint8_t ll_meta_mark : 1;
     uint8_t ll_expr_mark : 1;
-    uint8_t ll_has_schema : 1;
     uint8_t ll_level : 4;
+    uint8_t ll_filter_bits : FILTER_BITS;
 };
 
 static_assert(LEVEL__MAX <= 16, "log_level_t must fit in logline::ll_level");
 
-static_assert(sizeof(logline) == 24);
+static_assert(sizeof(logline) == 16);
 
 struct format_tag_def {
     explicit format_tag_def(std::string name) : ftd_name(std::move(name)) {}

@@ -1,0 +1,4 @@
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /etc/hosts - 5 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq[1840]: read /var/lib/libvirt/dnsmasq/default.addnhosts - 0 addresses
+Dec  6 13:01:34 ubu-mac dnsmasq-dhcp[1840]: read /var/lib/libvirt/dnsmasq/default.hostsfile
+Dec  6 13:05:01 ubu-mac CRON[3883]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)

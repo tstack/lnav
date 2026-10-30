@@ -300,6 +300,29 @@ public:
 
     size_t get_buffer_size() const { return this->lb_buffer.size(); }
 
+    size_t get_buffer_capacity() const { return this->lb_buffer.capacity(); }
+
+    /**
+     * How much of a buffer the OS holds in memory, and how much it has
+     * paged out, as mincore() reports it.  Pages that were never written
+     * are in neither, and on macOS so, it seems, are pages held in the
+     * memory compressor.
+     */
+    struct buffer_residency {
+        const void* br_addr{nullptr};
+        size_t br_capacity{0};
+        size_t br_resident{0};
+        size_t br_paged_out{0};
+    };
+
+    buffer_residency get_buffer_residency() const;
+
+    /**
+     * The same for the preload buffer, or nullopt when there isn't one or
+     * the preload thread has it (see get_byte_size()).
+     */
+    std::optional<buffer_residency> get_alt_buffer_residency() const;
+
     using file_header_t
         = mapbox::util::variant<lnav::gzip::header, lnav::piper::header>;
 

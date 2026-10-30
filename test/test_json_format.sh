@@ -170,6 +170,24 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_pino.0
 
+# A message rendered into more lines than logline::SUB_LINE_STRIDE, so
+# finding a line's place in it skips back a stride at a time.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_pino_many_fields.json
+
+# A field far into the rendering still filters the whole message.
+run_cap_test ${lnav_test} -n \
+    -c ':filter-out k250' \
+    ${test_dir}/logfile_pino_many_fields.json
+
+# A line far into the message maps back to the message's first line, which
+# the logline table is made from.
+run_cap_test ${lnav_test} -n \
+    -c ':goto 280' \
+    -c ':create-logline-table many_fields' \
+    -c ";SELECT count(*) AS columns FROM pragma_table_info('many_fields')" \
+    ${test_dir}/logfile_pino_many_fields.json
+
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_cloudflare.json
 

@@ -47,9 +47,11 @@
 #include "base/progress.hh"
 #include "base/string_attr_type.hh"
 #include "config.h"
+#include "data_parser.hh"
 #include "fmt/format.h"
 #include "hasher.hh"
 #include "lnav.hh"
+#include "log_data_table.hh"
 #include "log_format.hh"
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
@@ -86,11 +88,25 @@ constexpr uint32_t VAR_SAMPLES = 32;
  */
 constexpr size_t STEP_CLOCK_LINES = 16;
 
+/**
+ * A log_msg_schema that messages were mapped to: a log statement log2src
+ * found, or, for messages it found none for, the schema all_logs falls back
+ * to.  Only the statements are reported in log_stmt_stats.
+ */
 struct statement {
-    /** log2src's source details, as JSON, like all_logs.log_msg_src. */
+    all_logs_vtab::schema_kind s_kind{all_logs_vtab::schema_kind::statement};
+    /**
+     * log2src's source details, as JSON, like all_logs.log_msg_src; empty
+     * when the schema isn't a statement's.
+     */
     std::string s_src;
-    /** hash(src, pattern), like all_logs.log_msg_schema. */
+    /** Like all_logs.log_msg_schema: hash(src, pattern) for a statement. */
     std::string s_schema;
+    /**
+     * For a message-kind schema, the data_parser schema of its pairs alone
+     * (dp_pairs_schema_id), as a logline table has it; else empty.
+     */
+    std::string s_pairs_schema;
     /**
      * The argument values of sampled messages, from log2src's variables:
      * [{"expr": ..., "value": ...}, ...].  The values are always text.
@@ -205,23 +221,19 @@ struct stmt_map {
     std::mutex sm_intern_mutex;
 
     /**
-     * The statement's id, from the worker's own [cache] when it has seen the
-     * statement before, else from the shared table.
+     * The schema's id, from the worker's own [cache] when it has seen the
+     * schema before, else from the shared table.  The [src] and
+     * [pairs_schema] are only used the first time.
      */
-    template<typename S>
     uint32_t intern_cached(
         std::unordered_map<string_fragment, uint32_t, frag_hasher, frag_equal>&
             cache,
         ArenaAlloc::Alloc<char>& arena,
-        const S& src,
-        const S& pattern)
+        all_logs_vtab::schema_kind kind,
+        const string_fragment& src,
+        const string_fragment& schema,
+        const string_fragment& pairs_schema)
     {
-        char schema_buf[hasher::STRING_SIZE];
-        all_logs_vtab::statement_schema(string_fragment::from(src),
-                                        string_fragment::from(pattern),
-                                        schema_buf);
-        auto schema = string_fragment::from(schema_buf);
-
         auto iter = cache.find(schema);
         if (iter != cache.end()) {
             return iter->second;
@@ -230,15 +242,17 @@ struct stmt_map {
         uint32_t id;
         {
             std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
-            id = this->intern(src, schema);
+            id = this->intern(kind, src, schema, pairs_schema);
         }
         cache.emplace(schema.to_owned(arena), id);
         return id;
     }
 
     /** Callers hold sm_intern_mutex while files are being mapped. */
-    template<typename S>
-    uint32_t intern(const S& src, const string_fragment& schema)
+    uint32_t intern(all_logs_vtab::schema_kind kind,
+                    const string_fragment& src,
+                    const string_fragment& schema,
+                    const string_fragment& pairs_schema)
     {
         auto schema_str = schema.to_string();
         auto iter = this->sm_schema_ids.find(schema_str);
@@ -248,7 +262,10 @@ struct stmt_map {
 
         auto id = static_cast<uint32_t>(this->sm_statements.size());
         this->sm_statements.emplace_back(
-            statement{(std::string) src, schema_str});
+            statement{kind,
+                      src.to_string(),
+                      schema_str,
+                      pairs_schema.to_string()});
         this->sm_schema_ids.emplace(std::move(schema_str), id);
         return id;
     }
@@ -296,7 +313,10 @@ struct stmt_map {
             ms_cache;
         /** Holds the schemas the cache is keyed by. */
         ArenaAlloc::Alloc<char> ms_arena{4 * 1024};
+        /** The message, as all_logs gets it. */
+        shared_buffer_ref ms_line;
         string_attrs_t ms_sa;
+        /** What annotate() gave, on a copy of ms_line. */
         logline_value_vector ms_values;
         /** Statements this worker has seen with all of their samples. */
         std::unordered_set<uint32_t> ms_sampled;
@@ -320,7 +340,10 @@ struct stmt_map {
         }
         {
             std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
-            if (this->sm_statements[id].s_vars.sample_count() >= VAR_SAMPLES) {
+            const auto& st = this->sm_statements[id];
+            if (st.s_kind != all_logs_vtab::schema_kind::statement
+                || st.s_vars.sample_count() >= VAR_SAMPLES)
+            {
                 ms.ms_sampled.insert(id);
                 return;
             }
@@ -344,10 +367,15 @@ struct stmt_map {
 #endif
     }
 
-    /** The statement for the message starting at line_number of lf. */
+    /**
+     * The schema of the message starting at line_number of lf: its
+     * statement, or else what all_logs falls back to, its source location
+     * or its text.
+     */
     uint32_t match_line(logfile* lf, size_t line_number, match_scratch& ms)
     {
-#ifdef HAVE_RUST_DEPS
+        using kind = all_logs_vtab::schema_kind;
+
         auto ll = lf->begin() + line_number;
         if (ll->is_continued()) {
             return NO_STATEMENT;
@@ -360,30 +388,63 @@ struct stmt_map {
 
         auto& values = ms.ms_values;
         auto& sa = ms.ms_sa;
+        auto& sbr = ms.ms_line;
         values.clear();
         sa.clear();
-        auto& sbr = values.lvv_sbr;
         lf->read_full_message(ll, sbr);
         sbr.erase_ansi();
-        if (!sbr.get_metadata().m_valid_utf) {
-            return NO_STATEMENT;
-        }
 
+        // As in all_logs::extract(): annotate() can swap in the format's own
+        // copy of the message (a JSON message's rendering), but the attrs
+        // are for the message as read, so that's what is matched and parsed.
+        values.lvv_sbr = sbr.clone();
         format->annotate(lf, line_number, sa, values);
 
+#ifdef HAVE_RUST_DEPS
         auto find_res = all_logs_vtab::find_statement(
             sbr, sa, values, ll->get_msg_level(), false);
-        if (find_res == nullptr) {
-            return NO_STATEMENT;
+        if (find_res != nullptr) {
+            char schema_buf[hasher::STRING_SIZE];
+            all_logs_vtab::statement_schema(
+                string_fragment::from(find_res->src),
+                string_fragment::from(find_res->pattern),
+                schema_buf);
+            auto id = this->intern_cached(ms.ms_cache,
+                                          ms.ms_arena,
+                                          kind::statement,
+                                          string_fragment::from(find_res->src),
+                                          string_fragment::from(schema_buf),
+                                          ""_frag);
+            this->sample_vars(id, sbr, sa, values, ll->get_msg_level(), ms);
+            return id;
+        }
+#endif
+
+        auto loc_schema = all_logs_vtab::src_location_schema(format, values);
+        if (loc_schema) {
+            return this->intern_cached(ms.ms_cache,
+                                       ms.ms_arena,
+                                       kind::src_location,
+                                       ""_frag,
+                                       string_fragment::from(*loc_schema),
+                                       ""_frag);
         }
 
-        auto id = this->intern_cached(
-            ms.ms_cache, ms.ms_arena, find_res->src, find_res->pattern);
-        this->sample_vars(id, sbr, sa, values, ll->get_msg_level(), ms);
-        return id;
-#else
-        return NO_STATEMENT;
-#endif
+        // Parsed as all_logs does, with the message format, which goes into
+        // its log_msg_schema.
+        data_scanner ds(all_logs_vtab::schema_body(sbr, sa));
+        data_parser dp(&ds);
+        std::string msg_format;
+        dp.dp_msg_format = &msg_format;
+        dp.parse();
+        auto msg_schema = dp.dp_schema_id.to_string();
+        auto pairs_schema = dp.dp_pairs_schema_id.to_string();
+        return this->intern_cached(ms.ms_cache,
+                                   ms.ms_arena,
+                                   kind::message,
+                                   ""_frag,
+                                   string_fragment::from(msg_schema),
+                                   string_fragment::from(pairs_schema));
     }
 };
 
@@ -393,6 +454,20 @@ get_map()
     static stmt_map retval;
 
     return retval;
+}
+
+/**
+ * Starts mapping the messages, for whatever asks first: a query of
+ * log_stmt_stats or a logline table.
+ */
+void
+start_map()
+{
+    auto& sm = get_map();
+    if (!sm.sm_active) {
+        sm.sm_active = true;
+        log_info("starting the statement map");
+    }
 }
 
 lnav::task_progress
@@ -481,10 +556,7 @@ CREATE TABLE lnav_db.log_stmt_stats (
         auto& sm = get_map();
         auto& lss = lnav_data.ld_log_source;
 
-        if (!sm.sm_active) {
-            sm.sm_active = true;
-            log_info("log_stmt_stats: starting the statement map");
-        }
+        start_map();
         if (lnav_data.ld_flags.is_set<lnav_flags::headless>()) {
             // There's no main loop to map in slices, so map everything now.
             // step() doesn't map while log2src is scanning the source, so
@@ -534,7 +606,10 @@ CREATE TABLE lnav_db.log_stmt_stats (
                 continue;
             }
             mapped += 1;
-            if (id < FIRST_STATEMENT) {
+            if (id < FIRST_STATEMENT
+                || sm.sm_statements[id].s_kind
+                    != all_logs_vtab::schema_kind::statement)
+            {
                 continue;
             }
 
@@ -678,11 +753,10 @@ DIST_SLICE(prog_reps)
 lnav::progress_reporter_t LOG_STMT_MAP_PROG_REP = stmt_map_progress;
 
 /**
- * The LOG view rows logged by the statements with the schemas, for all_logs'
+ * The LOG view rows of the messages with the schemas, for all_logs'
  * log_msg_schema constraints.  A schema the map can't say for goes to
  * unknown_out: all of them when the map hasn't been started or is behind,
- * otherwise the ones that aren't a statement's (messages log2src didn't
- * match can have a schema from the format's source fields).
+ * otherwise the ones no message was mapped to.
  */
 static void
 schema_lines(const std::vector<std::string>& schemas,
@@ -832,13 +906,46 @@ line_stmt(const logfile* lf, uint64_t line_number)
     }
 
     const auto& st = sm.sm_statements[id];
-    return all_logs_vtab::line_stmt_mapped{&st.s_src, &st.s_schema};
+    return all_logs_vtab::line_stmt_mapped{
+        st.s_kind == all_logs_vtab::schema_kind::statement ? &st.s_src
+                                                           : nullptr,
+        &st.s_schema,
+        st.s_kind,
+    };
+}
+
+/**
+ * Checks a message against a logline table's data_parser schema.  Only a
+ * message-kind schema is the text's, and that doesn't depend on the source,
+ * so it holds even when the statements have changed since the line was
+ * mapped.
+ */
+static log_data_table::schema_check
+check_schema(const logfile* lf, uint64_t line_number, const std::string& schema)
+{
+    const auto& sm = get_map();
+    const auto& ids = lf->get_stmt_ids().si_ids;
+    if (!sm.sm_active || line_number >= ids.size()
+        || ids[line_number] < FIRST_STATEMENT)
+    {
+        return log_data_table::schema_check::unknown;
+    }
+
+    const auto& st = sm.sm_statements[ids[line_number]];
+    if (st.s_kind != all_logs_vtab::schema_kind::message) {
+        return log_data_table::schema_check::unknown;
+    }
+    return st.s_pairs_schema == schema
+        ? log_data_table::schema_check::same
+        : log_data_table::schema_check::different;
 }
 
 static const auto REGISTER_SCHEMA_LINES = []() {
     all_logs_vtab::alv_schema_lines = schema_lines;
     all_logs_vtab::alv_line_stmt = line_stmt;
     all_logs_vtab::alv_scan_started = check_statements;
+    log_data_table::ldt_check_schema = check_schema;
+    log_data_table::ldt_start_map = start_map;
     return true;
 }();
 

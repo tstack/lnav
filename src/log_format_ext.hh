@@ -218,6 +218,7 @@ public:
 
     void get_subline(const log_format_file_state& lffs,
                      const logline& ll,
+                     size_t sub_line,
                      shared_buffer_ref& sbr,
                      subline_options opts) override;
 
@@ -624,6 +625,7 @@ private:
     void compute_subline_offsets();
 
     void share_rewritten_subline(const logline& ll,
+                                 size_t sub_line,
                                  shared_buffer_ref& sbr,
                                  subline_options opts);
 

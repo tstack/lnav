@@ -840,14 +840,6 @@ struct string_fragment {
         return hash_str(this->data(), this->length());
     }
 
-    uint64_t bloom_bits() const;
-
-    /**
-     * The bloom bits for a fragment whose hash() is already known, so the
-     * data does not have to be hashed again.
-     */
-    static uint64_t bloom_bits_from_hash(uint32_t a);
-
     class cursor_impl {
     public:
         std::optional<uint32_t> lookbehind() const
@@ -1296,7 +1288,7 @@ to_owned(std::optional<string_fragment> sf, A allocator)
 
 /**
  * A fragment along with its hash(), for a value that is used for more than
- * one table lookup or for its bloom bits, so it is only hashed once.
+ * one table lookup, so it is only hashed once.
  */
 class string_key {
 public:
@@ -1380,11 +1372,6 @@ public:
         }
 
         return false;
-    }
-
-    uint64_t bloom_bits() const
-    {
-        return string_fragment::bloom_bits_from_hash(this->sk_hash);
     }
 
     const char* data() const { return this->sk_data; }

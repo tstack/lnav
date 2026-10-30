@@ -32,6 +32,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "config.h"
@@ -102,20 +104,32 @@ public:
     using scan_started_t = void (*)();
     static scan_started_t alv_scan_started;
 
+    /** Where a message's log_msg_schema comes from, as log_msg_schema_kind. */
+    enum class schema_kind : uint8_t {
+        /** A log statement in the source, found by log2src. */
+        statement,
+        /** The format's source file and line fields. */
+        src_location,
+        /** The message's text, as data_parser parses it. */
+        message,
+    };
+
     /** The statement map hasn't matched the line yet, or its answer is stale. */
     struct line_stmt_unmapped {};
-    /** The statement map matched the line and log2src found no statement. */
+    /** The statement map looked at the line and it has no schema. */
     struct line_stmt_unmatched {};
-    /** The statement map's answer for a line: the statement's details. */
+    /** The statement map's answer for a line: its schema's details. */
     struct line_stmt_mapped {
         /**
-         * log2src's description of the statement, like log_msg_src.  The
-         * statement map keeps both strings for good, in place, so all_logs
-         * passes them on as fragments, without copying.
+         * log2src's description of the statement, like log_msg_src, or
+         * nullptr when the schema isn't a statement's.  The statement map
+         * keeps its strings for good, in place, so all_logs passes them on
+         * as fragments, without copying.
          */
         const std::string* lsm_src;
         /** Like log_msg_schema. */
         const std::string* lsm_schema;
+        schema_kind lsm_kind;
     };
     using line_stmt = mapbox::util::
         variant<line_stmt_unmapped, line_stmt_unmatched, line_stmt_mapped>;
@@ -135,6 +149,21 @@ public:
     static void statement_schema(const string_fragment& src_json,
                                  const string_fragment& pattern,
                                  char buf[hasher::STRING_SIZE]);
+
+    /**
+     * The log_msg_schema of a message log2src found no statement for, when
+     * the format gave it both a source file and a line: a hash of those and
+     * the format's name.  The values are what annotate() gave for it.
+     */
+    static std::optional<std::string> src_location_schema(
+        const log_format* format, const logline_value_vector& values);
+
+    /**
+     * The part of a message its schema comes from: the body, or the whole
+     * message when the format didn't mark one.
+     */
+    static string_fragment schema_body(const shared_buffer_ref& sbr,
+                                       const string_attrs_t& sa);
 
 #ifdef HAVE_RUST_DEPS
     /**

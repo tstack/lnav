@@ -96,6 +96,7 @@ public:
 
     void get_subline(const log_format_file_state& lffs,
                      const logline& ll,
+                     size_t sub_line,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {
@@ -669,7 +670,7 @@ public:
         st.mss_separator = ',';
         auto has_sep_directive = false;
         for (auto ll_iter = dst.begin(); ll_iter != dst.end(); ++ll_iter) {
-            if (ll_iter->get_sub_offset() != 0) {
+            if (ll_iter->is_sub_line()) {
                 continue;
             }
             auto read_res = lf.read_raw_message(ll_iter);
@@ -1165,7 +1166,6 @@ public:
         exttm tm;
         size_t found_ts = 0;
         log_level_t level = LEVEL_INFO;
-        uint64_t opid_bloom = 0;
         auto opid_cap = string_fragment::invalid();
         string_key opid_hf;
         auto host_cap = string_fragment::invalid();
@@ -1207,7 +1207,6 @@ public:
             } else if (UID == fd.fd_meta.lvm_name) {
                 opid_cap = *iter;
                 opid_hf = string_key::from(opid_cap);
-                opid_bloom = opid_hf.bloom_bits();
             } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
                 host_cap = *iter;
             } else if (DURATION == fd.fd_meta.lvm_name) {
@@ -1270,7 +1269,6 @@ public:
             ll.set_time(log_us);
             ll.set_level(level);
             ll.set_ignore(false);
-            ll.merge_bloom_bits(opid_bloom);
             return scan_match{2000};
         }
         return scan_no_match{"no header found"};
@@ -1335,7 +1333,7 @@ public:
         st.bss_separator = intern_string::lookup(sep);
 
         for (++line_iter; line_iter != dst.end(); ++line_iter) {
-            if (line_iter->get_sub_offset() != 0) {
+            if (line_iter->is_sub_line()) {
                 continue;
             }
             auto next_read_result = lf.read_raw_message(line_iter);
@@ -1624,6 +1622,7 @@ public:
 
     void get_subline(const log_format_file_state& lffs,
                      const logline& ll,
+                     size_t sub_line,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {
@@ -2180,7 +2179,7 @@ public:
 
         for (auto line_iter = dst.begin(); line_iter != dst.end(); ++line_iter)
         {
-            if (line_iter->get_sub_offset() != 0) {
+            if (line_iter->is_sub_line()) {
                 continue;
             }
             auto next_read_result = lf.read_raw_message(line_iter);
@@ -2494,6 +2493,7 @@ public:
 
     void get_subline(const log_format_file_state& lffs,
                      const logline& ll,
+                     size_t sub_line,
                      shared_buffer_ref& sbr,
                      subline_options opts) override
     {

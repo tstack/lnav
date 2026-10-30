@@ -108,7 +108,7 @@ text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
         lfs.tfs_filter_count[this->lf_index] -= 1;
         size_t line_number = lfs.tfs_filter_count[this->lf_index];
 
-        lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
+        lfs.set_mask_bit(line_number, this->lf_index, false);
     }
     if (lfs.tfs_lines_for_message[this->lf_index] > 0) {
         require(lfs.tfs_lines_for_message[this->lf_index] >= rollback_size);
@@ -143,10 +143,6 @@ text_filter::add_line(logfile_filter_state& lfs,
 void
 text_filter::end_of_message(logfile_filter_state& lfs)
 {
-    uint32_t mask = 0;
-
-    mask = ((uint32_t) 1U << this->lf_index);
-
     for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++)
     {
         size_t line_number = lfs.tfs_filter_count[this->lf_index];
@@ -155,11 +151,9 @@ text_filter::end_of_message(logfile_filter_state& lfs)
         if (line_number == lfs.tfs_logfile->size()) {
             continue;
         }
-        if (lfs.tfs_message_matched[this->lf_index]) {
-            lfs.tfs_mask[line_number] |= mask;
-        } else {
-            lfs.tfs_mask[line_number] &= ~mask;
-        }
+        lfs.set_mask_bit(line_number,
+                         this->lf_index,
+                         lfs.tfs_message_matched[this->lf_index]);
         lfs.tfs_filter_count[this->lf_index] += 1;
     }
     lfs.tfs_filter_hits[this->lf_index]
@@ -2603,7 +2597,6 @@ logfile_filter_state::logfile_filter_state(std::shared_ptr<logfile> lf)
     memset(this->tfs_last_lines_for_message,
            0,
            sizeof(this->tfs_last_lines_for_message));
-    this->tfs_mask.reserve(64 * 1024);
 }
 
 void
@@ -2629,6 +2622,8 @@ logfile_filter_state::clear_for_rebuild()
            0,
            sizeof(this->tfs_last_lines_for_message));
     this->tfs_mask.clear();
+    this->tfs_wide = false;
+    this->tfs_any_matches_mask = 0;
     this->tfs_index.clear();
 }
 
@@ -2652,14 +2647,29 @@ logfile_filter_state::clear_deleted_filter_state(uint32_t used_mask)
             this->clear_filter_state(lpc);
         }
     }
-    for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
-        this->tfs_mask[lpc] &= used_mask;
+    constexpr auto LINE_MASK = (uint32_t{1} << logline::FILTER_BITS) - 1;
+    const auto stale_mask = this->tfs_any_matches_mask & ~used_mask;
+    if ((stale_mask & LINE_MASK) != 0 && this->tfs_logfile != nullptr) {
+        const auto keep = uint8_t(used_mask & LINE_MASK);
+        for (auto& ll : *this->tfs_logfile) {
+            ll.keep_filter_bits(keep);
+        }
     }
+    if ((stale_mask & ~LINE_MASK) != 0) {
+        for (auto& mask : this->tfs_mask) {
+            mask &= used_mask;
+        }
+    }
+    this->tfs_any_matches_mask &= used_mask;
 }
 
 void
 logfile_filter_state::resize(size_t newsize)
 {
+    if (!this->tfs_wide) {
+        return;
+    }
+
     size_t old_mask_size = this->tfs_mask.size();
 
     this->tfs_mask.resize(newsize);
@@ -2673,7 +2683,52 @@ logfile_filter_state::resize(size_t newsize)
 void
 logfile_filter_state::reserve(size_t expected)
 {
-    this->tfs_mask.reserve(expected);
+    if (this->tfs_wide) {
+        this->tfs_mask.reserve(expected);
+    }
+}
+
+uint32_t
+logfile_filter_state::mask_at(size_t line) const
+{
+    uint32_t retval = this->tfs_logfile->begin()[line].get_filter_bits();
+    if (line < this->tfs_mask.size()) {
+        retval |= this->tfs_mask[line];
+    }
+
+    return retval;
+}
+
+void
+logfile_filter_state::set_mask_bit(size_t line, size_t index, bool val)
+{
+    // A rollback can revert lines that have already been dropped from the
+    // index, and the lines that replace them start out cleared.
+    if (val) {
+        this->tfs_any_matches_mask |= uint32_t{1} << index;
+    }
+    if (index < logline::FILTER_BITS) {
+        if (line < this->tfs_logfile->size()) {
+            this->tfs_logfile->begin()[line].set_filter_bit(index, val);
+        }
+        return;
+    }
+
+    if (!this->tfs_wide) {
+        if (!val) {
+            return;
+        }
+        this->tfs_wide = true;
+        this->tfs_mask.resize(this->tfs_logfile->size());
+    }
+    if (line < this->tfs_mask.size()) {
+        const auto mask = uint32_t{1} << index;
+        if (val) {
+            this->tfs_mask[line] |= mask;
+        } else {
+            this->tfs_mask[line] &= ~mask;
+        }
+    }
 }
 
 std::optional<size_t>

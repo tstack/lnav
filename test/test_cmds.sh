@@ -460,6 +460,51 @@ run_cap_test ${lnav_test} -n \
     -c ":filter-in dnsmasq" \
     ${test_dir}/logfile_filter.0
 
+# More filters than the loglines keep the results of, so the last one's are
+# kept in the filter state's mask.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out Joining" \
+    -c ":filter-out relevant" \
+    -c ":filter-out Registering" \
+    -c ":filter-out started" \
+    -c ":filter-out compile" \
+    -c ":filter-out range" \
+    -c ":filter-out sockets" \
+    -c ":filter-out resolv" \
+    -c ":filter-out nameserver" \
+    ${test_dir}/logfile_filter.0
+
+# Deleting filters kept in the loglines and in the mask brings their lines
+# back.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out Joining" \
+    -c ":filter-out relevant" \
+    -c ":filter-out Registering" \
+    -c ":filter-out started" \
+    -c ":filter-out compile" \
+    -c ":filter-out range" \
+    -c ":filter-out sockets" \
+    -c ":filter-out resolv" \
+    -c ":filter-out nameserver" \
+    -c ":delete-filter Registering" \
+    -c ":delete-filter nameserver" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_filter.0
+
+# A line's log_filters has the filters from both places.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-in dnsmasq" \
+    -c ":filter-out nomatch2" \
+    -c ":filter-out nomatch3" \
+    -c ":filter-out nomatch4" \
+    -c ":filter-out nomatch5" \
+    -c ":filter-out nomatch6" \
+    -c ":filter-out nomatch7" \
+    -c ":filter-out nomatch8" \
+    -c ":filter-in dhcp" \
+    -c ";SELECT log_line, log_body, log_filters FROM syslog_log" \
+    ${test_dir}/logfile_filter.0
+
 run_cap_test ${lnav_test} -n \
     -c ":switch-to-view text" \
     -c ":filter-in World" \

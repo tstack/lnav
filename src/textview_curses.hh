@@ -81,6 +81,12 @@ public:
 
     void reserve(size_t expected);
 
+    /** The filters, as a mask of their indexes, that matched the line. */
+    uint32_t mask_at(size_t line) const;
+
+    /** Records whether the filter at index matched the line. */
+    void set_mask_bit(size_t line, size_t index, bool val);
+
     std::optional<size_t> content_line_to_vis_line(uint32_t line);
 
     const static int MAX_FILTERS = 32;
@@ -94,7 +100,15 @@ public:
     bool tfs_last_message_matched[MAX_FILTERS];
     size_t tfs_last_lines_for_message[MAX_FILTERS];
     size_t tfs_last_hits_for_message[MAX_FILTERS];
+    /**
+     * The results of the filters with an index of logline::FILTER_BITS or
+     * more, by line; the lower ones are kept in the loglines.  Only sized
+     * once one of those filters has been used, so tfs_wide is set.
+     */
     std::vector<uint32_t> tfs_mask;
+    bool tfs_wide{false};
+    /** The filters, as a mask of their indexes, that have matched a line. */
+    uint32_t tfs_any_matches_mask{0};
     std::vector<uint32_t> tfs_index;
 };
 

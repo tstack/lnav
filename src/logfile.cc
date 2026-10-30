@@ -52,6 +52,7 @@
 #include "base/auto_fd.hh"
 #include "base/date_time_scanner.cfg.hh"
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
 #include "base/injector.hh"
 #include "base/intern_string.hh"
 #include "base/is_utf8.hh"
@@ -483,7 +484,7 @@ logfile::discard_index_before(size_t index)
     auto last_msg = this->lf_index.size() - 1;
     while (last_msg > 0
            && (this->lf_index[last_msg].is_continued()
-               || this->lf_index[last_msg].get_sub_offset() != 0))
+               || this->lf_index[last_msg].is_sub_line()))
     {
         last_msg -= 1;
     }
@@ -1079,8 +1080,18 @@ logfile::update_time_order(bool recheck)
         std::iota(this->lf_time_order.begin(), this->lf_time_order.end(), 0);
     }
 
+    // A message's rendered lines share its time and offset, so ties are
+    // broken by position to keep them in order.
     const auto cmp = [this](uint32_t lhs, uint32_t rhs) {
-        return this->lf_index[lhs] < this->lf_index[rhs];
+        const auto& ll_lhs = this->lf_index[lhs];
+        const auto& ll_rhs = this->lf_index[rhs];
+        if (ll_lhs < ll_rhs) {
+            return true;
+        }
+        if (ll_rhs < ll_lhs) {
+            return false;
+        }
+        return lhs < rhs;
     };
     const auto mid_off = this->lf_time_order.size();
     this->lf_time_order.resize(line_count);
@@ -1472,7 +1483,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             curr->clear();
             this->set_base_time_for(sbc_tmp, li);
             log_format::scan_result_t scan_res{mapbox::util::no_init{}};
-            while (this->lf_index.back().get_sub_offset() != 0) {
+            while (this->lf_index.back().is_sub_line()) {
                 prev_subs.emplace_back(this->lf_index.back().clone());
                 this->lf_index.pop_back();
             }
@@ -1509,7 +1520,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                     |= log_format::file_type_bit(curr->lf_file_type);
             }
             if (!scan_res.is<log_format::scan_match>()) {
-                while (this->lf_index.back().get_sub_offset() != 0) {
+                while (this->lf_index.back().is_sub_line()) {
                     this->lf_index.pop_back();
                 }
                 this->lf_index.back().replace(prev_ll);
@@ -1617,7 +1628,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             best_match->second.sm_precision,
                             sm.sm_strikes,
                             best_match->second.sm_strikes);
-                        while (this->lf_index.back().get_sub_offset() != 0) {
+                        while (this->lf_index.back().is_sub_line()) {
                             this->lf_index.pop_back();
                         }
                         this->lf_index.back().replace(prev_ll);
@@ -2118,7 +2129,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
              * Drop the last line we read since it might have been a partial
              * read.
              */
-            while (this->lf_index.back().get_sub_offset() != 0) {
+            while (this->lf_index.back().is_sub_line()) {
                 this->lf_index.pop_back();
                 rollback_size += 1;
             }
@@ -2487,14 +2498,40 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             // The limit comes from how the log view numbers lines, and a
             // file being streamed never goes into the log view.
-            if (!this->lf_options.loo_streaming
-                && this->lf_index.size() > max_lines)
-            {
-                log_warning(
-                    "%s: reached the maximum of %llu lines, "
-                    "stopping indexing",
-                    this->lf_filename_as_string.c_str(),
-                    (unsigned long long) max_lines);
+            const auto over_line_limit = !this->lf_options.loo_streaming
+                && this->lf_index.size() > max_lines;
+            // A logline can only hold offsets up to MAX_OFFSET.
+            const auto over_offset_limit
+                = li.li_file_range.fr_offset > logline::MAX_OFFSET;
+            if (over_line_limit || over_offset_limit) {
+                attr_line_t reason;
+                if (over_line_limit) {
+                    log_warning(
+                        "%s: reached the maximum of %llu lines, "
+                        "stopping indexing",
+                        this->lf_filename_as_string.c_str(),
+                        (unsigned long long) max_lines);
+                    reason.append("file has more than ")
+                        .append(
+                            lnav::roles::number(fmt::to_string(max_lines)))
+                        .append(
+                            " lines, the maximum that can be indexed for a "
+                            "single file");
+                } else {
+                    log_warning(
+                        "%s: line at offset %lld is past the maximum of "
+                        "%lld, stopping indexing",
+                        this->lf_filename_as_string.c_str(),
+                        (long long) li.li_file_range.fr_offset,
+                        (long long) logline::MAX_OFFSET);
+                    reason.append("file is larger than ")
+                        .append(lnav::roles::number(
+                            humanize::file_size(logline::MAX_OFFSET + 1,
+                                                humanize::alignment::none)))
+                        .append(
+                            ", the maximum that can be indexed for a single "
+                            "file");
+                }
                 // A single line can add several entries, so drop all of
                 // them rather than keep part of the message.
                 while (this->lf_index.size() > old_size) {
@@ -2506,12 +2543,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     = lnav::console::user_message::warning(
                           attr_line_t("stopped indexing ")
                               .append_quoted(this->lf_filename))
-                          .with_reason(
-                              attr_line_t("file has more than ")
-                                  .append(lnav::roles::number(
-                                      fmt::to_string(max_lines)))
-                                  .append(" lines, the maximum that can be "
-                                          "indexed for a single file"))
+                          .with_reason(reason)
                           .with_help("split the file into smaller pieces")
                           .move();
                 this->lf_notes.writeAccess()->insert(note_type::line_limit,
@@ -2862,7 +2894,7 @@ logfile::message_lines(iterator ll)
     }
     auto ending_ll = starting_ll;
     while (ending_ll != this->end()) {
-        if (ending_ll->get_sub_offset() != 0) {
+        if (ending_ll->is_sub_line()) {
             break;
         }
         if (!ending_ll->is_continued()) {
@@ -2889,6 +2921,8 @@ Result<shared_buffer_ref, std::string>
 logfile::read_line(iterator ll, subline_options opts)
 {
     try {
+        const auto sub_line = this->sub_line_index(ll);
+
         if (this->lf_format && this->lf_format->lf_formatted_lines) {
             // The other lines of a multi-line rendering are served from the
             // format's cache, so the raw message does not need to be read.
@@ -2896,7 +2930,7 @@ logfile::read_line(iterator ll, subline_options opts)
                 shared_buffer_ref sbr;
 
                 this->lf_format->get_subline(
-                    this->get_format_file_state(), *ll, sbr, opts);
+                    this->get_format_file_state(), *ll, sub_line, sbr, opts);
                 return Ok(std::move(sbr));
             }
 
@@ -2912,13 +2946,13 @@ logfile::read_line(iterator ll, subline_options opts)
                 sbr_meta.m_valid_utf = true;
             }
             this->lf_format->get_subline(
-                this->get_format_file_state(), *ll, sbr, opts);
+                this->get_format_file_state(), *ll, sub_line, sbr, opts);
             return Ok(std::move(sbr));
         }
 
         auto get_range_res = this->get_file_range(ll, false);
         return this->lf_line_buffer.read_range(get_range_res)
-            .map([&ll, &get_range_res, &opts, this](auto sbr) {
+            .map([&ll, &get_range_res, &opts, sub_line, this](auto sbr) {
                 sbr.rtrim(is_line_ending);
                 if (opts.scrub_invalid_utf8
                     && !get_range_res.fr_metadata.m_valid_utf)
@@ -2928,8 +2962,11 @@ logfile::read_line(iterator ll, subline_options opts)
                 }
 
                 if (this->lf_format != nullptr) {
-                    this->lf_format->get_subline(
-                        this->get_format_file_state(), *ll, sbr, opts);
+                    this->lf_format->get_subline(this->get_format_file_state(),
+                                                 *ll,
+                                                 sub_line,
+                                                 sbr,
+                                                 opts);
                 }
                 return sbr;
             });
@@ -2989,7 +3026,7 @@ logfile::get_line_number(const_iterator ll) const
 
     if (this->lf_format != nullptr && this->lf_format->lf_formatted_lines) {
         for (auto iter = this->begin(); iter != ll; ++iter) {
-            if (iter->get_sub_offset() == 0) {
+            if (!iter->is_sub_line()) {
                 retval += 1;
             }
         }
@@ -3006,7 +3043,7 @@ logfile::read_full_message(const_iterator ll,
                            line_buffer::scan_direction dir,
                            read_format_t format)
 {
-    require(ll->get_sub_offset() == 0);
+    require(!ll->is_sub_line());
 
 #if 0
     log_debug(
@@ -3052,7 +3089,7 @@ logfile::read_full_message(const_iterator ll,
 
                 ++curr_ll;
             } while (curr_ll != this->end() && curr_ll->is_continued()
-                     && curr_ll->get_sub_offset() == 0);
+                     && !curr_ll->is_sub_line());
             msg_out.share(this->lf_plain_msg_shared,
                           this->lf_plain_msg_buffer.data(),
                           this->lf_plain_msg_buffer.size());
@@ -3075,7 +3112,7 @@ logfile::read_full_message(const_iterator ll,
         }
         if (this->lf_format.get() != nullptr) {
             this->lf_format->get_subline(
-                this->get_format_file_state(), *ll, msg_out, {true});
+                this->get_format_file_state(), *ll, 0, msg_out, {true});
         }
     } catch (const line_buffer::error& e) {
         log_error("failed to read line");
@@ -3085,6 +3122,12 @@ logfile::read_full_message(const_iterator ll,
 void
 logfile::set_logline_observer(logline_observer* llo)
 {
+    if (llo != this->lf_logline_observer) {
+        // The filter results in the lines are for the old observer's filters.
+        for (auto& ll : this->lf_index) {
+            ll.keep_filter_bits(0);
+        }
+    }
     this->lf_logline_observer = llo;
     if (llo != nullptr) {
         this->reobserve_from(this->begin());
@@ -3116,7 +3159,7 @@ logfile::reobserve_from(iterator iter)
         = this->lf_logline_observer->logline_wants_text();
 
     for (; iter != this->end(); ++iter) {
-        if (iter->get_sub_offset() > 0) {
+        if (iter->is_sub_line()) {
             continue;
         }
 
@@ -3140,7 +3183,7 @@ logfile::reobserve_from(iterator iter)
         }
 
         auto iter_end = iter + 1;
-        while (iter_end != this->end() && iter_end->get_sub_offset() != 0) {
+        while (iter_end != this->end() && iter_end->is_sub_line()) {
             ++iter_end;
         }
         this->lf_logline_observer->logline_new_lines(
@@ -3231,7 +3274,7 @@ logfile::message_byte_length(const_iterator ll, bool include_continues)
 Result<shared_buffer_ref, std::string>
 logfile::read_raw_message(const_iterator ll)
 {
-    require(ll->get_sub_offset() == 0);
+    require(!ll->is_sub_line());
 
     auto ending_ll = std::next(ll);
     while (ending_ll != this->end()) {
@@ -3239,7 +3282,7 @@ logfile::read_raw_message(const_iterator ll)
             // hit the next log message
             break;
         }
-        if (ending_ll->get_sub_offset() != 0) {
+        if (ending_ll->is_sub_line()) {
             // hit a synthesized line
             break;
         }
@@ -3483,10 +3526,28 @@ logfile::dump_stats()
              this->lf_value_stats.capacity() * sizeof(logline_value_stats));
     log_info("  plain_msg_buffer=%zu", this->lf_plain_msg_buffer.capacity());
     log_info("  allocator=%zu", this->lf_allocator.getNumBytesAllocated());
+    log_info("  line_buffer=%zu", this->lf_line_buffer.get_byte_size());
     log_info("line buffer stats for file: %s",
              this->lf_filename_as_string.c_str());
     log_info("  file_size=%lld", this->lf_line_buffer.get_file_size());
-    log_info("  buffer_size=%ld", this->lf_line_buffer.get_buffer_size());
+    log_info("  buffer_size=%zu", this->lf_line_buffer.get_buffer_size());
+    log_info("  buffer_capacity=%zu",
+             this->lf_line_buffer.get_buffer_capacity());
+    const auto buf_res = this->lf_line_buffer.get_buffer_residency();
+    log_info("  buffer addr=%p capacity=%zu resident=%zu paged_out=%zu",
+             buf_res.br_addr,
+             buf_res.br_capacity,
+             buf_res.br_resident,
+             buf_res.br_paged_out);
+    const auto alt_res = this->lf_line_buffer.get_alt_buffer_residency();
+    if (alt_res) {
+        log_info(
+            "  alt_buffer addr=%p capacity=%zu resident=%zu paged_out=%zu",
+            alt_res->br_addr,
+            alt_res->br_capacity,
+            alt_res->br_resident,
+            alt_res->br_paged_out);
+    }
     log_info("  read_hist=[%4u %4u %4u %4u %4u %4u %4u %4u %4u %4u]",
              buf_stats.s_hist[0],
              buf_stats.s_hist[1],
@@ -3547,7 +3608,6 @@ logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
     auto& otr = opid_iter->second;
 
     otr.otr_level_stats.update_msg_count(ll.get_msg_level());
-    ll.merge_bloom_bits(opid_hf.bloom_bits());
     this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
     this->lf_may_have_user_opids = true;
 }

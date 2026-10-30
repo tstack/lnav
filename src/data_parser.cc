@@ -532,6 +532,12 @@ data_parser::pairup(data_parser::schema_id_t* schema,
         pairs_out.PUSH_FRONT(element(pair_subs, DNT_PAIR));
     }
 
+    if (schema != nullptr) {
+        auto pairs_context = context;
+        pairs_context.Final(this->dp_pairs_schema_id.out(0),
+                            this->dp_pairs_schema_id.out(1));
+    }
+
     if (schema != nullptr && this->dp_msg_format != nullptr) {
         for (auto& fiter : pairs_out) {
             *(this->dp_msg_format) += this->get_string_up_to_value(fiter);

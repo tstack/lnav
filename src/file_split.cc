@@ -397,7 +397,7 @@ private:
 bool
 starts_message(const logline& ll)
 {
-    return !ll.is_continued() && ll.get_sub_offset() == 0;
+    return !ll.is_continued() && !ll.is_sub_line();
 }
 
 }  // namespace
@@ -811,7 +811,7 @@ split(const std::filesystem::path& path,
             mi.mi_bytes = end_off - start_off;
             mi.mi_entries = msg_end - local;
             for (auto lpc = local; lpc < msg_end; lpc++) {
-                if ((*lf)[lpc].get_sub_offset() == 0) {
+                if (!(*lf)[lpc].is_sub_line()) {
                     mi.mi_lines += 1;
                 }
             }

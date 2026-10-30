@@ -319,7 +319,7 @@ public:
      * thread id or its opid, scan_batch_context::sbc_line_ids_set), so the
      * log tables can answer log_thread_id and log_opid without reading and
      * parsing the message again.  The scan works both out anyway, for the
-     * thread and opid time ranges and the bloom bits.
+     * thread and opid time ranges.
      *
      * Kept as runs of lines with the same value: each run lasts until the
      * next one starts, and lines from ir_end on aren't known.  A run's id is
@@ -627,12 +627,38 @@ public:
 
     Result<shared_buffer_ref, std::string> read_range(const file_range& fr);
 
+    /** The first of the lines a message was rendered into. */
     iterator line_base(iterator ll)
     {
-        auto retval = ll;
+        return ll - this->sub_line_index(ll);
+    }
 
-        while (retval != this->begin() && retval->get_sub_offset() != 0) {
-            --retval;
+    const_iterator line_base(const_iterator ll) const
+    {
+        return ll - this->sub_line_index(ll);
+    }
+
+    /**
+     * Which of its message's rendered lines this is, 0 for the first.  A far
+     * sub-line is at least logline::SUB_LINE_STRIDE lines into its message,
+     * so the lines are skipped that many at a time from one.  Lines are
+     * discarded from the front of a streamed file without regard to
+     * messages, so a jump never goes before the first line.
+     */
+    size_t sub_line_index(const_iterator ll) const
+    {
+        constexpr auto stride = logline::SUB_LINE_STRIDE;
+        size_t retval = 0;
+
+        while (ll->is_far_sub_line()
+               && static_cast<size_t>(ll - this->cbegin()) >= stride)
+        {
+            ll -= stride;
+            retval += stride;
+        }
+        while (ll != this->cbegin() && ll->is_sub_line()) {
+            --ll;
+            retval += 1;
         }
 
         return retval;
@@ -640,12 +666,12 @@ public:
 
     iterator message_start(iterator ll)
     {
-        auto retval = ll;
+        auto retval = this->line_base(ll);
 
-        while (retval != this->begin()
-               && (retval->get_sub_offset() != 0 || !retval->is_message()))
-        {
-            --retval;
+        // An earlier message's rendered lines aren't messages either, so
+        // they're passed over in one go.
+        while (retval != this->begin() && !retval->is_message()) {
+            retval = this->line_base(retval - 1);
         }
 
         return retval;

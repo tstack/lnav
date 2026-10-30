@@ -1023,11 +1023,7 @@ com_save_to(exec_context& ec,
                 }
                 auto cl = lss.at(*iter);
                 auto lf = lss.find(cl);
-                auto lf_iter = lf->begin() + cl;
-
-                while (lf_iter->get_sub_offset() != 0) {
-                    --lf_iter;
-                }
+                auto lf_iter = lf->line_base(lf->begin() + cl);
 
                 auto line_pair = std::make_pair(
                     lf.get(),

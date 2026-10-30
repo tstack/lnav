@@ -417,7 +417,13 @@ public:
     element_list_t dp_errors;
 
     element_list_t dp_pairs;
+    /** Covers the message format too when dp_msg_format is set. */
     schema_id_t dp_schema_id;
+    /**
+     * The schema of the pairs alone, without the message format: the same
+     * as dp_schema_id when dp_msg_format isn't set.
+     */
+    schema_id_t dp_pairs_schema_id;
     std::string* dp_msg_format;
     int dp_msg_format_begin;
 

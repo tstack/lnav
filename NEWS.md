@@ -360,6 +360,7 @@ Performance:
   bounds) now scans just the time range when the
   column's index hasn't been built yet, instead of
   scanning the whole log to build the index first.
+* Memory usage has been reduced.
 
 Bug Fixes:
 * Bookmarks in the TEXT view should be more stable.

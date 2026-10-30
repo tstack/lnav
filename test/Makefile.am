@@ -443,6 +443,7 @@ dist_noinst_DATA = \
 	logfile_openam.0 \
 	logfile_partitions.0 \
 	logfile_pino.0 \
+	logfile_pino_many_fields.json \
 	logfile_plain.0 \
 	logfile_postgres.0 \
 	logfile_postgres.1 \

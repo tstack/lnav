@@ -266,8 +266,14 @@ public:
         return nullptr;
     }
 
+    /**
+     * Rewrites sbr, the message containing ll, to the line that ll is:
+     * its sub_line'th (logfile::sub_line_index()) of the lines the format
+     * renders the message into.
+     */
     virtual void get_subline(const log_format_file_state& lffs,
                              const logline& ll,
+                             size_t sub_line,
                              shared_buffer_ref& sbr,
                              subline_options opts = subline_options{})
     {

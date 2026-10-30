@@ -72,10 +72,9 @@ public:
                   uint32_t filter_out_mask,
                   size_t offset) const
     {
-        bool filtered_in = (filter_in_mask == 0)
-            || (this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
-        bool filtered_out
-            = (this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
+        const auto mask = this->lfo_filter_state.mask_at(offset);
+        bool filtered_in = (filter_in_mask == 0) || (mask & filter_in_mask) != 0;
+        bool filtered_out = (mask & filter_out_mask) != 0;
         return !filtered_in || filtered_out;
     }
 

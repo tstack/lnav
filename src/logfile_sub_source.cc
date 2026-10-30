@@ -842,10 +842,11 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             line_range{0, -1}, VC_ROLE.value(role_t::VCR_INVALID_MSG));
     }
 
+    const auto token_sub_line
+        = (int) this->lss_token_file->sub_line_index(this->lss_token_line);
     for (const auto& line_value : line_values.lvv_values) {
         if ((!(this->lss_token_flags & RF_FULL)
-             && line_value.lv_sub_offset
-                 != this->lss_token_line->get_sub_offset())
+             && line_value.lv_sub_offset != token_sub_line)
             || !line_value.lv_origin.is_valid())
         {
             continue;
