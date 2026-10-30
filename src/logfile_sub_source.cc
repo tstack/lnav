@@ -327,6 +327,13 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
         this->lss_token_file->read_full_message(this->lss_token_line, sbr);
         this->lss_token_al.al_string = to_string(sbr);
+        // The validity of every line in the message, which the piper path
+        // of read_full_message() does not carry on the buffer it returns.  A
+        // message cut to the buffer size may end in a partial character.
+        auto mlr = this->lss_token_file->message_byte_length(
+            this->lss_token_line);
+        this->lss_token_valid_utf = mlr.mlr_metadata.m_valid_utf
+            && mlr.mlr_length <= line_buffer::MAX_LINE_BUFFER_SIZE;
         if (sbr.get_metadata().m_has_ansi) {
             scrub_ansi_string(this->lss_token_al.al_string,
                               &this->lss_token_al.al_attrs);
@@ -339,6 +346,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             = this->lss_token_file->read_line(this->lss_token_line, sub_opts)
                   .map([](auto sbr) { return to_string(sbr); })
                   .unwrapOr({});
+        this->lss_token_valid_utf = this->lss_token_line->is_valid_utf();
         if (this->lss_token_line->has_ansi()) {
             scrub_ansi_string(this->lss_token_al.al_string,
                               &this->lss_token_al.al_attrs);
@@ -5157,7 +5165,11 @@ logfile_sub_source::add_stack_frame_links()
             continue;
         }
 
-        auto res = sfd.sfd_pattern.pp_value->capture_from(body_sf).for_each(
+        auto res = sfd.sfd_pattern.pp_value->capture_from(body_sf)
+                       .with_options(this->lss_token_valid_utf
+                                         ? PCRE2_NO_UTF_CHECK
+                                         : 0)
+                       .for_each(
             [this, &sfd, &links](const lnav::pcre2pp::match_data& md) {
                 auto file_sf = md[sfd.sfd_file_index];
                 auto line_sf = md[sfd.sfd_line_index];

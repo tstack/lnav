@@ -157,6 +157,10 @@ void yajl_string_decode(yajl_buf buf, const unsigned char * str,
                         } else {
                             break;
                         }
+                    } else if ((codepoint & 0xFC00) == 0xDC00) {
+                        /* a low surrogate on its own isn't a character, and
+                         * its UTF-8 form isn't valid UTF-8 */
+                        break;
                     } else if (codepoint == 0x1b) {
                         props->has_ansi = 1;
                     } else if (codepoint == '\n') {

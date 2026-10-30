@@ -2112,7 +2112,12 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
         jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
         ll.set_has_ansi(jlu.jlu_has_ansi);
-        ll.set_valid_utf(jlu.jlu_valid_utf);
+        // The parser doesn't validate strings (yajl_dont_validate_strings),
+        // so the values drawn on every sub-line are only as valid as the raw
+        // line: the clones below don't get the check the file does for the
+        // last line of a scan.
+        ll.set_valid_utf(jlu.jlu_valid_utf
+                         && li.li_utf8_scan_result.is_valid());
         auto sub_ll = ll.clone();
         sub_ll.set_continued(true);
         for (int lpc = 1; lpc < jlu.jlu_sub_line_count; lpc++) {
@@ -2163,7 +2168,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
             return scan_no_match{"JSON parsing failed"};
         }
         ll.set_has_ansi(jlu.jlu_has_ansi);
-        ll.set_valid_utf(jlu.jlu_valid_utf);
+        ll.set_valid_utf(jlu.jlu_valid_utf
+                         && li.li_utf8_scan_result.is_valid());
         ll.set_level(LEVEL_INVALID);
         auto sub_ll = ll.clone();
         sub_ll.set_continued(true);

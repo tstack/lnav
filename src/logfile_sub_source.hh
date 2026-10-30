@@ -1171,6 +1171,9 @@ private:
     std::vector<std::pair<int, int>> lss_token_shifts;
     shared_buffer lss_share_manager;
     logfile::iterator lss_token_line;
+    // whether lss_token_al's text was read from bytes that are valid UTF-8,
+    // so pattern matches on it can skip PCRE2's own check of the subject.
+    bool lss_token_valid_utf{false};
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE>
         lss_line_size_cache;
     bool lss_marked_only{false};
