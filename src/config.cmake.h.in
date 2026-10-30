@@ -22,6 +22,8 @@
 
 #cmakedefine HAVE_EXECINFO_H
 
+#cmakedefine HAVE_MINCORE
+
 #cmakedefine HAVE_LIBPROC_H
 
 #define HAVE_SQLITE3_STMT_READONLY

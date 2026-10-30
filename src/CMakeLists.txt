@@ -11,6 +11,7 @@ check_include_file("pty.h" HAVE_PTY_H)
 check_include_file("util.h" HAVE_UTIL_H)
 check_include_file("execinfo.h" HAVE_EXECINFO_H)
 check_include_file("libproc.h" HAVE_LIBPROC_H)
+check_function_exists(mincore HAVE_MINCORE)
 
 set(PACKAGE "${CMAKE_PROJECT_NAME}")
 set(PACKAGE_URL "${CMAKE_PROJECT_HOMEPAGE_URL}")

@@ -97,6 +97,7 @@ AC_SEARCH_LIBS(uc_width, unistring, [], [AC_MSG_ERROR([libunistring required to 
 LIBCURL_CHECK_CONFIG([], [7.23.0], [], [AC_MSG_ERROR([libcurl required to build])], [test x"${enable_static}" = x"yes"])
 
 AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h uniwidth.h sys/sysctl.h windows.h)
+AC_CHECK_FUNCS(mincore)
 
 AS_IF([test "x$ac_cv_header_uniwidth_h" != "xyes"], [
   AC_MSG_ERROR([uniwidth.h header from libunistring was not found])dnl

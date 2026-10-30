@@ -575,6 +575,10 @@ residency_of(const char* data, size_t capacity)
 
     retval.br_addr = data;
     retval.br_capacity = capacity;
+#ifndef HAVE_MINCORE
+    // Cygwin/MSYS has no mincore(), so nothing is reported as resident.
+    return retval;
+#else
     if (data == nullptr || capacity == 0) {
         return retval;
     }
@@ -608,6 +612,7 @@ residency_of(const char* data, size_t capacity)
     }
 
     return retval;
+#endif
 }
 
 line_buffer::buffer_residency
