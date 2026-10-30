@@ -255,3 +255,9 @@ run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_json_opid_dur.json
+
+# Values over a max-width are cut on character boundaries, and a wide
+# character that would overrun the width is left out.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_overflow.json

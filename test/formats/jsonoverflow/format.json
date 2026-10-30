@@ -1,0 +1,50 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_json_overflow_log": {
+        "title": "Test JSON overflow Log",
+        "file-type": "json",
+        "file-pattern": "logfile_json_overflow\\.json",
+        "description": "Regression format for max-width overflows cutting values with multibyte and wide characters",
+        "line-format": [
+            {
+                "field": "trunc",
+                "max-width": 6,
+                "overflow": "truncate"
+            },
+            "|",
+            {
+                "field": "dotdot",
+                "max-width": 6,
+                "overflow": "dot-dot"
+            },
+            "|",
+            {
+                "field": "abbrev",
+                "max-width": 6,
+                "overflow": "abbrev"
+            },
+            "|",
+            {
+                "field": "lastword",
+                "max-width": 6,
+                "overflow": "last-word"
+            },
+            "|"
+        ],
+        "timestamp-field": "ts",
+        "value": {
+            "trunc": {
+                "kind": "string"
+            },
+            "dotdot": {
+                "kind": "string"
+            },
+            "abbrev": {
+                "kind": "string"
+            },
+            "lastword": {
+                "kind": "string"
+            }
+        }
+    }
+}

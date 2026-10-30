@@ -1,0 +1,8 @@
+abcdef|ab..ij|c.e.foo|foo|
+  ts: 2024-01-01T00:00:00Z
+aééééé|aé..éz|é.ñ.c.thing|thing|
+  ts: 2024-01-01T00:00:01Z
+日本語|日..本|日.語.thing|thing|
+  ts: 2024-01-01T00:00:02Z
+abcde|a..b|abc|abc|
+  ts: 2024-01-01T00:00:03Z

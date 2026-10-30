@@ -1,0 +1,4 @@
+{"ts": "2024-01-01T00:00:00Z", "trunc": "abcdefghij", "dotdot": "abcdefghij", "abbrev": "com.example.foo", "lastword": "com.example.foo"}
+{"ts": "2024-01-01T00:00:01Z", "trunc": "aéééééz", "dotdot": "aéééééz", "abbrev": "été.ñan.cool.thing", "lastword": "été.ñan.cool.thing"}
+{"ts": "2024-01-01T00:00:02Z", "trunc": "日本語日本", "dotdot": "日本語日本", "abbrev": "日本.語日.thing", "lastword": "日本.語日.thing"}
+{"ts": "2024-01-01T00:00:03Z", "trunc": "abcde日本", "dotdot": "a日本語日本b", "abbrev": "abc", "lastword": "abc"}
