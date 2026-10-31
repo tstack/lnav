@@ -719,7 +719,7 @@ DISTCLEANFILES = \
 	line-ids-text.0 \
 	log2src-* \
 	logline-src-fields.0 \
-	stack-frame-local.log \
+	stack-frame-* \
 	not:a:remote:file \
 	rollover_in.0 \
 	since-partial-line.log \
