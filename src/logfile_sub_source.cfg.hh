@@ -101,6 +101,13 @@ struct stack_frame_def {
     int sfd_line_index{-1};
     int sfd_col_index{-1};
     int sfd_pkg_index{-1};
+
+    /**
+     * True if the pattern is enabled and valid and either names no
+     * languages or names one of [languages], the source languages log2src
+     * found statements in.  An empty [languages] matches every pattern.
+     */
+    bool is_used_for(const std::vector<source_language_t>& languages) const;
 };
 
 struct config {

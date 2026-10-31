@@ -13,7 +13,7 @@ use cxx::UniquePtr;
 use log::{Level, Log, Metadata, Record};
 use log2src::{
     Cache, LogError, LogLevel, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder,
-    ProgressTracker, ProgressUpdate, SourceRef, VariablePair, WorkInfo,
+    ProgressTracker, ProgressUpdate, StatementRef, VariablePair, WorkInfo,
 };
 use miette::Diagnostic;
 use prqlc::{DisplayOptions, Target};
@@ -595,20 +595,21 @@ fn get_status() -> ExtProgress {
     retval
 }
 
-impl From<&SourceRef> for FindLogResult {
-    fn from(value: &SourceRef) -> Self {
+impl From<StatementRef<'_>> for FindLogResult {
+    fn from(value: StatementRef<'_>) -> Self {
+        let details = SourceDetailsBorrowed::from(&value);
         Self {
             src: SourceDetails {
-                file: value.source_path.to_string(),
-                begin_line: value.line_no,
-                end_line: value.end_line_no,
-                name: value.name.to_string(),
-                qualified_name: value.qualified_name.to_string(),
-                block_id: value.block_id,
-                language: value.language.as_str(),
+                file: details.file.to_string(),
+                begin_line: details.begin_line,
+                end_line: details.end_line,
+                name: details.name.to_string(),
+                qualified_name: details.qualified_name.to_string(),
+                block_id: details.block_id,
+                language: details.language,
             },
-            src_json: src_json(value),
-            pattern: value.pattern_str.to_string(),
+            src_json: details.to_json(),
+            pattern: value.pattern_source().into_owned(),
             level: value.level.into(),
             variables: vec![],
         }
@@ -692,19 +693,26 @@ pub struct SourceDetailsBorrowed<'a> {
     pub language: &'static str,
 }
 
-/// The statement's source details as JSON, the same everywhere they are
-/// given out, since `log_msg_schema` is a hash of this text.
-fn src_json(src_ref: &SourceRef) -> String {
-    serde_json::to_string(&SourceDetailsBorrowed {
-        file: src_ref.source_path.as_str(),
-        begin_line: src_ref.line_no,
-        end_line: src_ref.end_line_no,
-        name: src_ref.name.as_str(),
-        qualified_name: src_ref.qualified_name.as_str(),
-        block_id: src_ref.block_id,
-        language: src_ref.language.as_str(),
-    })
-    .unwrap()
+impl<'a> From<&StatementRef<'a>> for SourceDetailsBorrowed<'a> {
+    fn from(stmt: &StatementRef<'a>) -> Self {
+        Self {
+            file: stmt.source_path(),
+            begin_line: stmt.stmt.line_no,
+            end_line: stmt.stmt.end_line_no,
+            name: stmt.stmt.name.as_str(),
+            qualified_name: stmt.stmt.qualified_name.as_str(),
+            block_id: stmt.stmt.block_id,
+            language: stmt.language().as_str(),
+        }
+    }
+}
+
+impl SourceDetailsBorrowed<'_> {
+    /// The statement's source details as JSON, the same everywhere they are
+    /// given out, since `log_msg_schema` is a hash of this text.
+    fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
 }
 
 fn find_log_statement_json(
@@ -739,8 +747,8 @@ fn find_log_statement_json(
             serde_json::to_string(&exception_trace).unwrap()
         };
         UniquePtr::new(FindLogResultJson {
-            src: src_json(src_ref),
-            pattern: src_ref.pattern_str.clone(),
+            src: SourceDetailsBorrowed::from(&src_ref).to_json(),
+            pattern: src_ref.pattern_source().into_owned(),
             variables: serde_json::to_string(&variables).unwrap(),
             stack_trace,
         })
@@ -782,15 +790,12 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
 /// are no roots or no statements.
 fn source_languages() -> Vec<String> {
     let matcher = LOG_MATCHER.read().unwrap();
-    let mut retval: Vec<String> = vec![];
 
-    for src_ref in matcher.statements() {
-        let lang = src_ref.language.as_str();
-        if !retval.iter().any(|known| known == lang) {
-            retval.push(lang.to_string());
-        }
-    }
-    retval
+    matcher
+        .languages()
+        .into_iter()
+        .map(|lang| lang.as_str().to_string())
+        .collect()
 }
 
 /// Find a file under the source roots, like one named in a stack trace.  The result is

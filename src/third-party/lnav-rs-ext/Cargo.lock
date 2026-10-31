@@ -1396,7 +1396,7 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=caching1#e277041363d1f9ddb334bdea4908d5f75241b955"
+source = "git+https://github.com/tstack/log2src.git?branch=caching1#b1252a1456e4dfd8b84e9e8206bb938b9a36378e"
 dependencies = [
  "aho-corasick",
  "bincode",
@@ -1413,7 +1413,6 @@ dependencies = [
  "regex-syntax",
  "serde",
  "serde_json",
- "serde_regex",
  "sha2",
  "tempfile",
  "thiserror",
@@ -2031,16 +2030,6 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
-]
-
-[[package]]
-name = "serde_regex"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bafc8d0c5330cecff10f16b459b479fd9acaa5b4acd7167301414e21b0057012"
-dependencies = [
- "regex",
- "serde",
 ]
 
 [[package]]

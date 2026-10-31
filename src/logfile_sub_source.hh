@@ -83,32 +83,24 @@ struct stack_frame_match {
 /** Text longer than this isn't looked at for stack frames. */
 constexpr size_t MAX_STACK_FRAME_SCAN_LENGTH = 8 * 1024;
 
-struct stack_frame_def;
 enum class source_language_t : uint8_t;
 
-/** One of the enabled /log/stack-frames patterns. */
-struct stack_frame_pattern {
-    const std::string* sfp_name;
-    const stack_frame_def* sfp_def;
-};
-
 /**
- * The enabled /log/stack-frames patterns.  Given [languages], the source
- * languages log2src found statements in, only the patterns for one of them
- * and the patterns that don't name any; all of them when it's empty.  The
- * list is good until the config is reloaded.
+ * Bumped each time the config is reloaded, which can change the
+ * /log/stack-frames patterns.
  */
-std::vector<stack_frame_pattern> stack_frame_patterns(
-    const std::vector<source_language_t>& languages = {});
+size_t stack_frames_generation();
 
 /**
- * Calls [func] with each frame that [patterns] find in one line of text,
- * [sf]: those of the first pattern that finds any.  [options] go to the
- * matches: PCRE2_NO_UTF_CHECK when [sf] is known to be valid UTF-8.  Safe to
- * call from several threads.
+ * Calls [func] with each frame that the /log/stack-frames patterns find in
+ * one line of text, [sf]: those of the first pattern that finds any.  Only
+ * the patterns used for [languages] are tried, see
+ * stack_frame_def::is_used_for().  [options] go to the matches:
+ * PCRE2_NO_UTF_CHECK when [sf] is known to be valid UTF-8.  Safe to call
+ * from several threads, but not while the config is being reloaded.
  */
 void for_each_stack_frame(
-    const std::vector<stack_frame_pattern>& patterns,
+    const std::vector<source_language_t>& languages,
     string_fragment sf,
     uint32_t options,
     const std::function<void(const stack_frame_match&)>& func);

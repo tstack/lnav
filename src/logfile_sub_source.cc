@@ -5077,6 +5077,10 @@ logfile_sub_source::text_handle_mouse(
     return true;
 }
 
+namespace logfile_sub_source_ns {
+static size_t STACK_FRAMES_GENERATION = 0;
+}
+
 void
 logfile_sub_source::reload_config(error_reporter& reporter)
 {
@@ -5124,9 +5128,35 @@ logfile_sub_source::reload_config(error_reporter& reporter)
         }
         sfd.sfd_valid = true;
     }
+    logfile_sub_source_ns::STACK_FRAMES_GENERATION += 1;
 }
 
 namespace logfile_sub_source_ns {
+
+size_t
+stack_frames_generation()
+{
+    return STACK_FRAMES_GENERATION;
+}
+
+bool
+stack_frame_def::is_used_for(
+    const std::vector<source_language_t>& languages) const
+{
+    if (!this->sfd_enabled || !this->sfd_valid) {
+        return false;
+    }
+    if (languages.empty() || this->sfd_languages.empty()) {
+        return true;
+    }
+    return std::any_of(this->sfd_languages.begin(),
+                       this->sfd_languages.end(),
+                       [&languages](source_language_t lang) {
+                           return std::find(
+                                      languages.begin(), languages.end(), lang)
+                               != languages.end();
+                       });
+}
 
 std::string
 stack_frame_match::path() const
@@ -5147,35 +5177,8 @@ stack_frame_match::append_path(std::string& out) const
     out.append(this->sfm_file.data(), this->sfm_file.length());
 }
 
-std::vector<stack_frame_pattern>
-stack_frame_patterns(const std::vector<source_language_t>& languages)
-{
-    static const auto& cfg = injector::get<const config&>();
-
-    std::vector<stack_frame_pattern> retval;
-    for (const auto& [name, sfd] : cfg.c_stack_frames) {
-        if (!sfd.sfd_enabled || !sfd.sfd_valid) {
-            continue;
-        }
-        if (!languages.empty() && !sfd.sfd_languages.empty()) {
-            auto for_one = std::any_of(
-                sfd.sfd_languages.begin(),
-                sfd.sfd_languages.end(),
-                [&languages](source_language_t lang) {
-                    return std::find(languages.begin(), languages.end(), lang)
-                        != languages.end();
-                });
-            if (!for_one) {
-                continue;
-            }
-        }
-        retval.emplace_back(stack_frame_pattern{&name, &sfd});
-    }
-    return retval;
-}
-
 void
-for_each_stack_frame(const std::vector<stack_frame_pattern>& patterns,
+for_each_stack_frame(const std::vector<source_language_t>& languages,
                      string_fragment sf,
                      uint32_t options,
                      const std::function<void(const stack_frame_match&)>& func)
@@ -5185,13 +5188,16 @@ for_each_stack_frame(const std::vector<stack_frame_pattern>& patterns,
     }
     // A line is one language's frame, so once a pattern has found one, the
     // other patterns aren't tried on it.
+    static const auto& cfg = injector::get<const config&>();
+
     auto found = false;
-    for (const auto& [name_ptr, sfd_ptr] : patterns) {
+    for (const auto& [name, sfd] : cfg.c_stack_frames) {
         if (found) {
             break;
         }
-        const auto& name = *name_ptr;
-        const auto& sfd = *sfd_ptr;
+        if (!sfd.is_used_for(languages)) {
+            continue;
+        }
 
         auto res = sfd.sfd_pattern.pp_value->capture_from(sf)
                        .with_options(options)
@@ -5255,7 +5261,7 @@ logfile_sub_source::add_stack_frame_links()
     // Every pattern, unlike the stack frame counts: a frame in another
     // language than the source's can still be opened.
     logfile_sub_source_ns::for_each_stack_frame(
-        logfile_sub_source_ns::stack_frame_patterns(),
+        {},
         body_sf,
         this->lss_token_valid_utf ? PCRE2_NO_UTF_CHECK : 0,
         [this, &links](const logfile_sub_source_ns::stack_frame_match& sfm) {

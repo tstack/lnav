@@ -260,12 +260,8 @@ struct stmt_map {
      * they change, every message's frames are found again.
      */
     std::optional<std::string> sm_frame_patterns;
-    /**
-     * The patterns the frames are found with: those for the languages
-     * log2src found statements in (sm_languages), from step().
-     */
-    std::vector<logfile_sub_source_ns::stack_frame_pattern>
-        sm_frame_pattern_list;
+    /** The stack_frames_generation() that sm_frame_patterns is from. */
+    std::optional<size_t> sm_frame_generation;
     /**
      * The source languages log2src found statements in, as of the source
      * scan the statements are from.
@@ -537,7 +533,7 @@ struct stmt_map {
                     ? text.length()
                     : static_cast<size_t>(nl - text.data());
                 logfile_sub_source_ns::for_each_stack_frame(
-                    this->sm_frame_pattern_list,
+                    this->sm_languages,
                     string_fragment::from_bytes(text.data(), len),
                     options,
                     on_frame);
@@ -1696,6 +1692,7 @@ step(std::chrono::steady_clock::time_point deadline)
     }
 
     auto& lss = lnav_data.ld_log_source;
+    auto languages_changed = false;
 
 #ifdef HAVE_RUST_DEPS
     // While log2src is scanning the source, the statements are in flux, so
@@ -1718,6 +1715,7 @@ step(std::chrono::steady_clock::time_point deadline)
                             lang.data());
             }
         }
+        languages_changed = true;
         if (sm.sm_scan_version) {
             log_info("statements changed, re-mapping the log messages");
             for (const auto& ld : lss) {
@@ -1731,26 +1729,31 @@ step(std::chrono::steady_clock::time_point deadline)
     }
 #endif
 
-    // The frames were found with the patterns as they were: when those
-    // change, by the config or the source's languages, every message is
-    // looked at again.
-    {
-        sm.sm_frame_pattern_list
-            = logfile_sub_source_ns::stack_frame_patterns(sm.sm_languages);
+    // A config reload or a source scan can change the patterns used to find
+    // the frames.  A reload can also leave them as they were, so the frames
+    // are only found again if the patterns themselves differ.
+    const auto frame_generation
+        = logfile_sub_source_ns::stack_frames_generation();
+    if (languages_changed || sm.sm_frame_generation != frame_generation) {
+        static const auto& cfg
+            = injector::get<const logfile_sub_source_ns::config&>();
+
+        sm.sm_frame_generation = frame_generation;
         std::string patterns;
-        for (const auto& [name, sfd] : sm.sm_frame_pattern_list) {
-            patterns.append(*name).push_back('\n');
-            patterns.append(sfd->sfd_pattern.pp_value->get_pattern())
+        std::string names;
+        for (const auto& [name, sfd] : cfg.c_stack_frames) {
+            if (!sfd.is_used_for(sm.sm_languages)) {
+                continue;
+            }
+            patterns.append(name).push_back('\n');
+            patterns.append(sfd.sfd_pattern.pp_value->get_pattern())
                 .push_back('\n');
+            if (!names.empty()) {
+                names.append(", ");
+            }
+            names.append(name);
         }
         if (sm.sm_frame_patterns != patterns) {
-            std::string names;
-            for (const auto& sfp : sm.sm_frame_pattern_list) {
-                if (!names.empty()) {
-                    names.append(", ");
-                }
-                names.append(*sfp.sfp_name);
-            }
             log_info("finding stack frames with: %s", names.c_str());
             if (sm.sm_frame_patterns) {
                 log_info(
