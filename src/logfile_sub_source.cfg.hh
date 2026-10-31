@@ -32,6 +32,7 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,13 @@ enum class source_language_t : uint8_t {
     TypeScript,
     VisualBasic,
 };
+
+/**
+ * The language with the Language Server Protocol identifier [id] ("java",
+ * "cpp", ...), the names used in the configuration and by log2src.
+ */
+std::optional<source_language_t> source_language_from_lsp_id(
+    string_fragment id);
 
 /**
  * A pattern for a frame in a stack trace.  The "file" and "line" captures

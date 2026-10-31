@@ -1797,6 +1797,17 @@ static constexpr json_path_handler_base::enum_value_t _source_language_values[]
         json_path_handler_base::ENUM_TERMINATOR,
 };
 
+std::optional<logfile_sub_source_ns::source_language_t>
+logfile_sub_source_ns::source_language_from_lsp_id(string_fragment id)
+{
+    for (const auto* ev = _source_language_values; !ev->first.empty(); ++ev) {
+        if (ev->first == id) {
+            return static_cast<source_language_t>(ev->second);
+        }
+    }
+    return std::nullopt;
+}
+
 static const typed_json_path_container<logfile_sub_source_ns::stack_frame_def>
     stack_frame_def_handlers = {
         yajlpp::property_handler("enabled")

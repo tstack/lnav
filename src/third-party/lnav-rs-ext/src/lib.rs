@@ -777,10 +777,9 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     retval
 }
 
-/// Find a file under the source roots, like one named in a stack trace.  The result is
-/// empty if the file could not be found.
-/// The languages of the log statements found under the source roots, each once, as log2src
-/// names them ("Java", "C++", ...).  Empty when there are no roots or no statements.
+/// The languages of the log statements found under the source roots, each once, by their
+/// LSP language identifiers, as log2src names them ("java", "cpp", ...).  Empty when there
+/// are no roots or no statements.
 fn source_languages() -> Vec<String> {
     let matcher = LOG_MATCHER.read().unwrap();
     let mut retval: Vec<String> = vec![];
@@ -794,6 +793,8 @@ fn source_languages() -> Vec<String> {
     retval
 }
 
+/// Find a file under the source roots, like one named in a stack trace.  The result is
+/// empty if the file could not be found.
 fn find_src_file(path_str: &str) -> String {
     let matcher = LOG_MATCHER.read().unwrap();
 

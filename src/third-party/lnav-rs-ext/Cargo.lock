@@ -1389,14 +1389,14 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.34"
+version = "0.4.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
+checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=caching1#b5bbd4c72e534c9e7c4017c67ca13465a5c53c22"
+source = "git+https://github.com/tstack/log2src.git?branch=caching1#e277041363d1f9ddb334bdea4908d5f75241b955"
 dependencies = [
  "aho-corasick",
  "bincode",

@@ -654,7 +654,12 @@ struct stmt_map {
         // copy of the message (a JSON message's rendering), but the attrs
         // are for the message as read, so that's what is matched and parsed.
         values.lvv_sbr = sbr.clone();
-        format->annotate(lf, line_number, sa, values);
+        // Only a JSON message's frames need its values; a text message's
+        // are found in the message as read.
+        if (want_stmt || format->lf_file_type == log_format::file_type_t::JSON)
+        {
+            format->annotate(lf, line_number, sa, values);
+        }
 
         if (want_frames) {
             this->find_frames(lf, ll, format, ms);
@@ -710,30 +715,6 @@ struct stmt_map {
                                    string_fragment::from(pairs_schema));
     }
 };
-
-#ifdef HAVE_RUST_DEPS
-/** A language as log2src names it (SourceLanguage::as_str()). */
-std::optional<logfile_sub_source_ns::source_language_t>
-from_log2src_language(const string_fragment& name)
-{
-    using lang = logfile_sub_source_ns::source_language_t;
-    static const std::pair<string_fragment, lang> NAMES[] = {
-        {"C"_frag, lang::C},
-        {"C++"_frag, lang::Cpp},
-        {"Java"_frag, lang::Java},
-        {"Kotlin"_frag, lang::Kotlin},
-        {"Python"_frag, lang::Python},
-        {"Rust"_frag, lang::Rust},
-    };
-
-    for (const auto& [log2src_name, sl] : NAMES) {
-        if (name == log2src_name) {
-            return sl;
-        }
-    }
-    return std::nullopt;
-}
-#endif
 
 stmt_map&
 get_map()
@@ -1727,7 +1708,7 @@ step(std::chrono::steady_clock::time_point deadline)
     if (sm.sm_scan_version != ext.version) {
         sm.sm_languages.clear();
         for (const auto& lang : lnav_rs_ext::source_languages()) {
-            auto sl = from_log2src_language(
+            auto sl = logfile_sub_source_ns::source_language_from_lsp_id(
                 string_fragment::from_bytes(lang.data(), lang.size()));
             if (sl) {
                 sm.sm_languages.emplace_back(sl.value());
