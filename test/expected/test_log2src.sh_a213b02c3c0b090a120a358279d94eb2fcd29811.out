@@ -1,0 +1,11 @@
+[31m2024-03-01T10:00:00.000Z[0m[31m [0m[31mw[0m[31m[[0m[31m1[0m[31m] [0m[31mERROR   [0m[31m [0m[31mbad [0m[33m"\xff"[0m[31m byte[0m
+  [1mHex dump of line with invalid UTF-8 content[0m
+     32 30 32 34 2d 30 33 2d  30 31 54 31 30 3a 30 30  2024-03- 01T10:00
+     3a 30 30 2e 30 30 30 5a [32m 20[0m 77 5b 31 5d[32m 20[0m 45 52  :00.000Z [32m_[0mw[1][32m_[0mER
+     52 4f 52[32m 20[0m[32m 20[0m[32m 20[0m[32m 20[0m 62  61 64[32m 20[0m[33m ff[0m[32m 20[0m 62 79 74  ROR[32m_[0m[32m_[0m[32m_[0m[32m_[0mb ad[32m_[0m[33m×[0m[32m_[0mbyt
+     65                                                e
+[31m  exc: [0m[31mjava.lang.X: x[0m
+[31m  exc: [0m[31m	at com.foo.A.b([0m[4m[31mA.java:1[0m[31m)[0m
+[31m2024-03-01T10:00:01.000Z[0m[31m [0m[31mw[0m[31m[[0m[31m1[0m[31m] [0m[31mERROR   [0m[31m [0m[31mlone ? here[0m
+[31m  exc: [0m[31mjava.lang.Y: y[0m
+[31m  exc: [0m[31m	at com.foo.A.c([0m[4m[31mA.java:2[0m[31m)[0m

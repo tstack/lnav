@@ -1,0 +1,16 @@
+path,line,hits,src_path
+./src/lib.rs,10,1,<NULL>
+/app/index.js,3,1,<NULL>
+/app/lib/foo.rb,10,1,<NULL>
+/app/lib/main.rb,3,1,<NULL>
+/app/svc/handler.py,26,1,<NULL>
+/home/user/go/src/app/main.go,12,1,<NULL>
+/src/App/Worker.cs,42,1,<NULL>
+/src/test.cc,5,1,<NULL>
+/var/www/src/Controller.php,12,1,<NULL>
+com/foo/Bar.java,12,1,<NULL>
+com/foo/Bar.java,40,1,<NULL>
+com/foo/Bar.java,42,1,<NULL>
+com/foo/Bar.java,55,1,<NULL>
+java/lang/Thread.java,833,1,<NULL>
+src/main.rs,2,1,<NULL>

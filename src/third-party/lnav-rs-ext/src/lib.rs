@@ -404,6 +404,8 @@ mod ffi {
 
         fn find_src_file(path: &str) -> String;
 
+        fn source_languages() -> Vec<String>;
+
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
 
         fn set_one_time_password() -> String;
@@ -777,6 +779,21 @@ fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
 
 /// Find a file under the source roots, like one named in a stack trace.  The result is
 /// empty if the file could not be found.
+/// The languages of the log statements found under the source roots, each once, as log2src
+/// names them ("Java", "C++", ...).  Empty when there are no roots or no statements.
+fn source_languages() -> Vec<String> {
+    let matcher = LOG_MATCHER.read().unwrap();
+    let mut retval: Vec<String> = vec![];
+
+    for src_ref in matcher.statements() {
+        let lang = src_ref.language.as_str();
+        if !retval.iter().any(|known| known == lang) {
+            retval.push(lang.to_string());
+        }
+    }
+    retval
+}
+
 fn find_src_file(path_str: &str) -> String {
     let matcher = LOG_MATCHER.read().unwrap();
 

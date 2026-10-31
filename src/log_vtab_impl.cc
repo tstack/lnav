@@ -27,7 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -2064,6 +2066,13 @@ private:
     /** Narrows the cursor's range of lines to the time range. */
     void narrow_by_time();
 
+    /**
+     * Makes the cursor's indexed rows cover the whole scan, for rows that are
+     * known up front (a table's, or a log_line IN list's): add_known_lines()
+     * puts them in once the time range has narrowed the scan.
+     */
+    void cover_scan();
+
     /** Puts the rows the table knew that are inside the scan on the cursor. */
     void add_known_lines();
 
@@ -2083,6 +2092,9 @@ private:
     const std::vector<vis_line_t>* fc_known_lines{nullptr};
     // The rows the table gave, for some or all of the values.
     std::vector<vis_line_t> fc_table_lines;
+    // The rows of a `log_line IN (...)` list, sorted, without duplicates, or
+    // nullopt without one.
+    std::optional<std::vector<vis_line_t>> fc_line_list;
 };
 
 vtab_time_range&
@@ -2114,6 +2126,39 @@ vt_filter_constraints::add(
 #endif
     switch (col) {
         case VT_COL_LINE_NUMBER: {
+            if (op == LNAV_INDEX_CONSTRAINT_IN) {
+                // The whole list at once (vt_best_index asked for it with
+                // sqlite3_vtab_in()): its rows are the scan's, in order, so
+                // ORDER BY log_line ... LIMIT stops early.
+                std::vector<vis_line_t> lines;
+                sqlite3_value* in_val = nullptr;
+                for (auto rc = sqlite3_vtab_in_first(argv[argi], &in_val);
+                     rc == SQLITE_OK && in_val != nullptr;
+                     rc = sqlite3_vtab_in_next(argv[argi], &in_val))
+                {
+                    // NULL = anything is never true, so it matches no rows.
+                    if (sqlite3_value_type(in_val) == SQLITE_NULL) {
+                        continue;
+                    }
+                    lines.emplace_back(sqlite3_value_int64(in_val));
+                }
+                std::sort(lines.begin(), lines.end());
+                lines.erase(std::unique(lines.begin(), lines.end()),
+                            lines.end());
+                if (this->fc_line_list) {
+                    // Another list for log_line: the rows in both.
+                    std::vector<vis_line_t> both;
+                    std::set_intersection(this->fc_line_list->begin(),
+                                          this->fc_line_list->end(),
+                                          lines.begin(),
+                                          lines.end(),
+                                          std::back_inserter(both));
+                    lines = std::move(both);
+                }
+                this->fc_line_list = std::move(lines);
+                break;
+            }
+
             auto vl = vis_line_t(sqlite3_value_int64(argv[argi]));
 
             this->fc_cursor.update(op, vl, log_cursor::constraint_t::unique);
@@ -2492,8 +2537,18 @@ vt_filter_constraints::add_indexed_column(int col,
 void
 vt_filter_constraints::apply()
 {
+    if (this->fc_line_list) {
+        // A log_line IN list says which rows; the indexed columns are left
+        // to SQLite's own check of their constraints on those rows, rather
+        // than looking them up (or scanning to index them) as well.
+        this->fc_cursor.lc_indexed_columns.clear();
+        this->cover_scan();
+    }
     this->narrow_by_index();
     this->narrow_by_time();
+    if (this->fc_line_list) {
+        this->fc_known_lines = &this->fc_line_list.value();
+    }
     this->add_known_lines();
 
     this->fc_cursor.lc_opid_bloom_set = this->fc_opid_bloom_set;
@@ -2559,10 +2614,7 @@ vt_filter_constraints::narrow_by_index()
             // The rows are added once the other constraints have narrowed
             // the scan, below.
             this->fc_cursor.lc_indexed_columns.clear();
-            this->fc_cursor.lc_indexed_lines_range
-                = msg_range::empty()
-                      .expand_to(scan_range.v_min_line)
-                      .expand_to(scan_range.v_max_line - 1_vl);
+            this->cover_scan();
         } else {
             for (const auto& icol : this->fc_cursor.lc_indexed_columns) {
                 auto& coli = this->fc_vt->vi->vi_column_indexes[icol.cc_column];
@@ -2844,6 +2896,25 @@ vt_filter_constraints::narrow_by_time()
 }
 
 void
+vt_filter_constraints::cover_scan()
+{
+    auto& lc = this->fc_cursor;
+    if (lc.lc_curr_line == lc.lc_end_line) {
+        return;
+    }
+    auto scan_range
+        = msg_range::empty()
+              .expand_to(lc.lc_curr_line)
+              .expand_to(lc.lc_end_line
+                         - (lc.lc_direction > 0 ? 1_vl : -1_vl))
+              .get_valid()
+              .value();
+    lc.lc_indexed_lines_range = msg_range::empty()
+                                    .expand_to(scan_range.v_min_line)
+                                    .expand_to(scan_range.v_max_line - 1_vl);
+}
+
+void
 vt_filter_constraints::add_known_lines()
 {
     if (this->fc_known_lines != nullptr) {
@@ -2986,9 +3057,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
             p_info->orderByConsumed = 1;
         }
     }
-    for (int lpc = 0; vt->vi->vi_supports_indexes && lpc < p_info->nConstraint;
-         lpc++)
-    {
+    for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
         const auto& constraint = p_info->aConstraint[lpc];
         if (!constraint.usable || constraint.op == SQLITE_INDEX_CONSTRAINT_MATCH
 #ifdef SQLITE_INDEX_CONSTRAINT_OFFSET
@@ -3006,6 +3075,12 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
 
         auto col = constraint.iColumn;
         auto op = constraint.op;
+        // A table without indexes (a logline table) still takes log_line's
+        // bounds and IN lists: they only narrow the rows the cursor steps
+        // through, and SQLite checks them on each row as well.
+        if (!vt->vi->vi_supports_indexes && col != VT_COL_LINE_NUMBER) {
+            continue;
+        }
         auto colname = vt->vi->get_column_name(col);
         log_debug("  column (%d) %.*s: op: %s",
                   col,
@@ -3017,8 +3092,21 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                 argvInUse += 1;
                 indexes.push_back(constraint);
                 p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
-                index_desc.emplace_back(fmt::format(
-                    FMT_STRING("log_line {} ?"), sql_constraint_op_name(op)));
+                // An IN list (of rows from a subquery, like a stack frame's
+                // from log_stack_frame_rows()) is taken whole: its rows are
+                // read in order, so ORDER BY log_line ... LIMIT stops early.
+                // Asked one value at a time, every row was read first.
+                if (op == SQLITE_INDEX_CONSTRAINT_EQ
+                    && sqlite3_vtab_in(p_info, lpc, -1))
+                {
+                    sqlite3_vtab_in(p_info, lpc, 1);
+                    indexes.back().op = LNAV_INDEX_CONSTRAINT_IN;
+                    index_desc.emplace_back("log_line IN (?)");
+                } else {
+                    index_desc.emplace_back(
+                        fmt::format(FMT_STRING("log_line {} ?"),
+                                    sql_constraint_op_name(op)));
+                }
                 break;
             }
             case VT_COL_LOG_TIME: {

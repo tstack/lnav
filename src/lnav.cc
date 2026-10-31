@@ -3197,6 +3197,7 @@ main(int argc, char* argv[])
     register_fstat_vtab(lnav_data.ld_db.in());
     lnav::events::register_events_tab(lnav_data.ld_db.in());
     register_log_stmt_vtab(lnav_data.ld_db.in());
+    lnav::stmt_stats::register_frame_rows(lnav_data.ld_db.in());
 
 #ifdef HAVE_RUST_DEPS
     {

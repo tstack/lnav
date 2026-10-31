@@ -5126,14 +5126,110 @@ logfile_sub_source::reload_config(error_reporter& reporter)
     }
 }
 
+namespace logfile_sub_source_ns {
+
+std::string
+stack_frame_match::path() const
+{
+    std::string retval;
+    this->append_path(retval);
+    return retval;
+}
+
+void
+stack_frame_match::append_path(std::string& out) const
+{
+    if (this->sfm_pkg) {
+        for (auto ch : this->sfm_pkg.value()) {
+            out.push_back(ch == '.' ? '/' : ch);
+        }
+    }
+    out.append(this->sfm_file.data(), this->sfm_file.length());
+}
+
+std::vector<stack_frame_pattern>
+stack_frame_patterns(const std::vector<source_language_t>& languages)
+{
+    static const auto& cfg = injector::get<const config&>();
+
+    std::vector<stack_frame_pattern> retval;
+    for (const auto& [name, sfd] : cfg.c_stack_frames) {
+        if (!sfd.sfd_enabled || !sfd.sfd_valid) {
+            continue;
+        }
+        if (!languages.empty() && !sfd.sfd_languages.empty()) {
+            auto for_one = std::any_of(
+                sfd.sfd_languages.begin(),
+                sfd.sfd_languages.end(),
+                [&languages](source_language_t lang) {
+                    return std::find(languages.begin(), languages.end(), lang)
+                        != languages.end();
+                });
+            if (!for_one) {
+                continue;
+            }
+        }
+        retval.emplace_back(stack_frame_pattern{&name, &sfd});
+    }
+    return retval;
+}
+
+void
+for_each_stack_frame(const std::vector<stack_frame_pattern>& patterns,
+                     string_fragment sf,
+                     uint32_t options,
+                     const std::function<void(const stack_frame_match&)>& func)
+{
+    if (sf.length() > MAX_STACK_FRAME_SCAN_LENGTH) {
+        return;
+    }
+    // A line is one language's frame, so once a pattern has found one, the
+    // other patterns aren't tried on it.
+    auto found = false;
+    for (const auto& [name_ptr, sfd_ptr] : patterns) {
+        if (found) {
+            break;
+        }
+        const auto& name = *name_ptr;
+        const auto& sfd = *sfd_ptr;
+
+        auto res = sfd.sfd_pattern.pp_value->capture_from(sf)
+                       .with_options(options)
+                       .for_each([&sfd, &func, &found](
+                                     const lnav::pcre2pp::match_data& md) {
+                           auto file_sf = md[sfd.sfd_file_index];
+                           auto line_sf = md[sfd.sfd_line_index];
+                           if (!file_sf || !line_sf || file_sf->empty()) {
+                               return;
+                           }
+
+                           auto sfm = stack_frame_match{
+                               file_sf.value(),
+                               line_sf.value(),
+                           };
+                           if (sfd.sfd_col_index >= 0) {
+                               sfm.sfm_col = md[sfd.sfd_col_index];
+                           }
+                           if (sfd.sfd_pkg_index >= 0) {
+                               sfm.sfm_pkg = md[sfd.sfd_pkg_index];
+                           }
+                           found = true;
+                           func(sfm);
+                       });
+        if (res.isErr()) {
+            auto err = res.unwrapErr();
+            log_error("stack frame pattern %s failed: %s",
+                      name.c_str(),
+                      err.get_message().c_str());
+        }
+    }
+}
+
+}  // namespace logfile_sub_source_ns
+
 void
 logfile_sub_source::add_stack_frame_links()
 {
-    static const auto& cfg
-        = injector::get<const logfile_sub_source_ns::config&>();
-    // Bounds the cost for very long lines, which aren't stack frames.
-    static constexpr auto MAX_SCAN_LENGTH = 8 * 1024;
-
     auto& al = this->lss_token_al;
     auto body = find_string_attr_range(al.al_attrs, &SA_BODY);
     if (!body.is_valid()) {
@@ -5143,9 +5239,6 @@ logfile_sub_source::add_stack_frame_links()
     }
     if (!body.is_valid()) {
         body = line_range{0, static_cast<int>(al.al_string.size())};
-    }
-    if (body.length() > MAX_SCAN_LENGTH) {
-        return;
     }
 
     auto body_sf = string_fragment::from_str_range(
@@ -5159,93 +5252,60 @@ logfile_sub_source::add_stack_frame_links()
         std::string fl_href;
     };
     std::vector<frame_link> links;
-    for (const auto& sf : cfg.c_stack_frames) {
-        const auto& sfd = sf.second;
-        if (!sfd.sfd_enabled || !sfd.sfd_valid) {
-            continue;
-        }
-
-        auto res = sfd.sfd_pattern.pp_value->capture_from(body_sf)
-                       .with_options(this->lss_token_valid_utf
-                                         ? PCRE2_NO_UTF_CHECK
-                                         : 0)
-                       .for_each(
-            [this, &sfd, &links](const lnav::pcre2pp::match_data& md) {
-                auto file_sf = md[sfd.sfd_file_index];
-                auto line_sf = md[sfd.sfd_line_index];
-                if (!file_sf || !line_sf || file_sf->empty()) {
+    // Every pattern, unlike the stack frame counts: a frame in another
+    // language than the source's can still be opened.
+    logfile_sub_source_ns::for_each_stack_frame(
+        logfile_sub_source_ns::stack_frame_patterns(),
+        body_sf,
+        this->lss_token_valid_utf ? PCRE2_NO_UTF_CHECK : 0,
+        [this, &links](const logfile_sub_source_ns::stack_frame_match& sfm) {
+            auto end = sfm.sfm_col ? sfm.sfm_col->sf_end : sfm.sfm_line.sf_end;
+            auto lr = line_range{sfm.sfm_file.sf_begin, end};
+            for (const auto& link : links) {
+                if (link.fl_range.intersects(lr)) {
                     return;
                 }
+            }
 
-                auto end = line_sf->sf_end;
-                std::optional<string_fragment> col_sf;
-                if (sfd.sfd_col_index >= 0) {
-                    col_sf = md[sfd.sfd_col_index];
-                    if (col_sf) {
-                        end = col_sf->sf_end;
-                    }
-                }
-                auto lr = line_range{file_sf->sf_begin, end};
-                for (const auto& link : links) {
-                    if (link.fl_range.intersects(lr)) {
-                        return;
-                    }
-                }
+            auto path = sfm.path();
 
-                std::string path;
-                if (sfd.sfd_pkg_index >= 0) {
-                    auto pkg_sf = md[sfd.sfd_pkg_index];
-                    if (pkg_sf) {
-                        path = pkg_sf->to_string();
-                        std::replace(path.begin(), path.end(), '.', '/');
-                    }
+            // As numbers, when a pattern's captures are digits.
+            auto gen_number = [](yajlpp_map& root,
+                                 const char* key,
+                                 const string_fragment& sf) {
+                int64_t num = 0;
+                auto [ptr, ec] = std::from_chars(sf.begin(), sf.end(), num);
+                if (ec == std::errc{} && ptr == sf.end()) {
+                    root.gen(key);
+                    root.gen(num);
                 }
-                path.append(file_sf->data(), file_sf->length());
-
-                // As numbers, when a pattern's captures are digits.
-                auto gen_number = [](yajlpp_map& root,
-                                     const char* key,
-                                     const string_fragment& sf) {
-                    int64_t num = 0;
-                    auto [ptr, ec] = std::from_chars(sf.begin(), sf.end(), num);
-                    if (ec == std::errc{} && ptr == sf.end()) {
-                        root.gen(key);
-                        root.gen(num);
-                    }
-                };
-                yajlpp_gen gen;
-                {
-                    yajlpp_map root(gen);
-                    root.gen("path");
-                    root.gen(path);
-                    gen_number(root, "line", line_sf.value());
-                    if (col_sf) {
-                        gen_number(root, "col", col_sf.value());
-                    }
+            };
+            yajlpp_gen gen;
+            {
+                yajlpp_map root(gen);
+                root.gen("path");
+                root.gen(path);
+                gen_number(root, "line", sfm.sfm_line);
+                if (sfm.sfm_col) {
+                    gen_number(root, "col", sfm.sfm_col.value());
                 }
-                auto href = std::string();
-                if (this->is_local_source_file(path)) {
-                    href = fmt::format(FMT_STRING("file://{}#L{}"),
-                                       path,
-                                       line_sf->to_string_view());
-                }
-                links.emplace_back(frame_link{
-                    lr,
-                    fmt::format(FMT_STRING("|lnav-stack-frame-handler "
-                                           "$mouse_button '{}' {}"),
-                                shlex::escape(path),
-                                line_sf->to_string_view()),
-                    gen.to_string_fragment().to_string(),
-                    std::move(href),
-                });
+            }
+            auto href = std::string();
+            if (this->is_local_source_file(path)) {
+                href = fmt::format(FMT_STRING("file://{}#L{}"),
+                                   path,
+                                   sfm.sfm_line.to_string_view());
+            }
+            links.emplace_back(frame_link{
+                lr,
+                fmt::format(FMT_STRING("|lnav-stack-frame-handler "
+                                       "$mouse_button '{}' {}"),
+                            shlex::escape(path),
+                            sfm.sfm_line.to_string_view()),
+                gen.to_string_fragment().to_string(),
+                std::move(href),
             });
-        if (res.isErr()) {
-            auto err = res.unwrapErr();
-            log_error("stack frame pattern %s failed: %s",
-                      sf.first.c_str(),
-                      err.get_message().c_str());
-        }
-    }
+        });
 
     for (auto& link : links) {
         al.with_attr(

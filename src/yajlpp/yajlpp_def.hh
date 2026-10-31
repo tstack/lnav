@@ -351,6 +351,7 @@ struct json_path_handler : public json_path_handler_base {
         vector,
         integer_vector,
         string_vector,
+        enum_vector,
         map,
     };
 
@@ -451,6 +452,8 @@ struct json_path_handler : public json_path_handler_base {
                                      && !std::is_same_v<vt, bool>)
                 {
                     return field_kind::integer_vector;
+                } else if constexpr (std::is_enum_v<vt>) {
+                    return field_kind::enum_vector;
                 } else {
                     return field_kind::vector;
                 }
@@ -525,6 +528,11 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args>
     inline static constexpr bool is_integer_vector_field_v
         = (FieldKind<Args...>::inner_kind == field_kind::integer_vector)
+        && !FieldKind<Args...>::is_optional;
+
+    template<typename... Args>
+    inline static constexpr bool is_enum_vector_field_v
+        = (FieldKind<Args...>::inner_kind == field_kind::enum_vector)
         && !FieldKind<Args...>::is_optional;
 
     template<typename... Args>
@@ -693,6 +701,47 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        return *this;
+    }
+
+    /** An array of the enum_values' names, kept as the enum values. */
+    template<typename... Args,
+             std::enable_if_t<is_enum_vector_field_v<Args...>, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        using elem_type = typename VectorInner<
+            typename FieldKind<Args...>::raw_type>::type;
+
+        this->add_cb(str_field_cb2);
+        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                     const string_fragment& value_str,
+                                     yajl_string_props_t*) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* handler = ypc->ypc_current_handler;
+            auto res = handler->to_enum_value(value_str);
+
+            if (res) {
+                json_path_handler::get_field(obj, args...)
+                    .emplace_back((elem_type) res.value());
+            } else {
+                handler->report_enum_error(ypc, value_str.to_string());
+            }
+
+            return 1;
+        };
+        this->jph_gen_callback = make_gen_callback(
+            [](const auto& field,
+               const auto&,
+               const auto& jph,
+               yajl_gen handle) {
+                yajlpp_array arr(handle);
+
+                for (const auto& elem : field) {
+                    arr.gen(jph.to_enum_string(elem));
+                }
+                return yajl_gen_status_ok;
+            },
+            args...);
         return *this;
     }
 

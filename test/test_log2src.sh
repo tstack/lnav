@@ -270,3 +270,140 @@ run_cap_test ${lnav_test} -nN \
 run_cap_test ${lnav_test} -W -n \
     -I ${test_dir}/bad-config-stack-frame \
     ${test_dir}/logfile_stack_frames.0
+
+# log_stack_frames counts, for each location in a stack trace, the messages
+# whose trace has it.  With no source paths, every pattern is used; frames
+# without a line, like "Unknown Source" and "Native Method", aren't counted.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT path, line, hits, src_path FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_stack_frames.0
+
+# In a JSON log, the frames come from the decoded values.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_stack_frames.json
+
+# A message is counted once for a frame, however often the frame is in its
+# trace.
+printf '2024-03-01T10:00:00.000Z ERROR deep\njava.lang.StackOverflowError\n\tat com.foo.Rec.down(Rec.java:5)\n\tat com.foo.Rec.down(Rec.java:5)\n\tat com.foo.Rec.down(Rec.java:5)\n2024-03-01T10:00:01.000Z ERROR again\njava.lang.IllegalStateException: once\n\tat com.foo.Rec.down(Rec.java:5)\n\tat com.foo.Rec.start(Rec.java:9)\n' > stack-frame-repeat.log
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# The counts are for the messages the LOG view shows, after filters.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out again" \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# src_path is the file under the source paths that a frame's path is, found
+# by its trailing directories, or NULL.
+printf '2024-03-01T10:00:00.000Z ERROR server failed\njava.lang.IllegalStateException: boom\n\tat com.example.net.Server.handle(Server.java:14)\n\tat com.example.other.Missing.run(Missing.java:3)\n' > stack-frame-src.log
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT path, line, hits, src_path LIKE '%/log2src/java/com/example/net/Server.java' AS in_source FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-src.log
+
+# Once log2src has found log statements, only the patterns for their
+# languages are used: with Java source, only the Java frames are counted.
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_stack_frames.0
+
+# A stack frame pattern's languages have to be known ones.
+run_cap_test ${lnav_test} -W -n \
+    -I ${test_dir}/bad-config-stack-frame-lang \
+    ${test_dir}/logfile_stack_frames.0
+
+# A JSON message with bytes that aren't UTF-8, and one with a lone low
+# surrogate escape, which is decoded as "?": their frames are still found.
+printf '{"name":"w","hostname":"h","pid":1,"level":50,"msg":"bad \xff byte","time":"2024-03-01T10:00:00.000Z","v":0,"exc":"java.lang.X: x\\n\\tat com.foo.A.b(A.java:1)"}\n{"name":"w","hostname":"h","pid":1,"level":50,"msg":"lone \\udc80 here","time":"2024-03-01T10:00:01.000Z","v":0,"exc":"java.lang.Y: y\\n\\tat com.foo.A.c(A.java:2)"}\n' > stack-frame-utf.json
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-utf.json
+
+run_cap_test ${lnav_test} -n \
+    stack-frame-utf.json
+
+# When more of a message is read, its frames are found again, without
+# counting the earlier ones twice.
+printf '2024-03-01T10:00:00.000Z ERROR boom\njava.lang.X: x\n\tat com.foo.G.a(G.java:1)\n' > stack-frame-grow.log
+printf '\tat com.foo.G.b(G.java:2)\n2024-03-01T10:00:01.000Z ERROR boom2\njava.lang.Y: y\n\tat com.foo.G.a(G.java:1)\n' > stack-frame-grow.more
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT count(*) FROM log_stack_frames" \
+    -c ":sh cat stack-frame-grow.more >> stack-frame-grow.log" \
+    -c ":rebuild" \
+    -c ";SELECT path, line, hits FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-grow.log
+
+# log_stack_frame_rows() lists the rows of the messages with a frame in their
+# stack trace, by its log_stack_frames rowid, in order.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# A frame that isn't in the table, a NULL frame, or no frame at all gives no
+# rows; ORDER BY log_line DESC is SQLite's to sort.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT count(*) FROM log_stack_frame_rows(999999)) AS unknown, (SELECT count(*) FROM log_stack_frame_rows(NULL)) AS null_frame, (SELECT count(*) FROM log_stack_frame_rows) AS no_frame" \
+    -c ":write-csv-to -" \
+    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5)) ORDER BY log_line DESC" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# The rows are the LOG view's, so a message a filter hides isn't listed.
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out again" \
+    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# When more of a message is read, its rows are listed again for the frames it
+# has now, and a message after it is listed too.
+printf '2024-03-01T10:00:00.000Z ERROR boom\njava.lang.X: x\n\tat com.foo.H.a(H.java:1)\n' > stack-frame-grow-rows.log
+printf '\tat com.foo.H.b(H.java:2)\n2024-03-01T10:00:01.000Z ERROR boom2\njava.lang.Y: y\n\tat com.foo.H.a(H.java:1)\n' > stack-frame-grow-rows.more
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT 'before' AS w, log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/H.java' AND line = 1))" \
+    -c ":write-csv-to -" \
+    -c ":sh cat stack-frame-grow-rows.more >> stack-frame-grow-rows.log" \
+    -c ":rebuild" \
+    -c ";SELECT f.line AS frame_line, r.log_line FROM log_stack_frames f, log_stack_frame_rows(f.rowid) r WHERE f.path = 'com/foo/H.java' ORDER BY f.line, r.log_line" \
+    -c ":write-csv-to -" \
+    stack-frame-grow-rows.log
+
+# The same for a log_msg_schema lookup: the grown message has another schema,
+# and it's found by that one, not the one it had before.
+printf '2024-03-01T10:00:00.000Z ERROR boom\njava.lang.X: x\n\tat com.foo.H.a(H.java:1)\n' > stack-frame-grow-schema.log
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM all_logs WHERE log_msg_schema = (SELECT log_msg_schema FROM all_logs WHERE log_line = 0)" \
+    -c ":sh cat stack-frame-grow-rows.more >> stack-frame-grow-schema.log" \
+    -c ":rebuild" \
+    -c ";SELECT log_line FROM all_logs WHERE log_msg_schema = (SELECT log_msg_schema FROM all_logs WHERE log_line = 0)" \
+    -c ":write-csv-to -" \
+    stack-frame-grow-schema.log
+
+# all_logs takes a log_line IN list whole: its rows in order, NULLs and rows
+# that aren't a message's start left out, clipped by other log_line bounds.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM all_logs WHERE log_line IN (5, 0, 1, NULL, 5) ORDER BY log_line DESC" \
+    -c ":write-csv-to -" \
+    -c ";SELECT log_line FROM all_logs WHERE log_line IN (0, 5) AND log_line > 0" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log
+
+# A frame's messages through all_logs; with another term in an OR, the rows
+# are the frame's and the other term's.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 9))) OR log_body LIKE '%deep%' ORDER BY log_line" \
+    -c ":write-csv-to -" \
+    stack-frame-repeat.log

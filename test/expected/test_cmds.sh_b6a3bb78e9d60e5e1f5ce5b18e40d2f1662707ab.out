@@ -4116,7 +4116,7 @@ For support questions, email:
   Return the CSS rules for the classes used in the 'html' output of
   lnav_view_lines(), generated from the current theme.
 [4mSee Also[0m
-  [1mlnav_view_lines()[0m
+  [1mlnav_view_lines()[0m, [1mlog_stack_frame_rows()[0m
 [4mExample[0m
 #1 To get the stylesheet for the current theme:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlnav_theme_css[0m[37m[40m()                           [0m
@@ -4254,7 +4254,7 @@ For support questions, email:
             for a header line.
   [4mcontent[0m   The rendered line.
 [4mSee Also[0m
-  [1mlnav_theme_css()[0m
+  [1mlnav_theme_css()[0m, [1mlog_stack_frame_rows()[0m
 [4mExample[0m
 #1 To get the lines displayed in the log view as HTML:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcontent[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_views[0m[37m[40m, [0m[1m[37m[40mlnav_view_lines[0m[37m[40m([0m[37m[40mname[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m, [0m[37m[40mtop[0m[37m[40m [0m[1m[37m[40m+[0m[37m[40m [0m[37m[40mheight[0m[37m[40m [0m[1m[37m[40m-[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m,[0m
@@ -4309,6 +4309,27 @@ For support questions, email:
 [1;4mlog_msg_line[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the starting line number of the focused log message.
+
+
+[1;4mlog_stack_frame_rows[0m[4m([0m[4mframe[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued function that lists the LOG view rows of the
+  messages with a stack frame in their stack trace, in order, for
+  finding them in all_logs with log_line IN (...).  Until the
+  background task that finds the frames is done, only the messages
+  looked at so far.
+[4mParameter[0m
+  [4mframe[0m   The frame, as its rowid in log_stack_frames.
+[4mResult[0m
+  [4mlog_line[0m   The row of a message with the frame in its
+             stack trace.
+[4mSee Also[0m
+  [1mlnav_theme_css()[0m, [1mlnav_view_lines()[0m
+[4mExample[0m
+#1 To get the messages with a frame in their stack trace:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mall_logs[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[36m[40mIN[0m[37m[40m ([0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[36m[40mFROM[0m
+   [37m[40m   [0m[1m[37m[40mlog_stack_frame_rows[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40m))[0m
+   [1;4mlog_line[0m[1;4m [0m[1;4mlog_body[0m[1;4m [0m
 
 
 [1;4mlog_top_datetime[0m[4m()[0m

@@ -271,8 +271,8 @@ public:
     int get_index_generation() const { return this->lf_index_generation; }
 
     /**
-     * The log statement each line's message came from, kept by
-     * lnav::stmt_stats.  Cleared along with the index.
+     * The log statement each line's message came from, and the stack frames
+     * in it, kept by lnav::stmt_stats.  Cleared along with the index.
      */
     struct stmt_ids {
         /** Statement ids by line number; 0 for lines not looked at yet. */
@@ -285,10 +285,62 @@ public:
          */
         size_t si_verified{0};
 
+        /** The frames of one line, the end of its run in si_frame_ids. */
+        struct frame_line {
+            size_t fl_line;
+            size_t fl_end;
+        };
+
+        /**
+         * The ids of the stack frames in each line's message, from
+         * lnav::stmt_stats' frame table.  Only the lines with frames are in
+         * si_frame_lines, in order, each with where its run of
+         * si_frame_ids ends; the run starts where the one before it ends.
+         * Lines before si_frames_verified have been looked at.  A message's
+         * frames don't depend on the statements, so a source re-scan leaves
+         * them.
+         */
+        std::vector<frame_line> si_frame_lines;
+        std::vector<uint32_t> si_frame_ids;
+        size_t si_frames_verified{0};
+
         void clear()
         {
             this->si_ids.clear();
             this->si_verified = 0;
+            this->reset_frames();
+        }
+
+        /** Forgets every line's frames, so they are found again. */
+        void reset_frames()
+        {
+            this->si_frame_lines.clear();
+            this->si_frame_ids.clear();
+            this->si_frames_verified = 0;
+        }
+
+        /** Sets the frames of line si_frames_verified and moves past it. */
+        void add_frames(const std::vector<uint32_t>& ids)
+        {
+            if (!ids.empty()) {
+                this->si_frame_ids.insert(
+                    this->si_frame_ids.end(), ids.begin(), ids.end());
+                this->si_frame_lines.emplace_back(frame_line{
+                    this->si_frames_verified,
+                    this->si_frame_ids.size(),
+                });
+            }
+            this->si_frames_verified += 1;
+        }
+
+        /** The range of si_frame_ids with the frames of [line]. */
+        std::pair<size_t, size_t> frames_of(size_t line) const
+        {
+            auto iter = this->first_frame_line(line);
+            if (iter == this->si_frame_lines.end() || iter->fl_line != line) {
+                return {0, 0};
+            }
+            return {this->run_start(iter), iter->fl_end};
         }
 
         /** Forgets the lines from [size] on, so they are matched again. */
@@ -298,15 +350,52 @@ public:
                 this->si_ids.resize(size);
             }
             this->si_verified = std::min(this->si_verified, size);
+            if (size < this->si_frames_verified) {
+                auto iter = this->first_frame_line(size);
+                this->si_frame_ids.resize(this->run_start(iter));
+                this->si_frame_lines.erase(iter, this->si_frame_lines.end());
+                this->si_frames_verified = size;
+            }
         }
 
         /** Drops the first [count] lines, as the index does. */
         void discard_front(size_t count)
         {
+            auto kept = this->first_frame_line(count);
+            auto first_kept = this->run_start(kept);
+            this->si_frame_ids.erase(this->si_frame_ids.begin(),
+                                     this->si_frame_ids.begin() + first_kept);
+            this->si_frame_lines.erase(this->si_frame_lines.begin(), kept);
+            for (auto& fl : this->si_frame_lines) {
+                fl.fl_line -= count;
+                fl.fl_end -= first_kept;
+            }
+            this->si_frames_verified
+                -= std::min(this->si_frames_verified, count);
+
             count = std::min(count, this->si_ids.size());
             this->si_ids.erase(this->si_ids.begin(),
                                this->si_ids.begin() + count);
             this->si_verified -= std::min(this->si_verified, count);
+        }
+
+    private:
+        /** The first of si_frame_lines at or after [line]. */
+        std::vector<frame_line>::const_iterator first_frame_line(
+            size_t line) const
+        {
+            return std::lower_bound(
+                this->si_frame_lines.begin(),
+                this->si_frame_lines.end(),
+                line,
+                [](const frame_line& fl, size_t l) { return fl.fl_line < l; });
+        }
+
+        /** Where the run of [iter]'s line starts in si_frame_ids. */
+        size_t run_start(std::vector<frame_line>::const_iterator iter) const
+        {
+            return iter == this->si_frame_lines.begin() ? 0
+                                                        : std::prev(iter)->fl_end;
         }
     };
 

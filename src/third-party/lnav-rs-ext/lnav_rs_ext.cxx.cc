@@ -1217,6 +1217,8 @@ void lnav_rs_ext$cxxbridge1$205$get_log_statements_for(::rust::Str file, ::rust:
 
 void lnav_rs_ext$cxxbridge1$205$find_src_file(::rust::Str path, ::rust::String *return$) noexcept;
 
+void lnav_rs_ext$cxxbridge1$205$source_languages(::rust::Vec<::rust::String> *return$) noexcept;
+
 void lnav_rs_ext$cxxbridge1$205$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$set_one_time_password(::rust::String *return$) noexcept;
@@ -1265,6 +1267,12 @@ void discover_srcs() noexcept {
 ::rust::String find_src_file(::rust::Str path) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
   lnav_rs_ext$cxxbridge1$205$find_src_file(path, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::Vec<::rust::String> source_languages() noexcept {
+  ::rust::MaybeUninit<::rust::Vec<::rust::String>> return$;
+  lnav_rs_ext$cxxbridge1$205$source_languages(&return$.value);
   return ::std::move(return$.value);
 }
 

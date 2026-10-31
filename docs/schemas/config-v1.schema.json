@@ -1306,6 +1306,30 @@
                                     "title": "/log/stack-frames/<name>/pattern",
                                     "description": "A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.",
                                     "type": "string"
+                                },
+                                "languages": {
+                                    "title": "/log/stack-frames/<name>/languages",
+                                    "description": "The source languages whose frames this pattern matches, as Language Server Protocol identifiers.  When log2src has found log statements under the source paths, the stack frame counts only use the patterns for their languages and the patterns without any.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "c",
+                                            "cpp",
+                                            "csharp",
+                                            "fsharp",
+                                            "go",
+                                            "java",
+                                            "javascript",
+                                            "kotlin",
+                                            "php",
+                                            "python",
+                                            "ruby",
+                                            "rust",
+                                            "typescript",
+                                            "vb"
+                                        ]
+                                    }
                                 }
                             },
                             "additionalProperties": false

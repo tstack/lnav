@@ -746,6 +746,30 @@ llline,jgline
 9,8
 EOF
 
+# The log tables take a log_line IN list whole, its rows in order (NULLs and
+# rows that aren't in the table left out): a format's table, a search table
+# (every match in a listed line), and a logline table, which takes log_line's
+# constraints though it has no indexes.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM access_log WHERE log_line IN (2, 0, 99, NULL) ORDER BY log_line DESC" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":create-search-table digits (?<d>\d)" \
+    -c ";SELECT log_line, d FROM digits WHERE log_line IN (2, 0) AND d = '5'" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":create-logline-table join_group" \
+    -c ";SELECT log_line FROM join_group WHERE log_line IN (8, 1, 2, NULL) ORDER BY log_line DESC" \
+    -c ':write-csv-to -' \
+    -c ";SELECT log_line FROM join_group WHERE log_line IN (1, 8) AND log_line < 5" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_for_join.0
+
 
 run_cap_test ${lnav_test} -n \
     -c ";select log_body from syslog_log where log_procname = 'automount'" \

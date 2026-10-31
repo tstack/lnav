@@ -1,0 +1,11 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "log": {
+        "stack-frames": {
+            "cobol-frames": {
+                "pattern": "^\\s+at (?<file>\\S+\\.cbl):(?<line>\\d+)",
+                "languages": ["cobol"]
+            }
+        }
+    }
+}

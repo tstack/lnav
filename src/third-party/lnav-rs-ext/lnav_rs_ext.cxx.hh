@@ -1140,6 +1140,8 @@ void discover_srcs() noexcept;
 
 ::rust::String find_src_file(::rust::Str path) noexcept;
 
+::rust::Vec<::rust::String> source_languages() noexcept;
+
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept;
 
 ::rust::String set_one_time_password() noexcept;

@@ -1,0 +1,6 @@
+path,line,hits
+com/foo/Bar.java,12,1
+com/foo/Bar.java,40,1
+com/foo/Bar.java,42,1
+com/foo/Bar.java,55,1
+java/lang/Thread.java,833,1

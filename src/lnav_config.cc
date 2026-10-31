@@ -1771,6 +1771,32 @@ static const struct json_path_container log_source_watch_handlers = {
         .with_children(log_source_watch_expr_handlers),
 };
 
+/**
+ * The Language Server Protocol's language identifiers, except Kotlin, which
+ * the spec doesn't list; "kotlin" is what its language server uses.
+ */
+static constexpr json_path_handler_base::enum_value_t _source_language_values[]
+    = {
+        {"c"_frag, logfile_sub_source_ns::source_language_t::C},
+        {"cpp"_frag, logfile_sub_source_ns::source_language_t::Cpp},
+        {"csharp"_frag, logfile_sub_source_ns::source_language_t::CSharp},
+        {"fsharp"_frag, logfile_sub_source_ns::source_language_t::FSharp},
+        {"go"_frag, logfile_sub_source_ns::source_language_t::Go},
+        {"java"_frag, logfile_sub_source_ns::source_language_t::Java},
+        {"javascript"_frag,
+         logfile_sub_source_ns::source_language_t::JavaScript},
+        {"kotlin"_frag, logfile_sub_source_ns::source_language_t::Kotlin},
+        {"php"_frag, logfile_sub_source_ns::source_language_t::Php},
+        {"python"_frag, logfile_sub_source_ns::source_language_t::Python},
+        {"ruby"_frag, logfile_sub_source_ns::source_language_t::Ruby},
+        {"rust"_frag, logfile_sub_source_ns::source_language_t::Rust},
+        {"typescript"_frag,
+         logfile_sub_source_ns::source_language_t::TypeScript},
+        {"vb"_frag, logfile_sub_source_ns::source_language_t::VisualBasic},
+
+        json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const typed_json_path_container<logfile_sub_source_ns::stack_frame_def>
     stack_frame_def_handlers = {
         yajlpp::property_handler("enabled")
@@ -1785,6 +1811,16 @@ static const typed_json_path_container<logfile_sub_source_ns::stack_frame_def>
                 "optional.  A 'pkg' capture, like a Java package, is "
                 "turned into the directories that 'file' is in.")
             .for_field(&logfile_sub_source_ns::stack_frame_def::sfd_pattern),
+        yajlpp::property_handler("languages#")
+            .with_synopsis("<language>")
+            .with_description(
+                "The source languages whose frames this pattern matches, as "
+                "Language Server Protocol identifiers.  When log2src has "
+                "found log statements under the source "
+                "paths, the stack frame counts only use the patterns for "
+                "their languages and the patterns without any.")
+            .with_enum_values(_source_language_values)
+            .for_field(&logfile_sub_source_ns::stack_frame_def::sfd_languages),
 };
 
 static const json_path_container stack_frames_handlers = {

@@ -32,6 +32,8 @@
 
 #include <chrono>
 
+struct sqlite3;
+
 namespace lnav::stmt_stats {
 
 /**
@@ -43,6 +45,12 @@ namespace lnav::stmt_stats {
  * @return True if there is more mapping to do.
  */
 bool step(std::chrono::steady_clock::time_point deadline);
+
+/**
+ * Creates the log_stack_frame_rows() table-valued function: a stack frame's
+ * messages' LOG view rows, from the same map.
+ */
+int register_frame_rows(sqlite3* db);
 
 }  // namespace lnav::stmt_stats
 

@@ -1,0 +1,9 @@
+[1m[31m✘[0m [1m[31merror[0m: “cobol” is not a valid value for option “[1m/log/stack-frames/cobol-frames/languages#[0m”
+[36m --> [0m[1m{test_dir}/bad-config-stack-frame-lang/configs/invalid-language/config.json[0m:7
+[36m | [0m[37m[40m                "languages": ["cobol"]  [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/cobol-frames/languages#[0m [4m<language>[0m
+         [1mDescription[0m
+           The source languages whose frames this pattern matches, as Language Server Protocol identifiers.  When log2src has found log statements under the source paths, the stack frame counts only use the patterns for their languages and the patterns without any.
+         [1mAllowed Values[0m
+           [1mc[0m, [1mcpp[0m, [1mcsharp[0m, [1mfsharp[0m, [1mgo[0m, [1mjava[0m, [1mjavascript[0m, [1mkotlin[0m, [1mphp[0m, [1mpython[0m, [1mruby[0m, [1mrust[0m, [1mtypescript[0m, [1mvb[0m

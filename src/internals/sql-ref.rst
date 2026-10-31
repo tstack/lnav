@@ -2909,7 +2909,7 @@ lnav_theme_css()
       .-lnav_log-level-styles_fatal { color: #dc322f; }
 
   **See Also**
-    :ref:`lnav_view_lines`
+    :ref:`lnav_view_lines`, :ref:`log_stack_frame_rows`
 
 ----
 
@@ -2963,7 +2963,7 @@ lnav_view_lines(*view_name*, *\[first_line\]*, *\[last_line\]*, *\[format\]*, *\
       content 
 
   **See Also**
-    :ref:`lnav_theme_css`
+    :ref:`lnav_theme_css`, :ref:`log_stack_frame_rows`
 
 ----
 
@@ -3039,6 +3039,30 @@ log_msg_line()
 
   **PRQL Name**: lnav.view.msg_line
 
+
+----
+
+
+.. _log_stack_frame_rows:
+
+log_stack_frame_rows(*frame*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued function that lists the LOG view rows of the messages with a stack frame in their stack trace, in order, for finding them in all_logs with log_line IN (...).  Until the background task that finds the frames is done, only the messages looked at so far.
+
+  **Parameters**
+    * **frame\*** --- The frame, as its rowid in log_stack_frames.
+
+  **Examples**
+    To get the messages with a frame in their stack trace:
+
+    .. code-block::  custsqlite
+
+      ;SELECT log_line, log_body FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows(0))
+      log_line log_body 
+
+  **See Also**
+    :ref:`lnav_theme_css`, :ref:`lnav_view_lines`
 
 ----
 

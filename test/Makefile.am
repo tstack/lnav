@@ -271,6 +271,7 @@ dist_noinst_DATA = \
 	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
 	bad-config-stack-frame/configs/invalid-stack-frame/config.json \
+	bad-config-stack-frame-lang/configs/invalid-language/config.json \
 	bad-config2/configs/invalid-annotation/config.json \
 	bad-config2/configs/invalid-theme/config.json \
 	bad-config2/formats/invalid-config/config.json \

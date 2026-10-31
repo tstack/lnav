@@ -38,34 +38,44 @@
         },
         "stack-frames": {
             "java": {
-                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)[\\w$]+\\.[\\w$<>]+\\((?<file>[^:()]+):(?<line>\\d+)\\)"
+                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)[\\w$]+\\.[\\w$<>]+\\((?<file>[^:()]+):(?<line>\\d+)\\)",
+                "languages": ["java", "kotlin"]
             },
             "python": {
-                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)"
+                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)",
+                "languages": ["python"]
             },
             "rust": {
-                "pattern": "(?:panicked at (?:'.*', )?|^\\s+at )(?<file>[^\\s:'\"()]+\\.rs):(?<line>\\d+)(?::(?<col>\\d+))?"
+                "pattern": "(?:panicked at (?:'.*', )?|^\\s+at )(?<file>[^\\s:'\"()]+\\.rs):(?<line>\\d+)(?::(?<col>\\d+))?",
+                "languages": ["rust"]
             },
             "go": {
-                "pattern": "^\\s+(?<file>/\\S+\\.go):(?<line>\\d+)"
+                "pattern": "^\\s+(?<file>/\\S+\\.go):(?<line>\\d+)",
+                "languages": ["go"]
             },
             "node": {
-                "pattern": "^\\s+at (?:.+ \\()?(?:file://)?(?<file>[^\\s()]+\\.[cm]?[jt]sx?):(?<line>\\d+):(?<col>\\d+)\\)?"
+                "pattern": "^\\s+at (?:.+ \\()?(?:file://)?(?<file>[^\\s()]+\\.[cm]?[jt]sx?):(?<line>\\d+):(?<col>\\d+)\\)?",
+                "languages": ["javascript", "typescript"]
             },
             "dotnet": {
-                "pattern": "^\\s+at .+ in (?<file>.+\\.(?:cs|fs|vb)):line (?<line>\\d+)"
+                "pattern": "^\\s+at .+ in (?<file>.+\\.(?:cs|fs|vb)):line (?<line>\\d+)",
+                "languages": ["csharp", "fsharp", "vb"]
             },
             "ruby": {
-                "pattern": "(?<file>[^\\s:]+\\.rb):(?<line>\\d+):in\\b"
+                "pattern": "(?<file>[^\\s:]+\\.rb):(?<line>\\d+):in\\b",
+                "languages": ["ruby"]
             },
             "php": {
-                "pattern": "#\\d+ (?<file>[^\\s()]+\\.php)\\((?<line>\\d+)\\)"
+                "pattern": "#\\d+ (?<file>[^\\s()]+\\.php)\\((?<line>\\d+)\\)",
+                "languages": ["php"]
             },
             "php-error": {
-                "pattern": " in (?<file>/\\S+\\.php)(?: on line |:)(?<line>\\d+)"
+                "pattern": " in (?<file>/\\S+\\.php)(?: on line |:)(?<line>\\d+)",
+                "languages": ["php"]
             },
             "cxx": {
-                "pattern": "^\\s*#\\d+\\s.*?\\s(?<file>[^\\s:()]+\\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|m|mm)):(?<line>\\d+)(?::(?<col>\\d+))?"
+                "pattern": "^\\s*#\\d+\\s.*?\\s(?<file>[^\\s:()]+\\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|m|mm)):(?<line>\\d+)(?::(?<col>\\d+))?",
+                "languages": ["c", "cpp"]
             }
         },
         "demux": {

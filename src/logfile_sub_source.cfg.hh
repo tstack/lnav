@@ -30,8 +30,10 @@
 #ifndef lnav_logfile_sub_source_cfg_hh
 #define lnav_logfile_sub_source_cfg_hh
 
+#include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "pcrepp/pcre2pp.hh"
 #include "yajlpp/yajlpp.hh"
@@ -50,6 +52,28 @@ struct watch_expression {
 };
 
 /**
+ * A source language whose stack frames a /log/stack-frames pattern matches.
+ * Declared ahead in logfile_sub_source.hh, so the underlying type is spelled
+ * out.
+ */
+enum class source_language_t : uint8_t {
+    C,
+    Cpp,
+    CSharp,
+    FSharp,
+    Go,
+    Java,
+    JavaScript,
+    Kotlin,
+    Php,
+    Python,
+    Ruby,
+    Rust,
+    TypeScript,
+    VisualBasic,
+};
+
+/**
  * A pattern for a frame in a stack trace.  The "file" and "line" captures
  * are required, "col" and "pkg" (a dotted package that is turned into a
  * directory prefix of the file) are optional.
@@ -57,6 +81,11 @@ struct watch_expression {
 struct stack_frame_def {
     bool sfd_enabled{true};
     factory_container<lnav::pcre2pp::code> sfd_pattern;
+    /**
+     * The source languages whose frames the pattern matches.  Empty for a
+     * pattern that's always used.
+     */
+    std::vector<source_language_t> sfd_languages;
 
     /** Set when the pattern has passed the checks in reload_config(). */
     bool sfd_valid{false};
