@@ -345,26 +345,26 @@ run_cap_test ${lnav_test} -n \
     -c ":write-csv-to -" \
     stack-frame-grow.log
 
-# log_stack_frame_rows() lists the rows of the messages with a frame in their
-# stack trace, by its log_stack_frames rowid, in order.
+# log_stack_frame_rows(NULL, NULL, frame) lists the rows of the messages with a
+# frame in their stack trace, by its log_stack_frames rowid, in order.
 run_cap_test ${lnav_test} -n \
-    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
+    -c ";SELECT log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
     -c ":write-csv-to -" \
     stack-frame-repeat.log
 
-# A frame that isn't in the table, a NULL frame, or no frame at all gives no
+# A frame that isn't in the table, NULLs, or no arguments at all give no
 # rows; ORDER BY log_line DESC is SQLite's to sort.
 run_cap_test ${lnav_test} -n \
-    -c ";SELECT (SELECT count(*) FROM log_stack_frame_rows(999999)) AS unknown, (SELECT count(*) FROM log_stack_frame_rows(NULL)) AS null_frame, (SELECT count(*) FROM log_stack_frame_rows) AS no_frame" \
+    -c ";SELECT (SELECT count(*) FROM log_stack_frame_rows(NULL, NULL, 999999)) AS unknown, (SELECT count(*) FROM log_stack_frame_rows(NULL, NULL, NULL)) AS null_frame, (SELECT count(*) FROM log_stack_frame_rows) AS no_frame" \
     -c ":write-csv-to -" \
-    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5)) ORDER BY log_line DESC" \
+    -c ";SELECT log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5)) ORDER BY log_line DESC" \
     -c ":write-csv-to -" \
     stack-frame-repeat.log
 
 # The rows are the LOG view's, so a message a filter hides isn't listed.
 run_cap_test ${lnav_test} -n \
     -c ":filter-out again" \
-    -c ";SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
+    -c ";SELECT log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 5))" \
     -c ":write-csv-to -" \
     stack-frame-repeat.log
 
@@ -373,11 +373,11 @@ run_cap_test ${lnav_test} -n \
 printf '2024-03-01T10:00:00.000Z ERROR boom\njava.lang.X: x\n\tat com.foo.H.a(H.java:1)\n' > stack-frame-grow-rows.log
 printf '\tat com.foo.H.b(H.java:2)\n2024-03-01T10:00:01.000Z ERROR boom2\njava.lang.Y: y\n\tat com.foo.H.a(H.java:1)\n' > stack-frame-grow-rows.more
 run_cap_test ${lnav_test} -n \
-    -c ";SELECT 'before' AS w, log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/H.java' AND line = 1))" \
+    -c ";SELECT 'before' AS w, log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/H.java' AND line = 1))" \
     -c ":write-csv-to -" \
     -c ":sh cat stack-frame-grow-rows.more >> stack-frame-grow-rows.log" \
     -c ":rebuild" \
-    -c ";SELECT f.line AS frame_line, r.log_line FROM log_stack_frames f, log_stack_frame_rows(f.rowid) r WHERE f.path = 'com/foo/H.java' ORDER BY f.line, r.log_line" \
+    -c ";SELECT f.line AS frame_line, r.log_line FROM log_stack_frames f, log_stack_frame_rows(NULL, NULL, f.rowid) r WHERE f.path = 'com/foo/H.java' ORDER BY f.line, r.log_line" \
     -c ":write-csv-to -" \
     stack-frame-grow-rows.log
 
@@ -404,6 +404,59 @@ run_cap_test ${lnav_test} -n \
 # A frame's messages through all_logs; with another term in an OR, the rows
 # are the frame's and the other term's.
 run_cap_test ${lnav_test} -n \
-    -c ";SELECT log_line FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows((SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 9))) OR log_body LIKE '%deep%' ORDER BY log_line" \
+    -c ";SELECT log_line FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE path = 'com/foo/Rec.java' AND line = 9))) OR log_body LIKE '%deep%' ORDER BY log_line" \
     -c ":write-csv-to -" \
     stack-frame-repeat.log
+
+# log_stack_frame_rows(src_path, line) lists the rows of the messages with a
+# frame at that line of the file under the source paths, each once, however
+# many of its frames match; without a line, any line in the file.
+printf '2024-03-01T10:00:00.000Z ERROR both\njava.lang.IllegalStateException: a\n\tat com.example.net.Server.handle(Server.java:14)\n\tat com.example.net.Server.run(Server.java:20)\n\tat com.example.net.Server.handle(Server.java:14)\n2024-03-01T10:00:01.000Z ERROR fourteen\njava.lang.IllegalStateException: b\n\tat com.example.net.Server.handle(Server.java:14)\n2024-03-01T10:00:02.000Z ERROR twenty\njava.lang.IllegalStateException: c\n\tat com.example.net.Server.run(Server.java:20)\n2024-03-01T10:00:03.000Z ERROR elsewhere\njava.lang.IllegalStateException: d\n\tat com.example.other.Missing.run(Missing.java:3)\n' > stack-frame-loc.log
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT 'line 14' AS q, log_line FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java', 14)" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'file' AS q, log_line FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java')" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'no such line' AS q, count(*) AS rows FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java', 15)" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'no such file' AS q, count(*) AS rows FROM log_stack_frame_rows('com/example/net/Server.java', 14)" \
+    -c ":write-csv-to -" \
+    stack-frame-loc.log
+
+# With a frame as well as a location, only that frame's messages, if it's at
+# the location.
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT 'at it' AS q, log_line FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java', NULL, (SELECT rowid FROM log_stack_frames WHERE line = 20))" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'elsewhere' AS q, count(*) AS rows FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java', NULL, (SELECT rowid FROM log_stack_frames WHERE line = 3))" \
+    -c ":write-csv-to -" \
+    stack-frame-loc.log
+
+# A location's messages through all_logs, in order.
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT log_line, log_body FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows('${test_dir}/log2src/java/com/example/net/Server.java', 20)) ORDER BY log_line" \
+    -c ":write-csv-to -" \
+    stack-frame-loc.log
+
+# Frames whose paths are the same file under the source paths are one
+# location in log_stack_frames, however the traces write the path, and a
+# message with both is counted once; a frame that isn't in the source paths
+# is its own location.
+printf '2024-03-01T10:00:00.000Z ERROR both\nTraceback (most recent call last):\n  File "/build/agent1/app/log_example.py", line 12, in main\n  File "/home/ci/app/log_example.py", line 12, in main\nValueError: a\n2024-03-01T10:00:01.000Z ERROR one\nTraceback (most recent call last):\n  File "/build/agent1/app/log_example.py", line 12, in main\nValueError: b\n2024-03-01T10:00:02.000Z ERROR other\nTraceback (most recent call last):\n  File "/home/ci/app/log_example.py", line 12, in main\n  File "/home/ci/app/log_example.py", line 20, in run\n  File "/usr/lib/python3/json.py", line 7, in loads\nValueError: c\n' > stack-frame-spellings.log
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/python" \
+    -c ";SELECT path, line, hits, src_path FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'line 12' AS q, log_line FROM log_stack_frame_rows('${test_dir}/log2src/python/log_example.py', 12)" \
+    -c ":write-csv-to -" \
+    -c ";SELECT 'by rowid' AS q, log_line FROM log_stack_frame_rows(NULL, NULL, (SELECT rowid FROM log_stack_frames WHERE line = 12))" \
+    -c ":write-csv-to -" \
+    stack-frame-spellings.log
+
+# A rowid where the source path goes is an error that says how to pass one.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM log_stack_frame_rows(0)" \
+    stack-frame-loc.log

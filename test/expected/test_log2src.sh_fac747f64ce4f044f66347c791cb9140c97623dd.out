@@ -1,0 +1,11 @@
+q,log_line
+line 14,0
+line 14,5
+q,log_line
+file,0
+file,5
+file,8
+q,rows
+no such line,0
+q,rows
+no such file,0

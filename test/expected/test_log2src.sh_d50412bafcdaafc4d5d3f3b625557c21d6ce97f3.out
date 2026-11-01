@@ -1,0 +1,9 @@
+log_line,log_body
+0,"both
+java.lang.IllegalStateException: a
+	at com.example.net.Server.handle(Server.java:14)
+	at com.example.net.Server.run(Server.java:20)
+	at com.example.net.Server.handle(Server.java:14)"
+8,"twenty
+java.lang.IllegalStateException: c
+	at com.example.net.Server.run(Server.java:20)"

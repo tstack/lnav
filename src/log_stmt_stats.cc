@@ -189,9 +189,81 @@ struct stack_frame_hasher {
     }
 };
 
+using frame_id = logfile::stmt_ids::frame_id;
+
 /** Frame ids by frame. */
 using stack_frame_ids
-    = std::unordered_map<stack_frame, uint32_t, stack_frame_hasher>;
+    = std::unordered_map<stack_frame, frame_id, stack_frame_hasher>;
+
+/**
+ * A source location's id, its log_stack_frames rowid.  Locations are only
+ * ever appended, so an id stays valid while lnav runs.
+ */
+struct location_id
+    : type_safe::strong_typedef<location_id, uint32_t>
+    , type_safe::strong_typedef_op::equality_comparison<location_id>
+    , type_safe::strong_typedef_op::relational_comparison<location_id> {
+    using strong_typedef::strong_typedef;
+};
+
+/**
+ * Where frames are in the source: a line of a file under the source roots,
+ * which frames with different paths in their traces can be at, or, for a
+ * frame whose path isn't a file there, the path as the trace has it.
+ */
+struct frame_location {
+    /** The file under the source roots, or nullopt for a frame's own. */
+    std::optional<std::string> loc_src_path;
+    /**
+     * The path in the trace of the first frame found at the location.  In
+     * sm_frame_arena, like the frames' paths.
+     */
+    string_key loc_path;
+    int64_t loc_line{0};
+};
+
+/** What frame_location ids are keyed by: its file under the roots, or not. */
+struct location_key {
+    bool lk_in_src{false};
+    std::string lk_path;
+    int64_t lk_line{0};
+
+    bool operator==(const location_key& rhs) const
+    {
+        return this->lk_in_src == rhs.lk_in_src && this->lk_line == rhs.lk_line
+            && this->lk_path == rhs.lk_path;
+    }
+};
+
+struct location_key_hasher {
+    size_t operator()(const location_key& lk) const
+    {
+        size_t h1 = std::hash<std::string>{}(lk.lk_path);
+        auto h2 = std::hash<int64_t>{}(lk.lk_line * 2 + lk.lk_in_src);
+        return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+    }
+};
+
+/**
+ * The frames a log_stack_frame_rows() call asks for: the ones that match all
+ * of the given parts.
+ */
+struct frame_query {
+    /** The file under the source roots that the frame's path is. */
+    std::optional<std::string> fq_src_path;
+    /** The frame's line, as the trace has it. */
+    std::optional<int64_t> fq_line;
+    /** The frame's location, as its log_stack_frames rowid. */
+    std::optional<int64_t> fq_frame;
+
+    bool operator==(const frame_query& rhs) const
+    {
+        return this->fq_src_path == rhs.fq_src_path
+            && this->fq_line == rhs.fq_line && this->fq_frame == rhs.fq_frame;
+    }
+
+    bool operator!=(const frame_query& rhs) const { return !(*this == rhs); }
+};
 
 struct stmt_map {
     /** Set by the first query of the summary table. */
@@ -243,16 +315,27 @@ struct stmt_map {
     size_t sm_frame_resets{0};
 
     /**
-     * Each frame's LOG view rows, ascending, for all_logs' log_stack_frame
-     * constraints, kept like sm_rows.  Only rows whose frames have been
-     * found are in it: fr_row_count stops at the first one that hasn't.
+     * The LOG view rows, ascending, of the messages with a frame that matches
+     * the last log_stack_frame_rows() query; kept like sm_rows while the
+     * query stays the same.  Rows before fr_row_count are in it; the scan
+     * stops at the first row whose file's frames haven't been found yet, and
+     * picks up there on the next call.
      */
     struct frame_rows {
-        std::vector<std::vector<vis_line_t>> fr_rows;
+        frame_query fr_query;
+        /**
+         * Whether each of sm_frames matches fr_query, by id.  Frames found
+         * since are checked on the next call; the rows already read can't
+         * have them, since a row's frames are found before it's read.
+         */
+        std::vector<bool> fr_frames;
+        std::vector<vis_line_t> fr_rows;
         bool fr_valid{false};
         uint64_t fr_index_change_seq{0};
         uint32_t fr_index_generation{0};
         size_t fr_resets{0};
+        /** The sm_frame_locations_generation fr_frames was checked with. */
+        size_t fr_locations_generation{0};
         size_t fr_row_count{0};
     } sm_frame_rows;
     /**
@@ -281,6 +364,103 @@ struct stmt_map {
      * rows' src_paths are out of date.
      */
     size_t sm_frame_src_generation{0};
+
+    /**
+     * The frames' source locations, by location id.  Only ever appended: a
+     * location keeps its id while lnav runs, even once no frame is at it.
+     */
+    std::deque<frame_location> sm_locations;
+    /** The ids of sm_locations. */
+    std::unordered_map<location_key, location_id, location_key_hasher>
+        sm_location_ids;
+    /** Each of sm_frames' location, by frame id. */
+    std::vector<location_id> sm_frame_locations;
+    /** The sm_frame_src_generation that sm_frame_locations is from. */
+    size_t sm_frame_locations_src_generation{0};
+    /**
+     * Set when a frame's file couldn't be looked up during a source scan, so
+     * it's at its own location for now and they're all found again next time.
+     */
+    bool sm_frame_locations_pending{false};
+    /**
+     * Bumped when frames already in sm_frame_locations may have moved to
+     * another location, unlike frames found since getting theirs.
+     */
+    size_t sm_frame_locations_generation{0};
+
+    /** The location of frame [id], added to sm_locations if it's new. */
+    location_id locate_frame(size_t id, bool& pending)
+    {
+        const auto& frame = this->sm_frames[id];
+        auto src = this->frame_src(frame.f_path, pending);
+        location_key key;
+        if (src) {
+            key.lk_in_src = true;
+            key.lk_path = src.value();
+        } else {
+            key.lk_path = frame.f_path.to_frag().to_string();
+        }
+        key.lk_line = frame.f_line;
+
+        auto iter = this->sm_location_ids.find(key);
+        if (iter != this->sm_location_ids.end()) {
+            return iter->second;
+        }
+        auto retval
+            = location_id(static_cast<uint32_t>(this->sm_locations.size()));
+        this->sm_locations.emplace_back(frame_location{
+            std::move(src),
+            frame.f_path,
+            frame.f_line,
+        });
+        this->sm_location_ids.emplace(std::move(key), retval);
+        return retval;
+    }
+
+    /**
+     * Brings sm_frame_locations up to date: the frames found since get
+     * theirs, and all of them do again after a source scan, which can change
+     * the files under the roots, or when some were left pending.
+     */
+    void sync_frame_locations()
+    {
+        this->sync_frame_src();
+        if (this->sm_frame_locations_src_generation
+                != this->sm_frame_src_generation
+            || this->sm_frame_locations_pending)
+        {
+            this->sm_frame_locations.clear();
+            this->sm_frame_locations_src_generation
+                = this->sm_frame_src_generation;
+            this->sm_frame_locations_generation += 1;
+        }
+        auto pending = false;
+        for (auto id = this->sm_frame_locations.size();
+             id < this->sm_frames.size();
+             id++)
+        {
+            this->sm_frame_locations.push_back(this->locate_frame(id, pending));
+        }
+        this->sm_frame_locations_pending = pending;
+    }
+
+    /**
+     * Forgets the frames' files under the source roots after a source scan
+     * finishes, since it may have added or removed files.
+     */
+    void sync_frame_src()
+    {
+#ifdef HAVE_RUST_DEPS
+        auto ext = lnav_rs_ext::get_status();
+        if (ext.status != lnav_rs_ext::Status::working
+            && this->sm_frame_src_version != ext.version)
+        {
+            this->sm_frame_src.clear();
+            this->sm_frame_src_version = ext.version;
+            this->sm_frame_src_generation += 1;
+        }
+#endif
+    }
 
     /**
      * [path]'s file under the source roots, or nullopt when there's none.
@@ -376,7 +556,7 @@ struct stmt_map {
      * shared table.  The cache's keys are copies of the shared frames, so
      * their paths are in sm_frame_arena too.
      */
-    uint32_t intern_frame_cached(stack_frame_ids& cache,
+    frame_id intern_frame_cached(stack_frame_ids& cache,
                                  const stack_frame& frame)
     {
         auto iter = cache.find(frame);
@@ -384,7 +564,7 @@ struct stmt_map {
             return iter->second;
         }
 
-        uint32_t id;
+        frame_id id;
         stack_frame owned;
         {
             std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
@@ -393,7 +573,7 @@ struct stmt_map {
                 id = shared_iter->second;
                 owned = shared_iter->first;
             } else {
-                id = static_cast<uint32_t>(this->sm_frames.size());
+                id = frame_id(static_cast<uint32_t>(this->sm_frames.size()));
                 owned = stack_frame{
                     frame.f_path.to_owned(this->sm_frame_arena),
                     frame.f_line,
@@ -481,7 +661,7 @@ struct stmt_map {
         /** The path of the frame being looked up. */
         std::string ms_frame_path;
         /** The frames found in the current message. */
-        std::vector<uint32_t> ms_frames;
+        std::vector<frame_id> ms_frames;
     };
 
     /**
@@ -1023,7 +1203,6 @@ CREATE TABLE lnav_db.log_stmt_stats (
 struct log_stack_frames_vtab
     : public tvt_iterator_cursor<log_stack_frames_vtab> {
     struct row {
-        std::optional<std::string> r_src_path;
         int64_t r_hits;
         int64_t r_first_time;
         int64_t r_last_time;
@@ -1031,26 +1210,28 @@ struct log_stack_frames_vtab
         int r_bucket_shift;
     };
 
-    /** By frame id, which is the rowid. */
-    using iterator = std::map<uint32_t, row>::iterator;
+    /** By location id, which is the rowid. */
+    using iterator = std::map<location_id, row>::iterator;
 
     static constexpr const char* NAME = "log_stack_frames";
     static constexpr const char* CREATE_STMT = R"(
 -- The locations in the stack traces of multi-line messages in the LOG view,
 -- after filters, as the /log/stack-frames patterns find them, with the number
--- of messages that have each one.  When log2src has found log statements
+-- of messages that have each one.  Frames whose paths are the same file under
+-- the source paths are one location, however their traces write the path.  When log2src has found log statements
 -- under the source paths (see :add-source-path), only the patterns for their
 -- languages are used (/log/stack-frames/<name>/languages).  Querying this
 -- table starts the background task that log_stmt_stats does; until it
 -- finishes, the counts cover only the messages looked at so far.
 CREATE TABLE lnav_db.log_stack_frames (
-    path TEXT,           -- The frame's file as the trace has it, with a Java
-                         -- frame's package as directories.
-    line INTEGER,        -- The frame's line number.
+    path TEXT,           -- The file as the trace has it, with a Java frame's
+                         -- package as directories; for a location in
+                         -- src_path, as the first frame found there has it.
+    line INTEGER,        -- The line number.
     src_path TEXT,       -- The file under the source roots (see
                          -- :add-source-path) that the path is, or NULL.
-    hits INTEGER,        -- The number of messages with the frame, each
-                         -- counted once however often the frame is in it.
+    hits INTEGER,        -- The number of messages with a frame at the
+                         -- location, each counted once however often.
     first_time INTEGER,  -- The log_time_msecs of its first message.
     last_time INTEGER,   -- The log_time_msecs of its last message.
     buckets TEXT,        -- A JSON array of [key, count] for its message times,
@@ -1063,7 +1244,7 @@ CREATE TABLE lnav_db.log_stack_frames (
 );
 )";
 
-    std::map<uint32_t, row> lsf_rows;
+    std::map<location_id, row> lsf_rows;
     int64_t lsf_mapped{0};
     int64_t lsf_total{0};
     std::optional<std::tuple<uint64_t, uint32_t, size_t, size_t, size_t>>
@@ -1078,10 +1259,14 @@ CREATE TABLE lnav_db.log_stack_frames (
     iterator end() { return this->lsf_rows.end(); }
 
     /**
-     * The frame's id: stable while lnav runs, since frames are never removed
-     * or renumbered, so it's what all_logs.log_stack_frame takes.
+     * The location's id: stable while lnav runs, since locations are never
+     * removed or renumbered, so it's what log_stack_frame_rows() takes.  A
+     * source scan can move a frame to another location, though.
      */
-    sqlite3_int64 get_rowid(iterator iter) { return iter->first; }
+    sqlite3_int64 get_rowid(iterator iter)
+    {
+        return type_safe::get(iter->first);
+    }
 
     void refresh()
     {
@@ -1099,29 +1284,20 @@ CREATE TABLE lnav_db.log_stack_frames (
             sm.sync_files(lss);
         }
 
-#ifdef HAVE_RUST_DEPS
-        // A finished source scan may have added or removed files.
-        auto ext = lnav_rs_ext::get_status();
-        if (ext.status != lnav_rs_ext::Status::working
-            && sm.sm_frame_src_version != ext.version)
-        {
-            sm.sm_frame_src.clear();
-            sm.sm_frame_src_version = ext.version;
-            sm.sm_frame_src_generation += 1;
-        }
-#endif
+        sm.sync_frame_locations();
 
         auto key = std::make_tuple(lss.lss_index_change_seq,
                                    lss.lss_index_generation,
                                    sm.sm_frame_changes,
                                    lss.text_line_count(),
-                                   sm.sm_frame_src_generation);
+                                   sm.sm_frame_locations_generation);
         if (this->lsf_rows_key == key) {
             return;
         }
         this->lsf_rows_key = key;
 
-        std::vector<stmt_totals> totals(sm.sm_frames.size());
+        std::vector<stmt_totals> totals(sm.sm_locations.size());
+        std::vector<uint32_t> locs;
         int64_t mapped = 0;
         int64_t total = 0;
         const auto row_count = lss.text_line_count();
@@ -1147,16 +1323,24 @@ CREATE TABLE lnav_db.log_stack_frames (
             if (lo == hi) {
                 continue;
             }
-            auto t = ll->get_time<std::chrono::milliseconds>().count();
+            // Two of a message's frames can be at the same location, but it's
+            // counted once there.
+            locs.clear();
             for (auto index = lo; index < hi; index++) {
-                totals[si.si_frame_ids[index]].add(t);
+                locs.push_back(type_safe::get(sm.sm_frame_locations[type_safe::get(
+                    si.si_frame_ids[index])]));
+            }
+            std::sort(locs.begin(), locs.end());
+            locs.erase(std::unique(locs.begin(), locs.end()), locs.end());
+            auto t = ll->get_time<std::chrono::milliseconds>().count();
+            for (auto loc : locs) {
+                totals[loc].add(t);
             }
         }
 
         this->lsf_rows.clear();
         this->lsf_mapped = mapped;
         this->lsf_total = total;
-        auto pending = false;
         for (uint32_t id = 0; id < totals.size(); id++) {
             auto& st = totals[id];
             if (st.st_hits == 0) {
@@ -1164,18 +1348,16 @@ CREATE TABLE lnav_db.log_stack_frames (
             }
 
             auto [buckets, shift] = st.buckets();
-            this->lsf_rows.emplace(
-                id,
-                row{
-                    sm.frame_src(sm.sm_frames[id].f_path, pending),
-                    st.st_hits,
-                    st.st_first_time,
-                    st.st_last_time,
-                    std::move(buckets),
-                    shift,
-                });
+            this->lsf_rows.emplace(location_id(id),
+                                   row{
+                                       st.st_hits,
+                                       st.st_first_time,
+                                       st.st_last_time,
+                                       std::move(buckets),
+                                       shift,
+                                   });
         }
-        if (pending) {
+        if (sm.sm_frame_locations_pending) {
             // Some paths couldn't be looked up during a source scan: do them
             // the next time.
             this->lsf_rows_key = std::nullopt;
@@ -1185,23 +1367,23 @@ CREATE TABLE lnav_db.log_stack_frames (
     int get_column(cursor& vc, sqlite3_context* ctx, int col)
     {
         const auto& [id, r] = *vc.iter;
-        const auto& frame = get_map().sm_frames[id];
+        const auto& loc = get_map().sm_locations[type_safe::get(id)];
 
         switch (col) {
             // A frame's path is never freed or changed (see sm_frames), so
             // SQLite can take it without a copy.
             case 0:
                 sqlite3_result_text(ctx,
-                                    frame.f_path.to_frag().data(),
-                                    frame.f_path.to_frag().length(),
+                                    loc.loc_path.to_frag().data(),
+                                    loc.loc_path.to_frag().length(),
                                     SQLITE_STATIC);
                 break;
             case 1:
-                to_sqlite(ctx, frame.f_line);
+                to_sqlite(ctx, loc.loc_line);
                 break;
             case 2:
-                if (r.r_src_path) {
-                    to_sqlite(ctx, r.r_src_path.value());
+                if (loc.loc_src_path) {
+                    to_sqlite(ctx, loc.loc_src_path.value());
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -1402,14 +1584,33 @@ schema_lines(const std::vector<std::string>& schemas,
     }
 }
 
+/** Whether frame [id]'s location matches [q]. */
+static bool
+frame_matches(const stmt_map& sm, const frame_query& q, size_t id)
+{
+    auto loc_id = sm.sm_frame_locations[id];
+    if (q.fq_frame && q.fq_frame.value() != (int64_t) type_safe::get(loc_id))
+    {
+        return false;
+    }
+    const auto& loc = sm.sm_locations[type_safe::get(loc_id)];
+    if (q.fq_line && q.fq_line.value() != loc.loc_line) {
+        return false;
+    }
+    if (q.fq_src_path) {
+        return loc.loc_src_path
+            && loc.loc_src_path.value() == q.fq_src_path.value();
+    }
+    return true;
+}
+
 /**
- * The LOG view rows of the messages whose stack traces have the frame (an id in
- * sm_frames, a log_stack_frames rowid), ascending, for log_stack_frame_rows();
- * null for no such frame.  Until the map is done, only the messages looked at
- * so far.  Good until the next call.
+ * The LOG view rows, ascending, of the messages whose stack traces have a
+ * frame that matches [q], for log_stack_frame_rows().  Until the map is done,
+ * only the messages looked at so far.  Good until the next call.
  */
-static const std::vector<vis_line_t>*
-frame_rows(int64_t frame, logfile_sub_source& lss)
+static const std::vector<vis_line_t>&
+frame_rows(logfile_sub_source& lss, const frame_query& q)
 {
     auto& sm = get_map();
 
@@ -1423,15 +1624,31 @@ frame_rows(int64_t frame, logfile_sub_source& lss)
         lnav::stmt_stats::step(std::chrono::steady_clock::now()
                                + std::chrono::milliseconds(100));
     }
+    sm.sync_frame_locations();
 
     auto& fr = sm.sm_frame_rows;
+    if (fr.fr_query != q || fr.fr_resets != sm.sm_frame_resets
+        || fr.fr_locations_generation != sm.sm_frame_locations_generation)
+    {
+        fr.fr_valid = false;
+    }
+    if (!fr.fr_valid) {
+        fr.fr_query = q;
+        fr.fr_frames.clear();
+        fr.fr_rows.clear();
+        fr.fr_row_count = 0;
+    }
+
+    for (auto id = fr.fr_frames.size(); id < sm.sm_frames.size(); id++) {
+        fr.fr_frames.push_back(frame_matches(sm, q, id));
+    }
+
     const auto row_count = lss.text_line_count();
-    auto trim_from
-        = rows_changed_from(lss,
-                            fr.fr_valid && fr.fr_resets == sm.sm_frame_resets,
-                            fr.fr_index_change_seq,
-                            fr.fr_index_generation,
-                            fr.fr_row_count);
+    auto trim_from = rows_changed_from(lss,
+                                       fr.fr_valid,
+                                       fr.fr_index_change_seq,
+                                       fr.fr_index_generation,
+                                       fr.fr_row_count);
     {
         auto from = message_start_row(
             lss,
@@ -1442,14 +1659,12 @@ frame_rows(int64_t frame, logfile_sub_source& lss)
         }
     }
     if (trim_from) {
-        const auto end = vis_line_t(trim_from.value());
-        for (auto& rows : fr.fr_rows) {
-            rows.erase(std::lower_bound(rows.begin(), rows.end(), end),
-                       rows.end());
-        }
+        fr.fr_rows.erase(std::lower_bound(fr.fr_rows.begin(),
+                                          fr.fr_rows.end(),
+                                          vis_line_t(trim_from.value())),
+                         fr.fr_rows.end());
         fr.fr_row_count = std::min(fr.fr_row_count, trim_from.value());
     }
-    fr.fr_rows.resize(sm.sm_frames.size());
 
     auto vl = fr.fr_row_count;
     for (; vl < row_count; vl++) {
@@ -1465,30 +1680,36 @@ frame_rows(int64_t frame, logfile_sub_source& lss)
         }
         auto [lo, hi] = si.frames_of(line_number);
         for (auto index = lo; index < hi; index++) {
-            fr.fr_rows[si.si_frame_ids[index]].push_back(vis_line_t(vl));
+            if (fr.fr_frames[type_safe::get(si.si_frame_ids[index])]) {
+                fr.fr_rows.emplace_back(vl);
+                break;
+            }
         }
     }
+    // With a file that couldn't be looked up, the frames' locations are found
+    // again next time, which starts this over.
     fr.fr_valid = true;
     fr.fr_row_count = vl;
     fr.fr_index_change_seq = lss.lss_index_change_seq;
     fr.fr_index_generation = lss.lss_index_generation;
     fr.fr_resets = sm.sm_frame_resets;
+    fr.fr_locations_generation = sm.sm_frame_locations_generation;
 
-    if (frame < 0 || (size_t) frame >= fr.fr_rows.size()) {
-        return nullptr;
-    }
-    return &fr.fr_rows[frame];
+    return fr.fr_rows;
 }
 
 enum class frame_rows_col : int {
     log_line,
+    src_path,
+    line,
     frame,
 };
 
 /**
  * The log_stack_frame_rows() table-valued function: the LOG view rows of the
- * messages with a stack frame in their trace, for finding them in all_logs
- * with `log_line IN (SELECT log_line FROM log_stack_frame_rows(?))`.
+ * messages with a stack frame at a source location in their trace, for
+ * finding them in all_logs with
+ * `log_line IN (SELECT log_line FROM log_stack_frame_rows(?, ?))`.
  */
 struct log_stack_frame_rows {
     static constexpr const char* NAME = "log_stack_frame_rows";
@@ -1497,16 +1718,23 @@ struct log_stack_frame_rows {
 -- the messages with a stack frame in their trace.
 CREATE TABLE lnav_db.log_stack_frame_rows (
     log_line INTEGER,     -- The row of a message with the frame in its stack trace.
-    frame INTEGER HIDDEN  -- The frame, as its log_stack_frames rowid.
+    src_path TEXT HIDDEN, -- The frame's file under the source paths, as log_stack_frames.src_path has it.
+    line INTEGER HIDDEN,  -- The frame's line; any line in the file when NULL.
+    frame INTEGER HIDDEN  -- The location, as its log_stack_frames rowid.
 );
 )";
 
+    /** idxNum bits: which of the hidden columns were given, in this order. */
+    static constexpr int HAS_SRC_PATH = 1;
+    static constexpr int HAS_LINE = 2;
+    static constexpr int HAS_FRAME = 4;
+
     struct cursor {
         sqlite3_vtab_cursor base;
-        /** A copy: the map's lists can move on the next call. */
+        /** A copy: the map's list can change on the next call. */
         std::vector<vis_line_t> c_rows;
         size_t c_index{0};
-        std::optional<int64_t> c_frame;
+        frame_query c_query;
 
         explicit cursor(sqlite3_vtab* vt) : base({vt}) {}
 
@@ -1523,16 +1751,49 @@ CREATE TABLE lnav_db.log_stack_frame_rows (
         {
             this->c_rows.clear();
             this->c_index = 0;
-            this->c_frame = std::nullopt;
-            if (argc < 1 || sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+            this->c_query = frame_query{};
+
+            // A NULL for a part leaves it out, so the parts after it can be
+            // given by position.
+            int argi = 0;
+            if (idxNum & HAS_SRC_PATH) {
+                auto* val = argv[argi++];
+                switch (sqlite3_value_type(val)) {
+                    case SQLITE_NULL:
+                        break;
+                    case SQLITE_TEXT:
+                        this->c_query.fq_src_path
+                            = (const char*) sqlite3_value_text(val);
+                        break;
+                    default:
+                        this->base.pVtab->zErrMsg = sqlite3_mprintf(
+                            "%s: expecting a source path as the first "
+                            "argument; for a frame's rowid, use "
+                            "%s(NULL, NULL, rowid)",
+                            NAME,
+                            NAME);
+                        return SQLITE_ERROR;
+                }
+            }
+            if (idxNum & HAS_LINE) {
+                auto* val = argv[argi++];
+                if (sqlite3_value_type(val) != SQLITE_NULL) {
+                    this->c_query.fq_line = sqlite3_value_int64(val);
+                }
+            }
+            if (idxNum & HAS_FRAME) {
+                auto* val = argv[argi++];
+                if (sqlite3_value_type(val) != SQLITE_NULL) {
+                    this->c_query.fq_frame = sqlite3_value_int64(val);
+                }
+            }
+            // Without a file or a frame, it would be every message with a
+            // trace, which isn't what this is for.
+            if (!this->c_query.fq_src_path && !this->c_query.fq_frame) {
                 return SQLITE_OK;
             }
-            this->c_frame = sqlite3_value_int64(argv[0]);
-            const auto* rows
-                = frame_rows(this->c_frame.value(), lnav_data.ld_log_source);
-            if (rows != nullptr) {
-                this->c_rows = *rows;
-            }
+
+            this->c_rows = frame_rows(lnav_data.ld_log_source, this->c_query);
             return SQLITE_OK;
         }
 
@@ -1551,8 +1812,14 @@ CREATE TABLE lnav_db.log_stack_frame_rows (
             case frame_rows_col::log_line:
                 to_sqlite(ctx, (int64_t) vc.c_rows[vc.c_index]);
                 break;
+            case frame_rows_col::src_path:
+                to_sqlite(ctx, vc.c_query.fq_src_path);
+                break;
+            case frame_rows_col::line:
+                to_sqlite(ctx, vc.c_query.fq_line);
+                break;
             case frame_rows_col::frame:
-                to_sqlite(ctx, vc.c_frame);
+                to_sqlite(ctx, vc.c_query.fq_frame);
                 break;
         }
         return SQLITE_OK;
@@ -1560,21 +1827,49 @@ CREATE TABLE lnav_db.log_stack_frame_rows (
 
     int best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     {
-        auto has_frame = false;
+        static constexpr std::pair<frame_rows_col, int> HIDDEN[] = {
+            {frame_rows_col::src_path, HAS_SRC_PATH},
+            {frame_rows_col::line, HAS_LINE},
+            {frame_rows_col::frame, HAS_FRAME},
+        };
+
+        int used[3] = {-1, -1, -1};
         for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
             const auto& cons = p_info->aConstraint[lpc];
-            if (has_frame || !cons.usable
-                || cons.iColumn != (int) frame_rows_col::frame
-                || cons.op != SQLITE_INDEX_CONSTRAINT_EQ)
-            {
+            if (cons.op != SQLITE_INDEX_CONSTRAINT_EQ) {
                 continue;
             }
-            // The rows are exactly the frame's, so SQLite needn't check.
-            p_info->aConstraintUsage[lpc].argvIndex = 1;
-            p_info->aConstraintUsage[lpc].omit = 1;
-            has_frame = true;
+            if (!cons.usable) {
+                // An argument from another table (`f.rowid` in a join) isn't
+                // known in this plan; without it, the query would be another
+                // one, so make SQLite pick a plan that has it.
+                for (const auto& hidden : HIDDEN) {
+                    if (cons.iColumn == (int) hidden.first) {
+                        return SQLITE_CONSTRAINT;
+                    }
+                }
+                continue;
+            }
+            for (size_t hi = 0; hi < 3; hi++) {
+                if (cons.iColumn == (int) HIDDEN[hi].first && used[hi] == -1) {
+                    used[hi] = lpc;
+                }
+            }
         }
-        if (has_frame) {
+
+        int idx_num = 0;
+        int argv_index = 0;
+        for (size_t hi = 0; hi < 3; hi++) {
+            if (used[hi] == -1) {
+                continue;
+            }
+            // The rows are exactly the query's, so SQLite needn't check.
+            p_info->aConstraintUsage[used[hi]].argvIndex = ++argv_index;
+            p_info->aConstraintUsage[used[hi]].omit = 1;
+            idx_num |= HIDDEN[hi].second;
+        }
+        p_info->idxNum = idx_num;
+        if (idx_num & (HAS_SRC_PATH | HAS_FRAME)) {
             p_info->estimatedCost = 1.0;
             p_info->estimatedRows = 100;
         } else {
@@ -1941,22 +2236,37 @@ register_frame_rows(sqlite3* db)
     static auto frame_rows_help
         = help_text(log_stack_frame_rows::NAME,
                     "A table-valued function that lists the LOG view rows of "
-                    "the messages with a stack frame in their stack trace, "
-                    "in order, for finding them in all_logs with "
-                    "log_line IN (...).  Until the background task that "
-                    "finds the frames is done, only the messages looked at "
-                    "so far.")
+                    "the messages with a stack frame at a source location in "
+                    "their stack trace, in order, for finding them in "
+                    "all_logs with log_line IN (...).  A message is listed "
+                    "once, however many of its frames match.  Until the "
+                    "background task that finds the frames is done, only the "
+                    "messages looked at so far.")
               .sql_table_valued_function()
+              .with_parameter({"src_path",
+                               "The file under the source paths, as "
+                               "log_stack_frames.src_path has it."})
               .with_parameter(
-                  {"frame", "The frame, as its rowid in log_stack_frames."})
+                  help_text{"line",
+                            "The line in the file.  Any line, if not given."}
+                      .optional())
+              .with_parameter(help_text{"frame",
+                                        "A location's rowid in "
+                                        "log_stack_frames, to list the "
+                                        "messages with a frame there instead.  "
+                                        "Pass NULL for src_path and line to "
+                                        "use it alone."}
+                                  .optional())
               .with_result({"log_line",
                             "The row of a message with the frame in its "
                             "stack trace."})
               .with_tags({"text"})
               .with_example({
-                  "To get the messages with a frame in their stack trace",
+                  "To get the messages with a frame at a line of a file in "
+                  "their stack trace",
                   "SELECT log_line, log_body FROM all_logs WHERE log_line IN "
-                  "(SELECT log_line FROM log_stack_frame_rows(0))",
+                  "(SELECT log_line FROM "
+                  "log_stack_frame_rows('/src/app/Foo.java', 83))",
               });
 
     auto rc = FRAME_ROWS_MODULE.create(db, log_stack_frame_rows::NAME);

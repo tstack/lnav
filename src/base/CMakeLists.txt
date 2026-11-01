@@ -115,6 +115,8 @@ add_library(
 target_include_directories(base PUBLIC . .. ../third-party
         ../third-party/date/include
         ../third-party/parallel_hashmap
+        ../third-party/type_safe/include
+        ../third-party/debug_assert
         ${CMAKE_CURRENT_BINARY_DIR}/..
 )
 target_link_libraries(base

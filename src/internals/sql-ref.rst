@@ -3045,20 +3045,22 @@ log_msg_line()
 
 .. _log_stack_frame_rows:
 
-log_stack_frame_rows(*frame*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+log_stack_frame_rows(*src_path*, *\[line\]*, *\[frame\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  A table-valued function that lists the LOG view rows of the messages with a stack frame in their stack trace, in order, for finding them in all_logs with log_line IN (...).  Until the background task that finds the frames is done, only the messages looked at so far.
+  A table-valued function that lists the LOG view rows of the messages with a stack frame at a source location in their stack trace, in order, for finding them in all_logs with log_line IN (...).  A message is listed once, however many of its frames match.  Until the background task that finds the frames is done, only the messages looked at so far.
 
   **Parameters**
-    * **frame\*** --- The frame, as its rowid in log_stack_frames.
+    * **src_path\*** --- The file under the source paths, as log_stack_frames.src_path has it.
+    * **line** --- The line in the file.  Any line, if not given.
+    * **frame** --- A location's rowid in log_stack_frames, to list the messages with a frame there instead.  Pass NULL for src_path and line to use it alone.
 
   **Examples**
-    To get the messages with a frame in their stack trace:
+    To get the messages with a frame at a line of a file in their stack trace:
 
     .. code-block::  custsqlite
 
-      ;SELECT log_line, log_body FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows(0))
+      ;SELECT log_line, log_body FROM all_logs WHERE log_line IN (SELECT log_line FROM log_stack_frame_rows('/src/app/Foo.java', 83))
       log_line log_body 
 
   **See Also**

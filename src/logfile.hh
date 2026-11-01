@@ -62,6 +62,7 @@
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
+#include "type_safe/strong_typedef.hpp"
 #include "unique_path.hh"
 
 /**
@@ -270,6 +271,21 @@ public:
 
     int get_index_generation() const { return this->lf_index_generation; }
 
+    /** A line number in this file. */
+    struct file_line
+        : type_safe::strong_typedef<file_line, uint32_t>
+        , type_safe::strong_typedef_op::equality_comparison<file_line>
+        , type_safe::strong_typedef_op::relational_comparison<file_line>
+        , type_safe::strong_typedef_op::subtraction<file_line> {
+        using strong_typedef::strong_typedef;
+    };
+
+    /** [line], which is below MAX_LINES, so it fits. */
+    static file_line to_file_line(size_t line)
+    {
+        return file_line(static_cast<uint32_t>(line));
+    }
+
     /**
      * The log statement each line's message came from, and the stack frames
      * in it, kept by lnav::stmt_stats.  Cleared along with the index.
@@ -285,11 +301,30 @@ public:
          */
         size_t si_verified{0};
 
+        /**
+         * A stack frame's id: its index in lnav::stmt_stats' frame table,
+         * which is also its log_stack_frames rowid.
+         */
+        struct frame_id
+            : type_safe::strong_typedef<frame_id, uint32_t>
+            , type_safe::strong_typedef_op::equality_comparison<frame_id>
+            , type_safe::strong_typedef_op::relational_comparison<frame_id> {
+            using strong_typedef::strong_typedef;
+        };
+
+        /** An offset into si_frame_ids. */
+        struct frame_ids_offset
+            : type_safe::strong_typedef<frame_ids_offset, uint32_t>
+            , type_safe::strong_typedef_op::subtraction<frame_ids_offset> {
+            using strong_typedef::strong_typedef;
+        };
+
         /** The frames of one line, the end of its run in si_frame_ids. */
         struct frame_line {
-            size_t fl_line;
-            size_t fl_end;
+            file_line fl_line;
+            frame_ids_offset fl_end;
         };
+        static_assert(sizeof(frame_line) == 8);
 
         /**
          * The ids of the stack frames in each line's message, from
@@ -301,7 +336,7 @@ public:
          * them.
          */
         std::vector<frame_line> si_frame_lines;
-        std::vector<uint32_t> si_frame_ids;
+        std::vector<frame_id> si_frame_ids;
         size_t si_frames_verified{0};
 
         void clear()
@@ -320,14 +355,16 @@ public:
         }
 
         /** Sets the frames of line si_frames_verified and moves past it. */
-        void add_frames(const std::vector<uint32_t>& ids)
+        void add_frames(const std::vector<frame_id>& ids)
         {
             if (!ids.empty()) {
                 this->si_frame_ids.insert(
                     this->si_frame_ids.end(), ids.begin(), ids.end());
+                require_lt(this->si_frame_ids.size(), UINT32_MAX);
                 this->si_frame_lines.emplace_back(frame_line{
-                    this->si_frames_verified,
-                    this->si_frame_ids.size(),
+                    to_file_line(this->si_frames_verified),
+                    frame_ids_offset(
+                        static_cast<uint32_t>(this->si_frame_ids.size())),
                 });
             }
             this->si_frames_verified += 1;
@@ -336,11 +373,13 @@ public:
         /** The range of si_frame_ids with the frames of [line]. */
         std::pair<size_t, size_t> frames_of(size_t line) const
         {
-            auto iter = this->first_frame_line(line);
-            if (iter == this->si_frame_lines.end() || iter->fl_line != line) {
+            auto fline = to_file_line(line);
+            auto iter = this->first_frame_line(fline);
+            if (iter == this->si_frame_lines.end() || iter->fl_line != fline) {
                 return {0, 0};
             }
-            return {this->run_start(iter), iter->fl_end};
+            return {type_safe::get(this->run_start(iter)),
+                    type_safe::get(iter->fl_end)};
         }
 
         /** Forgets the lines from [size] on, so they are matched again. */
@@ -351,8 +390,9 @@ public:
             }
             this->si_verified = std::min(this->si_verified, size);
             if (size < this->si_frames_verified) {
-                auto iter = this->first_frame_line(size);
-                this->si_frame_ids.resize(this->run_start(iter));
+                auto iter = this->first_frame_line(to_file_line(size));
+                this->si_frame_ids.resize(
+                    type_safe::get(this->run_start(iter)));
                 this->si_frame_lines.erase(iter, this->si_frame_lines.end());
                 this->si_frames_verified = size;
             }
@@ -361,13 +401,15 @@ public:
         /** Drops the first [count] lines, as the index does. */
         void discard_front(size_t count)
         {
-            auto kept = this->first_frame_line(count);
+            auto count_lines = to_file_line(count);
+            auto kept = this->first_frame_line(count_lines);
             auto first_kept = this->run_start(kept);
-            this->si_frame_ids.erase(this->si_frame_ids.begin(),
-                                     this->si_frame_ids.begin() + first_kept);
+            this->si_frame_ids.erase(
+                this->si_frame_ids.begin(),
+                this->si_frame_ids.begin() + type_safe::get(first_kept));
             this->si_frame_lines.erase(this->si_frame_lines.begin(), kept);
             for (auto& fl : this->si_frame_lines) {
-                fl.fl_line -= count;
+                fl.fl_line -= count_lines;
                 fl.fl_end -= first_kept;
             }
             this->si_frames_verified
@@ -382,20 +424,23 @@ public:
     private:
         /** The first of si_frame_lines at or after [line]. */
         std::vector<frame_line>::const_iterator first_frame_line(
-            size_t line) const
+            file_line line) const
         {
-            return std::lower_bound(
-                this->si_frame_lines.begin(),
-                this->si_frame_lines.end(),
-                line,
-                [](const frame_line& fl, size_t l) { return fl.fl_line < l; });
+            return std::lower_bound(this->si_frame_lines.begin(),
+                                    this->si_frame_lines.end(),
+                                    line,
+                                    [](const frame_line& fl, file_line l) {
+                                        return fl.fl_line < l;
+                                    });
         }
 
         /** Where the run of [iter]'s line starts in si_frame_ids. */
-        size_t run_start(std::vector<frame_line>::const_iterator iter) const
+        frame_ids_offset run_start(
+            std::vector<frame_line>::const_iterator iter) const
         {
-            return iter == this->si_frame_lines.begin() ? 0
-                                                        : std::prev(iter)->fl_end;
+            return iter == this->si_frame_lines.begin()
+                ? frame_ids_offset(0)
+                : std::prev(iter)->fl_end;
         }
     };
 
@@ -717,10 +762,7 @@ public:
     Result<shared_buffer_ref, std::string> read_range(const file_range& fr);
 
     /** The first of the lines a message was rendered into. */
-    iterator line_base(iterator ll)
-    {
-        return ll - this->sub_line_index(ll);
-    }
+    iterator line_base(iterator ll) { return ll - this->sub_line_index(ll); }
 
     const_iterator line_base(const_iterator ll) const
     {

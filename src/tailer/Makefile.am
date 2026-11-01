@@ -64,7 +64,9 @@ libtailerservice_a_CPPFLAGS = \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/digestible/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
-	-I$(top_srcdir)/src/third-party/scnlib/include
+	-I$(top_srcdir)/src/third-party/scnlib/include \
+	-I$(top_srcdir)/src/third-party/type_safe/include \
+	-I$(top_srcdir)/src/third-party/debug_assert
 
 libtailerservice_a_SOURCES = \
     tailerbin.cc \

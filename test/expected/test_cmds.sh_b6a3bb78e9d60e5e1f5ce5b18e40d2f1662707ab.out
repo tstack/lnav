@@ -4311,24 +4311,31 @@ For support questions, email:
   Return the starting line number of the focused log message.
 
 
-[1;4mlog_stack_frame_rows[0m[4m([0m[4mframe[0m[4m)[0m
+[1;4mlog_stack_frame_rows[0m[4m([0m[4msrc_path[0m[4m, [[0m[4mline[0m[4m], [[0m[4mframe[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued function that lists the LOG view rows of the
-  messages with a stack frame in their stack trace, in order, for
-  finding them in all_logs with log_line IN (...).  Until the
-  background task that finds the frames is done, only the messages
-  looked at so far.
-[4mParameter[0m
-  [4mframe[0m   The frame, as its rowid in log_stack_frames.
+  messages with a stack frame at a source location in their stack
+  trace, in order, for finding them in all_logs with log_line IN
+  (...).  A message is listed once, however many of its frames match.
+  Until the background task that finds the frames is done, only the
+  messages looked at so far.
+[4mParameters[0m
+  [4msrc_path[0m   The file under the source paths, as
+             log_stack_frames.src_path has it.
+  [4mline[0m       The line in the file.  Any line, if not
+             given.
+  [4mframe[0m      A location's rowid in log_stack_frames, to
+             list the messages with a frame there instead.  Pass NULL
+             for src_path and line to use it alone.
 [4mResult[0m
   [4mlog_line[0m   The row of a message with the frame in its
              stack trace.
 [4mSee Also[0m
   [1mlnav_theme_css()[0m, [1mlnav_view_lines()[0m
 [4mExample[0m
-#1 To get the messages with a frame in their stack trace:
+#1 To get the messages with a frame at a line of a file in their stack trace:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mall_logs[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[36m[40mIN[0m[37m[40m ([0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[36m[40mFROM[0m
-   [37m[40m   [0m[1m[37m[40mlog_stack_frame_rows[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40m))[0m
+   [37m[40m   [0m[1m[37m[40mlog_stack_frame_rows[0m[37m[40m([0m[35m[40m'/src/app/Foo.java'[0m[37m[40m, [0m[1m[37m[40m83[0m[37m[40m))[0m
    [1;4mlog_line[0m[1;4m [0m[1;4mlog_body[0m[1;4m [0m
 
 

@@ -31,6 +31,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/third-party \
 	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/digestible/include \
+	-I$(top_srcdir)/src/third-party/type_safe/include \
+	-I$(top_srcdir)/src/third-party/debug_assert \
 	-I$(top_srcdir)/src/third-party/cpp-HyperLogLog/include \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \

@@ -189,6 +189,8 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party/lnav-rs-ext \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(srcdir)/third-party/hat-trie/include \
+	-I$(srcdir)/third-party/type_safe/include \
+	-I$(srcdir)/third-party/debug_assert \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-I$(top_srcdir)/src/third-party/scnlib/src/deps \
 	-Wall \
@@ -693,6 +695,8 @@ EXTRA_DIST = \
     third-party/lnav-rs-ext/cbindgen.toml \
     third-party/lnav-rs-ext/src/lib.rs \
     third-party/lnav-rs-ext/src/ext_access.rs \
+    third-party/type_safe \
+    third-party/debug_assert \
 	ptimec.cc
 
 CLEANFILES = \

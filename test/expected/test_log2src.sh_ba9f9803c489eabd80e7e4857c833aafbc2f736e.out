@@ -1,0 +1,12 @@
+path,line,hits,src_path
+/build/agent1/app/log_example.py,12,3,{test_dir}/log2src/python/log_example.py
+/home/ci/app/log_example.py,20,1,{test_dir}/log2src/python/log_example.py
+/usr/lib/python3/json.py,7,1,<NULL>
+q,log_line
+line 12,0
+line 12,5
+line 12,9
+q,log_line
+by rowid,0
+by rowid,5
+by rowid,9
