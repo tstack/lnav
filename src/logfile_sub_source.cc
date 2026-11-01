@@ -5114,6 +5114,7 @@ logfile_sub_source::reload_config(error_reporter& reporter)
         sfd.sfd_line_index = pat->name_index("line");
         sfd.sfd_col_index = pat->name_index("col");
         sfd.sfd_pkg_index = pat->name_index("pkg");
+        sfd.sfd_func_index = pat->name_index("func");
         if (sfd.sfd_file_index < 0) {
             reporter(&sfd.sfd_pattern,
                      lnav::console::user_message::error(
@@ -5218,6 +5219,9 @@ for_each_stack_frame(const std::vector<source_language_t>& languages,
                            }
                            if (sfd.sfd_pkg_index >= 0) {
                                sfm.sfm_pkg = md[sfd.sfd_pkg_index];
+                           }
+                           if (sfd.sfd_func_index >= 0) {
+                               sfm.sfm_func = md[sfd.sfd_func_index];
                            }
                            found = true;
                            func(sfm);

@@ -72,6 +72,8 @@ struct stack_frame_match {
     string_fragment sfm_line;
     std::optional<string_fragment> sfm_col;
     std::optional<string_fragment> sfm_pkg;
+    /** The function the frame is in, as the trace names it. */
+    std::optional<string_fragment> sfm_func;
 
     /** The frame's file, with the "pkg" capture before it as directories. */
     std::string path() const;

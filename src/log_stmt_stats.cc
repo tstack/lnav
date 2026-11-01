@@ -167,16 +167,24 @@ struct statement {
 };
 
 /**
- * A location in a stack trace: a path as the trace has it and a line.  In
- * sm_frames, the path is in stmt_map's sm_frame_arena.
+ * A location in a stack trace: a path as the trace has it and a line, and the
+ * function the trace says it's in, if the pattern captures one (invalid when
+ * not).  In sm_frames, the path and function are in stmt_map's
+ * sm_frame_arena.
  */
 struct stack_frame {
     string_key f_path;
     int64_t f_line{0};
+    string_key f_func;
 
     bool operator==(const stack_frame& rhs) const
     {
-        return this->f_line == rhs.f_line && this->f_path == rhs.f_path;
+        if (this->f_line != rhs.f_line || this->f_path != rhs.f_path
+            || this->f_func.is_valid() != rhs.f_func.is_valid())
+        {
+            return false;
+        }
+        return !this->f_func.is_valid() || this->f_func == rhs.f_func;
     }
 };
 
@@ -185,6 +193,9 @@ struct stack_frame_hasher {
     {
         size_t h1 = sf.f_path.hash();
         auto h2 = std::hash<int64_t>{}(sf.f_line);
+        if (sf.f_func.is_valid()) {
+            h2 ^= sf.f_func.hash() * 0x9e3779b97f4a7c15ULL;
+        }
         return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
     }
 };
@@ -388,6 +399,41 @@ struct stmt_map {
      */
     size_t sm_frame_locations_generation{0};
 
+    /**
+     * The function names in the frames, for log_stack_frames.functions: name
+     * id - 1 is the index in sm_func_names, and 0 is no name.  Only appended,
+     * like the frames, whose arena holds the names.
+     */
+    std::deque<string_key> sm_func_names;
+    std::unordered_map<string_key, uint32_t, frag_hasher, frag_equal>
+        sm_func_ids;
+    /** Each of sm_frames' function name id, by frame id. */
+    std::vector<uint32_t> sm_frame_funcs;
+
+    /** Gives the frames found since their function name ids. */
+    void sync_frame_funcs()
+    {
+        for (auto id = this->sm_frame_funcs.size(); id < this->sm_frames.size();
+             id++)
+        {
+            const auto& func = this->sm_frames[id].f_func;
+            if (!func.is_valid() || func.to_frag().empty()) {
+                this->sm_frame_funcs.push_back(0);
+                continue;
+            }
+            auto iter = this->sm_func_ids.find(func);
+            if (iter == this->sm_func_ids.end()) {
+                this->sm_func_names.push_back(func);
+                iter = this->sm_func_ids
+                           .emplace(func,
+                                    static_cast<uint32_t>(
+                                        this->sm_func_names.size()))
+                           .first;
+            }
+            this->sm_frame_funcs.push_back(iter->second);
+        }
+    }
+
     /** The location of frame [id], added to sm_locations if it's new. */
     location_id locate_frame(size_t id, bool& pending)
     {
@@ -577,6 +623,7 @@ struct stmt_map {
                 owned = stack_frame{
                     frame.f_path.to_owned(this->sm_frame_arena),
                     frame.f_line,
+                    frame.f_func.to_owned(this->sm_frame_arena),
                 };
                 this->sm_frames.emplace_back(owned);
                 this->sm_frame_ids.emplace(owned, id);
@@ -703,6 +750,8 @@ struct stmt_map {
                       stack_frame{
                           string_key::from(string_fragment::from_str(path)),
                           line,
+                          sfm.sfm_func ? string_key::from(sfm.sfm_func.value())
+                                       : string_key::invalid(),
                       }));
               };
         auto scan_lines = [this, &options, &on_frame](string_fragment text) {
@@ -1208,6 +1257,8 @@ struct log_stack_frames_vtab
         int64_t r_last_time;
         std::string r_buckets;
         int r_bucket_shift;
+        /** The functions column's JSON, or nullopt without any names. */
+        std::optional<std::string> r_functions;
     };
 
     /** By location id, which is the rowid. */
@@ -1239,6 +1290,11 @@ CREATE TABLE lnav_db.log_stack_frames (
                          -- are at most 32 buckets.
     bucket_shift INTEGER,-- How far the keys were merged: each bucket covers
                          -- 4096 << bucket_shift milliseconds.
+    functions TEXT,      -- A JSON array of [name, count] for the functions the
+                         -- traces say the location is in (a pattern's 'func'
+                         -- capture), most messages first, or NULL when none
+                         -- are named.  Traces from builds where the line was
+                         -- in another function name more than one.
     mapped INTEGER HIDDEN, -- The messages in the LOG view looked at so far.
     total INTEGER HIDDEN   -- The messages in the LOG view.
 );
@@ -1296,8 +1352,13 @@ CREATE TABLE lnav_db.log_stack_frames (
         }
         this->lsf_rows_key = key;
 
+        sm.sync_frame_funcs();
+
         std::vector<stmt_totals> totals(sm.sm_locations.size());
         std::vector<uint32_t> locs;
+        // A message's (location, function name id) pairs, and their counts.
+        std::vector<uint64_t> loc_funcs;
+        std::unordered_map<uint64_t, int64_t> func_hits;
         int64_t mapped = 0;
         int64_t total = 0;
         const auto row_count = lss.text_line_count();
@@ -1326,9 +1387,15 @@ CREATE TABLE lnav_db.log_stack_frames (
             // Two of a message's frames can be at the same location, but it's
             // counted once there.
             locs.clear();
+            loc_funcs.clear();
             for (auto index = lo; index < hi; index++) {
-                locs.push_back(type_safe::get(sm.sm_frame_locations[type_safe::get(
-                    si.si_frame_ids[index])]));
+                auto fid = type_safe::get(si.si_frame_ids[index]);
+                auto loc = type_safe::get(sm.sm_frame_locations[fid]);
+                locs.push_back(loc);
+                auto func = sm.sm_frame_funcs[fid];
+                if (func != 0) {
+                    loc_funcs.push_back((uint64_t) loc << 32 | func);
+                }
             }
             std::sort(locs.begin(), locs.end());
             locs.erase(std::unique(locs.begin(), locs.end()), locs.end());
@@ -1336,6 +1403,20 @@ CREATE TABLE lnav_db.log_stack_frames (
             for (auto loc : locs) {
                 totals[loc].add(t);
             }
+            std::sort(loc_funcs.begin(), loc_funcs.end());
+            loc_funcs.erase(std::unique(loc_funcs.begin(), loc_funcs.end()),
+                            loc_funcs.end());
+            for (auto lf_pair : loc_funcs) {
+                func_hits[lf_pair] += 1;
+            }
+        }
+
+        // Each location's function names and counts.
+        std::unordered_map<uint32_t, std::vector<std::pair<uint32_t, int64_t>>>
+            loc_func_counts;
+        for (const auto& [lf_pair, n] : func_hits) {
+            loc_func_counts[(uint32_t) (lf_pair >> 32)].emplace_back(
+                (uint32_t) (lf_pair & 0xffffffff), n);
         }
 
         this->lsf_rows.clear();
@@ -1347,6 +1428,33 @@ CREATE TABLE lnav_db.log_stack_frames (
                 continue;
             }
 
+            std::optional<std::string> functions;
+            auto lfc_iter = loc_func_counts.find(id);
+            if (lfc_iter != loc_func_counts.end()) {
+                auto& counts = lfc_iter->second;
+                // Most messages first, then by name, so the order is stable.
+                std::sort(counts.begin(),
+                          counts.end(),
+                          [&sm](const auto& lhs, const auto& rhs) {
+                              if (lhs.second != rhs.second) {
+                                  return lhs.second > rhs.second;
+                              }
+                              return sm.sm_func_names[lhs.first - 1]
+                                  < sm.sm_func_names[rhs.first - 1];
+                          });
+                yajlpp_gen gen;
+                yajl_gen_config(gen, yajl_gen_beautify, false);
+                {
+                    yajlpp_array arr(gen);
+                    for (const auto& [func, n] : counts) {
+                        yajlpp_array pair(gen);
+                        pair.gen(sm.sm_func_names[func - 1].to_frag());
+                        pair.gen(n);
+                    }
+                }
+                functions = gen.to_string_fragment().to_string();
+            }
+
             auto [buckets, shift] = st.buckets();
             this->lsf_rows.emplace(location_id(id),
                                    row{
@@ -1355,6 +1463,7 @@ CREATE TABLE lnav_db.log_stack_frames (
                                        st.st_last_time,
                                        std::move(buckets),
                                        shift,
+                                       std::move(functions),
                                    });
         }
         if (sm.sm_frame_locations_pending) {
@@ -1405,9 +1514,17 @@ CREATE TABLE lnav_db.log_stack_frames (
                 to_sqlite(ctx, (int64_t) r.r_bucket_shift);
                 break;
             case 8:
-                to_sqlite(ctx, this->lsf_mapped);
+                if (r.r_functions) {
+                    to_sqlite(ctx, r.r_functions.value());
+                    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case 9:
+                to_sqlite(ctx, this->lsf_mapped);
+                break;
+            case 10:
                 to_sqlite(ctx, this->lsf_total);
                 break;
         }

@@ -38,11 +38,11 @@
         },
         "stack-frames": {
             "java": {
-                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)[\\w$]+\\.[\\w$<>]+\\((?<file>[^:()]+):(?<line>\\d+)\\)",
+                "pattern": "^\\s+at\\s+(?:[^\\s/(]*/)*(?<pkg>(?:[a-z_]\\w*\\.)*)(?<func>[\\w$]+\\.[\\w$<>]+)\\((?<file>[^:()]+):(?<line>\\d+)\\)",
                 "languages": ["java", "kotlin"]
             },
             "python": {
-                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)",
+                "pattern": "^\\s*File \"(?<file>[^\"]+)\", line (?<line>\\d+)(?:, in (?<func>\\S+))?",
                 "languages": ["python"]
             },
             "rust": {

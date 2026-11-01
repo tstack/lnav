@@ -1820,7 +1820,9 @@ static const typed_json_path_container<logfile_sub_source_ns::stack_frame_def>
                 "A regular expression that matches a frame in a stack trace.  "
                 "The 'file' and 'line' captures are required, and 'col' is "
                 "optional.  A 'pkg' capture, like a Java package, is "
-                "turned into the directories that 'file' is in.")
+                "turned into the directories that 'file' is in.  A 'func' "
+                "capture is the function the frame is in, as the trace names "
+                "it, which log_stack_frames.functions lists.")
             .for_field(&logfile_sub_source_ns::stack_frame_def::sfd_pattern),
         yajlpp::property_handler("languages#")
             .with_synopsis("<language>")

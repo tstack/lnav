@@ -1,0 +1,5 @@
+path,line,hits,functions
+/build/agent1/app/log_example.py,12,2,"[[""main"",2]]"
+/home/ci/app/log_example.py,12,2,"[[""main"",2]]"
+/home/ci/app/log_example.py,20,1,"[[""run"",1]]"
+/usr/lib/python3/json.py,7,1,"[[""loads"",1]]"

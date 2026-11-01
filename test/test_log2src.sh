@@ -460,3 +460,19 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line FROM log_stack_frame_rows(0)" \
     stack-frame-loc.log
+
+# log_stack_frames.functions has the functions the traces say a location is in,
+# with the messages for each, most first: traces from two builds where a line
+# was in different functions name both, and a message whose trace has the
+# location twice counts once.  A Python frame's function is after ", in".
+printf '2024-03-01T10:00:00.000Z ERROR new\njava.lang.IllegalStateException: a\n\tat com.example.net.Server.handle(Server.java:14)\n\tat com.example.net.Server.handle(Server.java:14)\n2024-03-01T10:00:01.000Z ERROR new2\njava.lang.IllegalStateException: b\n\tat com.example.net.Server.handle(Server.java:14)\n2024-03-01T10:00:02.000Z ERROR old\njava.lang.IllegalStateException: c\n\tat com.example.net.Server$Conn.run(Server.java:14)\n' > stack-frame-funcs.log
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/java" \
+    -c ";SELECT path, line, hits, functions FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-funcs.log
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT path, line, hits, functions FROM log_stack_frames ORDER BY path, line" \
+    -c ":write-csv-to -" \
+    stack-frame-spellings.log

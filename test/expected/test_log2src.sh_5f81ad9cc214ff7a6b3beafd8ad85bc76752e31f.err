@@ -4,4 +4,4 @@
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/log/stack-frames/no-line/pattern[0m [4m<regex>[0m
          [1mDescription[0m
-           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.
+           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.  A 'func' capture is the function the frame is in, as the trace names it, which log_stack_frames.functions lists.

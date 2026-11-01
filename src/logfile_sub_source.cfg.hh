@@ -83,8 +83,9 @@ std::optional<source_language_t> source_language_from_lsp_id(
 
 /**
  * A pattern for a frame in a stack trace.  The "file" and "line" captures
- * are required, "col" and "pkg" (a dotted package that is turned into a
- * directory prefix of the file) are optional.
+ * are required, "col", "pkg" (a dotted package that is turned into a
+ * directory prefix of the file), and "func" (the function the frame is in,
+ * as the trace names it) are optional.
  */
 struct stack_frame_def {
     bool sfd_enabled{true};
@@ -101,6 +102,7 @@ struct stack_frame_def {
     int sfd_line_index{-1};
     int sfd_col_index{-1};
     int sfd_pkg_index{-1};
+    int sfd_func_index{-1};
 
     /**
      * True if the pattern is enabled and valid and either names no
