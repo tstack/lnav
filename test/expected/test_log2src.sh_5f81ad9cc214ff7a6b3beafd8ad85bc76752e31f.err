@@ -1,7 +1,39 @@
+[1m[31m✘[0m [1m[31merror[0m: “^(?<file>” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
+[36m --> [0m[1m/log/stack-frames/bad-regex/pattern[0m
+[36m | [0m[1m[36m[40m^[0m[1;7m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mfile[0m[1m[36m[40m>[0m[37m[40m                               [0m
+[36m | [0m[37m[40m         [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m  [0m
+[36m --> [0m[1m{test_dir}/bad-config-stack-frame/configs/invalid-stack-frame/config.json[0m:9
+[36m | [0m[37m[40m                "pattern": "^(?<file>"  [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/bad-regex/pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.  A 'func' capture is the function the frame is in, as the trace names it, which log_stack_frames.functions lists.
+[1m[31m✘[0m [1m[31merror[0m: “foolang” is not a valid value for option “[1m/log/stack-frames/bad-languages/languages#[0m”
+[36m --> [0m[1m{test_dir}/bad-config-stack-frame/configs/invalid-stack-frame/config.json[0m:16
+[36m | [0m[37m[40m                "languages": ["foolang"][0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/bad-languages/languages#[0m [4m<language>[0m
+         [1mDescription[0m
+           The source languages whose frames this pattern matches, as Language Server Protocol identifiers.  When log2src has found log statements under the source paths, the stack frame counts only use the patterns for their languages and the patterns without any.
+         [1mAllowed Values[0m
+           [1mc[0m, [1mcpp[0m, [1mcsharp[0m, [1mfsharp[0m, [1mgo[0m, [1mjava[0m, [1mjavascript[0m, [1mkotlin[0m, [1mphp[0m, [1mpython[0m, [1mruby[0m, [1mrust[0m, [1mtypescript[0m, [1mvb[0m
+[1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/log/stack-frames/bad-regex/pattern[0m”
+ [1m[31mreason[0m: stack frame patterns cannot be empty
+[36m --> [0m[1m{test_dir}/bad-config-stack-frame/configs/invalid-stack-frame/config.json[0m:9
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/bad-regex/pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.  A 'func' capture is the function the frame is in, as the trace names it, which log_stack_frames.functions lists.
 [1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/log/stack-frames/no-line/pattern[0m”
  [1m[31mreason[0m: 'line' capture not found in stack frame pattern
 [36m --> [0m[1m{test_dir}/bad-config-stack-frame/configs/invalid-stack-frame/config.json[0m:6
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/log/stack-frames/no-line/pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.  A 'func' capture is the function the frame is in, as the trace names it, which log_stack_frames.functions lists.
+[1m[31m✘[0m [1m[31merror[0m: missing value for property “[1m/log/stack-frames/no-regex/pattern[0m”
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/log/stack-frames/no-regex/pattern[0m [4m<regex>[0m
          [1mDescription[0m
            A regular expression that matches a frame in a stack trace.  The 'file' and 'line' captures are required, and 'col' is optional.  A 'pkg' capture, like a Java package, is turned into the directories that 'file' is in.  A 'func' capture is the function the frame is in, as the trace names it, which log_stack_frames.functions lists.

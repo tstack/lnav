@@ -330,8 +330,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         // The validity of every line in the message, which the piper path
         // of read_full_message() does not carry on the buffer it returns.  A
         // message cut to the buffer size may end in a partial character.
-        auto mlr = this->lss_token_file->message_byte_length(
-            this->lss_token_line);
+        auto mlr
+            = this->lss_token_file->message_byte_length(this->lss_token_line);
         this->lss_token_valid_utf = mlr.mlr_metadata.m_valid_utf
             && mlr.mlr_length <= line_buffer::MAX_LINE_BUFFER_SIZE;
         if (sbr.get_metadata().m_has_ansi) {
@@ -4333,8 +4333,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         crumbs.emplace_back(
             curr_opid,
             attr_line_t().append(opid_display),
-            [this, curr_opid](
-                string_fragment search)
+            [this, curr_opid](string_fragment search)
                 -> std::vector<breadcrumb::possibility> {
                 breadcrumb::possibility_collector collector(search);
 
@@ -5105,6 +5104,12 @@ logfile_sub_source::reload_config(error_reporter& reporter)
     auto* mut_cfg = injector::get<logfile_sub_source_ns::config*>();
     for (auto& [name, sfd] : mut_cfg->c_stack_frames) {
         sfd.sfd_valid = false;
+        if (sfd.sfd_pattern.pp_path.empty()) {
+            reporter(&sfd.sfd_pattern,
+                     lnav::console::user_message::error(
+                         "stack frame patterns cannot be empty"));
+            continue;
+        }
         if (sfd.sfd_pattern.pp_value == nullptr) {
             continue;
         }

@@ -4,6 +4,16 @@
         "stack-frames": {
             "no-line": {
                 "pattern": "^\\s+at (?<file>\\S+\\.foo)"
+            },
+            "bad-regex": {
+                "pattern": "^(?<file>"
+            },
+            "no-regex": {
+                "languages": ["java"]
+            },
+            "bad-languages": {
+                "pattern": "^\\s+at (?<file>\\S+\\.foo):(?<line>\\d+)",
+                "languages": ["foolang"]
             }
         }
     }
