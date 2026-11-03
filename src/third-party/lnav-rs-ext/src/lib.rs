@@ -10,7 +10,7 @@ use crate::ffi::{
     StmtLevel, VarPair,
 };
 use cxx::UniquePtr;
-use log::{Level, Log, Metadata, Record};
+use log::{info, Level, Log, Metadata, Record};
 use log2src::{
     Cache, LogError, LogLevel, LogMapping, LogMatchOptions, LogMatcher, LogRefBuilder,
     ProgressTracker, ProgressUpdate, StatementRef, VariablePair, WorkInfo,
@@ -50,8 +50,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
         for () in receiver {
             let errs = if let Ok(tracker) = TRACKER.lock() {
                 if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
-                    ext_prog.status = Status::working;
-                    ext_prog.version += 1;
+                    ext_prog.set_status(Status::working);
                 }
                 let mut matcher = LOG_MATCHER.write().unwrap();
                 let mut errs: Vec<LogError> = vec![];
@@ -79,10 +78,7 @@ static REFRESH_WORKER: LazyLock<Sender<()>> = LazyLock::new(|| {
                     errs.into_iter().map(Into::into).collect(),
                 );
 
-                ext_prog.status = Status::idle;
-                // Pollers skip an idle task whose version they've seen, so the
-                // finished scan and its messages need a version of their own.
-                ext_prog.version += 1;
+                ext_prog.set_status(Status::idle);
             }
             notify_completion();
         }
@@ -164,6 +160,7 @@ mod ffi {
     struct ExtProgress {
         id: String,
         status: Status,
+        status_change_time: u64,
         version: usize,
         current_step: String,
         completed: u64,
@@ -204,13 +201,13 @@ mod ffi {
 
     struct FindLogOptions {
         pub extract_variables: bool,
+        pub fallback: bool,
     }
 
     struct FindLogResultJson {
         pub src: String,
         pub pattern: String,
         pub variables: String,
-        pub stack_trace: String,
     }
 
     struct VarPair {
@@ -350,6 +347,8 @@ mod ffi {
 
         fn version_info() -> String;
 
+        fn steady_clock_now() -> u64;
+
         fn longpoll(poll_inpout: &PollInput) -> PollResult;
 
         fn notify_pollers();
@@ -406,6 +405,10 @@ mod ffi {
 
         fn source_languages() -> Vec<String>;
 
+        /// Log how the messages matched since the last call were matched, and reset the
+        /// counters.  Nothing is logged if no messages were matched.
+        fn log_match_stats();
+
         fn start_ext_access(port: u16, api_key: String) -> StartExtResult;
 
         fn set_one_time_password() -> String;
@@ -417,6 +420,15 @@ mod ffi {
 struct LnavLogger;
 
 static EXT_LOGGER: LnavLogger = LnavLogger;
+
+impl ExtProgress {
+    fn set_status(&mut self, status: Status) {
+        info!("progress {}: {:?} -> {:?}", self.id, self.status, status);
+        self.status = status;
+        self.status_change_time = ffi::steady_clock_now();
+        self.version += 1;
+    }
+}
 
 impl From<LnavLogLevel> for log::Level {
     fn from(value: LnavLogLevel) -> Self {
@@ -584,8 +596,7 @@ pub fn add_src_root(path: String) -> UniquePtr<ExtError> {
 
 fn discover_srcs() {
     if let Ok(mut ext_prog) = EXT_PROGRESS.lock() {
-        ext_prog.status = Status::working;
-        ext_prog.version += 1;
+        ext_prog.set_status(Status::working);
     }
     let _ = REFRESH_WORKER.send(());
 }
@@ -733,24 +744,18 @@ fn find_log_statement_json(
     if let Some(LogMapping {
         variables,
         src_ref: Some(src_ref),
-        exception_trace,
         ..
     }) = log_matcher.match_log_statement(
         &log_ref,
         &LogMatchOptions {
             extract_variables: options.extract_variables,
+            fallback: options.fallback,
         },
     ) {
-        let stack_trace = if exception_trace.is_empty() {
-            "".to_string()
-        } else {
-            serde_json::to_string(&exception_trace).unwrap()
-        };
         UniquePtr::new(FindLogResultJson {
             src: SourceDetailsBorrowed::from(&src_ref).to_json(),
             pattern: src_ref.pattern_source().into_owned(),
             variables: serde_json::to_string(&variables).unwrap(),
-            stack_trace,
         })
     } else {
         UniquePtr::null()
@@ -796,6 +801,16 @@ fn source_languages() -> Vec<String> {
         .into_iter()
         .map(|lang| lang.as_str().to_string())
         .collect()
+}
+
+fn log_match_stats() {
+    let stats = log2src::take_match_stats();
+    if stats.messages.calls == 0 {
+        return;
+    }
+    for line in stats.to_string().lines() {
+        log::info!("log2src {}", line);
+    }
 }
 
 /// Find a file under the source roots, like one named in a stack trace.  The result is

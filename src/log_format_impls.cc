@@ -55,6 +55,8 @@ using std::string_literals::operator""s;
 
 class piper_log_format : public log_format {
 public:
+    piper_log_format() { this->lf_has_body = true; }
+
     const intern_string_t get_name() const override
     {
         static const intern_string_t RETVAL
@@ -91,6 +93,16 @@ public:
     {
         auto lr = line_range{0, TIMESTAMP_SIZE};
         sa.emplace_back(lr, L_TIMESTAMP.value());
+
+        // The captured text is the message.  get_subline() put the time and
+        // zone in front of it, which has no spaces, then a space.
+        const auto line_sf = values.lvv_sbr.to_string_fragment();
+        const auto prefix = line_sf.find(' ');
+        const auto end = static_cast<int>(line_sf.length());
+        if (prefix && prefix.value() + 1 < end) {
+            sa.emplace_back(line_range{prefix.value() + 1, end},
+                            SA_BODY.value());
+        }
         log_format::annotate(lf, line_number, sa, values);
     }
 
@@ -150,6 +162,8 @@ private:
 
 class o1_generic_log_format : public log_format {
 public:
+    o1_generic_log_format() { this->lf_has_body = true; }
+
     static const pcre_format* get_pcre_log_formats()
     {
         static const pcre_format log_fmt[] = {
@@ -2548,6 +2562,8 @@ struct logfmt_pair_handler {
 
 class logfmt_format : public log_format {
 public:
+    logfmt_format() { this->lf_has_body = true; }
+
     const intern_string_t get_name() const override
     {
         const static intern_string_t NAME = intern_string::lookup("logfmt_log");

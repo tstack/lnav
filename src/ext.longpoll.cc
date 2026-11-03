@@ -138,9 +138,8 @@ longpoll(const PollInput& pi)
         auto p = POLLERS.writeAccess<std::unique_lock>();
         const auto client_id = (std::string) pi.client_id;
         // An id this process never issued came from an earlier process.
-        const auto last_event_id = pi.last_event_id < p->p_next_request_id
-            ? pi.last_event_id
-            : 0;
+        const auto last_event_id
+            = pi.last_event_id < p->p_next_request_id ? pi.last_event_id : 0;
         const auto poller_key = (std::string) pi.poller_key;
         if (!poller_key.empty()) {
             const auto now = std::chrono::steady_clock::now();
@@ -179,8 +178,7 @@ longpoll(const PollInput& pi)
             ec.ec_polling = true;
             // The client echoes back the highest request id it received.
             p->p_open_requests.remove_if([&](const open_request& req) {
-                return req.or_client == client_id
-                    && req.or_id <= last_event_id;
+                return req.or_client == client_id && req.or_id <= last_event_id;
             });
         }
         auto views_are_same = pi.view_states.log == p->p_latest_state.vs_log
@@ -316,6 +314,8 @@ longpoll(const PollInput& pi)
                 tp.tp_id,
                 tp.tp_status == lnav::progress_status_t::idle ? Status::idle
                                                               : Status::working,
+                static_cast<uint64_t>(
+                    tp.tp_status_change_time.time_since_epoch().count()),
                 tp.tp_version,
                 tp.tp_step,
                 tp.tp_completed,

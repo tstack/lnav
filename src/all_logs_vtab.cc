@@ -188,15 +188,12 @@ all_logs_vtab::all_logs_vtab()
       alv_src_meta(intern_string::lookup("log_msg_src"),
                    value_kind_t::VALUE_JSON,
                    logline_value_meta::table_column{3}),
-      alv_stacktrace_meta(intern_string::lookup("log_stack_trace"),
-                          value_kind_t::VALUE_TEXT,
-                          logline_value_meta::table_column{4}),
       alv_format_values_meta(intern_string::lookup("log_format_values"),
                              value_kind_t::VALUE_JSON,
-                             logline_value_meta::table_column{5}),
+                             logline_value_meta::table_column{4}),
       alv_schema_kind_meta(intern_string::lookup("log_msg_schema_kind"),
                            value_kind_t::VALUE_TEXT,
-                           logline_value_meta::table_column{6})
+                           logline_value_meta::table_column{5})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
@@ -224,11 +221,6 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
                       intern_string_t{},
                       false,
                       "The source code that generated this message"_frag);
-    cols.emplace_back(this->alv_stacktrace_meta.lvm_name,
-                      SQLITE3_TEXT,
-                      intern_string_t{},
-                      false,
-                      "If found, the stack trace details"_frag);
     // Hidden, so SELECT * isn't widened by a copy of every message's values.
     cols.emplace_back(
         this->alv_format_values_meta.lvm_name,
@@ -325,9 +317,14 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
                              this->alv_schema_meta,
                              this->alv_values_meta,
                              this->alv_src_meta,
-                             this->alv_stacktrace_meta,
                              this->alv_schema_kind_meta))
     {
+        return;
+    }
+    // A message without a body is all fields, which the format has parsed
+    // already, so there's no statement to find or message format to parse.
+    const auto body_sf = schema_body(line, sa);
+    if (body_sf.empty()) {
         return;
     }
     // Without a statement, the schema comes from the format's source file
@@ -338,18 +335,16 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         : KIND_MESSAGE;
 
     // The statement map already matched most messages, so take what it knows
-    // instead of matching the message again.  A statement's pattern,
-    // variables, and stack trace, and a message's format and values, aren't
-    // kept there, so they still need the message read again.
+    // instead of matching the message again.  A statement's pattern and
+    // variables, and a message's format and values, aren't kept there, so
+    // they still need the message read again.
     auto stmt = alv_line_stmt != nullptr ? alv_line_stmt(lf, line_number)
                                          : line_stmt{line_stmt_unmapped{}};
     auto is_statement = false;
     if (stmt.is<line_stmt_mapped>()) {
         const auto& mapped = stmt.get<line_stmt_mapped>();
         is_statement = mapped.lsm_kind == schema_kind::statement;
-        if (!ec.are_columns_used(this->alv_msg_meta, this->alv_values_meta)
-            && (!is_statement || !ec.is_column_used(this->alv_stacktrace_meta)))
-        {
+        if (!ec.are_columns_used(this->alv_msg_meta, this->alv_values_meta)) {
             // The statement map's strings are never freed or changed.
             values.lvv_values.emplace_back(
                 this->alv_schema_meta,
@@ -371,13 +366,12 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         && !ec.are_columns_used(
             this->alv_msg_meta, this->alv_schema_meta, this->alv_values_meta))
     {
-        // No statement, so no log_msg_src or stack trace.
+        // No statement, so no log_msg_src.
         values.lvv_values.emplace_back(this->alv_schema_kind_meta,
                                        unmatched_kind);
         return;
     }
 
-    auto body_sf = schema_body(line, sa);
 #ifdef HAVE_RUST_DEPS
     auto find_res = unmatched
         ? nullptr
@@ -402,10 +396,6 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
                                        (std::string) find_res->src);
         values.lvv_values.emplace_back(this->alv_schema_kind_meta,
                                        KIND_STATEMENT);
-        if (!find_res->stack_trace.empty()) {
-            values.lvv_values.emplace_back(this->alv_stacktrace_meta,
-                                           (std::string) find_res->stack_trace);
-        }
     } else
 #endif
     {
@@ -466,8 +456,7 @@ all_logs_vtab::schema_body(const shared_buffer_ref& sbr,
 {
     auto body = find_string_attr_range(sa, &SA_BODY);
     if (!body.is_valid()) {
-        body.lr_start = 0;
-        body.lr_end = sbr.length();
+        return {};
     }
     return sbr.to_string_fragment(body);
 }
@@ -485,6 +474,9 @@ all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
     }
 
     auto body_sf = schema_body(sbr, sa);
+    if (body_sf.empty()) {
+        return nullptr;
+    }
 
     auto file_rust_str = rust::Str();
     auto lineno = 0UL;

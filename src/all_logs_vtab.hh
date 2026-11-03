@@ -159,8 +159,9 @@ public:
         const log_format* format, const logline_value_vector& values);
 
     /**
-     * The part of a message its schema comes from: the body, or the whole
-     * message when the format didn't mark one.
+     * The part of a message its schema comes from, the body, or an empty
+     * fragment when the format didn't mark one: then every part of the
+     * message is a field, and there's nothing to match or parse.
      */
     static string_fragment schema_body(const shared_buffer_ref& sbr,
                                        const string_attrs_t& sa);
@@ -194,7 +195,6 @@ private:
     logline_value_meta alv_schema_meta;
     logline_value_meta alv_values_meta;
     logline_value_meta alv_src_meta;
-    logline_value_meta alv_stacktrace_meta;
     logline_value_meta alv_format_values_meta;
     logline_value_meta alv_schema_kind_meta;
 };

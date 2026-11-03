@@ -132,8 +132,7 @@ public:
     virtual Result<void, std::string> leave_span(const span& bl) = 0;
 
     virtual Result<void, std::string> text(MD_TEXTTYPE tt,
-                                           const string_fragment& sf)
-        = 0;
+                                           const string_fragment& sf) = 0;
 
     void set_line_number_from(const char* text);
     block build_block(MD_BLOCKTYPE type, void* detail);
@@ -238,14 +237,20 @@ inline constexpr emoji_literal KNOWN_EMOJIS[] = {
     {":bar_chart:"_frag, "\U0001F4CA"_frag},
     {":bell:"_frag, "\U0001F514"_frag},
     {":bulb:"_frag, "\U0001F4A1"_frag},
-    {":card_index_dividers:"_frag, "\U0001F5C2"_frag},  // NB: emojis.json lists this shortcode twice
+    {":card_index_dividers:"_frag,
+     "\U0001F5C2"_frag},  // NB: emojis.json lists this shortcode twice
     {":clipboard:"_frag, "\U0001F4CB"_frag},
     {":compass:"_frag, "\U0001F9ED"_frag},
-    {":desktop_computer:"_frag, "\U0001F5A5"_frag},  // NB: emojis.json lists this shortcode twice
-    {":file_cabinet:"_frag, "\U0001F5C4"_frag},  // NB: emojis.json lists this shortcode twice
+    {":desktop_computer:"_frag,
+     "\U0001F5A5"_frag},  // NB: emojis.json lists this shortcode twice
+    {":file_cabinet:"_frag,
+     "\U0001F5C4"_frag},  // NB: emojis.json lists this shortcode twice
     {":floppy_disk:"_frag, "\U0001F4BE"_frag},
-    {":framed_picture:"_frag, "\U0001F5BC"_frag},  // NB: emojis.json lists this shortcode twice
+    {":framed_picture:"_frag,
+     "\U0001F5BC"_frag},  // NB: emojis.json lists this shortcode twice
     {":globe_with_meridians:"_frag, "\U0001F310"_frag},
+    {":hourglass:"_frag, "\u231B"_frag},
+    {":hourglass_flowing_sand:"_frag, "\u23F3"_frag},
     {":mag_right:"_frag, "\U0001F50E"_frag},
     {":mailbox:"_frag, "\U0001F4EB"_frag},
     {":memo:"_frag, "\U0001F4DD"_frag},
@@ -255,7 +260,8 @@ inline constexpr emoji_literal KNOWN_EMOJIS[] = {
     {":small_red_triangle:"_frag, "\U0001F53A"_frag},
     {":speech_balloon:"_frag, "\U0001F4AC"_frag},
     {":star2:"_frag, "\U0001F31F"_frag},
-    {":warning:"_frag, "\u26A0\uFE0F"_frag},  // NB: emojis.json lists this shortcode twice
+    {":warning:"_frag,
+     "\u26A0\uFE0F"_frag},  // NB: emojis.json lists this shortcode twice
 };
 
 /**

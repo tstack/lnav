@@ -43,6 +43,7 @@
 
 #include "all_logs_vtab.hh"
 #include "ArenaAlloc/arenaalloc.h"
+#include "base/guard_util.hh"
 #include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
 #include "base/parallel_for.hh"
@@ -91,6 +92,63 @@ constexpr uint32_t VAR_SAMPLES = 32;
  * step()): a line can take a millisecond, and the slice is 20ms.
  */
 constexpr size_t STEP_CLOCK_LINES = 16;
+
+using steady_ns = std::chrono::nanoseconds;
+
+uint64_t
+ns_since(std::chrono::steady_clock::time_point start)
+{
+    return std::chrono::duration_cast<steady_ns>(
+               std::chrono::steady_clock::now() - start)
+        .count();
+}
+
+/** Adds the time from its construction to its destruction to [dst]. */
+struct scoped_ns {
+    explicit scoped_ns(uint64_t& dst) : sn_dst(dst) {}
+    scoped_ns(const scoped_ns&) = delete;
+    scoped_ns& operator=(const scoped_ns&) = delete;
+    ~scoped_ns() { this->sn_dst += ns_since(this->sn_start); }
+
+    uint64_t& sn_dst;
+    std::chrono::steady_clock::time_point sn_start{
+        std::chrono::steady_clock::now()};
+};
+
+using map_counters = logfile::stmt_ids::counters;
+
+/**
+ * The step() loop's view of a pass, kept on the main thread: from the first
+ * slice with work to the one that finishes it.
+ */
+struct pass_counters {
+    std::optional<std::chrono::steady_clock::time_point> pc_start;
+    uint64_t pc_slices{0};
+    /** Time in step()'s parallel_for_each(), the main loop being held. */
+    uint64_t pc_slice_ns{0};
+    uint64_t pc_max_slice_ns{0};
+    /** How far past their deadline the slices ran, at most and in all. */
+    uint64_t pc_max_overrun_ns{0};
+    uint64_t pc_overrun_ns{0};
+    /** Slices that ran out of time with files left. */
+    uint64_t pc_short_slices{0};
+    /** Files given to the workers, and the ones left for a later slice. */
+    uint64_t pc_files{0};
+    uint64_t pc_files_deferred{0};
+    uint64_t pc_max_width{0};
+};
+
+double
+to_ms(uint64_t ns)
+{
+    return static_cast<double>(ns) / 1e6;
+}
+
+double
+pct(uint64_t part, uint64_t total)
+{
+    return total == 0 ? 0.0 : static_cast<double>(part) * 100.0 / total;
+}
 
 /**
  * A log_msg_schema that messages were mapped to: a log statement log2src
@@ -293,6 +351,7 @@ struct stmt_map {
 
     // Read by the progress reporter on the external-access threads.
     std::atomic<bool> sm_working{false};
+    std::atomic<std::chrono::steady_clock::time_point> sm_status_change_time;
     std::atomic<size_t> sm_version{0};
     std::atomic<size_t> sm_completed{0};
     std::atomic<size_t> sm_total{0};
@@ -306,6 +365,12 @@ struct stmt_map {
     size_t sm_remaps{0};
     /** How many slices step() has run, to rotate which file goes first. */
     size_t sm_slices{0};
+
+    /** The workers' counters for this pass, see map_counters. */
+    std::mutex sm_counters_mutex;
+    map_counters sm_counters;
+    /** Only used by step(), on the main thread. */
+    pass_counters sm_pass;
 
     /**
      * The stack frames found in multi-line messages, by id.  Like the
@@ -360,7 +425,7 @@ struct stmt_map {
      * The source languages log2src found statements in, as of the source
      * scan the statements are from.
      */
-    std::vector<logfile_sub_source_ns::source_language_t> sm_languages;
+    lnav::enums::bitset<logfile_sub_source_ns::source_language_t> sm_languages;
     /**
      * The file under the source roots that each frame path is, for
      * log_stack_frames.src_path, empty when there's none.  Looked up once per
@@ -580,13 +645,17 @@ struct stmt_map {
         all_logs_vtab::schema_kind kind,
         const string_fragment& src,
         const string_fragment& schema,
-        const string_fragment& pairs_schema)
+        const string_fragment& pairs_schema,
+        uint64_t* shared_count = nullptr)
     {
         auto iter = cache.find(schema);
         if (iter != cache.end()) {
             return iter->second;
         }
 
+        if (shared_count != nullptr) {
+            *shared_count += 1;
+        }
         uint32_t id;
         {
             std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
@@ -709,6 +778,7 @@ struct stmt_map {
         std::string ms_frame_path;
         /** The frames found in the current message. */
         std::vector<frame_id> ms_frames;
+        map_counters ms_counters;
     };
 
     /**
@@ -806,6 +876,7 @@ struct stmt_map {
         if (id < FIRST_STATEMENT || ms.ms_sampled.count(id) > 0) {
             return;
         }
+        scoped_ns timer(ms.ms_counters.mc_sample_ns);
         {
             std::lock_guard<std::mutex> lg(this->sm_intern_mutex);
             const auto& st = this->sm_statements[id];
@@ -817,6 +888,7 @@ struct stmt_map {
             }
         }
 
+        ms.ms_counters.mc_samples += 1;
         auto res = all_logs_vtab::find_statement(sbr, sa, values, level, true);
         if (res == nullptr) {
             return;
@@ -849,18 +921,23 @@ struct stmt_map {
     {
         using kind = all_logs_vtab::schema_kind;
 
+        auto& mc = ms.ms_counters;
+        mc.mc_lines += 1;
         ms.ms_frames.clear();
         auto ll = lf->begin() + line_number;
         if (ll->is_continued()) {
+            mc.mc_continued += 1;
             return NO_STATEMENT;
         }
 
         auto* format = lf->get_format_ptr();
         if (format == nullptr) {
+            mc.mc_no_format += 1;
             return NO_STATEMENT;
         }
 
         if (!want_stmt) {
+            mc.mc_frames_only += 1;
             auto next = std::next(ll);
             if (next == lf->end() || !next->is_continued()) {
                 return NO_STATEMENT;
@@ -872,8 +949,14 @@ struct stmt_map {
         auto& sbr = ms.ms_line;
         values.clear();
         sa.clear();
-        lf->read_full_message(ll, sbr);
-        sbr.erase_ansi();
+        {
+            scoped_ns timer(mc.mc_read_ns);
+            lf->read_full_message(ll, sbr);
+            sbr.erase_ansi();
+        }
+        mc.mc_read_bytes += sbr.length();
+        mc.mc_max_message_bytes
+            = std::max<uint64_t>(mc.mc_max_message_bytes, sbr.length());
 
         // As in all_logs::extract(): annotate() can swap in the format's own
         // copy of the message (a JSON message's rendering), but the attrs
@@ -883,31 +966,51 @@ struct stmt_map {
         // are found in the message as read.
         if (want_stmt || format->lf_file_type == log_format::file_type_t::JSON)
         {
+            scoped_ns timer(mc.mc_annotate_ns);
             format->annotate(lf, line_number, sa, values);
         }
 
         if (want_frames) {
+            scoped_ns timer(mc.mc_frames_ns);
             this->find_frames(lf, ll, format, ms);
         }
         if (!want_stmt) {
             return NO_STATEMENT;
         }
+        // A message without a body, like a line from a pattern without one,
+        // is all fields, so there's nothing to match.
+        const auto body = all_logs_vtab::schema_body(sbr, sa);
+        if (body.empty()) {
+            mc.mc_no_body += 1;
+            return NO_STATEMENT;
+        }
 
 #ifdef HAVE_RUST_DEPS
+        const auto find_start = std::chrono::steady_clock::now();
         auto find_res = all_logs_vtab::find_statement(
             sbr, sa, values, ll->get_msg_level(), false);
+        const auto find_ns = ns_since(find_start);
+        mc.mc_find_calls += 1;
+        mc.mc_find_ns += find_ns;
+        mc.mc_max_find_ns = std::max(mc.mc_max_find_ns, find_ns);
         if (find_res != nullptr) {
-            char schema_buf[hasher::STRING_SIZE];
-            all_logs_vtab::statement_schema(
-                string_fragment::from(find_res->src),
-                string_fragment::from(find_res->pattern),
-                schema_buf);
-            auto id = this->intern_cached(ms.ms_cache,
-                                          ms.ms_arena,
-                                          kind::statement,
-                                          string_fragment::from(find_res->src),
-                                          string_fragment::from(schema_buf),
-                                          ""_frag);
+            mc.mc_statements += 1;
+            uint32_t id;
+            {
+                scoped_ns timer(mc.mc_intern_ns);
+                char schema_buf[hasher::STRING_SIZE];
+                all_logs_vtab::statement_schema(
+                    string_fragment::from(find_res->src),
+                    string_fragment::from(find_res->pattern),
+                    schema_buf);
+                id = this->intern_cached(ms.ms_cache,
+                                         ms.ms_arena,
+                                         kind::statement,
+                                         string_fragment::from(find_res->src),
+                                         string_fragment::from(schema_buf),
+                                         ""_frag,
+                                         &mc.mc_shared_interns);
+            }
             this->sample_vars(id, sbr, sa, values, ll->get_msg_level(), ms);
             return id;
         }
@@ -915,17 +1018,21 @@ struct stmt_map {
 
         auto loc_schema = all_logs_vtab::src_location_schema(format, values);
         if (loc_schema) {
+            mc.mc_src_locations += 1;
             return this->intern_cached(ms.ms_cache,
                                        ms.ms_arena,
                                        kind::src_location,
                                        ""_frag,
                                        string_fragment::from(*loc_schema),
-                                       ""_frag);
+                                       ""_frag,
+                                       &mc.mc_shared_interns);
         }
 
         // Parsed as all_logs does, with the message format, which goes into
         // its log_msg_schema.
-        data_scanner ds(all_logs_vtab::schema_body(sbr, sa));
+        mc.mc_messages += 1;
+        scoped_ns parse_timer(mc.mc_parse_ns);
+        data_scanner ds(body);
         data_parser dp(&ds);
         std::string msg_format;
         dp.dp_msg_format = &msg_format;
@@ -937,7 +1044,141 @@ struct stmt_map {
                                    kind::message,
                                    ""_frag,
                                    string_fragment::from(msg_schema),
-                                   string_fragment::from(pairs_schema));
+                                   string_fragment::from(pairs_schema),
+                                   &mc.mc_shared_interns);
+    }
+
+    /**
+     * Logs where the pass that just finished spent its time, and starts the
+     * counts over for the next one.
+     */
+    void log_pass_stats(logfile_sub_source& lss)
+    {
+        map_counters mc;
+        {
+            std::lock_guard<std::mutex> lg(this->sm_counters_mutex);
+            mc = std::exchange(this->sm_counters, map_counters{});
+        }
+        auto pc = std::exchange(this->sm_pass, pass_counters{});
+        const auto wall_ns = pc.pc_start ? ns_since(*pc.pc_start) : 0;
+        const auto in_lines = mc.mc_worker_ns;
+        const auto matched_lines
+            = mc.mc_lines - mc.mc_continued - mc.mc_no_format;
+
+        log_info(
+            "stmt map pass: %.1fms wall, %llu slices holding the main loop "
+            "%.1fms (%.1f%%, max %.1fms), %.1fms in workers (%.1fx parallel, "
+            "max width %llu)",
+            to_ms(wall_ns),
+            (unsigned long long) pc.pc_slices,
+            to_ms(pc.pc_slice_ns),
+            pct(pc.pc_slice_ns, wall_ns),
+            to_ms(pc.pc_max_slice_ns),
+            to_ms(mc.mc_worker_ns),
+            pc.pc_slice_ns == 0
+                ? 0.0
+                : static_cast<double>(mc.mc_worker_ns) / pc.pc_slice_ns,
+            (unsigned long long) pc.pc_max_width);
+        log_info(
+            "stmt map pass:   slices: %llu ran out of time, overran deadline "
+            "by %.1fms in all (max %.1fms); %llu file runs, %llu deferred",
+            (unsigned long long) pc.pc_short_slices,
+            to_ms(pc.pc_overrun_ns),
+            to_ms(pc.pc_max_overrun_ns),
+            (unsigned long long) pc.pc_files,
+            (unsigned long long) pc.pc_files_deferred);
+        log_info(
+            "stmt map pass:   lines: %llu looked at, %llu continued, %llu "
+            "without a format, %llu for frames only, %llu without a body",
+            (unsigned long long) mc.mc_lines,
+            (unsigned long long) mc.mc_continued,
+            (unsigned long long) mc.mc_no_format,
+            (unsigned long long) mc.mc_frames_only,
+            (unsigned long long) mc.mc_no_body);
+        log_info(
+            "stmt map pass:   mapped to: %llu statements, %llu source "
+            "locations, %llu message formats",
+            (unsigned long long) mc.mc_statements,
+            (unsigned long long) mc.mc_src_locations,
+            (unsigned long long) mc.mc_messages);
+        log_info(
+            "stmt map pass:   read %.1fms (%.1f%%) for %.1fMB (avg %.0fB, max "
+            "%lluB), annotate %.1fms (%.1f%%), frames %.1fms (%.1f%%)",
+            to_ms(mc.mc_read_ns),
+            pct(mc.mc_read_ns, in_lines),
+            static_cast<double>(mc.mc_read_bytes) / (1024.0 * 1024.0),
+            matched_lines == 0 ? 0.0
+                               : static_cast<double>(mc.mc_read_bytes)
+                    / static_cast<double>(matched_lines),
+            (unsigned long long) mc.mc_max_message_bytes,
+            to_ms(mc.mc_annotate_ns),
+            pct(mc.mc_annotate_ns, in_lines),
+            to_ms(mc.mc_frames_ns),
+            pct(mc.mc_frames_ns, in_lines));
+        log_info(
+            "stmt map pass:   log2src %llu calls %.1fms (%.1f%%, avg %.1fus, "
+            "max %.1fms), intern %.1fms (%.1f%%, %llu shared), samples %llu "
+            "%.1fms (%.1f%%), message formats %.1fms (%.1f%%)",
+            (unsigned long long) mc.mc_find_calls,
+            to_ms(mc.mc_find_ns),
+            pct(mc.mc_find_ns, in_lines),
+            mc.mc_find_calls == 0
+                ? 0.0
+                : static_cast<double>(mc.mc_find_ns) / 1e3 / mc.mc_find_calls,
+            to_ms(mc.mc_max_find_ns),
+            to_ms(mc.mc_intern_ns),
+            pct(mc.mc_intern_ns, in_lines),
+            (unsigned long long) mc.mc_shared_interns,
+            (unsigned long long) mc.mc_samples,
+            to_ms(mc.mc_sample_ns),
+            pct(mc.mc_sample_ns, in_lines),
+            to_ms(mc.mc_parse_ns),
+            pct(mc.mc_parse_ns, in_lines));
+
+        // The slowest files first, since that's what's being looked for.
+        // The files closed during the pass took their counts with them.
+        std::vector<std::pair<const logfile*, map_counters>> files;
+        for (const auto& ld : lss) {
+            auto* lf = ld->get_file_ptr();
+            if (lf == nullptr) {
+                continue;
+            }
+            auto fc = std::exchange(lf->get_stmt_ids().si_counters, {});
+            if (fc.mc_lines > 0) {
+                files.emplace_back(lf, fc);
+            }
+        }
+        std::sort(
+            files.begin(), files.end(), [](const auto& lhs, const auto& rhs) {
+                return lhs.second.mc_worker_ns > rhs.second.mc_worker_ns;
+            });
+        for (const auto& [lf, fc] : files) {
+            // The messages there was something to match: the ones without
+            // a body or a format never get a statement.
+            const auto with_body
+                = fc.mc_statements + fc.mc_src_locations + fc.mc_messages;
+            const auto without_stmt = fc.mc_src_locations + fc.mc_messages;
+            log_info(
+                "stmt map file: %.1fms (%.1f%% of workers), log2src %.1fms "
+                "(avg %.1fus); %llu lines, %.1fMB; %llu messages with a body, "
+                "%llu without a statement (%.1f%%: %llu source locations, "
+                "%llu message formats), %llu without a body; %s",
+                to_ms(fc.mc_worker_ns),
+                pct(fc.mc_worker_ns, mc.mc_worker_ns),
+                to_ms(fc.mc_find_ns),
+                fc.mc_find_calls == 0 ? 0.0
+                                      : static_cast<double>(fc.mc_find_ns) / 1e3
+                        / fc.mc_find_calls,
+                (unsigned long long) fc.mc_lines,
+                static_cast<double>(fc.mc_read_bytes) / (1024.0 * 1024.0),
+                (unsigned long long) with_body,
+                (unsigned long long) without_stmt,
+                pct(without_stmt, with_body),
+                (unsigned long long) fc.mc_src_locations,
+                (unsigned long long) fc.mc_messages,
+                (unsigned long long) fc.mc_no_body,
+                lf->get_filename().c_str());
+        }
     }
 };
 
@@ -972,6 +1213,7 @@ stmt_map_progress()
         "log-stmt-map",
         sm.sm_working ? lnav::progress_status_t::working
                       : lnav::progress_status_t::idle,
+        sm.sm_status_change_time.load(),
         sm.sm_version,
         sm.sm_working ? "Mapping log messages to statements and stack frames"
                       : "",
@@ -1706,8 +1948,7 @@ static bool
 frame_matches(const stmt_map& sm, const frame_query& q, size_t id)
 {
     auto loc_id = sm.sm_frame_locations[id];
-    if (q.fq_frame && q.fq_frame.value() != (int64_t) type_safe::get(loc_id))
-    {
+    if (q.fq_frame && q.fq_frame.value() != (int64_t) type_safe::get(loc_id)) {
         return false;
     }
     const auto& loc = sm.sm_locations[type_safe::get(loc_id)];
@@ -2115,12 +2356,12 @@ step(std::chrono::steady_clock::time_point deadline)
         return false;
     }
     if (sm.sm_scan_version != ext.version) {
-        sm.sm_languages.clear();
+        sm.sm_languages = {};
         for (const auto& lang : lnav_rs_ext::source_languages()) {
             auto sl = logfile_sub_source_ns::source_language_from_lsp_id(
                 string_fragment::from_bytes(lang.data(), lang.size()));
             if (sl) {
-                sm.sm_languages.emplace_back(sl.value());
+                sm.sm_languages.set(sl.value());
             } else {
                 log_warning("unknown log2src language: %.*s",
                             (int) lang.size(),
@@ -2195,7 +2436,20 @@ step(std::chrono::steady_clock::time_point deadline)
         if (lf == nullptr) {
             continue;
         }
-        const auto& si = lf->get_stmt_ids();
+        auto& si = lf->get_stmt_ids();
+        // A format without a body has parsed every part of its messages into
+        // fields, so the whole file has nothing to match.  Its frames aren't
+        // looked for either: a format like that with stack traces in a field
+        // seems unlikely.
+        const auto* format = lf->get_format_ptr();
+        if (format != nullptr && !format->lf_has_body) {
+            std::fill(si.si_ids.begin() + si.si_verified,
+                      si.si_ids.end(),
+                      NO_STATEMENT);
+            si.si_verified = si.si_ids.size();
+            si.si_frames_verified = si.si_ids.size();
+            continue;
+        }
         if (si.si_verified < si.si_ids.size()
             || si.si_frames_verified < si.si_ids.size())
         {
@@ -2220,68 +2474,103 @@ step(std::chrono::steady_clock::time_point deadline)
     // only starts another file while nothing has been.
     std::atomic<bool> progressed{false};
     if (!work.empty()) {
-        lnav::parallel_for_each(
-            work.size(),
-            lnav::logfile_indexing_width(work.size()),
-            [&](size_t index) {
-                auto* lf = work[index];
-                auto& si = lf->get_stmt_ids();
-                stmt_map::match_scratch ms;
-                size_t done = 0;
+        if (!sm.sm_pass.pc_start) {
+            sm.sm_pass.pc_start = std::chrono::steady_clock::now();
+        }
+        const auto width = lnav::logfile_indexing_width(work.size());
+        sm.sm_pass.pc_max_width
+            = std::max<uint64_t>(sm.sm_pass.pc_max_width, width);
+        sm.sm_pass.pc_files += work.size();
+        const auto slice_start = std::chrono::steady_clock::now();
+        lnav::parallel_for_each(work.size(), width, [&](size_t index) {
+            auto* lf = work[index];
+            auto& si = lf->get_stmt_ids();
+            stmt_map::match_scratch ms;
+            size_t done = 0;
+            const auto worker_start = std::chrono::steady_clock::now();
+            // Whatever way the worker leaves, its counts go in the map's.
+            auto merge_counters = lnav::finally([&] {
+                ms.ms_counters.mc_worker_ns += ns_since(worker_start);
+                // Only this worker has the file during the slice.
+                si.si_counters.merge(ms.ms_counters);
+                std::lock_guard<std::mutex> lg(sm.sm_counters_mutex);
+                sm.sm_counters.merge(ms.ms_counters);
+            });
 
-                // Out of time already (the workers went through the other
-                // files): leave this one for the next slice.  Each file used
-                // to map a first batch whatever the time, so with 77 files a
-                // 20ms slice held the main loop for 300ms.
-                if (progressed.load(std::memory_order_relaxed)
+            // Out of time already (the workers went through the other
+            // files): leave this one for the next slice.  Each file used
+            // to map a first batch whatever the time, so with 77 files a
+            // 20ms slice held the main loop for 300ms.
+            if (progressed.load(std::memory_order_relaxed)
+                && std::chrono::steady_clock::now() >= deadline)
+            {
+                unfinished[index] = 1;
+                return;
+            }
+            // The statements and the frames each go on from where they
+            // got to: after a source re-scan only the statements are
+            // matched again, after a change to the frame patterns only
+            // the frames.
+            while (true) {
+                auto line = std::min(si.si_verified, si.si_frames_verified);
+                if (line >= si.si_ids.size()) {
+                    break;
+                }
+                // Check the clock every few lines: a line can take a
+                // millisecond (a JSON message parsed, then matched by
+                // log2src), so every 256 overran the slice by ~250ms.
+                if (done > 0 && done % STEP_CLOCK_LINES == 0
                     && std::chrono::steady_clock::now() >= deadline)
                 {
                     unfinished[index] = 1;
-                    return;
+                    break;
                 }
-                // The statements and the frames each go on from where they
-                // got to: after a source re-scan only the statements are
-                // matched again, after a change to the frame patterns only
-                // the frames.
-                while (true) {
-                    auto line = std::min(si.si_verified, si.si_frames_verified);
-                    if (line >= si.si_ids.size()) {
-                        break;
-                    }
-                    // Check the clock every few lines: a line can take a
-                    // millisecond (a JSON message parsed, then matched by
-                    // log2src), so every 256 overran the slice by ~250ms.
-                    if (done > 0 && done % STEP_CLOCK_LINES == 0
-                        && std::chrono::steady_clock::now() >= deadline)
-                    {
-                        unfinished[index] = 1;
-                        break;
-                    }
-                    auto want_stmt = line == si.si_verified;
-                    auto want_frames = line == si.si_frames_verified;
-                    auto id
-                        = sm.match_line(lf, line, ms, want_stmt, want_frames);
-                    if (want_stmt) {
-                        auto old_id = si.si_ids[line];
-                        if (old_id != id) {
-                            si.si_ids[line] = id;
-                            changed[index] = 1;
-                            if (old_id != UNMAPPED) {
-                                remapped[index] = 1;
-                            }
-                        }
-                        si.si_verified += 1;
-                    }
-                    if (want_frames) {
-                        si.add_frames(ms.ms_frames);
-                        if (!ms.ms_frames.empty()) {
-                            frames_found[index] = 1;
+                auto want_stmt = line == si.si_verified;
+                auto want_frames = line == si.si_frames_verified;
+                auto id = sm.match_line(lf, line, ms, want_stmt, want_frames);
+                if (want_stmt) {
+                    auto old_id = si.si_ids[line];
+                    if (old_id != id) {
+                        si.si_ids[line] = id;
+                        changed[index] = 1;
+                        if (old_id != UNMAPPED) {
+                            remapped[index] = 1;
                         }
                     }
-                    done += 1;
-                    progressed.store(true, std::memory_order_relaxed);
+                    si.si_verified += 1;
                 }
-            });
+                if (want_frames) {
+                    si.add_frames(ms.ms_frames);
+                    if (!ms.ms_frames.empty()) {
+                        frames_found[index] = 1;
+                    }
+                }
+                done += 1;
+                progressed.store(true, std::memory_order_relaxed);
+            }
+        });
+        const auto slice_end = std::chrono::steady_clock::now();
+        const auto slice_ns
+            = std::chrono::duration_cast<steady_ns>(slice_end - slice_start)
+                  .count();
+        sm.sm_pass.pc_slices += 1;
+        sm.sm_pass.pc_slice_ns += slice_ns;
+        sm.sm_pass.pc_max_slice_ns
+            = std::max<uint64_t>(sm.sm_pass.pc_max_slice_ns, slice_ns);
+        if (slice_end > deadline) {
+            const uint64_t overrun_ns
+                = std::chrono::duration_cast<steady_ns>(slice_end - deadline)
+                      .count();
+            sm.sm_pass.pc_overrun_ns += overrun_ns;
+            sm.sm_pass.pc_max_overrun_ns
+                = std::max(sm.sm_pass.pc_max_overrun_ns, overrun_ns);
+        }
+        const auto deferred
+            = std::count(unfinished.begin(), unfinished.end(), 1);
+        sm.sm_pass.pc_files_deferred += deferred;
+        if (deferred > 0) {
+            sm.sm_pass.pc_short_slices += 1;
+        }
     }
 
     auto more = std::find(unfinished.begin(), unfinished.end(), 1)
@@ -2332,10 +2621,17 @@ step(std::chrono::steady_clock::time_point deadline)
             with_frames,
             frame_refs,
             sm.sm_frames.size());
+        sm.log_pass_stats(lss);
+#ifdef HAVE_RUST_DEPS
+        lnav_rs_ext::log_match_stats();
+#endif
     }
     sm.sm_completed = completed;
     sm.sm_total = total;
-    sm.sm_working = more;
+    if (was_working != more) {
+        sm.sm_working = more;
+        sm.sm_status_change_time = std::chrono::steady_clock::now();
+    }
     if (was_working != more || (total == 0 && old_total != 0)
         || (total > 0
             && (completed - std::min(completed, old_completed)) * 100 >= total))
@@ -2363,10 +2659,9 @@ register_frame_rows(sqlite3* db)
               .with_parameter({"src_path",
                                "The file under the source paths, as "
                                "log_stack_frames.src_path has it."})
-              .with_parameter(
-                  help_text{"line",
-                            "The line in the file.  Any line, if not given."}
-                      .optional())
+              .with_parameter(help_text{
+                  "line", "The line in the file.  Any line, if not given."}
+                                  .optional())
               .with_parameter(help_text{"frame",
                                         "A location's rowid in "
                                         "log_stack_frames, to list the "

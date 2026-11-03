@@ -220,6 +220,40 @@ TEST_CASE("string_fragment::column_width")
 
         CHECK(1 == sf.column_width());
     }
+    {
+        CHECK(9 == string_fragment::from_const("ab\tc").column_width());
+        CHECK(2 == string_fragment::from_const("a\x01").column_width());
+        CHECK(4 == string_fragment::from_const("a中b").column_width());
+        CHECK(2 == string_fragment::from_const("a\xff").column_width());
+
+        static const char with_nul[] = "abc\0def";
+        CHECK(6
+              == string_fragment::from_bytes(with_nul, sizeof(with_nul) - 1)
+                     .column_width());
+    }
+    {
+        const std::string base = "0123456789abcdef";
+        for (size_t off : {0, 7, 8, 15}) {
+            auto s = base;
+            s[off] = '\t';
+            auto expected = ((off + 8) & ~size_t{7}) + (base.size() - off - 1);
+            CHECK(expected == string_fragment::from_str(s).column_width());
+
+            s = base;
+            s[off] = '\0';
+            CHECK(base.size() - 1
+                  == string_fragment::from_str(s).column_width());
+
+            s = base;
+            s[off] = '\x1b';
+            CHECK(base.size() == string_fragment::from_str(s).column_width());
+
+            s = base;
+            s.replace(off, 1, "中");
+            CHECK(base.size() + 1
+                  == string_fragment::from_str(s).column_width());
+        }
+    }
 }
 
 TEST_CASE("string_fragment::next_word")

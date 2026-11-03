@@ -35,30 +35,31 @@
 #include <string_view>
 #include <vector>
 
-#include "CLI/App.hpp"
+#include "cmds.hh"
+
 #include "apps.cfg.hh"
-#include "attr_line.html.hh"
 #include "apps.hh"
+#include "attr_line.html.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/lnav.console.hh"
-#include "ext.longpoll.hh"
 #include "base/lnav.ryml.hh"
 #include "base/result.h"
 #include "bound_tags.hh"
+#include "CLI/App.hpp"
 #include "command_executor.hh"
 #include "config.h"
 #include "ext.access.hh"
+#include "ext.longpoll.hh"
 #include "external_opener.hh"
-#include "base/itertools.similar.hh"
 #include "libbase64.h"
+#include "lnav.commands.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.prompt.hh"
-#include "cmds.hh"
 #include "md4c/md4c-html.h"
 #include "md4cpp.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "lnav.commands.hh"
 #include "service_tags.hh"
 #include "session.export.hh"
 #include "shlex.hh"
@@ -516,6 +517,8 @@ ext_prog_rep()
     auto retval = lnav::task_progress{
         (std::string) ext.id,
         status,
+        std::chrono::steady_clock::time_point{
+            std::chrono::microseconds{ext.status_change_time}},
         ext.version,
         (std::string) ext.current_step,
         ext.completed,
@@ -589,6 +592,14 @@ version_info()
     }
 
     return gen.to_string_fragment().to_string();
+}
+
+::rust::u64
+steady_clock_now()
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 
 static void
@@ -1274,8 +1285,9 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
                     .with_format(help_parameter_format_t::HPF_STRING)
                     .optional())
             .with_tags({"scripting"})
-            .with_example({"To give this instance a name for clients to look up",
-                           "--name=tectonic"}),
+            .with_example(
+                {"To give this instance a name for clients to look up",
+                 "--name=tectonic"}),
     },
     {
         "external-access-login",

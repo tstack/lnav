@@ -30,6 +30,7 @@
 #ifndef lnav_progress_hh
 #define lnav_progress_hh
 
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
@@ -131,6 +132,7 @@ private:
 struct task_progress {
     std::string tp_id;
     progress_status_t tp_status{progress_status_t::idle};
+    std::chrono::steady_clock::time_point tp_status_change_time;
     size_t tp_version{0};
     std::string tp_step;
     size_t tp_completed{0};

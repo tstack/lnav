@@ -846,10 +846,46 @@ string_fragment::transform_codepoints(
 size_t
 string_fragment::column_width() const
 {
+    static constexpr uint64_t ONES = 0x0101010101010101ULL;
+    static constexpr uint64_t HIGHS = 0x8080808080808080ULL;
+    static constexpr auto has_zero_byte
+        = [](uint64_t v) { return ((v - ONES) & ~v & HIGHS) != 0; };
+
+    const auto* bytes = reinterpret_cast<const unsigned char*>(this->sf_string);
     auto index = this->sf_begin;
     size_t retval = 0;
 
     while (index < this->sf_end) {
+        // A run of eight ASCII bytes that contains no NUL or tab is exactly
+        // eight columns wide, so it can be counted without decoding.
+        while (this->sf_end - index >= 8) {
+            uint64_t w = 0;
+            for (int lpc = 0; lpc < 8; lpc++) {
+                w |= uint64_t{bytes[index + lpc]} << (lpc * 8);
+            }
+            if ((w & HIGHS) != 0 || has_zero_byte(w)
+                || has_zero_byte(w ^ (ONES * '\t')))
+            {
+                break;
+            }
+            retval += 8;
+            index += 8;
+        }
+        if (index >= this->sf_end) {
+            break;
+        }
+
+        const auto b = bytes[index];
+        if (b < 0x80) {
+            index += 1;
+            if (b == '\t') {
+                retval = (retval + 8) & ~size_t{7};
+            } else if (b != 0) {
+                retval += 1;
+            }
+            continue;
+        }
+
         auto read_res = ww898::utf::utf8::read(
             [this, &index]() { return this->sf_string[index++]; });
         if (read_res.isErr()) {
@@ -858,11 +894,6 @@ string_fragment::column_width() const
             auto ch = read_res.unwrap();
 
             switch (ch) {
-                case '\t':
-                    do {
-                        retval += 1;
-                    } while (retval % 8);
-                    break;
                 default: {
                     auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
                     if (wcw_res < 0) {

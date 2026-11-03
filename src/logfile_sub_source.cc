@@ -5104,6 +5104,10 @@ logfile_sub_source::reload_config(error_reporter& reporter)
     auto* mut_cfg = injector::get<logfile_sub_source_ns::config*>();
     for (auto& [name, sfd] : mut_cfg->c_stack_frames) {
         sfd.sfd_valid = false;
+        sfd.sfd_language_mask = {};
+        for (const auto lang : sfd.sfd_languages) {
+            sfd.sfd_language_mask.set(lang);
+        }
         if (sfd.sfd_pattern.pp_path.empty()) {
             reporter(&sfd.sfd_pattern,
                      lnav::console::user_message::error(
@@ -5147,21 +5151,15 @@ stack_frames_generation()
 
 bool
 stack_frame_def::is_used_for(
-    const std::vector<source_language_t>& languages) const
+    lnav::enums::bitset<source_language_t> languages) const
 {
     if (!this->sfd_enabled || !this->sfd_valid) {
         return false;
     }
-    if (languages.empty() || this->sfd_languages.empty()) {
+    if (languages.empty() || this->sfd_language_mask.empty()) {
         return true;
     }
-    return std::any_of(this->sfd_languages.begin(),
-                       this->sfd_languages.end(),
-                       [&languages](source_language_t lang) {
-                           return std::find(
-                                      languages.begin(), languages.end(), lang)
-                               != languages.end();
-                       });
+    return this->sfd_language_mask.intersects(languages);
 }
 
 std::string
@@ -5184,7 +5182,7 @@ stack_frame_match::append_path(std::string& out) const
 }
 
 void
-for_each_stack_frame(const std::vector<source_language_t>& languages,
+for_each_stack_frame(lnav::enums::bitset<source_language_t> languages,
                      string_fragment sf,
                      uint32_t options,
                      const std::function<void(const stack_frame_match&)>& func)

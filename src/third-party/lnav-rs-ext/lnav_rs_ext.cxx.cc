@@ -883,6 +883,7 @@ enum class Status : ::std::uint8_t {
 struct ExtProgress final {
   ::rust::String id;
   ::lnav_rs_ext::Status status;
+  ::std::uint64_t status_change_time CXX_DEFAULT_VALUE(0);
   ::std::size_t version CXX_DEFAULT_VALUE(0);
   ::rust::String current_step;
   ::std::uint64_t completed CXX_DEFAULT_VALUE(0);
@@ -950,6 +951,7 @@ struct CompileResult2 final {
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogOptions
 struct FindLogOptions final {
   bool extract_variables CXX_DEFAULT_VALUE(false);
+  bool fallback CXX_DEFAULT_VALUE(false);
 
   using IsRelocatable = ::std::true_type;
 };
@@ -961,7 +963,6 @@ struct FindLogResultJson final {
   ::rust::String src;
   ::rust::String pattern;
   ::rust::String variables;
-  ::rust::String stack_trace;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -1164,6 +1165,11 @@ void lnav_rs_ext$cxxbridge1$205$version_info(::rust::String *return$) noexcept {
   new (return$) ::rust::String(version_info$());
 }
 
+::std::uint64_t lnav_rs_ext$cxxbridge1$205$steady_clock_now() noexcept {
+  ::std::uint64_t (*steady_clock_now$)() = ::lnav_rs_ext::steady_clock_now;
+  return steady_clock_now$();
+}
+
 void lnav_rs_ext$cxxbridge1$205$longpoll(::lnav_rs_ext::PollInput const &poll_inpout, ::lnav_rs_ext::PollResult *return$) noexcept {
   ::lnav_rs_ext::PollResult (*longpoll$)(::lnav_rs_ext::PollInput const &) = ::lnav_rs_ext::longpoll;
   new (return$) ::lnav_rs_ext::PollResult(longpoll$(poll_inpout));
@@ -1218,6 +1224,8 @@ void lnav_rs_ext$cxxbridge1$205$get_log_statements_for(::rust::Str file, ::rust:
 void lnav_rs_ext$cxxbridge1$205$find_src_file(::rust::Str path, ::rust::String *return$) noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$source_languages(::rust::Vec<::rust::String> *return$) noexcept;
+
+void lnav_rs_ext$cxxbridge1$205$log_match_stats() noexcept;
 
 void lnav_rs_ext$cxxbridge1$205$start_ext_access(::std::uint16_t port, ::rust::String *api_key, ::lnav_rs_ext::StartExtResult *return$) noexcept;
 
@@ -1274,6 +1282,12 @@ void discover_srcs() noexcept {
   ::rust::MaybeUninit<::rust::Vec<::rust::String>> return$;
   lnav_rs_ext$cxxbridge1$205$source_languages(&return$.value);
   return ::std::move(return$.value);
+}
+
+// Log how the messages matched since the last call were matched, and reset the
+// counters.  Nothing is logged if no messages were matched.
+void log_match_stats() noexcept {
+  lnav_rs_ext$cxxbridge1$205$log_match_stats();
 }
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept {

@@ -29,14 +29,17 @@
 
 #include "progress_source.hh"
 
+#include "base/humanize.time.hh"
 #include "base/progress.hh"
 
 using namespace lnav::roles::literals;
 using namespace std::chrono_literals;
+using namespace md4cpp::literals;
 
 bool
 progress_source::poll()
 {
+    const auto now = std::chrono::steady_clock::now();
     auto new_lines = std::vector<attr_line_t>();
 
     {
@@ -89,22 +92,35 @@ progress_source::poll()
             }
 
             auto total_str = fmt::format("{:L}", tp.tp_total);
+            auto ratio = attr_line_t().appendf(FMT_STRING("{:>{}L}/{:} "),
+                                               tp.tp_completed,
+                                               total_str.size(),
+                                               total_str);
+            auto lr = line_range{0, static_cast<int>(total_str.size())};
+            ratio.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
+            lr.lr_start = lr.lr_end + 1;
+            lr.lr_end = lr.lr_start + total_str.size();
+            ratio.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
             auto body = attr_line_t()
-                            .appendf(FMT_STRING("{:>{}L}/{:} "),
-                                     tp.tp_completed,
-                                     total_str.size(),
-                                     total_str)
                             .append(lnav::roles::keyword(tp.tp_id))
                             .append(" \u2014 ")
                             .append(tp.tp_step);
-            auto lr = line_range{0, static_cast<int>(total_str.size())};
-            body.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
-            lr.lr_start = lr.lr_end + 1;
-            lr.lr_end = lr.lr_start + total_str.size();
-            body.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
 
             auto pct = (tp.tp_completed * 10) / tp.tp_total;
-            auto al = attr_line_t(" \u231b [");
+            auto al = attr_line_t(" ").append(
+                tp.tp_status == lnav::progress_status_t::working
+                    ? ":hourglass_flowing_sand:"_emoji
+                    : ":hourglass:"_emoji);
+            auto duration = now - tp.tp_status_change_time;
+            if (duration > 1s) {
+                auto hduration
+                    = humanize::time::duration::from(duration).with_resolution(
+                        1s);
+                al.append(" ").append(
+                    lnav::roles::time_ago(hduration.to_string()));
+            }
+            al.append(" [");
+            auto left_pos = al.column_width();
             if (tp.tp_completed > 0) {
                 if (pct > 0 && tp.tp_completed < tp.tp_total) {
                     pct -= 1;
@@ -116,7 +132,8 @@ progress_source::poll()
                     al.append("\u257e"_ok);
                 }
             }
-            al.pad_to(14).append("] ").append(body);
+            al.pad_to(left_pos + 10).append("] ").append(ratio);
+            al.append(body);
 
             new_lines.emplace_back(std::move(al));
         }

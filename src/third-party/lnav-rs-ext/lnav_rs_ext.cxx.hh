@@ -847,6 +847,7 @@ enum class Status : ::std::uint8_t {
 struct ExtProgress final {
   ::rust::String id;
   ::lnav_rs_ext::Status status;
+  ::std::uint64_t status_change_time CXX_DEFAULT_VALUE(0);
   ::std::size_t version CXX_DEFAULT_VALUE(0);
   ::rust::String current_step;
   ::std::uint64_t completed CXX_DEFAULT_VALUE(0);
@@ -914,6 +915,7 @@ struct CompileResult2 final {
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$FindLogOptions
 struct FindLogOptions final {
   bool extract_variables CXX_DEFAULT_VALUE(false);
+  bool fallback CXX_DEFAULT_VALUE(false);
 
   using IsRelocatable = ::std::true_type;
 };
@@ -925,7 +927,6 @@ struct FindLogResultJson final {
   ::rust::String src;
   ::rust::String pattern;
   ::rust::String variables;
-  ::rust::String stack_trace;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -1141,6 +1142,10 @@ void discover_srcs() noexcept;
 ::rust::String find_src_file(::rust::Str path) noexcept;
 
 ::rust::Vec<::rust::String> source_languages() noexcept;
+
+// Log how the messages matched since the last call were matched, and reset the
+// counters.  Nothing is logged if no messages were matched.
+void log_match_stats() noexcept;
 
 ::lnav_rs_ext::StartExtResult start_ext_access(::std::uint16_t port, ::rust::String api_key) noexcept;
 

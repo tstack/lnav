@@ -40,6 +40,8 @@ enum class LnavLogLevel : std::uint8_t;
 
 ::rust::String version_info();
 
+::rust::u64 steady_clock_now();
+
 ExecResult execute_external_command(::rust::String,
                                     ::rust::String,
                                     ::rust::String hdrs,

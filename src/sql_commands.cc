@@ -50,9 +50,9 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "fmt/chrono.h"
+#include "lnav.commands.hh"
 #include "lnav.hh"
 #include "lnav_util.hh"
-#include "lnav.commands.hh"
 #include "safe/safe.h"
 #include "service_tags.hh"
 #include "shlex.hh"
@@ -138,6 +138,7 @@ sql_cmd_dump(exec_context& ec,
 struct backup_progress_t {
     std::atomic<lnav::progress_status_t> bp_status{
         lnav::progress_status_t::idle};
+    std::atomic<std::chrono::steady_clock::time_point> bp_status_change_time;
     std::atomic_uint32_t bp_instance{0};
     std::atomic_uint64_t bp_complete{0};
     std::atomic_uint64_t bp_total{0};
@@ -148,6 +149,8 @@ struct backup_progress_t {
         {
             if (bg_helper.gh_enabled) {
                 INSTANCE.bp_status.store(lnav::progress_status_t::idle);
+                INSTANCE.bp_status_change_time.store(
+                    std::chrono::steady_clock::now());
 
                 lnav::progress_tracker::instance().notify_completion();
             }
@@ -175,6 +178,7 @@ struct backup_progress_t {
         INSTANCE.bp_total.store(1);
         INSTANCE.bp_instance.fetch_add(1, std::memory_order_relaxed);
         INSTANCE.bp_status.store(lnav::progress_status_t::working);
+        INSTANCE.bp_status_change_time.store(std::chrono::steady_clock::now());
 
         return {};
     }
@@ -190,6 +194,7 @@ backup_prog_rep()
     return {
         ";.save",
         backup_progress_t::INSTANCE.bp_status.load(),
+        backup_progress_t::INSTANCE.bp_status_change_time.load(),
         (size_t) backup_progress_t::INSTANCE.bp_instance.load(),
         "Backing up DB",
         (size_t) backup_progress_t::INSTANCE.bp_complete.load(),

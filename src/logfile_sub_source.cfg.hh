@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 
+#include "base/enum_util.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "yajlpp/yajlpp.hh"
 
@@ -95,6 +96,8 @@ struct stack_frame_def {
      * pattern that's always used.
      */
     std::vector<source_language_t> sfd_languages;
+    /** sfd_languages as a set, filled in by reload_config(). */
+    lnav::enums::bitset<source_language_t> sfd_language_mask;
 
     /** Set when the pattern has passed the checks in reload_config(). */
     bool sfd_valid{false};
@@ -109,7 +112,7 @@ struct stack_frame_def {
      * languages or names one of [languages], the source languages log2src
      * found statements in.  An empty [languages] matches every pattern.
      */
-    bool is_used_for(const std::vector<source_language_t>& languages) const;
+    bool is_used_for(lnav::enums::bitset<source_language_t> languages) const;
 };
 
 struct config {

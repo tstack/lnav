@@ -75,6 +75,13 @@ struct bitset {
 
     void set(T arg) { this->bs_data |= 1 << to_underlying(arg); }
 
+    [[nodiscard]] bool empty() const { return this->bs_data == 0; }
+
+    [[nodiscard]] bool intersects(const bitset& other) const
+    {
+        return (this->bs_data & other.bs_data) != 0;
+    }
+
     uint64_t bs_data;
 };
 

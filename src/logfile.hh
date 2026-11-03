@@ -32,6 +32,7 @@
 #ifndef logfile_hh
 #define logfile_hh
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <deque>
@@ -338,6 +339,91 @@ public:
         std::vector<frame_line> si_frame_lines;
         std::vector<frame_id> si_frame_ids;
         size_t si_frames_verified{0};
+
+        /**
+         * Where a mapping pass's time goes, for finding out why one is
+         * slow, kept by lnav::stmt_stats for each file and for the whole
+         * pass.  Each worker counts in its own copy, which is added to its
+         * file's and the pass's once it's done with the file for the slice,
+         * so the workers don't share these as they go.  The times are summed
+         * over the workers, so they can add up to more than the pass took.
+         * Logged and reset at the end of each pass, with log2src's own
+         * stats, which break down the time in find_statement().  Not reset
+         * by clear(), so a pass's counts include the lines mapped before the
+         * index was thrown away.
+         */
+        struct counters {
+            /** Lines looked at, and the ones skipped early. */
+            uint64_t mc_lines{0};
+            uint64_t mc_continued{0};
+            uint64_t mc_no_format{0};
+            /** Lines only looked at for their frames, after a re-scan. */
+            uint64_t mc_frames_only{0};
+            uint64_t mc_no_body{0};
+
+            /** read_full_message() and erase_ansi(). */
+            uint64_t mc_read_ns{0};
+            uint64_t mc_read_bytes{0};
+            uint64_t mc_max_message_bytes{0};
+            uint64_t mc_annotate_ns{0};
+            uint64_t mc_frames_ns{0};
+
+            /**
+             * The calls to log2src from match_line(), including the trip
+             * across the FFI and making the JSON of the result; compare
+             * with log2src's own time to see how much that costs.
+             */
+            uint64_t mc_find_calls{0};
+            uint64_t mc_find_ns{0};
+            uint64_t mc_max_find_ns{0};
+            /** Hashing the statement's schema and getting its id. */
+            uint64_t mc_intern_ns{0};
+            /** Interns that weren't in the worker's own cache. */
+            uint64_t mc_shared_interns{0};
+            /** sample_vars(), and how many of its calls matched again. */
+            uint64_t mc_sample_ns{0};
+            uint64_t mc_samples{0};
+
+            /** What the messages were mapped to. */
+            uint64_t mc_statements{0};
+            uint64_t mc_src_locations{0};
+            uint64_t mc_messages{0};
+            /** The data_parser for the messages without a statement. */
+            uint64_t mc_parse_ns{0};
+
+            /** Time in the workers, which is the time per file per slice. */
+            uint64_t mc_worker_ns{0};
+
+            void merge(const counters& rhs)
+            {
+                this->mc_lines += rhs.mc_lines;
+                this->mc_continued += rhs.mc_continued;
+                this->mc_no_format += rhs.mc_no_format;
+                this->mc_frames_only += rhs.mc_frames_only;
+                this->mc_no_body += rhs.mc_no_body;
+                this->mc_read_ns += rhs.mc_read_ns;
+                this->mc_read_bytes += rhs.mc_read_bytes;
+                this->mc_max_message_bytes = std::max(
+                    this->mc_max_message_bytes, rhs.mc_max_message_bytes);
+                this->mc_annotate_ns += rhs.mc_annotate_ns;
+                this->mc_frames_ns += rhs.mc_frames_ns;
+                this->mc_find_calls += rhs.mc_find_calls;
+                this->mc_find_ns += rhs.mc_find_ns;
+                this->mc_max_find_ns
+                    = std::max(this->mc_max_find_ns, rhs.mc_max_find_ns);
+                this->mc_intern_ns += rhs.mc_intern_ns;
+                this->mc_shared_interns += rhs.mc_shared_interns;
+                this->mc_sample_ns += rhs.mc_sample_ns;
+                this->mc_samples += rhs.mc_samples;
+                this->mc_statements += rhs.mc_statements;
+                this->mc_src_locations += rhs.mc_src_locations;
+                this->mc_messages += rhs.mc_messages;
+                this->mc_parse_ns += rhs.mc_parse_ns;
+                this->mc_worker_ns += rhs.mc_worker_ns;
+            }
+        };
+
+        counters si_counters;
 
         void clear()
         {

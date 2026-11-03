@@ -44,6 +44,7 @@
 
 #include <limits.h>
 
+#include "base/enum_util.hh"
 #include "base/time_util.hh"
 #include "big_array.hh"
 #include "bookmarks.hh"
@@ -102,7 +103,7 @@ size_t stack_frames_generation();
  * from several threads, but not while the config is being reloaded.
  */
 void for_each_stack_frame(
-    const std::vector<source_language_t>& languages,
+    lnav::enums::bitset<source_language_t> languages,
     string_fragment sf,
     uint32_t options,
     const std::function<void(const stack_frame_match&)>& func);

@@ -455,6 +455,13 @@ public:
      * (all_logs_vtab).  Without them, it's the message's text.
      */
     bool lf_has_src_location{false};
+    /**
+     * Whether the format's messages can have a body (SA_BODY): text that
+     * isn't parsed into fields.  Without one, the format has parsed every
+     * part of the message, so there's no text to match to a log statement
+     * or to parse for a message format.
+     */
+    bool lf_has_body{false};
     std::optional<uint64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;

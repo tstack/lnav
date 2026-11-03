@@ -825,8 +825,7 @@ logline_value_vector::operator=(const logline_value_vector& other)
     this->lvv_values = other.lvv_values;
     this->lvv_time_value = other.lvv_time_value;
     this->lvv_time_exttm = other.lvv_time_exttm;
-    this->lvv_opid_value
-        = to_owned(other.lvv_opid_value, this->lvv_allocator);
+    this->lvv_opid_value = to_owned(other.lvv_opid_value, this->lvv_allocator);
     this->lvv_opid_provenance = other.lvv_opid_provenance;
     this->lvv_thread_id_value
         = to_owned(other.lvv_thread_id_value, this->lvv_allocator);
@@ -2055,9 +2054,8 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (jlu.jlu_opid_frag) {
-            line_values.lvv_opid_value
-                = jlu.jlu_opid_frag->to_frag().to_owned(
-                    line_values.lvv_allocator);
+            line_values.lvv_opid_value = jlu.jlu_opid_frag->to_frag().to_owned(
+                line_values.lvv_allocator);
             line_values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
             auto opid_iter = this->record_opid(jlu.jlu_opid_frag.value(),
@@ -5478,6 +5476,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
 
         this->elf_pattern_order.push_back(elf_pattern.second);
+    }
+    if (this->lf_file_type == file_type_t::JSON) {
+        this->lf_has_body = !this->elf_body_field.empty();
+    } else {
+        this->lf_has_body = std::any_of(
+            this->elf_pattern_order.begin(),
+            this->elf_pattern_order.end(),
+            [](const auto& pat) { return pat->p_body_field_index != -1; });
     }
     if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_src_file_field.empty() && src_file_found == 0)
