@@ -402,140 +402,36 @@ public:
             /** Time in the workers, which is the time per file per slice. */
             uint64_t mc_worker_ns{0};
 
-            void merge(const counters& rhs)
-            {
-                this->mc_lines += rhs.mc_lines;
-                this->mc_continued += rhs.mc_continued;
-                this->mc_no_format += rhs.mc_no_format;
-                this->mc_frames_only += rhs.mc_frames_only;
-                this->mc_no_body += rhs.mc_no_body;
-                this->mc_read_ns += rhs.mc_read_ns;
-                this->mc_read_bytes += rhs.mc_read_bytes;
-                this->mc_max_message_bytes = std::max(
-                    this->mc_max_message_bytes, rhs.mc_max_message_bytes);
-                this->mc_annotate_ns += rhs.mc_annotate_ns;
-                this->mc_frames_ns += rhs.mc_frames_ns;
-                this->mc_find_calls += rhs.mc_find_calls;
-                this->mc_find_ns += rhs.mc_find_ns;
-                this->mc_max_find_ns
-                    = std::max(this->mc_max_find_ns, rhs.mc_max_find_ns);
-                this->mc_intern_ns += rhs.mc_intern_ns;
-                this->mc_shared_interns += rhs.mc_shared_interns;
-                this->mc_sample_ns += rhs.mc_sample_ns;
-                this->mc_samples += rhs.mc_samples;
-                this->mc_statements += rhs.mc_statements;
-                this->mc_src_locations += rhs.mc_src_locations;
-                this->mc_messages += rhs.mc_messages;
-                this->mc_parse_ns += rhs.mc_parse_ns;
-                this->mc_worker_ns += rhs.mc_worker_ns;
-            }
+            void merge(const counters& rhs);
         };
 
         counters si_counters;
 
-        void clear()
-        {
-            this->si_ids.clear();
-            this->si_verified = 0;
-            this->reset_frames();
-        }
+        void clear();
 
         /** Forgets every line's frames, so they are found again. */
-        void reset_frames()
-        {
-            this->si_frame_lines.clear();
-            this->si_frame_ids.clear();
-            this->si_frames_verified = 0;
-        }
+        void reset_frames();
 
         /** Sets the frames of line si_frames_verified and moves past it. */
-        void add_frames(const std::vector<frame_id>& ids)
-        {
-            if (!ids.empty()) {
-                this->si_frame_ids.insert(
-                    this->si_frame_ids.end(), ids.begin(), ids.end());
-                require_lt(this->si_frame_ids.size(), UINT32_MAX);
-                this->si_frame_lines.emplace_back(frame_line{
-                    to_file_line(this->si_frames_verified),
-                    frame_ids_offset(
-                        static_cast<uint32_t>(this->si_frame_ids.size())),
-                });
-            }
-            this->si_frames_verified += 1;
-        }
+        void add_frames(const std::vector<frame_id>& ids);
 
         /** The range of si_frame_ids with the frames of [line]. */
-        std::pair<size_t, size_t> frames_of(size_t line) const
-        {
-            auto fline = to_file_line(line);
-            auto iter = this->first_frame_line(fline);
-            if (iter == this->si_frame_lines.end() || iter->fl_line != fline) {
-                return {0, 0};
-            }
-            return {type_safe::get(this->run_start(iter)),
-                    type_safe::get(iter->fl_end)};
-        }
+        std::pair<size_t, size_t> frames_of(size_t line) const;
 
         /** Forgets the lines from [size] on, so they are matched again. */
-        void truncate(size_t size)
-        {
-            if (size < this->si_ids.size()) {
-                this->si_ids.resize(size);
-            }
-            this->si_verified = std::min(this->si_verified, size);
-            if (size < this->si_frames_verified) {
-                auto iter = this->first_frame_line(to_file_line(size));
-                this->si_frame_ids.resize(
-                    type_safe::get(this->run_start(iter)));
-                this->si_frame_lines.erase(iter, this->si_frame_lines.end());
-                this->si_frames_verified = size;
-            }
-        }
+        void truncate(size_t size);
 
         /** Drops the first [count] lines, as the index does. */
-        void discard_front(size_t count)
-        {
-            auto count_lines = to_file_line(count);
-            auto kept = this->first_frame_line(count_lines);
-            auto first_kept = this->run_start(kept);
-            this->si_frame_ids.erase(
-                this->si_frame_ids.begin(),
-                this->si_frame_ids.begin() + type_safe::get(first_kept));
-            this->si_frame_lines.erase(this->si_frame_lines.begin(), kept);
-            for (auto& fl : this->si_frame_lines) {
-                fl.fl_line -= count_lines;
-                fl.fl_end -= first_kept;
-            }
-            this->si_frames_verified
-                -= std::min(this->si_frames_verified, count);
-
-            count = std::min(count, this->si_ids.size());
-            this->si_ids.erase(this->si_ids.begin(),
-                               this->si_ids.begin() + count);
-            this->si_verified -= std::min(this->si_verified, count);
-        }
+        void discard_front(size_t count);
 
     private:
         /** The first of si_frame_lines at or after [line]. */
         std::vector<frame_line>::const_iterator first_frame_line(
-            file_line line) const
-        {
-            return std::lower_bound(this->si_frame_lines.begin(),
-                                    this->si_frame_lines.end(),
-                                    line,
-                                    [](const frame_line& fl, file_line l) {
-                                        return fl.fl_line < l;
-                                    });
-        }
+            file_line line) const;
 
         /** Where the run of [iter]'s line starts in si_frame_ids. */
         frame_ids_offset run_start(
-            std::vector<frame_line>::const_iterator iter) const
-        {
-            return iter == this->si_frame_lines.begin()
-                ? frame_ids_offset(0)
-                : std::prev(iter)->fl_end;
-        }
+            std::vector<frame_line>::const_iterator iter) const;
     };
 
     stmt_ids& get_stmt_ids() { return this->lf_stmt_ids; }
@@ -982,36 +878,14 @@ public:
      * a compressed file's on-disk size until the stream hits EOF and its
      * decompressed size after, which made the total jump mid-pass.
      */
-    void begin_indexing_progress()
-    {
-        auto prog = this->get_index_progress();
-
-        this->lf_index_progress.ip_offset.store(0, std::memory_order_relaxed);
-        this->lf_index_progress.ip_total.store(prog ? prog->second : 0,
-                                               std::memory_order_relaxed);
-        this->lf_index_progress.ip_done.store(false, std::memory_order_relaxed);
-        this->lf_index_progress.ip_abort.store(false,
-                                               std::memory_order_relaxed);
-    }
+    void begin_indexing_progress();
 
     /**
      * The reobserve_from() counterpart of begin_indexing_progress(): seeds
      * the same slots, in the same byte units, for a re-scan starting at
      * `iter`.
      */
-    void begin_reobserve_progress(iterator iter)
-    {
-        const auto start = iter == this->end() ? this->lf_index_size
-                                               : iter->get_offset();
-
-        this->lf_index_progress.ip_offset.store(start,
-                                                std::memory_order_relaxed);
-        this->lf_index_progress.ip_total.store(this->lf_index_size,
-                                               std::memory_order_relaxed);
-        this->lf_index_progress.ip_done.store(false, std::memory_order_relaxed);
-        this->lf_index_progress.ip_abort.store(false,
-                                               std::memory_order_relaxed);
-    }
+    void begin_reobserve_progress(iterator iter);
 
     /** @see index_progress -- safe to read while a worker is scanning. */
     const index_progress& indexing_progress() const
@@ -1286,22 +1160,7 @@ protected:
      * scan started.  Passed in rather than asked for here because the answer
      * holds for the whole pass and this runs on every line.
      */
-    bool needs_line_text(const line_info& li, bool observer_wants_text) const
-    {
-        // Both of these can change part-way through a pass -- a format may
-        // still be found, and detection may give up -- so they are read per
-        // line rather than hoisted with the observer's answer.
-        if (this->lf_format != nullptr || this->lf_options.loo_detect_format) {
-            return true;
-        }
-        if (!li.li_utf8_scan_result.is_valid()) {
-            // The not-utf note and the TRACE-level warning both hexdump the
-            // offending line.
-            return true;
-        }
-
-        return observer_wants_text;
-    }
+    bool needs_line_text(const line_info& li, bool observer_wants_text) const;
 
     void set_base_time_for(scan_batch_context& sbc, const line_info& li);
 
