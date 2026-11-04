@@ -107,6 +107,7 @@ set(FORMAT_FILES
         formats/cloudflare_log.json
         formats/cloudvm_ram_log.json
         formats/cups_log.json
+        formats/dmesg_log.json
         formats/dpkg_log.json
         formats/ecs_log.json
         formats/elb_log.json
@@ -168,6 +169,7 @@ set(FORMAT_FILES
         formats/web_robot_log.json
         formats/windows_event_log.json
         formats/xmlrpc_log.json
+        formats/xorg_log.json
         formats/zap_console_log.json
         formats/zellij_log.json
         formats/zookeeper_log.json

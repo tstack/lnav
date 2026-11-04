@@ -437,6 +437,8 @@ public:
     uint32_t lf_timestamp_flags{0};
     timestamp_point_of_reference_t lf_timestamp_point_of_reference{
         timestamp_point_of_reference_t::end};
+    factory_container<lnav::pcre2pp::code> lf_timestamp_anchor_pattern;
+    intern_string_t lf_timestamp_anchor_format;
     std::map<std::string, action_def> lf_action_defs;
     std::vector<highlighter> lf_highlighters;
     bool lf_is_self_describing{false};

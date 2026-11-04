@@ -75,6 +75,24 @@ TEST_CASE("date_time_scanner")
     lnav_config.lc_log_date_time.c_zoned_to_local = false;
 
     {
+        const char* ts = "90694.142083";
+        const char* fmt[] = {
+            "%E.%f",
+            nullptr,
+        };
+        char buf[64];
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        secs2tm(1428721664, &tm.et_tm);
+        dts.set_base_time(1428721664, tm.et_tm);
+        const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
+        CHECK(ts_end != nullptr);
+        CHECK(ts_end - ts == 12);
+    }
+
+    {
         static const char* ts = "Mar-18 21:41:15";
         exttm tm;
         off_t off = 0;
@@ -526,12 +544,15 @@ TEST_CASE("date_time_scanner")
             const char* sv_timestamp;
         } variants[] = {
             {"ASCII space", "Mar 10, 2026 at 11:51:40 AM"},
-            {"U+00A0 NO-BREAK SPACE", "Mar 10, 2026 at 11:51:40\xc2\xa0"
-                                      "AM"},
-            {"U+2007 FIGURE SPACE", "Mar 10, 2026 at 11:51:40\xe2\x80\x87"
-                                    "AM"},
-            {"U+2009 THIN SPACE", "Mar 10, 2026 at 11:51:40\xe2\x80\x89"
-                                  "AM"},
+            {"U+00A0 NO-BREAK SPACE",
+             "Mar 10, 2026 at 11:51:40\xc2\xa0"
+             "AM"},
+            {"U+2007 FIGURE SPACE",
+             "Mar 10, 2026 at 11:51:40\xe2\x80\x87"
+             "AM"},
+            {"U+2009 THIN SPACE",
+             "Mar 10, 2026 at 11:51:40\xe2\x80\x89"
+             "AM"},
             {"U+202F NARROW NO-BREAK SPACE",
              "Mar 10, 2026 at 11:51:40\xe2\x80\xaf"
              "AM"},
@@ -611,9 +632,8 @@ TEST_CASE("date_time_scanner")
             exttm tm;
 
             printf("scanning %s\n", sc.sc_timestamp);
-            const auto* rc
-                = dts.scan(sc.sc_timestamp, strlen(sc.sc_timestamp), nullptr,
-                           &tm, tv);
+            const auto* rc = dts.scan(
+                sc.sc_timestamp, strlen(sc.sc_timestamp), nullptr, &tm, tv);
             CHECK(rc != nullptr);
             CHECK(tm.et_tm.tm_mon == 2);
             CHECK(tm.et_tm.tm_year == 126);
@@ -662,8 +682,7 @@ TEST_CASE("date_time_scanner scan_relocking")
     {
         date_time_scanner dts;
 
-        REQUIRE(dts.scan(TS1, strlen(TS1), nullptr, &tm, tv, false)
-                != nullptr);
+        REQUIRE(dts.scan(TS1, strlen(TS1), nullptr, &tm, tv, false) != nullptr);
         CHECK(dts.scan(TS2, strlen(TS2), nullptr, &tm, tv, false) == nullptr);
     }
 

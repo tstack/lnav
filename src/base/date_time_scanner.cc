@@ -195,7 +195,19 @@ date_time_scanner::scan(const char* time_dest,
             } else if (matched == PTIME_MATCHED) {
                 retval = &time_dest[off];
 
-                tm_out->fill_from_base(this->dts_base_tm);
+                if (tm_out->et_flags & ETF_ELAPSED_TIME) {
+                    auto epoch_time = this->dts_base_time + tm_out->et_elapsed;
+                    if (convert_local) {
+                        this->to_localtime(epoch_time, *tm_out);
+                    } else {
+                        secs2tm(epoch_time, &tm_out->et_tm);
+                    }
+                    tm_out->et_flags |= ETF_DAY_SET | ETF_MONTH_SET
+                        | ETF_YEAR_SET | ETF_HOUR_SET | ETF_MINUTE_SET
+                        | ETF_SECOND_SET;
+                } else {
+                    tm_out->fill_from_base(this->dts_base_tm);
+                }
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
@@ -268,11 +280,23 @@ date_time_scanner::scan(const char* time_dest,
 #endif
             if (ptime_fmt(
                     time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len)
-                && (time_dest[off] == '.' || time_dest[off] == ','
-                    || off == (off_t) time_len))
+                && (off == (off_t) time_len || time_dest[off] == '.'
+                    || time_dest[off] == ','))
             {
                 retval = &time_dest[off];
-                tm_out->fill_from_base(this->dts_base_tm);
+                if (tm_out->et_flags & ETF_ELAPSED_TIME) {
+                    auto epoch_time = this->dts_base_time + tm_out->et_elapsed;
+                    if (convert_local) {
+                        this->to_localtime(epoch_time, *tm_out);
+                    } else {
+                        secs2tm(epoch_time, &tm_out->et_tm);
+                    }
+                    tm_out->et_flags |= ETF_DAY_SET | ETF_MONTH_SET
+                        | ETF_YEAR_SET | ETF_HOUR_SET | ETF_MINUTE_SET
+                        | ETF_SECOND_SET;
+                } else {
+                    tm_out->fill_from_base(this->dts_base_tm);
+                }
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
@@ -459,6 +483,8 @@ date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
     this->dts_last_tm = tm{};
     this->dts_last_gmtoff = 0;
     this->dts_last_tv = timeval{};
+    this->dts_localtime_cached_gmt = 0;
+    this->dts_localtime_cached_tm = tm{};
 }
 
 void

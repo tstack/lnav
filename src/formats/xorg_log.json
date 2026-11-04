@@ -1,0 +1,68 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "xorg_log": {
+        "title": "X.Org server log format",
+        "description": "Log format for the X.Org X server (e.g. /var/log/Xorg.0.log)",
+        "url": "https://www.x.org/releases/current/doc/man/man1/Xorg.1.xhtml",
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?|\\s*\\d+\\.\\d{3})\\] (?:\\((?<level>EE|WW|II|NI|!!|--|\\*\\*|==|\\+\\+|\\?\\?)\\) )?(?:(?<driver>[\\w-]+)\\((?<screen>[^)\\s]+)\\): )?(?<body>.*)$"
+            }
+        },
+        "timestamp-format": [
+            "%Y-%m-%d %H:%M:%S",
+            "%E.%f"
+        ],
+        "timestamp-anchor": {
+            "pattern": "\\(==\\) Log file: \"[^\"]+\", Time: (.+)$"
+        },
+        "level": {
+            "error": "^EE$",
+            "warning": "^WW$",
+            "notice": "^!!$"
+        },
+        "value": {
+            "level": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The message marker: (--) probed, (**) from config file, (==) default setting, (++) from command line, (!!) notice, (II) informational, (WW) warning, (EE) error, (NI) not implemented, (??) unknown"
+            },
+            "driver": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The name of the driver that logged the message"
+            },
+            "screen": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The screen or GPU index the driver message is about"
+            }
+        },
+        "sample": [
+            {
+                "line": "[    18.124] (==) Log file: \"/var/log/Xorg.0.log\", Time: Fri Nov 10 09:15:02 2023"
+            },
+            {
+                "line": "[    18.200] (II) modeset(0): using drv /dev/dri/card0"
+            },
+            {
+                "line": "[    18.210] (WW) Falling back to old probe method for fbdev",
+                "level": "warning"
+            },
+            {
+                "line": "[    18.300] (EE) Failed to load module \"nvidia\" (module does not exist, 0)",
+                "level": "error"
+            },
+            {
+                "line": "[    18.305] (!!) NVIDIA(GPU-0): Depth 24 is not supported",
+                "level": "notice"
+            },
+            {
+                "line": "[    18.124] Markers: (--) probed, (**) from config file, (==) default setting,\n\t(++) from command line, (!!) notice, (II) informational,\n\t(WW) warning, (EE) error, (NI) not implemented, (??) unknown."
+            },
+            {
+                "line": "[2026-08-11 13:20:21] (==) Log file: \"/var/log/Xorg.0.log\", Time: Tue Aug 11 13:20:21 2026"
+            }
+        ]
+    }
+}

@@ -1,0 +1,349 @@
+[  1314.621] 
+X.Org X Server 1.14.2
+Release Date: 2013-06-25
+[  1314.688] X Protocol Version 11, Revision 0
+[  1314.710] Build Operating System: Linux 3.9.7-1-ARCH x86_64 
+[  1314.756] Current Operating System: Linux realex 3.10.5-1-ARCH #1 SMP PREEMPT Mon Aug 5 08:04:22 CEST 2013 x86_64
+[  1314.756] Kernel command line: BOOT_IMAGE=/boot/vmlinuz-linux root=UUID=a6a90ff3-39ef-417d-b82c-46dbc169deab ro
+[  1314.826] Build Date: 01 July 2013  10:48:42AM
+[  1314.848]  
+[  1314.869] Current version of pixman: 0.30.2
+[  1314.913] 	Before reporting problems, check http://wiki.x.org
+	to make sure that you have the latest version.
+[  1314.914] Markers: (--) probed, (**) from config file, (==) default setting,
+	(++) from command line, (!!) notice, (II) informational,
+	(WW) warning, (EE) error, (NI) not implemented, (??) unknown.
+[  1315.003] (==) Log file: "/var/log/Xorg.0.log", Time: Thu Aug  8 20:19:29 2013
+[  1315.025] (==) Using config file: "/etc/X11/xorg.conf"
+[  1315.047] (==) Using config directory: "/etc/X11/xorg.conf.d"
+[  1315.047] (==) ServerLayout "Layout0"
+[  1315.047] (**) |-->Screen "Screen0" (0)
+[  1315.047] (**) |   |-->Monitor "Monitor0"
+[  1315.047] (**) |   |-->Device "Device0"
+[  1315.047] (**) |-->Input Device "Keyboard0"
+[  1315.047] (**) |-->Input Device "Mouse0"
+[  1315.047] (==) Automatically adding devices
+[  1315.047] (==) Automatically enabling devices
+[  1315.047] (==) Automatically adding GPU devices
+[  1315.047] (WW) The directory "/usr/share/fonts/OTF/" does not exist.
+[  1315.047] 	Entry deleted from font path.
+[  1315.047] (WW) `fonts.dir' not found (or not valid) in "/usr/share/fonts/100dpi/".
+[  1315.047] 	Entry deleted from font path.
+[  1315.047] 	(Run 'mkfontdir' on "/usr/share/fonts/100dpi/").
+[  1315.047] (WW) `fonts.dir' not found (or not valid) in "/usr/share/fonts/75dpi/".
+[  1315.047] 	Entry deleted from font path.
+[  1315.047] 	(Run 'mkfontdir' on "/usr/share/fonts/75dpi/").
+[  1315.047] (==) FontPath set to:
+	/usr/share/fonts/misc/,
+	/usr/share/fonts/TTF/,
+	/usr/share/fonts/Type1/
+[  1315.047] (==) ModulePath set to "/usr/lib/xorg/modules"
+[  1315.047] (WW) Hotplugging is on, devices using drivers 'kbd', 'mouse' or 'vmmouse' will be disabled.
+[  1315.047] (WW) Disabling Keyboard0
+[  1315.047] (WW) Disabling Mouse0
+[  1315.047] (II) Loader magic: 0x7fdc20
+[  1315.047] (II) Module ABI versions:
+[  1315.047] 	X.Org ANSI C Emulation: 0.4
+[  1315.047] 	X.Org Video Driver: 14.1
+[  1315.047] 	X.Org XInput driver : 19.1
+[  1315.047] 	X.Org Server Extension : 7.0
+[  1315.047] (II) xfree86: Adding drm device (/dev/dri/card0)
+[  1315.048] (--) PCI:*(0:5:0:0) 10de:11c6:1569:11c6 rev 161, Mem @ 0xf6000000/16777216, 0xe8000000/134217728, 0xf2000000/33554432, I/O @ 0x0000ec00/128, BIOS @ 0x????????/524288
+[  1315.071] Initializing built-in extension Generic Event Extension
+[  1315.093] Initializing built-in extension SHAPE
+[  1315.114] Initializing built-in extension MIT-SHM
+[  1315.136] Initializing built-in extension XInputExtension
+[  1315.158] Initializing built-in extension XTEST
+[  1315.179] Initializing built-in extension BIG-REQUESTS
+[  1315.200] Initializing built-in extension SYNC
+[  1315.220] Initializing built-in extension XKEYBOARD
+[  1315.239] Initializing built-in extension XC-MISC
+[  1315.259] Initializing built-in extension SECURITY
+[  1315.279] Initializing built-in extension XINERAMA
+[  1315.298] Initializing built-in extension XFIXES
+[  1315.317] Initializing built-in extension RENDER
+[  1315.335] Initializing built-in extension RANDR
+[  1315.352] Initializing built-in extension COMPOSITE
+[  1315.368] Initializing built-in extension DAMAGE
+[  1315.383] Initializing built-in extension MIT-SCREEN-SAVER
+[  1315.397] Initializing built-in extension DOUBLE-BUFFER
+[  1315.410] Initializing built-in extension RECORD
+[  1315.424] Initializing built-in extension DPMS
+[  1315.437] Initializing built-in extension X-Resource
+[  1315.449] Initializing built-in extension XVideo
+[  1315.461] Initializing built-in extension XVideo-MotionCompensation
+[  1315.472] Initializing built-in extension XFree86-VidModeExtension
+[  1315.482] Initializing built-in extension XFree86-DGA
+[  1315.492] Initializing built-in extension XFree86-DRI
+[  1315.500] Initializing built-in extension DRI2
+[  1315.500] (II) LoadModule: "glx"
+[  1315.500] (II) Loading /usr/lib/xorg/modules/extensions/libglx.so
+[  1315.508] (II) Module glx: vendor="NVIDIA Corporation"
+[  1315.508] 	compiled for 4.0.2, module version = 1.0.0
+[  1315.508] 	Module class: X.Org Server Extension
+[  1315.508] (II) NVIDIA GLX Module  325.15  Wed Jul 31 18:12:00 PDT 2013
+[  1315.516] Loading extension GLX
+[  1315.516] (II) LoadModule: "nvidia"
+[  1315.516] (II) Loading /usr/lib/xorg/modules/drivers/nvidia_drv.so
+[  1315.516] (II) Module nvidia: vendor="NVIDIA Corporation"
+[  1315.516] 	compiled for 4.0.2, module version = 1.0.0
+[  1315.516] 	Module class: X.Org Video Driver
+[  1315.516] (II) NVIDIA dlloader X Driver  325.15  Wed Jul 31 17:50:57 PDT 2013
+[  1315.516] (II) NVIDIA Unified Driver for all Supported NVIDIA GPUs
+[  1315.516] (--) using VT number 4
+
+[  1315.556] (II) Loading sub module "fb"
+[  1315.556] (II) LoadModule: "fb"
+[  1315.556] (II) Loading /usr/lib/xorg/modules/libfb.so
+[  1315.557] (II) Module fb: vendor="X.Org Foundation"
+[  1315.557] 	compiled for 1.14.2, module version = 1.0.0
+[  1315.557] 	ABI class: X.Org ANSI C Emulation, version 0.4
+[  1315.557] (WW) Unresolved symbol: fbGetGCPrivateKey
+[  1315.557] (II) Loading sub module "wfb"
+[  1315.557] (II) LoadModule: "wfb"
+[  1315.557] (II) Loading /usr/lib/xorg/modules/libwfb.so
+[  1315.557] (II) Module wfb: vendor="X.Org Foundation"
+[  1315.557] 	compiled for 1.14.2, module version = 1.0.0
+[  1315.557] 	ABI class: X.Org ANSI C Emulation, version 0.4
+[  1315.557] (II) Loading sub module "shadow"
+[  1315.557] (II) LoadModule: "shadow"
+[  1315.557] (II) Loading /usr/lib/xorg/modules/libshadow.so
+[  1315.557] (II) Module shadow: vendor="X.Org Foundation"
+[  1315.557] 	compiled for 1.14.2, module version = 1.1.0
+[  1315.557] 	ABI class: X.Org ANSI C Emulation, version 0.4
+[  1315.558] (II) Loading sub module "ramdac"
+[  1315.558] (II) LoadModule: "ramdac"
+[  1315.558] (II) Module "ramdac" already built-in
+[  1315.558] (**) NVIDIA(0): Depth 24, (--) framebuffer bpp 32
+[  1315.558] (==) NVIDIA(0): RGB weight 888
+[  1315.558] (==) NVIDIA(0): Default visual is TrueColor
+[  1315.558] (==) NVIDIA(0): Using gamma correction (1.0, 1.0, 1.0)
+[  1315.558] (**) NVIDIA(0): Enabling 2D acceleration
+[  1315.920] (II) NVIDIA(GPU-0): Found DRM driver nvidia-drm (20130102)
+[  1315.929] (II) NVIDIA(GPU-0): Display (Samsung SyncMaster (DFP-1)) does not support NVIDIA
+[  1315.929] (II) NVIDIA(GPU-0):     3D Vision stereo.
+[  1315.930] (II) NVIDIA(0): NVIDIA GPU GeForce GTX 650 Ti (GK106) at PCI:5:0:0 (GPU-0)
+[  1315.930] (--) NVIDIA(0): Memory: 1048576 kBytes
+[  1315.930] (--) NVIDIA(0): VideoBIOS: 80.06.21.00.1e
+[  1315.930] (II) NVIDIA(0): Detected PCI Express Link width: 16X
+[  1315.933] (--) NVIDIA(0): Valid display device(s) on GeForce GTX 650 Ti at PCI:5:0:0
+[  1315.933] (--) NVIDIA(0):     CRT-0
+[  1315.933] (--) NVIDIA(0):     DFP-0
+[  1315.933] (--) NVIDIA(0):     Samsung SyncMaster (DFP-1) (boot, connected)
+[  1315.933] (--) NVIDIA(0): CRT-0: 480.0 MHz maximum pixel clock
+[  1315.933] (--) NVIDIA(0): DFP-0: 165.0 MHz maximum pixel clock
+[  1315.933] (--) NVIDIA(0): DFP-0: Internal Single Link TMDS
+[  1315.933] (--) NVIDIA(0): Samsung SyncMaster (DFP-1): 330.0 MHz maximum pixel clock
+[  1315.933] (--) NVIDIA(0): Samsung SyncMaster (DFP-1): Internal Dual Link TMDS
+[  1315.933] (**) NVIDIA(0): Using HorizSync/VertRefresh ranges from the EDID for display
+[  1315.933] (**) NVIDIA(0):     device Samsung SyncMaster (DFP-1) (Using EDID frequencies
+[  1315.933] (**) NVIDIA(0):     has been enabled on all display devices.)
+[  1315.935] (==) NVIDIA(0): 
+[  1315.935] (==) NVIDIA(0): No modes were requested; the default mode "nvidia-auto-select"
+[  1315.935] (==) NVIDIA(0):     will be used as the requested mode.
+[  1315.935] (==) NVIDIA(0): 
+[  1315.935] (II) NVIDIA(0): Validated MetaModes:
+[  1315.935] (II) NVIDIA(0):     "DFP-1:nvidia-auto-select{}"
+[  1315.935] (II) NVIDIA(0): Virtual screen size determined to be 1680 x 1050
+[  1315.968] (--) NVIDIA(0): DPI set to (99, 98); computed from "UseEdidDpi" X config
+[  1315.968] (--) NVIDIA(0):     option
+[  1315.968] (--) Depth 24 pixmap format is 32 bpp
+[  1315.968] (II) NVIDIA: Using 3072.00 MB of virtual memory for indirect memory
+[  1315.968] (II) NVIDIA:     access.
+[  1315.971] (II) NVIDIA(0): ACPI: failed to connect to the ACPI event daemon; the daemon
+[  1315.971] (II) NVIDIA(0):     may not be running or the "AcpidSocketPath" X
+[  1315.971] (II) NVIDIA(0):     configuration option may not be set correctly.  When the
+[  1315.971] (II) NVIDIA(0):     ACPI event daemon is available, the NVIDIA X driver will
+[  1315.971] (II) NVIDIA(0):     try to use it to receive ACPI event notifications.  For
+[  1315.971] (II) NVIDIA(0):     details, please see the "ConnectToAcpid" and
+[  1315.971] (II) NVIDIA(0):     "AcpidSocketPath" X configuration options in Appendix B: X
+[  1315.971] (II) NVIDIA(0):     Config Options in the README.
+[  1315.975] (II) NVIDIA(0): Setting mode "DFP-1:nvidia-auto-select{}"
+[  1316.017] Loading extension NV-GLX
+[  1316.033] (==) NVIDIA(0): Disabling shared memory pixmaps
+[  1316.033] (==) NVIDIA(0): Backing store disabled
+[  1316.033] (==) NVIDIA(0): Silken mouse enabled
+[  1316.033] (**) NVIDIA(0): DPMS enabled
+[  1316.033] Loading extension NV-CONTROL
+[  1316.034] Loading extension XINERAMA
+[  1316.034] (II) Loading sub module "dri2"
+[  1316.034] (II) LoadModule: "dri2"
+[  1316.034] (II) Module "dri2" already built-in
+[  1316.034] (II) NVIDIA(0): [DRI2] Setup complete
+[  1316.034] (II) NVIDIA(0): [DRI2]   VDPAU driver: nvidia
+[  1316.034] (--) RandR disabled
+[  1316.037] (II) Initializing extension GLX
+[  1316.085] (II) config/udev: Adding input device Power Button (/dev/input/event2)
+[  1316.085] (**) Power Button: Applying InputClass "evdev keyboard catchall"
+[  1316.085] (II) LoadModule: "evdev"
+[  1316.085] (II) Loading /usr/lib/xorg/modules/input/evdev_drv.so
+[  1316.085] (II) Module evdev: vendor="X.Org Foundation"
+[  1316.085] 	compiled for 1.14.2, module version = 2.8.1
+[  1316.085] 	Module class: X.Org XInput Driver
+[  1316.085] 	ABI class: X.Org XInput driver, version 19.1
+[  1316.085] (II) Using input driver 'evdev' for 'Power Button'
+[  1316.085] (**) Power Button: always reports core events
+[  1316.085] (**) evdev: Power Button: Device: "/dev/input/event2"
+[  1316.085] (--) evdev: Power Button: Vendor 0 Product 0x1
+[  1316.085] (--) evdev: Power Button: Found keys
+[  1316.085] (II) evdev: Power Button: Configuring as keyboard
+[  1316.086] (**) Option "config_info" "udev:/sys/devices/LNXSYSTM:00/LNXPWRBN:00/input/input2/event2"
+[  1316.086] (II) XINPUT: Adding extended input device "Power Button" (type: KEYBOARD, id 6)
+[  1316.086] (**) Option "xkb_rules" "evdev"
+[  1316.086] (**) Option "xkb_model" "pc104"
+[  1316.086] (**) Option "xkb_layout" "us"
+[  1316.114] (II) config/udev: Adding input device Power Button (/dev/input/event1)
+[  1316.114] (**) Power Button: Applying InputClass "evdev keyboard catchall"
+[  1316.114] (II) Using input driver 'evdev' for 'Power Button'
+[  1316.114] (**) Power Button: always reports core events
+[  1316.114] (**) evdev: Power Button: Device: "/dev/input/event1"
+[  1316.114] (--) evdev: Power Button: Vendor 0 Product 0x1
+[  1316.114] (--) evdev: Power Button: Found keys
+[  1316.114] (II) evdev: Power Button: Configuring as keyboard
+[  1316.114] (**) Option "config_info" "udev:/sys/devices/LNXSYSTM:00/device:00/PNP0C0C:00/input/input1/event1"
+[  1316.114] (II) XINPUT: Adding extended input device "Power Button" (type: KEYBOARD, id 7)
+[  1316.115] (**) Option "xkb_rules" "evdev"
+[  1316.115] (**) Option "xkb_model" "pc104"
+[  1316.115] (**) Option "xkb_layout" "us"
+[  1316.115] (II) config/udev: Adding input device HDA Intel MID Front Mic (/dev/input/event10)
+[  1316.115] (II) No input driver specified, ignoring this device.
+[  1316.115] (II) This device may have been added with another device file.
+[  1316.116] (II) config/udev: Adding input device HDA Intel MID Rear Mic (/dev/input/event11)
+[  1316.116] (II) No input driver specified, ignoring this device.
+[  1316.116] (II) This device may have been added with another device file.
+[  1316.116] (II) config/udev: Adding input device HDA Intel MID Front Headphone (/dev/input/event4)
+[  1316.116] (II) No input driver specified, ignoring this device.
+[  1316.116] (II) This device may have been added with another device file.
+[  1316.116] (II) config/udev: Adding input device HDA Intel MID Line Out Side (/dev/input/event5)
+[  1316.116] (II) No input driver specified, ignoring this device.
+[  1316.116] (II) This device may have been added with another device file.
+[  1316.117] (II) config/udev: Adding input device HDA Intel MID Line Out CLFE (/dev/input/event6)
+[  1316.117] (II) No input driver specified, ignoring this device.
+[  1316.117] (II) This device may have been added with another device file.
+[  1316.117] (II) config/udev: Adding input device HDA Intel MID Line Out Surround (/dev/input/event7)
+[  1316.117] (II) No input driver specified, ignoring this device.
+[  1316.117] (II) This device may have been added with another device file.
+[  1316.117] (II) config/udev: Adding input device HDA Intel MID Line Out Front (/dev/input/event8)
+[  1316.117] (II) No input driver specified, ignoring this device.
+[  1316.117] (II) This device may have been added with another device file.
+[  1316.118] (II) config/udev: Adding input device HDA Intel MID Line (/dev/input/event9)
+[  1316.118] (II) No input driver specified, ignoring this device.
+[  1316.118] (II) This device may have been added with another device file.
+[  1316.118] (II) config/udev: Adding drm device (/dev/dri/card0)
+[  1316.118] (II) config/udev: Adding input device HDA NVidia HDMI/DP,pcm=9 (/dev/input/event15)
+[  1316.118] (II) No input driver specified, ignoring this device.
+[  1316.118] (II) This device may have been added with another device file.
+[  1316.119] (II) config/udev: Adding input device HDA NVidia HDMI/DP,pcm=8 (/dev/input/event16)
+[  1316.119] (II) No input driver specified, ignoring this device.
+[  1316.119] (II) This device may have been added with another device file.
+[  1316.119] (II) config/udev: Adding input device HDA NVidia HDMI/DP,pcm=7 (/dev/input/event17)
+[  1316.119] (II) No input driver specified, ignoring this device.
+[  1316.119] (II) This device may have been added with another device file.
+[  1316.120] (II) config/udev: Adding input device HDA NVidia HDMI/DP,pcm=3 (/dev/input/event18)
+[  1316.120] (II) No input driver specified, ignoring this device.
+[  1316.120] (II) This device may have been added with another device file.
+[  1316.120] (II) config/udev: Adding input device USB2.0 Camera (/dev/input/event14)
+[  1316.120] (**) USB2.0 Camera: Applying InputClass "evdev keyboard catchall"
+[  1316.120] (II) Using input driver 'evdev' for 'USB2.0 Camera'
+[  1316.120] (**) USB2.0 Camera: always reports core events
+[  1316.120] (**) evdev: USB2.0 Camera: Device: "/dev/input/event14"
+[  1316.120] (--) evdev: USB2.0 Camera: Vendor 0x1871 Product 0x1f0
+[  1316.120] (--) evdev: USB2.0 Camera: Found keys
+[  1316.120] (II) evdev: USB2.0 Camera: Configuring as keyboard
+[  1316.120] (**) Option "config_info" "udev:/sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.3/2-1.3:1.0/input/input14/event14"
+[  1316.120] (II) XINPUT: Adding extended input device "USB2.0 Camera" (type: KEYBOARD, id 8)
+[  1316.120] (**) Option "xkb_rules" "evdev"
+[  1316.120] (**) Option "xkb_model" "pc104"
+[  1316.120] (**) Option "xkb_layout" "us"
+[  1316.121] (II) config/udev: Adding input device A4TECH USB Device (/dev/input/event12)
+[  1316.121] (**) A4TECH USB Device: Applying InputClass "evdev keyboard catchall"
+[  1316.121] (II) Using input driver 'evdev' for 'A4TECH USB Device'
+[  1316.121] (**) A4TECH USB Device: always reports core events
+[  1316.121] (**) evdev: A4TECH USB Device: Device: "/dev/input/event12"
+[  1316.121] (II) evdev: A4TECH USB Device: Using mtdev for this device
+[  1316.121] (--) evdev: A4TECH USB Device: Vendor 0x9da Product 0x9090
+[  1316.121] (--) evdev: A4TECH USB Device: Found 1 mouse buttons
+[  1316.121] (--) evdev: A4TECH USB Device: Found scroll wheel(s)
+[  1316.121] (--) evdev: A4TECH USB Device: Found relative axes
+[  1316.121] (--) evdev: A4TECH USB Device: Found absolute axes
+[  1316.121] (--) evdev: A4TECH USB Device: Found absolute multitouch axes
+[  1316.121] (--) evdev: A4TECH USB Device: Found x and y absolute axes
+[  1316.121] (--) evdev: A4TECH USB Device: Found keys
+[  1316.121] (II) evdev: A4TECH USB Device: Forcing relative x/y axes to exist.
+[  1316.121] (II) evdev: A4TECH USB Device: Configuring as mouse
+[  1316.121] (II) evdev: A4TECH USB Device: Configuring as keyboard
+[  1316.122] (II) evdev: A4TECH USB Device: Adding scrollwheel support
+[  1316.122] (**) evdev: A4TECH USB Device: YAxisMapping: buttons 4 and 5
+[  1316.122] (**) evdev: A4TECH USB Device: EmulateWheelButton: 4, EmulateWheelInertia: 10, EmulateWheelTimeout: 200
+[  1316.122] (**) Option "config_info" "udev:/sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.5/2-1.5:1.0/input/input12/event12"
+[  1316.122] (II) XINPUT: Adding extended input device "A4TECH USB Device" (type: KEYBOARD, id 9)
+[  1316.122] (**) Option "xkb_rules" "evdev"
+[  1316.122] (**) Option "xkb_model" "pc104"
+[  1316.122] (**) Option "xkb_layout" "us"
+[  1316.122] (II) evdev: A4TECH USB Device: initialized for relative axes.
+[  1316.122] (WW) evdev: A4TECH USB Device: ignoring absolute axes.
+[  1316.122] (**) A4TECH USB Device: (accel) keeping acceleration scheme 1
+[  1316.122] (**) A4TECH USB Device: (accel) acceleration profile 0
+[  1316.122] (**) A4TECH USB Device: (accel) acceleration factor: 2.000
+[  1316.122] (**) A4TECH USB Device: (accel) acceleration threshold: 4
+[  1316.123] (II) config/udev: Adding input device A4TECH USB Device (/dev/input/js0)
+[  1316.123] (II) No input driver specified, ignoring this device.
+[  1316.123] (II) This device may have been added with another device file.
+[  1316.123] (II) config/udev: Adding input device A4TECH USB Device (/dev/input/event13)
+[  1316.123] (**) A4TECH USB Device: Applying InputClass "evdev pointer catchall"
+[  1316.123] (II) Using input driver 'evdev' for 'A4TECH USB Device'
+[  1316.123] (**) A4TECH USB Device: always reports core events
+[  1316.123] (**) evdev: A4TECH USB Device: Device: "/dev/input/event13"
+[  1316.123] (--) evdev: A4TECH USB Device: Vendor 0x9da Product 0x9090
+[  1316.124] (--) evdev: A4TECH USB Device: Found 20 mouse buttons
+[  1316.124] (--) evdev: A4TECH USB Device: Found scroll wheel(s)
+[  1316.124] (--) evdev: A4TECH USB Device: Found relative axes
+[  1316.124] (--) evdev: A4TECH USB Device: Found x and y relative axes
+[  1316.124] (II) evdev: A4TECH USB Device: Configuring as mouse
+[  1316.124] (II) evdev: A4TECH USB Device: Adding scrollwheel support
+[  1316.124] (**) evdev: A4TECH USB Device: YAxisMapping: buttons 4 and 5
+[  1316.124] (**) evdev: A4TECH USB Device: EmulateWheelButton: 4, EmulateWheelInertia: 10, EmulateWheelTimeout: 200
+[  1316.124] (**) Option "config_info" "udev:/sys/devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.5/2-1.5:1.1/input/input13/event13"
+[  1316.124] (II) XINPUT: Adding extended input device "A4TECH USB Device" (type: MOUSE, id 10)
+[  1316.124] (II) evdev: A4TECH USB Device: initialized for relative axes.
+[  1316.124] (**) A4TECH USB Device: (accel) keeping acceleration scheme 1
+[  1316.124] (**) A4TECH USB Device: (accel) acceleration profile 0
+[  1316.124] (**) A4TECH USB Device: (accel) acceleration factor: 2.000
+[  1316.124] (**) A4TECH USB Device: (accel) acceleration threshold: 4
+[  1316.124] (II) config/udev: Adding input device A4TECH USB Device (/dev/input/mouse0)
+[  1316.125] (II) No input driver specified, ignoring this device.
+[  1316.125] (II) This device may have been added with another device file.
+[  1316.125] (II) config/udev: Adding input device AT Translated Set 2 keyboard (/dev/input/event0)
+[  1316.125] (**) AT Translated Set 2 keyboard: Applying InputClass "evdev keyboard catchall"
+[  1316.125] (II) Using input driver 'evdev' for 'AT Translated Set 2 keyboard'
+[  1316.125] (**) AT Translated Set 2 keyboard: always reports core events
+[  1316.125] (**) evdev: AT Translated Set 2 keyboard: Device: "/dev/input/event0"
+[  1316.125] (--) evdev: AT Translated Set 2 keyboard: Vendor 0x1 Product 0x1
+[  1316.125] (--) evdev: AT Translated Set 2 keyboard: Found keys
+[  1316.125] (II) evdev: AT Translated Set 2 keyboard: Configuring as keyboard
+[  1316.125] (**) Option "config_info" "udev:/sys/devices/platform/i8042/serio0/input/input0/event0"
+[  1316.125] (II) XINPUT: Adding extended input device "AT Translated Set 2 keyboard" (type: KEYBOARD, id 11)
+[  1316.125] (**) Option "xkb_rules" "evdev"
+[  1316.125] (**) Option "xkb_model" "pc104"
+[  1316.125] (**) Option "xkb_layout" "us"
+[  1316.126] (II) config/udev: Adding input device PC Speaker (/dev/input/event3)
+[  1316.126] (II) No input driver specified, ignoring this device.
+[  1316.126] (II) This device may have been added with another device file.
+[  1316.200] (II) NVIDIA(GPU-0): Display (Samsung SyncMaster (DFP-1)) does not support NVIDIA
+[  1316.200] (II) NVIDIA(GPU-0):     3D Vision stereo.
+[  1316.207] (II) NVIDIA(GPU-0): Display (Samsung SyncMaster (DFP-1)) does not support NVIDIA
+[  1316.207] (II) NVIDIA(GPU-0):     3D Vision stereo.
+[  1323.322] (II) evdev: AT Translated Set 2 keyboard: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.322] (II) evdev: A4TECH USB Device: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.322] (II) evdev: A4TECH USB Device: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.322] (II) evdev: USB2.0 Camera: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.322] (II) evdev: Power Button: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.322] (II) evdev: Power Button: Close
+[  1323.322] (II) UnloadModule: "evdev"
+[  1323.565] (II) NVIDIA(GPU-0): Deleting GPU-0
+[  1323.657] (EE) Server terminated successfully (0). Closing log file.

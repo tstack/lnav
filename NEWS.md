@@ -79,6 +79,8 @@ Features:
   The new format exposes `device`, `tool`, and `action` fields,
   groups messages by device in the TIMELINE view, and highlights
   `error:` lines and `FILESYSTEM CLEAN` status messages.
+* Added the `dmesg_log` format for Linux kernel logs.
+* Added the `xorg_log` format for X.Org server logs.
 * Added a log format for the Asterisk PBX framework.  The
   call ID (e.g. `C-00000001`) is used as the operation ID so
   the messages for a call are grouped in the TIMELINE view.
@@ -329,6 +331,15 @@ Features:
   could not tell, like for a `printf()`.  When a message
   matches more than one statement equally well, the one with
   the same level as the message is now chosen.
+* Added the `%E` time format specifier that can be used for
+  "elapsed time" in seconds.  Elapsed time timestamps must
+  then be paired with an "anchor" log message that contains
+  an absolute timestamp.  The anchor is defined by the
+  `timestamp-anchor` object property in the log format.
+  That property must specify a `pattern` regex that is used
+  to capture the anchor timestamp.  If the format of the
+  timestamp is non-standard, the `format` can be set
+  to a specifier string.
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the
@@ -345,6 +356,9 @@ Interface Changes:
 * Pressing `G` will now cycle through putting the
   end of the content at the top and bottom of the
   screen in cursor mode.
+* The "Files" details panel now show the "Base Time"
+  information for a file.  The "Base Time" is used
+  to file in incomplete log timestamps.
 
 Performance:
 * Indexing performance has been improved in a few

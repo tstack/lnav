@@ -55,8 +55,7 @@
 \
     block \
 \
-        off_inout \
-        += (amount);
+        off_inout += (amount);
 
 #define PTIME_APPEND(ch) \
     if ((off_inout + 2) >= len) { \
@@ -124,8 +123,7 @@ ptime_a_upto(char ch, const char* str, off_t& off_inout, ssize_t len)
         }
         // A byte at or above 0x80 is part of a multibyte name, so only the
         // ASCII range says anything about what this is.
-        if (ch == ' ' && name_ch < 0x80
-            && !(name_ch >= 'A' && name_ch <= 'Z')
+        if (ch == ' ' && name_ch < 0x80 && !(name_ch >= 'A' && name_ch <= 'Z')
             && !(name_ch >= 'a' && name_ch <= 'z') && name_ch != '.'
             && name_ch != '-')
         {
@@ -918,6 +916,48 @@ ftime_d(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
     PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 10) % 10));
     PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 1) % 10));
+}
+
+/**
+ * Parse elapsed time in the format of "%E".
+ */
+inline bool
+ptime_E(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    lnav::time64_t epoch = 0;
+
+    while (off_inout < len && isspace(str[off_inout])) {
+        off_inout += 1;
+    }
+    off_t off_start = off_inout;
+    while (off_inout < len) {
+        if (!isdigit(str[off_inout])) {
+            break;
+        }
+        if ((off_inout - off_start) >= 11) {
+            return false;
+        }
+
+        epoch *= 10;
+        epoch += str[off_inout] - '0';
+        off_inout += 1;
+    }
+
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
+    dst->et_elapsed = epoch;
+    dst->et_flags = ETF_ELAPSED_TIME | ETF_MACHINE_ORIENTED;
+
+    return off_inout > off_start;
+}
+
+inline void
+ftime_E(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+{
+    snprintf(&dst[off_inout], len - off_inout, "%lld", tm.et_elapsed);
+    off_inout = strlen(dst);
 }
 
 inline bool

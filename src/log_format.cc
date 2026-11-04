@@ -5965,6 +5965,20 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         }
     }
 
+    if (this->lf_timestamp_anchor_pattern.pp_value
+        && this->lf_timestamp_anchor_pattern.pp_value->get_capture_count() != 1)
+    {
+        errors.emplace_back(
+            lnav::console::user_message::error(
+                attr_line_t("invalid value for property ")
+                    .append_quoted(lnav::roles::symbol(
+                        fmt::format(FMT_STRING("/{}/timestamp-anchor/pattern"),
+                                    this->elf_name))))
+                .with_reason(attr_line_t("timestamp anchor pattern must have a "
+                                         "single capture group"))
+                .with_snippets(this->get_snippets()));
+    }
+
     for (size_t sample_index = 0; sample_index < this->elf_samples.size();
          sample_index += 1)
     {

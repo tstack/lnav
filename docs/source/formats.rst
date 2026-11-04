@@ -335,6 +335,7 @@ object with the following fields:
   supported: %a, %b, %L, %M, %H, %I, %d, %e, %j, %k, %l, %m, %p, %y, %Y, %S, %s,
   %Z, %z.  In addition, you can also use the following:
 
+  :%E: Elapsed time in seconds as a decimal number (range 0 to 9999999999).
   :%L: Milliseconds as a decimal number (range 000 to 999).
   :%f: Microseconds as a decimal number (range 000000 to 999999).
   :%N: Nanoseconds as a decimal number (range 000000000 to 999999999).
@@ -357,6 +358,12 @@ object with the following fields:
   without padding.  The :code:`_` flag, for example :code:`%_d`, reads a
   number that is padded with a space.  These flags can be used with
   :code:`%d`, :code:`%m`, :code:`%H`, :code:`%I`, :code:`%M`, and :code:`%S`.
+
+:timestamp-anchor: (v0.15.0+) An object that contains a :code:`pattern`
+  property with a regular expression that matches the "anchor" timestamp
+  in the log file.  The anchor timestamp is the absolute time that
+  relative log times are based on.  A :code:`format` property can also
+  be specified to indicate the time-format of the anchor timestamp.
 
 :convert-to-local-time: If :code:`true`, timestamps are converted to the
   local time zone before being displayed.  This is useful for log formats

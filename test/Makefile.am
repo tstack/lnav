@@ -365,6 +365,7 @@ dist_noinst_DATA = \
 	logfile_cloudflare.json \
 	logfile_cloudflare.1 \
 	logfile_cxx.0 \
+	logfile_dmesg.0 \
 	logfile_docker_compose.0 \
 	logfile_docker_compose_with_noise.0 \
 	logfile_docker_compose_with_ts.0 \
@@ -595,7 +596,8 @@ dist_noinst_DATA = \
     tui-captures/tui_echo.0 \
     tui-captures/tui_filters.0 \
     tui-captures/tui_filters.1 \
-	tui-captures/tui_help.0
+	tui-captures/tui_help.0 \
+	Xorg.log.0
 
 TESTS = \
     document.sections.tests \

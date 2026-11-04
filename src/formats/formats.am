@@ -11,6 +11,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/cloudflare_log.json \
     $(srcdir)/%reldir%/cloudvm_ram_log.json \
     $(srcdir)/%reldir%/cups_log.json \
+    $(srcdir)/%reldir%/dmesg_log.json \
     $(srcdir)/%reldir%/dpkg_log.json \
     $(srcdir)/%reldir%/ecs_log.json \
     $(srcdir)/%reldir%/elb_log.json \
@@ -72,6 +73,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/web_robot_log.json \
     $(srcdir)/%reldir%/windows_event_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
+    $(srcdir)/%reldir%/xorg_log.json \
     $(srcdir)/%reldir%/zap_console_log.json \
     $(srcdir)/%reldir%/zellij_log.json \
     $(srcdir)/%reldir%/zookeeper_log.json \

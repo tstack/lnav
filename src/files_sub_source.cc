@@ -185,53 +185,52 @@ files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
         case 'X': {
             auto sel = files_model::from_selection(lv.get_selection());
 
-            sel.match(
-                [](files_model::no_selection) {},
-                [&](files_model::stub_selection& es) {
-                    auto& fc = lnav_data.ld_active_files;
+            sel.match([](files_model::no_selection) {},
+                      [&](files_model::stub_selection& es) {
+                          auto& fc = lnav_data.ld_active_files;
 
-                    const auto& key = es.sb_iter.sd_key;
-                    const auto& display_name = es.sb_iter.sd_display_name;
+                          const auto& key = es.sb_iter.sd_key;
+                          const auto& display_name = es.sb_iter.sd_display_name;
 
-                    fc.fc_file_names.erase(key);
-                    fc.fc_file_names.erase(display_name);
+                          fc.fc_file_names.erase(key);
+                          fc.fc_file_names.erase(display_name);
 
-                    auto name_iter = fc.fc_file_names.begin();
-                    while (name_iter != fc.fc_file_names.end()) {
-                        if (name_iter->first == key
-                            || name_iter->first == display_name)
-                        {
-                            fc.fc_file_names.erase(name_iter);
-                            name_iter = fc.fc_file_names.begin();
-                            continue;
-                        }
+                          auto name_iter = fc.fc_file_names.begin();
+                          while (name_iter != fc.fc_file_names.end()) {
+                              if (name_iter->first == key
+                                  || name_iter->first == display_name)
+                              {
+                                  fc.fc_file_names.erase(name_iter);
+                                  name_iter = fc.fc_file_names.begin();
+                                  continue;
+                              }
 
-                        auto rp_opt = humanize::network::path::from_str(
-                            name_iter->first);
+                              auto rp_opt = humanize::network::path::from_str(
+                                  name_iter->first);
 
-                        if (rp_opt) {
-                            auto rp = *rp_opt;
+                              if (rp_opt) {
+                                  auto rp = *rp_opt;
 
-                            if (fmt::to_string(rp.home()) == key) {
-                                fc.fc_other_files.erase(name_iter->first);
-                                fc.fc_file_names.erase(name_iter);
-                                name_iter = fc.fc_file_names.begin();
-                                continue;
-                            }
-                        }
-                        ++name_iter;
-                    }
+                                  if (fmt::to_string(rp.home()) == key) {
+                                      fc.fc_other_files.erase(name_iter->first);
+                                      fc.fc_file_names.erase(name_iter);
+                                      name_iter = fc.fc_file_names.begin();
+                                      continue;
+                                  }
+                              }
+                              ++name_iter;
+                          }
 
-                    // A file turned up by a glob has no fc_file_names entry
-                    // of its own, so erasing above is not enough to keep the
-                    // next scan from finding it again.
-                    fc.fc_closed_files.insert(key);
-                    fc.fc_name_to_stubs->writeAccess()->erase(key);
-                    fc.fc_invalidate_merge = true;
-                    lv.reload_data();
-                },
-                [](files_model::other_selection) {},
-                [](files_model::file_selection) {});
+                          // A file turned up by a glob has no fc_file_names
+                          // entry of its own, so erasing above is not enough to
+                          // keep the next scan from finding it again.
+                          fc.fc_closed_files.insert(key);
+                          fc.fc_name_to_stubs->writeAccess()->erase(key);
+                          fc.fc_invalidate_merge = true;
+                          lv.reload_data();
+                      },
+                      [](files_model::other_selection) {},
+                      [](files_model::file_selection) {});
             return true;
         }
     }
@@ -817,6 +816,34 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                          .append(humanize::time::duration::from(
                                                      tr.tr_end - tr.tr_begin)
                                                      .to_string()));
+                auto base_line
+                    = attr_line_t()
+                          .append("Base Time"_h3)
+                          .right_justify(NAME_WIDTH)
+                          .append(": ")
+                          .append(lnav::to_rfc3339_string(
+                              std::chrono::seconds(
+                                  lf->get_time_scanner().dts_base_time),
+                              'T'))
+                          .append(" UTC");
+
+                auto anchor = lf->get_anchor_time();
+                anchor.match(
+                    [&](const logfile::file_line& fl) {
+                        base_line.append(" - provided by line ")
+                            .append(
+                                lnav::roles::number(fmt::to_string(fl.value_)));
+                    },
+                    [&](const logfile::file_mtime&) {
+                        base_line.append(
+                            " - provided by the file's modification time");
+                    },
+                    [&](const logfile::embedded_file_time&) {
+                        base_line.append(
+                            " - provided by the modification time embedded in "
+                            "the file");
+                    });
+                details.emplace_back(std::move(base_line));
             }
 
             auto file_options_opt = lf->get_file_options();
@@ -891,7 +918,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 details.emplace_back(line);
             }
 
-            if (lf->get_format_ptr() != nullptr) {
+            if (format != nullptr) {
                 const auto um = lnav::console::user_message::info(
                     attr_line_t("The file contents matched this log format and "
                                 "will be shown in the LOG view"));

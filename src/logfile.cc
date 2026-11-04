@@ -357,8 +357,8 @@ logfile::line_id_runs::id_for(const std::optional<string_key>& key)
 
     // Consecutive lines mostly have the value of the last run.
     if (!this->ir_runs.empty() && this->ir_runs.back().r_id > 1) {
-        const auto last = this->ir_values[this->ir_runs.back().r_id - 1]
-                              .to_frag();
+        const auto last
+            = this->ir_values[this->ir_runs.back().r_id - 1].to_frag();
         const auto sf = key->to_frag();
         if (last.data() == sf.data() && last.length() == sf.length()) {
             return this->ir_runs.back().r_id;
@@ -468,6 +468,7 @@ logfile::reset_internal_state_for_reindex()
     if (this->lf_logline_observer) {
         this->lf_logline_observer->logline_clear(*this);
     }
+    this->lf_anchor_time = mapbox::util::no_init{};
 }
 
 size_t
@@ -1262,18 +1263,22 @@ logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
     time_t file_time = li.li_timestamp.tv_sec != 0
         ? li.li_timestamp.tv_sec
         : this->lf_line_buffer.get_file_time();
+    auto anchor = anchor_time_t{embedded_file_time{}};
 
     if (file_time == 0) {
         file_time = this->lf_stat.st_mtime;
+        anchor = file_mtime{};
     }
 
-    if (!this->lf_cached_base_time
-        || this->lf_cached_base_time.value() != file_time)
+    if (!this->lf_anchor_time.is<file_line>()
+        && (!this->lf_cached_base_time
+            || this->lf_cached_base_time.value() != file_time))
     {
         tm new_base_tm;
         this->lf_cached_base_time = file_time;
         localtime_r(&file_time, &new_base_tm);
         this->lf_cached_base_tm = new_base_tm;
+        this->lf_anchor_time = anchor;
     }
     // Stash it for seed_for(), which re-applies it after copying
     // a format's settings, and set it on the scanner directly for the case
@@ -1992,11 +1997,11 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             auto opid_iter
                 = writeOpids->los_opid_ranges.find(bm_pair.second.bm_opid);
             if (opid_iter == writeOpids->los_opid_ranges.end()) {
-                opid_iter = writeOpids->los_opid_ranges
-                                .emplace(*inv_iter,
-                                         opid_time_range{
-                                             time_range{log_us, log_us}})
-                                .first;
+                opid_iter
+                    = writeOpids->los_opid_ranges
+                          .emplace(*inv_iter,
+                                   opid_time_range{time_range{log_us, log_us}})
+                          .first;
             }
 
             opid_iter->second.otr_range.extend_to(log_us);
@@ -2512,8 +2517,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         this->lf_filename_as_string.c_str(),
                         (unsigned long long) max_lines);
                     reason.append("file has more than ")
-                        .append(
-                            lnav::roles::number(fmt::to_string(max_lines)))
+                        .append(lnav::roles::number(fmt::to_string(max_lines)))
                         .append(
                             " lines, the maximum that can be indexed for a "
                             "single file");
@@ -2630,6 +2634,14 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 && !this->lf_options.loo_streaming)
             {
                 auto sf = sbr.to_string_fragment();
+
+                if (this->lf_format->lf_timestamp_anchor_pattern.pp_value
+                    && !this->lf_anchor_time.is<file_line>())
+                {
+                    if (this->check_for_timestamp_anchor(sbc, sf)) {
+                        sort_needed = true;
+                    }
+                }
 
                 for (const auto& td : this->lf_applicable_taggers) {
                     thread_local auto tag_md
@@ -3541,12 +3553,11 @@ logfile::dump_stats()
              buf_res.br_paged_out);
     const auto alt_res = this->lf_line_buffer.get_alt_buffer_residency();
     if (alt_res) {
-        log_info(
-            "  alt_buffer addr=%p capacity=%zu resident=%zu paged_out=%zu",
-            alt_res->br_addr,
-            alt_res->br_capacity,
-            alt_res->br_resident,
-            alt_res->br_paged_out);
+        log_info("  alt_buffer addr=%p capacity=%zu resident=%zu paged_out=%zu",
+                 alt_res->br_addr,
+                 alt_res->br_capacity,
+                 alt_res->br_resident,
+                 alt_res->br_paged_out);
     }
     log_info("  read_hist=[%4u %4u %4u %4u %4u %4u %4u %4u %4u %4u]",
              buf_stats.s_hist[0],
@@ -3686,4 +3697,163 @@ logfile::estimated_remaining_lines() const
     const auto remaining_bytes = this->lf_stat.st_size - this->lf_index_size;
 
     return remaining_bytes / bytes_per_line;
+}
+
+bool
+logfile::check_for_timestamp_anchor(scan_batch_context& sbc, string_fragment sf)
+{
+    thread_local auto anchor_md = lnav::pcre2pp::match_data::unitialized();
+
+    auto retval = false;
+    auto match_res = this->lf_format->lf_timestamp_anchor_pattern.pp_value
+                         ->capture_from(sf)
+                         .into(anchor_md)
+                         .matches(PCRE2_NO_UTF_CHECK)
+                         .ignore_error();
+    if (!match_res) {
+        return retval;
+    }
+    log_info("found anchor time for %s: %.*s",
+             this->lf_filename_as_string.c_str(),
+             sf.length(),
+             sf.data());
+    this->lf_anchor_time = to_file_line(this->lf_index.size() - 1);
+
+    auto ts_sf = anchor_md[1];
+    if (!ts_sf) {
+        log_error("timestamp anchor pattern did not capture a value %s",
+                  this->lf_filename_as_string.c_str());
+        return retval;
+    }
+
+    date_time_scanner dts;
+    exttm anchor_tm;
+    timeval anchor_tv;
+    const char* const anchor_time_fmts[] = {
+        this->lf_format->lf_timestamp_anchor_format.c_str(),
+        nullptr,
+    };
+
+    const auto* time_end = dts.scan(
+        ts_sf->data(),
+        ts_sf->length(),
+        !this->lf_format->lf_timestamp_anchor_format.empty() ? anchor_time_fmts
+                                                             : nullptr,
+        &anchor_tm,
+        anchor_tv,
+        false);
+    if (time_end == nullptr) {
+        log_error("unable to parse anchor time for %s: %.*s",
+                  this->lf_filename_as_string.c_str(),
+                  ts_sf->length(),
+                  ts_sf->data());
+        return retval;
+    }
+    if (anchor_tm.et_flags & ETF_ZONE_SET) {
+        anchor_tv.tv_sec -= anchor_tm.et_gmtoff;
+        log_info("anchor time for %s has timezone with offset: %ld",
+                 this->lf_filename_as_string.c_str(),
+                 anchor_tm.et_gmtoff);
+        secs2tm(anchor_tv.tv_sec, &anchor_tm.et_tm);
+    } else if (!(anchor_tm.et_flags & ETF_MACHINE_ORIENTED)) {
+        // The anchor time is local without a zone, so we need to convert it
+        // to UTC.
+        auto anchor_s = std::chrono::seconds{anchor_tv.tv_sec};
+        auto info = lnav::local_time_to_info(date::local_seconds{anchor_s});
+        log_info(
+            "anchor time for %s is not machine-oriented, so using local "
+            "timezone: %lld %lld",
+            this->lf_filename_as_string.c_str(),
+            info.first.offset.count(),
+            info.second.offset.count());
+        anchor_tv.tv_sec -= info.first.offset.count();
+        anchor_tm = {};
+        secs2tm(anchor_tv.tv_sec, &anchor_tm.et_tm);
+    }
+    auto anchor_us_utc = to_us(anchor_tv);
+
+    auto old_first_line_time_us = this->lf_index.front().get_time();
+    // The last line contains the anchor.  Convert its time from local to UTC
+    // and then find the difference.
+    auto last_line_time_local = this->lf_index.back().get_time();
+    auto last_line_local_info = lnav::local_time_to_info(date::local_seconds{
+        std::chrono::round<std::chrono::seconds>(last_line_time_local)});
+    auto last_line_time_utc
+        = last_line_time_local - last_line_local_info.first.offset;
+    auto delta_us = last_line_time_utc - anchor_us_utc;
+    // Based on the delta, find the new base time.
+    auto old_base_utc
+        = std::chrono::seconds{this->lf_time_scanner.dts_base_time};
+    auto new_base_utc
+        = old_base_utc - std::chrono::round<std::chrono::seconds>(delta_us);
+    // We need to process each line since its time might cross a zone boundary.
+    for (auto& ll : this->lf_index) {
+        // Work backwards from the line's local time to UTC and then the
+        // elapsed before going forward to UTC and then local time.
+        auto line_time_local = ll.get_time();
+        auto line_local_info = lnav::local_time_to_info(date::local_seconds{
+            std::chrono::round<std::chrono::seconds>(line_time_local)});
+        auto line_time_utc = line_time_local - line_local_info.first.offset;
+        auto line_elapsed = line_time_utc - old_base_utc;
+        auto new_line_time_utc = new_base_utc + line_elapsed;
+        auto line_sys_info = lnav::sys_time_to_info(date::sys_seconds{
+            std::chrono::round<std::chrono::seconds>(new_line_time_utc)});
+        auto new_line_time_local = new_line_time_utc + line_sys_info.offset;
+
+        ll.set_time(new_line_time_local);
+    }
+
+    this->lf_content_time_range.invalidate();
+    this->lf_content_time_range.extend_to(this->lf_index.front().get_time());
+    this->lf_content_time_range.extend_to(this->lf_index.back().get_time());
+
+    auto first_line_delta_us
+        = this->lf_index.front().get_time() - old_first_line_time_us;
+    for (auto& otr_pair : sbc.sbc_opids.los_opid_ranges) {
+        auto& otr = otr_pair.second;
+        otr.otr_range.tr_begin -= first_line_delta_us;
+        otr.otr_range.tr_end -= first_line_delta_us;
+    }
+    for (auto& titr_pair : sbc.sbc_tids.ltis_tid_ranges) {
+        auto& titr = titr_pair.second;
+        titr.titr_range.tr_begin -= first_line_delta_us;
+        titr.titr_range.tr_end -= first_line_delta_us;
+    }
+    if (sbc.sbc_tids.ltis_no_tid) {
+        sbc.sbc_tids.ltis_no_tid->titr_range.tr_begin -= first_line_delta_us;
+        sbc.sbc_tids.ltis_no_tid->titr_range.tr_end -= first_line_delta_us;
+    }
+    {
+        auto writeOpids = this->lf_opids.writeAccess();
+        for (auto& otr_pair : writeOpids->los_opid_ranges) {
+            auto& otr = otr_pair.second;
+            otr.otr_range.tr_begin -= first_line_delta_us;
+            otr.otr_range.tr_end -= first_line_delta_us;
+        }
+    }
+    {
+        auto writeTids = this->lf_thread_ids.writeAccess();
+        for (auto& tid_pair : writeTids->ltis_tid_ranges) {
+            auto& titr = tid_pair.second;
+            titr.titr_range.tr_begin -= first_line_delta_us;
+            titr.titr_range.tr_end -= first_line_delta_us;
+        }
+        if (writeTids->ltis_no_tid) {
+            writeTids->ltis_no_tid->titr_range.tr_begin -= first_line_delta_us;
+            writeTids->ltis_no_tid->titr_range.tr_end -= first_line_delta_us;
+        }
+    }
+
+    time_t new_base_utc_t = new_base_utc.count();
+    tm new_base_tm_local;
+    localtime_r(&new_base_utc_t, &new_base_tm_local);
+    this->lf_time_scanner.set_base_time(new_base_utc_t, new_base_tm_local);
+    this->lf_cached_base_time = new_base_utc_t;
+    this->lf_cached_base_tm = new_base_tm_local;
+    sbc.sbc_time_scanner.set_base_time(new_base_utc_t, new_base_tm_local);
+    sbc.sbc_base_time = new_base_utc_t;
+    sbc.sbc_base_tm = new_base_tm_local;
+    retval = true;
+
+    return retval;
 }

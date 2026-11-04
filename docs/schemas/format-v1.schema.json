@@ -162,6 +162,24 @@
                         "start"
                     ]
                 },
+                "timestamp-anchor": {
+                    "description": "Properties related to the log message that anchors the relative timestamps for this format",
+                    "title": "/<format_name>/timestamp-anchor",
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "title": "/<format_name>/timestamp-anchor/pattern",
+                            "description": "A regular expression that matches the log message that anchors the timestamp for this log message.  This is used when the timestamp is relative to another log message.",
+                            "type": "string"
+                        },
+                        "format": {
+                            "title": "/<format_name>/timestamp-anchor/format",
+                            "description": "A strptime(3) format for the anchor",
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "body-field": {
                     "title": "/<format_name>/body-field",
                     "description": "The name of the body field in the log message pattern",

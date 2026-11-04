@@ -287,6 +287,14 @@ public:
         return file_line(static_cast<uint32_t>(line));
     }
 
+    struct file_mtime {};
+    struct embedded_file_time {};
+
+    using anchor_time_t
+        = mapbox::util::variant<file_line, file_mtime, embedded_file_time>;
+
+    anchor_time_t get_anchor_time() const { return this->lf_anchor_time; }
+
     /**
      * The log statement each line's message came from, and the stack frames
      * in it, kept by lnav::stmt_stats.  Cleared along with the index.
@@ -1310,6 +1318,9 @@ private:
 
     void update_time_order(bool recheck);
 
+    bool check_for_timestamp_anchor(scan_batch_context& sbc,
+                                    string_fragment sf);
+
     std::filesystem::path lf_filename;
     std::string lf_filename_as_string;
     logfile_open_options lf_options;
@@ -1367,6 +1378,7 @@ private:
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
     std::optional<time_t> lf_cached_base_time;
     std::optional<tm> lf_cached_base_tm;
+    anchor_time_t lf_anchor_time{mapbox::util::no_init{}};
 
     std::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
     robin_hood::unordered_set<intern_string_t, intern_hasher>

@@ -446,6 +446,18 @@ static constexpr json_path_handler_base::enum_value_t OPID_SOURCE_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
+static const json_path_container timestamp_anchor_handlers = {
+    json_path_handler("pattern")
+        .with_description(
+            "A regular expression that matches the log message that anchors "
+            "the timestamp for this log message.  This is used when the "
+            "timestamp is relative to another log message.")
+        .for_field(&external_log_format::lf_timestamp_anchor_pattern),
+    json_path_handler("format")
+        .with_description("A strptime(3) format for the anchor")
+        .for_field(&external_log_format::lf_timestamp_anchor_format),
+};
+
 static const json_path_container line_format_handlers = {
     yajlpp::property_handler("field")
         .with_synopsis("<field-name>")
@@ -1071,6 +1083,10 @@ const struct json_path_container format_handlers = {
                           "the message refers to.")
         .with_enum_values(TS_POR_ENUM)
         .for_field(&external_log_format::lf_timestamp_point_of_reference),
+    json_path_handler("timestamp-anchor")
+        .with_description("Properties related to the log message that anchors "
+                          "the relative timestamps for this format")
+        .with_children(timestamp_anchor_handlers),
     json_path_handler("body-field")
         .with_description(
             "The name of the body field in the log message pattern")
@@ -1437,9 +1453,8 @@ validate_format_file(const std::filesystem::path& filename,
     // would otherwise hand back the loaded definition and build() would
     // validate the two spliced together.
     auto saved_formats = std::exchange(LOG_FORMATS, log_formats_map_t{});
-    auto restore = lnav::finally([&saved_formats]() {
-        LOG_FORMATS = std::move(saved_formats);
-    });
+    auto restore = lnav::finally(
+        [&saved_formats]() { LOG_FORMATS = std::move(saved_formats); });
 
     auto retval = load_format_file(filename, errors);
     for (const auto& name : retval) {
@@ -1547,15 +1562,14 @@ load_formats(const std::vector<std::filesystem::path>& extra_paths,
 
     // Prioritize formats that have a filename pattern over those that don't so
     // that they are tried first when detecting a file's format.
-    std::stable_sort(alpha_ordered_formats.begin(),
-                     alpha_ordered_formats.end(),
-                     [](const auto& lhs, const auto& rhs) {
-                         auto lhs_has_pattern
-                             = lhs->elf_filename_pcre.pp_value != nullptr;
-                         auto rhs_has_pattern
-                             = rhs->elf_filename_pcre.pp_value != nullptr;
-                         return lhs_has_pattern && !rhs_has_pattern;
-                     });
+    std::stable_sort(
+        alpha_ordered_formats.begin(),
+        alpha_ordered_formats.end(),
+        [](const auto& lhs, const auto& rhs) {
+            auto lhs_has_pattern = lhs->elf_filename_pcre.pp_value != nullptr;
+            auto rhs_has_pattern = rhs->elf_filename_pcre.pp_value != nullptr;
+            return lhs_has_pattern && !rhs_has_pattern;
+        });
 
     auto& graph_ordered_formats = external_log_format::GRAPH_ORDERED_FORMATS;
 

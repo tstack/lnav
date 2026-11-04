@@ -908,6 +908,23 @@ run_cap_test ${lnav_test} -n ${test_dir}/logfile_laravel.1
 
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_asterisk.0
 
+# make sure logs with anchored timestamps are handled correctly
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_time FROM all_logs LIMIT 1" \
+    ${test_dir}/logfile_dmesg.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_time FROM all_logs ORDER BY log_line DESC LIMIT 1" \
+    ${test_dir}/logfile_dmesg.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_time FROM all_logs LIMIT 1" \
+    ${test_dir}/Xorg.log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_time FROM all_logs ORDER BY log_line DESC LIMIT 1" \
+    ${test_dir}/Xorg.log.0
+
 run_cap_test ${lnav_test} -n ${test_dir}/\#with
 
 run_cap_test ${lnav_test} -n \

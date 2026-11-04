@@ -126,6 +126,7 @@ enum exttm_bits_t {
     ETB_SECOND_SET,
     ETB_MACHINE_ORIENTED,
     ETB_EPOCH_TIME,
+    ETB_ELAPSED_TIME,
     ETB_SUB_NOT_IN_FORMAT,
     ETB_MILLIS_SET,
     ETB_MICROS_SET,
@@ -147,6 +148,7 @@ enum exttm_flags_t {
     ETF_SECOND_SET = (1UL << ETB_SECOND_SET),
     ETF_MACHINE_ORIENTED = (1UL << ETB_MACHINE_ORIENTED),
     ETF_EPOCH_TIME = (1UL << ETB_EPOCH_TIME),
+    ETF_ELAPSED_TIME = (1UL << ETB_ELAPSED_TIME),
     ETF_SUB_NOT_IN_FORMAT = (1UL << ETB_SUB_NOT_IN_FORMAT),
     ETF_MILLIS_SET = (1UL << ETB_MILLIS_SET),
     ETF_MICROS_SET = (1UL << ETB_MICROS_SET),
@@ -163,6 +165,7 @@ struct exttm {
 
     tm et_tm{};
     int32_t et_nsec{0};
+    lnav::time64_t et_elapsed{0};
     uint32_t et_flags{0};
     long et_gmtoff{0};
     long et_orig_gmtoff{0};

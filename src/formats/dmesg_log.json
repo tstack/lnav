@@ -1,0 +1,24 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "dmesg_log": {
+        "title": "Linux dmesg log format",
+        "description": "Log format for the Linux kernel's dmesg command",
+        "regex": {
+            "elapsed": {
+                "pattern": "^\\[(?<timestamp>\\s*\\d+\\.\\d+)\\] (?<body>.*)"
+            }
+        },
+        "timestamp-format": [
+            "%E.%f"
+        ],
+        "timestamp-anchor": {
+            "pattern": "setting system clock to .* \\((\\d+)\\)$",
+            "format": "%s"
+        },
+        "sample": [
+            {
+                "line": "[    0.000000] Initializing cgroup subsys cpuset"
+            }
+        ]
+    }
+}
