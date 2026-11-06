@@ -367,6 +367,7 @@ dist_noinst_DATA = \
 	logfile_cxx.0 \
 	logfile_dmesg.0 \
 	logfile_docker_compose.0 \
+	logfile_docker_compose_empty_body.0 \
 	logfile_docker_compose_with_noise.0 \
 	logfile_docker_compose_with_ts.0 \
 	logfile_dst.0 \

@@ -19,6 +19,9 @@ cat ${test_dir}/logfile_docker_compose_with_ts.0 | run_cap_test env TEST_COMMENT
 
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_docker_compose_with_ts.0
 
+# The first message has an empty body
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_docker_compose_empty_body.0
+
 run_cap_test ${lnav_test} -n ${test_dir}/logfile_mux_zookeeper.0
 
 run_cap_test ${lnav_test} -n \
