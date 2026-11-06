@@ -116,6 +116,12 @@ unquote_content(char* dst, const char* str, size_t len, char quote_char)
                 case 't':
                     dst[index] = '\t';
                     break;
+                case 'a':
+                    dst[index] = '\a';
+                    break;
+                case 'b':
+                    dst[index] = '\b';
+                    break;
                 default:
                     dst[index] = str[lpc + 1];
                     break;
@@ -163,41 +169,32 @@ unquote_w3c(char* dst, const char* str, size_t len)
 }
 
 void
-truncate_to(std::string& str, size_t max_char_len)
+truncate_to(std::string& str, size_t max_width)
 {
     static constexpr const char ELLIPSIS[] = "\u22ef";
 
-    if (str.length() < max_char_len) {
+    const auto sf = string_fragment::from_str(str);
+    const auto str_width = sf.column_width();
+    if (str_width <= max_width) {
         return;
     }
 
-    auto str_char_len_res = utf8_string_length(str);
-
-    if (str_char_len_res.isErr()) {
-        // XXX
-        return;
-    }
-
-    auto str_char_len = str_char_len_res.unwrap();
-    if (str_char_len <= max_char_len) {
-        return;
-    }
-
-    if (max_char_len < 3) {
+    if (max_width < 3) {
         str = ELLIPSIS;
         return;
     }
 
-    auto chars_to_remove = (str_char_len - max_char_len) + 1;
-    auto midpoint = str_char_len / 2;
-    auto chars_to_keep_at_front = midpoint - (chars_to_remove / 2);
+    auto cols_to_remove = (str_width - max_width) + 1;
+    auto midpoint = str_width / 2;
     auto bytes_to_keep_at_front
-        = utf8_char_to_byte_index(str, chars_to_keep_at_front);
-    auto remove_up_to_bytes = utf8_char_to_byte_index(
-        str, chars_to_keep_at_front + chars_to_remove);
-    auto bytes_to_remove = remove_up_to_bytes - bytes_to_keep_at_front;
-    str.erase(bytes_to_keep_at_front, bytes_to_remove);
-    str.insert(bytes_to_keep_at_front, ELLIPSIS);
+        = sf.column_to_byte_index(midpoint - (cols_to_remove / 2));
+    // A wide character can straddle the cut, so measure what was kept.
+    auto front_width = sf.sub_range(0, bytes_to_keep_at_front).column_width();
+    auto remove_up_to_bytes
+        = sf.column_to_byte_index(front_width + cols_to_remove);
+    str.replace(bytes_to_keep_at_front,
+                remove_up_to_bytes - bytes_to_keep_at_front,
+                ELLIPSIS);
 }
 
 ssize_t
@@ -297,7 +294,8 @@ split_ws(const std::string& str, std::vector<std::string>& toks_out)
     auto str_sf = string_fragment::from_str(str);
 
     while (true) {
-        auto split_pair = str_sf.split_when(isspace);
+        auto split_pair = str_sf.split_when(
+            [](const char ch) { return isspace((unsigned char) ch); });
         if (split_pair.first.empty()) {
             if (split_pair.second.empty()) {
                 break;
@@ -326,8 +324,8 @@ center_str(const std::string& subject, size_t width)
 
     truncate_to(retval, width);
 
-    auto retval_length = utf8_string_length(retval).unwrapOr(retval.length());
-    auto total_fill = width - retval_length;
+    auto retval_width = string_fragment::from_str(retval).column_width();
+    auto total_fill = width > retval_width ? width - retval_width : 0;
     auto before = total_fill / 2;
     auto after = total_fill - before;
 
@@ -340,8 +338,9 @@ center_str(const std::string& subject, size_t width)
 bool
 is_blank(const std::string& str)
 {
-    return std::all_of(
-        str.begin(), str.end(), [](const auto ch) { return isspace(ch); });
+    return std::all_of(str.begin(), str.end(), [](const auto ch) {
+        return isspace((unsigned char) ch);
+    });
 }
 
 size_t
@@ -417,7 +416,7 @@ to_superscript(const std::string& in)
 {
     std::string retval;
     for (const auto ch : in) {
-        if (isdigit(ch)) {
+        if (isdigit((unsigned char) ch)) {
             auto index = ch - '0';
 
             retval.append(SUPERSCRIPT_NUMS[index]);
@@ -432,8 +431,8 @@ to_superscript(const std::string& in)
 namespace fmt {
 auto
 formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,
-                                        format_context& ctx)
-    const -> decltype(ctx.out())
+                                        format_context& ctx) const
+    -> decltype(ctx.out())
 {
     auto esc_res = fmt::detail::find_escape(
         ts.ts_str.data(), ts.ts_str.data() + ts.ts_str.size());
@@ -464,6 +463,7 @@ is_meta(char ch)
         case '?':
         case '{':
         case '}':
+        case '|':
             return true;
         default:
             return false;
@@ -489,9 +489,17 @@ quote(string_fragment str)
     std::string retval;
 
     while (true) {
+        if (str.empty()) {
+            break;
+        }
+
         auto cp_pair_opt = str.consume_codepoint();
         if (!cp_pair_opt) {
-            break;
+            // Patterns are compiled in UTF mode, where an invalid byte cannot
+            // be written literally, so match it as a single code unit.
+            retval.append("\\C");
+            str = str.substr(1);
+            continue;
         }
 
         auto cp_pair = cp_pair_opt.value();

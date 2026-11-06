@@ -98,6 +98,41 @@ TEST_CASE("truncate_to")
     CHECK(str == "01\u22efyz");
 }
 
+TEST_CASE("truncate_to wide characters")
+{
+    // Each CJK character is two columns wide.
+    std::string str = "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05";
+    truncate_to(str, 7);
+    CHECK(str == "\u4e00\u4e01\u22ef\u4e05");
+
+    str = "ab\xff" "cdefghij";
+    truncate_to(str, 5);
+    CHECK(str == "ab\u22efij");
+}
+
+TEST_CASE("center_str")
+{
+    CHECK(center_str("ab", 6) == "  ab  ");
+    CHECK(center_str("abcdef", 0) == "\u22ef");
+    CHECK(center_str("\u4e00", 4) == " \u4e00 ");
+}
+
+TEST_CASE("unquote_content")
+{
+    const std::string in = R"(a\ab\bc\n)";
+    char buf[32];
+    auto len = unquote_content(buf, in.c_str(), in.size(), 0);
+    CHECK(std::string(buf, len) == "a\ab\bc\n");
+}
+
+TEST_CASE("pcre2pp::quote")
+{
+    CHECK(lnav::pcre2pp::quote(string_fragment::from_const("a|b.c"))
+          == R"(a\|b\.c)");
+    CHECK(lnav::pcre2pp::quote(string_fragment::from_const("a\xff" "b"))
+          == R"(a\Cb)");
+}
+
 TEST_CASE("strnatcmp")
 {
     {

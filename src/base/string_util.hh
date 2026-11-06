@@ -99,7 +99,11 @@ endswith(const std::string& str, const char (&suffix)[N])
     return strcmp(&str[str.size() - (N - 1)], suffix) == 0;
 }
 
-void truncate_to(std::string& str, size_t max_char_len);
+/**
+ * Shorten a string to fit in the given number of terminal columns by
+ * replacing its middle with an ellipsis.
+ */
+void truncate_to(std::string& str, size_t max_width);
 
 std::string scrub_ws(const char* in, ssize_t len = -1);
 inline std::string
