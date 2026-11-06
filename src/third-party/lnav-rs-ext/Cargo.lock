@@ -1396,7 +1396,7 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 [[package]]
 name = "log2src"
 version = "0.1.0"
-source = "git+https://github.com/tstack/log2src.git?branch=caching1#3d176d6dcf5ad6d89c9ec782230b6cbbe93cc90f"
+source = "git+https://github.com/tstack/log2src.git?branch=caching1#dbfc88e66c3fe8c170f46d744d9c7983448f7d25"
 dependencies = [
  "aho-corasick",
  "bincode",
@@ -1470,9 +1470,9 @@ dependencies = [
 
 [[package]]
 name = "mime"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+checksum = "d5848f5a9e8117cf94f2f90faac24a87ff81600ff8628c1e3deaab572e76bfa1"
 
 [[package]]
 name = "mime_guess"
