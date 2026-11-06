@@ -340,6 +340,12 @@ Features:
   to capture the anchor timestamp.  If the format of the
   timestamp is non-standard, the `format` can be set
   to a specifier string.
+* Added the `use-default-for-empty` property to the
+  `line-format` elements of JSON log formats.  When set to
+  `true`, a field whose value is an empty string is
+  rendered with the element's `default-value`, the same as
+  a missing field.  Fields with a `null` value now always
+  use the `default-value` instead of displaying "null".
 
 Interface Changes:
 * Moving horizontally now defaults to moving to the

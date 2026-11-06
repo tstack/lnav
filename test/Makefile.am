@@ -376,6 +376,7 @@ dist_noinst_DATA = \
 	logfile_epoch.0 \
 	logfile_epoch.1 \
 	logfile_json_opid_dur.json \
+	logfile_json_default.json \
 	logfile_json_overflow.json \
 	logfile_sim_ps.0 \
 	logfile_filter.0 \
@@ -540,6 +541,7 @@ dist_noinst_DATA = \
 	formats/jsondeprecated/format.json \
 	formats/jsonidtest/format.json \
 	formats/jsonopiddur/format.json \
+	formats/jsondefault/format.json \
 	formats/jsonoverflow/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest/lnav-logstash.json \

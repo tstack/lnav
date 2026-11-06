@@ -261,3 +261,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json_overflow.json
+
+# Missing and null fields use the default-value, and empty strings do too
+# when use-default-for-empty is set.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_default.json

@@ -317,13 +317,18 @@ object with the following fields:
   :timestamp-format: The timestamp format to use when displaying the time
     for this log message. (v0.8.2+)
   :default-value: The default value to use if the field could not be found
-    in the current log message.  The built-in default is "-".
+    in the current log message or its value is null.  The built-in default
+    is "-".  If the default value is an empty string, the prefix and suffix
+    are also left out.
+  :use-default-for-empty: If true, a field whose value is an empty string
+    is treated the same as a missing field and the "default-value" is used
+    instead.  Defaults to false.
   :text-transform: Transform the text in the field.  Supported options are:
     none, uppercase, lowercase, capitalize
-  :prefix: Text to prepend to the value.  If the value is empty, this prefix
-    will not be added.
-  :suffix: Text to append to the value.  If the value is empty, this suffix
-    will not be added.
+  :prefix: Text to prepend to the value.  If the field is missing or null
+    and the "default-value" is empty, this prefix will not be added.
+  :suffix: Text to append to the value.  If the field is missing or null
+    and the "default-value" is empty, this suffix will not be added.
 
 :timestamp-field: The name of the field that contains the log message
   timestamp.

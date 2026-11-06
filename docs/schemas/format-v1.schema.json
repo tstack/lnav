@@ -791,8 +791,13 @@
                             },
                             "default-value": {
                                 "title": "/<format_name>/line-format/default-value",
-                                "description": "The default value for this position if the field is null",
+                                "description": "The default value for this position if the field is missing or null",
                                 "type": "string"
+                            },
+                            "use-default-for-empty": {
+                                "title": "/<format_name>/line-format/use-default-for-empty",
+                                "description": "Use the default value for this position if the field is an empty string",
+                                "type": "boolean"
                             },
                             "timestamp-format": {
                                 "title": "/<format_name>/line-format/timestamp-format",

@@ -1,0 +1,40 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_json_default_log": {
+        "title": "Test JSON default-value Log",
+        "file-type": "json",
+        "file-pattern": "logfile_json_default\\.json",
+        "description": "Regression format for default-value with missing, null, and empty fields",
+        "line-format": [
+            {
+                "field": "plain"
+            },
+            "|",
+            {
+                "field": "empty_default",
+                "use-default-for-empty": true
+            },
+            "|",
+            {
+                "field": "hidden",
+                "prefix": "h=",
+                "suffix": ";",
+                "default-value": "",
+                "use-default-for-empty": true
+            },
+            "|"
+        ],
+        "timestamp-field": "ts",
+        "value": {
+            "plain": {
+                "kind": "string"
+            },
+            "empty_default": {
+                "kind": "string"
+            },
+            "hidden": {
+                "kind": "string"
+            }
+        }
+    }
+}

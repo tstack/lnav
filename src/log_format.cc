@@ -4018,16 +4018,34 @@ external_log_format::render_line_format(const log_format_file_state& lffs,
                     this->jlf_line_values.lvv_values.begin(),
                     this->jlf_line_values.lvv_values.end(),
                     logline_value_name_cmp(&jfe.jfe_value.pp_value));
+                std::string str;
+                logline_value* defaulted_lv = nullptr;
                 if (lv_iter != this->jlf_line_values.lvv_values.end()) {
-                    auto str = lv_iter->to_string();
+                    if (lv_iter->lv_meta.lvm_kind != value_kind_t::VALUE_NULL) {
+                        str = lv_iter->to_string();
+                        while (endswith(str, "\n")) {
+                            str.pop_back();
+                        }
+                    }
+                    if (lv_iter->lv_meta.lvm_kind == value_kind_t::VALUE_NULL
+                        || (str.empty() && jfe.jfe_use_default_for_empty))
+                    {
+                        // Render this position as if the field were missing.
+                        used_values[std::distance(
+                            this->jlf_line_values.lvv_values.begin(), lv_iter)]
+                            = true;
+                        defaulted_lv = &(*lv_iter);
+                        lr = line_range::empty_at(
+                            this->jlf_attr_line.al_string.size());
+                        lv_iter = this->jlf_line_values.lvv_values.end();
+                    }
+                }
+                if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                     value_def* vd = nullptr;
                     if (lv_iter->lv_meta.lvm_values_index) {
                         vd = this->elf_value_def_order
                                  [lv_iter->lv_meta.lvm_values_index.value()]
                                      .get();
-                    }
-                    while (endswith(str, "\n")) {
-                        str.pop_back();
                     }
                     size_t nl_pos = str.find('\n');
 
@@ -4269,12 +4287,25 @@ external_log_format::render_line_format(const log_format_file_state& lffs,
                         this->json_append_to_cache(jfe.jfe_prefix);
                         sub_offset += jfe.jfe_prefix_line_feeds;
                     }
+                    lr.lr_start = this->jlf_attr_line.al_string.size();
                     this->json_append(
                         lffs, jfe, nullptr, jfe.jfe_default_value);
+                    lr.lr_end = this->jlf_attr_line.al_string.size();
+                    if (defaulted_lv != nullptr) {
+                        defaulted_lv->lv_sub_offset = sub_offset;
+                    }
                     if (!jfe.jfe_suffix.empty()) {
                         this->json_append_to_cache(jfe.jfe_suffix);
                         sub_offset += jfe.jfe_suffix_line_feeds;
                     }
+                } else if (defaulted_lv != nullptr) {
+                    defaulted_lv->lv_sub_offset = sub_offset;
+                }
+
+                if (defaulted_lv != nullptr) {
+                    // Point the value at the text rendered in its place so
+                    // it stays attached to this line.
+                    defaulted_lv->lv_origin = lr;
                 }
 
                 this->apply_text_transform(begin_size, jfe.jfe_text_transform);

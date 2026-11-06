@@ -514,7 +514,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
     auto src_file_attr
         = find_string_attr(this->lss_token_al.al_attrs, &SA_SRC_FILE);
-    if (src_file_attr != this->lss_token_al.al_attrs.end()) {
+    if (src_file_attr != this->lss_token_al.al_attrs.end()
+        && !src_file_attr->sa_range.empty())
+    {
         auto lr = src_file_attr->sa_range;
         lr.lr_end = lr.lr_start + 1;
         auto break_ta = text_attrs::with_underline();

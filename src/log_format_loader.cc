@@ -467,10 +467,16 @@ static const json_path_container line_format_handlers = {
 
     yajlpp::property_handler("default-value")
         .with_synopsis("<string>")
-        .with_description(
-            "The default value for this position if the field is null")
+        .with_description("The default value for this position if the field "
+                          "is missing or null")
         .for_field(
             &external_log_format::json_format_element::jfe_default_value),
+
+    yajlpp::property_handler("use-default-for-empty")
+        .with_description("Use the default value for this position if the "
+                          "field is an empty string")
+        .for_field(&external_log_format::json_format_element::
+                       jfe_use_default_for_empty),
 
     yajlpp::property_handler("timestamp-format")
         .with_synopsis("<string>")

@@ -279,6 +279,7 @@ public:
         positioned_property<intern_string_t> jfe_value;
         std::string jfe_default_value{"-"};
         size_t jfe_default_value_line_feeds{0};
+        bool jfe_use_default_for_empty{false};
         long long jfe_min_width{0};
         bool jfe_auto_width{false};
         long long jfe_max_width{LLONG_MAX};

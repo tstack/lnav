@@ -1,0 +1,4 @@
+{"ts": "2024-01-01T00:00:00Z", "plain": "a", "empty_default": "b", "hidden": "c"}
+{"ts": "2024-01-01T00:00:01Z"}
+{"ts": "2024-01-01T00:00:02Z", "plain": null, "empty_default": null, "hidden": null}
+{"ts": "2024-01-01T00:00:03Z", "plain": "", "empty_default": "", "hidden": ""}
