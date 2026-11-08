@@ -26,6 +26,19 @@ run_cap_test ${lnav_test} -nN \
     -c ";SELECT begin_line, end_line, language, function_name, qualified_name, block_id, level, pattern, path FROM source_log_stmt('log_example.py')" \
     -c ":write-jsonlines-to -"
 
+# A NULL path, as from a join, has no statements.
+run_cap_test ${lnav_test} -nN \
+    -c ":add-source-path ${test_dir}/log2src/python" \
+    -c ";SELECT p.path, count(s.begin_line) AS stmts FROM (SELECT 'log_example.py' AS path UNION ALL SELECT NULL) p LEFT JOIN source_log_stmt(p.path) s GROUP BY 1" \
+    -c ":write-csv-to -"
+
+# Only the first search_path constraint is the argument; the others filter
+# the rows.
+run_cap_test ${lnav_test} -nN \
+    -c ":add-source-path ${test_dir}/log2src/python" \
+    -c ";SELECT (SELECT count(*) FROM source_log_stmt('log_example.py') WHERE search_path = 'log_example.py') AS same_path, (SELECT count(*) FROM source_log_stmt('log_example.py') WHERE search_path = 'other.py') AS other_path" \
+    -c ":write-csv-to -"
+
 run_cap_test ${lnav_test} -n \
     -c ":add-source-path ${test_dir}/log2src/java" \
     -c ";SELECT log_line, log_msg_src, log_msg_format, log_msg_values FROM all_logs" \

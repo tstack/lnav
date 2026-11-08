@@ -38,9 +38,10 @@ namespace lnav::stmt_stats {
 
 /**
  * Maps more of the loaded messages to the log statements that produced them,
- * until the deadline.  Nothing is done until the log_stmt_stats table has
- * been queried, so lnav users that don't ask for statement counts don't pay
- * for the matching.
+ * and finds the stack frames in their traces, until the deadline.  Nothing is
+ * done until something needs the map: a query of log_stmt_stats,
+ * log_stack_frames, log_stack_frame_rows() or a logline table.  So, lnav
+ * users that don't ask for any of those don't pay for the matching.
  *
  * @return True if there is more mapping to do.
  */

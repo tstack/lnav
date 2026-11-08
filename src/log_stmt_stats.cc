@@ -61,6 +61,7 @@
 #include "logfile_sub_source.hh"
 #include "sql_help.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 #include "yajlpp/json_schema_builder.hh"
 #include "yajlpp/yajlpp.hh"
 
@@ -118,8 +119,8 @@ struct scoped_ns {
 using map_counters = logfile::stmt_ids::counters;
 
 /**
- * The step() loop's view of a pass, kept on the main thread: from the first
- * slice with work to the one that finishes it.
+ * The step() loop's view of the initial pass, kept on the main thread: from
+ * the first slice with work to the one that finishes it.
  */
 struct pass_counters {
     std::optional<std::chrono::steady_clock::time_point> pc_start;
@@ -181,7 +182,7 @@ struct statement {
      * were sampled.  Each item's title is the source expression and its type
      * the narrowest that covers the samples.
      */
-    std::optional<std::string> var_schema() const
+    std::optional<json_string> var_schema() const
     {
         auto samples = this->s_vars.sample_count();
         if (samples == 0) {
@@ -220,7 +221,7 @@ struct statement {
             root.gen("items");
             root.gen(false);
         }
-        return gen.to_string_fragment().to_string();
+        return json_string(gen);
     }
 };
 
@@ -366,11 +367,16 @@ struct stmt_map {
     /** How many slices step() has run, to rotate which file goes first. */
     size_t sm_slices{0};
 
-    /** The workers' counters for this pass, see map_counters. */
+    /** The workers' counters for the initial pass, see map_counters. */
     std::mutex sm_counters_mutex;
     map_counters sm_counters;
     /** Only used by step(), on the main thread. */
     pass_counters sm_pass;
+    /**
+     * Set once the initial pass's stats are logged.  Later passes, for
+     * appended lines or after a re-scan, aren't logged.
+     */
+    bool sm_pass_logged{false};
 
     /**
      * The stack frames found in multi-line messages, by id.  Like the
@@ -385,7 +391,10 @@ struct stmt_map {
      * SQLite is handed their paths without a copy.
      */
     ArenaAlloc::Alloc<char> sm_frame_arena{16 * 1024};
-    /** Bumped when any file's frames change. */
+    /**
+     * Bumped when any file's frames change or more of its lines have been
+     * looked at for frames, which changes log_stack_frames.mapped.
+     */
     size_t sm_frame_changes{0};
     /** Bumped when every file's frames are found again. */
     size_t sm_frame_resets{0};
@@ -1048,10 +1057,7 @@ struct stmt_map {
                                    &mc.mc_shared_interns);
     }
 
-    /**
-     * Logs where the pass that just finished spent its time, and starts the
-     * counts over for the next one.
-     */
+    /** Logs where the initial pass spent its time. */
     void log_pass_stats(logfile_sub_source& lss)
     {
         map_counters mc;
@@ -1470,13 +1476,7 @@ CREATE TABLE lnav_db.log_stmt_stats (
                 to_sqlite(ctx, (int64_t) r.r_bucket_shift);
                 break;
             case 7: {
-                auto schema = stmt.var_schema();
-                if (schema) {
-                    to_sqlite(ctx, schema.value());
-                    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
-                } else {
-                    sqlite3_result_null(ctx);
-                }
+                to_sqlite(ctx, stmt.var_schema());
                 break;
             }
             case 8:
@@ -2443,11 +2443,18 @@ step(std::chrono::steady_clock::time_point deadline)
         // seems unlikely.
         const auto* format = lf->get_format_ptr();
         if (format != nullptr && !format->lf_has_body) {
-            std::fill(si.si_ids.begin() + si.si_verified,
-                      si.si_ids.end(),
-                      NO_STATEMENT);
-            si.si_verified = si.si_ids.size();
-            si.si_frames_verified = si.si_ids.size();
+            // The lines filled in here count as mapped, like the workers'.
+            if (si.si_verified < si.si_ids.size()) {
+                std::fill(si.si_ids.begin() + si.si_verified,
+                          si.si_ids.end(),
+                          NO_STATEMENT);
+                si.si_verified = si.si_ids.size();
+                sm.sm_changes += 1;
+            }
+            if (si.si_frames_verified < si.si_ids.size()) {
+                si.si_frames_verified = si.si_ids.size();
+                sm.sm_frame_changes += 1;
+            }
             continue;
         }
         if (si.si_verified < si.si_ids.size()
@@ -2469,7 +2476,8 @@ step(std::chrono::steady_clock::time_point deadline)
     std::vector<char> unfinished(work.size(), 0);
     std::vector<char> changed(work.size(), 0);
     std::vector<char> remapped(work.size(), 0);
-    std::vector<char> frames_found(work.size(), 0);
+    // Whether a worker looked at any line's frames, found or not.
+    std::vector<char> frames_checked(work.size(), 0);
     // Whether this slice has mapped anything yet: past the deadline, a worker
     // only starts another file while nothing has been.
     std::atomic<bool> progressed{false};
@@ -2498,9 +2506,8 @@ step(std::chrono::steady_clock::time_point deadline)
             });
 
             // Out of time already (the workers went through the other
-            // files): leave this one for the next slice.  Each file used
-            // to map a first batch whatever the time, so with 77 files a
-            // 20ms slice held the main loop for 300ms.
+            // files): leave this one for the next slice, so the time the
+            // main loop is held doesn't grow with the number of files.
             if (progressed.load(std::memory_order_relaxed)
                 && std::chrono::steady_clock::now() >= deadline)
             {
@@ -2518,7 +2525,7 @@ step(std::chrono::steady_clock::time_point deadline)
                 }
                 // Check the clock every few lines: a line can take a
                 // millisecond (a JSON message parsed, then matched by
-                // log2src), so every 256 overran the slice by ~250ms.
+                // log2src), so checking rarely overruns the slice.
                 if (done > 0 && done % STEP_CLOCK_LINES == 0
                     && std::chrono::steady_clock::now() >= deadline)
                 {
@@ -2541,9 +2548,7 @@ step(std::chrono::steady_clock::time_point deadline)
                 }
                 if (want_frames) {
                     si.add_frames(ms.ms_frames);
-                    if (!ms.ms_frames.empty()) {
-                        frames_found[index] = 1;
-                    }
+                    frames_checked[index] = 1;
                 }
                 done += 1;
                 progressed.store(true, std::memory_order_relaxed);
@@ -2581,8 +2586,8 @@ step(std::chrono::steady_clock::time_point deadline)
     if (std::find(remapped.begin(), remapped.end(), 1) != remapped.end()) {
         sm.sm_remaps += 1;
     }
-    if (std::find(frames_found.begin(), frames_found.end(), 1)
-        != frames_found.end())
+    if (std::find(frames_checked.begin(), frames_checked.end(), 1)
+        != frames_checked.end())
     {
         sm.sm_frame_changes += 1;
     }
@@ -2602,7 +2607,10 @@ step(std::chrono::steady_clock::time_point deadline)
     auto old_completed = sm.sm_completed.load();
     auto old_total = sm.sm_total.load();
     auto was_working = sm.sm_working.load();
-    if (!more && progressed.load()) {
+    // The initial pass is over once a slice leaves nothing to do, even one
+    // with no work left, as when the last file being mapped was closed.
+    if (!more && sm.sm_pass.pc_start && !sm.sm_pass_logged) {
+        sm.sm_pass_logged = true;
         size_t with_frames = 0;
         size_t frame_refs = 0;
         for (const auto& ld : lss) {

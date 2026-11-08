@@ -355,10 +355,10 @@ public:
          * file's and the pass's once it's done with the file for the slice,
          * so the workers don't share these as they go.  The times are summed
          * over the workers, so they can add up to more than the pass took.
-         * Logged and reset at the end of each pass, with log2src's own
-         * stats, which break down the time in find_statement().  Not reset
-         * by clear(), so a pass's counts include the lines mapped before the
-         * index was thrown away.
+         * Logged at the end of the initial pass, with log2src's own stats,
+         * which break down the time in find_statement().  Not reset by
+         * clear(), so the counts include the lines mapped before the index
+         * was thrown away.
          */
         struct counters {
             /** Lines looked at, and the ones skipped early. */

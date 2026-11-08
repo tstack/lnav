@@ -34,9 +34,12 @@
 #include "all_logs_vtab.hh"
 #include "config.h"
 #include "hasher.hh"
-#include "lnav-rs-ext/lnav_rs_ext.cxx.hh"
 #include "sql_help.hh"
 #include "vtab_module.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "lnav_rs_ext.cxx.hh"
+#endif
 
 #ifdef HAVE_RUST_DEPS
 namespace {
@@ -181,12 +184,11 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
             continue;
         }
 
-        switch (log_stmt_col(iter->iColumn)) {
-            case log_stmt_col::search_path:
-                viu.column_used(iter);
-                break;
-            default:
-                break;
+        // Only the first path is an argument; SQLite checks any others
+        // against the search_path column, since they aren't omitted.
+        if (log_stmt_col(iter->iColumn) == log_stmt_col::search_path) {
+            viu.column_used(iter);
+            break;
         }
     }
 
@@ -205,15 +207,26 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 {
     auto* pCur = (log_stmt_table::cursor*) pVtabCursor;
 
+    pCur->c_path.clear();
+    pCur->c_stmts.clear();
+    pCur->c_index = 0;
+
     if (argc != 1) {
-        pCur->c_path.clear();
+        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+            "source_log_stmt: expecting the path of a source file");
+        return SQLITE_ERROR;
+    }
+
+    // A NULL path, as from a join, is no file, so it has no statements.
+    const auto* path = (const char*) sqlite3_value_text(argv[0]);
+    if (path == nullptr) {
         return SQLITE_OK;
     }
 
     // While log2src scans the source, it holds its statements' lock to write
-    // them, so reading them here would block lnav's main loop until the scan is
-    // done (3.7s, when a client asked right after :add-source-path).  Say so
-    // instead; the statements can be asked for again once the scan is done.
+    // them, so reading them here would block lnav's main loop until the scan
+    // is done.  Say so instead; the statements can be asked for again once the
+    // scan is done.
     if (lnav_rs_ext::get_status().status == lnav_rs_ext::Status::working) {
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
             "the source is being scanned (:add-source-path); its log statements "
@@ -221,9 +234,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
         return SQLITE_ERROR;
     }
 
-    const char* path = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_path = path;
-    pCur->c_index = 0;
     pCur->c_stmts = lnav_rs_ext::get_log_statements_for(path);
 
     return SQLITE_OK;
@@ -239,10 +250,9 @@ register_log_stmt_vtab(sqlite3* db)
     static vtab_module<tvt_no_update<log_stmt_table>> LOG_STMT_MODULE;
     static auto log_stmt_help
         = help_text("source_log_stmt",
-                    "A table-valued function for getting information about log "
-                    "statements "
-                    "that were found in source code added by the "
-                    ":add-source-path command.")
+                    "A table-valued function for getting information about "
+                    "log statements that were found in source code added by "
+                    "the :add-source-path command.")
               .sql_table_valued_function()
               .with_parameter({"path", "The source file path"})
               .with_result(
