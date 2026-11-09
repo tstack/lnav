@@ -2062,9 +2062,9 @@ public:
                                      &tm,
                                      tv))
                         {
-                            sbc.sbc_time_scanner.set_base_time(tv.tv_sec,
+                            sbc.sbc_time_scanner.set_base_time(to_us(tv),
                                                                tm.et_tm);
-                            st.wss_time_scanner.set_base_time(tv.tv_sec,
+                            st.wss_time_scanner.set_base_time(to_us(tv),
                                                               tm.et_tm);
                         }
                     }
@@ -2227,8 +2227,8 @@ public:
                              &tm,
                              tv))
                 {
-                    sbc.sbc_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
-                    st.wss_time_scanner.set_base_time(tv.tv_sec, tm.et_tm);
+                    sbc.sbc_time_scanner.set_base_time(to_us(tv), tm.et_tm);
+                    st.wss_time_scanner.set_base_time(to_us(tv), tm.et_tm);
                 }
             } else if (directive == "#Fields:" && st.wss_field_defs.empty()) {
                 int numeric_count = 0;

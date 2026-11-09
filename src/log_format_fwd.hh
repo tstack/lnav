@@ -339,7 +339,7 @@ struct scan_batch_context {
      * on the format so that a candidate being tried out does not write one
      * file's base time into an object every other file also scans with.
      */
-    std::optional<time_t> sbc_base_time;
+    std::optional<std::chrono::microseconds> sbc_base_time;
     tm sbc_base_tm{};
     /**
      * The timestamp flags a candidate accumulates while it is being tried

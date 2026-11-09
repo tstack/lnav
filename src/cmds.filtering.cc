@@ -91,7 +91,7 @@ com_hide_line(exec_context& ec,
             auto curr_time = time(nullptr);
             tm base_tm;
             localtime_r(&curr_time, &base_tm);
-            dts.set_base_time(curr_time, base_tm);
+            dts.set_base_time(std::chrono::seconds{curr_time}, base_tm);
         }
         if (parse_res.isOk()) {
             if (tc->get_inner_height() > 0) {

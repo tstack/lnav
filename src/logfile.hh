@@ -1235,7 +1235,7 @@ private:
     safe_thread_id_state lf_thread_ids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
-    std::optional<time_t> lf_cached_base_time;
+    std::optional<std::chrono::microseconds> lf_cached_base_time;
     std::optional<tm> lf_cached_base_tm;
     anchor_time_t lf_anchor_time{mapbox::util::no_init{}};
 

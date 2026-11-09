@@ -1,0 +1,16 @@
+2026-11-09T05:55:09.310780Z  INFO main ThreadId(01) tracegen: src/main.rs:5: starting server version="1.2.3"
+2026-11-09T05:55:09.311092Z DEBUG main ThreadId(01) serve{port=8080}: tracegen: src/main.rs:8: binding addr=0.0.0.0:8080
+2026-11-09T05:55:09.311172Z  WARN worker-1 ThreadId(02) conn{peer="10.0.0.1:5000"}: tracegen: src/main.rs:14: connection reset retries=3
+2026-11-09T05:55:09.311190Z ERROR worker-1 ThreadId(02) conn{peer="10.0.0.1:5000"}: tracegen: src/main.rs:15: request failed:
+  caused by: timeout
+  caused by: broken pipe
+2026-11-09T05:55:09.311279Z  INFO ThreadId(03) tracegen: src/main.rs:21: flushing cache
+2026-11-09T05:55:09.311330Z TRACE     main ThreadId(01) serve{port=8080}: metrics: src/main.rs:22: requests=42
+2026-11-09T06:55:09.337055+01:00  INFO main ThreadId(01) tracegen: src/main.rs:5: starting server version="1.2.3"
+2026-11-09T06:55:09.343023+01:00 DEBUG main ThreadId(01) serve{port=8080}: tracegen: src/main.rs:8: binding addr=0.0.0.0:8080
+2026-11-09T06:55:09.343116+01:00  WARN worker-1 ThreadId(02) conn{peer="10.0.0.1:5000"}: tracegen: src/main.rs:14: connection reset retries=3
+2026-11-09T06:55:09.344275+01:00 ERROR worker-1 ThreadId(02) conn{peer="10.0.0.1:5000"}: tracegen: src/main.rs:15: request failed:
+  caused by: timeout
+  caused by: broken pipe
+2026-11-09T06:55:09.344378+01:00  INFO ThreadId(03) tracegen: src/main.rs:21: flushing cache
+2026-11-09T06:55:09.345405+01:00 TRACE     main ThreadId(01) serve{port=8080}: metrics: src/main.rs:22: requests=42

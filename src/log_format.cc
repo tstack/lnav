@@ -101,7 +101,7 @@ const intern_string_t log_format::LOG_EXTRA_FIELDS_STR
     = intern_string::lookup("log_extra_fields");
 
 static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
-    | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET;
+    | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_ELAPSED_TIME;
 
 log_level_stats&
 log_level_stats::operator|=(const log_level_stats& rhs)

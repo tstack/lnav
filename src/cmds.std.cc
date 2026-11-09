@@ -331,7 +331,7 @@ com_adjust_log_time(exec_context& ec,
         top_time = ll.get_timeval();
         localtime_r(&top_time.tv_sec, &base_tm);
 
-        dts.set_base_time(top_time.tv_sec, base_tm);
+        dts.set_base_time(ll.get_time(), base_tm);
         args[1] = remaining_args(cmdline, args);
 
         auto parse_res = relative_time::from_str(args[1]);
@@ -883,7 +883,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             struct tm top_tm;
 
             localtime_r(&top_time_tv.tv_sec, &top_tm);
-            dts.set_base_time(top_time_tv.tv_sec, top_tm);
+            dts.set_base_time(to_us(top_time_tv), top_tm);
         }
     }
 

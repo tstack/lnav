@@ -925,6 +925,21 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_time FROM all_logs ORDER BY log_line DESC LIMIT 1" \
     ${test_dir}/Xorg.log.0
 
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, log_level, target, spans, log_body FROM rust_tracing_text_log" \
+    ${test_dir}/logfile_rust_tracing_text.0
+
+# an anchor with an offset from UTC
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, log_body FROM all_logs" \
+    ${test_dir}/logfile_rust_tracing_text.1
+
+# absolute timestamps, in UTC and with an offset, and the optional thread,
+# file, and line parts
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, log_level, thread, thread_id, spans, target, file, line, log_body FROM rust_tracing_text_log" \
+    ${test_dir}/logfile_rust_tracing_text.2
+
 run_cap_test ${lnav_test} -n ${test_dir}/\#with
 
 run_cap_test ${lnav_test} -n \

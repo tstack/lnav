@@ -461,6 +461,9 @@ dist_noinst_DATA = \
 	logfile_rollover.0 \
 	logfile_rollover.1 \
 	logfile_rust_tracing.0 \
+	logfile_rust_tracing_text.0 \
+	logfile_rust_tracing_text.1 \
+	logfile_rust_tracing_text.2 \
 	logfile_shop_access_log.0 \
 	logfile_spark.0 \
 	logfile_spark_dupe.0 \

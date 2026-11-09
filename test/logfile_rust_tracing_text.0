@@ -1,0 +1,32 @@
+   0.001364291s TRACE cargo: start="2026-11-08T17:19:17.280527Z"
+   0.008925583s TRACE main:cli: cargo::context: get cv ConfigKey { env: "CARGO_TERM", parts: [("term", 5)] }
+   0.012007583s TRACE main:expand_aliases: cargo::context: get cv ConfigKey { env: "CARGO_ALIAS_CHECK", parts: [("alias", 5), ("check", 11)] }
+   0.012616875s TRACE main:configure_gctx: cargo::context: get cv ConfigKey { env: "CARGO_TERM", parts: [("term", 5)] }
+   0.012829041s TRACE main:configure_gctx: cargo::context: get cv ConfigKey { env: "CARGO_NET", parts: [("net", 5)] }
+   0.035556416s TRACE main:exec:workspace:read_manifest{path="/home/user/project/Cargo.toml" source_id=SourceId { inner: SourceIdInner { url: Url { scheme: "file", cannot_be_a_base: false, username: "", password: None, host: None, port: None, path: "/home/user/project", query: None, fragment: None }, canonical_url: CanonicalUrl(Url { scheme: "file", cannot_be_a_base: false, username: "", password: None, host: None, port: None, path: "/home/user/project", query: None, fragment: None }), kind: Path, precise: None, registry_key: None } }}:to_real_manifest:gather_dependencies: cargo::context: get cv ConfigKey { env: "CARGO_REGISTRY_INDEX", parts: [("registry", 5), ("index", 14)] }
+   0.037392375s TRACE main:exec:workspace: cargo::context: get cv ConfigKey { env: "CARGO_BUILD", parts: [("build", 5)] }
+   0.037698708s DEBUG main:exec:workspace:find_members: cargo::workspace::workspace: find_members - only me as a member
+   0.037910166s TRACE main:exec:workspace: cargo::context: get cv ConfigKey { env: "CARGO_RESOLVER", parts: [("resolver", 5)] }
+   0.038132583s TRACE main:exec:workspace: cargo::context: get cv ConfigKey { env: "CARGO_REGISTRY_GLOBAL_MIN_PUBLISH_AGE", parts: [("registry", 5), ("global-min-publish-age", 14)] }
+   0.038142500s TRACE main:exec:workspace: cargo::context: get cv ConfigKey { env: "CARGO_REGISTRY_MIN_PUBLISH_AGE", parts: [("registry", 5), ("min-publish-age", 14)] }
+   0.039407666s TRACE main:exec:compile_ws:create_bcx: cargo::context: get cv ConfigKey { env: "CARGO_TERM", parts: [("term", 5)] }
+   0.104814041s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous: cargo::ops::resolve: previous: graph: Graph {
+  - addr2line v0.27.1
+    - gimli v0.34.0
+  - adler2 v2.0.1
+  - aho-corasick v1.1.5
+    - memchr v2.8.3
+  - anstream v1.0.0
+    - anstyle v1.0.14
+    - anstyle-parse v1.0.0
+   0.162827250s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::registry: 	escargot/^0.5/registry `crates-io`
+   0.162829375s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::registry: 	nope, unlocked
+   0.162831208s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::registry: 	libc/^0.2.137/registry `crates-io`
+   0.162833791s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::registry: 	first hit on libc v0.2.191
+   0.162836583s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::dependency: locking dep from `libc` with `^0.2.137` at registry `crates-io` to libc v0.2.191
+   0.402406666s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:save: gc: saving last-use data
+   0.402490833s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:save: gc: insert registry_index RegistryIndex { encoded_registry_name: "index.crates.io-1949cf8c6b5b557f" } 1794158357
+   4.060678666s DEBUG main:exec:compile_ws:compile:execute: cargo::compiler::job_queue: end (Unit { pkg: Package { id: PackageId { name: "project", version: "0.1.0", source: "/home/user/project" }, ..: ".." }, target: TargetInner { name: "project", doc: true, ..: with_path("/home/user/project/src/main.rs", Edition2021) }, profile: Profile { split_debuginfo: Some("unpacked"), ..: default_dev() }, kind: Host, mode: Check { test: false }, features: [], rustflags: [], rustdocflags: [], links_overrides: {}, artifact: false, artifact_target_for_features: None, is_std: false, dep_hash: 5618299353023131504 }): Ok(())
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.05s
+   4.060728500s TRACE main:exec:compile_ws:compile:execute: cargo::context: get cv ConfigKey { env: "CARGO_FUTURE_INCOMPAT_REPORT", parts: [("future-incompat-report", 5)] }
+   4.068793125s  INFO main:exec:compile_ws: cargo::util::rustc: updated rustc info cache

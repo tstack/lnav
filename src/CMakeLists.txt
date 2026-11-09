@@ -149,6 +149,7 @@ set(FORMAT_FILES
         formats/redis_log.json
         formats/robot_fwk_log.json
         formats/rust_tracing_log.json
+        formats/rust_tracing_text_log.json
         formats/simple_rs_log.json
         formats/snaplogic_log.json
         formats/spdlog_log.json

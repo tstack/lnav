@@ -80,13 +80,12 @@ TEST_CASE("date_time_scanner")
             "%E.%f",
             nullptr,
         };
-        char buf[64];
         date_time_scanner dts;
         exttm tm;
         timeval tv;
 
         secs2tm(1428721664, &tm.et_tm);
-        dts.set_base_time(1428721664, tm.et_tm);
+        dts.set_base_time(std::chrono::seconds{1428721664}, tm.et_tm);
         const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
         CHECK(ts_end != nullptr);
         CHECK(ts_end - ts == 12);
@@ -188,7 +187,7 @@ TEST_CASE("date_time_scanner")
             date_time_scanner dts2;
             exttm tm2;
             timeval tv2;
-            dts2.set_base_time(tv.tv_sec, tm.et_tm);
+            dts2.set_base_time(to_us(tv), tm.et_tm);
             CHECK(dts2.scan(feb26.data(), feb26.length(), nullptr, &tm2, tv2)
                   != nullptr);
             CHECK(tm2.et_nsec == 0);

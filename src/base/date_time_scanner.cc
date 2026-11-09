@@ -196,12 +196,7 @@ date_time_scanner::scan(const char* time_dest,
                 retval = &time_dest[off];
 
                 if (tm_out->et_flags & ETF_ELAPSED_TIME) {
-                    auto epoch_time = this->dts_base_time + tm_out->et_elapsed;
-                    if (convert_local) {
-                        this->to_localtime(epoch_time, *tm_out);
-                    } else {
-                        secs2tm(epoch_time, &tm_out->et_tm);
-                    }
+                    this->apply_elapsed_time(*tm_out, convert_local);
                     tm_out->et_flags |= ETF_DAY_SET | ETF_MONTH_SET
                         | ETF_YEAR_SET | ETF_HOUR_SET | ETF_MINUTE_SET
                         | ETF_SECOND_SET;
@@ -285,12 +280,7 @@ date_time_scanner::scan(const char* time_dest,
             {
                 retval = &time_dest[off];
                 if (tm_out->et_flags & ETF_ELAPSED_TIME) {
-                    auto epoch_time = this->dts_base_time + tm_out->et_elapsed;
-                    if (convert_local) {
-                        this->to_localtime(epoch_time, *tm_out);
-                    } else {
-                        secs2tm(epoch_time, &tm_out->et_tm);
-                    }
+                    this->apply_elapsed_time(*tm_out, convert_local);
                     tm_out->et_flags |= ETF_DAY_SET | ETF_MONTH_SET
                         | ETF_YEAR_SET | ETF_HOUR_SET | ETF_MINUTE_SET
                         | ETF_SECOND_SET;
@@ -464,7 +454,7 @@ date_time_scanner::unlocked_copy() const
 void
 date_time_scanner::clear()
 {
-    this->dts_base_time = 0;
+    this->dts_base_time = std::chrono::microseconds::zero();
     this->dts_base_tm = exttm{};
     this->dts_fmt_lock = -1;
     this->dts_fmt_len = -1;
@@ -476,7 +466,26 @@ date_time_scanner::clear()
 }
 
 void
-date_time_scanner::set_base_time(time_t base_time, const tm& local_tm)
+date_time_scanner::apply_elapsed_time(exttm& tm_out, bool convert_local)
+{
+    auto epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                     this->dts_base_time)
+        + std::chrono::seconds{tm_out.et_elapsed}
+        + std::chrono::nanoseconds{tm_out.et_nsec};
+    auto epoch_secs = std::chrono::floor<std::chrono::seconds>(epoch);
+    time_t epoch_time = epoch_secs.count();
+
+    if (convert_local) {
+        this->to_localtime(epoch_time, tm_out);
+    } else {
+        secs2tm(epoch_time, &tm_out.et_tm);
+    }
+    tm_out.et_nsec = (epoch - epoch_secs).count();
+}
+
+void
+date_time_scanner::set_base_time(std::chrono::microseconds base_time,
+                                 const tm& local_tm)
 {
     this->dts_base_time = base_time;
     this->dts_base_tm.et_tm = local_tm;
@@ -572,7 +581,7 @@ point::from(string_fragment in, std::optional<timeval> ref_point)
             auto curr_time = ::time(nullptr);
             struct tm base_tm;
             localtime_r(&curr_time, &base_tm);
-            dts.set_base_time(curr_time, base_tm);
+            dts.set_base_time(std::chrono::seconds{curr_time}, base_tm);
         }
         auto scan_end = dts.scan(in.data(), in.length(), nullptr, &tm, tv_abs);
         if (scan_end != nullptr) {

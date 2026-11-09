@@ -85,7 +85,7 @@ struct date_time_scanner {
      */
     date_time_scanner unlocked_copy() const;
 
-    void set_base_time(time_t base_time, const tm& local_tm);
+    void set_base_time(std::chrono::microseconds base_time, const tm& local_tm);
 
     /**
      * Convert a timestamp to local time.
@@ -96,10 +96,16 @@ struct date_time_scanner {
      */
     void to_localtime(time_t t, struct exttm& tm_out);
 
+    /**
+     * Fill in tm_out from the base time plus the elapsed time and the
+     * fraction that were parsed into it.
+     */
+    void apply_elapsed_time(exttm& tm_out, bool convert_local);
+
     bool dts_keep_base_tz{false};
     bool dts_local_time{false};
     bool dts_zoned_to_local{true};
-    time_t dts_base_time{0};
+    std::chrono::microseconds dts_base_time{0};
     struct exttm dts_base_tm;
     int dts_fmt_lock{-1};
     int dts_fmt_len{-1};

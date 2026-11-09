@@ -1,0 +1,92 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "rust_tracing_text_log": {
+        "title": "Rust tracing text format",
+        "description": "The default text format of the tracing-subscriber crate for Rust, as written by `tracing_subscriber::fmt::init()`.  The timestamps can be the time since the program started, like cargo's `CARGO_LOG` output.  The clock time for those comes from an event in the first second whose message is only a timestamp, like cargo's `start=\"2026-11-08T17:19:17.280527Z\"`.",
+        "url": [
+            "https://docs.rs/tracing-subscriber/latest/tracing_subscriber/fmt/format/struct.Full.html"
+        ],
+        "regex": {
+            "std": {
+                "pattern": "^\\s*(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})|\\d+\\.\\d{9}s)\\s+(?<level>TRACE|DEBUG|INFO|WARN|ERROR)\\s+(?:(?!ThreadId\\()(?<thread>[^\\s{}:\"=]+)\\s+)?(?:ThreadId\\((?<thread_id>\\d+)\\) )?(?:(?<spans>[\\w-]+(?:\\{|:(?!:)).*?:) )?(?<target>\\w[\\w.-]*(?:::[\\w.-]+)*): (?:(?<file>[^\\s:]+\\.rs):(?:(?<line>\\d+):)? )?(?<body>.*)$"
+            }
+        },
+        "timestamp-format": [
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%E.%Ns"
+        ],
+        "timestamp-anchor": {
+            "pattern": "^\\s*0\\.\\d{9}s\\s+[A-Z]+ .*?: (?:[\\w.]+=)?\"?(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2}))\"?$"
+        },
+        "value": {
+            "thread": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The name of the thread, when the subscriber is configured with `with_thread_names(true)`"
+            },
+            "thread_id": {
+                "kind": "integer",
+                "identifier": true,
+                "description": "The ID of the thread, when the subscriber is configured with `with_thread_ids(true)`"
+            },
+            "spans": {
+                "kind": "string",
+                "description": "The spans that the event is in, from the outermost to the innermost, with their fields"
+            },
+            "target": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The target of the event, which is the Rust module that generated it, unless it was set with `target:`"
+            },
+            "file": {
+                "kind": "string",
+                "identifier": true,
+                "description": "The source file of the event, when the subscriber is configured with `with_file(true)`"
+            },
+            "line": {
+                "kind": "integer",
+                "foreign-key": true,
+                "description": "The line number of the event, when the subscriber is configured with `with_line_number(true)`"
+            }
+        },
+        "sample": [
+            {
+                "line": "2025-10-17T22:09:20.139141Z  INFO mapf::testlib: Loading test scenario from file: \"_data/tests/kill.txt\"",
+                "level": "info"
+            },
+            {
+                "line": "2025-10-17T22:09:20.140743Z DEBUG run_scenarios:run_scenario{scenario_path=\"_data/tests/kill.txt\"}:next{playing=1}: mapf::ai::greedy: Greedy AI chose move: Move((1, 1), (1, 2))",
+                "level": "debug"
+            },
+            {
+                "line": "2025-10-17T22:09:20.140743+02:00  WARN tokio-runtime-worker ThreadId(02) server::conn: src/conn.rs:42: connection reset peer=10.0.0.1:443",
+                "level": "warning"
+            },
+            {
+                "line": "2026-11-09T05:55:09.311330Z TRACE     main ThreadId(01) serve{port=8080}: metrics: src/main.rs:22: requests=42",
+                "level": "trace"
+            },
+            {
+                "line": "2026-11-09T05:55:09.311279Z  INFO ThreadId(03) tracegen: src/main.rs:21: flushing cache",
+                "level": "info"
+            },
+            {
+                "line": "   0.001364291s TRACE cargo: start=\"2026-11-08T17:19:17.280527Z\"",
+                "level": "trace"
+            },
+            {
+                "line": "   0.037698708s DEBUG main:exec:workspace:find_members: cargo::workspace::workspace: find_members - only me",
+                "level": "debug"
+            },
+            {
+                "line": "   0.162829375s TRACE main:exec:compile_ws:create_bcx:resolve_with_registry:resolve_with_previous:resolve: cargo::workspace::registry: \tnope, unlocked",
+                "level": "trace"
+            },
+            {
+                "line": "   0.402490833s ERROR main:exec: gc: failed to auto-clean cache data: database is locked",
+                "level": "error"
+            }
+        ]
+    }
+}

@@ -1394,12 +1394,15 @@ logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
         anchor = file_mtime{};
     }
 
+    auto file_time_us = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::seconds{file_time});
+
     if (!this->lf_anchor_time.is<file_line>()
         && (!this->lf_cached_base_time
-            || this->lf_cached_base_time.value() != file_time))
+            || this->lf_cached_base_time.value() != file_time_us))
     {
         tm new_base_tm;
-        this->lf_cached_base_time = file_time;
+        this->lf_cached_base_time = file_time_us;
         localtime_r(&file_time, &new_base_tm);
         this->lf_cached_base_tm = new_base_tm;
         this->lf_anchor_time = anchor;
@@ -2776,7 +2779,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             {
                 auto sf = sbr.to_string_fragment();
 
-                if (this->lf_format->lf_timestamp_anchor_pattern.pp_value
+                if (this->lf_format->lf_timestamp_flags & ETF_ELAPSED_TIME
+                    && this->lf_format->lf_timestamp_anchor_pattern.pp_value
                     && !this->lf_anchor_time.is<file_line>())
                 {
                     if (this->check_for_timestamp_anchor(sbc, sf)) {
@@ -3916,7 +3920,7 @@ logfile::check_for_timestamp_anchor(scan_batch_context& sbc, string_fragment sf)
         return retval;
     }
     if (anchor_tm.et_flags & ETF_ZONE_SET) {
-        anchor_tv.tv_sec -= anchor_tm.et_gmtoff;
+        // The scanner already applied the offset to anchor_tv, so it is UTC.
         log_info("anchor time for %s has timezone with offset: %ld",
                  this->lf_filename_as_string.c_str(),
                  anchor_tm.et_gmtoff);
@@ -3948,10 +3952,8 @@ logfile::check_for_timestamp_anchor(scan_batch_context& sbc, string_fragment sf)
         = last_line_time_local - last_line_local_info.first.offset;
     auto delta_us = last_line_time_utc - anchor_us_utc;
     // Based on the delta, find the new base time.
-    auto old_base_utc
-        = std::chrono::seconds{this->lf_time_scanner.dts_base_time};
-    auto new_base_utc
-        = old_base_utc - std::chrono::round<std::chrono::seconds>(delta_us);
+    auto old_base_utc = this->lf_time_scanner.dts_base_time;
+    auto new_base_utc = old_base_utc - delta_us;
     // We need to process each line since its time might cross a zone boundary.
     for (auto& ll : this->lf_index) {
         // Work backwards from the line's local time to UTC and then the
@@ -4010,14 +4012,15 @@ logfile::check_for_timestamp_anchor(scan_batch_context& sbc, string_fragment sf)
         }
     }
 
-    time_t new_base_utc_t = new_base_utc.count();
+    time_t new_base_utc_t
+        = std::chrono::floor<std::chrono::seconds>(new_base_utc).count();
     tm new_base_tm_local;
     localtime_r(&new_base_utc_t, &new_base_tm_local);
-    this->lf_time_scanner.set_base_time(new_base_utc_t, new_base_tm_local);
-    this->lf_cached_base_time = new_base_utc_t;
+    this->lf_time_scanner.set_base_time(new_base_utc, new_base_tm_local);
+    this->lf_cached_base_time = new_base_utc;
     this->lf_cached_base_tm = new_base_tm_local;
-    sbc.sbc_time_scanner.set_base_time(new_base_utc_t, new_base_tm_local);
-    sbc.sbc_base_time = new_base_utc_t;
+    sbc.sbc_time_scanner.set_base_time(new_base_utc, new_base_tm_local);
+    sbc.sbc_base_time = new_base_utc;
     sbc.sbc_base_tm = new_base_tm_local;
     retval = true;
 

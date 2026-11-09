@@ -822,9 +822,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                           .right_justify(NAME_WIDTH)
                           .append(": ")
                           .append(lnav::to_rfc3339_string(
-                              std::chrono::seconds(
-                                  lf->get_time_scanner().dts_base_time),
-                              'T'))
+                              lf->get_time_scanner().dts_base_time, 'T'))
                           .append(" UTC");
 
                 auto anchor = lf->get_anchor_time();

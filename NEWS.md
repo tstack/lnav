@@ -81,6 +81,10 @@ Features:
   `error:` lines and `FILESYSTEM CLEAN` status messages.
 * Added the `dmesg_log` format for Linux kernel logs.
 * Added the `xorg_log` format for X.Org server logs.
+* Added the `rust_tracing_text_log` format for the default text
+  output of Rust's `tracing-subscriber` crate.  The timestamps
+  can be the time since the program started, like in cargo's
+  `CARGO_LOG` output, whose first message has the current time.
 * Added a log format for the Asterisk PBX framework.  The
   call ID (e.g. `C-00000001`) is used as the operation ID so
   the messages for a call are grouped in the TIMELINE view.

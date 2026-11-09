@@ -622,7 +622,7 @@ filter_sub_source::time_filter_row::parse_time(textview_curses* top_view,
             tm top_tm;
 
             localtime_r(&top_time_tv.tv_sec, &top_tm);
-            dts.set_base_time(top_time_tv.tv_sec, top_tm);
+            dts.set_base_time(to_us(top_time_tv), top_tm);
         }
     }
     if (parse_res.isOk()) {
