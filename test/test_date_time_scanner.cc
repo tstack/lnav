@@ -68,6 +68,58 @@ static const char* BAD_TIMES[] = {
     "@4000000043",
 };
 
+TEST_CASE("numeric timezone offsets")
+{
+    for (const auto* zone : {"-root-INFO", "-RedisUtils-INFO", "+0a00",
+                             "+01b0", "+010c", "+a100", "+24:00",
+                             "+0060", "-00:60", "+010", "+01:0"})
+    {
+        exttm tm{};
+        off_t off = 0;
+        CAPTURE(doctest::String(zone));
+        CHECK_FALSE(ptime_z(&tm, zone, off, strlen(zone)));
+        CHECK(off == 0);
+        CHECK((tm.et_flags & ETF_ZONE_SET) == 0);
+    }
+
+    for (const auto* zone : {"+0100", "+01:00", "-0500", "-05:00",
+                             "+2359", "-23:59", "Z"})
+    {
+        exttm tm{};
+        off_t off = 0;
+        CAPTURE(doctest::String(zone));
+        REQUIRE(ptime_z(&tm, zone, off, strlen(zone)));
+        CHECK(off == strlen(zone));
+        const auto expected = zone[0] == 'Z' ? 0
+            : zone[1] == '2' ? 86340
+            : zone[0] == '+' ? 3600 : 18000;
+        CHECK(tm.et_gmtoff == (zone[0] == '-' ? -expected : expected));
+        CHECK((tm.et_flags & ETF_ZONE_SET) != 0);
+    }
+}
+
+TEST_CASE("logger names after milliseconds are not timezone offsets")
+{
+    setenv("TZ", "UTC", 1);
+    lnav_config.lc_log_date_time.c_zoned_to_local = false;
+    for (const auto* ts : {
+             "2026-10-22 05:17:14,750-root-INFO request_process_1",
+             "2026-10-22 05:17:14,958-RedisUtils-INFO feedback_process_1"})
+    {
+        date_time_scanner dts;
+        exttm tm{};
+        timeval tv{};
+        CAPTURE(doctest::String(ts));
+        const auto* end = dts.scan(ts, strlen(ts), nullptr, &tm, tv);
+        REQUIRE(end != nullptr);
+        CHECK(end == ts + strlen("2026-10-22 05:17:14,750"));
+        CHECK((tm.et_flags & ETF_ZONE_SET) == 0);
+        CHECK(tm.et_tm.tm_hour == 5);
+        CHECK(tm.et_tm.tm_min == 17);
+        CHECK(tm.et_tm.tm_sec == 14);
+    }
+}
+
 TEST_CASE("date_time_scanner")
 {
     setenv("TZ", "UTC", 1);
