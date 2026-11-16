@@ -303,6 +303,32 @@ Features:
   mapped, `all_logs` reads `log_msg_src` and `log_msg_schema`
   from that map instead of matching each message again, unless
   the query also needs `log_msg_format` or `log_msg_values`.
+* Added the `lnav_help` table that contains the documentation
+  for lnav's:
+
+  * commands
+  * SQL functions and keywords
+  * SQLite virtual tables
+  * PRQL transforms
+
+  This should make it easier for agents to figure out what is
+  available in the running build of lnav.
+* A script sent to the external-access server's `/api/exec` can
+  be limited to the effects listed in an `X-Lnav-Allow-Effects`
+  header (e.g. `read, output, view`): commands with any other
+  effect fail the request instead of running, even when run by
+  `:eval` or a script.  SQL that changes data needs `view`, and
+  writing to a file instead of the response, `shell_exec()`,
+  `fstat()`, `ATTACH`, `VACUUM INTO`, `CREATE TRIGGER`,
+  `CREATE VIEW`, and pragmas that change a setting need
+  `external`, including SQL in commands like `:filter-expr`.  A
+  header naming an unknown effect, or one lnav can't read, fails
+  the request.
+* A request to the external-access server with an `X-Lnav-`
+  header that lnav doesn't read (e.g. from a later version, or
+  misspelled), or an `X-Lnav-Db-View` value other than `shared`,
+  now fails with a 400 instead of running as if the header
+  weren't there.
 * Added the `percentile_disc(value, p)` SQL aggregate function,
   which returns the value at the p-th percentile by the
   nearest-rank method, so the result is always one of the

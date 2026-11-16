@@ -1,0 +1,8 @@
+[1;4m    format     [0m[1;4m [0m[1;4m  name   [0m[1;4m [0m[1;4m        roles        [0m[1;4m [0m[1;4m                    description                    [0m[1;4m [0m
+mysql_error_log level     ["level"]             The message's level, like Note, Warning, or ERROR   
+mysql_error_log thread    ["opid","thread-id"]  The ID of the thread that logged the message        
+[1mmysql_error_log[0m[1m [0m[1mtimestamp[0m[1m [0m[1m["timestamp"]        [0m[1m [0m[1mThe time the message was logged                     [0m
+[1mvmw_log        [0m[1m [0m[1mfile     [0m[1m [0m[1m["src-file"]         [0m[1m [0m[1mThe source file that logged the message             [0m
+vmw_log         line      ["src-line"]          The line in the source file that logged the message 
+vmw_log         opid      ["opid"]              The ID of the operation the message is about        
+[1mvmw_log        [0m[1m [0m[1mtid      [0m[1m [0m[1m["subid","thread-id"][0m[1m [0m[1mThe ID of the thread that logged the message        [0m

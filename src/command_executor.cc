@@ -209,6 +209,7 @@ execute_command(exec_context& ec, const std::string& cmdline)
             return Err(um);
         }
 
+        TRY(ec.check_effect(iter->second->c_help.ht_effect, ":" + args[0]));
         ec.ec_current_help = &iter->second->c_help;
         try {
             auto retval = iter->second->c_func(ec, cmdline, args);
@@ -407,6 +408,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
+            TRY(ec.check_effect(cmd_iter->second->c_help.ht_effect, args[0]));
             ec.ec_current_help = &cmd_iter->second->c_help;
             auto retval = cmd_iter->second->c_func(ec, stmt_str, args);
             ec.ec_current_help = nullptr;
@@ -438,10 +440,19 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         std::set<std::string> touched_tables;
         {
             sql_table_capture_guard capture_guard(touched_tables);
+            // Forget a refusal from SQL compiled elsewhere, e.g. by
+            // :filter-expr, so it isn't reported for this statement.
+            lnav::sql::take_external_denial();
             retcode = sqlite3_prepare_v2(
                 lnav_data.ld_db.in(), curr_stmt, -1, stmt.out(), &tail);
         }
         if (retcode != SQLITE_OK) {
+            auto denial = lnav::sql::take_external_denial();
+            if (denial) {
+                TRY(ec.check_effect(
+                    help_effect_t::external, denial->ed_what, denial->ed_why));
+            }
+
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
             alt_msg = "";
@@ -479,6 +490,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             return ec.make_error(
                 "modifying statements are not allowed in this context: {}",
                 sql);
+        }
+        if (!last_is_readonly) {
+            TRY(ec.check_effect(help_effect_t::view,
+                                "an SQL statement that changes data"));
         }
 #endif
         bool done = false;
@@ -556,6 +571,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     }
 
                     log_error("sqlite3_step error code: %d", retcode);
+                    // Refused while running, like the ATTACH that VACUUM
+                    // INTO does.
+                    auto denial = lnav::sql::take_external_denial();
+                    if (denial) {
+                        TRY(ec.check_effect(help_effect_t::external,
+                                            denial->ed_what,
+                                            denial->ed_why));
+                    }
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db,
                                                             bound_note)
                                   .move();
@@ -784,6 +807,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     }
 
     ec.ec_local_vars.emplace();
+    auto vars_guard = lnav::finally([&ec]() { ec.ec_local_vars.pop(); });
 
     auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
@@ -805,72 +829,92 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 
     std::vector<script_metadata> paths_to_exec;
 
-    if (lnav::filesystem::is_url(script_name)) {
-        auto_mem<CURLU> cu(curl_url_cleanup);
-        cu = curl_url();
-        auto set_rc = curl_url_set(cu, CURLUPART_URL, script_name.c_str(), 0);
-        if (set_rc == CURLUE_OK) {
-            auto_mem<char> scheme_part(curl_free);
-            auto get_rc
-                = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
-            if (get_rc == CURLUE_OK
-                && string_fragment::from_c_str(scheme_part.in()) == "file")
-            {
-                auto_mem<char> path_part;
+    if (!ec.allows_effect(help_effect_t::external)) {
+        // Without the external effect, only the scripts installed in lnav's
+        // configuration directories can run, since anything else reads a
+        // file the request picked.
+        auto scripts = find_format_scripts(lnav_data.ld_config_paths);
+        auto iter = scripts.as_scripts.find(script_name);
+        if (iter == scripts.as_scripts.end()) {
+            auto check_res = ec.check_effect(help_effect_t::external,
+                                             "|" + script_name,
+                                             "it is not an installed script");
+            if (check_res.isErr()) {
+                return Err(check_res.unwrapErr());
+            }
+        } else {
+            paths_to_exec = iter->second;
+        }
+    } else {
+        if (lnav::filesystem::is_url(script_name)) {
+            auto_mem<CURLU> cu(curl_url_cleanup);
+            cu = curl_url();
+            auto set_rc
+                = curl_url_set(cu, CURLUPART_URL, script_name.c_str(), 0);
+            if (set_rc == CURLUE_OK) {
+                auto_mem<char> scheme_part(curl_free);
                 auto get_rc
-                    = curl_url_get(cu, CURLUPART_PATH, path_part.out(), 0);
-                if (get_rc == CURLUE_OK) {
-                    auto rp_res = lnav::filesystem::realpath(path_part.in());
-                    if (rp_res.isOk()) {
-                        struct script_metadata meta;
+                    = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
+                if (get_rc == CURLUE_OK
+                    && string_fragment::from_c_str(scheme_part.in()) == "file")
+                {
+                    auto_mem<char> path_part;
+                    auto get_rc
+                        = curl_url_get(cu, CURLUPART_PATH, path_part.out(), 0);
+                    if (get_rc == CURLUE_OK) {
+                        auto rp_res
+                            = lnav::filesystem::realpath(path_part.in());
+                        if (rp_res.isOk()) {
+                            struct script_metadata meta;
 
-                        meta.sm_path = rp_res.unwrap();
-                        extract_metadata_from_file(meta);
-                        paths_to_exec.push_back(meta);
+                            meta.sm_path = rp_res.unwrap();
+                            extract_metadata_from_file(meta);
+                            paths_to_exec.push_back(meta);
+                        }
                     }
                 }
             }
         }
-    }
-    if (script_name == "-" || script_name == "/dev/stdin") {
-        paths_to_exec.push_back({script_name, "", "", ""});
-    } else if (access(script_name.c_str(), R_OK) == 0) {
-        struct script_metadata meta;
-        auto rp_res = lnav::filesystem::realpath(script_name);
+        if (script_name == "-" || script_name == "/dev/stdin") {
+            paths_to_exec.push_back({script_name, "", "", ""});
+        } else if (access(script_name.c_str(), R_OK) == 0) {
+            struct script_metadata meta;
+            auto rp_res = lnav::filesystem::realpath(script_name);
 
-        if (rp_res.isErr()) {
-            log_error("unable to get realpath() of %s -- %s",
-                      script_name.c_str(),
-                      rp_res.unwrapErr().c_str());
-            meta.sm_path = script_name;
-        } else {
-            meta.sm_path = rp_res.unwrap();
-        }
-        extract_metadata_from_file(meta);
-        paths_to_exec.push_back(meta);
-    } else if (errno != ENOENT) {
-        open_error = lnav::from_errno().message();
-    } else {
-        auto script_path = std::filesystem::path(script_name);
-
-        if (!script_path.is_absolute()) {
-            auto scripts = find_format_scripts(lnav_data.ld_config_paths);
-            auto iter = scripts.as_scripts.find(script_name);
-            if (iter != scripts.as_scripts.end()) {
-                paths_to_exec = iter->second;
+            if (rp_res.isErr()) {
+                log_error("unable to get realpath() of %s -- %s",
+                          script_name.c_str(),
+                          rp_res.unwrapErr().c_str());
+                meta.sm_path = script_name;
+            } else {
+                meta.sm_path = rp_res.unwrap();
             }
-
-            script_path = ec.ec_path_stack.back() / script_path;
-        }
-
-        if (std::filesystem::is_regular_file(script_path)) {
-            script_metadata meta;
-
-            meta.sm_path = script_path;
             extract_metadata_from_file(meta);
             paths_to_exec.push_back(meta);
         } else if (errno != ENOENT) {
             open_error = lnav::from_errno().message();
+        } else {
+            auto script_path = std::filesystem::path(script_name);
+
+            if (!script_path.is_absolute()) {
+                auto scripts = find_format_scripts(lnav_data.ld_config_paths);
+                auto iter = scripts.as_scripts.find(script_name);
+                if (iter != scripts.as_scripts.end()) {
+                    paths_to_exec = iter->second;
+                }
+
+                script_path = ec.ec_path_stack.back() / script_path;
+            }
+
+            if (std::filesystem::is_regular_file(script_path)) {
+                script_metadata meta;
+
+                meta.sm_path = script_path;
+                extract_metadata_from_file(meta);
+                paths_to_exec.push_back(meta);
+            } else if (errno != ENOENT) {
+                open_error = lnav::from_errno().message();
+            }
         }
     }
 
@@ -887,7 +931,6 @@ execute_file(exec_context& ec, const std::string& path_and_args)
             retval = TRY(execute_file_contents(ec, path_iter.sm_path));
         }
     }
-    ec.ec_local_vars.pop();
 
     if (paths_to_exec.empty()) {
         return ec.make_error(
@@ -915,6 +958,7 @@ execute_from_file(exec_context& ec,
             retval = TRY(execute_command(ec, cmdline.substr(1)));
             break;
         case '/':
+            TRY(ec.check_effect(help_effect_t::view, "a search"));
             execute_search(cmdline.substr(1));
             break;
         case ';': {
@@ -989,6 +1033,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
             retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
+            TRY(ec.check_effect(help_effect_t::view, "a search"));
             execute_search(cmdline);
             break;
         case ';':
@@ -1423,6 +1468,76 @@ exec_context::add_error_context(lnav::console::user_message& um) const
                                   help_text_content::synopsis_and_summary);
         um.with_help(help);
     }
+}
+
+bool
+exec_context::allows_effect(help_effect_t effect) const
+{
+    if (!this->ec_allowed_effects) {
+        return true;
+    }
+    // A command that doesn't say what it does could do anything.
+    if (effect == help_effect_t::unknown) {
+        effect = help_effect_t::external;
+    }
+    return this->ec_allowed_effects->is_set(effect);
+}
+
+Result<void, lnav::console::user_message>
+exec_context::check_effect(help_effect_t effect,
+                           const std::string& what,
+                           const std::string& why) const
+{
+    if (this->allows_effect(effect)) {
+        return Ok();
+    }
+
+    std::vector<std::string> allowed;
+    for (auto lpc = help_effect_t::read; lpc <= help_effect_t::exit;
+         lpc = static_cast<help_effect_t>(static_cast<unsigned>(lpc) + 1))
+    {
+        if (this->ec_allowed_effects->is_set(lpc)) {
+            allowed.emplace_back(help_effect_name(lpc));
+        }
+    }
+    log_info("refusing %s: effect %s is not allowed",
+             what.c_str(),
+             help_effect_name(effect));
+    auto um = lnav::console::user_message::error(
+                  attr_line_t().append(lnav::roles::symbol(what)).append(
+                      " is not allowed here"))
+                  .with_reason(attr_line_t(why.empty() ? "" : why + ", so ")
+                                   .append("its effect is ")
+                                   .append_quoted(help_effect_name(effect))
+                                   .append(", and only these are allowed: ")
+                                   .append(allowed.empty()
+                                               ? std::string("none")
+                                               : fmt::format(
+                                                     FMT_STRING("{}"),
+                                                     fmt::join(allowed, ", "))))
+                  .with_help(
+                      "the X-Lnav-Allow-Effects header of an external-access "
+                      "request lists the effects its commands may have; see "
+                      "the effect column of the lnav_help table")
+                  .move();
+    if (!this->ec_source.empty()) {
+        um.with_snippets(this->ec_source);
+        um.remove_internal_snippets();
+    }
+    return Err(um);
+}
+
+exec_context::allowed_effects_guard::allowed_effects_guard(
+    exec_context& ec, help_effect_set_t effects)
+    : aeg_context(ec), aeg_prev(ec.ec_allowed_effects),
+      aeg_sql(effects.is_set<help_effect_t::external>())
+{
+    ec.ec_allowed_effects = effects;
+}
+
+exec_context::allowed_effects_guard::~allowed_effects_guard()
+{
+    this->aeg_context.ec_allowed_effects = this->aeg_prev;
 }
 
 lnav::console::user_message

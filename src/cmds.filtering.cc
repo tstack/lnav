@@ -464,6 +464,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_hide_line,
 
         help_text(":hide-lines-before")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide lines that come before the given date")
             .with_parameter(
                 help_text("date", "An absolute or relative date")
@@ -481,6 +482,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_hide_line,
 
         help_text(":hide-lines-after")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide lines that come after the given date")
             .with_parameter(
                 help_text("date", "An absolute or relative date")
@@ -498,6 +500,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_show_lines,
 
         help_text(":show-lines-before-and-after")
+            .with_effect(help_effect_t::view)
             .with_summary("Show lines that were hidden by the "
                           "'hide-lines' commands")
             .with_opposites({"hide-lines-before", "hide-lines-after"})
@@ -508,6 +511,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_filter,
 
         help_text(":filter-in")
+            .with_effect(help_effect_t::view)
             .with_summary("Only show lines that match the given regular "
                           "expression in the current view")
             .with_parameter(
@@ -524,6 +528,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_filter,
 
         help_text(":filter-out")
+            .with_effect(help_effect_t::view)
             .with_summary("Remove lines that match the given "
                           "regular expression "
                           "in the current view")
@@ -542,6 +547,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_enable_filter,
 
         help_text(":enable-filter")
+            .with_effect(help_effect_t::view)
             .with_summary("Enable a previously created and disabled filter")
             .with_parameter(
                 help_text("pattern",
@@ -559,6 +565,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_disable_filter,
 
         help_text(":disable-filter")
+            .with_effect(help_effect_t::view)
             .with_summary("Disable a filter created with filter-in/filter-out")
             .with_parameter(
                 help_text("pattern",
@@ -575,6 +582,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_delete_filter,
 
         help_text(":delete-filter")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Delete the filter created with ':filter-in' or ':filter-out'")
             .with_parameter(
@@ -591,6 +599,7 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_filter_context,
 
         help_text(":filter-context")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Show extra lines around filtered-in lines, similar to "
                 "grep's -C option")

@@ -1496,7 +1496,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
-  [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
+  [1m:show-unmarked-lines[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
 
 [4m:[0m[1;4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════

@@ -1,0 +1,36 @@
+[
+    {
+        "kind": "command",
+        "name": ":filter-out",
+        "effect": "view",
+        "aliases": [
+
+        ],
+        "summary": "Remove lines that match the given regular expression in the current view",
+        "synopsis": ":filter-out pattern",
+        "description": null,
+        "parameters": [
+            {
+                "name": "pattern",
+                "description": "The regular expression to match",
+                "required": true,
+                "type": "string",
+                "format": "regex"
+            }
+        ],
+        "examples": [
+            {
+                "description": "To filter out log messages that contain the string 'last message repeated'",
+                "code": ":filter-out last message repeated",
+                "language": "default"
+            }
+        ],
+        "tags": [
+            "filtering"
+        ],
+        "opposites": [
+
+        ],
+        "prql_path": null
+    }
+]

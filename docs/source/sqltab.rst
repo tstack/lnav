@@ -14,6 +14,7 @@ the following tables/views:
 * `lnav_file_value_stats`_
 * `lnav_format_value_stats`_
 * `lnav_format_values`_
+* `lnav_help`_
 * `lnav_log_breakpoints`_
 * `lnav_user_notifications`_
 * `lnav_views`_
@@ -225,6 +226,100 @@ following columns are available in this table:
 :identifier: Indicates if the value is an identifier.
 
 .. _table_lnav_log_breakpoints:
+
+.. _table_lnav_help:
+
+lnav_help
+---------
+
+The :code:`lnav_help` table has the reference for the following in
+this build of **lnav**:
+
+* the commands
+* SQL functions and keywords
+* PRQL transforms
+* SQLite virtual tables
+
+It holds the same text as the :ref:`:help<help>` command and this
+documentation, so a script, or a program driving **lnav** through the
+:ref:`external-access API<ExternalAccess>`, can look up what is available by
+name or by topic.  The columns in the table are as follows:
+
+:kind: The kind of entry: :code:`command`, :code:`table`,
+  :code:`sql_function`, :code:`sql_aggregate_function`,
+  :code:`sql_table_function`, :code:`sql_command`, :code:`sql_keyword`,
+  :code:`sql_infix`, :code:`prql_transform`, or :code:`prql_function`.
+:name: The name to call it by.  Command names start with a colon
+  (e.g. :code:`:filter-out`).
+:effect: For a command or SQL dot-command (like :code:`.dump`), what
+  running it can change, so a program running commands on someone's
+  behalf can tell which ones need their approval.  An
+  :ref:`external-access<ExternalAccess>` request can limit the effects
+  its script may have with an :code:`X-Lnav-Allow-Effects` header.
+  :code:`NULL` for other kinds of entries.
+
+  :read: Nothing, though it may print to the script's output.
+    :code:`:eval` is :code:`read`, since the commands it runs are
+    checked against their own effects.
+  :output: Writes to the file it's given or, given :code:`-`, to the
+    script's output instead.
+  :view: **lnav**'s state for this session: views, filters, marks,
+    highlights, the files shown, and tables.  It can be undone in
+    **lnav**.
+  :config: Configuration or session files, which outlast this
+    **lnav**.
+  :external: Runs programs, reads or writes files other than
+    **lnav**'s own, or opens connections.  Writing to a file
+    instead of the script's output also counts as :code:`external`.
+  :exit: Quits **lnav**.
+  :unknown: Not declared.  Treat it like :code:`external`.
+:aliases: A JSON array of other names for the same entry.
+:summary: A one-line summary.
+:synopsis: How to call it, as plain text.  For a table, this is its
+  :code:`CREATE TABLE` statement with a comment for each column, which
+  the :code:`sqlite_master` table does not have for **lnav**'s tables.
+:description: Further detail, when there is more than the summary.
+:parameters: A JSON array of the parameters, in order, each described
+  along the lines of a JSON schema: its :code:`name`,
+  :code:`description`, whether it is :code:`required`, and its
+  :code:`type` (:code:`string`, :code:`integer`, :code:`number`, or
+  :code:`boolean` for a flag without a value).  A string can have a
+  :code:`format` saying how to write it, such as :code:`regex`,
+  :code:`sql`, or :code:`filename`, and :code:`enum` values.  A
+  parameter that can be given more than once has the type
+  :code:`array`, with the type of each value in :code:`items`, and a
+  :code:`minItems` of 1 when it must be given at least once.  When they
+  apply, a parameter also has the :code:`flag` keyword written before
+  its value, a :code:`default`, and nested :code:`parameters` for the
+  parts of a compound parameter.
+:examples: A JSON array of examples, each an object with a
+  :code:`description`, the :code:`code` to run, and its
+  :code:`language` (:code:`default` or :code:`prql`).
+:tags: A JSON array of the topics the entry belongs to, such as
+  :code:`filtering`, :code:`navigation`, or :code:`datetime`.
+:opposites: A JSON array of the names of the entries that undo this
+  one.
+:prql_path: For PRQL functions, the dotted module path
+  (e.g. :code:`text.regexp_match`).
+
+For example, to find the commands for filtering and how to undo them:
+
+.. code-block:: custsqlite
+
+    ;SELECT name, synopsis, summary, opposites FROM lnav_help
+         WHERE json_contains(tags, 'filtering')
+
+To list the commands that only change what **lnav** shows:
+
+.. code-block:: custsqlite
+
+    ;SELECT name, summary FROM lnav_help WHERE effect = 'view'
+
+.. note::
+
+    Like other JSON values, the JSON columns lose their JSON type when a
+    query sorts its rows, so :code:`:write-json-to` writes them as
+    strings after an :code:`ORDER BY`.
 
 lnav_log_breakpoints
 --------------------

@@ -32,9 +32,11 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "base/enum_util.hh"
 #include "base/intern_string.hh"
 
 enum class help_context_t {
@@ -107,6 +109,44 @@ enum class help_parameter_format_t {
     HPF_ACTIVE_TIMELINE_METRIC,
 };
 
+/**
+ * What running a command can change, so a caller driving lnav (a script, or a
+ * client of the external-access API) can tell which commands are safe to run
+ * on a user's behalf.  Shown in the lnav_help table's effect column.
+ */
+enum class help_effect_t {
+    /** Not declared; treat it like external. */
+    unknown,
+    /** Changes nothing, though it may print to the script's output. */
+    read,
+    /**
+     * Writes to the file it's given or, given "-", to the script's output
+     * instead.
+     */
+    output,
+    /**
+     * Changes lnav's state for this session: views, filters, marks,
+     * highlights, files shown, tables.  It can be undone in lnav.
+     */
+    view,
+    /** Changes configuration or session files that outlast this lnav. */
+    config,
+    /**
+     * Runs programs, reads or writes files outside of lnav's own, or opens
+     * connections.
+     */
+    external,
+    /** Quits lnav. */
+    exit,
+};
+
+const char* help_effect_name(help_effect_t effect);
+
+/** The effect with the given name, if there is one. */
+std::optional<help_effect_t> help_effect_from_name(string_fragment name);
+
+using help_effect_set_t = lnav::enums::bitset<help_effect_t>;
+
 struct help_example {
     enum class language {
         undefined,
@@ -137,6 +177,7 @@ struct help_text {
     help_function_type_t ht_function_type{help_function_type_t::HFT_REGULAR};
     std::vector<const char*> ht_prql_path;
     const char* ht_default_value{nullptr};
+    help_effect_t ht_effect{help_effect_t::unknown};
     void* ht_impl{nullptr};
 
     help_text() = default;
@@ -229,6 +270,12 @@ struct help_text {
         const std::initializer_list<help_example>& examples) noexcept;
 
     help_text& with_example(const help_example& example) noexcept;
+
+    help_text& with_effect(help_effect_t effect) noexcept
+    {
+        this->ht_effect = effect;
+        return *this;
+    }
 
     help_text& with_default_value(const char* defval)
     {

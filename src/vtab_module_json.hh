@@ -55,4 +55,13 @@ to_sqlite(sqlite3_context* ctx, json_string val)
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 
+/** The JSON document that gen has built, tagged as JSON. */
+inline void
+to_sqlite(sqlite3_context* ctx, yajlpp_gen& gen)
+{
+    auto sf = gen.to_string_fragment();
+    sqlite3_result_text(ctx, sf.data(), sf.length(), SQLITE_TRANSIENT);
+    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
 #endif

@@ -228,6 +228,7 @@ init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
             com_mark,
 
             help_text(":mark")
+                .with_effect(help_effect_t::view)
                 .with_summary(
                     "Toggle the bookmark state for the focused line in the "
                     "current view")
@@ -239,6 +240,7 @@ init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
             com_goto_mark,
 
             help_text(":next-mark")
+                .with_effect(help_effect_t::view)
                 .with_summary(
                     "Move to the next bookmark of the given type in the "
                     "current view")
@@ -256,6 +258,7 @@ init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
             com_goto_mark,
 
             help_text(":prev-mark")
+                .with_effect(help_effect_t::view)
                 .with_summary("Move to the previous bookmark of the given "
                               "type in the "
                               "current view")
@@ -274,6 +277,7 @@ init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
             com_sticky_header,
 
             help_text(":toggle-sticky-header")
+                .with_effect(help_effect_t::view)
                 .with_summary(
                     "Toggle the sticky header state for the focused line "
                     "in the current view")
@@ -284,6 +288,7 @@ init_lnav_bookmark_commands(lnav::commands::command_map_t& cmd_map)
             com_clear_sticky_headers,
 
             help_text(":clear-all-sticky-headers")
+                .with_effect(help_effect_t::view)
                 .with_summary(
                     "Clear all sticky header bookmarks in the current view")
                 .with_tags({"bookmarks", "display"}),

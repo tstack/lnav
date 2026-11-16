@@ -47,6 +47,7 @@
 #include "fmt/format.h"
 #include "help_text.hh"
 #include "lnav.script.parser.hh"
+#include "sql_util.hh"
 #include "vis_line.hh"
 
 namespace CLI {
@@ -90,6 +91,38 @@ struct exec_context {
     }
 
     void add_error_context(lnav::console::user_message& um) const;
+
+    /** Whether commands with the given effect may run now. */
+    bool allows_effect(help_effect_t effect) const;
+
+    /**
+     * An error if the effects allowed now don't include [effect].  [what]
+     * names what would have it, like ":sh", and [why], if given, says what
+     * it does that has that effect, like "it runs a program".
+     */
+    Result<void, lnav::console::user_message> check_effect(
+        help_effect_t effect,
+        const std::string& what,
+        const std::string& why = "") const;
+
+    /**
+     * Limits what the commands and SQL run while it's alive may change, as
+     * for an external-access request with an X-Lnav-Allow-Effects header.
+     */
+    class allowed_effects_guard {
+    public:
+        allowed_effects_guard(exec_context& ec, help_effect_set_t effects);
+        ~allowed_effects_guard();
+
+        allowed_effects_guard(const allowed_effects_guard&) = delete;
+        allowed_effects_guard& operator=(const allowed_effects_guard&)
+            = delete;
+
+    private:
+        exec_context& aeg_context;
+        std::optional<help_effect_set_t> aeg_prev;
+        lnav::sql::external_effect_guard aeg_sql;
+    };
 
     lnav::console::user_message make_error_from_str(std::string&& str) const;
 
@@ -379,6 +412,8 @@ struct exec_context {
     vis_line_t ec_top_line{0_vl};
     bool ec_dry_run{false};
     perm_t ec_perms{perm_t::READ_WRITE};
+    /** The effects commands may have, or nullopt when they're not limited. */
+    std::optional<help_effect_set_t> ec_allowed_effects;
 
     logline_value_vector* ec_line_values;
     std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;

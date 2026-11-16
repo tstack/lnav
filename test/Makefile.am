@@ -238,6 +238,7 @@ dist_noinst_SCRIPTS = \
 	test_shlexer.sh \
 	test_spectro.sh \
 	test_sql.sh \
+	test_sql_help.sh \
 	test_sql_anno.sh \
 	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
@@ -643,6 +644,7 @@ TESTS = \
 	test_shlexer.sh \
 	test_spectro.sh \
 	test_sql.sh \
+	test_sql_help.sh \
 	test_sql_anno.sh \
 	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \

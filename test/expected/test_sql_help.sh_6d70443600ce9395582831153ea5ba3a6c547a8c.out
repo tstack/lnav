@@ -1,0 +1,111 @@
+[
+    {
+        "kind": "sql_keyword",
+        "name": "SELECT",
+        "synopsis": "SELECT [DISTINCT|ALL] result-column1 [, ... result-columnN] [FROM table1 [, ... tableN]] [WHERE cond] [GROUP BY grouping-expr1 [, ... grouping-exprN]] [ORDER BY ordering-term1 [, ... ordering-termN]] [LIMIT limit-expr1 [, ... limit-exprN]]",
+        "parameters": [
+            {
+                "name": "filter",
+                "description": "Additional processing of rows",
+                "required": false,
+                "type": "string",
+                "enum": [
+                    "DISTINCT",
+                    "ALL"
+                ]
+            },
+            {
+                "name": "result-column",
+                "description": "The expression used to generate a result for this column.",
+                "required": true,
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 1
+            },
+            {
+                "name": "table",
+                "flag": "FROM",
+                "description": "The table(s) to query for data",
+                "required": false,
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "cond",
+                "flag": "WHERE",
+                "description": "The conditions used to select the rows to return.",
+                "required": false,
+                "type": "string"
+            },
+            {
+                "name": "grouping-expr",
+                "flag": "GROUP BY",
+                "description": "The expression to use when grouping rows.",
+                "required": false,
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "ordering-term",
+                "flag": "ORDER BY",
+                "description": "The values to use when ordering the result set.",
+                "required": false,
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            {
+                "name": "limit-expr",
+                "flag": "LIMIT",
+                "description": "The maximum number of rows to return.",
+                "required": false,
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        ],
+        "prql_path": null
+    },
+    {
+        "kind": "sql_function",
+        "name": "regexp_match",
+        "synopsis": "regexp_match(re, str)",
+        "parameters": [
+            {
+                "name": "re",
+                "description": "The regular expression to use",
+                "required": true,
+                "type": "string"
+            },
+            {
+                "name": "str",
+                "description": "The string to test against the regular expression",
+                "required": true,
+                "type": "string"
+            }
+        ],
+        "prql_path": "text.regexp_match"
+    },
+    {
+        "kind": "prql_transform",
+        "name": "from",
+        "synopsis": ";from table",
+        "parameters": [
+            {
+                "name": "table",
+                "description": "The table to use as a source",
+                "required": true,
+                "type": "string"
+            }
+        ],
+        "prql_path": null
+    }
+]

@@ -1,0 +1,7 @@
+[
+    {
+        "kind": "table",
+        "summary": "Access lnav's filters through this table.",
+        "synopsis": "-- Access lnav's filters through this table.\nCREATE TABLE lnav_db.lnav_view_filters (\n    view_name TEXT,                    -- The name of the view.\n    filter_id INTEGER DEFAULT 0,       -- The filter identifier.\n    enabled   INTEGER DEFAULT 1,       -- Indicates if the filter is enabled/disabled.\n    type      TEXT    DEFAULT 'out',   -- The type of filter (i.e. in/out).\n    language  TEXT    DEFAULT 'regex', -- The filter language.\n    pattern   TEXT                     -- The filter pattern.\n);"
+    }
+]

@@ -1,0 +1,4 @@
+found
+{test_dir}/tail-stmt-src/com/example/net/Server.java
+type,language,pattern
+out,statement,{test_dir}/tail-stmt-src/com/example/other/Server.java:15@3089d4c38cc0

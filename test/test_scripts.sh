@@ -55,3 +55,15 @@ fi
 run_cap_test ${lnav_test} -n \
     -c '|report-access-log' \
     ${test_dir}/logfile_shop_access_log.0
+
+# A script that fails leaves no variables behind for the commands after it.
+printf ':echo in script\n:filter-out [\n' > scripts-fail.lnav
+run_test ${lnav_test} -n \
+    -c '|scripts-fail.lnav arg1' \
+    -c ':echo after: 0=$0 1=$1' \
+    scripts-empty
+
+check_output "a failed script left its variables behind?" <<EOF
+in script
+after: 0= 1=
+EOF

@@ -649,6 +649,7 @@ PLUGIN_SRCS = \
 	all_ids_vtabs.cc \
 	breakpoint_vtab.cc \
 	file_vtab.cc \
+	help_vtab.cc \
 	log_stmt_stats.cc \
 	metrics_vtab.cc
 

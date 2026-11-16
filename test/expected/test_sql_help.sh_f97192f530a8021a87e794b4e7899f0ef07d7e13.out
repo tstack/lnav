@@ -1,0 +1,9 @@
+name,effect
+:config,config
+:current-time,read
+:filter-out,view
+:quit,exit
+:sh,external
+:write-json-to,output
+regexp_match,<NULL>
+lnav_help,<NULL>

@@ -509,6 +509,7 @@ static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
         "breakpoint",
         com_breakpoint,
         help_text(":breakpoint")
+            .with_effect(help_effect_t::view)
             .with_summary("Set a breakpoint for the given "
                           "[<format>:]<file>:<line> tuples "
                           "or the current line")
@@ -529,6 +530,7 @@ static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
         "toggle-breakpoint",
         com_toggle_breakpoint,
         help_text(":toggle-breakpoint")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Toggle a breakpoint for the focused line in the LOG view"),
     },
@@ -536,6 +538,7 @@ static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
         "clear-breakpoint",
         com_clear_breakpoint,
         help_text(":clear-breakpoint")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Clear the breakpoints that match the given glob pattern")
             .with_parameter(
@@ -551,6 +554,7 @@ static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
         "disable-breakpoint",
         com_disable_breakpoint,
         help_text(":disable-breakpoint")
+            .with_effect(help_effect_t::view)
             .with_summary("Disable a breakpoint for the given "
                           "[<format>:]<file>:<line> tuples "
                           "or the current line")
@@ -564,6 +568,7 @@ static lnav::commands::command_t BREAKPOINT_COMMANDS[] = {
         "enable-breakpoint",
         com_enable_breakpoint,
         help_text(":enable-breakpoint")
+            .with_effect(help_effect_t::view)
             .with_summary("Enable or create a breakpoint for the given "
                           "[<format>:]<file>:<line> tuples "
                           "or the current line")

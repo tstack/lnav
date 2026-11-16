@@ -1,0 +1,5 @@
+name
+kind,name
+table,lnav_view_files
+table,lnav_view_filter_stats
+table,lnav_view_filters

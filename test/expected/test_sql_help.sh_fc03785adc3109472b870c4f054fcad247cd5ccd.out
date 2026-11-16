@@ -1,0 +1,15 @@
+name,synopsis,summary,opposites
+:clear-filter-expr,:clear-filter-expr,Clear the filter expression,"["":filter-expr""]"
+:delete-filter,:delete-filter pattern,Delete the filter created with ':filter-in' or ':filter-out',"["":filter-in"","":filter-out""]"
+:disable-filter,:disable-filter pattern,Disable a filter created with filter-in/filter-out,"["":filter-out"","":filter-in""]"
+:enable-filter,:enable-filter pattern,Enable a previously created and disabled filter,"["":disable-filter""]"
+:filter-context,:filter-context count [after],"Show extra lines around filtered-in lines, similar to grep's -C option",[]
+:filter-expr,:filter-expr expr,Set the filter expression,"["":clear-filter-expr""]"
+:filter-in,:filter-in pattern,Only show lines that match the given regular expression in the current view,[]
+:filter-out,:filter-out pattern,Remove lines that match the given regular expression in the current view,[]
+:hide-lines-after,:hide-lines-after date,Hide lines that come after the given date,[]
+:hide-lines-before,:hide-lines-before date,Hide lines that come before the given date,[]
+:hide-unmarked-lines,:hide-unmarked-lines,Hide lines that have not been bookmarked,[]
+:show-lines-before-and-after,:show-lines-before-and-after,Show lines that were hidden by the 'hide-lines' commands,"["":hide-lines-before"","":hide-lines-after""]"
+:show-unmarked-lines,:show-unmarked-lines,Show lines that have not been bookmarked,"["":hide-unmarked-lines""]"
+:toggle-filtering,:toggle-filtering,Toggle the filtering flag for the current view,[]

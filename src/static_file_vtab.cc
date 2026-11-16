@@ -300,10 +300,11 @@ CREATE TABLE lnav_db.lnav_app_files (
 struct lnav_apps_vtab {
     static constexpr const char* NAME = "lnav_apps";
     static constexpr const char* CREATE_STMT = R"(
+-- The apps installed in the lnav configuration directories.
 CREATE TABLE lnav_db.lnav_apps (
-    name TEXT PRIMARY KEY,
-    description TEXT,
-    root TEXT
+    name TEXT PRIMARY KEY, -- The app's name, as publisher/app.
+    description TEXT,      -- What the app does.
+    root TEXT              -- The directory that holds the app's files.
 );
 )";
 

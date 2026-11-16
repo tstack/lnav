@@ -302,6 +302,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_create_named_search,
 
         help_text(":create-named-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Give a name to a search so that it stays active "
                           "and highlighted while other searches are run")
             .with_parameter(
@@ -323,6 +324,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_delete_named_search,
 
         help_text(":delete-named-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Delete a search created with create-named-search")
             .with_parameter(
                 help_text("name", "The name of the search to delete")
@@ -337,6 +339,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_set_named_search_enabled,
 
         help_text(":enable-named-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Enable a named search that was disabled with "
                           "disable-named-search")
             .with_parameter(
@@ -352,6 +355,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_set_named_search_enabled,
 
         help_text(":disable-named-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Stop highlighting the hits of a named search "
                           "without deleting it")
             .with_parameter(
@@ -367,6 +371,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_focus_search,
 
         help_text(":focus-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Narrow the search hotkeys to a single search so "
                           "that only its hits are moved through")
             .with_parameter(
@@ -385,6 +390,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_cycle_search_focus,
 
         help_text(":focus-next-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Focus the search after the one that is focused "
                           "now, wrapping around to all of them")
             .with_tags({"search", "navigation"})
@@ -395,6 +401,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_cycle_search_focus,
 
         help_text(":focus-prev-search")
+            .with_effect(help_effect_t::view)
             .with_summary("Focus the search before the one that is focused "
                           "now, wrapping around to all of them")
             .with_tags({"search", "navigation"})
@@ -405,6 +412,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_goto_search_hit,
 
         help_text(":next-search-hit")
+            .with_effect(help_effect_t::view)
             .with_summary("Move to the next hit of the focused search, or of "
                           "all of the searches when none is focused")
             .with_parameter(
@@ -423,6 +431,7 @@ static lnav::commands::command_t SEARCH_COMMANDS[] = {
         com_goto_search_hit,
 
         help_text(":prev-search-hit")
+            .with_effect(help_effect_t::view)
             .with_summary("Move to the previous hit of the focused search, or "
                           "of all of the searches when none is focused")
             .with_parameter(

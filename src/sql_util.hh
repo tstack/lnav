@@ -34,6 +34,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -159,6 +160,39 @@ private:
 namespace lnav::sql {
 
 auto_mem<char, sqlite3_free> mprintf(const char* fmt, ...);
+
+/**
+ * Keeps SQL from reaching outside of lnav (shell_exec(), fstat(), ATTACH,
+ * triggers, pragmas that set something) while a request that doesn't allow
+ * the "external" effect runs.  The authorizer checks every statement prepared
+ * meanwhile, including the SQL in commands like :filter-expr.  Nested guards
+ * restore the previous limit.
+ */
+class external_effect_guard {
+public:
+    explicit external_effect_guard(bool allow_external);
+    ~external_effect_guard();
+
+    external_effect_guard(const external_effect_guard&) = delete;
+    external_effect_guard& operator=(const external_effect_guard&) = delete;
+
+private:
+    std::optional<bool> eeg_prev;
+};
+
+/** SQL the authorizer refused for reaching outside of lnav. */
+struct external_denial_t {
+    /** What was refused, like "shell_exec()". */
+    std::string ed_what;
+    /** Why it reaches outside of lnav, like "it runs a program". */
+    std::string ed_why;
+};
+
+/**
+ * What the authorizer last refused for reaching outside of lnav, cleared when
+ * read, or nullopt when it refused nothing.
+ */
+std::optional<external_denial_t> take_external_denial();
 
 }  // namespace lnav::sql
 

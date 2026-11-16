@@ -676,6 +676,7 @@ static lnav::commands::command_t sql_commands[] = {
             ".dump",
             "Dump one or more tables to a file as a series of SQL statements")
             .sql_command()
+            .with_effect(help_effect_t::external)
             .with_parameter(
                 help_text{"path", "The path to the file to write"}.with_format(
                     help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -690,6 +691,7 @@ static lnav::commands::command_t sql_commands[] = {
         sql_cmd_save,
         help_text(".save", "Save the current database to a SQLite file")
             .sql_command()
+            .with_effect(help_effect_t::external)
             .with_parameter(
                 help_text{"path", "The path to the file to write"}.with_format(
                     help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -703,13 +705,15 @@ static lnav::commands::command_t sql_commands[] = {
         help_text(".msgformats",
                   "Executes a query that will summarize the different message "
                   "formats found in the logs")
-            .sql_command(),
+            .sql_command()
+            .with_effect(help_effect_t::read),
     },
     {
         ".read",
         sql_cmd_read,
         help_text(".read", "Execute the SQLite statements in the given file")
             .sql_command()
+            .with_effect(help_effect_t::external)
             .with_parameter(
                 help_text{"path", "The path to the file to write"}.with_format(
                     help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -724,6 +728,7 @@ static lnav::commands::command_t sql_commands[] = {
                   "Switch to the SCHEMA view that contains a dump of the "
                   "current database schema")
             .sql_command()
+            .with_effect(help_effect_t::view)
             .with_parameter({"name", "The name of a table to jump to"}),
     },
     {

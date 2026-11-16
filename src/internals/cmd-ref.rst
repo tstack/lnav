@@ -1179,7 +1179,7 @@
   Hide lines that have not been bookmarked
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`show_unmarked_lines`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 

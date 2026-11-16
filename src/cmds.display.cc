@@ -447,6 +447,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         "set-text-view-mode",
         com_set_text_view_mode,
         help_text(":set-text-view-mode")
+            .with_effect(help_effect_t::view)
             .with_summary("Set the display mode for text files")
             .with_parameter(help_text{"mode"}
                                 .with_summary("The display mode")
@@ -461,6 +462,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_toggle_field,
 
         help_text(":hide-fields")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide log message fields by replacing them "
                           "with an ellipsis")
             .with_parameter(
@@ -483,6 +485,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_toggle_field,
 
         help_text(":show-fields")
+            .with_effect(help_effect_t::view)
             .with_summary("Show log message fields that were previously hidden")
             .with_parameter(
                 help_text("field-name", "The name of the field to show")
@@ -498,6 +501,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_timeline_row_type_visibility,
 
         help_text(":hide-in-timeline")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide rows of the given type(s) in the timeline "
                           "view")
             .with_parameter(help_text("row-type", "The type of row to hide")
@@ -519,6 +523,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_timeline_row_type_visibility,
 
         help_text(":show-in-timeline")
+            .with_effect(help_effect_t::view)
             .with_summary("Show rows of the given type(s) that were "
                           "previously hidden in the timeline view")
             .with_parameter(help_text("row-type", "The type of row to show")
@@ -540,6 +545,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_timeline_row_type_visibility,
 
         help_text(":show-only-in-timeline")
+            .with_effect(help_effect_t::view)
             .with_summary("Show only rows of the given type(s) in the "
                           "timeline view, hiding all of the others.  With no "
                           "arguments, only the type of the focused row is "
@@ -563,6 +569,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_timeline_metric,
 
         help_text(":timeline-metric")
+            .with_effect(help_effect_t::view)
             .with_summary("Add a sparkline to the timeline view header "
                           "for the given metric")
             .with_parameter(
@@ -581,6 +588,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_timeline_metric_sql,
 
         help_text(":timeline-metric-sql")
+            .with_effect(help_effect_t::view)
             .with_summary("Add a sparkline driven by a SQL query. The "
                           "query must return two columns named log_time "
                           "and value; it is wrapped as "
@@ -601,6 +609,7 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
         com_clear_timeline_metric,
 
         help_text(":clear-timeline-metric")
+            .with_effect(help_effect_t::view)
             .with_summary("Remove a sparkline from the timeline view header")
             .with_parameter(
                 help_text("label", "The label of the metric to remove")

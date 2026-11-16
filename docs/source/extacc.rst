@@ -100,6 +100,34 @@ The following routes are available:
   show them with :code:`:spectrogram`, send an
   :code:`X-Lnav-Db-View: shared` header.
 
+  A client that runs scripts on someone's behalf, like an AI agent, can
+  limit what they may change with an :code:`X-Lnav-Allow-Effects` header
+  listing the allowed effects, separated by commas or spaces (e.g.
+  :code:`X-Lnav-Allow-Effects: read, output, view`).  The effects are the
+  ones in the :code:`effect` column of the :ref:`lnav_help<table_lnav_help>`
+  table.  A command whose effect isn't listed fails the request instead of
+  running, including one run by :code:`:eval` or from a :code:`|script`.
+  A command whose effect is :code:`unknown` needs :code:`external`.  The
+  same limits apply to the rest of the script:
+
+  * A search (:code:`/`) and an SQL statement that changes data need
+    :code:`view`.
+  * Writing to a file or the clipboard, instead of to the response with
+    :code:`-`, needs :code:`external`, whatever the command's own effect.
+  * SQL that reaches outside of lnav needs :code:`external`, including
+    SQL in commands like :code:`:filter-expr`: :code:`shell_exec()`,
+    :code:`fstat()`, :code:`ATTACH`, :code:`DETACH`, :code:`VACUUM INTO`,
+    :code:`CREATE TRIGGER` and :code:`CREATE VIEW` (the trigger or view
+    would run later, without these limits), and pragmas that change a
+    setting.  Database files that lnav opens and attaches itself are not
+    affected.
+  * Running a :code:`|script` needs :code:`external`, since it reads a
+    file, unless the script is installed in lnav's configuration
+    directory and run by its name (e.g. :code:`|dhclient-summary`).
+
+  Without the header, a script can do anything.  A header that names an
+  unknown effect, or that lnav can't read, fails the request.
+
 * | :code:`POST /api/poll`
   | :code:`Content-Type: application/json`
 
@@ -171,6 +199,18 @@ The following routes are available:
   like an IDE, can find and open the file itself.  When the path is a file on
   this machine, the element also has an :code:`href` with a :code:`file://`
   link to that line.
+
+.. note::
+
+  A request with an :code:`X-Lnav-` header that lnav doesn't read, or with a
+  value it can't use, fails with a 400 instead of running without it, since a
+  client that sends one, like a header from a later version of lnav or a
+  misspelled one, expects lnav to act on it.  Giving one of these headers more
+  than once also fails with a 400, since lnav would use only one of the
+  values; list all of the effects in a single :code:`X-Lnav-Allow-Effects`
+  header instead.  The headers lnav reads are
+  :code:`X-Lnav-Var-<name>`, :code:`X-Lnav-Db-View`, and
+  :code:`X-Lnav-Allow-Effects`, matched without regard to case.
 
 Apps
 ----

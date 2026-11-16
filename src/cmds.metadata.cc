@@ -453,6 +453,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_annotate,
 
         help_text(":annotate")
+            .with_effect(help_effect_t::external)
             .with_summary("Analyze the focused log message and "
                           "attach annotations")
             .with_tags({"metadata"}),
@@ -463,6 +464,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_comment,
 
         help_text(":comment")
+            .with_effect(help_effect_t::view)
             .with_summary("Attach a comment to the focused log line.  The "
                           "comment will be "
                           "displayed right below the log message it is "
@@ -483,6 +485,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
      com_clear_comment,
 
      help_text(":clear-comment")
+         .with_effect(help_effect_t::view)
          .with_summary("Clear the comment attached to the focused log line")
          .with_opposites({"comment"})
          .with_tags({"metadata"})},
@@ -491,6 +494,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_tag,
 
         help_text(":tag")
+            .with_effect(help_effect_t::view)
             .with_summary("Attach tags to the focused log line")
             .with_parameter(help_text("tag", "The tags to attach")
                                 .one_or_more()
@@ -505,6 +509,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_untag,
 
         help_text(":untag")
+            .with_effect(help_effect_t::view)
             .with_summary("Detach tags from the focused log line")
             .with_parameter(
                 help_text("tag", "The tags to detach")
@@ -521,6 +526,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_delete_tags,
 
         help_text(":delete-tags")
+            .with_effect(help_effect_t::view)
             .with_summary("Remove the given tags from all log lines")
             .with_parameter(help_text("tag", "The tags to delete")
                                 .one_or_more()
@@ -537,6 +543,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_partition_name,
 
         help_text(":partition-name")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Mark the focused line in the log view as the start of a "
                 "new partition with the given name")
@@ -553,6 +560,7 @@ static lnav::commands::command_t METADATA_COMMANDS[] = {
         com_clear_partition,
 
         help_text(":clear-partition")
+            .with_effect(help_effect_t::view)
             .with_summary("Clear the partition the focused line is a part of")
             .with_opposites({"partition-name"})
             .with_tags({"metadata"}),

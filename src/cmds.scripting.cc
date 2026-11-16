@@ -68,6 +68,7 @@
 #include "text_format.hh"
 #include "top_status_source.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 #ifdef HAVE_RUST_DEPS
 #    include "lnav_rs_ext.cxx.hh"
@@ -88,6 +89,12 @@ com_export_session_to(exec_context& ec,
         auto_mem<FILE> outfile(fclose);
         auto fn = trim(remaining_args(cmdline, args));
         auto to_term = false;
+
+        if (fn != "-" && fn != "/dev/stdout") {
+            TRY(ec.check_effect(
+                help_effect_t::external,
+                fmt::format(FMT_STRING(":{} {}"), args[0], fn)));
+        }
 
         if (fn == "-" || fn == "/dev/stdout") {
             auto ec_out = ec.get_output();
@@ -852,25 +859,66 @@ get_static_file(::rust::Str path, ::rust::Vec<uint8_t>& dst)
         });
 }
 
-/**
- * True if the request asked for its SQL results to go to the regular DB view
- * with an "X-Lnav-Db-View: shared" header.  [hdrs] is the request's headers as
- * a JSON object with lowercase names.
- */
-static bool
-wants_shared_db_view(const std::string& hdrs)
-{
-    static const char* PATH[] = {"x-lnav-db-view", nullptr};
-    char errbuf[256];
-    auto_mem<yajl_val_s> tree(yajl_tree_free);
+namespace {
 
-    tree = yajl_tree_parse(hdrs.c_str(), errbuf, sizeof(errbuf));
-    if (tree.in() == nullptr) {
-        return false;
+/**
+ * The X-Lnav- headers of an external-access request that change how its
+ * script runs.  The request's headers arrive as a JSON object with lowercase
+ * names.
+ */
+struct external_request_headers {
+    /** "shared" to send SQL results to the regular DB view. */
+    std::optional<std::string> erh_db_view;
+    /** A comma- or space-separated list of the effects the script may have. */
+    std::optional<std::string> erh_allow_effects;
+
+    static const typed_json_path_container<external_request_headers> handlers;
+
+    bool wants_shared_db_view() const
+    {
+        return this->erh_db_view
+            && strcasecmp(this->erh_db_view->c_str(), "shared") == 0;
     }
-    auto* val = yajl_tree_get(tree.in(), PATH, yajl_t_string);
-    return val != nullptr && strcasecmp(YAJL_GET_STRING(val), "shared") == 0;
-}
+
+    /**
+     * The effects the X-Lnav-Allow-Effects header allows, or nullopt if the
+     * request doesn't have one.  An error names an effect that doesn't exist.
+     */
+    Result<std::optional<help_effect_set_t>, std::string> allowed_effects()
+        const
+    {
+        if (!this->erh_allow_effects) {
+            return Ok(std::optional<help_effect_set_t>{});
+        }
+
+        help_effect_set_t retval;
+        auto value = this->erh_allow_effects.value();
+        std::replace(value.begin(), value.end(), ',', ' ');
+        std::vector<std::string> names;
+        split_ws(value, names);
+        for (const auto& name : names) {
+            auto effect
+                = help_effect_from_name(string_fragment::from_str(name));
+            if (!effect) {
+                return Err(fmt::format(
+                    FMT_STRING("unknown effect in X-Lnav-Allow-Effects: {}"),
+                    name));
+            }
+            retval.set(effect.value());
+        }
+        return Ok(std::make_optional(retval));
+    }
+};
+
+const typed_json_path_container<external_request_headers>
+    external_request_headers::handlers = {
+        yajlpp::property_handler("x-lnav-db-view")
+            .for_field(&external_request_headers::erh_db_view),
+        yajlpp::property_handler("x-lnav-allow-effects")
+            .for_field(&external_request_headers::erh_allow_effects),
+};
+
+}  // namespace
 
 ExecResult
 execute_external_command(::rust::String rs_src,
@@ -878,17 +926,47 @@ execute_external_command(::rust::String rs_src,
                          ::rust::String hdrs,
                          ::rust::Vec<VarPair> vars)
 {
+    static const auto SRC = intern_string::lookup("headers");
+
     auto src = (std::string) rs_src;
     auto script = (std::string) rs_script;
     auto retval = std::make_shared<ExecResult>();
-    auto shared_db = wants_shared_db_view((std::string) hdrs);
+    auto hdrs_str = (std::string) hdrs;
+    auto hdrs_res = external_request_headers::handlers.parser_for(SRC)
+                        .with_ignore_unused(true)
+                        .of(string_fragment::from_str(hdrs_str));
+    if (hdrs_res.isErr()) {
+        retval->error.msg = "unable to read the request headers";
+        retval->error.reason = hdrs_res.unwrapErr()[0].to_attr_line().al_string;
+        return *retval;
+    }
+    auto req_hdrs = hdrs_res.unwrap();
+    auto shared_db = req_hdrs.wants_shared_db_view();
+    auto effects_res = req_hdrs.allowed_effects();
+    if (effects_res.isErr()) {
+        retval->error.msg = effects_res.unwrapErr();
+        retval->error.help
+            = "the effects are listed in the effect column of the lnav_help "
+              "table";
+        return *retval;
+    }
+    auto allowed_effects = effects_res.unwrap();
 
     log_debug("sending remote command to main looper");
     isc::to<main_looper&, services::main_t>().send_and_wait(
-        [src, script, hdrs, vars, shared_db, &retval](auto& mlooper) {
+        [src, script, hdrs, vars, shared_db, allowed_effects, &retval](
+            auto& mlooper) {
             log_debug("executing remote command from: %s", src.c_str());
             db_label_source ext_db_source;
             auto& ec = lnav_data.ld_exec_context;
+            // A client running commands on someone's behalf can limit what
+            // they may change; commands and SQL that would do more fail.
+            std::optional<exec_context::allowed_effects_guard> aeg;
+            if (allowed_effects) {
+                log_debug("  allowed effects: %llx",
+                          (unsigned long long) allowed_effects->bs_data);
+                aeg.emplace(ec, allowed_effects.value());
+            }
             // A command's SQL results go to a DB source of its own, so a
             // client's queries don't replace what the user has in the DB
             // view.  A request can ask for the regular DB view instead, for
@@ -1173,6 +1251,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_export_session_to,
 
         help_text(":export-session-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Export the current lnav state to an executable lnav "
                           "script file that contains the commands needed to "
                           "restore the current session")
@@ -1185,6 +1264,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         "rebuild",
         com_rebuild,
         help_text(":rebuild")
+            .with_effect(help_effect_t::view)
             .with_summary("Forcefully rebuild file indexes")
             .with_tags({"scripting"}),
     },
@@ -1193,6 +1273,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_echo,
 
         help_text(":echo")
+            .with_effect(help_effect_t::read)
             .with_summary(
                 "Echo the given message to the screen or, if "
                 ":redirect-to has "
@@ -1215,6 +1296,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_alt_msg,
 
         help_text(":alt-msg")
+            .with_effect(help_effect_t::view)
             .with_summary("Display a message in the alternate command position")
             .with_parameter(help_text("msg", "The message to display")
                                 .with_format(help_parameter_format_t::HPF_TEXT))
@@ -1228,6 +1310,8 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_eval,
 
         help_text(":eval")
+            // Changes nothing itself; what it runs is checked on its own.
+            .with_effect(help_effect_t::read)
             .with_summary("Evaluate the given command/query after doing "
                           "environment variable substitution")
             .with_parameter(help_text(
@@ -1241,6 +1325,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_sh,
 
         help_text(":sh")
+            .with_effect(help_effect_t::external)
             .with_summary("Execute the given command-line and display the "
                           "captured output")
             .with_parameter(help_text(
@@ -1254,6 +1339,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         com_cd,
 
         help_text(":cd")
+            .with_effect(help_effect_t::view)
             .with_summary("Change the current directory")
             .with_parameter(
                 help_text("dir", "The new current directory")
@@ -1264,6 +1350,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         "external-access",
         com_external_access,
         help_text(":external-access")
+            .with_effect(help_effect_t::external)
             .with_summary(
                 "Open a port to give remote access to this lnav instance.  "
                 "This is done automatically when lnav starts in the TUI.")
@@ -1293,6 +1380,7 @@ static lnav::commands::command_t SCRIPTING_COMMANDS[] = {
         "external-access-login",
         com_external_access_login,
         help_text(":external-access-login")
+            .with_effect(help_effect_t::external)
             .with_summary("Use the external-opener to open a URL that refers "
                           "to lnav's external-access server")
             .with_parameter(

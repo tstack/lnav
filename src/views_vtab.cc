@@ -1762,7 +1762,8 @@ CREATE TABLE lnav_db.lnav_view_filter_stats (
 struct lnav_view_files : tvt_iterator_cursor<lnav_view_files> {
     static constexpr const char* NAME = "lnav_view_files";
     static constexpr const char* CREATE_STMT = R"(
---
+-- The files shown in each view, and whether each one is visible.  UPDATE the
+-- visible column to show or hide a file.
 CREATE TABLE lnav_db.lnav_view_files (
     view_name TEXT,     -- The name of the view.
     filepath  TEXT,     -- The path to the file.

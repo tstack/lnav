@@ -1056,6 +1056,9 @@ attach_sqlite_db(sqlite3* db, const std::string& filename)
     static const std::regex db_name_converter("[^\\w]");
 
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    // lnav attaches the files it opens itself, so a request's limits don't
+    // apply.
+    lnav::sql::external_effect_guard eeg(true);
 
     if (sqlite3_prepare_v2(db, "ATTACH DATABASE ? as ?", -1, stmt.out(), NULL)
         != SQLITE_OK)
@@ -1537,6 +1540,78 @@ sqlite_close_wrapper(void* mem)
 static thread_local std::set<std::string>* tl_authorizer_table_capture
     = nullptr;
 
+// Set while a request that limits effects runs: false when it doesn't allow
+// the "external" effect.
+static thread_local std::optional<bool> tl_allow_external;
+static thread_local std::optional<lnav::sql::external_denial_t>
+    tl_external_denial;
+
+// What an action does outside of lnav, or nullopt if it stays inside.
+static std::optional<lnav::sql::external_denial_t>
+external_denial(int action_code, const char* detail1, const char* detail2)
+{
+    // Pragmas that only report something, even when given an argument.
+    static const std::set<std::string> READ_PRAGMAS = {
+        "collation_list",
+        "compile_options",
+        "database_list",
+        "foreign_key_list",
+        "function_list",
+        "index_info",
+        "index_list",
+        "index_xinfo",
+        "module_list",
+        "pragma_list",
+        "table_info",
+        "table_list",
+        "table_xinfo",
+    };
+
+    switch (action_code) {
+        case SQLITE_ATTACH:
+            // Also how VACUUM INTO writes its file.
+            return lnav::sql::external_denial_t{
+                "ATTACH", "it opens a database file"};
+        case SQLITE_DETACH:
+            return lnav::sql::external_denial_t{
+                "DETACH", "it closes a database file"};
+        case SQLITE_CREATE_TRIGGER:
+        case SQLITE_CREATE_TEMP_TRIGGER:
+            return lnav::sql::external_denial_t{
+                "CREATE TRIGGER",
+                "the trigger would run later, without this request's limits"};
+        case SQLITE_CREATE_VIEW:
+        case SQLITE_CREATE_TEMP_VIEW:
+            return lnav::sql::external_denial_t{
+                "CREATE VIEW",
+                "the view would run later, without this request's limits"};
+        case SQLITE_FUNCTION:
+            if (detail2 != nullptr && strcmp(detail2, "shell_exec") == 0) {
+                return lnav::sql::external_denial_t{"shell_exec()",
+                                                    "it runs a program"};
+            }
+            break;
+        case SQLITE_READ:
+            if (detail1 != nullptr && strcmp(detail1, "fstat") == 0) {
+                return lnav::sql::external_denial_t{
+                    "fstat()", "it reads the file system"};
+            }
+            break;
+        case SQLITE_PRAGMA:
+            if (detail1 != nullptr && detail2 != nullptr
+                && !READ_PRAGMAS.count(detail1))
+            {
+                return lnav::sql::external_denial_t{
+                    fmt::format(FMT_STRING("PRAGMA {} = ..."), detail1),
+                    "it changes a setting"};
+            }
+            break;
+        default:
+            break;
+    }
+    return std::nullopt;
+}
+
 int
 sqlite_authorizer(void* pUserData,
                   int action_code,
@@ -1552,6 +1627,16 @@ sqlite_authorizer(void* pUserData,
     {
         return SQLITE_DENY;
     }
+    if (tl_allow_external.has_value() && !tl_allow_external.value()) {
+        auto denial = external_denial(action_code, detail1, detail2);
+        if (denial) {
+            log_info("refusing SQL that reaches outside of lnav: %s -- %s",
+                     denial->ed_what.c_str(),
+                     denial->ed_why.c_str());
+            tl_external_denial = std::move(denial);
+            return SQLITE_DENY;
+        }
+    }
     if (action_code == SQLITE_READ && tl_authorizer_table_capture != nullptr
         && detail1 != nullptr)
     {
@@ -1559,6 +1644,28 @@ sqlite_authorizer(void* pUserData,
     }
     return SQLITE_OK;
 }
+
+namespace lnav::sql {
+
+external_effect_guard::external_effect_guard(bool allow_external)
+    : eeg_prev(tl_allow_external)
+{
+    tl_allow_external = allow_external;
+    tl_external_denial.reset();
+}
+
+external_effect_guard::~external_effect_guard()
+{
+    tl_allow_external = this->eeg_prev;
+}
+
+std::optional<external_denial_t>
+take_external_denial()
+{
+    return std::exchange(tl_external_denial, std::nullopt);
+}
+
+}  // namespace lnav::sql
 
 sql_table_capture_guard::sql_table_capture_guard(std::set<std::string>& into)
     : stcg_prev(tl_authorizer_table_capture)

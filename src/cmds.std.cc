@@ -2703,6 +2703,7 @@ com_redraw(exec_context& ec,
 
 static auto CONFIG_HELP
     = help_text(":config")
+          .with_effect(help_effect_t::config)
           .with_summary("Read or write a configuration option")
           .with_parameter(
               help_text{"option", "The path to the option to read or write"}
@@ -3298,6 +3299,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_prompt,
 
         help_text(":prompt")
+            .with_effect(help_effect_t::view)
             .with_summary("Open the given prompt")
             .with_parameter(
                 help_text{"type", "The type of prompt"}.with_enum_values({
@@ -3331,6 +3333,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "add-source-path",
         com_add_src_path,
         help_text(":add-source-path")
+            .with_effect(help_effect_t::external)
             .with_summary(
                 "Add a path to the source code that generated log messages.  "
                 "Adding source allows lnav to more accurately extract values "
@@ -3347,6 +3350,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_adjust_log_time,
 
         help_text(":adjust-log-time")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Change the timestamps of the focused file to be relative "
                 "to the given date")
@@ -3364,9 +3368,10 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_clear_adjusted_log_time,
 
         help_text(":clear-adjusted-log-time")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Clear the adjusted time for the focused line in the view")
-            .with_opposites({":adjust-log-time"}),
+            .with_opposites({"adjust-log-time"}),
     },
 
     {
@@ -3374,6 +3379,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_unix_time,
 
         help_text(":unix-time")
+            .with_effect(help_effect_t::read)
             .with_summary("Convert epoch time to a human-readable form")
             .with_parameter(
                 help_text("seconds", "The epoch timestamp to convert")
@@ -3385,6 +3391,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "convert-time-to",
         com_convert_time_to,
         help_text(":convert-time-to")
+            .with_effect(help_effect_t::read)
             .with_summary("Convert the focused timestamp to the "
                           "given timezone")
             .with_parameter(
@@ -3395,6 +3402,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "set-file-timezone",
         com_set_file_timezone,
         help_text(":set-file-timezone")
+            .with_effect(help_effect_t::config)
             .with_summary("Set the timezone to use for log messages that do "
                           "not include a timezone.  The timezone is applied "
                           "to the given glob pattern or all files whose "
@@ -3412,6 +3420,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "clear-file-timezone",
         com_clear_file_timezone,
         help_text(":clear-file-timezone")
+            .with_effect(help_effect_t::config)
             .with_summary("Clear the timezone setting for the given glob "
                           "pattern or all files whose message timestamps do "
                           "not have a timezone.")
@@ -3427,6 +3436,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_current_time,
 
      help_text(":current-time")
+         .with_effect(help_effect_t::read)
          .with_summary("Print the current time in human-readable form and "
                        "seconds since the epoch")},
     {
@@ -3434,6 +3444,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_goto,
 
         help_text(":goto")
+            .with_effect(help_effect_t::view)
             .with_summary("Go to the given location in the top view")
             .with_parameter(
                 help_text("line#|N%|timestamp|#anchor",
@@ -3455,6 +3466,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "reload-view",
         com_reload_view,
         help_text(":reload-view")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Re-run the operation that populated the current view")
             .with_tags({"views"}),
@@ -3463,6 +3475,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "relative-goto",
         com_relative_goto,
         help_text(":relative-goto")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Move the current view up or down by the given amount")
             .with_parameter(
@@ -3479,6 +3492,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_mark_expr,
 
         help_text(":mark-expr")
+            .with_effect(help_effect_t::view)
             .with_summary("Set the bookmark expression")
             .with_parameter(
                 help_text("expr",
@@ -3501,6 +3515,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_clear_mark_expr,
 
      help_text(":clear-mark-expr")
+         .with_effect(help_effect_t::view)
          .with_summary("Clear the mark expression")
          .with_opposites({"mark-expr"})
          .with_tags({"bookmarks"})},
@@ -3508,12 +3523,14 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_goto_location,
 
      help_text(":next-location")
+         .with_effect(help_effect_t::view)
          .with_summary("Move to the next position in the location history")
          .with_tags({"navigation"})},
     {"prev-location",
      com_goto_location,
 
      help_text(":prev-location")
+         .with_effect(help_effect_t::view)
          .with_summary("Move to the previous position in the "
                        "location history")
          .with_tags({"navigation"})},
@@ -3523,6 +3540,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_next_section,
 
         help_text(":next-section")
+            .with_effect(help_effect_t::view)
             .with_summary("Move to the next section in the document")
             .with_tags({"navigation"}),
     },
@@ -3531,6 +3549,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_prev_section,
 
         help_text(":prev-section")
+            .with_effect(help_effect_t::view)
             .with_summary("Move to the previous section in the document")
             .with_tags({"navigation"}),
     },
@@ -3539,13 +3558,16 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "help",
         com_help,
 
-        help_text(":help").with_summary("Open the help text view"),
+        help_text(":help")
+            .with_effect(help_effect_t::view)
+            .with_summary("Open the help text view"),
     },
     {
         "hide-unmarked-lines",
         com_hide_unmarked,
 
         help_text(":hide-unmarked-lines")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide lines that have not been bookmarked")
             .with_tags({"filtering", "bookmarks"}),
     },
@@ -3554,8 +3576,9 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_show_unmarked,
 
         help_text(":show-unmarked-lines")
+            .with_effect(help_effect_t::view)
             .with_summary("Show lines that have not been bookmarked")
-            .with_opposites({"show-unmarked-lines"})
+            .with_opposites({"hide-unmarked-lines"})
             .with_tags({"filtering", "bookmarks"}),
     },
     {
@@ -3563,6 +3586,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_highlight,
 
         help_text(":highlight")
+            .with_effect(help_effect_t::view)
             .with_summary("Add coloring to log messages fragments "
                           "that match the "
                           "given regular expression")
@@ -3579,6 +3603,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_highlight_field,
 
         help_text(":highlight-field")
+            .with_effect(help_effect_t::view)
             .with_summary("Highlight a field that matches the given pattern")
             .with_parameter(
                 help_text("--color", "The foreground color to apply")
@@ -3616,6 +3641,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_clear_highlight_field,
 
         help_text(":clear-highlight-field")
+            .with_effect(help_effect_t::view)
             .with_summary("Remove a field highlight")
             .with_parameter(
                 help_text("field", "The name of highlighted field")
@@ -3631,6 +3657,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_clear_highlight,
 
         help_text(":clear-highlight")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Remove a previously set highlight regular expression")
             .with_parameter(
@@ -3648,6 +3675,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_filter_expr,
 
         help_text(":filter-expr")
+            .with_effect(help_effect_t::view)
             .with_summary("Set the filter expression")
             .with_parameter(
                 help_text("expr",
@@ -3674,6 +3702,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_clear_filter_expr,
 
      help_text(":clear-filter-expr")
+         .with_effect(help_effect_t::view)
          .with_summary("Clear the filter expression")
          .with_opposites({"filter-expr"})
          .with_tags({"filtering"})},
@@ -3681,12 +3710,14 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_enable_word_wrap,
 
      help_text(":enable-word-wrap")
+         .with_effect(help_effect_t::view)
          .with_summary("Enable word-wrapping for the current view")
          .with_tags({"display"})},
     {"disable-word-wrap",
      com_disable_word_wrap,
 
      help_text(":disable-word-wrap")
+         .with_effect(help_effect_t::view)
          .with_summary("Disable word-wrapping for the current view")
          .with_opposites({"enable-word-wrap"})
          .with_tags({"display"})},
@@ -3694,6 +3725,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_create_logline_table,
 
      help_text(":create-logline-table")
+         .with_effect(help_effect_t::view)
          .with_summary("Create an SQL table using the focused line of "
                        "the log view "
                        "as a template")
@@ -3706,6 +3738,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_delete_logline_table,
 
      help_text(":delete-logline-table")
+         .with_effect(help_effect_t::view)
          .with_summary("Delete a table created with create-logline-table")
          .with_parameter(
              help_text("table-name", "The name of the table to delete")
@@ -3719,6 +3752,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_create_search_table,
 
      help_text(":create-search-table")
+         .with_effect(help_effect_t::view)
          .with_summary("Create an SQL table based on a regex search")
          .with_parameter(
              help_text("table-name", "The name of the table to create"))
@@ -3740,6 +3774,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_delete_search_table,
 
      help_text(":delete-search-table")
+         .with_effect(help_effect_t::view)
          .with_summary("Delete a search table")
          .with_parameter(
              help_text("table-name", "The name of the table to delete")
@@ -3754,6 +3789,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_file_visibility,
 
         help_text(":hide-file")
+            .with_effect(help_effect_t::view)
             .with_summary("Hide the given file(s) and skip indexing until it "
                           "is shown again.  If no path is given, the current "
                           "file in the view is hidden")
@@ -3770,6 +3806,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_file_visibility,
 
         help_text(":show-file")
+            .with_effect(help_effect_t::view)
             .with_summary("Show the given file(s) and resume indexing.")
             .with_parameter(
                 help_text{"path",
@@ -3784,6 +3821,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_file_visibility,
 
         help_text(":show-only-this-file")
+            .with_effect(help_effect_t::view)
             .with_summary("Show only the file for the focused line in the view")
             .with_opposites({"hide-file"}),
     },
@@ -3791,6 +3829,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_session,
 
      help_text(":session")
+         .with_effect(help_effect_t::config)
          .with_summary("Add the given command to the session file "
                        "(~/.lnav/session)")
          .with_parameter(help_text("lnav-command", "The lnav command to save."))
@@ -3802,6 +3841,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_summarize,
 
         help_text(":summarize")
+            .with_effect(help_effect_t::view)
             .with_summary("Execute a SQL query that computes the "
                           "characteristics "
                           "of the values in the given column")
@@ -3816,6 +3856,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_switch_to_view,
 
      help_text(":switch-to-view")
+         .with_effect(help_effect_t::view)
          .with_summary("Switch to the given view")
          .with_parameter(
              help_text("view-name", "The name of the view to switch to.")
@@ -3825,6 +3866,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_switch_to_view,
 
      help_text(":toggle-view")
+         .with_effect(help_effect_t::view)
          .with_summary("Switch to the given view or, if it is "
                        "already displayed, "
                        "switch to the previous view")
@@ -3840,28 +3882,34 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_toggle_filtering,
 
      help_text(":toggle-filtering")
+         .with_effect(help_effect_t::view)
          .with_summary("Toggle the filtering flag for the current view")
          .with_tags({"filtering"})},
     {"reset-session",
      com_reset_session,
 
      help_text(":reset-session")
+         .with_effect(help_effect_t::config)
          .with_summary("Reset the session state, clearing all filters, "
                        "highlights, and bookmarks")},
     {"load-session",
      com_load_session,
 
-     help_text(":load-session").with_summary("Load the latest session state")},
+     help_text(":load-session")
+         .with_effect(help_effect_t::view)
+         .with_summary("Load the latest session state")},
     {"save-session",
      com_save_session,
 
      help_text(":save-session")
+         .with_effect(help_effect_t::config)
          .with_summary("Save the current state as a session")},
     {
         "set-min-log-level",
         com_set_min_log_level,
 
         help_text(":set-min-log-level")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Set the minimum log level to display in the log view")
             .with_parameter(help_text("log-level", "The new minimum log level")
@@ -3872,12 +3920,15 @@ lnav::commands::command_t STD_COMMANDS[] = {
     {"redraw",
      com_redraw,
 
-     help_text(":redraw").with_summary("Do a full redraw of the screen")},
+     help_text(":redraw")
+         .with_effect(help_effect_t::view)
+         .with_summary("Do a full redraw of the screen")},
     {
         "zoom-to",
         com_zoom_to,
 
         help_text(":zoom-to")
+            .with_effect(help_effect_t::view)
             .with_summary("Zoom the current view to the given level")
             .with_parameter(
                 help_text("zoom-level",
@@ -3898,6 +3949,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
      com_reset_config,
 
      help_text(":reset-config")
+         .with_effect(help_effect_t::config)
          .with_summary("Reset the configuration option to its default value")
          .with_parameter(
              help_text("option", "The path to the option to reset")
@@ -3911,6 +3963,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_spectrogram,
 
         help_text(":spectrogram")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Visualize the given message field or database column "
                 "using a spectrogram")
@@ -3926,12 +3979,15 @@ lnav::commands::command_t STD_COMMANDS[] = {
         "quit",
         com_quit,
 
-        help_text(":quit").with_summary("Quit lnav"),
+        help_text(":quit")
+            .with_effect(help_effect_t::exit)
+            .with_summary("Quit lnav"),
     },
     {
         "write-debug-log-to",
         com_write_debug_log_to,
         help_text(":write-debug-log-to")
+            .with_effect(help_effect_t::external)
             .with_summary(
                 "Write lnav's internal debug log to the given path.  This can "
                 "be useful if the `-d` flag was not passed on the command line")

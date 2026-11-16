@@ -446,6 +446,17 @@ com_save_to(exec_context& ec,
         }
     }
 
+    // Writing to the script's output is the command's own "output" effect;
+    // a file or the clipboard is outside of lnav.
+    if (!ec.ec_dry_run && split_args[0] != "-"
+        && split_args[0] != "/dev/stdout")
+    {
+        TRY(ec.check_effect(help_effect_t::external,
+                            fmt::format(FMT_STRING(":{} {}"),
+                                        args[0],
+                                        split_args[0])));
+    }
+
     if (ec.ec_dry_run) {
         outfile = tmpfile();
         toclose = outfile;
@@ -2314,7 +2325,16 @@ com_redirect_to(exec_context& ec,
         return Ok("info: output will be redirected to -- " + split_args[0]);
     }
 
-    if (split_args[0] == "-") {
+    // Redirecting to the script's output is the command's own "output"
+    // effect; a file or the clipboard is outside of lnav.
+    auto to_stdout = split_args[0] == "-" || split_args[0] == "/dev/stdout";
+    if (!to_stdout) {
+        TRY(ec.check_effect(
+            help_effect_t::external,
+            fmt::format(FMT_STRING(":{} {}"), args[0], split_args[0])));
+    }
+
+    if (to_stdout) {
         ec.clear_output();
     } else if (split_args[0] == "/dev/clipboard") {
         auto out = sysclip::open(sysclip::type_t::GENERAL);
@@ -2348,6 +2368,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":append-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Append marked lines in the current view to "
                           "the given file")
             .with_parameter(
@@ -2363,6 +2384,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Overwrite the given file with any marked "
                           "lines in the "
                           "current view")
@@ -2381,6 +2403,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-csv-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write SQL results to the given file in CSV format")
             .with_parameter(
                 help_text("--anonymize", "Anonymize the row contents").flag())
@@ -2396,6 +2419,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-json-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write SQL results to the given file in JSON format")
             .with_parameter(
                 help_text("--anonymize", "Anonymize the JSON values").flag())
@@ -2411,6 +2435,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-json-cols-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write SQL results to the given file in a "
                           "column-oriented JSON format.  In addition, columns "
                           "that contain JSON values will be flattened to their "
@@ -2433,6 +2458,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-jsonlines-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write SQL results or log lines to "
                           "the given file in JSON Lines format")
             .with_parameter(help_text("--all",
@@ -2454,6 +2480,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-table-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write SQL results to the given file in a "
                           "tabular format")
             .with_parameter(
@@ -2470,6 +2497,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-raw-to")
+            .with_effect(help_effect_t::output)
             .with_summary(
                 "In the log view, write the original log file content "
                 "of the marked messages to the file.  In the DB view, "
@@ -2494,6 +2522,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-view-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write the text in the top view to the given file "
                           "without any formatting")
             .with_parameter(
@@ -2510,6 +2539,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-html-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Write the text in the top view to the given file "
                           "as an HTML fragment that is styled with the "
                           "classes from lnav_theme_css()")
@@ -2531,6 +2561,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-screen-to")
+            .with_effect(help_effect_t::output)
             .with_summary(
                 "Write the displayed text or SQL results to the given "
                 "file without any formatting")
@@ -2548,6 +2579,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_open,
 
         help_text(":open")
+            .with_effect(help_effect_t::external)
             .with_summary("Open the given file(s) in lnav.  Opening files on "
                           "machines "
                           "accessible via SSH can be done using the syntax: "
@@ -2572,6 +2604,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_xopen,
 
         help_text(":xopen")
+            .with_effect(help_effect_t::external)
             .with_summary("Use an external command to open the given file(s)")
             .with_parameter(
                 help_text{"path", "The path to the file to open"}.one_or_more())
@@ -2583,6 +2616,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_close,
 
         help_text(":close")
+            .with_effect(help_effect_t::view)
             .with_summary(
                 "Close the given file(s) or the focused file in the view")
             .with_parameter(
@@ -2599,6 +2633,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_pipe_to,
 
         help_text(":pipe-to")
+            .with_effect(help_effect_t::external)
             .with_summary("Pipe the marked lines to the given shell command")
             .with_parameter(
                 help_text("shell-cmd", "The shell command-line to execute"))
@@ -2611,6 +2646,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_pipe_to,
 
         help_text(":pipe-line-to")
+            .with_effect(help_effect_t::external)
             .with_summary("Pipe the focused line to the given shell "
                           "command.  Any fields "
                           "defined by the format will be set as "
@@ -2626,6 +2662,7 @@ static lnav::commands::command_t IO_COMMANDS[] = {
         com_redirect_to,
 
         help_text(":redirect-to")
+            .with_effect(help_effect_t::output)
             .with_summary("Redirect the output of commands that write to "
                           "stdout to the given file")
             .with_parameter(

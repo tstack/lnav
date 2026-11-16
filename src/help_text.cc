@@ -40,6 +40,49 @@ help_text::help_text(const char* name, const char* summary) noexcept
     }
 }
 
+const char*
+help_effect_name(help_effect_t effect)
+{
+    switch (effect) {
+        case help_effect_t::unknown:
+            return "unknown";
+        case help_effect_t::read:
+            return "read";
+        case help_effect_t::output:
+            return "output";
+        case help_effect_t::view:
+            return "view";
+        case help_effect_t::config:
+            return "config";
+        case help_effect_t::external:
+            return "external";
+        case help_effect_t::exit:
+            return "exit";
+    }
+    return "unknown";
+}
+
+std::optional<help_effect_t>
+help_effect_from_name(string_fragment name)
+{
+    static constexpr help_effect_t ALL[] = {
+        help_effect_t::unknown,
+        help_effect_t::read,
+        help_effect_t::output,
+        help_effect_t::view,
+        help_effect_t::config,
+        help_effect_t::external,
+        help_effect_t::exit,
+    };
+
+    for (const auto effect : ALL) {
+        if (name == help_effect_name(effect)) {
+            return effect;
+        }
+    }
+    return std::nullopt;
+}
+
 help_text&
 help_text::with_parameters(
     const std::initializer_list<help_text>& params) noexcept

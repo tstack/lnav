@@ -160,6 +160,71 @@ fn script_var_name(header: &str) -> Option<&str> {
     }
 }
 
+/// The `X-Lnav-` headers the server reads; `X-Lnav-Var-<name>` is matched by its prefix.
+const KNOWN_LNAV_HEADERS: [&str; 2] = ["X-Lnav-Db-View", "X-Lnav-Allow-Effects"];
+
+/// A 400 response for an `X-Lnav-` header this lnav doesn't know, or a value it can't use, or
+/// `None` when they're all fine.  A client sending a header lnav would ignore, like one added in a
+/// later version or a misspelled one, expects lnav to act on it, which matters when it limits what
+/// a script may do, so the request fails instead of running without it.  A known header that is
+/// given more than once fails too, since only one of its values would be used.
+fn check_lnav_headers(request: &Request) -> Option<Response> {
+    let mut seen: Vec<&str> = Vec::new();
+    for (name, value) in request.headers() {
+        let Some(prefix) = name.get(..7) else {
+            continue;
+        };
+        if !prefix.eq_ignore_ascii_case("X-Lnav-") || script_var_name(name).is_some() {
+            continue;
+        }
+        let known = KNOWN_LNAV_HEADERS
+            .iter()
+            .any(|known| known.eq_ignore_ascii_case(name));
+        let repeated = known && seen.iter().any(|prev| prev.eq_ignore_ascii_case(name));
+        if known && !repeated {
+            seen.push(name);
+        }
+        let error = if !known {
+            Some((
+                format!("unknown header: {}", name),
+                "lnav would ignore it",
+                format!(
+                    "this lnav reads these X-Lnav- headers: {}, and X-Lnav-Var-<name>",
+                    KNOWN_LNAV_HEADERS.join(", ")
+                ),
+            ))
+        } else if repeated {
+            Some((
+                format!("header given more than once: {}", name),
+                "lnav would use only one of the values",
+                "send the header once, with all of its values".to_string(),
+            ))
+        } else if name.eq_ignore_ascii_case("X-Lnav-Db-View")
+            && !value.eq_ignore_ascii_case("shared")
+        {
+            Some((
+                format!("invalid value for X-Lnav-Db-View: {}", value),
+                "lnav would ignore the header",
+                "the only value is \"shared\"".to_string(),
+            ))
+        } else {
+            None
+        };
+        if let Some((msg, reason, help)) = error {
+            log::warn!("refusing request with header {}: {}", name, msg);
+            return Some(
+                Response::json(&serde_json::json!({
+                    "msg": msg,
+                    "reason": reason,
+                    "help": help,
+                }))
+                .with_status_code(400),
+            );
+        }
+    }
+    None
+}
+
 fn do_exec(request: &Request) -> Response {
     let body = try_or_400!(script_body_with_limit(request, 1024 * 1024));
 
@@ -268,6 +333,10 @@ pub fn start_server(port: u16, api_key: String) -> Result<u16, Box<dyn Error + S
             if req_api_key != api_key {
                 return Response::empty_400().with_status_code(401);
             }
+        }
+
+        if let Some(response) = check_lnav_headers(request) {
+            return response;
         }
 
         router!(request,
