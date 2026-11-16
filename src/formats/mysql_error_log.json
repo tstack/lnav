@@ -13,21 +13,26 @@
         },
         "value": {
             "err_code": {
+                "description": "The error code, like MY-012487",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level, like Note, Warning, or ERROR",
                 "kind": "string"
             },
             "subsystem": {
+                "description": "The subsystem that logged the message, like InnoDB or Server",
                 "kind": "string",
                 "identifier": true
             },
             "thread": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

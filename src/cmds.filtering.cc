@@ -30,12 +30,15 @@
 #include <string>
 #include <vector>
 
+#include "cmds.hh"
+
 #include "base/lnav.console.hh"
 #include "base/relative_time.hh"
 #include "lnav.hh"
-#include "cmds.hh"
+#include "logline_window.hh"
 #include "scn/scan.h"
 #include "sql_util.hh"
+#include "statement_filter.hh"
 
 static Result<std::string, lnav::console::user_message>
 com_hide_line(exec_context& ec,
@@ -324,6 +327,11 @@ com_enable_filter(exec_context& ec,
         args[1] = remaining_args(cmdline, args);
         lf = fs.get_filter(args[1]);
         if (lf == nullptr) {
+            // A statement filter can also be given by its statement's
+            // location, as for :filter-in-statement.
+            lf = lnav::statement_filters::find(fs, args[1]);
+        }
+        if (lf == nullptr) {
             return ec.make_error("no such filter -- {}", args[1]);
         }
         if (lf->is_enabled()) {
@@ -360,6 +368,9 @@ com_disable_filter(exec_context& ec,
         args[1] = remaining_args(cmdline, args);
         lf = fs.get_filter(args[1]);
         if (lf == nullptr) {
+            lf = lnav::statement_filters::find(fs, args[1]);
+        }
+        if (lf == nullptr) {
             return ec.make_error("no such filter -- {}", args[1]);
         }
         if (!lf->is_enabled()) {
@@ -393,6 +404,12 @@ com_delete_filter(exec_context& ec,
         auto& fs = tss->get_filters();
 
         args[1] = remaining_args(cmdline, args);
+        if (fs.get_filter(args[1]) == nullptr) {
+            auto sf = lnav::statement_filters::find(fs, args[1]);
+            if (sf != nullptr) {
+                args[1] = sf->get_id();
+            }
+        }
         if (ec.ec_dry_run) {
             retval = "";
         } else if (fs.delete_filter(args[1])) {
@@ -456,6 +473,108 @@ com_filter_context(exec_context& ec,
                          before,
                          after);
     return Ok(retval);
+}
+
+/** Suggests the statement that logged the focused message in the LOG view. */
+static lnav::commands::prompt_result_t
+com_filter_statement_prompt(exec_context& ec, const std::string& cmdline)
+{
+    std::vector<std::string> args;
+
+    split_ws(cmdline, args);
+    if (args.size() > 1) {
+        return {};
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto& lss = lnav_data.ld_log_source;
+    if (tc != &lnav_data.ld_views[LNV_LOG] || tc->get_inner_height() == 0) {
+        return {};
+    }
+    auto sel = tc->get_selection();
+    if (!sel) {
+        return {};
+    }
+    auto loc = lnav::statement_filters::location_at_row(lss, sel.value());
+    log_debug("suggesting the focused message's statement: %s",
+              loc ? loc->c_str() : "(none)");
+    if (loc) {
+        return {"", *loc};
+    }
+    return {};
+}
+
+static Result<std::string, lnav::console::user_message>
+com_filter_statement(exec_context& ec,
+                     std::string cmdline,
+                     std::vector<std::string>& args)
+{
+    if (args.size() < 2) {
+        return ec.make_error(
+            "expecting a source file and line, like "
+            "src/Server.java:42");
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        return ec.make_error("statements can only be filtered in the LOG view");
+    }
+
+    auto type = args[0] == "filter-in-statement" ? text_filter::INCLUDE
+                                                 : text_filter::EXCLUDE;
+    auto& lss = lnav_data.ld_log_source;
+    auto& fs = lss.get_filters();
+    auto point = trim(remaining_args(cmdline, args));
+    if (fs.full()) {
+        return ec.make_error("filter limit reached");
+    }
+    auto index = fs.next_index();
+    if (!index) {
+        return ec.make_error("too many filters");
+    }
+    auto sf = TRY(lnav::statement_filters::create(type, point, index.value()));
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
+
+    auto existing = lnav::statement_filters::find_same(fs, *sf);
+    if (existing != nullptr) {
+        if (existing->get_type() != type) {
+            return ec.make_error(
+                "{}",
+                lnav::statement_filters::already_filtered_message(*existing));
+        }
+        // The same statement again just turns its filter back on.
+        fs.set_filter_enabled(existing, true);
+        lss.text_filters_changed();
+        return Ok(fmt::format(FMT_STRING("info: enabled the filter for {}"),
+                              existing->get_id()));
+    }
+
+    log_debug("%s [%zu] %s", args[0].c_str(), sf->get_index(), point.c_str());
+    fs.add_filter(sf);
+    lss.text_filters_changed();
+    tc->set_needs_update();
+
+    auto verb = type == text_filter::INCLUDE ? "showing only" : "hiding";
+    if (sf->get_state() == statement_filter::state_t::resolved) {
+        return Ok(
+            fmt::format(FMT_STRING("info: {} the messages logged in {} at {}"),
+                        verb,
+                        sf->get_function(),
+                        sf->get_id()));
+    }
+    if (!sf->get_reason().empty()) {
+        return Ok(fmt::format(
+            FMT_STRING("info: {}, so the messages logged at {} will be "
+                       "filtered once it is added with :add-source-path"),
+            sf->get_reason(),
+            sf->get_id()));
+    }
+    return Ok(fmt::format(
+        FMT_STRING("info: the messages logged at {} will be filtered once "
+                   "the source has been scanned"),
+        sf->get_id()));
 }
 
 static lnav::commands::command_t FILTERING_COMMANDS[] = {
@@ -543,6 +662,59 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         com_filter_prompt,
     },
     {
+        "filter-in-statement",
+        com_filter_statement,
+
+        help_text(":filter-in-statement")
+            .with_effect(help_effect_t::view)
+            .with_summary(
+                "Only show the messages logged by the log statement at the "
+                "given source file and line, and those of other "
+                "filtered-in statements and patterns, as found in the source "
+                "added with :add-source-path.  "
+                "The statement is found again by its function and message each "
+                "time the source is scanned, so the filter follows it "
+                "when edits move it; if its message changes or it is "
+                "removed, the filter does nothing until it is deleted")
+            .with_parameter(
+                help_text("location",
+                          "The source file, as much of its path as is needed "
+                          "to tell it apart, and a line of the statement")
+                    .with_format(help_parameter_format_t::HPF_LOG_STATEMENT))
+            .with_tags({"filtering"})
+            .with_opposites({"delete-filter"})
+            .with_example({"To only show the messages logged by the "
+                           "statement on line 42 of Server.java",
+                           "com/example/net/Server.java:42"}),
+        com_filter_statement_prompt,
+    },
+    {
+        "filter-out-statement",
+        com_filter_statement,
+
+        help_text(":filter-out-statement")
+            .with_effect(help_effect_t::view)
+            .with_summary(
+                "Hide the messages logged by the log statement at the given "
+                "source file and line, as found in the source added with "
+                ":add-source-path.  "
+                "The statement is found again by its function and message each "
+                "time the source is scanned, so the filter follows it "
+                "when edits move it; if its message changes or it is "
+                "removed, the filter does nothing until it is deleted")
+            .with_parameter(
+                help_text("location",
+                          "The source file, as much of its path as is needed "
+                          "to tell it apart, and a line of the statement")
+                    .with_format(help_parameter_format_t::HPF_LOG_STATEMENT))
+            .with_tags({"filtering"})
+            .with_opposites({"delete-filter"})
+            .with_example({"To hide the messages logged by the statement on "
+                           "line 42 of Server.java",
+                           "com/example/net/Server.java:42"}),
+        com_filter_statement_prompt,
+    },
+    {
         "enable-filter",
         com_enable_filter,
 
@@ -551,7 +723,8 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
             .with_summary("Enable a previously created and disabled filter")
             .with_parameter(
                 help_text("pattern",
-                          "The regular expression used in the filter command")
+                          "The regular expression used in the filter command, "
+                          "or a filtered statement's source file and line")
                     .with_format(help_parameter_format_t::HPF_DISABLED_FILTERS))
             .with_tags({"filtering"})
             .with_opposites({"disable-filter"})
@@ -566,16 +739,24 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
 
         help_text(":disable-filter")
             .with_effect(help_effect_t::view)
-            .with_summary("Disable a filter created with filter-in/filter-out")
+            .with_summary("Disable a filter created with filter-in/filter-out "
+                          "or filter-in-statement/filter-out-statement")
             .with_parameter(
                 help_text("pattern",
-                          "The regular expression used in the filter command")
+                          "The regular expression used in the filter command, "
+                          "or a filtered statement's source file and line")
                     .with_format(help_parameter_format_t::HPF_ENABLED_FILTERS))
             .with_tags({"filtering"})
-            .with_opposites({"filter-out", "filter-in"})
+            .with_opposites({"filter-out",
+                             "filter-in",
+                             "filter-out-statement",
+                             "filter-in-statement"})
             .with_example({"To disable the filter with the pattern 'last "
                            "message repeated'",
-                           "last message repeated"}),
+                           "last message repeated"})
+            .with_example({"To disable the filter for the statement on line "
+                           "42 of Server.java",
+                           "Server.java:42"}),
     },
     {
         "delete-filter",
@@ -584,15 +765,26 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
         help_text(":delete-filter")
             .with_effect(help_effect_t::view)
             .with_summary(
-                "Delete the filter created with ':filter-in' or ':filter-out'")
+                "Delete the filter created with ':filter-in' or ':filter-out', "
+                "or ':filter-in-statement' or ':filter-out-statement'")
             .with_parameter(
-                help_text("pattern", "The regular expression to match")
+                help_text("pattern",
+                          "The regular expression to match, or a filtered "
+                          "statement's source file and line: where the "
+                          "statement is now, or, for one that can't be found, "
+                          "the location its filter shows")
                     .with_format(help_parameter_format_t::HPF_ALL_FILTERS))
-            .with_opposites({"filter-in", "filter-out"})
+            .with_opposites({"filter-in",
+                             "filter-out",
+                             "filter-in-statement",
+                             "filter-out-statement"})
             .with_tags({"filtering"})
             .with_example({"To delete the filter with the pattern 'last "
                            "message repeated'",
-                           "last message repeated"}),
+                           "last message repeated"})
+            .with_example({"To delete the filter for the statement on line "
+                           "42 of Server.java",
+                           "Server.java:42"}),
     },
     {
         "filter-context",
@@ -614,11 +806,9 @@ static lnav::commands::command_t FILTERING_COMMANDS[] = {
                     .optional())
             .with_tags({"filtering"})
             .with_example(
-                {"To show 2 lines of context around filtered-in lines",
-                 "2"})
+                {"To show 2 lines of context around filtered-in lines", "2"})
             .with_example(
-                {"To show 3 lines before and 1 line after each match",
-                 "3 1"}),
+                {"To show 3 lines before and 1 line after each match", "3 1"}),
     },
 };
 

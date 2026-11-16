@@ -226,10 +226,9 @@ Features:
   values.  The `lnav_format_value_stats` table has the same
   statistics combined across the visible files for each
   format.  Added the `lnav_format_values` SQL table, which
-  lists the values defined by the loaded formats, along
-  with their kind and unit (`unit_suffix` and
-  `unit_divisor`).  The two tables can be joined on the
-  `format` and `name` columns.
+  lists the values defined by the loaded formats.
+  The two tables can be joined on the `format` and `name`
+  columns.
 * The `options` column of the `lnav_views` table now has
   a `filter-context` property for the views that support
   filtering and, for the TIMELINE view, a `row-types`
@@ -303,6 +302,16 @@ Features:
   mapped, `all_logs` reads `log_msg_src` and `log_msg_schema`
   from that map instead of matching each message again, unless
   the query also needs `log_msg_format` or `log_msg_values`.
+* Added the `:filter-in-statement` and `:filter-out-statement`
+  commands to filter the messages logged by one log statement.
+  They take the source file and line (e.g.
+  `:filter-out-statement com/example/net/Server.java:42`) and
+  are processed once the source has been added with
+  `:add-source-path`.  At the prompt, the focused message's
+  statement is suggested, and TAB completes the statements of
+  the messages on the screen, and the statement filters for
+  the other commands.  In the filters panel, `I` and `O` create
+  them the same way.
 * Added the `lnav_help` table that contains the documentation
   for lnav's:
 

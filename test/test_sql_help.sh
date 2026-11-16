@@ -51,3 +51,18 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT name, effect FROM lnav_help WHERE name IN (':current-time', ':write-json-to', ':filter-out', ':config', ':sh', ':quit', 'regexp_match', 'lnav_help')" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0
+
+# every command has a topic, so looking commands up by tag finds them all
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT name FROM lnav_help WHERE kind = 'command' AND tags = '[]'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+# tables have topics too ("-- Tags:" in their CREATE TABLE), so looking up a
+# topic finds the tables for it along with the commands
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT name FROM lnav_help WHERE kind = 'table' AND tags = '[]'" \
+    -c ":write-csv-to -" \
+    -c ";SELECT kind, name FROM lnav_help WHERE json_contains(tags, 'filtering') AND kind = 'table'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0

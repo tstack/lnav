@@ -45,6 +45,7 @@
 #include "file_vtab.cfg.hh"
 #include "lnav.hh"
 #include "log_format.hh"
+#include "log_format_ext.hh"
 #include "log_format_loader.hh"
 #include "logfile.hh"
 #include "session_data.hh"
@@ -85,6 +86,7 @@ struct lnav_file : tvt_iterator_cursor<lnav_file> {
     static constexpr const char* NAME = "lnav_file";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
+-- Tags: io
 CREATE TABLE lnav_db.lnav_file (
     device integer,       -- The device the file is stored on.
     inode integer,        -- The inode for the file on the device.
@@ -323,6 +325,7 @@ struct lnav_file_metadata {
     static constexpr const char* NAME = "lnav_file_metadata";
     static constexpr const char* CREATE_STMT = R"(
 -- Access the metadata embedded in open files
+-- Tags: io, metadata
 CREATE TABLE lnav_db.lnav_file_metadata (
     filepath text,    -- The path to the file.
     descriptor text,  -- The descriptor that identifies the source of the metadata.
@@ -460,14 +463,22 @@ value_kind_name(value_kind_t kind)
 struct lnav_format_values {
     static constexpr const char* NAME = "lnav_format_values";
     static constexpr const char* CREATE_STMT = R"(
--- The values that the loaded log formats define.
+-- The values (fields) that the loaded log formats extract from messages.  Each
+-- is a column of the format's own table, named after the format (e.g. the "xid"
+-- value of format "fullsail_log" is fullsail_log.xid), which has the messages
+-- of that format; all_logs.log_format says which formats have messages.  Only
+-- the values declared in a format's "value" section are listed, so a field the
+-- format uses without declaring it, like an undeclared level-field, has no row.
+-- Tags: metadata
 CREATE TABLE lnav_db.lnav_format_values (
     format text,         -- The name of the log format.
     name text,           -- The name of the value.
     kind text,           -- The kind of value, e.g. 'string' or 'integer'.
     unit_suffix text,    -- The suffix used when humanizing the value, e.g. 's' or 'B'.
     unit_divisor real,   -- What the raw value is divided by to get the base unit implied by the suffix.
-    identifier integer   -- Indicates if the value is an identifier.
+    identifier integer,  -- 1 when the value names something, like an ID, so grouping by it makes sense.
+    roles text,          -- A JSON array of what the format uses the value for, e.g. ["opid"]: timestamp, start-timestamp, subsecond, time, level, body, opid, subid, thread-id, src-file, src-line, src-location, or duration.  The opid and thread-id ones are also all_logs.log_opid and log_thread_id.
+    description text     -- What the value is, as the format describes it, or NULL.
 );
 )";
 
@@ -475,6 +486,10 @@ CREATE TABLE lnav_db.lnav_format_values (
         struct value_row {
             intern_string_t vr_format;
             logline_value_meta vr_meta;
+            /** What the format uses this value for, e.g. "opid". */
+            std::vector<const char*> vr_roles;
+            /** Owned by the format, which outlives the query. */
+            const std::string* vr_description{nullptr};
         };
 
         sqlite3_vtab_cursor base;
@@ -484,9 +499,48 @@ CREATE TABLE lnav_db.lnav_format_values (
         explicit cursor(sqlite3_vtab* vt) : base({vt})
         {
             for (const auto& format : log_format::get_root_formats()) {
+                // Only formats defined in files say what their values are for.
+                const auto* ext
+                    = dynamic_cast<const external_log_format*>(format.get());
                 for (auto& meta : format->get_value_metadata()) {
-                    this->c_rows.emplace_back(
-                        value_row{format->get_name(), std::move(meta)});
+                    value_row row{format->get_name(), std::move(meta)};
+                    const auto& name = row.vr_meta.lvm_name;
+                    const std::pair<const char*, intern_string_t> roles[] = {
+                        {"timestamp", format->lf_timestamp_field},
+                        {"start-timestamp", format->lf_start_timestamp_field},
+                        {"subsecond", format->lf_subsecond_field},
+                        {"time", format->lf_time_field},
+                    };
+                    for (const auto& [role, field] : roles) {
+                        if (!field.empty() && field == name) {
+                            row.vr_roles.emplace_back(role);
+                        }
+                    }
+                    if (ext != nullptr) {
+                        const std::pair<const char*, intern_string_t>
+                            ext_roles[] = {
+                                {"level", ext->elf_level_field},
+                                {"body", ext->elf_body_field},
+                                {"opid", ext->elf_opid_field},
+                                {"subid", ext->elf_subid_field},
+                                {"thread-id", ext->elf_thread_id_field},
+                                {"src-file", ext->elf_src_file_field},
+                                {"src-line", ext->elf_src_line_field},
+                                {"src-location", ext->elf_src_loc_field},
+                                {"duration", ext->elf_duration_field},
+                            };
+                        for (const auto& [role, field] : ext_roles) {
+                            if (!field.empty() && field == name) {
+                                row.vr_roles.emplace_back(role);
+                            }
+                        }
+                        auto vd_iter = ext->elf_value_defs.find(name);
+                        if (vd_iter != ext->elf_value_defs.end()) {
+                            row.vr_description
+                                = &vd_iter->second->vd_description;
+                        }
+                    }
+                    this->c_rows.emplace_back(std::move(row));
                 }
             }
         }
@@ -542,6 +596,26 @@ CREATE TABLE lnav_db.lnav_format_values (
                 break;
             case 5:
                 to_sqlite(ctx, meta.lvm_identifier);
+                break;
+            case 6: {
+                yajlpp_gen gen;
+                {
+                    yajlpp_array arr(gen);
+                    for (const auto* role : vr.vr_roles) {
+                        arr.gen(role);
+                    }
+                }
+                to_sqlite(ctx, json_string(gen));
+                break;
+            }
+            case 7:
+                if (vr.vr_description == nullptr
+                    || vr.vr_description->empty())
+                {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, *vr.vr_description);
+                }
                 break;
             default:
                 ensure(0);
@@ -646,6 +720,7 @@ struct lnav_file_value_stats {
 -- Statistics for the values in each open log file.  The numbers are raw
 -- values, divide them by the unit_divisor in lnav_format_values to get the
 -- base unit.
+-- Tags: metadata
 CREATE TABLE lnav_db.lnav_file_value_stats (
     filepath text,              -- The path to the file.
     format text,                -- The name of the file's log format.
@@ -766,6 +841,7 @@ struct lnav_format_value_stats {
 -- Statistics for the values in each log format, combined across the files
 -- that are visible in the LOG view.  The numbers are raw values, divide them
 -- by the unit_divisor in lnav_format_values to get the base unit.
+-- Tags: metadata
 CREATE TABLE lnav_db.lnav_format_value_stats (
     format text,                -- The name of the log format.
     name text,                  -- The name of the value.

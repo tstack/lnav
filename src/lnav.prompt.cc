@@ -34,10 +34,12 @@
 
 #include "lnav.prompt.hh"
 
+#include "all_logs_vtab.hh"
 #include "apps.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/lnav.console.hh"
 #include "base/paths.hh"
 #include "base/string_attr_type.hh"
@@ -46,7 +48,6 @@
 #include "db_sub_source.hh"
 #include "external_editor.hh"
 #include "fmt/ranges.h"
-#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_data_table.hh"
@@ -58,13 +59,14 @@
 #include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
-#include "timeline_source.hh"
 #include "shlex.hh"
 #include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
+#include "statement_filter.hh"
 #include "tailer/tailer.looper.hh"
+#include "timeline_source.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
@@ -1355,6 +1357,60 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          });
                 break;
             }
+            case help_parameter_format_t::HPF_LOG_STATEMENT: {
+                auto* lss
+                    = dynamic_cast<logfile_sub_source*>(tc.get_sub_source());
+
+                if (lss == nullptr || tc.get_inner_height() == 0) {
+                    return {};
+                }
+                // The statements of the messages on the screen, the focused
+                // one's first.  The statement map only has them once
+                // something has asked for statement counts, so a message it
+                // doesn't have is matched, which is quick for a screenful,
+                // and skipped while a source scan runs.  Whether the map is
+                // current is checked as a query starts, and nothing may have
+                // queried since it caught up.
+                if (all_logs_vtab::alv_scan_started != nullptr) {
+                    all_logs_vtab::alv_scan_started();
+                }
+                std::vector<std::string> poss_strs;
+                auto add = [&poss_strs](
+                               const logline_window::logmsg_info& msg) {
+                    auto* lf = msg.get_file_ptr();
+                    auto loc = lnav::statement_filters::location_at(
+                        *lf, lf->begin() + msg.get_file_line_number());
+                    if (loc
+                        && std::find(poss_strs.begin(), poss_strs.end(), *loc)
+                            == poss_strs.end())
+                    {
+                        poss_strs.emplace_back(*loc);
+                    }
+                };
+                auto sel = tc.get_selection();
+                if (sel) {
+                    auto sel_win = lss->window_at(sel.value());
+                    for (const auto& msg : *sel_win) {
+                        add(msg);
+                    }
+                }
+                // get_bottom() is the last row shown; the window's end isn't
+                // included.
+                auto win = lss->window_at(
+                    tc.get_top(),
+                    std::min(tc.get_bottom() + 1_vl, tc.get_inner_height()));
+                for (const auto& msg : *win) {
+                    add(msg);
+                }
+                log_debug("%zu statements to complete from the screen",
+                          poss_strs.size());
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
+            }
             case help_parameter_format_t::HPF_BREAKPOINT: {
                 auto* lss
                     = dynamic_cast<logfile_sub_source*>(tc.get_sub_source());
@@ -1364,7 +1420,11 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 }
                 std::set<std::string> poss_strs;
 
-                auto win = lss->window_at(tc.get_top(), tc.get_bottom());
+                // get_bottom() is the last row shown; the window's end isn't
+                // included.
+                auto win = lss->window_at(
+                    tc.get_top(),
+                    std::min(tc.get_bottom() + 1_vl, tc.get_inner_height()));
                 for (const auto& msg : *win) {
                     auto format_name = msg.get_file_ptr()->get_format_name();
                     const auto& lvv = msg.get_values();
@@ -1574,6 +1634,14 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                     if (filt->get_lang() == filter_lang_t::REGEX) {
                         poss_strs.emplace_back(filt->get_id());
+                    } else if (filt->get_lang() == filter_lang_t::STATEMENT) {
+                        // By the location the commands take, not the id's
+                        // full path.
+                        const auto* sf
+                            = dynamic_cast<const statement_filter*>(filt.get());
+                        if (sf != nullptr) {
+                            poss_strs.emplace_back(sf->get_short_location());
+                        }
                     }
                 }
 

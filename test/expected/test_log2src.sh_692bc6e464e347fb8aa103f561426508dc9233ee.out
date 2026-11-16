@@ -1,0 +1,8 @@
+type,language,pattern
+in,statement,Server.java:15@3089d4c38cc0
+shown
+4
+type,language,pattern
+in,statement,{test_dir}/hide-stmt-src/com/example/net/Server.java:18@3089d4c38cc0
+log_body
+client 10.0.0.1 is slow

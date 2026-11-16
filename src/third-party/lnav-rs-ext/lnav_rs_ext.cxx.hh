@@ -1149,9 +1149,21 @@ void discover_srcs() noexcept;
 
 ::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> find_log_statement_json(::rust::Str file, ::std::size_t line, ::lnav_rs_ext::StmtLevel level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options) noexcept;
 
+// Like find_log_statement_json(), but doesn't wait for a source scan, which
+// holds the matcher for as long as it runs: `busy` is set and the result is
+// null when one is.
+::std::unique_ptr<::lnav_rs_ext::FindLogResultJson> try_find_log_statement_json(::rust::Str file, ::std::size_t line, ::lnav_rs_ext::StmtLevel level, ::rust::Str body, ::lnav_rs_ext::FindLogOptions const &options, bool &busy) noexcept;
+
 ::rust::Vec<::lnav_rs_ext::FindLogResult> get_log_statements_for(::rust::Str file) noexcept;
 
+// Like get_log_statements_for(), but empty with `busy` set while a source
+// scan runs.
+::rust::Vec<::lnav_rs_ext::FindLogResult> try_get_log_statements_for(::rust::Str file, bool &busy) noexcept;
+
 ::rust::String find_src_file(::rust::Str path) noexcept;
+
+// Like find_src_file(), but empty with `busy` set while a source scan runs.
+::rust::String try_find_src_file(::rust::Str path, bool &busy) noexcept;
 
 ::rust::Vec<::rust::String> source_languages() noexcept;
 

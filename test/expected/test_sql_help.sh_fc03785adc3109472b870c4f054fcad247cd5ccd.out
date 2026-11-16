@@ -1,15 +1,43 @@
 name,synopsis,summary,opposites
 :clear-filter-expr,:clear-filter-expr,Clear the filter expression,"["":filter-expr""]"
-:delete-filter,:delete-filter pattern,Delete the filter created with ':filter-in' or ':filter-out',"["":filter-in"","":filter-out""]"
-:disable-filter,:disable-filter pattern,Disable a filter created with filter-in/filter-out,"["":filter-out"","":filter-in""]"
+:delete-filter,:delete-filter pattern,"Delete the filter created with ':filter-in' or ':filter-out', or ':filter-in-statement' or ':filter-out-statement'","["":filter-in"","":filter-out"","":filter-in-statement"","":filter-out-statement""]"
+:disable-filter,:disable-filter pattern,Disable a filter created with filter-in/filter-out or filter-in-statement/filter-out-statement,"["":filter-out"","":filter-in"","":filter-out-statement"","":filter-in-statement""]"
 :enable-filter,:enable-filter pattern,Enable a previously created and disabled filter,"["":disable-filter""]"
 :filter-context,:filter-context count [after],"Show extra lines around filtered-in lines, similar to grep's -C option",[]
 :filter-expr,:filter-expr expr,Set the filter expression,"["":clear-filter-expr""]"
 :filter-in,:filter-in pattern,Only show lines that match the given regular expression in the current view,[]
+:filter-in-statement,:filter-in-statement location,"Only show the messages logged by the log statement at the given source file and line, and those of other filtered-in statements and patterns, as found in the source added with :add-source-path.  The statement is found again by its function and message each time the source is scanned, so the filter follows it when edits move it; if its message changes or it is removed, the filter does nothing until it is deleted","["":delete-filter""]"
 :filter-out,:filter-out pattern,Remove lines that match the given regular expression in the current view,[]
+:filter-out-statement,:filter-out-statement location,"Hide the messages logged by the log statement at the given source file and line, as found in the source added with :add-source-path.  The statement is found again by its function and message each time the source is scanned, so the filter follows it when edits move it; if its message changes or it is removed, the filter does nothing until it is deleted","["":delete-filter""]"
+:hide-file,:hide-file path,"Hide the given file(s) and skip indexing until it is shown again.  If no path is given, the current file in the view is hidden","["":show-file""]"
 :hide-lines-after,:hide-lines-after date,Hide lines that come after the given date,[]
 :hide-lines-before,:hide-lines-before date,Hide lines that come before the given date,[]
 :hide-unmarked-lines,:hide-unmarked-lines,Hide lines that have not been bookmarked,[]
+:set-min-log-level,:set-min-log-level log-level,Set the minimum log level to display in the log view,[]
+:show-file,:show-file path,Show the given file(s) and resume indexing.,"["":hide-file""]"
 :show-lines-before-and-after,:show-lines-before-and-after,Show lines that were hidden by the 'hide-lines' commands,"["":hide-lines-before"","":hide-lines-after""]"
+:show-only-this-file,:show-only-this-file,Show only the file for the focused line in the view,"["":hide-file""]"
 :show-unmarked-lines,:show-unmarked-lines,Show lines that have not been bookmarked,"["":hide-unmarked-lines""]"
 :toggle-filtering,:toggle-filtering,Toggle the filtering flag for the current view,[]
+lnav_view_files,"-- The files shown in each view, and whether each one is visible.  UPDATE the
+-- visible column to show or hide a file.
+CREATE TABLE lnav_db.lnav_view_files (
+    view_name TEXT,     -- The name of the view.
+    filepath  TEXT,     -- The path to the file.
+    visible   INTEGER   -- Indicates whether or not the file is shown.
+);","The files shown in each view, and whether each one is visible.  UPDATE the visible column to show or hide a file.",[]
+lnav_view_filter_stats,"-- Access statistics for filters through this table.
+CREATE TABLE lnav_db.lnav_view_filter_stats (
+    view_name TEXT,     -- The name of the view.
+    filter_id INTEGER,  -- The filter identifier.
+    hits      INTEGER   -- The number of lines that matched this filter.
+);",Access statistics for filters through this table.,[]
+lnav_view_filters,"-- Access lnav's filters through this table.
+CREATE TABLE lnav_db.lnav_view_filters (
+    view_name TEXT,                    -- The name of the view.
+    filter_id INTEGER DEFAULT 0,       -- The filter identifier.
+    enabled   INTEGER DEFAULT 1,       -- Indicates if the filter is enabled/disabled.
+    type      TEXT    DEFAULT 'out',   -- The type of filter (i.e. in/out).
+    language  TEXT    DEFAULT 'regex', -- The filter language.
+    pattern   TEXT                     -- The filter pattern.
+);",Access lnav's filters through this table.,[]

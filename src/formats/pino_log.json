@@ -39,19 +39,23 @@
         },
         "value": {
             "pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "hostname": {
+                "description": "The host the process ran on",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level as a number: 10 trace, 20 debug, 30 info, 40 warn, 50 error, 60 fatal",
                 "kind": "integer",
                 "identifier": true,
                 "foreign-key": true
             },
             "msg": {
+                "description": "The message",
                 "kind": "string"
             }
         },

@@ -38,126 +38,156 @@
         ],
         "value": {
             "level": {
+                "description": "The message's syslog level",
                 "kind": "string",
                 "identifier": true
             },
             "facility": {
+                "description": "The syslog facility of the message",
                 "kind": "string",
                 "identifier": false
             },
             "module": {
+                "description": "The process that logged the message",
                 "kind": "string",
                 "identifier": false
             },
             "ellapsed": {
+                "description": "The seconds since the kernel started",
                 "kind": "float",
                 "identifier": false,
                 "hidden": true
             },
             "rule_name": {
+                "description": "The name of the firewall rule that matched the packet",
                 "kind": "string",
                 "identifier": true
             },
             "host": {
+                "description": "The host that logged the message",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "dhcp_op": {
+                "description": "The DHCP operation, like DHCPACK",
                 "kind": "string",
                 "identifier": true
             },
             "dhcp_mac": {
+                "description": "The MAC address in the DHCP message",
                 "kind": "string",
                 "identifier": true
             },
             "dhcp_iface": {
+                "description": "The interface the DHCP message was on",
                 "kind": "string"
             },
             "dhcp_ip": {
+                "description": "The IP address in the DHCP message",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "ID": {
+                "description": "The packet's IP ID",
                 "kind": "integer",
                 "identifier": true
             },
             "IP_IN": {
+                "description": "The interface the packet came in on",
                 "kind": "string",
                 "identifier": false
             },
             "IP_OUT": {
+                "description": "The interface the packet went out on",
                 "kind": "string",
                 "identifier": false
             },
             "MAC": {
+                "description": "The packet's MAC addresses and type",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "MAC_SRC": {
+                "description": "The packet's source MAC address",
                 "kind": "string",
                 "identifier": false,
                 "hidden": true
             },
             "SRC": {
+                "description": "The packet's source IP address",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "SPT": {
+                "description": "The packet's source port",
                 "kind": "integer",
                 "identifier": true
             },
             "DST": {
+                "description": "The packet's destination IP address",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "DPT": {
+                "description": "The packet's destination port",
                 "kind": "integer",
                 "identifier": true
             },
             "LEN": {
+                "description": "The packet's length, in bytes",
                 "kind": "integer"
             },
             "TOS": {
+                "description": "The packet's type of service",
                 "kind": "string",
                 "hidden": true
             },
             "PREC": {
+                "description": "The packet's precedence",
                 "kind": "string",
                 "hidden": true
             },
             "TTL": {
+                "description": "The packet's time to live",
                 "kind": "integer",
                 "hidden": true
             },
             "PROTO": {
+                "description": "The packet's protocol, like TCP or UDP",
                 "kind": "string",
                 "identifier": true
             },
             "LEN_UDP": {
+                "description": "The length of the UDP datagram, in bytes",
                 "kind": "integer"
             },
             "WINDOW": {
+                "description": "The TCP window size",
                 "kind": "integer",
                 "hidden": true
             },
             "RES": {
+                "description": "The TCP reserved bits",
                 "kind": "string",
                 "hidden": true
             },
             "SYN": {
+                "description": "Whether the packet has the TCP SYN flag",
                 "kind": "string",
                 "hidden": true
             },
             "URGP": {
+                "description": "The TCP urgent pointer",
                 "kind": "integer",
                 "hidden": true
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             }
         },

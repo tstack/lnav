@@ -60,28 +60,34 @@
         "hide-extra": true,
         "value": {
             "source": {
+                "description": "The packet's source address",
                 "kind": "string",
                 "foreign-key": true,
                 "collate": "ipaddress",
                 "identifier": true
             },
             "destination": {
+                "description": "The packet's destination address",
                 "kind": "string",
                 "foreign-key": true,
                 "collate": "ipaddress",
                 "identifier": true
             },
             "protocol": {
+                "description": "The packet's highest protocol",
                 "kind": "string",
                 "identifier": true
             },
             "length": {
+                "description": "The packet's length, in bytes",
                 "kind": "integer"
             },
             "info": {
+                "description": "A summary of the packet",
                 "kind": "string"
             },
             "layers": {
+                "description": "The packet's decoded protocol layers",
                 "kind": "json",
                 "hidden": true
             }

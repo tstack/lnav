@@ -13,6 +13,7 @@
         },
         "value": {
             "timestamp": {
+                "description": "The time the query was logged",
                 "kind": "string"
             }
         },

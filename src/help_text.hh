@@ -104,6 +104,8 @@ enum class help_parameter_format_t {
     HPF_HIDDEN_FILES,
     HPF_BREAKPOINT,
     HPF_KNOWN_BREAKPOINT,
+    /** A log statement's source file and line, from the messages shown. */
+    HPF_LOG_STATEMENT,
     HPF_KNOWN_APP,
     HPF_TIMELINE_METRIC,
     HPF_ACTIVE_TIMELINE_METRIC,

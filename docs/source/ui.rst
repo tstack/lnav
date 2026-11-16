@@ -173,6 +173,12 @@ To edit the filters, you can press TAB to change the focus from the main
 view to the filter editor.  The editor allows you to create, enable/disable,
 and delete filters easily.
 
+In the LOG view, pressing :kbd:`Shift` + :kbd:`i` or :kbd:`Shift` + :kbd:`o`
+creates a filter that shows or hides the messages of a log statement (see
+:ref:`:filter-in-statement<filter_in_statement>`), given as its source file
+and line.  The statement of the focused message is suggested, and :kbd:`TAB`
+lists the statements of the messages on the screen.
+
 The view's :ref:`named searches<named_searches>` are listed below its filters,
 with the number of lines each one matches.  They are created by pressing
 :kbd:`s` and respond to the same keys as the filters, so a search can be

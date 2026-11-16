@@ -15,30 +15,37 @@
         "thread-id-field": "pid",
         "value": {
             "db_name": {
+                "description": "The database",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the backend process",
                 "kind": "string",
                 "identifier": true
             },
             "remote_pair": {
+                "description": "The client's host and port",
                 "kind": "string",
                 "identifier": true
             },
             "session_id": {
+                "description": "The ID of the session",
                 "kind": "string",
                 "identifier": true
             },
             "transaction_id": {
+                "description": "The ID of the transaction, or 0 if none",
                 "kind": "string",
                 "identifier": true
             },
             "user": {
+                "description": "The database user",
                 "kind": "string",
                 "identifier": true
             },
             "num_line": {
+                "description": "The number of the message within the session",
                 "kind": "integer",
                 "foreign-key": true
             }

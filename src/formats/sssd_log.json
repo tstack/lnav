@@ -29,21 +29,26 @@
         },
         "value": {
             "service": {
+                "description": "The SSSD service that logged the message, like sssd or be[domain]",
                 "kind": "string",
                 "identifier": true
             },
             "module": {
+                "description": "The module of the service that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "function": {
+                "description": "The function that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "debug_level": {
+                "description": "The message's debug level, as a bit mask like 0x0400",
                 "kind": "string"
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             }
         },

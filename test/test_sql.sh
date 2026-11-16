@@ -1177,6 +1177,11 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT format, name, unit_suffix, unit_divisor FROM lnav_format_values WHERE unit_divisor != 1 AND format = 'haproxy_log'" \
     ${test_dir}/logfile_access_log.0
 
+# A value can have several roles, like a thread ID that is also the subid.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT format, name, roles, description FROM lnav_format_values WHERE format IN ('vmw_log', 'mysql_error_log') AND roles != '[]' ORDER BY format, name" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT name, count, text_count, min, max, mean, p50, p90, p99, distinct_estimate FROM lnav_file_value_stats" \
     ${test_dir}/logfile_access_log.0

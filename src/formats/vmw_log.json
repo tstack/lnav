@@ -157,58 +157,72 @@
         },
         "value": {
             "prc": {
+                "description": "The process that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "tid": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "src": {
+                "description": "The component that logged the message",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "comp": {
+                "description": "The component that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "sub": {
+                "description": "The subcomponent that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "item": {
+                "description": "The item the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "opid": {
+                "description": "The ID of the operation the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "req": {
+                "description": "The ID of the request the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "sid": {
+                "description": "The ID of the session the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "user": {
+                "description": "The user the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "vpxa_update": {
+                "description": "The number of the vpxa update the message is about",
                 "kind": "integer",
                 "identifier": true
             },
             "reason": {
+                "description": "The reason given in the message's context",
                 "kind": "string"
             },
             "file": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             }

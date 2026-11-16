@@ -27,8 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+
 #include "vtab_module.hh"
 
+#include "base/string_util.hh"
 #include "config.h"
 #include "lnav_util.hh"
 #include "sqlitepp.hh"
@@ -36,6 +39,36 @@
 std::string vtab_module_schemas;
 
 std::map<intern_string_t, std::string> vtab_module_ddls;
+
+std::map<intern_string_t, std::vector<std::string>> vtab_module_tags;
+
+std::string
+vtab_module_extract_tags(const char* create_stmt,
+                         std::vector<std::string>& tags_out)
+{
+    std::string retval;
+    auto stmt = string_fragment::from_c_str(create_stmt);
+    auto in_header = true;
+
+    for (const auto& line : stmt.split_lines()) {
+        auto trimmed = line.trim();
+        if (!trimmed.empty() && !trimmed.startswith("--")) {
+            in_header = false;
+        }
+        if (in_header && trimmed.startswith("--")) {
+            auto comment = trimmed.substr(2).trim();
+            if (comment.startswith("Tags:")) {
+                auto tags = comment.substr(5).to_string();
+                std::replace(tags.begin(), tags.end(), ',', ' ');
+                split_ws(tags, tags_out);
+                continue;
+            }
+        }
+        retval.append(line.data(), line.length());
+    }
+
+    return retval;
+}
 
 void
 to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um)

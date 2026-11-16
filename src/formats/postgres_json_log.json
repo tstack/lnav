@@ -70,106 +70,135 @@
         },
         "value": {
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             },
             "user": {
+                "description": "The database user",
                 "kind": "string",
                 "identifier": true
             },
             "dbname": {
+                "description": "The database",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the backend process",
                 "kind": "integer",
                 "identifier": true
             },
             "remote_host": {
+                "description": "The client's host",
                 "kind": "string",
                 "identifier": true
             },
             "remote_port": {
+                "description": "The client's port",
                 "kind": "integer"
             },
             "session_id": {
+                "description": "The ID of the session",
                 "kind": "string",
                 "identifier": true
             },
             "line_num": {
+                "description": "The number of the message within the session",
                 "kind": "integer"
             },
             "ps": {
+                "description": "The current command, as the process title shows it",
                 "kind": "string"
             },
             "session_start": {
+                "description": "The time the session started",
                 "kind": "string",
                 "hidden": true
             },
             "vxid": {
+                "description": "The virtual transaction ID",
                 "kind": "string",
                 "identifier": true
             },
             "txid": {
+                "description": "The transaction ID",
                 "kind": "string",
                 "identifier": true
             },
             "error_severity": {
+                "description": "The message's severity, like LOG, WARNING, or ERROR",
                 "kind": "string",
                 "identifier": true,
                 "foreign-key": true
             },
             "state_code": {
+                "description": "The SQLSTATE code",
                 "kind": "string",
                 "identifier": true
             },
             "message": {
+                "description": "The message",
                 "kind": "string"
             },
             "detail": {
+                "description": "The message's detail",
                 "kind": "string"
             },
             "hint": {
+                "description": "The message's hint",
                 "kind": "string"
             },
             "internal_query": {
+                "description": "The internal query that led to the error",
                 "kind": "string"
             },
             "internal_position": {
+                "description": "The position of the error in the internal query",
                 "kind": "integer"
             },
             "context": {
+                "description": "Where the error happened",
                 "kind": "string"
             },
             "statement": {
+                "description": "The statement the client sent",
                 "kind": "string"
             },
             "cursor_position": {
+                "description": "The position of the error in the statement",
                 "kind": "integer"
             },
             "func_name": {
+                "description": "The PostgreSQL function that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "file_name": {
+                "description": "The PostgreSQL source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "file_line_num": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer"
             },
             "application_name": {
+                "description": "The client's application name",
                 "kind": "string",
                 "identifier": true
             },
             "backend_type": {
+                "description": "The type of backend, like client backend or checkpointer",
                 "kind": "string",
                 "identifier": true
             },
             "leader_pid": {
+                "description": "The ID of the parallel group leader, for a parallel worker",
                 "kind": "integer",
                 "identifier": true
             },
             "query_id": {
+                "description": "The ID of the query",
                 "kind": "integer",
                 "identifier": true
             }

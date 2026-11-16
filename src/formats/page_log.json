@@ -15,42 +15,52 @@
         },
         "value": {
             "printer": {
+                "description": "The name of the printer",
                 "kind": "string",
                 "identifier": true
             },
             "username": {
+                "description": "The user who printed the job",
                 "kind": "string",
                 "identifier": true
             },
             "job_id": {
+                "description": "The ID of the job",
                 "kind": "integer",
                 "identifier": true,
                 "foreign-key": true
             },
             "page_number": {
+                "description": "The page number, or total for the job's summary",
                 "kind": "string"
             },
             "num_copies": {
+                "description": "The number of copies",
                 "kind": "integer"
             },
             "job_billing": {
+                "description": "The billing information for the job",
                 "kind": "string",
                 "identifier": true
             },
             "job_originating_hostname": {
+                "description": "The host the job came from",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "job_name": {
+                "description": "The name of the job",
                 "kind": "string",
                 "identifier": true
             },
             "media": {
+                "description": "The media the job was printed on, like Letter",
                 "kind": "string",
                 "identifier": true
             },
             "sides": {
+                "description": "Whether the job was printed one-sided or two-sided",
                 "kind": "string",
                 "identifier": true
             }

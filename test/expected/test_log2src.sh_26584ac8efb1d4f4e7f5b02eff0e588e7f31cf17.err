@@ -1,0 +1,3 @@
+[33m⚠[0m [33mwarning[0m: the statement filtered by [1m:filter-in-statement {builddir}/hide-stmt-src/com/example/net/Server.java:15@3089d4c38cc0[0m can't be found, so the filter does nothing
+   [33mreason[0m: no statement in com.example.net.Server.handle logs the same message any more: its text changed, or it was removed
+[36m =[0m   [36mhelp[0m: use :delete-filter with the same location to remove the filter, and filter the statement again at its new location

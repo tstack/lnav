@@ -181,6 +181,7 @@
         },
         "value": {
             "s": {
+                "description": "The message's severity: F fatal, E error, W warning, I info, D1-D5 debug",
                 "kind": "string",
                 "identifier": true,
                 "foreign-key": true
@@ -241,6 +242,7 @@
                 }
             },
             "attr/command/query": {
+                "description": "The query of the command",
                 "kind": "json"
             },
             "attr/command/update": {
@@ -259,9 +261,11 @@
                 "description": "The document for a command"
             },
             "attr/docsExamined": {
+                "description": "The number of documents the operation examined",
                 "kind": "integer"
             },
             "attr/errMsg": {
+                "description": "The error message",
                 "kind": "string",
                 "highlights": {
                     "error": {
@@ -272,6 +276,7 @@
                 }
             },
             "attr/errName": {
+                "description": "The name of the error",
                 "kind": "string",
                 "highlights": {
                     "error": {
@@ -282,6 +287,7 @@
                 }
             },
             "attr/error": {
+                "description": "The error",
                 "kind": "any",
                 "highlights": {
                     "error": {
@@ -300,6 +306,7 @@
                 }
             },
             "attr/keysExamined": {
+                "description": "The number of index keys the operation examined",
                 "kind": "integer"
             },
             "attr/message/msg": {
@@ -344,12 +351,14 @@
                 "description": "The principal name for a connection"
             },
             "attr/storage/data/bytesRead": {
+                "description": "The bytes the operation read from disk",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "attr/storage/data/timeReadingMicros": {
+                "description": "The microseconds the operation spent reading from disk",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -367,6 +376,7 @@
                 "identifier": true
             },
             "t": {
+                "description": "The time the message was logged",
                 "kind": "json",
                 "hidden": true
             }

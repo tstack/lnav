@@ -229,16 +229,17 @@ sql_source_find_file(const char* path)
 
 #ifdef HAVE_RUST_DEPS
     // While log2src scans the source, it holds the lock on its source tree, so
-    // looking the file up would block lnav's main loop until the scan is done
-    // (a click on a stack frame right after a save, when an editor re-sends
-    // :add-source-path).  Say so instead, like source_log_stmt().
-    if (lnav_rs_ext::get_status().status == lnav_rs_ext::Status::working) {
+    // waiting for the lookup would block lnav's main loop until the scan is
+    // done (a click on a stack frame right after a save, when an editor
+    // re-sends :add-source-path).  Say so instead, like source_log_stmt().
+    auto busy = false;
+    auto found
+        = static_cast<std::string>(lnav_rs_ext::try_find_src_file(path, busy));
+    if (busy) {
         throw sqlite_func_error(
             "the source is being scanned (:add-source-path); files can be "
             "found once that's done");
     }
-
-    auto found = static_cast<std::string>(lnav_rs_ext::find_src_file(path));
     if (!found.empty()) {
         return found;
     }

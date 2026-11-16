@@ -29,9 +29,13 @@
 
 /**
  * lnav_help: the reference text behind `:help`, the prompt's help panel, and
- * the generated cmd-ref/sql-ref docs, as rows.  It lets a script (or an agent
- * driving lnav over the external-access API) look up what commands and SQL
- * functions the running build has, by name or by tag, without the docs.
+ * the generated cmd-ref/sql-ref docs, as rows.  A table's row comes from its
+ * CREATE TABLE: the comment lines before it are its summary, and a
+ * "-- Tags: a, b" line among them gives its topics, like a command's
+ * with_tags(), so a lookup by topic finds tables too; every table needs one. It
+ * lets a script (or an agent driving lnav over the external-access API) look up
+ * what commands and SQL functions the running build has, by name or by tag,
+ * without the docs.
  */
 
 #include <set>
@@ -67,6 +71,7 @@ struct help_entry_row {
 struct help_table_row {
     std::string htr_name;
     std::string htr_summary;
+    std::vector<std::string> htr_tags;
     std::string htr_ddl;
 };
 
@@ -169,6 +174,8 @@ format_for(help_parameter_format_t fmt)
             return "config_path";
         case help_parameter_format_t::HPF_TIMEZONE:
             return "timezone";
+        case help_parameter_format_t::HPF_LOG_STATEMENT:
+            return "log_statement";
         default:
             return nullptr;
     }
@@ -200,13 +207,14 @@ synopsis_for(const help_text& ht)
 }
 
 // Opposites name commands without the colon; prefix it so they match `name`.
+template<typename S>
 void
 gen_strings(yajlpp_gen& gen,
-            const std::vector<const char*>& strs,
+            const std::vector<S>& strs,
             const char* prefix = "")
 {
     yajlpp_array arr(gen);
-    for (const auto* str : strs) {
+    for (const auto& str : strs) {
         arr.gen(std::string(prefix) + str);
     }
 }
@@ -302,7 +310,7 @@ gen_examples(yajl_gen gen, const help_text& ht)
         }
         obj.gen("language");
         obj.gen(ex.he_language == help_example::language::prql ? "prql"
-                                                                 : "default");
+                                                               : "default");
     }
 }
 
@@ -315,6 +323,7 @@ struct lnav_help : tvt_iterator_cursor<lnav_help> {
 -- transforms, and lnav's own tables, one row per entry.  Find entries by name
 -- or by tag, for example:
 --   SELECT name, synopsis, summary FROM lnav_help WHERE json_contains(tags, 'filtering')
+-- Tags: scripting
 CREATE TABLE lnav_db.lnav_help (
     kind TEXT,         -- The kind of entry: command, table, sql_function, sql_aggregate_function, sql_table_function, sql_command, sql_keyword, sql_infix, prql_transform, or prql_function.
     name TEXT,         -- The name to call it by; commands start with a colon (e.g. ':filter-out').
@@ -384,9 +393,13 @@ CREATE TABLE lnav_db.lnav_help (
         // lnav's own tables.  Their entries in sqlite_master only say
         // "CREATE VIRTUAL TABLE ... USING ...", without the column comments.
         for (const auto& [name, ddl] : vtab_module_ddls) {
+            auto tags_iter = vtab_module_tags.find(name);
             retval.emplace_back(help_table_row{
                 name.to_string(),
                 table_summary(ddl),
+                tags_iter != vtab_module_tags.end()
+                    ? tags_iter->second
+                    : std::vector<std::string>{},
                 ddl,
             });
         }
@@ -522,10 +535,15 @@ CREATE TABLE lnav_db.lnav_help (
             case 5:
                 to_sqlite(ctx, row.htr_ddl);
                 break;
+            case 9: {
+                yajlpp_gen gen;
+                gen_strings(gen, row.htr_tags);
+                to_sqlite(ctx, gen);
+                break;
+            }
             case 3:
             case 7:
             case 8:
-            case 9:
             case 10: {
                 yajlpp_gen gen;
                 {

@@ -584,27 +584,26 @@ struct stmt_map {
 
     /**
      * [path]'s file under the source roots, or nullopt when there's none.
-     * Without an answer cached, nothing is looked up while log2src scans the
-     * source, since it holds the tree's lock; [pending] is set instead.
+     * Without an answer cached, the lookup doesn't wait while a source scan
+     * holds the tree's lock; [pending] is set instead.
      */
     std::optional<std::string> frame_src(const string_key& path, bool& pending)
     {
 #ifdef HAVE_RUST_DEPS
         auto iter = this->sm_frame_src.find(path);
         if (iter == this->sm_frame_src.end()) {
-            if (lnav_rs_ext::get_status().status
-                == lnav_rs_ext::Status::working)
-            {
+            // Not cached while a scan holds log2src's source tree: the file
+            // may be found once it's done.
+            auto path_sf = path.to_frag();
+            auto busy = false;
+            auto found = static_cast<std::string>(
+                lnav_rs_ext::try_find_src_file(
+                    rust::Str(path_sf.data(), path_sf.length()), busy));
+            if (busy) {
                 pending = true;
                 return std::nullopt;
             }
-            auto path_sf = path.to_frag();
-            iter = this->sm_frame_src
-                       .emplace(
-                           path,
-                           static_cast<std::string>(lnav_rs_ext::find_src_file(
-                               rust::Str(path_sf.data(), path_sf.length()))))
-                       .first;
+            iter = this->sm_frame_src.emplace(path, std::move(found)).first;
         }
         if (iter->second.empty()) {
             return std::nullopt;
@@ -1320,6 +1319,7 @@ struct log_stmt_stats_vtab : public tvt_iterator_cursor<log_stmt_stats_vtab> {
 -- of messages each one produced in the LOG view, after filters.  Querying this
 -- table starts a background task that maps every message to its statement;
 -- until it finishes, the counts cover only the messages mapped so far.
+-- Tags: source
 CREATE TABLE lnav_db.log_stmt_stats (
     src TEXT,            -- The statement's source details, like log_msg_src.
     schema TEXT,         -- The statement's log_msg_schema in all_logs.
@@ -1516,6 +1516,7 @@ struct log_stack_frames_vtab
 -- languages are used (/log/stack-frames/<name>/languages).  Querying this
 -- table starts the background task that log_stmt_stats does; until it
 -- finishes, the counts cover only the messages looked at so far.
+-- Tags: source
 CREATE TABLE lnav_db.log_stack_frames (
     path TEXT,           -- The file as the trace has it, with a Java frame's
                          -- package as directories; for a location in
@@ -2074,6 +2075,7 @@ struct log_stack_frame_rows {
     static constexpr const char* CREATE_STMT = R"(
 -- The log_stack_frame_rows() table-valued function lists the LOG view rows of
 -- the messages with a stack frame in their trace.
+-- Tags: source
 CREATE TABLE lnav_db.log_stack_frame_rows (
     log_line INTEGER,     -- The row of a message with the frame in its stack trace.
     src_path TEXT HIDDEN, -- The frame's file under the source paths, as log_stack_frames.src_path has it.

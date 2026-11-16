@@ -1,12 +1,12 @@
-[1;4m  format  [0m[1;4m [0m[1;4m    name     [0m[1;4m [0m[1;4m kind  [0m[1;4m [0m[1;4munit_suffix[0m[1;4m [0m[1;4;7munit_divisor[0m[1;4m [0m[1;4;7midentifier[0m[1;4m [0m
-access_log cs_host       string  [1m[36m<NULL>     [0m [1;7m           1[0m [7m         1[0m 
-access_log c_ip          string  [1m[36m<NULL>     [0m [1;7m           1[0m [7m         1[0m 
-[1maccess_log[0m[1m [0m[1mcs_username  [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m
-[1maccess_log[0m[1m [0m[1mcs_method    [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m
-access_log cs_uri_stem   string  [1m[36m<NULL>     [0m [1;7m           1[0m [7m         1[0m 
-access_log cs_uri_query  string  [1m[36m<NULL>     [0m [1;7m           1[0m          0 
-[1maccess_log[0m[1m [0m[1mcs_version   [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m
-[1maccess_log[0m[1m [0m[1msc_status    [0m[1m [0m[1minteger[0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1m         0 [0m
-access_log sc_bytes      integer B           [1;7m           1[0m          0 
-access_log cs_referer    string  [1m[36m<NULL>     [0m [1;7m           1[0m [7m         1[0m 
-[1maccess_log[0m[1m [0m[1mcs_user_agent[0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m
+[1;4m  format  [0m[1;4m [0m[1;4m    name     [0m[1;4m [0m[1;4m kind  [0m[1;4m [0m[1;4munit_suffix[0m[1;4m [0m[1;4;7munit_divisor[0m[1;4m [0m[1;4;7midentifier[0m[1;4m [0m[1;4m  roles  [0m[1;4m [0m[1;4m                   description                   [0m[1;4m [0m
+access_log cs_host       string  [1m[36m<NULL>     [0m [1;7m           1[0m [1;7m         1[0m []        The value of the Host header                      
+access_log c_ip          string  [1m[36m<NULL>     [0m [1;7m           1[0m [1;7m         1[0m []        The client IP address                             
+[1maccess_log[0m[1m [0m[1mcs_username  [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m[1m[]       [0m[1m [0m[1mThe username passed from the client to the server [0m
+[1maccess_log[0m[1m [0m[1mcs_method    [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m[1m[]       [0m[1m [0m[1mThe request method                                [0m
+access_log cs_uri_stem   string  [1m[36m<NULL>     [0m [1;7m           1[0m [1;7m         1[0m []        The path part of the request URI                  
+access_log cs_uri_query  string  [1m[36m<NULL>     [0m [1;7m           1[0m [1m         0[0m []        The query parameters in the request URI           
+[1maccess_log[0m[1m [0m[1mcs_version   [0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m[1m[]       [0m[1m [0m[1mThe client's HTTP version                         [0m
+[1maccess_log[0m[1m [0m[1msc_status    [0m[1m [0m[1minteger[0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1m         0[0m[1m [0m[1m["level"][0m[1m [0m[1mThe status code returned by the server            [0m
+access_log sc_bytes      integer B           [1;7m           1[0m [1m         0[0m []        The number of bytes returned by the server        
+access_log cs_referer    string  [1m[36m<NULL>     [0m [1;7m           1[0m [1;7m         1[0m []        The client's referrer                             
+[1maccess_log[0m[1m [0m[1mcs_user_agent[0m[1m [0m[1mstring [0m[1m [0m[1m[36m<NULL>     [0m[1m [0m[1;7m           1[0m[1m [0m[1;7m         1[0m[1m [0m[1m[]       [0m[1m [0m[1mThe client's HTTP agent                           [0m

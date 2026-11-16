@@ -62,6 +62,7 @@ struct regexp_capture {
     static constexpr const char* CREATE_STMT = R"(
 -- The regexp_capture() table-valued function allows you to execute a regular-
 -- expression over a given string and get the captured data as rows in a table.
+-- Tags: regex
 CREATE TABLE regexp_capture (
     match_index INTEGER,
     capture_index INTEGER,
@@ -348,6 +349,7 @@ struct regexp_capture_into_json {
 -- The regexp_capture_into_json() table-valued function allows you to execute a
 -- regular-expression over a given string and get the captured data as rows in
 -- a table.
+-- Tags: regex
 CREATE TABLE regexp_capture_into_json (
     match_index INTEGER,
     content TEXT,

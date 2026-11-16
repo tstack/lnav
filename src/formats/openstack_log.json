@@ -31,18 +31,22 @@
         "thread-id-field": "tid",
         "value": {
             "tid": {
+                "description": "The ID of the request the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "logger": {
+                "description": "The module that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "user": {
+                "description": "The user who made the request",
                 "kind": "string",
                 "identifier": true
             }

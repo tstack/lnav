@@ -11,10 +11,12 @@
         "opid-field": "tid",
         "value": {
             "tid": {
+                "description": "The name of the thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "logger": {
+                "description": "The class that logged the message",
                 "kind": "string",
                 "identifier": true
             }

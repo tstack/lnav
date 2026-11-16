@@ -816,6 +816,13 @@ public:
 
     void invalidate_sql_filter();
 
+    /**
+     * Makes the next text_filters_changed() run the filter with [index] over
+     * every line again, for a filter whose answers changed in place, like a
+     * statement filter after a source scan.
+     */
+    void invalidate_filter(size_t index);
+
     void set_line_meta_changed() { this->lss_line_meta_changed = true; }
 
     bool is_line_meta_changed() const { return this->lss_line_meta_changed; }

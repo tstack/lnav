@@ -22,24 +22,31 @@
         },
         "value": {
             "cause_body": {
+                "description": "The chain of errors that caused the message",
                 "kind": "string"
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "module": {
+                "description": "The crate that logged the message",
                 "kind": "string"
             },
             "module2": {
+                "description": "The thread that logged the message",
                 "kind": "string"
             },
             "src_file": {
+                "description": "The source file that logged the message",
                 "kind": "string"
             },
             "src_line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

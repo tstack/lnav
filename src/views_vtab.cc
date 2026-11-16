@@ -44,6 +44,7 @@
 #include "lnav.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "statement_filter.hh"
 #include "timeline_source.hh"
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -96,8 +97,12 @@ struct from_sqlite<filter_lang_t> {
         if (strcasecmp(type_name, "sql") == 0) {
             return filter_lang_t::SQL;
         }
+        if (strcasecmp(type_name, "statement") == 0) {
+            return filter_lang_t::STATEMENT;
+        }
 
-        throw from_sqlite_conversion_error("value of 'regex' or 'sql'", argi);
+        throw from_sqlite_conversion_error(
+            "value of 'regex', 'sql', or 'statement'", argi);
     }
 };
 
@@ -424,6 +429,7 @@ struct lnav_views : tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's views through this table.
+-- Tags: views, navigation
 CREATE TABLE lnav_db.lnav_views (
     name TEXT PRIMARY KEY,  -- The name of the view.
     top INTEGER,            -- The number of the line at the top of the view, starting from zero.
@@ -1046,6 +1052,7 @@ struct lnav_view_stack : public tvt_iterator_cursor<lnav_view_stack> {
     static constexpr const char* NAME = "lnav_view_stack";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's view stack through this table.
+-- Tags: views, navigation
 CREATE TABLE lnav_db.lnav_view_stack (
     name TEXT
 );
@@ -1190,6 +1197,7 @@ struct lnav_view_filters
     static constexpr const char* NAME = "lnav_view_filters";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's filters through this table.
+-- Tags: filtering
 CREATE TABLE lnav_db.lnav_view_filters (
     view_name TEXT,                    -- The name of the view.
     filter_id INTEGER DEFAULT 0,       -- The filter identifier.
@@ -1239,14 +1247,26 @@ CREATE TABLE lnav_db.lnav_view_filters (
                     case filter_lang_t::SQL:
                         sqlite3_result_text(ctx, "sql", 3, SQLITE_STATIC);
                         break;
+                    case filter_lang_t::STATEMENT:
+                        sqlite3_result_text(ctx, "statement", 9, SQLITE_STATIC);
+                        break;
                     default:
                         ensure(0);
                 }
                 break;
-            case 5:
-                sqlite3_result_text(
-                    ctx, tf->get_id().c_str(), -1, SQLITE_TRANSIENT);
+            case 5: {
+                // A statement's pattern carries what finds it again, so a
+                // session export restores the same statement.
+                const auto* sf
+                    = dynamic_cast<const statement_filter*>(tf.get());
+                if (sf != nullptr) {
+                    to_sqlite(ctx, sf->get_point());
+                } else {
+                    sqlite3_result_text(
+                        ctx, tf->get_id().c_str(), -1, SQLITE_TRANSIENT);
+                }
                 break;
+            }
         }
 
         return SQLITE_OK;
@@ -1271,7 +1291,7 @@ CREATE TABLE lnav_db.lnav_view_filters (
         }
         auto& fs = tss->get_filters();
         auto filter_index
-            = lang.value_or(filter_lang_t::REGEX) == filter_lang_t::REGEX
+            = lang.value_or(filter_lang_t::REGEX) != filter_lang_t::SQL
             ? fs.next_index()
             : std::make_optional(size_t{0});
         if (!filter_index) {
@@ -1365,6 +1385,55 @@ CREATE TABLE lnav_db.lnav_view_filters (
                     return SQLITE_ERROR;
                 }
                 tf = lnav_data.ld_log_source.get_sql_filter().value();
+                break;
+            }
+            case filter_lang_t::STATEMENT: {
+                if (view_index != LNV_LOG) {
+                    throw sqlite_func_error(
+                        "statement filters are only supported in the log "
+                        "view");
+                }
+                auto point = from_sqlite<std::string>()(1, &pattern_str, 0);
+                auto create_res = lnav::statement_filters::create(
+                    type.value_or(text_filter::EXCLUDE), point, *filter_index);
+                if (create_res.isErr()) {
+                    set_vtable_errmsg(tab, create_res.unwrapErr());
+                    return SQLITE_ERROR;
+                }
+                auto sf = create_res.unwrap();
+                auto filter = lnav::statement_filters::find_same(fs, *sf);
+                if (filter != nullptr && filter->get_type() != sf->get_type()) {
+                    tab->zErrMsg = sqlite3_mprintf(
+                        "%s",
+                        lnav::statement_filters::already_filtered_message(
+                            *filter)
+                            .c_str());
+                    return SQLITE_ERROR;
+                }
+                if (filter != nullptr) {
+                    switch (conflict_mode) {
+                        case SQLITE_FAIL:
+                        case SQLITE_ABORT:
+                            tab->zErrMsg = sqlite3_mprintf(
+                                "filter already exists -- :%s",
+                                sf->to_command().c_str());
+                            return conflict_mode;
+                        case SQLITE_IGNORE:
+                            return SQLITE_OK;
+                        case SQLITE_REPLACE:
+                            if (filter->is_enabled() != enabled.value_or(true))
+                            {
+                                filter->set_enabled(enabled.value_or(true));
+                                tss->text_filters_changed();
+                                tc.set_needs_update();
+                            }
+                            return SQLITE_OK;
+                        default:
+                            break;
+                    }
+                }
+                fs.add_filter(sf);
+                tf = sf;
                 break;
             }
             default:
@@ -1463,6 +1532,48 @@ CREATE TABLE lnav_db.lnav_view_filters (
                 return SQLITE_ERROR;
             }
             *iter = lnav_data.ld_log_source.get_sql_filter().value();
+        } else if (lang == filter_lang_t::STATEMENT
+                   || tf->get_lang() == filter_lang_t::STATEMENT)
+        {
+            if (lang != filter_lang_t::STATEMENT) {
+                throw sqlite_func_error(
+                    "a statement filter's language must stay 'statement'");
+            }
+            if (view_index != LNV_LOG) {
+                throw sqlite_func_error(
+                    "statement filters are only supported in the log view");
+            }
+            auto point = from_sqlite<std::string>()(1, &pattern_val, 0);
+            const auto* sf = dynamic_cast<const statement_filter*>(tf.get());
+            // Only a new location makes a new filter; an UPDATE of just
+            // enabled leaves the statement as it was found.
+            if (sf == nullptr || type != tf->get_type()
+                || (point != sf->get_point() && point != sf->get_id()))
+            {
+                auto create_res = lnav::statement_filters::create(
+                    type, point, tf->get_index());
+                if (create_res.isErr()) {
+                    set_vtable_errmsg(tab, create_res.unwrapErr());
+                    return SQLITE_ERROR;
+                }
+                auto new_sf = create_res.unwrap();
+                auto dup
+                    = lnav::statement_filters::find_same(fs, *new_sf, tf.get());
+                if (dup != nullptr) {
+                    tab->zErrMsg = sqlite3_mprintf(
+                        "%s",
+                        lnav::statement_filters::already_filtered_message(*dup)
+                            .c_str());
+                    return SQLITE_ERROR;
+                }
+                tf->lf_deleted = true;
+                tss->text_filters_changed();
+                *iter = new_sf;
+            } else if (tf->is_enabled() == enabled) {
+                return SQLITE_OK;
+            } else {
+                tf->set_enabled(enabled);
+            }
         } else {
             tf->lf_deleted = true;
             tss->text_filters_changed();
@@ -1587,6 +1698,7 @@ struct lnav_view_searches
     static constexpr const char* NAME = "lnav_view_searches";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's named searches through this table.
+-- Tags: search
 CREATE TABLE lnav_db.lnav_view_searches (
     view_name TEXT,      -- The name of the view.
     enabled   INTEGER,   -- Indicates whether this search is enabled or disabled.
@@ -1727,6 +1839,7 @@ struct lnav_view_filter_stats
     static constexpr const char* NAME = "lnav_view_filter_stats";
     static constexpr const char* CREATE_STMT = R"(
 -- Access statistics for filters through this table.
+-- Tags: filtering
 CREATE TABLE lnav_db.lnav_view_filter_stats (
     view_name TEXT,     -- The name of the view.
     filter_id INTEGER,  -- The filter identifier.
@@ -1764,6 +1877,7 @@ struct lnav_view_files : tvt_iterator_cursor<lnav_view_files> {
     static constexpr const char* CREATE_STMT = R"(
 -- The files shown in each view, and whether each one is visible.  UPDATE the
 -- visible column to show or hide a file.
+-- Tags: filtering, views
 CREATE TABLE lnav_db.lnav_view_files (
     view_name TEXT,     -- The name of the view.
     filepath  TEXT,     -- The path to the file.
@@ -1884,6 +1998,7 @@ struct lnav_view_lines {
     static constexpr const char* NAME = "lnav_view_lines";
     static constexpr const char* CREATE_STMT = R"(
 -- The lnav_view_lines() table-valued function renders the lines of a view.
+-- Tags: views
 CREATE TABLE lnav_db.lnav_view_lines (
     line INTEGER,           -- The number of the line in the view, or NULL for a header line.
     content TEXT,           -- The rendered line.

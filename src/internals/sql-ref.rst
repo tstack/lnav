@@ -1089,7 +1089,7 @@ date(*timestring*, *modifier*)
       2017-04-04
 
   **See Also**
-    :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -1128,7 +1128,7 @@ datetime(*timestring*, *modifier*)
       2017-04-04 21:37:22
 
   **See Also**
-    :ref:`date`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -1260,7 +1260,7 @@ echoln(*value*)
     * **value\*** --- The value to write to the current output file
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1754,7 +1754,7 @@ humanize_duration(*secs*)
       1s500ms
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`measure_unit`, :ref:`measure_value`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`measure_unit`, :ref:`measure_value`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unix_time`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -2621,7 +2621,7 @@ julianday(*timestring*, *modifier*)
       2457848.400949074
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4633,7 +4633,7 @@ strftime(*format*, *timestring*, *modifier*)
       Julian day: 2457848.400949074
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4743,7 +4743,7 @@ time(*timestring*, *modifier*)
       21:37:22
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4771,7 +4771,7 @@ time_buckets(*t*, *value*, *max_buckets*, *\[lo\]*, *\[hi\]*)
       [{"start":0,"stop":4,"count":2,"p10":1,"median":1,"p90":5,"max":5},{"start":4,"stop":8,"count":1,"p10":3,"median":3,"p90":3,"max":3},{"start":8,"stop":12,"count":1,"p10":2,"median":2,"p90":2,"max":2}]
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4805,7 +4805,7 @@ timediff(*time1*, *time2*)
       86400
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timeslice`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4852,7 +4852,7 @@ timeslice(*time*, *slice*)
       2017-02⋯.000000          3 
 
   **See Also**
-    :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timezone`
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -4879,7 +4879,7 @@ timezone(*tz*, *ts*)
       2022-03-02T02:00:00.000000-0800
 
   **See Also**
-    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`measure_unit`, :ref:`measure_value`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+    :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`julianday`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`measure_unit`, :ref:`measure_value`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`strftime`, :ref:`substr`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unix_time`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
 
 ----
 
@@ -5185,7 +5185,7 @@ zeroblob(*N*)
     * **table** --- The name of the table to dump
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -5212,7 +5212,7 @@ zeroblob(*N*)
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -5228,7 +5228,7 @@ zeroblob(*N*)
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 

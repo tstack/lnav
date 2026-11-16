@@ -41,49 +41,62 @@
         "multiline": false,
         "value": {
             "body": {
+                "description": "The message",
                 "kind": "string"
             },
             "log_pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "log_procname": {
+                "description": "The name of the process that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "log_syslog_tag": {
+                "description": "The process name and ID together",
                 "kind": "string"
             },
             "logger": {
+                "description": "The logger that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "opid": {
+                "description": "The ID of the operation the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "sub": {
+                "description": "The subcomponent that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "sid": {
+                "description": "The ID of the session the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "user": {
+                "description": "The user the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "syslog_pri": {
+                "description": "The syslog priority of the message",
                 "kind": "string"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             },
             "reason": {
+                "description": "The reason given in the message's context",
                 "kind": "string"
             },
             "update_num": {
+                "description": "The number of the update the message is about",
                 "kind": "integer",
                 "foreign-key": true
             }

@@ -9,6 +9,8 @@
   **Parameters**
     * **path** --- The path to the source code to index
 
+  **See Also**
+    
 
 ----
 
@@ -36,6 +38,8 @@
 
       :adjust-log-time -1h
 
+  **See Also**
+    :ref:`clear_adjusted_log_time`, :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -58,7 +62,7 @@
       :alt-msg Press t to switch to the text view
 
   **See Also**
-    :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -94,7 +98,7 @@
       :append-to /tmp/interesting-lines.txt
 
   **See Also**
-    :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -116,6 +120,8 @@
 
       :breakpoint foo.cc:32
 
+  **See Also**
+    :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -131,7 +137,7 @@
     * **dir\*** --- The new current directory
 
   **See Also**
-    :ref:`alt_msg`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -143,6 +149,8 @@
 
   Clear the adjusted time for the focused line in the view
 
+  **See Also**
+    :ref:`adjust_log_time`, :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -155,7 +163,7 @@
   Clear all sticky header bookmarks in the current view
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -177,6 +185,8 @@
 
       :clear-breakpoint *
 
+  **See Also**
+    :ref:`breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -218,7 +228,7 @@
   Clear the filter expression
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_expr`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -241,7 +251,7 @@
       :clear-highlight foobar
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -264,7 +274,7 @@
       :clear-highlight-field sc_status
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -306,7 +316,7 @@
     * **label\*** --- The label of the metric to remove
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`timeline_metric_sql`, :ref:`timeline_metric`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`timeline_metric_sql`, :ref:`timeline_metric`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -322,7 +332,7 @@
     * **path** --- A path or glob pattern that specifies the files to close
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -390,6 +400,8 @@
   **Parameters**
     * **zone\*** --- The timezone name
 
+  **See Also**
+    :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -412,7 +424,7 @@
       :create-logline-table task_durations
 
   **See Also**
-    :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_search_table`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -460,7 +472,7 @@
       :create-search-table task_durations duration=(?<duration>\d+)
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -472,6 +484,8 @@
 
   Print the current time in human-readable form and seconds since the epoch
 
+  **See Also**
+    :ref:`convert_time_to`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`, :ref:`unix_time`
 
 ----
 
@@ -481,10 +495,10 @@
 :delete-filter *pattern*
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Delete the filter created with ':filter-in' or ':filter-out'
+  Delete the filter created with ':filter-in' or ':filter-out', or ':filter-in-statement' or ':filter-out-statement'
 
   **Parameters**
-    * **pattern\*** --- The regular expression to match
+    * **pattern\*** --- The regular expression to match, or a filtered statement's source file and line: where the statement is now, or, for one that can't be found, the location its filter shows
 
   **Examples**
     To delete the filter with the pattern 'last message repeated':
@@ -493,8 +507,14 @@
 
       :delete-filter last message repeated
 
+    To delete the filter for the statement on line 42 of Server.java:
+
+    .. code-block::  lnav
+
+      :delete-filter Server.java:42
+
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_in_statement`, :ref:`filter_in`, :ref:`filter_out_statement`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -517,7 +537,7 @@
       :delete-logline-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -563,7 +583,7 @@
       :delete-search-table task_durations
 
   **See Also**
-    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
+    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -601,6 +621,8 @@
   **Parameters**
     * **point** --- The file and line number of the breakpoint
 
+  **See Also**
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -610,10 +632,10 @@
 :disable-filter *pattern*
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Disable a filter created with filter-in/filter-out
+  Disable a filter created with filter-in/filter-out or filter-in-statement/filter-out-statement
 
   **Parameters**
-    * **pattern\*** --- The regular expression used in the filter command
+    * **pattern\*** --- The regular expression used in the filter command, or a filtered statement's source file and line
 
   **Examples**
     To disable the filter with the pattern 'last message repeated':
@@ -622,8 +644,14 @@
 
       :disable-filter last message repeated
 
+    To disable the filter for the statement on line 42 of Server.java:
+
+    .. code-block::  lnav
+
+      :disable-filter Server.java:42
+
   **See Also**
-    :ref:`enable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`enable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -659,7 +687,7 @@
   Disable word-wrapping for the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -683,7 +711,7 @@
       :echo Hello, World!
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -698,6 +726,8 @@
   **Parameters**
     * **point** --- The file and line number of the breakpoint
 
+  **See Also**
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -710,7 +740,7 @@
   Enable a previously created and disabled filter
 
   **Parameters**
-    * **pattern\*** --- The regular expression used in the filter command
+    * **pattern\*** --- The regular expression used in the filter command, or a filtered statement's source file and line
 
   **Examples**
     To enable the disabled filter with the pattern 'last message repeated':
@@ -720,7 +750,7 @@
       :enable-filter last message repeated
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -756,7 +786,7 @@
   Enable word-wrapping for the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -779,7 +809,7 @@
       :eval ;SELECT * FROM ${table}
 
   **See Also**
-    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -795,7 +825,7 @@
     * **path\*** --- The path to the file to write
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -820,7 +850,7 @@
       :external-access --name=tectonic
 
   **See Also**
-    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -836,7 +866,7 @@
     * **app** --- The app to launch
 
   **See Also**
-    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -866,7 +896,7 @@
       :filter-context 3 1
 
   **See Also**
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -895,7 +925,7 @@
       :filter-expr :log_body REGEXP 'id\d+' AND :log_body REGEXP 'foo'
 
   **See Also**
-    :ref:`clear_filter_expr`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`clear_filter_expr`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -918,7 +948,30 @@
       :filter-in dhclient
 
   **See Also**
-    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
+
+----
+
+
+.. _filter_in_statement:
+
+:filter-in-statement *location*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Only show the messages logged by the log statement at the given source file and line, and those of other filtered-in statements and patterns, as found in the source added with :add-source-path.  The statement is found again by its function and message each time the source is scanned, so the filter follows it when edits move it; if its message changes or it is removed, the filter does nothing until it is deleted
+
+  **Parameters**
+    * **location\*** --- The source file, as much of its path as is needed to tell it apart, and a line of the statement
+
+  **Examples**
+    To only show the messages logged by the statement on line 42 of Server.java:
+
+    .. code-block::  lnav
+
+      :filter-in-statement com/example/net/Server.java:42
+
+  **See Also**
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -941,7 +994,30 @@
       :filter-out last message repeated
 
   **See Also**
-    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
+
+----
+
+
+.. _filter_out_statement:
+
+:filter-out-statement *location*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Hide the messages logged by the log statement at the given source file and line, as found in the source added with :add-source-path.  The statement is found again by its function and message each time the source is scanned, so the filter follows it when edits move it; if its message changes or it is removed, the filter does nothing until it is deleted
+
+  **Parameters**
+    * **location\*** --- The source file, as much of its path as is needed to tell it apart, and a line of the statement
+
+  **Examples**
+    To hide the messages logged by the statement on line 42 of Server.java:
+
+    .. code-block::  lnav
+
+      :filter-out-statement com/example/net/Server.java:42
+
+  **See Also**
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -954,7 +1030,7 @@
   Focus the search after the one that is focused now, wrapping around to all of them
 
   **See Also**
-    :ref:`focus_prev_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_prev_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -967,7 +1043,7 @@
   Focus the search before the one that is focused now, wrapping around to all of them
 
   **See Also**
-    :ref:`focus_next_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_next_search`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -990,7 +1066,7 @@
       :focus-search req
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1031,7 +1107,7 @@
       :goto #screenshots
 
   **See Also**
-    :ref:`focus_search`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1043,6 +1119,8 @@
 
   Open the help text view
 
+  **See Also**
+    :ref:`reload_view`, :ref:`switch_to_view`, :ref:`toggle_view`
 
 ----
 
@@ -1071,7 +1149,7 @@
       :hide-fields syslog_log.log_procname
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`set_text_view_mode`, :ref:`show_fields`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_fields`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1086,6 +1164,8 @@
   **Parameters**
     * **path** --- A path or glob pattern that specifies the files to hide
 
+  **See Also**
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`show_file`, :ref:`show_only_this_file`, :ref:`toggle_filtering`
 
 ----
 
@@ -1108,7 +1188,7 @@
       :hide-in-timeline logfile thread
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1137,7 +1217,7 @@
       :hide-lines-after 6am
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
 
@@ -1166,7 +1246,7 @@
       :hide-lines-before 6am
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
 
@@ -1179,7 +1259,7 @@
   Hide lines that have not been bookmarked
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`show_unmarked_lines`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_min_log_level`, :ref:`show_unmarked_lines`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1202,7 +1282,7 @@
       :highlight \d{3,}
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1232,7 +1312,7 @@
       :highlight-field --color=green sc_status ^2.*
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1244,6 +1324,8 @@
 
   Load the latest session state
 
+  **See Also**
+    :ref:`reset_session`, :ref:`save_session`, :ref:`session`
 
 ----
 
@@ -1292,7 +1374,7 @@
   Move to the next position in the location history
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1315,7 +1397,7 @@
       :next-mark error
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+    :ref:`breakpoint`, :ref:`clear_all_sticky_headers`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1338,7 +1420,7 @@
       :next-search-hit req
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_search_hit`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_search_hit`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1351,7 +1433,7 @@
   Move to the next section in the document
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1382,7 +1464,7 @@
       :open dean@host1.example.com:/var/log/syslog.log
 
   **See Also**
-    :ref:`append_to`, :ref:`close`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`close`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1428,7 +1510,7 @@
       :pipe-line-to sed -e 's/foo/bar/g'
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1451,7 +1533,7 @@
       :pipe-to sed -e s/foo/bar/g
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1464,7 +1546,7 @@
   Move to the previous position in the location history
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1487,7 +1569,7 @@
       :prev-mark error
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_sticky_header`
+    :ref:`breakpoint`, :ref:`clear_all_sticky_headers`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1510,7 +1592,7 @@
       :prev-search-hit req
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_search_hit`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_search_hit`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1523,7 +1605,7 @@
   Move to the previous section in the document
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1554,6 +1636,8 @@
 
       :prompt user 'Are you sure? '
 
+  **See Also**
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -1565,6 +1649,8 @@
 
   Quit lnav
 
+  **See Also**
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -1577,7 +1663,7 @@
   Forcefully rebuild file indexes
 
   **See Also**
-    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -1600,7 +1686,7 @@
       :redirect-to /tmp/script-output.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -1612,6 +1698,8 @@
 
   Do a full redraw of the screen
 
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1640,7 +1728,7 @@
       :relative-goto -10%
 
   **See Also**
-    :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`toggle_breakpoint`
 
 ----
 
@@ -1653,7 +1741,7 @@
   Re-run the operation that populated the current view
 
   **See Also**
-    
+    :ref:`help`, :ref:`switch_to_view`, :ref:`toggle_view`
 
 ----
 
@@ -1688,6 +1776,8 @@
 
   Reset the session state, clearing all filters, highlights, and bookmarks
 
+  **See Also**
+    :ref:`load_session`, :ref:`save_session`, :ref:`session`
 
 ----
 
@@ -1699,6 +1789,8 @@
 
   Save the current state as a session
 
+  **See Also**
+    :ref:`load_session`, :ref:`reset_session`, :ref:`session`
 
 ----
 
@@ -1720,6 +1812,8 @@
 
       :session :highlight foobar
 
+  **See Also**
+    :ref:`load_session`, :ref:`reset_session`, :ref:`save_session`
 
 ----
 
@@ -1758,6 +1852,8 @@
 
       :set-min-log-level error
 
+  **See Also**
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -1773,7 +1869,7 @@
     * **mode\*** --- The display mode
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1790,7 +1886,7 @@
     * **cmdline\*** --- The command-line to execute.
 
   **See Also**
-    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`alt_msg`, :ref:`cd`, :ref:`echo`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -1813,7 +1909,7 @@
       :show-fields log_procname
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1828,6 +1924,8 @@
   **Parameters**
     * **path** --- The path or glob pattern that specifies the files to show
 
+  **See Also**
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_file`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -1850,7 +1948,7 @@
       :show-in-timeline logfile thread
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`set_text_view_mode`, :ref:`show_only_in_timeline`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_only_in_timeline`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1863,7 +1961,7 @@
   Show lines that were hidden by the 'hide-lines' commands
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -1886,7 +1984,7 @@
       :show-only-in-timeline opid
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1898,6 +1996,8 @@
 
   Show only the file for the focused line in the view
 
+  **See Also**
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`, :ref:`toggle_filtering`
 
 ----
 
@@ -1910,7 +2010,7 @@
   Show lines that have not been bookmarked
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_min_log_level`, :ref:`toggle_filtering`, :ref:`toggle_sticky_header`
 
 ----
 
@@ -1932,6 +2032,8 @@
 
       :spectrogram sc_bytes
 
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1953,6 +2055,8 @@
 
       :summarize sc_bytes
 
+  **See Also**
+    :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`
 
 ----
 
@@ -1974,6 +2078,8 @@
 
       :switch-to-view schema
 
+  **See Also**
+    :ref:`help`, :ref:`reload_view`, :ref:`toggle_view`
 
 ----
 
@@ -2019,7 +2125,7 @@
       :timeline-metric cpu.cpu_pct
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2043,7 +2149,7 @@
       :timeline-metric-sql rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2055,6 +2161,8 @@
 
   Toggle a breakpoint for the focused line in the LOG view
 
+  **See Also**
+    :ref:`breakpoint`, :ref:`clear_breakpoint`, :ref:`disable_breakpoint`, :ref:`enable_breakpoint`, :ref:`focus_search`, :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -2067,7 +2175,7 @@
   Toggle the filtering flag for the current view
 
   **See Also**
-    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`filter_context`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`set_min_log_level`
 
 ----
 
@@ -2080,7 +2188,7 @@
   Toggle the sticky header state for the focused line in the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`set_text_view_mode`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`zoom_to`
 
 ----
 
@@ -2102,6 +2210,8 @@
 
       :toggle-view schema
 
+  **See Also**
+    :ref:`help`, :ref:`reload_view`, :ref:`switch_to_view`
 
 ----
 
@@ -2123,6 +2233,8 @@
 
       :unix-time 1490191111
 
+  **See Also**
+    :ref:`convert_time_to`, :ref:`current_time`, :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time_buckets_agg`, :ref:`time`, :ref:`timediff`, :ref:`timeslice`, :ref:`timezone`
 
 ----
 
@@ -2169,7 +2281,7 @@
       :write-table-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2193,7 +2305,7 @@
       :write-csv-to /tmp/table.csv
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2208,6 +2320,8 @@
   **Parameters**
     * **path\*** --- The destination path for the debug log
 
+  **See Also**
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2232,7 +2346,7 @@
       :write-html-to /tmp/view.html
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2256,7 +2370,7 @@
       :write-json-cols-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2280,7 +2394,7 @@
       :write-json-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2305,7 +2419,7 @@
       :write-jsonlines-to /tmp/table.json
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2330,7 +2444,7 @@
       :write-raw-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2354,7 +2468,7 @@
       :write-screen-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2378,7 +2492,7 @@
       :write-to /tmp/interesting-lines.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_view_to`, :ref:`xopen`
 
 ----
 
@@ -2402,7 +2516,7 @@
       :write-view-to /tmp/table.txt
 
   **See Also**
-    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`xopen`
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`external_access_login`, :ref:`external_access`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`prompt`, :ref:`quit`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`sh`, :ref:`summarize`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`xopen`
 
 ----
 
@@ -2425,7 +2539,7 @@
       :xopen /path/to/file
 
   **See Also**
-    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`dot_save`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`open`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_debug_log_to`, :ref:`write_html_to`, :ref:`write_json_cols_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -2453,6 +2567,8 @@
 
       :zoom-to +
 
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`
 
 ----
 

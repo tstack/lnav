@@ -461,13 +461,79 @@ all_logs_vtab::schema_body(const shared_buffer_ref& sbr,
     return sbr.to_string_fragment(body);
 }
 
+all_logs_vtab::stmt_lookup
+all_logs_vtab::statement_src_at(logfile& lf, logfile::const_iterator ll)
+{
+    return statement_at(lf, ll, true);
+}
+
+all_logs_vtab::stmt_lookup
+all_logs_vtab::statement_schema_at(logfile& lf, logfile::const_iterator ll)
+{
+    return statement_at(lf, ll, false);
+}
+
+all_logs_vtab::stmt_lookup
+all_logs_vtab::statement_at(logfile& lf,
+                            logfile::const_iterator ll,
+                            bool is_src)
+{
+    const auto line_number = std::distance(lf.cbegin(), ll);
+    const auto stmt = alv_line_stmt != nullptr
+        ? alv_line_stmt(&lf, line_number)
+        : line_stmt{line_stmt_unmapped{}};
+    if (stmt.is<line_stmt_mapped>()) {
+        const auto& mapped = stmt.get<line_stmt_mapped>();
+        if (mapped.lsm_kind != schema_kind::statement
+            || (is_src && mapped.lsm_src == nullptr))
+        {
+            return stmt_lookup_none{};
+        }
+        return std::string(is_src ? *mapped.lsm_src : *mapped.lsm_schema);
+    }
+    if (stmt.is<line_stmt_unmatched>()) {
+        return stmt_lookup_none{};
+    }
+
+#ifdef HAVE_RUST_DEPS
+    // The map hasn't matched this line yet (it's new, or the source was
+    // scanned again since), so match it here.
+    logline_value_vector values;
+    auto& sbr = values.lvv_sbr;
+    lf.read_full_message(ll, sbr);
+    sbr.erase_ansi();
+    string_attrs_t sa;
+    lf.get_format_ptr()->annotate(&lf, line_number, sa, values);
+    auto busy = false;
+    auto find_res
+        = find_statement(sbr, sa, values, ll->get_msg_level(), false, &busy);
+    if (busy) {
+        return stmt_lookup_busy{};
+    }
+    if (find_res == nullptr) {
+        return stmt_lookup_none{};
+    }
+    if (is_src) {
+        return (std::string) find_res->src;
+    }
+    char schema_buf[hasher::STRING_SIZE];
+    statement_schema(string_fragment::from(find_res->src),
+                     string_fragment::from(find_res->pattern),
+                     schema_buf);
+    return std::string(schema_buf);
+#else
+    return stmt_lookup_none{};
+#endif
+}
+
 #ifdef HAVE_RUST_DEPS
 std::unique_ptr<lnav_rs_ext::FindLogResultJson>
 all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
                               const string_attrs_t& sa,
                               const logline_value_vector& values,
                               log_level_t level,
-                              bool extract_variables)
+                              bool extract_variables,
+                              bool* busy)
 {
     if (!sbr.get_metadata().m_valid_utf) {
         return nullptr;
@@ -495,6 +561,15 @@ all_logs_vtab::find_statement(const shared_buffer_ref& sbr,
     auto find_options = lnav_rs_ext::FindLogOptions{
         .extract_variables = extract_variables,
     };
+    if (busy != nullptr) {
+        return lnav_rs_ext::try_find_log_statement_json(
+            file_rust_str,
+            lineno,
+            to_stmt_level(level),
+            rust::Str(body_sf.data(), body_sf.length()),
+            find_options,
+            *busy);
+    }
     return lnav_rs_ext::find_log_statement_json(
         file_rust_str,
         lineno,

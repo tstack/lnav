@@ -12,10 +12,12 @@
         "thread-id-field": "thread",
         "value": {
             "module": {
+                "description": "The OpenAM component that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "thread": {
+                "description": "The thread that logged the message",
                 "kind": "string",
                 "identifier": true
             }

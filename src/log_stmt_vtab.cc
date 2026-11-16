@@ -64,6 +64,7 @@ struct log_stmt_table {
 -- The source_log_stmt() table-valued function allows you to query
 -- the log statements that were extracted from source code added
 -- by the :add-source-path command.
+-- Tags: source
 CREATE TABLE lnav_db.source_log_stmt (
     begin_line INTEGER,
     end_line INTEGER,
@@ -224,10 +225,12 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     }
 
     // While log2src scans the source, it holds its statements' lock to write
-    // them, so reading them here would block lnav's main loop until the scan
-    // is done.  Say so instead; the statements can be asked for again once the
-    // scan is done.
-    if (lnav_rs_ext::get_status().status == lnav_rs_ext::Status::working) {
+    // them, so waiting to read them here would block lnav's main loop until
+    // the scan is done.  Say so instead; the statements can be asked for
+    // again once the scan is done.
+    auto busy = false;
+    auto stmts = lnav_rs_ext::try_get_log_statements_for(path, busy);
+    if (busy) {
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
             "the source is being scanned (:add-source-path); its log statements "
             "are available once that's done");
@@ -235,7 +238,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     }
 
     pCur->c_path = path;
-    pCur->c_stmts = lnav_rs_ext::get_log_statements_for(path);
+    pCur->c_stmts = std::move(stmts);
 
     return SQLITE_OK;
 }

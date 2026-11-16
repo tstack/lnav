@@ -88,6 +88,7 @@ struct xpath_vtab {
     static constexpr const char* NAME = "xpath";
     static constexpr const char* CREATE_STMT = R"(
 -- The xpath() table-valued function allows you to execute an xpath expression
+-- Tags: xml
 CREATE TABLE xpath (
     result text,        -- The result of the xpath expression
     node_path text,     -- The absolute path to the node selected by the expression

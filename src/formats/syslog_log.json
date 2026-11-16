@@ -56,10 +56,12 @@
                 "description": "The combination of the procname and pid"
             },
             "log_msgid": {
+                "description": "The type of the message (RFC 5424's MSGID)",
                 "kind": "string",
                 "identifier": true
             },
             "log_struct": {
+                "description": "The message's structured data (RFC 5424's STRUCTURED-DATA)",
                 "kind": "struct"
             }
         },

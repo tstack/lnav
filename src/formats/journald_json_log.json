@@ -54,29 +54,36 @@
         "body-field": "MESSAGE",
         "value": {
             "__REALTIME_TIMESTAMP": {
+                "description": "The time the journal received the message, in microseconds since the epoch",
                 "kind": "integer"
             },
             "__MONOTONIC_TIMESTAMP": {
+                "description": "The microseconds since the system booted when the journal received the message",
                 "kind": "integer"
             },
             "_SYSTEMD_UNIT": {
+                "description": "The systemd unit the process belongs to",
                 "kind": "string",
                 "identifier": true
             },
             "SYSLOG_IDENTIFIER": {
+                "description": "The name the program logged under",
                 "kind": "string",
                 "identifier": true
             },
             "_PID": {
+                "description": "The ID of the process that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "PRIORITY": {
+                "description": "The message's syslog priority: 0 emerg to 7 debug",
                 "kind": "string",
                 "identifier": true,
                 "foreign-key": true
             },
             "MESSAGE": {
+                "description": "The message",
                 "kind": "string"
             }
         }

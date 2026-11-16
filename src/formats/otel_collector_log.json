@@ -60,46 +60,57 @@
         "hide-extra": true,
         "value": {
             "observed_ns": {
+                "description": "The time the collector observed the message, in nanoseconds since the epoch",
                 "kind": "string",
                 "hidden": true
             },
             "severity_number": {
+                "description": "The message's severity as an OpenTelemetry number, from 1 (trace) to 24 (fatal)",
                 "kind": "integer",
                 "identifier": true
             },
             "severity": {
+                "description": "The message's severity",
                 "kind": "string",
                 "identifier": true
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             },
             "trace_id": {
+                "description": "The ID of the trace the message is part of",
                 "kind": "string",
                 "identifier": true
             },
             "span_id": {
+                "description": "The ID of the span the message is part of",
                 "kind": "string",
                 "identifier": true
             },
             "flags": {
+                "description": "The trace flags",
                 "kind": "integer",
                 "hidden": true
             },
             "scope_name": {
+                "description": "The name of the instrumentation scope, usually the logger's",
                 "kind": "string",
                 "identifier": true
             },
             "service.name": {
+                "description": "The name of the service that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "host.name": {
+                "description": "The host the service ran on",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "deployment.environment": {
+                "description": "The environment the service was deployed to",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true

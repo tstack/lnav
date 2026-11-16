@@ -1,0 +1,4 @@
+log_body
+client 10.0.0.1 is slow
+type,language,pattern
+in,statement,{test_dir}/hide-stmt-src/com/example/net/Server.java:15@3089d4c38cc0

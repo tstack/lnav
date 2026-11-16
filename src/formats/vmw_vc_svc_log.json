@@ -56,20 +56,25 @@
         },
         "value": {
             "body": {
+                "description": "The message",
                 "kind": "string"
             },
             "opid": {
+                "description": "The ID of the operation the message is about",
                 "kind": "string"
             },
             "srcfile": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "srcline": {
+                "description": "The line in the source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "module": {
+                "description": "The service that logged the message",
                 "kind": "string",
                 "identifier": true
             }

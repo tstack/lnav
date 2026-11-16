@@ -166,19 +166,51 @@ public:
     static string_fragment schema_body(const shared_buffer_ref& sbr,
                                        const string_attrs_t& sa);
 
+    /** The message has no statement. */
+    struct stmt_lookup_none {};
+    /**
+     * A source scan holds log2src's statements, so the message couldn't be
+     * matched without waiting for it to finish.
+     */
+    struct stmt_lookup_busy {};
+    /** What a statement lookup found: none, busy, or the string asked for. */
+    using stmt_lookup = mapbox::util::
+        variant<stmt_lookup_none, stmt_lookup_busy, std::string>;
+
+    /**
+     * The log_msg_schema of the message at [ll] when log2src matched it to a
+     * log statement.  From the statement map when it has the line, else by
+     * reading the message and matching it, as all_logs does for a row the
+     * map doesn't know.  Never waits for a source scan: busy while one runs
+     * and the map doesn't have the line.  Safe to call from the filter
+     * threads, which don't run while the map changes.
+     */
+    static stmt_lookup statement_schema_at(logfile& lf,
+                                           logfile::const_iterator ll);
+
+    /**
+     * log2src's description of the statement that logged the message at [ll]
+     * (JSON, like log_msg_src), found like statement_schema_at().
+     */
+    static stmt_lookup statement_src_at(logfile& lf,
+                                        logfile::const_iterator ll);
+
 #ifdef HAVE_RUST_DEPS
     /**
      * Finds the source statement that logged a message, or nullptr.  The
      * sbr is the message, sa and values are what the format's annotate()
      * gave for it, and level is the message's level, which breaks ties
-     * between statements that match equally well.
+     * between statements that match equally well.  With [busy], it doesn't
+     * wait for a source scan: while one runs, it sets *busy and returns
+     * nullptr.
      */
     static std::unique_ptr<lnav_rs_ext::FindLogResultJson> find_statement(
         const shared_buffer_ref& sbr,
         const string_attrs_t& sa,
         const logline_value_vector& values,
         log_level_t level,
-        bool extract_variables);
+        bool extract_variables,
+        bool* busy = nullptr);
 
     /**
      * The level of a message as log2src tells them apart.  The levels it
@@ -191,6 +223,11 @@ public:
 #endif
 
 private:
+    /** statement_src_at() with [is_src], else statement_schema_at(). */
+    static stmt_lookup statement_at(logfile& lf,
+                                    logfile::const_iterator ll,
+                                    bool is_src);
+
     logline_value_meta alv_msg_meta;
     logline_value_meta alv_schema_meta;
     logline_value_meta alv_values_meta;

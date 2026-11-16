@@ -14,25 +14,31 @@
         },
         "value": {
             "dir": {
+                "description": "The direction of the message: ---> sent, <--- received",
                 "kind": "string"
             },
             "type": {
+                "description": "The type of the message: C command, R result, E event, P progress, N unknown command",
                 "kind": "string",
                 "identifier": true
             },
             "token": {
+                "description": "The token that pairs a command with its result",
                 "kind": "string",
                 "identifier": true
             },
             "service": {
+                "description": "The service the message is for",
                 "kind": "string",
                 "identifier": true
             },
             "name": {
+                "description": "The name of the command or event",
                 "kind": "string",
                 "identifier": true
             },
             "msg": {
+                "description": "The arguments or results of the message",
                 "kind": "json"
             }
         },

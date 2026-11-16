@@ -71,48 +71,59 @@
         },
         "value": {
             "ClientIP": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "identifier": true
             },
             "ClientRequestMethod": {
+                "description": "The request method",
                 "kind": "string"
             },
             "ClientRequestURI": {
+                "description": "The request URI",
                 "kind": "string",
                 "identifier": true
             },
             "EdgeEndTimestamp": {
+                "description": "The time the edge finished sending the response to the client",
                 "kind": "string",
                 "hidden": true
             },
             "EdgeResponseBytes": {
+                "description": "The size of the response the edge sent to the client, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "EdgeResponseStatus": {
+                "description": "The HTTP status code the edge returned to the client",
                 "kind": "integer"
             },
             "EdgeStartTimestamp": {
+                "description": "The time the edge received the request",
                 "hidden": true,
                 "kind": "string"
             },
             "RayID": {
+                "description": "The ID of the request (the Cf-Ray header)",
                 "kind": "string",
                 "identifier": true,
                 "foreign-key": true,
                 "hidden": true
             },
             "CacheCacheStatus": {
+                "description": "Whether the response came from the cache: hit, miss, expired, and so on",
                 "kind": "string",
                 "hidden": true
             },
             "CacheTieredFill": {
+                "description": "Whether the response was filled from a tiered cache",
                 "kind": "json",
                 "hidden": true
             },
             "CacheResponseBytes": {
+                "description": "The size of the response from the cache, in bytes",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -120,22 +131,27 @@
                 }
             },
             "CacheResponseStatus": {
+                "description": "The HTTP status code the cache returned",
                 "kind": "integer",
                 "hidden": true
             },
             "FirewallMatchesActions": {
+                "description": "The actions the firewall took for the rules the request matched",
                 "kind": "json",
                 "hidden": true
             },
             "FirewallMatchesRuleIDs": {
+                "description": "The IDs of the firewall rules the request matched",
                 "kind": "json",
                 "hidden": true
             },
             "FirewallMatchesSources": {
+                "description": "The firewall products whose rules the request matched",
                 "kind": "json",
                 "hidden": true
             },
             "OriginResponseBytes": {
+                "description": "The size of the origin's response, in bytes",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -143,6 +159,7 @@
                 }
             },
             "OriginResponseDurationMs": {
+                "description": "The milliseconds from sending the request to the origin to receiving its response",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -151,14 +168,17 @@
                 }
             },
             "OriginResponseHTTPExpires": {
+                "description": "The origin response's Expires header",
                 "kind": "string",
                 "hidden": true
             },
             "OriginResponseHTTPLastModified": {
+                "description": "The origin response's Last-Modified header",
                 "kind": "string",
                 "hidden": true
             },
             "OriginResponseHeaderReceiveDurationMs": {
+                "description": "The milliseconds it took to receive the origin's response headers",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -167,10 +187,12 @@
                 }
             },
             "OriginResponseStatus": {
+                "description": "The HTTP status code the origin returned",
                 "kind": "integer",
                 "hidden": true
             },
             "OriginResponseTime": {
+                "description": "The time it took the origin to respond",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -179,6 +201,7 @@
                 }
             },
             "OriginDNSResponseTimeMs": {
+                "description": "The milliseconds it took to resolve the origin's name",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -187,10 +210,12 @@
                 }
             },
             "OriginIP": {
+                "description": "The IP address of the origin server",
                 "kind": "string",
                 "hidden": true
             },
             "OriginRequestHeaderSendDurationMs": {
+                "description": "The milliseconds it took to send the request headers to the origin",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -199,10 +224,12 @@
                 }
             },
             "OriginSSLProtocol": {
+                "description": "The SSL protocol used to connect to the origin",
                 "kind": "string",
                 "hidden": true
             },
             "OriginTCPHandshakeDurationMs": {
+                "description": "The milliseconds the TCP handshake with the origin took",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -211,6 +238,7 @@
                 }
             },
             "OriginTLSHandshakeDurationMs": {
+                "description": "The milliseconds the TLS handshake with the origin took",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -219,46 +247,57 @@
                 }
             },
             "WAFAction": {
+                "description": "The action the web application firewall took",
                 "kind": "string",
                 "hidden": true
             },
             "WAFFlags": {
+                "description": "Flags for the web application firewall's processing of the request",
                 "kind": "string",
                 "hidden": true
             },
             "WAFMatchedVar": {
+                "description": "The part of the request that matched a web application firewall rule",
                 "kind": "string",
                 "hidden": true
             },
             "WAFProfile": {
+                "description": "The web application firewall profile, like low, medium, or high",
                 "kind": "string",
                 "hidden": true
             },
             "WAFRuleID": {
+                "description": "The ID of the web application firewall rule that matched",
                 "kind": "string",
                 "hidden": true
             },
             "WAFRuleMessage": {
+                "description": "The message of the web application firewall rule that matched",
                 "kind": "string",
                 "hidden": true
             },
             "ClientASN": {
+                "description": "The autonomous system number of the client",
                 "kind": "integer",
                 "hidden": true
             },
             "ClientCountry": {
+                "description": "The client's country, by its IP address",
                 "kind": "string",
                 "hidden": true
             },
             "ClientDeviceType": {
+                "description": "The client's device type",
                 "kind": "string",
                 "hidden": true
             },
             "ClientIPClass": {
+                "description": "The class of the client's IP address, like clean or badHost",
                 "kind": "string",
                 "hidden": true
             },
             "ClientRequestBytes": {
+                "description": "The size of the client's request, in bytes",
                 "kind": "integer",
                 "hidden": true,
                 "unit": {
@@ -266,24 +305,30 @@
                 }
             },
             "ClientRequestPath": {
+                "description": "The path of the request URI",
                 "kind": "integer",
                 "identifier": true,
                 "hidden": true
             },
             "ClientRequestProtocol": {
+                "description": "The request's HTTP version",
                 "kind": "string"
             },
             "ClientRequestUserAgent": {
+                "description": "The request's User-Agent header",
                 "kind": "string"
             },
             "ClientRequestReferer": {
+                "description": "The request's Referer header",
                 "kind": "string"
             },
             "ClientRequestScheme": {
+                "description": "The request's scheme, http or https",
                 "kind": "string",
                 "hidden": true
             },
             "ClientRequestSource": {
+                "description": "Where the request came from, like eyeball (a client) or a worker",
                 "kind": "string",
                 "hidden": true
             }

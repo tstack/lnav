@@ -14,20 +14,25 @@
         "src-line-field": "src_line",
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "src_file": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "src_line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "foreign-key": true
             },
             "context": {
+                "description": "The fields logged with the message",
                 "kind": "json"
             },
             "stacktrace": {
+                "description": "The stack trace logged with the message",
                 "kind": "string"
             }
         },

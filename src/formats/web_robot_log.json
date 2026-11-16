@@ -44,43 +44,53 @@
         ],
         "value": {
             "ip": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string",
                 "hidden": true
             },
             "method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "resource": {
+                "description": "The requested resource",
                 "kind": "string",
                 "identifier": true
             },
             "response": {
+                "description": "The response's HTTP status code",
                 "kind": "integer",
                 "foreign-key": true
             },
             "bytes": {
+                "description": "The size of the response, in bytes",
                 "kind": "integer"
             },
             "referrer": {
+                "description": "The request's Referer header",
                 "kind": "string",
                 "identifier": true
             },
             "request": {
+                "description": "The request line",
                 "kind": "string",
                 "hidden": true
             },
             "request-id": {
+                "description": "The ID of the request",
                 "kind": "string",
                 "hidden": true,
                 "identifier": true
             },
             "useragent": {
+                "description": "The request's User-Agent header",
                 "kind": "string"
             }
         }

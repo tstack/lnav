@@ -10,10 +10,12 @@
         },
         "value": {
             "thread": {
+                "description": "The ID of the connection thread",
                 "kind": "string",
                 "identifier": true
             },
             "command": {
+                "description": "The type of command, like Connect, Query, or Quit",
                 "kind": "string",
                 "identifier": true
             }

@@ -31,33 +31,40 @@
         "hide-extra": true,
         "value": {
             "activityIdentifier": {
+                "description": "The ID of the activity the message is part of",
                 "kind": "integer",
                 "identifier": true,
                 "hidden": true
             },
             "messageType": {
+                "description": "The message's type, like Default, Info, Debug, Error, or Fault",
                 "kind": "string",
                 "hidden": true
             },
             "threadID": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "processID": {
+                "description": "The ID of the process that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "processImagePath": {
+                "description": "The path of the process's executable",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "senderImagePath": {
+                "description": "The path of the library or executable that logged the message",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "traceID": {
+                "description": "The ID of the trace the message is part of",
                 "kind": "integer",
                 "identifier": true,
                 "hidden": true

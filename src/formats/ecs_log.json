@@ -36,64 +36,80 @@
         ],
         "value": {
             "@timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             },
             "log.level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "message": {
+                "description": "The message",
                 "kind": "string"
             },
             "log/logger": {
+                "description": "The name of the logger",
                 "kind": "string",
                 "identifier":true
             },
             "ecs.version": {
+                "description": "The version of the Elastic Common Schema the message follows",
                 "kind": "integer",
                 "hidden": true
             },
             "log/origin/file/name": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "hidden": true
             },
             "log/origin/file/line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "hidden": true
             },
             "log/origin/function": {
+                "description": "The function that logged the message",
                 "kind": "string",
                 "hidden": true
             },
             "error/type": {
+                "description": "The type of the error, like the exception's class",
                 "kind": "string",
                 "hidden": true
             },
             "error/message": {
+                "description": "The error's message",
                 "kind": "string",
                 "hidden": true
             },
             "error/stack_trace": {
+                "description": "The error's stack trace",
                 "kind": "string",
                 "hidden": true
             },
             "log/original": {
+                "description": "The message as it was originally logged",
                 "kind": "string",
                 "hidden": true
             },
             "process/name": {
+                "description": "The name of the process",
                 "kind": "string",
                 "hidden": true,
                 "identifier":true
             },
             "process/pid": {
+                "description": "The ID of the process",
                 "kind": "integer",
                 "hidden": true
             },
             "process/thread/id": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "integer",
                 "hidden": true
             },
             "process/thread/name": {
+                "description": "The name of the thread that logged the message",
                 "kind": "string",
                 "hidden": true
             }

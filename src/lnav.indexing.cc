@@ -32,6 +32,7 @@
 
 #include "lnav.indexing.hh"
 
+#include "all_logs_vtab.hh"
 #include "bound_tags.hh"
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
@@ -39,6 +40,7 @@
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_util.hh"
+#include "statement_filter.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace std::chrono_literals;
@@ -511,6 +513,34 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     }
     if (!closed_files.empty()) {
         lnav_data.ld_active_files.close_files(closed_files);
+    }
+
+    // After a source scan, find the hidden statements again: edits move them,
+    // and change the schema of their messages.
+    {
+        auto check_res = lnav::statement_filters::check(lss.get_filters());
+        if (!check_res.cr_changed.empty()) {
+            log_info("%zu hidden statements changed after a source scan",
+                     check_res.cr_changed.size());
+            // Their answers changed for lines already filtered.
+            for (const auto index : check_res.cr_changed) {
+                lss.invalidate_filter(index);
+            }
+            // Have all_logs look at log2src's status again, so it doesn't take
+            // a schema from the statement map that's from before the scan.
+            if (all_logs_vtab::alv_scan_started != nullptr) {
+                all_logs_vtab::alv_scan_started();
+            }
+            lss.text_filters_changed();
+            lnav_data.ld_filter_view.reload_data();
+        }
+        for (const auto& um : check_res.cr_messages) {
+            if (is_headless) {
+                lnav::console::print(stderr, um);
+            } else {
+                show_user_message(um.to_attr_line());
+            }
+        }
     }
 
     // log_trace("rebuilding logs indexes");

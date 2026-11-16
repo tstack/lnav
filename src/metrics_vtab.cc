@@ -61,6 +61,7 @@ struct metrics_vtab {
 -- Each (file, row, column) combination produces one virtual row, so
 -- queries can filter by metric name without knowing which CSV file
 -- carried the value.
+-- Tags: display
 CREATE TABLE lnav_db.all_metrics (
     log_line INTEGER,         -- The line number in the LOG view of the
                               -- sample row (shared across all metrics at

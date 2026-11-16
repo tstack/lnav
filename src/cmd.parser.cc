@@ -349,6 +349,7 @@ parse_for(mode_t mode,
                     case help_parameter_format_t::HPF_HIDDEN_FILES:
                     case help_parameter_format_t::HPF_BREAKPOINT:
                     case help_parameter_format_t::HPF_KNOWN_BREAKPOINT:
+                    case help_parameter_format_t::HPF_LOG_STATEMENT:
                     case help_parameter_format_t::HPF_KNOWN_APP:
                     case help_parameter_format_t::HPF_TIMELINE_METRIC:
                     case help_parameter_format_t::HPF_ACTIVE_TIMELINE_METRIC:

@@ -301,6 +301,7 @@ struct lnav_apps_vtab {
     static constexpr const char* NAME = "lnav_apps";
     static constexpr const char* CREATE_STMT = R"(
 -- The apps installed in the lnav configuration directories.
+-- Tags: scripting
 CREATE TABLE lnav_db.lnav_apps (
     name TEXT PRIMARY KEY, -- The app's name, as publisher/app.
     description TEXT,      -- What the app does.

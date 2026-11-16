@@ -13,16 +13,20 @@
         },
         "value": {
             "context": {
+                "description": "The context data logged with the message",
                 "kind": "json"
             },
             "env": {
+                "description": "The application's environment, like local or production",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

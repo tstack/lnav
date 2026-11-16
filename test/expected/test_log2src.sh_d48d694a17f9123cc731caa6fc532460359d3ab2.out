@@ -1,0 +1,6 @@
+log_body
+constructing server on port 8080
+handling request from 10.0.0.1
+inner worker failed
+type,language,pattern
+out,statement,{test_dir}/hide-stmt-src/com/example/net/Server.java:15@3089d4c38cc0

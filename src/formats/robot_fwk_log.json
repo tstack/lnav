@@ -17,9 +17,11 @@
         "opid-field": "opid",
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

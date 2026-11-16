@@ -13,13 +13,16 @@
         },
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "module": {
+                "description": "The module path that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

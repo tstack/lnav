@@ -10,20 +10,25 @@
         },
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "level_char": {
+                "description": "The first letter of the message's level",
                 "kind": "string"
             },
             "pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "reqid": {
+                "description": "The ID of the request the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

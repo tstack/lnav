@@ -350,6 +350,7 @@ noinst_HEADERS = \
 	log_search_table.hh \
 	log_search_table_fwd.hh \
 	log_stmt_vtab.hh \
+	statement_filter.hh \
 	logfile.hh \
 	logfile.cfg.hh \
 	logfile_fwd.hh \
@@ -579,6 +580,7 @@ libdiag_a_SOURCES = \
 	log_level_re.cc \
 	log_search_table.cc \
 	log_stmt_vtab.cc \
+	statement_filter.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
 	logline_window.cc \

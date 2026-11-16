@@ -50,10 +50,12 @@
                 "description": "The dialplan extension of a message logged by the Log() application"
             },
             "function": {
+                "description": "The function that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level, like NOTICE, WARNING, or ERROR",
                 "kind": "string"
             },
             "priority": {
@@ -62,10 +64,12 @@
                 "description": "The dialplan priority of a message logged by the Log() application"
             },
             "src_file": {
+                "description": "The Asterisk source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "src_line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "foreign-key": true
             },
@@ -75,6 +79,7 @@
                 "description": "The ID of the thread that logged the message"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

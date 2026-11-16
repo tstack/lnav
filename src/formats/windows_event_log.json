@@ -26,91 +26,117 @@
         ],
         "value": {
             "Message": {
+                "description": "The event's message",
                 "kind": "string"
             },
             "Id": {
+                "description": "The ID of the kind of event",
                 "kind": "integer",
                 "identifier": true
             },
             "Version": {
+                "description": "The version of the event's definition",
                 "kind": "integer"
             },
             "Qualifiers": {
+                "description": "The qualifiers of the event's ID",
                 "kind": "integer"
             },
             "Level": {
+                "description": "The event's level as a number: 1 critical, 2 error, 3 warning, 4 information, 5 verbose",
                 "kind": "integer"
             },
             "Task": {
+                "description": "The ID of the event's task category",
                 "kind": "integer"
             },
             "Opcode": {
+                "description": "The ID of the event's operation code",
                 "kind": "integer"
             },
             "Keywords": {
+                "description": "The event's keywords as a bit mask",
                 "kind": "string"
             },
             "RecordId": {
+                "description": "The number of the event in its log",
                 "kind": "integer",
                 "foreign-key": true
             },
             "ProviderName": {
+                "description": "The name of the event's provider",
                 "kind": "string",
                 "identifier": true
             },
             "ProviderId": {
+                "description": "The ID of the event's provider",
                 "kind": "string"
             },
             "LogName": {
+                "description": "The name of the log the event is in",
                 "kind": "string",
                 "identifier": true
             },
             "ProcessId": {
+                "description": "The ID of the process that logged the event",
                 "kind": "integer",
                 "identifier": true
             },
             "ThreadId": {
+                "description": "The ID of the thread that logged the event",
                 "kind": "integer",
                 "identifier": true
             },
             "MachineName": {
+                "description": "The computer the event happened on",
                 "kind": "string",
                 "identifier": true
             },
             "UserId": {
+                "description": "The security ID of the user the event is about",
                 "kind": "string",
                 "identifier": true
             },
             "TimeCreated": {
+                "description": "The time the event happened",
                 "kind": "string"
             },
             "ActivityId": {
+                "description": "The ID of the activity the event is part of",
                 "kind": "string",
                 "identifier": true
             },
             "RelatedActivityId": {
+                "description": "The ID of a related activity",
                 "kind": "string",
                 "identifier": true
             },
             "ContainerLog": {
+                "description": "The log file or channel the event was read from",
                 "kind": "string"
             },
             "MatchedQueryIds": {
+                "description": "The IDs of the queries the event matched",
                 "kind": "string"
             },
             "Bookmark": {
+                "description": "The bookmark for resuming reading after the event",
                 "kind": "string"
             },
             "LevelDisplayName": {
+                "description": "The event's level",
                 "kind": "string"
             },
             "OpcodeDisplayName": {
+                "description": "The event's operation code",
                 "kind": "string"
             },
             "TaskDisplayName": {
+                "description": "The event's task category",
                 "kind": "string"
             },
             "KeywordsDisplayNames": {
+                "description": "The event's keywords",
                 "kind": "string"
             }
         }

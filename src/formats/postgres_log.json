@@ -34,43 +34,54 @@
         },
         "value": {
             "level": {
+                "description": "The message's level, like LOG, WARNING, or ERROR",
                 "kind": "string"
             },
             "pid": {
+                "description": "The ID of the backend process",
                 "kind": "string",
                 "identifier": true
             },
             "host": {
+                "description": "The client's host",
                 "kind": "string",
                 "identifier": true
             },
             "user": {
+                "description": "The database user",
                 "kind": "string",
                 "identifier": true
             },
             "db_name": {
+                "description": "The database",
                 "kind": "string",
                 "identifier": true
             },
             "app": {
+                "description": "The client's application name",
                 "kind": "string",
                 "identifier": true
             },
             "client": {
+                "description": "The client's address",
                 "kind": "string",
                 "identifier": true
             },
             "session_line": {
+                "description": "The number of the message within the session",
                 "kind": "string"
             },
             "duration": {
+                "description": "The milliseconds the statement took",
                 "kind": "string",
                 "collate": "measure_with_units"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             },
             "query_id": {
+                "description": "The ID of the query",
                 "kind": "string",
                 "identifier": true
             }

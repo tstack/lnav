@@ -11,13 +11,16 @@
         },
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "logger_name": {
+                "description": "The category of the logger that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "millis_since_start": {
+                "description": "The milliseconds since the IDE started",
                 "kind": "integer"
             }
         },

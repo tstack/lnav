@@ -82,6 +82,7 @@ struct lnav_log_breakpoints : tvt_iterator_cursor<lnav_log_breakpoints> {
     static constexpr const char* NAME = "lnav_log_breakpoints";
     static constexpr const char* CREATE_STMT = R"(
 -- Access lnav's log breakpoints through this table.
+-- Tags: breakpoints
 CREATE TABLE lnav_db.lnav_log_breakpoints (
     schema_id TEXT NOT NULL,                    -- The schema identifier for the breakpoint.  Matches the log_msg_schema in the all_logs table.
     description TEXT NOT NULL,                  -- A human-readable description of the breakpoint (e.g. format:file:line).

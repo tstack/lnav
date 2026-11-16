@@ -11,21 +11,26 @@
         "thread-id-field": "thread",
         "value": {
             "thread": {
+                "description": "The thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "myid": {
+                "description": "The ID of the ZooKeeper server",
                 "kind": "integer",
                 "identifier": true
             },
             "logger": {
+                "description": "The class that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "line_number": {
+                "description": "The line in the class's source that logged the message",
                 "kind": "integer",
                 "foreign-key": true
             }

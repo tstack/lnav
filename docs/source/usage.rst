@@ -404,6 +404,43 @@ or by doing an :code:`INSERT` into the
 :ref:`lnav_view_filters<table_lnav_view_filters>` table.
 
 
+Log Statement
+^^^^^^^^^^^^^
+
+Once **lnav** knows the source code that wrote the logs (see
+:ref:`:add-source-path<add_source_path>`), the messages logged by a log
+statement can be filtered by giving the statement's source file and line:
+:ref:`:filter-out-statement<filter_out_statement>` hides them and
+:ref:`:filter-in-statement<filter_in_statement>` shows only them, along with
+whatever other "in" filters match, like
+:code:`:filter-out-statement com/example/net/Server.java:42`.  Unlike a
+pattern, this filters exactly that statement's messages, whatever values they
+have, and none of another statement's.  At the prompt, the focused message's
+statement is suggested, and pressing :kbd:`TAB` lists the statements of the
+messages on the screen.  In the filters panel, :kbd:`Shift` + :kbd:`i` and
+:kbd:`Shift` + :kbd:`o` create these filters too.
+
+The filter follows the statement through edits to its file: each time the
+source is scanned again, the statement is found by its function and message,
+and the filter takes its new line.  If it can't be found, because its message
+was changed or it was removed, the filter is shown as not found, takes no part
+in filtering, and a message says why, rather than another statement being
+filtered instead.  Until the source has been scanned, as when a session is
+restored at startup, the filter waits for it and takes no part in filtering
+either, so an "in" filter never hides everything.
+
+The filter is listed with the others, and
+:ref:`:delete-filter<delete_filter>`, :ref:`:disable-filter<disable_filter>`,
+and :ref:`:enable-filter<enable_filter>` take the statement's location too:
+where the statement is now (as much of the path as tells it apart), or, for
+one that can't be found, the location its filter shows.  In the
+:ref:`lnav_view_filters<table_lnav_view_filters>` table, its
+:code:`language` is :code:`statement` and its :code:`pattern` is the file and
+line with an identifier for the statement, like
+:code:`/src/com/example/net/Server.java:42@3089d4c38cc0`, which is what lets a
+saved session find the same statement after the file has changed.
+
+
 SQLite Expression
 ^^^^^^^^^^^^^^^^^
 

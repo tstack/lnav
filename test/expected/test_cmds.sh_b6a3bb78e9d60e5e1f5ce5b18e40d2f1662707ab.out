@@ -716,7 +716,8 @@ For support questions, email:
   messages
 [4mParameter[0m
   [4mpath[0m   The path to the source code to index
-
+[4mSee Also[0m
+  
 
 [4m:[0m[1;4madjust-log-time[0m[4m [0m[4mtimestamp[0m
 ══════════════════════════════════════════════════════════════════════
@@ -725,7 +726,10 @@ For support questions, email:
 [4mParameter[0m
   [4mtimestamp[0m   The new timestamp for the focused line in
               the view
-
+[4mSee Also[0m
+  [1m:clear-adjusted-log-time[0m, [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, 
+  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
+  [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To set the focused timestamp to a given date:
    [37m[40m:[0m[1m[36m[40madjust-log-time[0m[37m[40m 2017-01-02T05:33:00              [0m
@@ -743,8 +747,8 @@ For support questions, email:
   [4mmsg[0m   The message to display
 [4mSee Also[0m
   [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -766,10 +770,10 @@ For support questions, email:
   [4mpath[0m   The path to the file to append to
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, 
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To append marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m {TMPDIR}interesting-lines.txt             [0m
@@ -784,7 +788,11 @@ For support questions, email:
   [4mpoint[0m   The file and line number of the breakpoint.  If
           the format is different from the currently focused one, the
           format name should be used as the prefix
-
+[4mSee Also[0m
+  [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, [1m:enable-breakpoint[0m, 
+  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 [4mExample[0m
 #1 To set a breakpoint for a log message at foo.cc:32:
    [37m[40m:[0m[1m[36m[40mbreakpoint[0m[37m[40m foo.cc:32                             [0m
@@ -798,22 +806,26 @@ For support questions, email:
   [4mdir[0m   The new current directory
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1;4mclear-adjusted-log-time[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the adjusted time for the focused line in the view
-
+[4mSee Also[0m
+  [1m:adjust-log-time[0m, [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, 
+  [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, 
+  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 
 [4m:[0m[1;4mclear-all-sticky-headers[0m
 ══════════════════════════════════════════════════════════════════════
   Clear all sticky header bookmarks in the current view
 [4mSee Also[0m
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -821,7 +833,10 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The glob pattern to use when matching the
             breakpoint definition of the format <format>:<file>:<line>
-
+[4mSee Also[0m
+  [1m:breakpoint[0m, [1m:disable-breakpoint[0m, [1m:enable-breakpoint[0m, [1m:focus-search[0m, 
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 [4mExample[0m
 #1 To clear all breakpoints:
    [37m[40m:[0m[1m[36m[40mclear-breakpoint[0m[37m[40m *                               [0m
@@ -850,7 +865,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-expr[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:toggle-filtering[0m
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 
 [4m:[0m[1;4mclear-highlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
@@ -860,7 +875,8 @@ For support questions, email:
             :highlight
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, 
+  [1m:zoom-to[0m
 [4mExample[0m
 #1 To clear the highlight with the pattern 'foobar':
    [37m[40m:[0m[1m[36m[40mclear-highlight[0m[37m[40m foobar                           [0m
@@ -874,7 +890,8 @@ For support questions, email:
   [4mfield[0m   The name of highlighted field
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:highlight-field[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:highlight-field[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To clear the highlights for the 'sc_status' field:
    [37m[40m:[0m[1m[36m[40mclear-highlight-field[0m[37m[40m sc_status                  [0m
@@ -900,9 +917,9 @@ For support questions, email:
 [4mParameter[0m
   [4mlabel[0m   The label of the metric to remove
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:timeline-metric[0m, [1m:timeline-metric-sql[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:timeline-metric[0m, 
+  [1m:timeline-metric-sql[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mclose[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
@@ -912,10 +929,10 @@ For support questions, email:
          close
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1;4mcomment[0m[4m [0m[4mtext[0m
 ══════════════════════════════════════════════════════════════════════
@@ -956,7 +973,10 @@ For support questions, email:
   Convert the focused timestamp to the given timezone
 [4mParameter[0m
   [4mzone[0m   The timezone name
-
+[4mSee Also[0m
+  [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, 
+  [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 
 [4m:[0m[1;4mcreate-logline-table[0m[4m [0m[4mtable-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -965,7 +985,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name for the new table
 [4mSee Also[0m
-  [1m:create-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:create-search-table[0m, [1m:summarize[0m, [1m:write-csv-to[0m, [1m:write-json-cols-to[0m, 
   [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1000,7 +1020,7 @@ For support questions, email:
                the table columns.  If not given, the current search
                pattern is used.
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:delete-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:create-logline-table[0m, [1m:delete-search-table[0m, [1m:summarize[0m, [1m:write-csv-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1014,19 +1034,31 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Print the current time in human-readable form and seconds since
   the epoch
-
+[4mSee Also[0m
+  [1m:convert-time-to[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, 
+  [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 
 [4m:[0m[1;4mdelete-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Delete the filter created with ':filter-in' or ':filter-out'
+  Delete the filter created with ':filter-in' or ':filter-out', or
+  ':filter-in-statement' or ':filter-out-statement'
 [4mParameter[0m
-  [4mpattern[0m   The regular expression to match
+  [4mpattern[0m   The regular expression to match, or a filtered
+            statement's source file and line: where the statement is
+            now, or, for one that can't be found, the location its
+            filter shows
 [4mSee Also[0m
-  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
-[4mExample[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-in-statement[0m, [1m:filter-out[0m, 
+  [1m:filter-out-statement[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
+[4mExamples[0m
 #1 To delete the filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40mdelete-filter[0m[37m[40m last message repeated              [0m
+   
+
+#2 To delete the filter for the statement on line 42 of Server.java:
+   [37m[40m:[0m[1m[36m[40mdelete-filter[0m[37m[40m Server[0m[1m[36m[40m.[0m[37m[40mjava:42                     [0m
    
 
 
@@ -1036,7 +1068,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name of the table to delete
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:summarize[0m, [1m:write-csv-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1064,7 +1096,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtable-name[0m   The name of the table to delete
 [4mSee Also[0m
-  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:summarize[0m, [1m:write-csv-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1092,21 +1124,29 @@ For support questions, email:
   or the current line
 [4mParameter[0m
   [4mpoint[0m   The file and line number of the breakpoint
-
+[4mSee Also[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:enable-breakpoint[0m, [1m:focus-search[0m, 
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mdisable-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Disable a filter created with filter-in/filter-out
+  Disable a filter created with filter-in/filter-out or
+  filter-in-statement/filter-out-statement
 [4mParameter[0m
   [4mpattern[0m   The regular expression used in the filter
-            command
+            command, or a filtered statement's source file and line
 [4mSee Also[0m
   [1m:enable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:toggle-filtering[0m
-[4mExample[0m
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
+[4mExamples[0m
 #1 To disable the filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40mdisable-filter[0m[37m[40m last message repeated             [0m
+   
+
+#2 To disable the filter for the statement on line 42 of Server.java:
+   [37m[40m:[0m[1m[36m[40mdisable-filter[0m[37m[40m Server[0m[1m[36m[40m.[0m[37m[40mjava:42                    [0m
    
 
 
@@ -1127,8 +1167,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Disable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1142,10 +1182,11 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
    [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
@@ -1158,17 +1199,21 @@ For support questions, email:
   [<format>:]<file>:<line> tuples or the current line
 [4mParameter[0m
   [4mpoint[0m   The file and line number of the breakpoint
-
+[4mSee Also[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, [1m:focus-search[0m, 
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4menable-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
   Enable a previously created and disabled filter
 [4mParameter[0m
   [4mpattern[0m   The regular expression used in the filter
-            command
+            command, or a filtered statement's source file and line
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, 
+  [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To enable the disabled filter with the pattern 'last message repeated':
    [37m[40m:[0m[1m[36m[40menable-filter[0m[37m[40m last message repeated              [0m
@@ -1192,8 +1237,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Enable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:disable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:disable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4meval[0m[4m [0m[4mcommand[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1204,8 +1249,8 @@ For support questions, email:
             on.
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1223,10 +1268,10 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1;4mexternal-access[0m[4m [[0m[4m--name[0m[4m] [[0m[4mport[0m[4m] [[0m[4mapi-key[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1241,8 +1286,8 @@ For support questions, email:
             written to the discovery file.
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 [4mExample[0m
@@ -1259,10 +1304,10 @@ For support questions, email:
   [4mapp[0m   The app to launch
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1;4mfilter-context[0m[4m [0m[4mcount[0m[4m [[0m[4mafter[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1275,7 +1320,7 @@ For support questions, email:
           matched lines (overrides count)
 [4mSee Also[0m
   [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To show 2 lines of context around filtered-in lines:
    [37m[40m:[0m[1m[36m[40mfilter-context[0m[37m[40m 2                                 [0m
@@ -1296,7 +1341,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-filter-expr[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:toggle-filtering[0m
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To set a filter expression that matched syslog messages from 'syslogd':
    [37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[37m[40m:log_procname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[35m[40m'syslogd'[0m[37m[40m            [0m
@@ -1317,10 +1362,32 @@ For support questions, email:
 [4mSee Also[0m
   [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:toggle-filtering[0m
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that do not have the string 'dhclient':
    [37m[40m:[0m[1m[36m[40mfilter-in[0m[37m[40m dhclient                               [0m
+   
+
+
+[4m:[0m[1;4mfilter-in-statement[0m[4m [0m[4mlocation[0m
+══════════════════════════════════════════════════════════════════════
+  Only show the messages logged by the log statement at the given
+  source file and line, and those of other filtered-in statements and
+  patterns, as found in the source added with :add-source-path.  The
+  statement is found again by its function and message each time the
+  source is scanned, so the filter follows it when edits move it; if
+  its message changes or it is removed, the filter does nothing until
+  it is deleted
+[4mParameter[0m
+  [4mlocation[0m   The source file, as much of its path as is
+             needed to tell it apart, and a line of the statement
+[4mSee Also[0m
+  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, 
+  [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
+[4mExample[0m
+#1 To only show the messages logged by the statement on line 42 of Server.java:
+   [37m[40m:[0m[1m[36m[40mfilter-in-statement[0m[37m[40m com/example/net/Server[0m[1m[36m[40m.[0m[37m[40mjava:42[0m
    
 
 
@@ -1333,10 +1400,31 @@ For support questions, email:
 [4mSee Also[0m
   [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:toggle-filtering[0m
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To filter out log messages that contain the string 'last message repeated':
    [37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m last message repeated                 [0m
+   
+
+
+[4m:[0m[1;4mfilter-out-statement[0m[4m [0m[4mlocation[0m
+══════════════════════════════════════════════════════════════════════
+  Hide the messages logged by the log statement at the given source
+  file and line, as found in the source added with :add-source-path.
+  The statement is found again by its function and message each time
+  the source is scanned, so the filter follows it when edits move it;
+  if its message changes or it is removed, the filter does nothing
+  until it is deleted
+[4mParameter[0m
+  [4mlocation[0m   The source file, as much of its path as is
+             needed to tell it apart, and a line of the statement
+[4mSee Also[0m
+  [1m:delete-filter[0m, [1m:disable-filter[0m, [1m:filter-context[0m, [1m:filter-in[0m, 
+  [1m:filter-out[0m, [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
+[4mExample[0m
+#1 To hide the messages logged by the statement on line 42 of Server.java:
+   [37m[40m:[0m[1m[36m[40mfilter-out-statement[0m[37m[40m com/example/net/Server[0m[1m[36m[40m.[0m[37m[40mjava:42[0m
    
 
 
@@ -1345,18 +1433,20 @@ For support questions, email:
   Focus the search after the one that is focused now, wrapping
   around to all of them
 [4mSee Also[0m
-  [1m:focus-prev-search[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
-  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
-  [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-prev-search[0m, [1m:focus-search[0m, [1m:goto[0m, 
+  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mfocus-prev-search[0m
 ══════════════════════════════════════════════════════════════════════
   Focus the search before the one that is focused now, wrapping
   around to all of them
 [4mSee Also[0m
-  [1m:focus-next-search[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
-  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
-  [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-next-search[0m, [1m:focus-search[0m, [1m:goto[0m, 
+  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mfocus-search[0m[4m [[0m[4mname[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1366,8 +1456,10 @@ For support questions, email:
   [4mname[0m   The name of the search to focus.  If not given, the
          hotkeys move through the hits of all of the searches again.
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 [4mExample[0m
 #1 To move through the hits of 'req' alone:
    [37m[40m:[0m[1m[36m[40mfocus-search[0m[37m[40m req                                 [0m
@@ -1384,8 +1476,10 @@ For support questions, email:
                                or a permalink to a log message.
                                Variables are expanded, as in :echo
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
-  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 [4mExamples[0m
 #1 To go to line 22:
    [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 22                                          [0m
@@ -1407,7 +1501,8 @@ For support questions, email:
 [4m:[0m[1;4mhelp[0m
 ══════════════════════════════════════════════════════════════════════
   Open the help text view
-
+[4mSee Also[0m
+  [1m:reload-view[0m, [1m:switch-to-view[0m, [1m:toggle-view[0m
 
 [4m:[0m[1;4mhide-fields[0m[4m [0m[4mfield-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mfield-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1418,8 +1513,9 @@ For support questions, email:
                be used where the field name is prefixed by the format
                name and a dot to hide any field.
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:set-text-view-mode[0m, 
-  [1m:show-fields[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:show-fields[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, 
+  [1m:zoom-to[0m
 [4mExamples[0m
 #1 To hide the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m log_procname                         [0m
@@ -1437,7 +1533,10 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   A path or glob pattern that specifies the files to
          hide
-
+[4mSee Also[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, 
+  [1m:show-file[0m, [1m:show-only-this-file[0m, [1m:toggle-filtering[0m
 
 [4m:[0m[1;4mhide-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1446,8 +1545,9 @@ For support questions, email:
   [4mrow-type[0m   The type of row to hide
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:show-in-timeline[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:show-in-timeline[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To hide logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mhide-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1461,7 +1561,8 @@ For support questions, email:
   [4mdate[0m   An absolute or relative date
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-before[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:show-lines-before-and-after[0m, 
+  [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines after the focused line in the view:
    [37m[40m:[0m[1m[36m[40mhide-lines-after[0m[37m[40m here                            [0m
@@ -1479,7 +1580,8 @@ For support questions, email:
   [4mdate[0m   An absolute or relative date
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:show-lines-before-and-after[0m, [1m:toggle-filtering[0m
+  [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, [1m:show-lines-before-and-after[0m, 
+  [1m:toggle-filtering[0m
 [4mExamples[0m
 #1 To hide the lines before the focused line in the view:
    [37m[40m:[0m[1m[36m[40mhide-lines-before[0m[37m[40m here                           [0m
@@ -1496,7 +1598,8 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
-  [1m:show-unmarked-lines[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
+  [1m:set-min-log-level[0m, [1m:show-unmarked-lines[0m, [1m:toggle-filtering[0m, 
+  [1m:toggle-sticky-header[0m
 
 [4m:[0m[1;4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1506,7 +1609,8 @@ For support questions, email:
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, 
-  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To highlight numbers with three or more digits:
    [37m[40m:[0m[1m[36m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
@@ -1527,7 +1631,8 @@ For support questions, email:
   [4mpattern[0m       The regular expression to match
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-highlight-field[0m, [1m:enable-word-wrap[0m, 
-  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To color status values that start with '2' green:
    [37m[40m:[0m[1m[36m[40mhighlight-field[0m[37m[40m --color=green sc_status [0m[1m[36m[40m^[0m[37m[40m2[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[37m[40m     [0m
@@ -1537,7 +1642,8 @@ For support questions, email:
 [4m:[0m[1;4mload-session[0m
 ══════════════════════════════════════════════════════════════════════
   Load the latest session state
-
+[4mSee Also[0m
+  [1m:reset-session[0m, [1m:save-session[0m, [1m:session[0m
 
 [4m:[0m[1;4mmark[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1566,8 +1672,10 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the next position in the location history
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mnext-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1577,9 +1685,11 @@ For support questions, email:
          user, file, meta
          [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
+  [1m:breakpoint[0m, [1m:clear-all-sticky-headers[0m, [1m:clear-breakpoint[0m, 
+  [1m:disable-breakpoint[0m, [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m, [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the next error:
    [37m[40m:[0m[1m[36m[40mnext-mark[0m[37m[40m error                                  [0m
@@ -1594,9 +1704,10 @@ For support questions, email:
   [4mname[0m   The name of the search to move through instead of
          the focused one
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
-  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-search-hit[0m, [1m:prev-section[0m, 
-  [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-search-hit[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 [4mExample[0m
 #1 To move to the next hit of 'req':
    [37m[40m:[0m[1m[36m[40mnext-search-hit[0m[37m[40m req                              [0m
@@ -1607,8 +1718,10 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the next section in the document
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mopen[0m[4m [[0m[4m--since[0m[4m] [[0m[4m--until[0m[4m] [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1621,10 +1734,10 @@ For support questions, email:
   [4mpath[0m      The path to the file to open
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:close[0m, [1m:echo[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExamples[0m
 #1 To open the file '/path/to/file':
    [37m[40m:[0m[1m[36m[40mopen[0m[37m[40m /path/to/file                               [0m
@@ -1657,10 +1770,10 @@ For support questions, email:
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, 
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the focused line to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
@@ -1674,10 +1787,10 @@ For support questions, email:
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, 
+  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
@@ -1688,8 +1801,10 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the previous position in the location history
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
-  [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1700,9 +1815,11 @@ For support questions, email:
          user, file, meta
          [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1msticky[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:hide-unmarked-lines[0m, 
-  [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
-  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-sticky-header[0m
+  [1m:breakpoint[0m, [1m:clear-all-sticky-headers[0m, [1m:clear-breakpoint[0m, 
+  [1m:disable-breakpoint[0m, [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, 
+  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m, 
+  [1m:toggle-sticky-header[0m
 [4mExample[0m
 #1 To go to the previous error:
    [37m[40m:[0m[1m[36m[40mprev-mark[0m[37m[40m error                                  [0m
@@ -1717,9 +1834,10 @@ For support questions, email:
   [4mname[0m   The name of the search to move through instead of
          the focused one
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-search-hit[0m, 
-  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
-  [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-search-hit[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m, [1m:toggle-breakpoint[0m
 [4mExample[0m
 #1 To move to the previous hit of 'req':
    [37m[40m:[0m[1m[36m[40mprev-search-hit[0m[37m[40m req                              [0m
@@ -1730,8 +1848,10 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the previous section in the document
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
-  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m, 
+  [1m:toggle-breakpoint[0m
 
 [4m:[0m[1;4mprompt[0m[4m [0m[4mtype[0m[4m [[0m[4m--alt[0m[4m] [[0m[4mprompt[0m[4m] [[0m[4minitial-value[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1744,7 +1864,12 @@ For support questions, email:
   [4mprompt[0m          The prompt to display
   [4minitial-value[0m   The initial value to fill in for
                   the prompt
-
+[4mSee Also[0m
+  [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
+  [1m:external-access-login[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 [4mExamples[0m
 #1 To open the command prompt with 'filter-in' already filled in:
    [37m[40m:[0m[1m[36m[40mprompt[0m[37m[40m command : 'filter-in '                    [0m
@@ -1758,15 +1883,20 @@ For support questions, email:
 [4m:[0m[1;4mquit[0m
 ══════════════════════════════════════════════════════════════════════
   Quit lnav
-
+[4mSee Also[0m
+  [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [4m:[0m[1;4mrebuild[0m
 ══════════════════════════════════════════════════════════════════════
   Forcefully rebuild file indexes
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
@@ -1780,10 +1910,10 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file {TMPDIR}script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m {TMPDIR}script-output.txt               [0m
@@ -1793,7 +1923,9 @@ For support questions, email:
 [4m:[0m[1;4mredraw[0m
 ══════════════════════════════════════════════════════════════════════
   Do a full redraw of the screen
-
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mrelative-goto[0m[4m [0m[4mline-count|N%[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1801,8 +1933,10 @@ For support questions, email:
 [4mParameter[0m
   [4mline-count|N%[0m   The amount to move the view by.
 [4mSee Also[0m
-  [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, 
-  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:toggle-breakpoint[0m
 [4mExamples[0m
 #1 To move 22 lines down in the view:
    [37m[40m:[0m[1m[36m[40mrelative-goto[0m[37m[40m +22                                [0m
@@ -1817,7 +1951,7 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Re-run the operation that populated the current view
 [4mSee Also[0m
-  
+  [1m:help[0m, [1m:switch-to-view[0m, [1m:toggle-view[0m
 
 [4m:[0m[1;4mreset-config[0m[4m [0m[4moption[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1836,19 +1970,22 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Reset the session state, clearing all filters, highlights, and
   bookmarks
-
+[4mSee Also[0m
+  [1m:load-session[0m, [1m:save-session[0m, [1m:session[0m
 
 [4m:[0m[1;4msave-session[0m
 ══════════════════════════════════════════════════════════════════════
   Save the current state as a session
-
+[4mSee Also[0m
+  [1m:load-session[0m, [1m:reset-session[0m, [1m:session[0m
 
 [4m:[0m[1;4msession[0m[4m [0m[4mlnav-command[0m
 ══════════════════════════════════════════════════════════════════════
   Add the given command to the session file (~/.lnav/session)
 [4mParameter[0m
   [4mlnav-command[0m   The lnav command to save.
-
+[4mSee Also[0m
+  [1m:load-session[0m, [1m:reset-session[0m, [1m:save-session[0m
 [4mExample[0m
 #1 To add the command ':highlight foobar' to the session file:
    [37m[40m:[0m[1m[36m[40msession[0m[37m[40m :highlight foobar                        [0m
@@ -1873,7 +2010,9 @@ For support questions, email:
 [4mParameter[0m
   [4mlog-level[0m   The new minimum log level
               [4mValues[0m: [1munknown[0m|[1mtrace[0m|[1mdebug5[0m|[1mdebug4[0m|[1mdebug3[0m|[1mdebug2[0m|[1mdebug[0m|[1minfo[0m|[1mstats[0m|[1mnotice[0m|[1mwarning[0m|[1merror[0m|[1mcritical[0m|[1mfatal[0m|[1minvalid[0m
-
+[4mSee Also[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
 [4mExample[0m
 #1 To set the minimum log level displayed to error:
    [37m[40m:[0m[1m[36m[40mset-min-log-level[0m[37m[40m error                          [0m
@@ -1887,8 +2026,8 @@ For support questions, email:
   [4mmode[0m   The display mode
          [4mValues[0m: [1mraw[0m|[1mrendered[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1899,8 +2038,8 @@ For support questions, email:
   [4mcmdline[0m         The command-line to execute.
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:external-access[0m, 
-  [1m:external-access-login[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
+  [1m:external-access-login[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-view-to[0m
 
@@ -1910,8 +2049,8 @@ For support questions, email:
 [4mParameter[0m
   [4mfield-name[0m   The name of the field to show
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show all the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mshow-fields[0m[37m[40m log_procname                         [0m
@@ -1924,7 +2063,10 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path or glob pattern that specifies the files to
          show
-
+[4mSee Also[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-file[0m, 
+  [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, 
+  [1m:set-min-log-level[0m, [1m:toggle-filtering[0m
 
 [4m:[0m[1;4mshow-in-timeline[0m[4m [0m[4mrow-type[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mrow-type[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1935,8 +2077,8 @@ For support questions, email:
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:hide-in-timeline[0m, [1m:set-text-view-mode[0m, [1m:show-only-in-timeline[0m, 
-  [1m:toggle-sticky-header[0m
+  [1m:hide-in-timeline[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, 
+  [1m:show-only-in-timeline[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mshow-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1948,7 +2090,8 @@ For support questions, email:
   Show lines that were hidden by the 'hide-lines' commands
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:toggle-filtering[0m
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, 
+  [1m:toggle-filtering[0m
 
 [4m:[0m[1;4mshow-only-in-timeline[0m[4m [0m[4mrow-type[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1959,8 +2102,8 @@ For support questions, email:
   [4mrow-type[0m   The type of row to show
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
-  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show only opid rows:
    [37m[40m:[0m[1m[36m[40mshow-only-in-timeline[0m[37m[40m opid                       [0m
@@ -1970,7 +2113,10 @@ For support questions, email:
 [4m:[0m[1;4mshow-only-this-file[0m
 ══════════════════════════════════════════════════════════════════════
   Show only the file for the focused line in the view
-
+[4mSee Also[0m
+  [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m, 
+  [1m:toggle-filtering[0m
 
 [4m:[0m[1;4mshow-unmarked-lines[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1978,7 +2124,8 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, 
   [1m:hide-lines-after[0m, [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
-  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:toggle-filtering[0m, [1m:toggle-sticky-header[0m
+  [1m:next-mark[0m, [1m:prev-mark[0m, [1m:set-min-log-level[0m, [1m:toggle-filtering[0m, 
+  [1m:toggle-sticky-header[0m
 
 [4m:[0m[1;4mspectrogram[0m[4m [0m[4mfield-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1987,7 +2134,9 @@ For support questions, email:
 [4mParameter[0m
   [4mfield-name[0m   The name of the numeric field to
                visualize.
-
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To visualize the sc_bytes field in the access_log format:
    [37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                             [0m
@@ -2000,7 +2149,10 @@ For support questions, email:
   values in the given column
 [4mParameter[0m
   [4mcolumn-name[0m   The name of the column to analyze.
-
+[4mSee Also[0m
+  [1m:create-logline-table[0m, [1m:create-search-table[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m
 [4mExample[0m
 #1 To get a summary of the sc_bytes column in the access_log table:
    [37m[40m:[0m[1m[36m[40msummarize[0m[37m[40m sc_bytes                               [0m
@@ -2013,7 +2165,8 @@ For support questions, email:
 [4mParameter[0m
   [4mview-name[0m   The name of the view to switch to.
               [4mValues[0m: [1mlog[0m|[1mtext[0m|[1mhelp[0m|[1mhistogram[0m|[1mdb[0m|[1mschema[0m|[1mpretty[0m|[1mspectro[0m|[1mtimeline[0m
-
+[4mSee Also[0m
+  [1m:help[0m, [1m:reload-view[0m, [1m:toggle-view[0m
 [4mExample[0m
 #1 To switch to the 'schema' view:
    [37m[40m:[0m[1m[36m[40mswitch-to-view[0m[37m[40m schema                            [0m
@@ -2042,7 +2195,8 @@ For support questions, email:
          replaced.
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
-  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show the cpu_pct column from cpu.csv:
    [37m[40m:[0m[1m[36m[40mtimeline-metric[0m[37m[40m cpu.cpu_pct                      [0m
@@ -2059,7 +2213,8 @@ For support questions, email:
   [4mquery[0m   A SQL SELECT returning log_time, value
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
-  [1m:hide-fields[0m, [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m
+  [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 Plot rss from procstate rows:
    [37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'[0m
@@ -2069,14 +2224,18 @@ For support questions, email:
 [4m:[0m[1;4mtoggle-breakpoint[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle a breakpoint for the focused line in the LOG view
-
+[4mSee Also[0m
+  [1m:breakpoint[0m, [1m:clear-breakpoint[0m, [1m:disable-breakpoint[0m, 
+  [1m:enable-breakpoint[0m, [1m:focus-search[0m, [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, 
+  [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
 
 [4m:[0m[1;4mtoggle-filtering[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle the filtering flag for the current view
 [4mSee Also[0m
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
-  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m
+  [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m
 
 [4m:[0m[1;4mtoggle-sticky-header[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2084,8 +2243,8 @@ For support questions, email:
   view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, 
-  [1m:set-text-view-mode[0m
+  [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mtoggle-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2095,7 +2254,8 @@ For support questions, email:
   [4mview-name[0m   The name of the view to toggle the display
               of.
               [4mValues[0m: [1mlog[0m|[1mtext[0m|[1mhelp[0m|[1mhistogram[0m|[1mdb[0m|[1mschema[0m|[1mpretty[0m|[1mspectro[0m|[1mtimeline[0m
-
+[4mSee Also[0m
+  [1m:help[0m, [1m:reload-view[0m, [1m:switch-to-view[0m
 [4mExample[0m
 #1 To switch to the 'schema' view if it is not displayed or switch back to the previous
    view:
@@ -2108,7 +2268,10 @@ For support questions, email:
   Convert epoch time to a human-readable form
 [4mParameter[0m
   [4mseconds[0m   The epoch timestamp to convert
-
+[4mSee Also[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExample[0m
 #1 To convert the epoch time 1490191111:
    [37m[40m:[0m[1m[36m[40munix-time[0m[37m[40m 1490191111                             [0m
@@ -2138,10 +2301,10 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as CSV to {TMPDIR}table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m {TMPDIR}table.csv                      [0m
@@ -2154,7 +2317,12 @@ For support questions, email:
   useful if the `-d` flag was not passed on the command line
 [4mParameter[0m
   [4mpath[0m   The destination path for the debug log
-
+[4mSee Also[0m
+  [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1;4mwrite-html-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2168,10 +2336,10 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the top view to {TMPDIR}view.html:
    [37m[40m:[0m[1m[36m[40mwrite-html-to[0m[37m[40m {TMPDIR}view.html                     [0m
@@ -2193,9 +2361,10 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-cols-to[0m[37m[40m {TMPDIR}table.json               [0m
@@ -2212,7 +2381,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2235,7 +2405,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
@@ -2258,7 +2429,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2279,7 +2451,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2299,7 +2472,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2318,10 +2492,11 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:eval[0m, 
   [1m:export-session-to[0m, [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-html-to[0m, [1m:write-json-cols-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
+  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
+  [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m {TMPDIR}interesting-lines.txt              [0m
@@ -2339,7 +2514,8 @@ For support questions, email:
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:external-access[0m, [1m:external-access-login[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
+  [1m:pipe-to[0m, [1m:prompt[0m, [1m:quit[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:summarize[0m, 
+  [1m:write-csv-to[0m, [1m:write-debug-log-to[0m, [1m:write-html-to[0m, 
   [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:xopen[0m, 
   [1mecholn()[0m
@@ -2356,10 +2532,10 @@ For support questions, email:
   [4mpath[0m   The path to the file to open
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To open the file '/path/to/file':
    [37m[40m:[0m[1m[36m[40mxopen[0m[37m[40m /path/to/file                              [0m
@@ -2373,7 +2549,9 @@ For support questions, email:
   [4mzoom-level[0m   The zoom level, or '+'/'-' to step in or
                out from the current level
                [4mValues[0m: [1m1-second[0m|[1m30-second[0m|[1m1-minute[0m|[1m5-minute[0m|[1m15-minute[0m|[1m1-hour[0m|[1m4-hour[0m|[1m8-hour[0m|[1m1-day[0m|[1m1-week[0m|[1m1-month[0m|[1m1-year[0m
-
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m
 [4mExamples[0m
 #1 To set the zoom level to '1-week':
    [37m[40m:[0m[1m[36m[40mzoom-to[0m[37m[40m 1-week                                   [0m
@@ -2815,8 +2993,9 @@ For support questions, email:
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
-  [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the date portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdate[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
@@ -2840,8 +3019,9 @@ For support questions, email:
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
-  [1mdate()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the date and time portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mdatetime[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)            [0m
@@ -2943,10 +3123,10 @@ For support questions, email:
   [4mvalue[0m   The value to write to the current output file
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m.save[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-html-to[0m, 
-  [1m:write-json-cols-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1m:xopen[0m
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-debug-log-to[0m, [1m:write-html-to[0m, [1m:write-json-cols-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m
 
 [1;4mencode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -3329,18 +3509,19 @@ For support questions, email:
 [4mParameter[0m
   [4msecs[0m   The duration in seconds
 [4mSee Also[0m
-  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdate()[0m, 
-  [1mdatetime()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mmeasure_unit()[0m, 
-  [1mmeasure_value()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mpretty_print()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
-  [1mtimeslice()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1manonymize()[0m, [1mchar()[0m, 
+  [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, 
+  [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, [1mgroup_concat()[0m, 
+  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, 
+  [1mhumanize_id()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, 
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mmeasure_unit()[0m, [1mmeasure_value()[0m, 
+  [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mpretty_print()[0m, [1mprintf()[0m, 
+  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, 
+  [1mtimezone()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExamples[0m
 #1 To format a duration:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m15[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m60[0m[37m[40m)                 [0m
@@ -3961,8 +4142,9 @@ For support questions, email:
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mstrftime()[0m, [1mtime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the julian day from the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjulianday[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)           [0m
@@ -5598,8 +5780,9 @@ For support questions, email:
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mtime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the year from the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mstrftime[0m[37m[40m([0m[35m[40m'%Y'[0m[37m[40m, [0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)      [0m
@@ -5688,8 +5871,9 @@ For support questions, email:
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime_buckets()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the time portion of the timestamp '2017-01-02T03:04:05':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime[0m[37m[40m([0m[35m[40m'2017-01-02T03:04:05'[0m[37m[40m)                [0m
@@ -5729,8 +5913,9 @@ For support questions, email:
                 Rows after it are skipped.  Defaults to the group's
                 last time
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExample[0m
 #1 To get the values over time in at most 4 buckets:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtime_buckets[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m, [0m[1m[37m[40m4[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[37m[40m0[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m), ([0m[1m[37m[40m7[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m), ([0m[1m[37m[40m9[0m[37m[40m,[0m
@@ -5745,8 +5930,9 @@ For support questions, email:
   [4mtime1[0m   The first timestamp
   [4mtime2[0m   The timestamp to subtract from the first
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime()[0m, [1mtime_buckets()[0m, [1mtimeslice()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, 
+  [1mtimeslice()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the difference between two timestamps:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimediff[0m[37m[40m([0m[35m[40m'2017-02-03T04:05:06'[0m[37m[40m, [0m[35m[40m'2017-02-03T04:05:00'[0m[37m[40m)[0m
@@ -5767,8 +5953,9 @@ For support questions, email:
           and a real in seconds.
   [4mslice[0m   The size of the time slices
 [4mSee Also[0m
-  [1mdate()[0m, [1mdatetime()[0m, [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, 
-  [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimezone()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
+  [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtime_buckets()[0m, 
+  [1mtimediff()[0m, [1mtimezone()[0m
 [4mExamples[0m
 #1 To get the timestamp rounded down to the start of the ten minute slice:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[35m[40m'2017-01-01T05:05:00'[0m[37m[40m, [0m[35m[40m'10m'[0m[37m[40m)    [0m
@@ -5797,18 +5984,19 @@ For support questions, email:
   [4mtz[0m   The target timezone
   [4mts[0m   The source timestamp
 [4mSee Also[0m
-  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdate()[0m, 
-  [1mdatetime()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, 
-  [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
-  [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, 
-  [1mmeasure_unit()[0m, [1mmeasure_value()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mpretty_print()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
-  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
-  [1mtime_buckets()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, 
-  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1manonymize()[0m, [1mchar()[0m, 
+  [1mcharindex()[0m, [1mconcat()[0m, [1mconcat_ws()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, 
+  [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mfuzzy_match()[0m, [1mgroup_concat()[0m, 
+  [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
+  [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mmeasure_unit()[0m, 
+  [1mmeasure_value()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mpretty_print()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtime_buckets()[0m, [1mtimediff()[0m, 
+  [1mtimeslice()[0m, [1mtrim()[0m, [1munhex()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To convert a time to America/Los_Angeles:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimezone[0m[37m[40m([0m[35m[40m'America/Los_Angeles'[0m[37m[40m, [0m[35m[40m'2022-03-02T10:00'[0m[37m[40m)[0m

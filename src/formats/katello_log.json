@@ -17,12 +17,15 @@
         },
         "value": {
             "alert_level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "module": {
+                "description": "The module that logged the message",
                 "kind": "string"
             },
             "message": {
+                "description": "The message",
                 "kind": "string"
             }
         },

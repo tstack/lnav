@@ -3617,6 +3617,14 @@ logfile_sub_source::invalidate_sql_filter()
 }
 
 void
+logfile_sub_source::invalidate_filter(size_t index)
+{
+    for (auto& ld : *this) {
+        ld->ld_filter_state.lfo_filter_state.clear_filter_state(index);
+    }
+}
+
+void
 logfile_sub_source::text_mark(const bookmark_type_t* bm,
                               vis_line_t line,
                               bool added)

@@ -17,14 +17,17 @@
         },
         "value": {
             "level": {
+                "description": "The message's level: I for info, W for warning, E for error",
                 "kind": "string",
                 "identifier": true
             },
             "section": {
+                "description": "The part of CUPS the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             }
         },

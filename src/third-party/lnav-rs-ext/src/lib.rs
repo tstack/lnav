@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::mpsc::{channel, Sender};
-use std::sync::{Arc, LazyLock, Mutex, RwLock};
+use std::sync::{Arc, LazyLock, Mutex, RwLock, RwLockReadGuard, TryLockError};
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -405,9 +405,28 @@ mod ffi {
             options: &FindLogOptions,
         ) -> UniquePtr<FindLogResultJson>;
 
+        /// Like find_log_statement_json(), but doesn't wait for a source scan, which
+        /// holds the matcher for as long as it runs: `busy` is set and the result is
+        /// null when one is.
+        fn try_find_log_statement_json(
+            file: &str,
+            line: usize,
+            level: StmtLevel,
+            body: &str,
+            options: &FindLogOptions,
+            busy: &mut bool,
+        ) -> UniquePtr<FindLogResultJson>;
+
         fn get_log_statements_for(file: &str) -> Vec<FindLogResult>;
 
+        /// Like get_log_statements_for(), but empty with `busy` set while a source
+        /// scan runs.
+        fn try_get_log_statements_for(file: &str, busy: &mut bool) -> Vec<FindLogResult>;
+
         fn find_src_file(path: &str) -> String;
+
+        /// Like find_src_file(), but empty with `busy` set while a source scan runs.
+        fn try_find_src_file(path: &str, busy: &mut bool) -> String;
 
         fn source_languages() -> Vec<String>;
 
@@ -735,6 +754,16 @@ impl SourceDetailsBorrowed<'_> {
     }
 }
 
+/// Read access to the matcher without waiting, or `None` while something writes it: a
+/// source scan does for as long as it runs.
+fn try_read_matcher() -> Option<RwLockReadGuard<'static, LogMatcher>> {
+    match LOG_MATCHER.try_read() {
+        Ok(guard) => Some(guard),
+        Err(TryLockError::WouldBlock) => None,
+        Err(TryLockError::Poisoned(err)) => panic!("log matcher lock poisoned: {err}"),
+    }
+}
+
 fn find_log_statement_json(
     file: &str,
     lineno: usize,
@@ -743,6 +772,33 @@ fn find_log_statement_json(
     options: &FindLogOptions,
 ) -> UniquePtr<FindLogResultJson> {
     let log_matcher = LOG_MATCHER.read().unwrap();
+    match_log_statement_json(&log_matcher, file, lineno, level, body, options)
+}
+
+fn try_find_log_statement_json(
+    file: &str,
+    lineno: usize,
+    level: StmtLevel,
+    body: &str,
+    options: &FindLogOptions,
+    busy: &mut bool,
+) -> UniquePtr<FindLogResultJson> {
+    let Some(log_matcher) = try_read_matcher() else {
+        *busy = true;
+        return UniquePtr::null();
+    };
+    *busy = false;
+    match_log_statement_json(&log_matcher, file, lineno, level, body, options)
+}
+
+fn match_log_statement_json(
+    log_matcher: &LogMatcher,
+    file: &str,
+    lineno: usize,
+    level: StmtLevel,
+    body: &str,
+    options: &FindLogOptions,
+) -> UniquePtr<FindLogResultJson> {
     let log_ref = LogRefBuilder::new()
         .with_file(if file.is_empty() { None } else { Some(file) })
         .with_lineno(if file.is_empty() { None } else { Some(lineno) })
@@ -790,6 +846,19 @@ fn stop_ext_access() {
 
 fn get_log_statements_for(path_str: &str) -> Vec<FindLogResult> {
     let matcher = LOG_MATCHER.read().unwrap();
+    log_statements_for(&matcher, path_str)
+}
+
+fn try_get_log_statements_for(path_str: &str, busy: &mut bool) -> Vec<FindLogResult> {
+    let Some(matcher) = try_read_matcher() else {
+        *busy = true;
+        return vec![];
+    };
+    *busy = false;
+    log_statements_for(&matcher, path_str)
+}
+
+fn log_statements_for(matcher: &LogMatcher, path_str: &str) -> Vec<FindLogResult> {
     let path = Path::new(path_str);
     let mut retval = vec![];
 
@@ -840,7 +909,19 @@ fn log_match_stats() {
 /// empty if the file could not be found.
 fn find_src_file(path_str: &str) -> String {
     let matcher = LOG_MATCHER.read().unwrap();
+    src_file_for(&matcher, path_str)
+}
 
+fn try_find_src_file(path_str: &str, busy: &mut bool) -> String {
+    let Some(matcher) = try_read_matcher() else {
+        *busy = true;
+        return String::new();
+    };
+    *busy = false;
+    src_file_for(&matcher, path_str)
+}
+
+fn src_file_for(matcher: &LogMatcher, path_str: &str) -> String {
     matcher
         .find_file(Path::new(path_str))
         .map(|path| path.to_string_lossy().to_string())

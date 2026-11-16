@@ -31,16 +31,20 @@
         },
         "value": {
             "level": {
+                "description": "The message's level: . debug, - verbose, * notice, # warning",
                 "kind": "string"
             },
             "pid": {
+                "description": "The ID of the Redis process",
                 "kind": "string",
                 "identifier": true
             },
             "role": {
+                "description": "The process's role: X sentinel, C RDB/AOF writing child, S replica, M master",
                 "kind": "string"
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

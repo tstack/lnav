@@ -71,72 +71,88 @@
         ],
         "value": {
             "bytes_read": {
+                "description": "The size of the request body read, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "duration": {
+                "description": "The seconds it took to handle the request",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string",
                 "hidden": true
             },
             "logger": {
+                "description": "The name of the Caddy module that logged the message",
                 "kind": "string",
                 "hidden": true
             },
             "request": {
+                "description": "The HTTP request, for access log messages",
                 "kind": "json",
                 "hidden": true
             },
             "request/client_ip": {
+                "description": "The IP address of the client that made the request",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "request/headers/User-Agent#": {
+                "description": "The request's User-Agent header",
                 "kind": "string",
                 "identifier": true
             },
             "request/host": {
+                "description": "The Host the request was for",
                 "kind": "string",
                 "identifier": true
             },
             "request/method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "request/proto": {
+                "description": "The request's HTTP version",
                 "kind": "string",
                 "identifier": true
             },
             "request/uri": {
+                "description": "The request URI",
                 "kind": "string",
                 "identifier": true
             },
             "resp_headers": {
+                "description": "The response headers",
                 "kind": "json",
                 "hidden": true
             },
             "msg": {
+                "description": "The message",
                 "kind": "string"
             },
             "size": {
+                "description": "The size of the response body, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "status": {
+                "description": "The response's HTTP status code",
                 "kind": "integer",
                 "foreign-key": true
             },
             "user_id": {
+                "description": "The authenticated user, if any",
                 "kind": "string",
                 "identifier": true
             }

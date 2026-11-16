@@ -33,24 +33,30 @@
         },
         "value": {
             "level": {
+                "description": "The message's priority: V verbose, D debug, I info, W warn, E error, F fatal",
                 "kind": "string"
             },
             "tag": {
+                "description": "The tag the message was logged with, usually the component's",
                 "kind": "string",
                 "identifier": false
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             },
             "uid": {
+                "description": "The user ID of the app that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "tid": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "integer",
                 "identifier": true
             }

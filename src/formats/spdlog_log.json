@@ -19,25 +19,31 @@
         "thread-id-field": "thread_id",
         "value": {
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "logger": {
+                "description": "The name of the logger",
                 "kind": "string",
                 "identifier": true
             },
             "src_file": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "src_line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "foreign-key": true
             },
             "thread_id": {
+                "description": "The ID of the thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

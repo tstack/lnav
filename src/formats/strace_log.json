@@ -48,33 +48,41 @@
         },
         "value": {
             "pid": {
+                "description": "The ID of the process that made the system call",
                 "kind": "integer",
                 "foreign-key": true,
                 "identifier": true
             },
             "syscall": {
+                "description": "The name of the system call",
                 "kind": "string",
                 "identifier": true
             },
             "rc": {
+                "description": "The system call's return value",
                 "kind": "integer",
                 "foreign-key": true
             },
             "rc_extra": {
+                "description": "The return value's meaning, like a flag name, when strace shows one",
                 "kind": "string"
             },
             "duration": {
+                "description": "The seconds the system call took",
                 "kind": "float"
             },
             "errno": {
+                "description": "The error the system call failed with, like ENOENT",
                 "kind": "string",
                 "identifier": true
             },
             "signame": {
+                "description": "The name of the signal the process received",
                 "kind": "string",
                 "identifier": true
             },
             "siginfo": {
+                "description": "The details of the signal the process received",
                 "kind": "string"
             }
         },

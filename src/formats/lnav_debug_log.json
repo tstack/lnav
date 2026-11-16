@@ -14,25 +14,31 @@
         "thread-id-field": "thread",
         "value": {
             "srcfile": {
+                "description": "The lnav source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level: T trace, D debug, I info, W warning, E error",
                 "kind": "string"
             },
             "srcline": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "opid": {
+                "description": "The ID of the lnav operation the message is part of",
                 "kind": "string",
                 "identifier": true
             },
             "thread": {
+                "description": "The lnav thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

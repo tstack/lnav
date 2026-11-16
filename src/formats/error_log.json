@@ -14,10 +14,12 @@
         "level-field": "level",
         "value": {
             "module": {
+                "description": "The server module that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the server process",
                 "kind": "integer",
                 "identifier": true
             },
@@ -33,6 +35,7 @@
                 "description": "The client IP address"
             },
             "c_port": {
+                "description": "The port of the client the message is about",
                 "kind": "integer",
                 "identifier": true
             }

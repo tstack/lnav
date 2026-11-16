@@ -758,6 +758,15 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
 extern std::string vtab_module_schemas;
 extern std::map<intern_string_t, std::string> vtab_module_ddls;
+/** The topics from each table's "-- Tags: a, b" comment line. */
+extern std::map<intern_string_t, std::vector<std::string>> vtab_module_tags;
+
+/**
+ * Remove the "-- Tags: a, b" comment line from a CREATE TABLE statement and
+ * add its tags to tags_out.
+ */
+std::string vtab_module_extract_tags(const char* create_stmt,
+                                     std::vector<std::string>& tags_out);
 
 class vtab_index_constraints {
 public:
@@ -1101,8 +1110,12 @@ struct vtab_module : vtab_module_base {
     int create(sqlite3* db, const char* name)
     {
         auto impl_name = std::string(name);
-        vtab_module_schemas += T::CREATE_STMT;
-        vtab_module_ddls[intern_string::lookup(name)] = trim(T::CREATE_STMT);
+        auto table_name = intern_string::lookup(name);
+        std::vector<std::string> tags;
+        auto ddl = vtab_module_extract_tags(T::CREATE_STMT, tags);
+        vtab_module_schemas += ddl;
+        vtab_module_ddls[table_name] = trim(ddl);
+        vtab_module_tags[table_name] = std::move(tags);
 
         // XXX Eponymous tables don't seem to work in older sqlite versions
         impl_name += "_impl";

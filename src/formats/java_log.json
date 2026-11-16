@@ -98,58 +98,73 @@
         },
         "value": {
             "function": {
+                "description": "The thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "hostname": {
+                "description": "The host the program ran on",
                 "kind": "string",
                 "identifier": true
             },
             "thread": {
+                "description": "The thread that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "level": {
+                "description": "The message's level",
                 "kind": "string"
             },
             "jvm_no": {
+                "description": "The number of the JVM the wrapper started",
                 "kind": "integer"
             },
             "debug_level": {
+                "description": "The level the application logged the message at",
                 "kind": "string"
             },
             "opid": {
+                "description": "The ID of the operation the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "corid": {
+                "description": "The correlation ID of the request the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "class": {
+                "description": "The class that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "method": {
+                "description": "The method that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "srcfile": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "srcline": {
+                "description": "The line in the source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "pid": {
+                "description": "The ID of the process",
                 "kind": "string",
                 "identifier": true
             },
             "body": {
+                "description": "The message",
                 "kind": "string"
             },
             "context": {
+                "description": "The context the message was logged in",
                 "kind": "string"
             }
         },

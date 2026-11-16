@@ -58,46 +58,57 @@
         },
         "value": {
             "pid": {
+                "description": "The ID of the process that logged the message",
                 "kind": "integer",
                 "identifier": true
             },
             "name": {
+                "description": "The name of the logger, usually the application's",
                 "kind": "string",
                 "identifier": true
             },
             "hostname": {
+                "description": "The host the process ran on",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "time": {
+                "description": "The time the message was logged",
                 "kind": "string",
                 "identifier": false
             },
             "level": {
+                "description": "The message's level as a number: 10 trace, 20 debug, 30 info, 40 warn, 50 error, 60 fatal",
                 "kind": "integer",
                 "identifier": true,
                 "foreign-key": true
             },
             "v": {
+                "description": "The Bunyan log format version",
                 "kind": "integer",
                 "hidden": true
             },
             "msg": {
+                "description": "The message",
                 "kind": "string"
             },
             "src": {
+                "description": "Where in the source the message was logged, when the logger records it",
                 "kind": "json",
                 "hidden": true
             },
             "src/file": {
+                "description": "The source file that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "src/line": {
+                "description": "The line in the source file that logged the message",
                 "kind": "integer"
             },
             "src/func": {
+                "description": "The function that logged the message",
                 "kind": "string",
                 "identifier": true
             }

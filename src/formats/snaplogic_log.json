@@ -18,30 +18,37 @@
         },
         "value": {
             "logger": {
+                "description": "The logger that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "facility": {
+                "description": "The SnapLogic component that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "msgid": {
+                "description": "The ID of the kind of message",
                 "kind": "string",
                 "identifier": true
             },
             "pipe_rid": {
+                "description": "The runtime ID of the pipeline the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "comp_rid": {
+                "description": "The runtime ID of the component in the pipeline",
                 "kind": "string",
                 "identifier": true
             },
             "resource_name": {
+                "description": "The name of the resource the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "invoker": {
+                "description": "The user who invoked the pipeline",
                 "kind": "string",
                 "identifier": true
             }

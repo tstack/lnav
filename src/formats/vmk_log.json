@@ -27,20 +27,24 @@
         "opid-field": "opid",
         "value": {
             "cpu": {
+                "description": "The CPU the message was logged on",
                 "kind": "integer",
                 "identifier": true,
                 "foreign-key": true
             },
             "world_id": {
+                "description": "The ID of the world (the VMkernel's process) that logged the message",
                 "kind": "integer",
                 "identifier": true,
                 "foreign-key": true
             },
             "subsystem": {
+                "description": "The VMkernel subsystem that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "opid": {
+                "description": "The ID of the operation the message is about",
                 "kind": "string",
                 "identifier": true
             }

@@ -15,22 +15,27 @@
         },
         "value": {
             "app_name": {
+                "description": "The name of the application that made the connection",
                 "kind": "string",
                 "identifier": true
             },
             "app_pid": {
+                "description": "The ID of the application's process",
                 "kind": "string",
                 "identifier": true
             },
             "target_host": {
+                "description": "The host the application connected to",
                 "kind": "string",
                 "identifier": true
             },
             "target_port": {
+                "description": "The port the application connected to",
                 "kind": "string",
                 "identifier": true
             },
             "timestamp": {
+                "description": "The time the message was logged",
                 "kind": "string"
             }
         },

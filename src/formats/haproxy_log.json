@@ -26,54 +26,69 @@
         },
         "value": {
             "stopping_timeout": {
+                "description": "The milliseconds the frontend waits for its connections before stopping",
                 "kind": "integer"
             },
             "frontend_connections": {
+                "description": "The number of connections the frontend had",
                 "kind": "integer"
             },
             "backend_connections": {
+                "description": "The number of connections the backend had",
                 "kind": "integer"
             },
             "logging_host": {
+                "description": "The host that sent the message to syslog",
                 "kind": "string"
             },
             "process_name": {
+                "description": "The name of the HAProxy process",
                 "kind": "string"
             },
             "pid": {
+                "description": "The ID of the HAProxy process",
                 "kind": "integer",
                 "foreign-key": true
             },
             "client_ip": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "collate": "ipaddress"
             },
             "client_port": {
+                "description": "The port of the client",
                 "kind": "integer",
                 "foreign-key": true
             },
             "accept_date": {
+                "description": "The time the connection was accepted",
                 "kind": "string"
             },
             "frontend_name": {
+                "description": "The name of the frontend (listener) that received the connection",
                 "kind": "string",
                 "identifier": true
             },
             "ssl": {
+                "description": "Whether the connection used SSL",
                 "kind": "string"
             },
             "ssl_error": {
+                "description": "The SSL error that ended the connection",
                 "kind": "string"
             },
             "backend_name": {
+                "description": "The name of the backend chosen for the request",
                 "kind": "string",
                 "identifier": true
             },
             "server_name": {
+                "description": "The name of the server the request was sent to",
                 "kind": "string",
                 "identifier": true
             },
             "tq": {
+                "description": "The milliseconds spent waiting for the client to send the whole request",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -81,6 +96,7 @@
                 }
             },
             "tw": {
+                "description": "The milliseconds spent waiting in queues for a connection slot",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -88,6 +104,7 @@
                 }
             },
             "tc": {
+                "description": "The milliseconds spent establishing the connection to the server",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -95,6 +112,7 @@
                 }
             },
             "tr": {
+                "description": "The milliseconds spent waiting for the server to send the response headers",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -102,6 +120,7 @@
                 }
             },
             "tt": {
+                "description": "The milliseconds from accepting the connection to closing it",
                 "kind": "integer",
                 "unit": {
                     "suffix": "s",
@@ -109,65 +128,82 @@
                 }
             },
             "status_code": {
+                "description": "The HTTP status code returned to the client",
                 "kind": "integer",
                 "identifier": true
             },
             "bytes_read": {
+                "description": "The bytes sent to the client",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "captured_request_cookie": {
+                "description": "The request cookie captured by the configuration",
                 "kind": "string"
             },
             "captured_response_cookie": {
+                "description": "The response cookie captured by the configuration",
                 "kind": "string"
             },
             "termination_state": {
+                "description": "How the session ended, as HAProxy's four-letter state code",
                 "kind": "string"
             },
             "actconn": {
+                "description": "The number of connections the process had when this one was logged",
                 "kind": "integer",
                 "foreign-key": true
             },
             "feconn": {
+                "description": "The number of connections the frontend had when this one was logged",
                 "kind": "integer",
                 "foreign-key": true
             },
             "beconn": {
+                "description": "The number of connections the backend had when this one was logged",
                 "kind": "integer",
                 "foreign-key": true
             },
             "srv_conn": {
+                "description": "The number of connections the server had when this one was logged",
                 "kind": "integer",
                 "foreign-key": true
             },
             "retries": {
+                "description": "The number of times the connection to a server was retried",
                 "kind": "integer"
             },
             "srv_queue": {
+                "description": "The number of requests ahead of this one in the server's queue",
                 "kind": "integer",
                 "foreign-key": true
             },
             "backend_queue": {
+                "description": "The number of requests ahead of this one in the backend's queue",
                 "kind": "integer",
                 "foreign-key": true
             },
             "captured_request_headers": {
+                "description": "The request headers captured by the configuration",
                 "kind": "string"
             },
             "captured_response_headers": {
+                "description": "The response headers captured by the configuration",
                 "kind": "string"
             },
             "http_method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "http_url": {
+                "description": "The request URL",
                 "kind": "string"
             },
             "http_version": {
+                "description": "The request's HTTP version",
                 "kind": "string"
             }
         },

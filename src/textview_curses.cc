@@ -2480,7 +2480,7 @@ filter_stack::get_enabled_mask(uint32_t& filter_in_mask,
         if (tf->lf_deleted) {
             continue;
         }
-        if (tf->is_enabled()) {
+        if (tf->is_enabled() && tf->is_active()) {
             uint32_t bit = (1UL << tf->get_index());
 
             switch (tf->get_type()) {

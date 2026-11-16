@@ -3300,6 +3300,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":prompt")
             .with_effect(help_effect_t::view)
+            .with_tags({"scripting"})
             .with_summary("Open the given prompt")
             .with_parameter(
                 help_text{"type", "The type of prompt"}.with_enum_values({
@@ -3334,6 +3335,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_add_src_path,
         help_text(":add-source-path")
             .with_effect(help_effect_t::external)
+            .with_tags({"source"})
             .with_summary(
                 "Add a path to the source code that generated log messages.  "
                 "Adding source allows lnav to more accurately extract values "
@@ -3351,6 +3353,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":adjust-log-time")
             .with_effect(help_effect_t::view)
+            .with_tags({"datetime"})
             .with_summary(
                 "Change the timestamps of the focused file to be relative "
                 "to the given date")
@@ -3369,6 +3372,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":clear-adjusted-log-time")
             .with_effect(help_effect_t::view)
+            .with_tags({"datetime"})
             .with_summary(
                 "Clear the adjusted time for the focused line in the view")
             .with_opposites({"adjust-log-time"}),
@@ -3380,6 +3384,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":unix-time")
             .with_effect(help_effect_t::read)
+            .with_tags({"datetime"})
             .with_summary("Convert epoch time to a human-readable form")
             .with_parameter(
                 help_text("seconds", "The epoch timestamp to convert")
@@ -3392,6 +3397,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_convert_time_to,
         help_text(":convert-time-to")
             .with_effect(help_effect_t::read)
+            .with_tags({"datetime"})
             .with_summary("Convert the focused timestamp to the "
                           "given timezone")
             .with_parameter(
@@ -3437,6 +3443,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":current-time")
          .with_effect(help_effect_t::read)
+         .with_tags({"datetime"})
          .with_summary("Print the current time in human-readable form and "
                        "seconds since the epoch")},
     {
@@ -3560,6 +3567,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":help")
             .with_effect(help_effect_t::view)
+            .with_tags({"views"})
             .with_summary("Open the help text view"),
     },
     {
@@ -3790,6 +3798,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":hide-file")
             .with_effect(help_effect_t::view)
+            .with_tags({"filtering"})
             .with_summary("Hide the given file(s) and skip indexing until it "
                           "is shown again.  If no path is given, the current "
                           "file in the view is hidden")
@@ -3807,6 +3816,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":show-file")
             .with_effect(help_effect_t::view)
+            .with_tags({"filtering"})
             .with_summary("Show the given file(s) and resume indexing.")
             .with_parameter(
                 help_text{"path",
@@ -3822,6 +3832,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":show-only-this-file")
             .with_effect(help_effect_t::view)
+            .with_tags({"filtering"})
             .with_summary("Show only the file for the focused line in the view")
             .with_opposites({"hide-file"}),
     },
@@ -3830,6 +3841,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":session")
          .with_effect(help_effect_t::config)
+         .with_tags({"session"})
          .with_summary("Add the given command to the session file "
                        "(~/.lnav/session)")
          .with_parameter(help_text("lnav-command", "The lnav command to save."))
@@ -3842,6 +3854,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":summarize")
             .with_effect(help_effect_t::view)
+            .with_tags({"sql"})
             .with_summary("Execute a SQL query that computes the "
                           "characteristics "
                           "of the values in the given column")
@@ -3857,6 +3870,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":switch-to-view")
          .with_effect(help_effect_t::view)
+         .with_tags({"views"})
          .with_summary("Switch to the given view")
          .with_parameter(
              help_text("view-name", "The name of the view to switch to.")
@@ -3867,6 +3881,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":toggle-view")
          .with_effect(help_effect_t::view)
+         .with_tags({"views"})
          .with_summary("Switch to the given view or, if it is "
                        "already displayed, "
                        "switch to the previous view")
@@ -3890,6 +3905,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":reset-session")
          .with_effect(help_effect_t::config)
+         .with_tags({"session"})
          .with_summary("Reset the session state, clearing all filters, "
                        "highlights, and bookmarks")},
     {"load-session",
@@ -3897,12 +3913,14 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":load-session")
          .with_effect(help_effect_t::view)
+         .with_tags({"session"})
          .with_summary("Load the latest session state")},
     {"save-session",
      com_save_session,
 
      help_text(":save-session")
          .with_effect(help_effect_t::config)
+         .with_tags({"session"})
          .with_summary("Save the current state as a session")},
     {
         "set-min-log-level",
@@ -3910,6 +3928,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":set-min-log-level")
             .with_effect(help_effect_t::view)
+            .with_tags({"filtering"})
             .with_summary(
                 "Set the minimum log level to display in the log view")
             .with_parameter(help_text("log-level", "The new minimum log level")
@@ -3922,6 +3941,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
      help_text(":redraw")
          .with_effect(help_effect_t::view)
+         .with_tags({"display"})
          .with_summary("Do a full redraw of the screen")},
     {
         "zoom-to",
@@ -3929,6 +3949,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":zoom-to")
             .with_effect(help_effect_t::view)
+            .with_tags({"display"})
             .with_summary("Zoom the current view to the given level")
             .with_parameter(
                 help_text("zoom-level",
@@ -3964,6 +3985,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":spectrogram")
             .with_effect(help_effect_t::view)
+            .with_tags({"display"})
             .with_summary(
                 "Visualize the given message field or database column "
                 "using a spectrogram")
@@ -3981,6 +4003,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
 
         help_text(":quit")
             .with_effect(help_effect_t::exit)
+            .with_tags({"scripting"})
             .with_summary("Quit lnav"),
     },
     {
@@ -3988,6 +4011,7 @@ lnav::commands::command_t STD_COMMANDS[] = {
         com_write_debug_log_to,
         help_text(":write-debug-log-to")
             .with_effect(help_effect_t::external)
+            .with_tags({"io"})
             .with_summary(
                 "Write lnav's internal debug log to the given path.  This can "
                 "be useful if the `-d` flag was not passed on the command line")

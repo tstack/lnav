@@ -29,113 +29,138 @@
         },
         "value": {
             "type": {
+                "description": "The type of request or connection: http, https, h2 (HTTP/2 over TLS), ws, or wss",
                 "kind": "string",
                 "identifier": true
             },
             "elb": {
+                "description": "The resource ID of the load balancer",
                 "kind": "string",
                 "identifier": true
             },
             "client_ip": {
+                "description": "The IP address of the requesting client",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "client_port": {
+                "description": "The port of the requesting client",
                 "kind": "integer",
                 "foreign-key": true
             },
             "target_ip": {
+                "description": "The IP address of the target that processed the request",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "target_port": {
+                "description": "The port of the target that processed the request",
                 "kind": "integer",
                 "foreign-key": true
             },
             "request_processing_time": {
+                "description": "The seconds from when the load balancer received the request until it sent it to a target, or -1 if it couldn't",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "target_processing_time": {
+                "description": "The seconds from when the load balancer sent the request to a target until the target started sending the response headers, or -1 if it couldn't",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "response_processing_time": {
+                "description": "The seconds from when the load balancer received the response headers from the target until it started sending the response to the client, or -1 if it couldn't",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "elb_status_code": {
+                "description": "The status code of the response from the load balancer",
                 "kind": "integer",
                 "foreign-key": true
             },
             "target_status_code": {
+                "description": "The status code of the response from the target",
                 "kind": "integer",
                 "foreign-key": true
             },
             "received_bytes": {
+                "description": "The size of the request received from the client, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "sent_bytes": {
+                "description": "The size of the response sent to the client, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "cs_method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_stem": {
+                "description": "The path part of the request URI",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_query": {
+                "description": "The query parameters in the request URI",
                 "kind": "string"
             },
             "cs_version": {
+                "description": "The client's HTTP version",
                 "kind": "string",
                 "identifier": true
             },
             "user_agent": {
+                "description": "The User-Agent header from the client",
                 "kind": "string",
                 "identifier": true
             },
             "ssl_cipher": {
+                "description": "The SSL cipher used for an HTTPS listener",
                 "kind": "string",
                 "identifier": true
             },
             "ssl_protocol": {
+                "description": "The SSL protocol used for an HTTPS listener",
                 "kind": "string",
                 "identifier": true
             },
             "target_group_arn": {
+                "description": "The ARN of the target group",
                 "kind": "string",
                 "identifier": true
             },
             "trace_id": {
+                "description": "The contents of the X-Amzn-Trace-Id header",
                 "kind": "string",
                 "identifier": true
             },
             "domain_name": {
+                "description": "The SNI domain the client provided in the TLS handshake",
                 "kind": "string",
                 "identifier": true
             },
             "chosen_cert_arn": {
+                "description": "The ARN of the certificate presented to the client",
                 "kind": "string",
                 "identifier": true
             },
             "matched_rule_priority": {
+                "description": "The priority of the rule that matched the request",
                 "kind": "integer",
                 "identifier": true
             }

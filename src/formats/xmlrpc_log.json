@@ -11,17 +11,21 @@
         },
         "value": {
             "pid": {
+                "description": "The ID of the server process",
                 "kind": "integer",
                 "identifier": true
             },
             "client_ip": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "identifier": true
             },
             "module": {
+                "description": "The XMLRPC handler module that was called",
                 "kind": "string"
             },
             "function": {
+                "description": "The XMLRPC function that was called",
                 "kind": "string"
             }
         },

@@ -21,50 +21,62 @@
         "multiline": false,
         "value": {
             "exception": {
+                "description": "The exception logged with the message",
                 "kind": "json",
                 "hidden": true
             },
             "exception/Exception": {
+                "description": "The exception's class",
                 "kind": "string",
                 "identifier": true
             },
             "exception/Message": {
+                "description": "The exception's message",
                 "kind": "string"
             },
             "app": {
+                "description": "The Nextcloud app that logged the message",
                 "kind": "string",
                 "identifier": true
             },
             "reqId": {
+                "description": "The ID of the request the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "remoteAddr": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "identifier": true
             },
             "url": {
+                "description": "The request URL",
                 "kind": "string",
                 "hidden": true
             },
             "method": {
+                "description": "The request method",
                 "kind": "string",
                 "hidden": true
             },
             "user": {
+                "description": "The user who made the request",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "userAgent": {
+                "description": "The request's User-Agent header",
                 "kind": "string",
                 "hidden": true
             },
             "version": {
+                "description": "The Nextcloud version",
                 "kind": "string",
                 "hidden": true
             },
             "data": {
+                "description": "Extra data logged with the message",
                 "kind": "json",
                 "hidden": true
             }

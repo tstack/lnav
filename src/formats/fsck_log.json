@@ -11,14 +11,17 @@
         "opid-field": "device",
         "value": {
             "device": {
+                "description": "The disk device being checked",
                 "kind": "string",
                 "identifier": true
             },
             "tool": {
+                "description": "The tool checking the device, fsck_apfs or fsck_hfs",
                 "kind": "string",
                 "identifier": true
             },
             "action": {
+                "description": "What the tool did: run, started, or completed",
                 "kind": "string",
                 "identifier": true
             }

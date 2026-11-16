@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: no log statement at [1mServer.java:12[0m
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m:[0m[1m[36m[40mfilter-out-statement[0m[37m[40m Server[0m[1m[36m[40m.[0m[37m[40mjava:12    [0m
+[36m =[0m [36mhelp[0m: give a line of a statement that source_log_stmt() lists for the file

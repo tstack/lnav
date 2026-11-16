@@ -489,3 +489,229 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT path, line, hits, functions FROM log_stack_frames ORDER BY path, line" \
     -c ":write-csv-to -" \
     stack-frame-spellings.log
+
+# :filter-out-statement hides the messages a statement logged, and follows it
+# through edits to its file.  The edits are made to a copy of the source while
+# lnav runs, by copying in versions prepared here (sed -i isn't portable).
+rm -rf hide-stmt-src
+cp -r ${test_dir}/log2src/java hide-stmt-src
+HIDE_SRC_FILE=hide-stmt-src/com/example/net/Server.java
+cp ${HIDE_SRC_FILE} hide-stmt-orig.java
+# three lines added above the statements: they all move down by three
+awk 'NR == 12 { print "// one"; print "// two"; print "// three" } { print }' \
+    hide-stmt-orig.java > hide-stmt-moved.java
+# the filtered statement's message changed: it can't be found any more
+sed -e 's/is slow/is very slow/' hide-stmt-orig.java > hide-stmt-changed.java
+HIDE_ID=';SELECT type, language, pattern FROM lnav_view_filters'
+HIDE_COUNT=';SELECT count(*) AS shown, (SELECT count(*) FROM lnav_view_filters) AS filters FROM all_logs'
+
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";SELECT log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+# :filter-in-statement shows only that statement's messages
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-in-statement Server.java:15" \
+    -c ";SELECT log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+# a line without a statement is an error, and so is filtering a statement
+# both in and out
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:12" \
+    hide-stmt-src/java-example.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ":filter-in-statement Server.java:15" \
+    hide-stmt-src/java-example.0
+
+# the filter commands take the statement's location too (a tail of its path
+# will do), as well as the filter's id
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ":delete-filter net/Server.java:15" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-in-statement Server.java:15" \
+    -c ":disable-filter Server.java:15" \
+    -c ";SELECT count(*) AS shown, (SELECT enabled FROM lnav_view_filters) AS enabled FROM all_logs" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";SELECT substr(pattern, 1, instr(pattern, '@') - 1) AS filter_id FROM lnav_view_filters" \
+    -c ":switch-to-view log" \
+    -c ":eval :delete-filter \$filter_id" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+# an edit that moves the statement moves the filter with it, and its new
+# location finds the filter
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";SELECT shell_exec('cp hide-stmt-moved.java ${HIDE_SRC_FILE}') AS r" \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";SELECT count(*) AS stmts FROM source_log_stmt('Server.java')" \
+    -c ";SELECT 1" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    -c ";SELECT log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":delete-filter Server.java:18" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    -c ";SELECT shell_exec('cp hide-stmt-orig.java ${HIDE_SRC_FILE}') AS r" \
+    hide-stmt-src/java-example.0
+
+# an edit to the statement's message leaves the filter unresolved: it says
+# why and does nothing, so its messages are shown again, and the location it
+# shows still finds it
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";SELECT count(*) AS shown FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ";SELECT shell_exec('cp hide-stmt-changed.java ${HIDE_SRC_FILE}') AS r" \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";SELECT count(*) AS stmts FROM source_log_stmt('Server.java')" \
+    -c ";SELECT 1" \
+    -c ";SELECT count(*) AS shown FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":delete-filter Server.java:15" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    -c ";SELECT shell_exec('cp hide-stmt-orig.java ${HIDE_SRC_FILE}') AS r" \
+    hide-stmt-src/java-example.0
+
+# an unresolved "in" filter does nothing too, rather than hiding everything
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-in-statement Server.java:15" \
+    -c ";SELECT count(*) AS shown FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ";SELECT shell_exec('cp hide-stmt-changed.java ${HIDE_SRC_FILE}') AS r" \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";SELECT count(*) AS stmts FROM source_log_stmt('Server.java')" \
+    -c ";SELECT 1" \
+    -c ";SELECT count(*) AS shown FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ";SELECT shell_exec('cp hide-stmt-orig.java ${HIDE_SRC_FILE}') AS r" \
+    hide-stmt-src/java-example.0
+
+# a saved filter (path:line@id) finds its statement where it is now, and one
+# given before the source is added waits for it, filtering nothing meanwhile
+cp hide-stmt-moved.java ${HIDE_SRC_FILE}
+run_cap_test ${lnav_test} -n \
+    -c ":filter-in-statement Server.java:15@3089d4c38cc0" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    -c ";SELECT count(*) AS shown FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";SELECT count(*) AS stmts FROM source_log_stmt('Server.java')" \
+    -c ";SELECT 1" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    -c ";SELECT log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+cp hide-stmt-orig.java ${HIDE_SRC_FILE}
+
+# a statement filter can't be made by SQL in a view other than LOG, by
+# changing a filter's language either
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";INSERT INTO lnav_view_filters (view_name, pattern) VALUES ('text', 'logger')" \
+    -c ";UPDATE lnav_view_filters SET language = 'statement', pattern = 'Server.java:15' WHERE view_name = 'text'" \
+    hide-stmt-src/java-example.0 \
+    ${HIDE_SRC_FILE}
+
+# SQL can't filter a statement in that's already filtered out, the same as
+# :filter-in-statement
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";INSERT INTO lnav_view_filters (view_name, type, language, pattern) VALUES ('log', 'in', 'statement', 'Server.java:15')" \
+    hide-stmt-src/java-example.0
+
+# or move a filter to a statement another filter has
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path hide-stmt-src" \
+    -c ":filter-out-statement Server.java:14" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ";UPDATE lnav_view_filters SET pattern = 'Server.java:15' WHERE pattern LIKE '%:14@%'" \
+    hide-stmt-src/java-example.0
+
+# a filter waiting for its source is found by a longer path than the one it
+# was given
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out-statement Server.java:15" \
+    -c ":delete-filter hide-stmt-src/com/example/net/Server.java:15" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+# a filter given by a line with no statement waits for its source; once the
+# source is added, it says there's no statement there
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out-statement Server.java:12" \
+    -c ":add-source-path hide-stmt-src" \
+    -c ";SELECT count(*) AS stmts FROM source_log_stmt('Server.java')" \
+    -c ";SELECT 1" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    hide-stmt-src/java-example.0
+
+# any line of a statement that spans several finds its filter
+rm -rf wrap-stmt-src
+cp -r ${test_dir}/log2src/java wrap-stmt-src
+awk 'NR == 15 { print "        Runnable r = () -> logger.warn(\"client {} \""; print "            + \"is slow\", client);"; next } { print }' \
+    hide-stmt-orig.java > wrap-stmt-src/com/example/net/Server.java
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path wrap-stmt-src" \
+    -c ":filter-out-statement Server.java:15" \
+    -c ":delete-filter Server.java:16" \
+    -c "${HIDE_COUNT}" \
+    -c ":write-csv-to -" \
+    wrap-stmt-src/java-example.0
+
+# a path tail that two filters' files end with is the file log2src finds for
+# it
+rm -rf tail-stmt-src
+cp -r ${test_dir}/log2src/java tail-stmt-src
+mkdir -p tail-stmt-src/com/example/other
+cp hide-stmt-orig.java tail-stmt-src/com/example/other/Server.java
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path tail-stmt-src" \
+    -c ":filter-out-statement net/Server.java:15" \
+    -c ":filter-out-statement other/Server.java:15" \
+    -c ";SELECT source_find_file('Server.java') AS found" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":delete-filter Server.java:15" \
+    -c "${HIDE_ID}" \
+    -c ":write-csv-to -" \
+    tail-stmt-src/java-example.0

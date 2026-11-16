@@ -138,6 +138,7 @@ struct all_opids {
 -- One row per operation ID across every open file, with its times and level
 -- counts.  It reads the files, not the LOG view, so it doesn't follow lnav's
 -- filters.  UPDATE the description column to give an operation a description.
+-- Tags: navigation
 CREATE TABLE lnav_db.all_opids (
     opid TEXT PRIMARY KEY,         -- The operation ID
     earliest DATETIME,             -- The earliest time this ID was seen
@@ -539,6 +540,7 @@ struct all_thread_ids {
 -- One row per thread ID across every open file, with its times and level
 -- counts.  It reads the files, not the LOG view, so it doesn't follow lnav's
 -- filters.
+-- Tags: navigation
 CREATE TABLE lnav_db.all_thread_ids (
     thread_id TEXT PRIMARY KEY,    -- The thread ID
     earliest DATETIME,             -- The earliest time this ID was seen
@@ -820,6 +822,7 @@ struct all_thread_opids {
 -- One row per thread and operation ID: the operations each thread logged in,
 -- across every open file, with their times and level counts.  It reads the
 -- files, not the LOG view, so it doesn't follow lnav's filters.
+-- Tags: navigation
 CREATE TABLE lnav_db.all_thread_opids (
     thread_id TEXT,                -- The thread ID, or NULL for messages without one
     opid TEXT,                     -- The operation ID, or NULL for the thread's messages without one

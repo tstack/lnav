@@ -20,42 +20,52 @@
         },
         "value": {
             "data": {
+                "description": "The data the message is about, like the request",
                 "kind": "quoted"
             },
             "loginid": {
+                "description": "The ID of the user",
                 "kind": "quoted",
                 "identifier": true
             },
             "contextid": {
+                "description": "The ID of the session or context",
                 "kind": "quoted",
                 "identifier": true
             },
             "ipaddr": {
+                "description": "The IP address of the client",
                 "kind": "quoted",
                 "identifier": true,
                 "collate": "ipaddress"
             },
             "domain": {
+                "description": "The realm the event happened in",
                 "kind": "quoted",
                 "identifier": true
             },
             "loggedby": {
+                "description": "The ID of the user or component that logged the message",
                 "kind": "quoted",
                 "identifier": true
             },
             "messageid": {
+                "description": "The ID of the kind of message",
                 "kind": "quoted",
                 "identifier": true
             },
             "modulename": {
+                "description": "The module that logged the message",
                 "kind": "quoted",
                 "identifier": true
             },
             "nameid": {
+                "description": "The name ID of the user",
                 "kind": "quoted",
                 "identifier": true
             },
             "hostname": {
+                "description": "The host the event happened on",
                 "kind": "quoted",
                 "identifier": true,
                 "collate": "ipaddress"

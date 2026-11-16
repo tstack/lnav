@@ -44,6 +44,8 @@ static constexpr auto EXIT_MSG = "Press " ANSI_HOTKEY("ESC") " to exit "_frag;
 static constexpr auto CREATE_HELP
     = "Create: " ANSI_HOTKEY("i") "n/" ANSI_HOTKEY("o") "ut";
 static constexpr auto CREATE_EXPR_HELP = "  SQL " ANSI_HOTKEY("e") "xpr";
+static constexpr auto CREATE_STMT_HELP
+    = "  " ANSI_HOTKEY("I") "/" ANSI_HOTKEY("O") " stmt";
 static constexpr auto CREATE_SEARCH_HELP = "  " ANSI_HOTKEY("s") "earch";
 static constexpr auto CREATE_LEVEL_HELP = "  " ANSI_HOTKEY("l") "evel";
 static constexpr auto MIN_MAX_TIME_HELP
@@ -318,11 +320,16 @@ filter_help_status_source::statusview_fields()
             auto sel = lv.get_selection();
             auto* fss = dynamic_cast<filter_sub_source*>(lv.get_sub_source());
             auto rows = fss->rows_for(tc);
-            if (rows.empty()) {
+            // A filter added or deleted from elsewhere (a script, the
+            // external-access API) changes the rows before the panel's
+            // selection catches up, so it can be unset or past the end.
+            if (rows.empty() || !sel || sel.value() >= vis_line_t(rows.size()))
+            {
                 this->fss_help.set_value(
-                    "  %s%s%s%s%s",
+                    "  %s%s%s%s%s%s",
                     CREATE_HELP,
                     lss != nullptr ? CREATE_EXPR_HELP : "",
+                    lss != nullptr ? CREATE_STMT_HELP : "",
                     lss != nullptr ? CREATE_LEVEL_HELP : "",
                     ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                     CREATE_SEARCH_HELP);
@@ -346,7 +353,17 @@ filter_help_status_source::statusview_fields()
                             ? "an SQL"
                             : "a regular";
 
-                        if (tf->get_type() == text_filter::type_t::INCLUDE) {
+                        if (tf->get_lang() == filter_lang_t::STATEMENT) {
+                            this->fss_help.set_value(
+                                "                           "
+                                "Enter the source file and line of the log "
+                                "statement to filter %s:",
+                                tf->get_type() == text_filter::type_t::INCLUDE
+                                    ? "in"
+                                    : "out");
+                        } else if (tf->get_type()
+                                   == text_filter::type_t::INCLUDE)
+                        {
                             this->fss_help.set_value(
                                 "                           "
                                 "Enter %s expression to match lines to filter "
@@ -371,9 +388,10 @@ filter_help_status_source::statusview_fields()
                 } else if (tfr != nullptr) {
                     auto& tf = tfr->tfr_filter;
                     this->fss_help.set_value(
-                        "  %s%s%s%s%s  %s%s  %s  %s%s  %s  %s%s",
+                        "  %s%s%s%s%s%s  %s%s  %s  %s%s  %s  %s%s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_STMT_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
                         ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                         CREATE_SEARCH_HELP,
@@ -390,9 +408,10 @@ filter_help_status_source::statusview_fields()
                 } else if (nsr != nullptr) {
                     const auto* ns = tc->find_named_search(nsr->nsr_name);
                     this->fss_help.set_value(
-                        "  %s%s%s%s%s  %s%s  %s%s  %s  %s",
+                        "  %s%s%s%s%s%s  %s%s  %s%s  %s  %s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_STMT_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
                         ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                         CREATE_SEARCH_HELP,
@@ -407,9 +426,10 @@ filter_help_status_source::statusview_fields()
                         DELETE_HELP);
                 } else {
                     this->fss_help.set_value(
-                        "  %s%s%s%s%s  %s  %s  %s%s",
+                        "  %s%s%s%s%s%s  %s  %s  %s%s",
                         CREATE_HELP,
                         lss != nullptr ? CREATE_EXPR_HELP : "",
+                        lss != nullptr ? CREATE_STMT_HELP : "",
                         lss != nullptr ? CREATE_LEVEL_HELP : "",
                         ttt != nullptr ? MIN_MAX_TIME_HELP : "",
                         CREATE_SEARCH_HELP,

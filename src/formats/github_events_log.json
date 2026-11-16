@@ -106,95 +106,121 @@
         ],
         "value": {
             "id": {
+                "description": "The ID of the event",
                 "kind": "string",
                 "identifier": true,
                 "hidden": true
             },
             "type": {
+                "description": "The type of the event, like PushEvent or IssuesEvent",
                 "kind": "string",
                 "identifier": true
             },
             "actor": {
+                "description": "The user who triggered the event",
                 "kind": "json",
                 "hidden": true
             },
             "actor/display_login": {
+                "description": "The login of the user who triggered the event",
                 "kind": "string",
                 "identifier": true
             },
             "org": {
+                "description": "The organization the repository belongs to",
                 "kind": "json",
                 "hidden": true
             },
             "payload": {
+                "description": "The details of the event, which depend on its type",
                 "kind": "json",
                 "hidden": true
             },
             "payload/action": {
+                "description": "What was done, like opened or closed",
                 "kind": "string"
             },
             "payload/commits#/message": {
+                "description": "The commit messages in a push",
                 "kind": "string"
             },
             "payload/forkee/full_name": {
+                "description": "The name of the repository the fork created",
                 "kind": "string"
             },
             "payload/master_branch": {
+                "description": "The repository's default branch",
                 "kind": "string",
                 "identifier": true
             },
             "payload/member/login": {
+                "description": "The login of the user added as a collaborator",
                 "kind": "string",
                 "identifier": true
             },
             "payload/pull_request/number": {
+                "description": "The number of the pull request",
                 "kind": "integer",
                 "identifier": true
             },
             "payload/pull_request/title": {
+                "description": "The title of the pull request",
                 "kind": "string"
             },
             "payload/pull_request/updated_at": {
+                "description": "The time the pull request was last updated",
                 "kind": "timestamp"
             },
             "payload/pull_request/merged_at": {
+                "description": "The time the pull request was merged",
                 "kind": "timestamp"
             },
             "payload/pull_request/closed_at": {
+                "description": "The time the pull request was closed",
                 "kind": "timestamp"
             },
             "payload/issue/number": {
+                "description": "The number of the issue",
                 "kind": "integer",
                 "identifier": true
             },
             "payload/issue/title": {
+                "description": "The title of the issue",
                 "kind": "string"
             },
             "payload/pages#/action": {
+                "description": "What was done to the wiki page: created or edited",
                 "kind": "string"
             },
             "payload/pages#/title": {
+                "description": "The title of the wiki page",
                 "kind": "string"
             },
             "payload/ref_type": {
+                "description": "The type of ref created or deleted: repository, branch, or tag",
                 "kind": "string"
             },
             "payload/release/name": {
+                "description": "The name of the release",
                 "kind": "string"
             },
             "payload/review/id": {
+                "description": "The ID of the pull request review",
                 "kind": "integer",
                 "identifier": true
             },
             "public": {
+                "description": "Whether the event is public",
                 "kind": "boolean",
                 "hidden": true
             },
             "repo": {
+                "description": "The repository the event is about",
                 "kind": "json",
                 "hidden": true
             },
             "repo/name": {
+                "description": "The name of the repository the event is about",
                 "kind": "string",
                 "identifier": true
             }

@@ -211,8 +211,12 @@ lnav_format_values
 ------------------
 
 The :code:`lnav_format_values` table lists the values that are defined by the
-loaded log formats, whether or not a file with that format is open.  The
-following columns are available in this table:
+loaded log formats, whether or not a file with that format is open.  Each value
+is a column of the format's own table, which is named after the format and has
+the messages of that format (e.g. the :code:`sc_status` value of
+:code:`access_log` is :code:`access_log.sc_status`).  The
+:code:`log_format` column of the :code:`all_logs` table says which formats
+have messages.  The following columns are available in this table:
 
 :format: The name of the log format.
 :name: The name of the value.
@@ -223,7 +227,20 @@ following columns are available in this table:
 :unit_divisor: What the raw value is divided by to get the base unit implied
   by the suffix.  For example, a value in milliseconds with a suffix of
   :code:`s` has a divisor of 1000.
-:identifier: Indicates if the value is an identifier.
+:identifier: 1 when the value names something, like an ID, so grouping by
+  it makes sense.
+:roles: A JSON array of what the format uses the value for, from its
+  :code:`*-field` properties and, for :code:`subid`, the :code:`subid`
+  property of :code:`opid`: :code:`timestamp`, :code:`start-timestamp`,
+  :code:`subsecond`, :code:`time`, :code:`level`, :code:`body`, :code:`opid`,
+  :code:`subid`, :code:`thread-id`, :code:`src-file`, :code:`src-line`,
+  :code:`src-location`, or :code:`duration`.  A value can have more than one
+  role, e.g. :code:`["opid","thread-id"]`, or none, :code:`[]`.  Only the
+  values declared in the format's :code:`value` section have rows, so a field
+  the format uses without declaring it, such as a :code:`level-field` that is
+  not in :code:`value`, does not appear in this table.
+:description: What the value is, from the :code:`description` property of
+  the value in the format file, or NULL if it has none.
 
 .. _table_lnav_log_breakpoints:
 
@@ -296,7 +313,9 @@ name or by topic.  The columns in the table are as follows:
   :code:`description`, the :code:`code` to run, and its
   :code:`language` (:code:`default` or :code:`prql`).
 :tags: A JSON array of the topics the entry belongs to, such as
-  :code:`filtering`, :code:`navigation`, or :code:`datetime`.
+  :code:`filtering`, :code:`navigation`, or :code:`datetime`.  Tables
+  have them too, so looking up a topic finds the tables for it along
+  with the commands and functions.
 :opposites: A JSON array of the names of the entries that undo this
   one.
 :prql_path: For PRQL functions, the dotted module path
@@ -478,7 +497,14 @@ The :code:`lnav_view_filters` table allows you to manipulate the filters in the
   :filter_id: The filter identifier.  This will be assigned on insertion.
   :enabled: Indicates whether this filter is enabled or disabled.
   :type: The type of filter, either 'in' or 'out'.
-  :pattern: The regular expression to filter on.
+  :language: What the pattern is: 'regex' for a regular expression, 'sql'
+    for a SQL expression (see :ref:`:filter-expr<filter_expr>`), or
+    'statement' for a log statement (see
+    :ref:`:filter-in-statement<filter_in_statement>`).
+  :pattern: The regular expression, SQL expression, or statement to filter
+    on.  A statement is its source file and line, with an identifier that
+    finds it again after the file changes (:code:`path:line@id`); an
+    :code:`INSERT` can leave the identifier out.
 
 This table supports :code:`SELECT`, :code:`INSERT`, :code:`UPDATE`, and
 :code:`DELETE` on the table rows to read, create, update, and delete

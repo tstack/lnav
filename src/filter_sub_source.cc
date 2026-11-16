@@ -48,6 +48,7 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "sql_util.hh"
+#include "statement_filter.hh"
 #include "textinput_curses.hh"
 #include "textview_curses.hh"
 
@@ -260,10 +261,19 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             break;
         }
         case 'i':
-        case 'o': {
+        case 'o':
+        case 'I':
+        case 'O': {
             auto* top_view = *lnav_data.ld_view_stack.top();
             auto* tss = top_view->get_sub_source();
             auto& fs = tss->get_filters();
+            // I and O filter by log statement, which only the LOG view has.
+            auto by_statement = isupper(ch.eff_text[0]);
+            if (by_statement
+                && dynamic_cast<logfile_sub_source*>(tss) == nullptr)
+            {
+                return true;
+            }
             auto filter_index = fs.next_index();
 
             if (!filter_index) {
@@ -272,11 +282,13 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 return true;
             }
 
-            auto filter_type = ch.eff_text[0] == 'i'
+            auto filter_type = tolower(ch.eff_text[0]) == 'i'
                 ? text_filter::type_t::INCLUDE
                 : text_filter::type_t::EXCLUDE;
             auto ef = std::make_shared<empty_filter>(
-                filter_type, filter_lang_t::REGEX, *filter_index);
+                filter_type,
+                by_statement ? filter_lang_t::STATEMENT : filter_lang_t::REGEX,
+                *filter_index);
             fs.add_filter(ef);
 
             const auto& [index, row] = this->find_row(top_view, ef);
@@ -402,8 +414,10 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
                                        line_flags_t flags)
 {
     auto* top_view = *lnav_data.ld_view_stack.top();
-    auto selected
-        = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
+    auto selected = line == tc.get_selection();
+    auto cursor_role = lnav_data.ld_mode == ln_mode_t::FILTER
+        ? role_t::VCR_CURSOR_LINE
+        : role_t::VCR_DISABLED_CURSOR_LINE;
     auto rows = this->rows_for(top_view);
     auto rs = render_state{top_view};
     auto& al = this->fss_curr_line;
@@ -423,7 +437,7 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
 
     row->value_for(rs, al);
     if (selected) {
-        al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));
+        al.with_attr_for_all(VC_ROLE.value(cursor_role));
     }
 
     value_out = al.al_string;
@@ -935,7 +949,9 @@ filter_sub_source::text_filter_row::value_for(const render_state& rs,
             al.append(" ").append(lnav::roles::ok("IN")).append(" ");
             break;
         case text_filter::EXCLUDE:
-            if (this->tfr_filter->get_lang() == filter_lang_t::REGEX) {
+            if (this->tfr_filter->get_lang() == filter_lang_t::REGEX
+                || this->tfr_filter->get_lang() == filter_lang_t::STATEMENT)
+            {
                 al.append(lnav::roles::error("OUT")).append(" ");
             } else {
                 al.append("    ");
@@ -970,6 +986,41 @@ filter_sub_source::text_filter_row::value_for(const render_state& rs,
             readline_sql_highlighter(
                 content, lnav::sql::dialect::sqlite, std::nullopt);
             break;
+        case filter_lang_t::STATEMENT: {
+            const auto* sf
+                = dynamic_cast<const statement_filter*>(this->tfr_filter.get());
+            if (sf != nullptr) {
+                // Labeled, so it doesn't read as a pattern for "path:line",
+                // and named by its short location and function, not the id.
+                content.clear();
+                content.append(lnav::roles::keyword("stmt"))
+                    .append(" ")
+                    .append(lnav::roles::file(sf->get_short_location()));
+                auto fn = sf->get_short_function();
+                if (!fn.empty()) {
+                    content.append(" in ").append(lnav::roles::symbol(fn));
+                }
+            }
+            if (sf != nullptr
+                && sf->get_state() == statement_filter::state_t::pending)
+            {
+                if (sf->get_reason().empty()) {
+                    content.append(" (waiting for the source scan)"_comment);
+                } else {
+                    content.append(" (waiting: "_comment)
+                        .append(lnav::roles::comment(sf->get_reason()))
+                        .append(")"_comment);
+                }
+            } else if (sf != nullptr
+                       && sf->get_state()
+                           == statement_filter::state_t::unresolved)
+            {
+                content.append(" (not found: "_comment)
+                    .append(lnav::roles::comment(sf->get_reason()))
+                    .append(")"_comment);
+            }
+            break;
+        }
         case filter_lang_t::NONE:
             break;
     }
@@ -1020,6 +1071,23 @@ filter_sub_source::text_filter_row::prime_text_input(textview_curses* top_view,
     ti.tc_text_format = this->tfr_filter->get_lang() == filter_lang_t::SQL
         ? text_format_t::TF_SQL
         : text_format_t::TF_PCRE;
+    if (this->tfr_filter->get_lang() == filter_lang_t::STATEMENT) {
+        ti.tc_text_format = text_format_t::TF_PLAINTEXT;
+        const auto* sf
+            = dynamic_cast<const statement_filter*>(this->tfr_filter.get());
+        ti.set_content(sf != nullptr ? sf->get_short_location() : "");
+        auto* lss
+            = dynamic_cast<logfile_sub_source*>(top_view->get_sub_source());
+        auto sel = top_view->get_selection();
+        if (sf == nullptr && lss != nullptr && sel) {
+            ti.tc_suggestion
+                = lnav::statement_filters::location_at_row(*lss, sel.value())
+                      .value_or("");
+        }
+        auto retval = this->tfr_filter->is_enabled();
+        this->tfr_filter->disable();
+        return retval;
+    }
     if (this->tfr_filter->get_lang() == filter_lang_t::SQL) {
         prompt.refresh_sql_completions(*top_view);
         prompt.refresh_sql_expr_completions(*top_view);
@@ -1047,6 +1115,24 @@ filter_sub_source::text_filter_row::ti_change(textview_curses* top_view,
     switch (this->tfr_filter->get_lang()) {
         case filter_lang_t::NONE:
             break;
+        case filter_lang_t::STATEMENT: {
+            // The focused message's statement, or the rest of it while what
+            // was typed is its start; anything else is another statement.
+            rc.tc_suggestion.clear();
+            auto* lss = dynamic_cast<logfile_sub_source*>(tss);
+            auto sel = top_view->get_selection();
+            if (lss == nullptr || !sel || !rc.is_cursor_at_end_of_line()) {
+                break;
+            }
+            auto loc
+                = lnav::statement_filters::location_at_row(*lss, sel.value());
+            if (loc && loc->size() > new_value.size()
+                && startswith(loc.value(), new_value))
+            {
+                rc.tc_suggestion = loc->substr(new_value.size());
+            }
+            break;
+        }
         case filter_lang_t::REGEX: {
             if (new_value.empty()) {
                 auto sugg = top_view->get_current_search();
@@ -1150,7 +1236,26 @@ filter_sub_source::text_filter_row::ti_completion_request(
               .with_parameter(
                   help_text("expr", "The expression to evaluate")
                       .with_format(help_parameter_format_t::HPF_SQL_EXPR));
+    static const auto FILTER_STATEMENT_HELP
+        = help_text("filter-statement", "filter the view by a log statement")
+              .with_parameter(
+                  help_text("location", "The statement's source file and line")
+                      .with_format(help_parameter_format_t::HPF_LOG_STATEMENT));
     static auto& prompt = lnav::prompt::get();
+
+    if (this->tfr_filter->get_lang() == filter_lang_t::STATEMENT) {
+        // The whole line is the location; keep the suggestion while typing.
+        if (crt == completion_request_type_t::full
+            || tc.tc_popup_type != textinput_curses::popup_type_t::none)
+        {
+            const auto& param = FILTER_STATEMENT_HELP.ht_parameters.front();
+            auto poss = prompt.get_cmd_parameter_completion(
+                *top_view, &FILTER_STATEMENT_HELP, &param, tc.get_content());
+            tc.open_popup_for_completion(0, poss);
+            tc.tc_popup.set_title(param.ht_name);
+        }
+        return;
+    }
 
     auto& al = tc.tc_lines[tc.tc_cursor.y];
     auto al_sf = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
@@ -1224,6 +1329,46 @@ filter_sub_source::text_filter_row::ti_perform(textview_curses* top_view,
         this->ti_abort(top_view, ti, parent);
     } else {
         switch (this->tfr_filter->get_lang()) {
+            case filter_lang_t::STATEMENT: {
+                const auto* old_sf = dynamic_cast<const statement_filter*>(
+                    this->tfr_filter.get());
+                if (old_sf != nullptr
+                    && new_value == old_sf->get_short_location())
+                {
+                    this->ti_abort(top_view, ti, parent);
+                    break;
+                }
+                auto create_res = lnav::statement_filters::create(
+                    this->tfr_filter->get_type(),
+                    new_value,
+                    this->tfr_filter->get_index());
+                if (create_res.isErr()) {
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(
+                        create_res.unwrapErr());
+                    this->ti_abort(top_view, ti, parent);
+                    break;
+                }
+                auto sf = create_res.unwrap();
+                auto dup = lnav::statement_filters::find_same(
+                    fs, *sf, this->tfr_filter.get());
+                if (dup != nullptr) {
+                    auto um = lnav::console::user_message::error(
+                        lnav::statement_filters::already_filtered_message(
+                            *dup));
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
+                    this->ti_abort(top_view, ti, parent);
+                    break;
+                }
+
+                log_debug("filter panel: statement filter %s",
+                          sf->get_id().c_str());
+                this->tfr_filter->lf_deleted = true;
+                tss->text_filters_changed();
+                auto iter = std::find(fs.begin(), fs.end(), this->tfr_filter);
+                *iter = sf;
+                tss->text_filters_changed();
+                break;
+            }
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {
                 auto compile_res

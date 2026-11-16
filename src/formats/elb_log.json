@@ -29,109 +29,133 @@
         },
         "value": {
             "elb": {
+                "description": "The name of the load balancer",
                 "kind": "string",
                 "identifier": true
             },
             "client_ip": {
+                "description": "The IP address of the requesting client",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "client_port": {
+                "description": "The port of the requesting client",
                 "kind": "integer",
                 "foreign-key": true
             },
             "backend_ip": {
+                "description": "The IP address of the instance that processed the request",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "backend_port": {
+                "description": "The port of the instance that processed the request",
                 "kind": "integer",
                 "foreign-key": true
             },
             "request_processing_time": {
+                "description": "The seconds from when the load balancer received the request until it sent it to an instance",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "backend_processing_time": {
+                "description": "The seconds from when the load balancer sent the request to an instance until the instance started responding",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "response_processing_time": {
+                "description": "The seconds from when the load balancer received the response headers from the instance until it started sending the response to the client",
                 "kind": "float",
                 "unit": {
                     "suffix": "s"
                 }
             },
             "elb_status_code": {
+                "description": "The status code of the response from the load balancer",
                 "kind": "integer",
                 "foreign-key": true
             },
             "backend_status_code": {
+                "description": "The status code of the response from the instance",
                 "kind": "integer",
                 "foreign-key": true
             },
             "received_bytes": {
+                "description": "The size of the request received from the client, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "sent_bytes": {
+                "description": "The size of the response sent to the client, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "cs_method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_stem": {
+                "description": "The path part of the request URI",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_query": {
+                "description": "The query parameters in the request URI",
                 "kind": "string"
             },
             "cs_version": {
+                "description": "The client's HTTP version",
                 "kind": "string",
                 "identifier": true
             },
             "user_agent": {
+                "description": "The User-Agent header from the client",
                 "kind": "string",
                 "identifier": true
             },
             "ssl_cipher": {
+                "description": "The SSL cipher used for an HTTPS listener",
                 "kind": "string",
                 "identifier": true
             },
             "ssl_protocol": {
+                "description": "The SSL protocol used for an HTTPS listener",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_whole" : {
+                "description": "The whole request URI",
                 "kind" : "string",
                 "identifier" : true
             },
             "cs_uri_scheme" : {
+                "description": "The request URI's scheme",
                 "kind" : "string",
                 "identifier" : true
             },
             "cs_uri_hostname" : {
+                "description": "The request URI's host name",
                 "kind" : "string",
                 "identifier" : true
             },
             "cs_uri_port" : {
+                "description": "The request URI's port",
                 "kind" : "string",
                 "identifier" : true
             },
             "cs_uri_path" : {
+                "description": "The request URI's path",
                 "kind" : "string",
                 "identifier" : true
             }

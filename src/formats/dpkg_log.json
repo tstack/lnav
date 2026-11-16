@@ -10,21 +10,26 @@
         },
         "value": {
             "action": {
+                "description": "What dpkg did: startup, status, configure, install, upgrade, trigproc, remove, or purge",
                 "kind": "string",
                 "identifier": true
             },
             "status": {
+                "description": "The package's state, like installed, half-configured, or not-installed",
                 "kind": "string",
                 "identifier": true
             },
             "package": {
+                "description": "The package the message is about",
                 "kind": "string",
                 "identifier": true
             },
             "installed_version": {
+                "description": "The version of the package that was installed",
                 "kind": "string"
             },
             "available_version": {
+                "description": "The version of the package being installed",
                 "kind": "string"
             }
         },

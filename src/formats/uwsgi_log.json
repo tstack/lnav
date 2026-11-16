@@ -31,80 +31,99 @@
         },
         "value": {
             "s_pid": {
+                "description": "The ID of the worker process that handled the request",
                 "kind": "string",
                 "identifier": true
             },
             "s_app": {
+                "description": "The ID of the application that handled the request",
                 "kind": "string",
                 "identifier": true
             },
             "s_req": {
+                "description": "The number of the request within the worker",
                 "kind": "integer",
                 "foreign-key": true
             },
             "s_worker_reqs": {
+                "description": "The total number of requests the worker has handled",
                 "kind": "integer",
                 "foreign-key": true
             },
             "c_ip": {
+                "description": "The IP address of the client",
                 "kind": "string",
                 "collate": "ipaddress",
                 "identifier": true
             },
             "cs_username": {
+                "description": "The authenticated user, if any",
                 "kind": "string",
                 "identifier": true
             },
             "cs_vars": {
+                "description": "The number of CGI variables in the request",
                 "kind": "integer"
             },
             "cs_bytes": {
+                "description": "The size of the request's variables, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "cs_method": {
+                "description": "The request method",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_stem": {
+                "description": "The path part of the request URI",
                 "kind": "string",
                 "identifier": true
             },
             "cs_uri_query": {
+                "description": "The query parameters in the request URI",
                 "kind": "string"
             },
             "sc_bytes": {
+                "description": "The size of the response, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "s_runtime": {
+                "description": "The milliseconds it took to handle the request",
                 "kind": "string"
             },
             "cs_version": {
+                "description": "The request's HTTP version",
                 "kind": "string",
                 "identifier": true
             },
             "sc_status": {
+                "description": "The response's HTTP status code",
                 "kind": "integer",
                 "foreign-key": true
             },
             "sc_headers": {
+                "description": "The number of response headers",
                 "kind": "integer"
             },
             "sc_header_bytes": {
+                "description": "The size of the response headers, in bytes",
                 "kind": "integer",
                 "unit": {
                     "suffix": "B"
                 }
             },
             "s_switches": {
+                "description": "The number of async switches while handling the request",
                 "kind": "integer"
             },
             "s_core": {
+                "description": "The core that handled the request",
                 "kind": "string",
                 "identifier": true
             }

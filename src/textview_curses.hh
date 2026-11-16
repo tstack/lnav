@@ -116,6 +116,11 @@ enum class filter_lang_t : int {
     NONE,
     REGEX,
     SQL,
+    /**
+     * The messages of a log statement log2src found
+     * (:filter-in-statement, :filter-out-statement).
+     */
+    STATEMENT,
 };
 
 class text_filter {
@@ -142,6 +147,14 @@ public:
     void enable() { this->lf_enabled = true; }
     void disable() { this->lf_enabled = false; }
     void set_enabled(bool value) { this->lf_enabled = value; }
+
+    /**
+     * Whether the filter takes part in filtering when enabled.  A filter
+     * that can't match anything yet (a statement filter waiting for the
+     * source, or whose statement is gone) isn't, so it doesn't make an
+     * "in" filter hide every line.
+     */
+    virtual bool is_active() const { return true; }
 
     void revert_to_last(logfile_filter_state& lfs, size_t rollback_size);
 
