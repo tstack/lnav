@@ -218,6 +218,9 @@ to_json(const lnav::console::user_message& um)
             case console::user_message::level::error:
                 root_map.gen("error");
                 break;
+            case console::user_message::level::fatal:
+                root_map.gen("fatal");
+                break;
         }
 
         root_map.gen("message");
