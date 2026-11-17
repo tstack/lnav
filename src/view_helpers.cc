@@ -731,7 +731,7 @@ layout_views()
     static auto* filter_source = injector::get<filter_sub_source*>();
     static auto& prompt = lnav::prompt::get();
 
-    unsigned int width, height;
+    unsigned width, height;
     ncplane_dim_yx(lnav_data.ld_window, &height, &width);
 
     int doc_height;
@@ -991,7 +991,7 @@ layout_views()
         lnav_data.ld_progress_view.set_visible(vis);
     }
 
-    auto bottom_used = bottom - height;
+    auto bottom_used = bottom - vis_line_t(height);
     for (auto& tc : lnav_data.ld_views) {
         tc.set_height(vis_line_t(bottom_used));
     }

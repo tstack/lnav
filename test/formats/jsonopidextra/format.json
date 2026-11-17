@@ -1,0 +1,39 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_json_opid_extra_log": {
+        "title": "Test JSON opid on a detail line",
+        "file-type": "json",
+        "file-pattern": "logfile_json_opid_extra\\.json",
+        "description": "Regression format for an opid that is not in the line-format, so it is shown on a detail line",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " [",
+            {
+                "field": "prc"
+            },
+            "] ",
+            {
+                "field": "msg"
+            }
+        ],
+        "timestamp-field": "ts",
+        "opid-field": "xid",
+        "thread-id-field": "prc",
+        "body-field": "msg",
+        "value": {
+            "msg": {
+                "kind": "string"
+            },
+            "xid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "prc": {
+                "kind": "string",
+                "identifier": true
+            }
+        }
+    }
+}

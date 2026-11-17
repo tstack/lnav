@@ -463,6 +463,14 @@ extern const string_attr_type<text_format_t> SA_QUOTED_TEXT;
 extern const string_attr_type<std::string> SA_STACK_FRAME;
 /** A file:// link for a stack frame whose path is a file on this machine. */
 extern const string_attr_type<std::string> SA_STACK_FRAME_HREF;
+/**
+ * The operation ID of the message, as lnav indexes it (log_opid), on the text
+ * that shows it.  The HTML output carries it for clients that show the
+ * operation's other messages.
+ */
+extern const string_attr_type<std::string> SA_OPID_VALUE;
+/** The thread ID of the message, as lnav indexes it, on the text showing it. */
+extern const string_attr_type<std::string> SA_THREAD_ID_VALUE;
 
 extern const string_attr_type<std::string> VC_ANCHOR;
 extern const string_attr_type<role_t> VC_ROLE;

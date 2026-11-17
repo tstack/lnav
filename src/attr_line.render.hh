@@ -85,6 +85,10 @@ struct styled_run {
     const std::string* sr_id{nullptr};
     /** A stack frame's location as JSON (SA_STACK_FRAME), or nullptr. */
     const std::string* sr_frame{nullptr};
+    /** The operation ID the run shows (SA_OPID_VALUE), or nullptr. */
+    const std::string* sr_opid{nullptr};
+    /** The thread ID the run shows (SA_THREAD_ID_VALUE), or nullptr. */
+    const std::string* sr_thread{nullptr};
     /**
      * Notes from the attributes that are not drawn, like the file a line
      * came from, but only the ones that do not cover the whole line.  Those

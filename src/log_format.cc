@@ -3053,6 +3053,9 @@ external_log_format::annotate(logfile* lf,
     }
 
     auto opid_cap = md[pat.p_opid_field_index];
+    // A synthesized opid, a hash of the description or of the line, is not
+    // text in the line, so it gets no L_OPID range.
+    auto opid_in_line = true;
 
     if (this->elf_opid_field.empty()
         && !pat.p_opid_description_field_indexes.empty())
@@ -3070,6 +3073,7 @@ external_log_format::annotate(logfile* lf,
             h.to_string(tmp_opid_buf);
             opid_cap = string_fragment::from_bytes(tmp_opid_buf,
                                                    sizeof(tmp_opid_buf) - 1);
+            opid_in_line = false;
         }
     } else if (duration_cap && !opid_cap) {
         hasher h;
@@ -3077,9 +3081,12 @@ external_log_format::annotate(logfile* lf,
         h.to_string(tmp_opid_buf);
         opid_cap = string_fragment::from_bytes(tmp_opid_buf,
                                                sizeof(tmp_opid_buf) - 1);
+        opid_in_line = false;
     }
     if (opid_cap && !opid_cap->empty()) {
-        sa.emplace_back(to_line_range(opid_cap.value()), L_OPID.value());
+        if (opid_in_line) {
+            sa.emplace_back(to_line_range(opid_cap.value()), L_OPID.value());
+        }
         values.lvv_opid_value = opid_cap->to_owned(values.lvv_allocator);
         values.lvv_opid_provenance
             = logline_value_vector::opid_provenance::file;

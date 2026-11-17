@@ -30,14 +30,16 @@
 #ifndef lnav_vis_line_hh
 #define lnav_vis_line_hh
 
+#include <cstdint>
+
 #include "strong_int.hh"
 
 /** Strongly-typed integer for visible lines. */
-STRONG_INT_TYPE(int, vis_line);
+STRONG_INT_TYPE(int32_t, vis_line);
 
 constexpr vis_line_t operator""_vl(unsigned long long line) noexcept
 {
-    return vis_line_t((int) line);
+    return vis_line_t(static_cast<int32_t>(line));
 }
 
 #endif

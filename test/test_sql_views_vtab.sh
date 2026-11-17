@@ -480,3 +480,19 @@ run_cap_test ${lnav_test} -n \
     -c ":create-named-search vmk vmk" \
     -c ";SELECT name, pattern, hits FROM lnav_view_searches" \
     ${test_dir}/logfile_access_log.0
+
+# The operation and thread IDs are marked in the HTML (data-lnav-opid,
+# data-lnav-thread), with the values lnav indexes, so a client can show the
+# rest of their messages.  In a JSON log whose line-format leaves out the
+# opid, it is on the detail line.  A synthesized opid, like access_log's
+# hash of its description, is not text in the line, so it is not marked.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, NULL, 'html')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_lnav_debug_ids.0
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT line, content FROM lnav_view_lines('log', 0, NULL, 'html')" \
+    -c ":write-raw-to -" \
+    ${test_dir}/logfile_json_opid_extra.json

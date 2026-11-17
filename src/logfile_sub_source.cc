@@ -557,6 +557,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     this->add_stack_frame_links();
+    this->add_id_values();
 
     value_out = this->lss_token_al.al_string;
 
@@ -5253,6 +5254,33 @@ for_each_stack_frame(lnav::enums::bitset<source_language_t> languages,
 }
 
 }  // namespace logfile_sub_source_ns
+
+void
+logfile_sub_source::add_id_values()
+{
+    auto& al = this->lss_token_al;
+    const auto& values = this->lss_token_values;
+    auto ids = std::vector<string_attr>{};
+
+    for (const auto& sa : al.al_attrs) {
+        if (sa.sa_type == &L_OPID && values.lvv_opid_value
+            && !values.lvv_opid_value->empty())
+        {
+            ids.emplace_back(sa.sa_range,
+                             SA_OPID_VALUE.value(
+                                 values.lvv_opid_value->to_string()));
+        } else if (sa.sa_type == &SA_THREAD_ID && values.lvv_thread_id_value
+                   && !values.lvv_thread_id_value->empty())
+        {
+            ids.emplace_back(sa.sa_range,
+                             SA_THREAD_ID_VALUE.value(
+                                 values.lvv_thread_id_value->to_string()));
+        }
+    }
+    for (auto& id : ids) {
+        al.al_attrs.emplace_back(std::move(id));
+    }
+}
 
 void
 logfile_sub_source::add_stack_frame_links()

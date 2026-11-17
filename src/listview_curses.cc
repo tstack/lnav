@@ -149,8 +149,6 @@ void
 listview_curses::get_dimensions(vis_line_t& height_out,
                                 unsigned long& width_out) const
 {
-    unsigned int height;
-
     if (this->vc_window == nullptr) {
         height_out = std::max(this->lv_height, 1_vl);
         if (this->lv_source) {
@@ -159,7 +157,8 @@ listview_curses::get_dimensions(vis_line_t& height_out,
             width_out = 80;
         }
     } else {
-        unsigned int width_tmp;
+        unsigned height;
+        unsigned width_tmp;
 
         ncplane_dim_yx(this->vc_window, &height, &width_tmp);
         width_out = width_tmp;

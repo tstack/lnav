@@ -1,4 +1,4 @@
-[31m192.168.202.254[0m[31m - - [[0m[31m20/Jul/2009[0m[31m:22:59:29 +0000[0m[31m] "[0m[31mGET[0m[31m [0m[31m/vmw/vSphere/default/vmkboot.gz[0m[31m [0m[31mHTTP/1.0[0m[31m" [0m[31m404[0m[31m 46210 "-" "[0m[31mgPXE/0.9.7[0m[31m"[0m
+[31m192.168.202.254[0m[31m - - [[0m[31m20/Jul/2009:22:59:29 +0000[0m[31m] "[0m[31mGET[0m[31m [0m[31m/vmw/vSphere/default/vmkboot.gz[0m[31m [0m[31mHTTP/1.0[0m[31m" [0m[31m404[0m[31m 46210 "-" "[0m[31mgPXE/0.9.7[0m[31m"[0m
 [4m▌ Line 1 parser details.[0m
  Received Time: [1m2009-07-20T22:59:29.000000+0000[0m — [1mover 3 years ago[0m  Format: [1m%d/%b/%Y:%H:%M:%S %z[0m  Default Zone: [32mnone[0m
  [1mPermalink:[0m    #msg00046f2b171e9640-v1:7ad4831dd06e0d6b0ffd965c7d65285f

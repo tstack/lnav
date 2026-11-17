@@ -217,7 +217,26 @@ struct html_style {
     const std::string* hs_href{nullptr};
     const std::string* hs_id{nullptr};
     const std::string* hs_frame{nullptr};
+    /** The operation ID the text shows (SA_OPID_VALUE), or nullptr. */
+    const std::string* hs_opid{nullptr};
+    /** The thread ID the text shows (SA_THREAD_ID_VALUE), or nullptr. */
+    const std::string* hs_thread{nullptr};
     std::vector<std::string> hs_notes;
+
+    /** @return True if the text is a part of something a client can act on. */
+    bool has_target() const
+    {
+        return this->hs_href != nullptr || this->hs_frame != nullptr
+            || this->hs_opid != nullptr || this->hs_thread != nullptr;
+    }
+
+    bool same_target(const html_style& other) const
+    {
+        return lnav::render::same_str(this->hs_href, other.hs_href)
+            && lnav::render::same_str(this->hs_frame, other.hs_frame)
+            && lnav::render::same_str(this->hs_opid, other.hs_opid)
+            && lnav::render::same_str(this->hs_thread, other.hs_thread);
+    }
 
     void add_class(const intern_string_t& cls)
     {
@@ -242,9 +261,7 @@ struct html_style {
     {
         return this->hs_classes == other.hs_classes
             && this->hs_attrs == other.hs_attrs
-            && lnav::render::same_str(this->hs_href, other.hs_href)
-            && lnav::render::same_str(this->hs_frame, other.hs_frame)
-            && this->hs_notes == other.hs_notes;
+            && this->same_target(other) && this->hs_notes == other.hs_notes;
     }
 };
 
@@ -348,6 +365,8 @@ to_html_style(const lnav::render::styled_run& sr, html_style& out)
         : nullptr;
     out.hs_id = sr.sr_id;
     out.hs_frame = sr.sr_frame;
+    out.hs_opid = sr.sr_opid;
+    out.hs_thread = sr.sr_thread;
     out.hs_notes = sr.sr_notes;
 }
 
@@ -407,9 +426,11 @@ to_html(const attr_line_t& al)
     html_style next;
     auto have_curr = false;
     auto span_open = false;
-    const std::string* open_href = nullptr;
-    const std::string* open_frame = nullptr;
-    auto anchor_open = false;
+    // The element around the runs of a link, stack frame, operation ID, or
+    // thread ID: an anchor for the first two and a span for the others,
+    // which link nowhere themselves.
+    auto open_target = html_style{};
+    const char* anchor_tag = nullptr;
     // An empty line has nothing to show a tooltip for.
     const auto notes = al.empty() ? std::vector<std::string>{}
                                   : lnav::render::line_notes(al);
@@ -431,15 +452,20 @@ to_html(const attr_line_t& al)
             if (span_open) {
                 retval.append("</span>");
             }
-            if (!lnav::render::same_str(next.hs_href, open_href)
-                || !lnav::render::same_str(next.hs_frame, open_frame))
-            {
-                if (anchor_open) {
-                    retval.append("</a>");
+            if (!next.same_target(open_target)) {
+                if (anchor_tag != nullptr) {
+                    retval.append("</");
+                    retval.append(anchor_tag);
+                    retval.append(">");
                 }
-                anchor_open = next.hs_href != nullptr || next.hs_frame != nullptr;
-                if (anchor_open) {
-                    retval.append("<a");
+                anchor_tag = !next.has_target()
+                    ? nullptr
+                    : (next.hs_href != nullptr || next.hs_frame != nullptr)
+                    ? "a"
+                    : "span";
+                if (anchor_tag != nullptr) {
+                    retval.append("<");
+                    retval.append(anchor_tag);
                     if (next.hs_href != nullptr) {
                         retval.append(" href=\"");
                         append_escaped_attr(
@@ -455,10 +481,24 @@ to_html(const attr_line_t& al)
                             retval, string_fragment::from_str(*next.hs_frame));
                         retval.append("\"");
                     }
+                    // The operation and thread a message is for, by their IDs
+                    // as lnav indexes them (log_opid, log_thread_id), so a
+                    // client can show the rest of their messages.
+                    if (next.hs_opid != nullptr) {
+                        retval.append(" data-lnav-opid=\"");
+                        append_escaped_attr(
+                            retval, string_fragment::from_str(*next.hs_opid));
+                        retval.append("\"");
+                    }
+                    if (next.hs_thread != nullptr) {
+                        retval.append(" data-lnav-thread=\"");
+                        append_escaped_attr(
+                            retval, string_fragment::from_str(*next.hs_thread));
+                        retval.append("\"");
+                    }
                     retval.append(">");
                 }
-                open_href = next.hs_href;
-                open_frame = next.hs_frame;
+                open_target = next;
             }
             span_open = open_span(retval, next);
             std::swap(curr, next);
@@ -470,8 +510,10 @@ to_html(const attr_line_t& al)
     if (span_open) {
         retval.append("</span>");
     }
-    if (anchor_open) {
-        retval.append("</a>");
+    if (anchor_tag != nullptr) {
+        retval.append("</");
+        retval.append(anchor_tag);
+        retval.append(">");
     }
     if (!notes.empty()) {
         retval.append("</span>");

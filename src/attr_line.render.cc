@@ -328,6 +328,8 @@ for_each_run(const attr_line_t& al,
         run.sr_href = nullptr;
         run.sr_id = nullptr;
         run.sr_frame = nullptr;
+        run.sr_opid = nullptr;
+        run.sr_thread = nullptr;
         run.sr_notes.clear();
         run.sr_text.clear();
 
@@ -436,6 +438,10 @@ for_each_run(const attr_line_t& al,
                 }
             } else if (attr.sa_type == &SA_STACK_FRAME) {
                 run.sr_frame = &attr.sa_value.get<std::string>();
+            } else if (attr.sa_type == &SA_OPID_VALUE) {
+                run.sr_opid = &attr.sa_value.get<std::string>();
+            } else if (attr.sa_type == &SA_THREAD_ID_VALUE) {
+                run.sr_thread = &attr.sa_value.get<std::string>();
             } else if (attr.sa_type == &VC_ANCHOR) {
                 if (start == static_cast<size_t>(attr_range.lr_start)) {
                     run.sr_id = &attr.sa_value.get<std::string>();

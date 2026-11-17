@@ -1190,6 +1190,13 @@ private:
      */
     void add_stack_frame_links();
 
+    /**
+     * Put the operation and thread IDs that lnav indexed for the line being
+     * rendered on the text that shows them (SA_OPID_VALUE, SA_THREAD_ID_VALUE),
+     * since the text can differ: an unescaped CSV cell, a hidden field.
+     */
+    void add_id_values();
+
     /** Whether a stack frame's path is a file here, for its file:// link. */
     bool is_local_source_file(const std::string& path);
 

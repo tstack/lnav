@@ -121,6 +121,11 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line >= 1 ORDER BY log_line DESC)) AS ge, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line > 0 ORDER BY log_line DESC)) AS gt, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line <= 1 ORDER BY log_line DESC)) AS le, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_line < 2 ORDER BY log_line DESC)) AS lt" \
     ${test_dir}/logfile_access_log.0
 
+# Bounds at the ends of the 64-bit range don't overflow, in either direction.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line <= 9223372036854775807 ORDER BY log_line ASC)) AS asc_le_max, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line > 9223372036854775807 ORDER BY log_line ASC)) AS asc_gt_max, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line >= -9223372036854775808 ORDER BY log_line ASC)) AS asc_ge_min, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line < -9223372036854775808 ORDER BY log_line ASC)) AS asc_lt_min, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line <= 9223372036854775807 ORDER BY log_line DESC)) AS desc_le_max, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line > 9223372036854775807 ORDER BY log_line DESC)) AS desc_gt_max, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line >= -9223372036854775808 ORDER BY log_line DESC)) AS desc_ge_min, (SELECT count(*) FROM (SELECT log_line FROM access_log WHERE log_line < -9223372036854775808 ORDER BY log_line DESC)) AS desc_lt_min" \
+    ${test_dir}/logfile_access_log.0
+
 # So do ranges of time.
 run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time >= '2009-07-20 22:59:29.000000' ORDER BY log_line DESC)) AS time_ge, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time <= '2009-07-20 22:59:26.000000' ORDER BY log_line DESC)) AS time_le, (SELECT group_concat(log_line) FROM (SELECT log_line FROM access_log WHERE log_time_msecs >= 1248130769000 ORDER BY log_line DESC)) AS msecs_ge" \
