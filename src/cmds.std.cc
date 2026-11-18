@@ -3035,6 +3035,34 @@ com_spectrogram(exec_context& ec,
             found = true;
         }
 
+        if (found && lnav_data.ld_window != nullptr) {
+            // Pick the finest zoom level whose rows fit in the view, so the
+            // chart fills the screen instead of opening as a single row.
+            // The view has to be laid out first to know its height, since
+            // the details pane below it only appears with it on top.
+            auto& spectro_view = lnav_data.ld_views[LNV_SPECTRO];
+
+            ensure_view(&spectro_view);
+            layout_views();
+
+            const auto [height, width] = spectro_view.get_dimensions();
+            // One row goes to the header and one to the details line under
+            // the selection.
+            const auto avail = std::max(1, (int) height - 2);
+            for (const auto level : text_time_translator::ZOOM_LEVELS) {
+                auto rows = ss.line_count_for_zoom(level);
+                if (!rows) {
+                    break;
+                }
+                ss.set_zoom_level(level);
+                if (rows.value() <= (size_t) avail) {
+                    break;
+                }
+            }
+            // Showing the view cached the row count for the old level.
+            ss.invalidate();
+        }
+
         if (found) {
             lnav_data.ld_views[LNV_SPECTRO].reload_data();
             ss.text_selection_changed(lnav_data.ld_views[LNV_SPECTRO]);

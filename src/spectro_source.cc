@@ -403,6 +403,113 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
     return {};
 }
 
+/**
+ * The shade, from 0 to 6, for a bucket holding `count` values.  A count that
+ * lands on a run of equal thresholds, where the row has no contrast, takes
+ * the middle of the run rather than its bottom.
+ */
+static int
+shade_for_count(const int (&st)[7], int count)
+{
+    const auto* lo = std::lower_bound(std::begin(st), std::end(st), count);
+    const auto* hi = std::upper_bound(lo, std::end(st), count);
+
+    return (std::distance(std::begin(st), lo) + std::distance(std::begin(st), hi))
+        / 2;
+}
+
+/** The legend's groups: shades 0-1 are low, 2-4 medium and 5-6 high. */
+static size_t
+legend_group_for_shade(int shade)
+{
+    if (shade <= 1) {
+        return 0;
+    }
+    if (shade <= 4) {
+        return 1;
+    }
+    return 2;
+}
+
+/**
+ * The legend for a row with thresholds `st`: one swatch per group, with the
+ * range of counts that are drawn in that group's shades.
+ */
+static std::string
+legend_for_thresholds(const int (&st)[7])
+{
+    static constexpr role_t GROUP_ROLES[] = {
+        role_t::VCR_LOW_THRESHOLD,
+        role_t::VCR_MED_THRESHOLD,
+        role_t::VCR_HIGH_THRESHOLD,
+    };
+
+    struct count_range {
+        bool cr_present{false};
+        int cr_low{0};
+        int cr_high{0};
+        bool cr_open{false};
+    };
+
+    // The shade only changes at a threshold or just past one, so these are
+    // the starts of the stretches of counts that share a shade.
+    std::vector<int> starts{1};
+    for (size_t lpc = 0; lpc < 6; lpc++) {
+        starts.push_back(st[lpc]);
+        if (st[lpc] < std::numeric_limits<int>::max()) {
+            starts.push_back(st[lpc] + 1);
+        }
+    }
+    std::sort(starts.begin(), starts.end());
+    starts.erase(std::unique(starts.begin(), starts.end()), starts.end());
+
+    // The shade never decreases as the count goes up, so each group's counts
+    // are one contiguous range.
+    count_range ranges[3];
+    for (size_t lpc = 0; lpc < starts.size(); lpc++) {
+        auto& cr = ranges[legend_group_for_shade(
+            shade_for_count(st, starts[lpc]))];
+
+        if (!cr.cr_present) {
+            cr.cr_present = true;
+            cr.cr_low = starts[lpc];
+        }
+        if (lpc + 1 < starts.size()) {
+            cr.cr_high = starts[lpc + 1] - 1;
+        } else {
+            cr.cr_open = true;
+        }
+    }
+
+    std::string retval;
+    char buf[64];
+    for (size_t lpc = 0; lpc < 3; lpc++) {
+        const auto& cr = ranges[lpc];
+
+        if (!cr.cr_present) {
+            continue;
+        }
+        if (!retval.empty()) {
+            retval.append(" ");
+        }
+        snprintf(buf,
+                 sizeof(buf),
+                 ANSI_ROLE("  ") " ",
+                 lnav::enums::to_underlying(GROUP_ROLES[lpc]));
+        retval.append(buf);
+        if (cr.cr_open) {
+            snprintf(buf, sizeof(buf), "%'d+", cr.cr_low);
+        } else if (cr.cr_low == cr.cr_high) {
+            snprintf(buf, sizeof(buf), "%'d", cr.cr_low);
+        } else {
+            snprintf(buf, sizeof(buf), "%'d-%'d", cr.cr_low, cr.cr_high);
+        }
+        retval.append(buf);
+    }
+
+    return retval;
+}
+
 void
 spectrogram_source::chart_attrs_for_line(textview_curses& tc,
                                          int row,
@@ -418,11 +525,7 @@ spectrogram_source::chart_attrs_for_line(textview_curses& tc,
         }
 
         auto role = lnav::enums::to_underlying(role_t::VCR_SPECTRO_THRESHOLD0);
-        auto t_iter = std::lower_bound(std::begin(s_row.sr_thresholds),
-                                       std::end(s_row.sr_thresholds),
-                                       col_value);
-        auto dist = std::distance(std::begin(s_row.sr_thresholds), t_iter);
-        role += dist;
+        role += shade_for_count(s_row.sr_thresholds, col_value);
         ensure(role < (int) role_t::VCR__MAX);
         auto lr
             = line_range{TIME_COLUMN_WIDTH + lpc, TIME_COLUMN_WIDTH + lpc + 1};
@@ -524,6 +627,33 @@ spectrogram_source::text_reload_data(exec_context& ec)
     return Ok(std::string());
 }
 
+static size_t
+rows_for_zoom(const spectrogram_bounds& sb, std::chrono::microseconds level)
+{
+    auto grain_begin_time = rounddown(sb.sb_begin_time, level);
+    auto grain_end_time = roundup_size(sb.sb_end_time, level);
+    auto diff = std::max(1us, grain_end_time - grain_begin_time);
+
+    return (diff + level - 1us) / level;
+}
+
+std::optional<size_t>
+spectrogram_source::line_count_for_zoom(std::chrono::microseconds level) const
+{
+    if (this->ss_value_source == nullptr) {
+        return std::nullopt;
+    }
+
+    spectrogram_bounds sb;
+
+    this->ss_value_source->spectro_bounds(sb);
+    if (sb.sb_count == 0) {
+        return std::nullopt;
+    }
+
+    return rows_for_zoom(sb, level);
+}
+
 void
 spectrogram_source::cache_bounds()
 {
@@ -558,12 +688,7 @@ spectrogram_source::cache_bounds()
 
     auto [height, width] = this->tss_view->get_dimensions();
     width -= UNUSABLE_WIDTH;
-    auto grain_begin_time = rounddown(sb.sb_begin_time, this->ttt_zoom_level);
-    auto grain_end_time = roundup_size(sb.sb_end_time, this->ttt_zoom_level);
-
-    auto diff = std::max(1us, grain_end_time - grain_begin_time);
-    this->ss_cached_line_count
-        = (diff + this->ttt_zoom_level - 1us) / this->ttt_zoom_level;
+    this->ss_cached_line_count = rows_for_zoom(sb, this->ttt_zoom_level);
 
     auto& bm = this->tss_view->get_bookmarks()[&textview_curses::BM_USER];
     bm.clear();
@@ -614,7 +739,6 @@ spectrogram_source::load_row(const listview_curses& tc, int row)
         s_row.sr_column_size = sr.sr_column_size;
         s_row.sr_values.clear();
         s_row.sr_values.resize(width + 1);
-        s_row.sr_tdigest.reset();
         this->ss_value_source->spectro_row(sr, s_row);
 
         s_row.sr_tdigest.reset();
@@ -627,18 +751,13 @@ spectrogram_source::load_row(const listview_curses& tc, int row)
         s_row.sr_tdigest.merge();
         auto& st = s_row.sr_thresholds;
         for (size_t lpc = 0; lpc < 6; lpc++) {
-            auto q = s_row.sr_tdigest.quantile(15.0 * (lpc + 1));
-            log_debug(" q[%f] = %f", 15.0 * (lpc + 1), q);
-            st[lpc] = q;
+            st[lpc] = s_row.sr_tdigest.quantile(15.0 * (lpc + 1));
         }
         st[6] = std::numeric_limits<int>::max();
         for (size_t lpc = 0; lpc < 6; lpc++) {
             if (st[lpc] < lpc + 1) {
                 st[lpc] = lpc + 1;
             }
-        }
-        for (const auto& thresh : st) {
-            log_debug(" thresh[] = %d", thresh);
         }
     }
 
@@ -743,24 +862,14 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
              format_bound(sb.sb_min_value_out).c_str());
     line.append(buf);
 
-    snprintf(buf,
-             sizeof(buf),
-             ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
-                 "  ") " %'d+",
-             lnav::enums::to_underlying(role_t::VCR_LOW_THRESHOLD),
-             st[0],
-             lnav::enums::to_underlying(role_t::VCR_MED_THRESHOLD),
-             st[2],
-             st[4],
-             lnav::enums::to_underlying(role_t::VCR_HIGH_THRESHOLD),
-             st[5] + 1);
-    auto buflen = strlen(buf);
+    const auto legend = legend_for_thresholds(st);
+    auto buflen = legend.length();
     if (line.length() + buflen + 20 < width) {
         line.append(width / 2 - buflen / 3 - line.length(), ' ');
     } else {
         line.append(" ");
     }
-    line.append(buf);
+    line.append(legend);
     scrub_ansi_string(line, &value_out.get_attrs());
 
     snprintf(buf,

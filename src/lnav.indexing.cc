@@ -82,8 +82,8 @@ indexing_scan_progress(file_off_t off,
 
     // update_loading() require()s that the offset not run past the total, and
     // an aggregate can do exactly that: a file that grows after the fstat
-    // that seeded its denominator indexes right past it.  The serial observer
-    // above clamps for the same reason; this is the entry point that would
+    // that seeded its denominator indexes right past it.  The sources clamp
+    // their sums for the same reason; this is the entry point that would
     // abort the process, so it does not trust its callers either.
     if (off > total) {
         off = total;
@@ -550,9 +550,8 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         auto force
             = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
-        if ((!scroll_downs[LNV_LOG]
-             || log_view.get_top() > vis_line_t(new_count))
-            && force)
+        if (force && scroll_downs[LNV_LOG]
+            && log_view.get_top() > vis_line_t(new_count))
         {
             log_debug("no log scroll down");
             scroll_downs[LNV_LOG] = false;
@@ -628,9 +627,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
     };
 
-    if (retval.rir_changes > 0
-        && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
-    {
+    if (retval.rir_changes > 0 && !is_headless) {
         lnav_data.ld_files_view.reload_data();
     }
     // log_trace("done");
@@ -764,9 +761,7 @@ rescan_files(bool req)
                 all_synced = false;
             }
         }
-        if (!all_synced) {
-            delay = 30ms;
-        }
+        delay = all_synced ? 0ms : 30ms;
         auto headless = lnav_data.ld_flags.is_set<lnav_flags::headless>();
         // A paused "**" walk is only waited on in headless mode, the main
         // loop continues it in the background otherwise.

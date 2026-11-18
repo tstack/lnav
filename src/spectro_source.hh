@@ -230,6 +230,13 @@ public:
 
     void cache_bounds();
 
+    /**
+     * The number of rows the current value source would take up at the
+     * given zoom level, or nullopt when there is no data to show.
+     */
+    std::optional<size_t> line_count_for_zoom(
+        std::chrono::microseconds level) const;
+
     std::optional<row_info> time_for_row_int(vis_line_t row);
 
     const spectrogram_row& load_row(const listview_curses& lv, int row);

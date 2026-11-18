@@ -288,7 +288,6 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                 auto d = scale_for_display(this->lsvs_meta, lv.lv_value.d);
                 row_out.add_value(
                     sr, spectrogram_row::value_type::real, d, marked);
-                row_out.sr_tdigest.insert(d);
                 break;
             }
             case value_kind_t::VALUE_INTEGER: {
@@ -296,7 +295,6 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                     this->lsvs_meta, static_cast<double>(lv.lv_value.i));
                 row_out.add_value(
                     sr, spectrogram_row::value_type::integer, d, marked);
-                row_out.sr_tdigest.insert(d);
                 break;
             }
             default:
