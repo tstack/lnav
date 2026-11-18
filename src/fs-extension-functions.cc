@@ -633,7 +633,8 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                     .with_example({
                         "To get the extensions of Kotlin source files",
                         "SELECT source_languages() -> '$.kotlin'",
-                    })),
+                    }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<decltype(&sql_shell_exec), sql_shell_exec>::builder(
             help_text("shell_exec",

@@ -99,6 +99,9 @@ struct user_message {
         fatal,
     };
 
+    /** The name of a level, as used in JSON. */
+    static string_fragment level_name(level lvl);
+
     static user_message raw(const attr_line_t& al);
 
     static user_message fatal(const attr_line_t& al);

@@ -611,10 +611,9 @@ files_sub_source::text_selection_changed(textview_curses& tc)
 
             auto lf = *fs.sb_iter;
             this->fss_details_mtime = lf->get_modified_time();
-            auto path = lf->get_filename();
-            auto actual_path = lf->get_actual_path();
-            auto format = lf->get_format();
-            const auto& open_opts = lf->get_open_options();
+            const auto fd = lf->get_details();
+            const auto& path = fd.d_path;
+            const auto& actual_path = fd.d_actual_path;
 
             details.emplace_back(attr_line_t()
                                      .appendf(FMT_STRING("{}"), path.filename())
@@ -625,20 +624,18 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                     .append(":open_file_folder:"_emoji)
                     .appendf(FMT_STRING(" {}"), path.parent_path()));
 
-            const auto& decompress_err = lf->get_decompress_error();
-            if (!decompress_err.empty()) {
+            if (!fd.d_decompress_error.empty()) {
                 details.emplace_back(
                     attr_line_t("  ")
                         .append("Error"_h2)
                         .append(": ")
-                        .append(lnav::roles::error(decompress_err)));
+                        .append(lnav::roles::error(fd.d_decompress_error)));
             }
 
-            const auto notes = lf->get_notes();
-            if (!notes.empty()) {
+            if (!fd.d_notes.empty()) {
                 details.emplace_back(
                     attr_line_t("  ").append("Notes"_h2).append(":"));
-                for (const auto& [note_kind, note_um] : notes.entries()) {
+                for (const auto& [note_kind, note_um] : fd.d_notes.entries()) {
                     for (const auto& note_line :
                          note_um.to_attr_line().split_lines())
                     {
@@ -662,28 +659,24 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             } else {
                 details.emplace_back(attr_line_t().append("  Piped"));
             }
-            if (open_opts.loo_glob_pattern) {
+            if (fd.d_glob_pattern) {
                 details.emplace_back(
                     attr_line_t()
                         .append("Glob Pattern"_h3)
                         .right_justify(NAME_WIDTH)
                         .append(": ")
-                        .append(lnav::roles::file(
-                            open_opts.loo_glob_pattern.value())));
+                        .append(lnav::roles::file(fd.d_glob_pattern.value())));
             }
-            if (open_opts.loo_child_poller) {
-                auto cmd_al = attr_line_t(
-                    open_opts.loo_child_poller->get_description());
+            if (fd.d_child_command) {
+                const auto& child = fd.d_child_command.value();
+                auto cmd_al = attr_line_t(child.cc_description);
                 readline_shlex_highlighter(cmd_al, std::nullopt);
                 cmd_al.with_attr_for_all(
                     VC_ROLE.value(role_t::VCR_QUOTED_CODE));
                 auto child_icon = ui_icon_t::ok;
-                if (open_opts.loo_child_poller->is_alive()) {
+                if (child.cc_running) {
                     child_icon = ui_icon_t::busy;
-                } else if (open_opts.loo_child_poller->get_exit_status()
-                               .value_or(0)
-                           != 0)
-                {
+                } else if (child.cc_exit_status.value_or(0) != 0) {
                     child_icon = ui_icon_t::error;
                 }
                 details.emplace_back(
@@ -694,19 +687,16 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                         .append("  ", VC_ICON.value(child_icon))
                         .append(cmd_al));
             }
-            {
-                auto tf_opt = lf->get_text_format();
-                if (tf_opt) {
-                    details.emplace_back(
-                        attr_line_t()
-                            .append("MIME Type"_h3)
-                            .right_justify(NAME_WIDTH)
-                            .append(": ")
-                            .append(fmt::to_string(tf_opt.value())));
-                }
+            if (fd.d_text_format) {
+                details.emplace_back(
+                    attr_line_t()
+                        .append("MIME Type"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(fmt::to_string(fd.d_text_format.value())));
             }
-            auto ltime = std::chrono::seconds{
-                convert_log_time_to_local(lf->get_stat().st_mtime)};
+            auto ltime
+                = std::chrono::seconds{convert_log_time_to_local(fd.d_mtime)};
             auto ltime_str = lnav::to_rfc3339_string(ltime, 'T');
             details.emplace_back(attr_line_t()
                                      .append("Last Modified"_h3)
@@ -718,15 +708,15 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                     .append("Size"_h3)
                     .right_justify(NAME_WIDTH)
                     .append(": ")
-                    .append(humanize::file_size(lf->get_index_size(),
+                    .append(humanize::file_size(fd.d_size,
                                                 humanize::alignment::none)));
-            if (lf->is_compressed()) {
+            if (fd.d_compressed_size) {
                 details.emplace_back(attr_line_t()
                                          .append("Compressed Size"_h3)
                                          .right_justify(NAME_WIDTH)
                                          .append(": ")
                                          .append(humanize::file_size(
-                                             lf->get_stat().st_size,
+                                             fd.d_compressed_size.value(),
                                              humanize::alignment::none)));
             }
 
@@ -735,9 +725,9 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                      .right_justify(NAME_WIDTH)
                                      .append(": ")
                                      .append(lnav::roles::number(fmt::format(
-                                         FMT_STRING("{:L}"), lf->size()))));
+                                         FMT_STRING("{:L}"), fd.d_lines))));
             {
-                const auto& activity = lf->get_activity();
+                const auto& activity = fd.d_activity;
                 if (activity.la_index.is_wall_us
                     > std::chrono::microseconds::zero())
                 {
@@ -779,8 +769,9 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                 humanize::alignment::none)));
                 }
             }
-            if (format != nullptr && lf->size() > 0) {
-                auto tr = lf->get_content_time_range();
+            if (fd.d_times) {
+                const auto& times = fd.d_times.value();
+                const auto& tr = times.t_content;
                 details.emplace_back(attr_line_t()
                                          .append("Time Range"_h3)
                                          .right_justify(NAME_WIDTH)
@@ -790,25 +781,23 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                          .append(" - ")
                                          .append(lnav::to_rfc3339_string(
                                              to_timeval(tr.tr_end), 'T')));
-                if (open_opts.loo_time_range.has_lower_bound()) {
+                if (times.t_cutoff.has_lower_bound()) {
                     details.emplace_back(
                         attr_line_t()
                             .append("Cutoff From"_h3)
                             .right_justify(NAME_WIDTH)
                             .append(": ")
                             .append(lnav::to_rfc3339_string(
-                                to_timeval(open_opts.loo_time_range.tr_begin),
-                                'T')));
+                                to_timeval(times.t_cutoff.tr_begin), 'T')));
                 }
-                if (open_opts.loo_time_range.has_upper_bound()) {
+                if (times.t_cutoff.has_upper_bound()) {
                     details.emplace_back(
                         attr_line_t()
                             .append("Cutoff To"_h3)
                             .right_justify(NAME_WIDTH)
                             .append(": ")
                             .append(lnav::to_rfc3339_string(
-                                to_timeval(open_opts.loo_time_range.tr_end),
-                                'T')));
+                                to_timeval(times.t_cutoff.tr_end), 'T')));
                 }
                 details.emplace_back(attr_line_t()
                                          .append("Duration"_h3)
@@ -822,12 +811,11 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                           .append("Base Time"_h3)
                           .right_justify(NAME_WIDTH)
                           .append(": ")
-                          .append(lnav::to_rfc3339_string(
-                              lf->get_time_scanner().dts_base_time, 'T'))
+                          .append(lnav::to_rfc3339_string(times.t_base_time,
+                                                          'T'))
                           .append(" UTC");
 
-                auto anchor = lf->get_anchor_time();
-                anchor.match(
+                times.t_base_time_source.match(
                     [&](const logfile::file_line& fl) {
                         base_line.append(" - provided by line ")
                             .append(
@@ -845,23 +833,20 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 details.emplace_back(std::move(base_line));
             }
 
-            auto file_options_opt = lf->get_file_options();
-            if (file_options_opt) {
-                auto& [path, file_options] = file_options_opt.value();
-
-                details.emplace_back(attr_line_t()
-                                         .append("Options Path"_h3)
-                                         .right_justify(NAME_WIDTH)
-                                         .append(": ")
-                                         .append(lnav::roles::file(path)));
-                if (file_options.fo_default_zone.pp_value != nullptr) {
-                    details.emplace_back(attr_line_t()
-                                             .append("Timezone"_h3)
-                                             .right_justify(NAME_WIDTH)
-                                             .append(": ")
-                                             .append(lnav::roles::symbol(
-                                                 file_options.fo_default_zone
-                                                     .pp_value->name())));
+            if (fd.d_options_path) {
+                details.emplace_back(
+                    attr_line_t()
+                        .append("Options Path"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(lnav::roles::file(fd.d_options_path.value())));
+                if (fd.d_timezone) {
+                    details.emplace_back(
+                        attr_line_t()
+                            .append("Timezone"_h3)
+                            .right_justify(NAME_WIDTH)
+                            .append(": ")
+                            .append(lnav::roles::symbol(fd.d_timezone.value())));
                 }
             }
 
@@ -871,21 +856,21 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                         .append("Provenance"_h3)
                         .right_justify(NAME_WIDTH)
                         .append(": ")
-                        .append(fmt::to_string(open_opts.loo_source)));
+                        .append(fmt::to_string(fd.d_provenance)));
                 details.emplace_back(
                     attr_line_t()
                         .append("Flags"_h3)
                         .right_justify(NAME_WIDTH)
                         .append(": ")
                         .append(lnav::roles::for_flag(
-                            "\u2022", open_opts.loo_include_in_session))
+                            "\u2022", fd.d_include_in_session))
                         .append("include-in-session")
                         .append(", ")
-                        .append(lnav::roles::for_flag(
-                            "\u2022", open_opts.loo_detect_format))
+                        .append(
+                            lnav::roles::for_flag("\u2022", fd.d_detect_format))
                         .append("detect-format"));
-                if (open_opts.loo_init_location.valid()) {
-                    auto loc = open_opts.loo_init_location.match(
+                if (fd.d_init_location.valid()) {
+                    auto loc = fd.d_init_location.match(
                         [](default_for_text_format) {
                             return std::string("default");
                         },
@@ -908,16 +893,16 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                 .append(": ")
                                 .move();
 
-                if (format != nullptr) {
+                if (fd.d_format_name) {
                     line.append(lnav::roles::identifier(
-                        format->get_name().to_string()));
+                        fd.d_format_name.value().to_string()));
                 } else {
                     line.append("(none)"_comment);
                 }
                 details.emplace_back(line);
             }
 
-            if (format != nullptr) {
+            if (fd.d_format_name) {
                 const auto um = lnav::console::user_message::info(
                     attr_line_t("The file contents matched this log format and "
                                 "will be shown in the LOG view"));
@@ -931,7 +916,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                           .append("format-name",
                                   VC_STYLE.value(text_attrs::with_underline()))
                           .append(" test ")
-                          .append(lf->get_filename())
+                          .append(path)
                           .with_attr_for_all(
                               VC_ROLE.value(role_t::VCR_QUOTED_CODE));
                 const auto um
@@ -951,10 +936,9 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                       });
             }
 
-            const auto& match_msgs = lf->get_format_match_messages();
             details.emplace_back(
                 attr_line_t("    ").append("Match Details"_h3));
-            for (const auto& msg : match_msgs) {
+            for (const auto& msg : fd.d_format_match_messages) {
                 auto msg_al = msg.to_attr_line();
 
                 for (auto& msg_line : msg_al.rtrim().split_lines()) {
@@ -963,7 +947,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 }
             }
 
-            const auto& ili = lf->get_invalid_line_info();
+            const auto& ili = fd.d_invalid_lines;
             if (ili.ili_total > 0) {
                 auto dotdot = ili.ili_total
                     > logfile::invalid_line_info::MAX_INVALID_LINES;

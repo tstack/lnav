@@ -202,26 +202,7 @@ to_json(const lnav::console::user_message& um)
         yajlpp_map root_map(gen);
 
         root_map.gen("level");
-        switch (um.um_level) {
-            case console::user_message::level::raw:
-                root_map.gen("raw");
-                break;
-            case console::user_message::level::ok:
-                root_map.gen("ok");
-                break;
-            case console::user_message::level::info:
-                root_map.gen("info");
-                break;
-            case console::user_message::level::warning:
-                root_map.gen("warning");
-                break;
-            case console::user_message::level::error:
-                root_map.gen("error");
-                break;
-            case console::user_message::level::fatal:
-                root_map.gen("fatal");
-                break;
-        }
+        root_map.gen(console::user_message::level_name(um.um_level));
 
         root_map.gen("message");
         to_json(gen, um.um_message);
@@ -335,6 +316,7 @@ static constexpr json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
     {"info"_frag, lnav::console::user_message::level::info},
     {"warning"_frag, lnav::console::user_message::level::warning},
     {"error"_frag, lnav::console::user_message::level::error},
+    {"fatal"_frag, lnav::console::user_message::level::fatal},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };

@@ -1,4 +1,4 @@
-[1m[31m✘[0m [1m[31merror[0m: the statement at {builddir}/hide-stmt-src/com/example/net/Server.java:15 is already filtered out; delete that filter first
+[1m[31m✘[0m [1m[31merror[0m: the statement at {test_dir}/hide-stmt-src/com/example/net/Server.java:15 is already filtered out; delete that filter first
 [36m --> [0m[1mcommand-option[0m:3
 [36m | [0m[37m[40m:[0m[1m[36m[40mfilter-in-statement[0m[37m[40m Server[0m[1m[36m[40m.[0m[37m[40mjava:15     [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1;4mfilter-in-statement[0m[4m [0m[4mlocation[0m

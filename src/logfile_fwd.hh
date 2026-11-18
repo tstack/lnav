@@ -33,6 +33,7 @@
 #define lnav_logfile_fwd_hh
 
 #include <chrono>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -121,6 +122,14 @@ struct logfile_open_options_base {
     std::string loo_scan_key;
     /** The glob pattern that matched this file, if it was opened by one. */
     std::optional<std::string> loo_glob_pattern;
+    /**
+     * For a file extracted from an archive, the archive's path and the
+     * file's path within it.  The file is displayed under the two joined,
+     * but they're kept apart so the file can still be traced to its archive
+     * after a rename.
+     */
+    std::optional<std::filesystem::path> loo_archive_path;
+    std::optional<std::filesystem::path> loo_archive_member;
     logfile_name_source loo_source{logfile_name_source::USER};
     dev_t loo_temp_dev{0};
     ino_t loo_temp_ino{0};
@@ -181,6 +190,15 @@ struct logfile_open_options : logfile_open_options_base {
     logfile_open_options& with_source(logfile_name_source src)
     {
         this->loo_source = src;
+
+        return *this;
+    }
+
+    logfile_open_options& with_archive(const std::filesystem::path& archive,
+                                       const std::filesystem::path& member)
+    {
+        this->loo_archive_path = archive;
+        this->loo_archive_member = member;
 
         return *this;
     }

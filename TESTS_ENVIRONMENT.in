@@ -167,7 +167,7 @@ run_cap_test() {
         -e "s;${top_builddir_abs}/src/lnav-test;{lnav-test};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${ROOT_DIR};{root_dir};g" \
-        -e "s;${builddir};{builddir};g" \
+        -e "s;${builddir};{test_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${TMPDIR};{TMPDIR};g" \
         -e "s;/tmp/;{TMPDIR};g" \

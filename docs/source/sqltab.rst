@@ -130,6 +130,62 @@ following columns are available in this table:
   :options: The options that are applicable to this file.  Currently, the
     only options available are for the timezone set by the
     :ref:`:set-file-timezone<set_file_timezone>` command.
+  :archive_path: For a file that was extracted from an archive, the path of
+    the archive.  Otherwise, NULL.  The files from one archive have the same
+    value here, so it can be used to group them, for example when several
+    support bundles are open at once.
+  :archive_member: For a file that was extracted from an archive, the path of
+    the file within the archive, like :code:`log/monitor.json`.  Otherwise,
+    NULL.  The :code:`filepath` of such a file is the two joined, but these
+    columns keep their values if :code:`filepath` is UPDATEd.
+  :details: A JSON object with what the details panel of the Files panel
+    shows for the file, other than what has its own column here.  Times from
+    the log messages are formatted the same way as :code:`log_time`.  The
+    object has the following properties, the optional ones only when they
+    apply:
+
+    * :code:`actual-path` -- The path of the file that is read, which differs
+      from :code:`filepath` for a file extracted from an archive or converted,
+      or :code:`null` when the content is piped in.
+    * :code:`glob-pattern` -- The pattern that matched the file, if it was
+      opened by one.
+    * :code:`child-command` -- For the output of a command, an object with the
+      :code:`command`, whether it is still :code:`running`, and its
+      :code:`exit-status`.
+    * :code:`last-modified` -- The file's modification time.
+    * :code:`size` -- The number of bytes that have been indexed.
+    * :code:`compressed-size` -- For a compressed file, its size on disk.
+    * :code:`time-range` -- For a log file, the :code:`begin` and :code:`end`
+      times of its messages.
+    * :code:`cutoff` -- The :code:`from` and :code:`to` times the file was
+      opened with, if any.
+    * :code:`base-time` -- For a log file, the time, in UTC, that dates
+      without a year or day are relative to, and its :code:`source`:
+      :code:`line` (with the :code:`line` it came from), :code:`mtime`, or
+      :code:`embedded`.
+    * :code:`provenance` -- How the file came to be opened, like
+      :code:`user`, :code:`archive`, or :code:`remote`.
+    * :code:`include-in-session` and :code:`detect-format` -- The flags the
+      file was opened with.
+    * :code:`initial-location` -- Where the file's view starts.
+    * :code:`format-match` -- The messages from matching the file against the
+      log formats, each with a :code:`level`, :code:`message`, and, when they
+      have them, :code:`reason` and :code:`help`.
+    * :code:`error` -- The error from decompressing the file, if there was
+      one.
+    * :code:`notes` -- Problems with the file, each with a :code:`kind`
+      (:code:`indexing-disabled`, :code:`duplicate`, :code:`not-utf`, or
+      :code:`line-limit`), a :code:`message`, and a :code:`reason`.  For
+      example, to find the files that were skipped or hidden:
+
+      .. code-block:: custsqlite
+
+          ;SELECT filepath, value->>'$.message' AS note
+             FROM lnav_file, json_each(details->'$.notes')
+
+    * :code:`invalid-lines` -- For a log file with lines the format didn't
+      handle, the :code:`count` of them and the :code:`first` few line
+      numbers.
 
 lnav_file_metadata
 ------------------

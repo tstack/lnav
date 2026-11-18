@@ -209,6 +209,43 @@ log       logfile_access_log.1       1
 EOF
 
     run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
+        -c ';SELECT basename(filepath), basename(archive_path), archive_member FROM lnav_file ORDER BY archive_member' \
+        -c ':write-csv-to -' \
+        test-logs.tgz
+
+    check_output "archive columns not set correctly" <<EOF
+basename(filepath),basename(archive_path),archive_member
+lnav,test-logs.tgz,src/lnav
+logfile_access_log.0,test-logs.tgz,test/logfile_access_log.0
+logfile_access_log.1,test-logs.tgz,test/logfile_access_log.1
+logfile_empty.0,test-logs.tgz,test/logfile_empty.0
+EOF
+
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
+        -c ";UPDATE lnav_file SET archive_member = 'other' WHERE archive_member = 'test/logfile_access_log.0'" \
+        test-logs.tgz
+
+    grep 'reason: the archive' `test_err_filename` > test_logfile.arcupd.out
+    mv test_logfile.arcupd.out `test_err_filename`
+    check_error_output "archive columns were updated" <<EOF
+ reason: the archive_path and archive_member columns cannot be updated
+EOF
+
+    # The binary in the archive isn't indexed, and the details say why.
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
+        -c ";SELECT archive_member, details->>'\$.provenance' AS provenance, details->>'\$.actual-path' IS NOT NULL AS has_actual_path, (SELECT group_concat(value->>'\$.kind') FROM json_each(details->'\$.notes')) AS notes FROM lnav_file ORDER BY archive_member" \
+        -c ':write-csv-to -' \
+        test-logs.tgz
+
+    check_output "file details not reported correctly" <<EOF
+archive_member,provenance,has_actual_path,notes
+src/lnav,archive,1,not-utf
+test/logfile_access_log.0,archive,1,<NULL>
+test/logfile_access_log.1,archive,1,<NULL>
+test/logfile_empty.0,archive,1,<NULL>
+EOF
+
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
         test-logs-trunc.tgz
 
     sed -e "s|${builddir}||g" \
@@ -319,6 +356,12 @@ run_test ./drive_logfile -f w3c_log ${srcdir}/logfile_w3c.0
 
 on_error_fail_with "Didn't infer w3c_log log format?"
 
+
+run_test ./drive_logfile -n -f test_log ${srcdir}/logfile_json.json
+
+check_output "find_line_number() did not return the first line?" <<EOF
+34 lines, 20 sub-lines, 15 numbers
+EOF
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
 

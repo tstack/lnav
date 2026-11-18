@@ -62,6 +62,7 @@
 #include "base/string_util.hh"
 #include "base/time_util.hh"
 #include "config.h"
+#include "file_collection.hh"
 #include "file_options.hh"
 #include "hasher.hh"
 #include "lnav.exec-phase.hh"
@@ -3194,7 +3195,7 @@ logfile::get_line_number(const_iterator ll) const
     // step per line instead of a walk from the start.
     auto memo = this->lf_line_number_memo;
     if (memo.lnm_index > this->lf_index.size()
-        || index < memo.lnm_index - index)
+        || (index < memo.lnm_index && index < memo.lnm_index - index))
     {
         memo = {};
     }
@@ -3216,6 +3217,51 @@ logfile::get_line_number(const_iterator ll) const
     this->lf_line_number_memo = {index, retval};
 
     return retval;
+}
+
+logfile::const_iterator
+logfile::find_line_number(size_t line_number) const
+{
+    if (line_number <= 1) {
+        return this->begin();
+    }
+
+    if (this->lf_format == nullptr || !this->lf_format->lf_formatted_lines) {
+        return this->begin()
+            + std::min(line_number - 1, this->lf_index.size());
+    }
+
+    // The same counting as get_line_number(), forward from the last answer
+    // when it is at or before the line, otherwise from the start.  The lines a
+    // message is rendered into share the number of the message after them, so
+    // the first line with the number may be one of those, but a message that
+    // starts on the line is never before it.
+    auto memo = this->lf_line_number_memo;
+    if (memo.lnm_index > this->lf_index.size()
+        || line_number < memo.lnm_line_number)
+    {
+        memo = {};
+    }
+
+    auto index = memo.lnm_index;
+    auto retval = memo.lnm_line_number;
+    while (index < this->lf_index.size() && retval < line_number) {
+        if (!this->lf_index[index].is_sub_line()) {
+            retval += 1;
+        }
+        index += 1;
+    }
+    if (retval < line_number) {
+        return this->end();
+    }
+    // A sub-line before the line shares its number, so the first line with
+    // the number is the one after the last non-sub-line.
+    while (index > 0 && this->lf_index[index - 1].is_sub_line()) {
+        index -= 1;
+    }
+    this->lf_line_number_memo = {index, retval};
+
+    return this->begin() + index;
 }
 
 void
@@ -3653,6 +3699,61 @@ logfile::set_filename(const std::string& filename)
         std::filesystem::path p(filename);
         this->lf_basename = p.filename();
     }
+}
+
+logfile::details
+logfile::get_details() const
+{
+    details retval;
+
+    retval.d_path = this->lf_filename;
+    retval.d_actual_path = this->lf_actual_path;
+    retval.d_glob_pattern = this->lf_options.loo_glob_pattern;
+    if (this->lf_options.loo_child_poller) {
+        const auto& cp = *this->lf_options.loo_child_poller;
+        retval.d_child_command = details::child_command{
+            cp.get_description(),
+            cp.is_alive(),
+            cp.get_exit_status(),
+        };
+    }
+    retval.d_text_format = this->get_text_format();
+    retval.d_mtime = this->lf_stat.st_mtime;
+    retval.d_size = this->lf_index_size;
+    if (this->is_compressed()) {
+        retval.d_compressed_size = this->lf_stat.st_size;
+    }
+    retval.d_lines = this->size();
+    retval.d_activity = this->lf_activity;
+    if (this->lf_format != nullptr && this->size() > 0) {
+        retval.d_times = details::times{
+            this->get_content_time_range(),
+            this->lf_options.loo_time_range,
+            this->lf_time_scanner.dts_base_time,
+            this->lf_anchor_time,
+        };
+    }
+    if (this->lf_file_options) {
+        const auto& [path, file_options] = this->lf_file_options.value();
+
+        retval.d_options_path = path;
+        if (file_options.fo_default_zone.pp_value != nullptr) {
+            retval.d_timezone = file_options.fo_default_zone.pp_value->name();
+        }
+    }
+    retval.d_provenance = this->lf_options.loo_source;
+    retval.d_include_in_session = this->lf_options.loo_include_in_session;
+    retval.d_detect_format = this->lf_options.loo_detect_format;
+    retval.d_init_location = this->lf_options.loo_init_location;
+    if (this->lf_format != nullptr) {
+        retval.d_format_name = this->lf_format->get_name();
+    }
+    retval.d_format_match_messages = this->lf_format_match_messages;
+    retval.d_decompress_error = this->get_decompress_error();
+    retval.d_notes = this->get_notes();
+    retval.d_invalid_lines = this->lf_invalid_lines;
+
+    return retval;
 }
 
 time_t

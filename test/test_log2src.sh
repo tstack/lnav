@@ -493,8 +493,10 @@ run_cap_test ${lnav_test} -n \
 # :filter-out-statement hides the messages a statement logged, and follows it
 # through edits to its file.  The edits are made to a copy of the source while
 # lnav runs, by copying in versions prepared here (sed -i isn't portable).
+# The copy is made writable since distcheck's source tree is read-only.
 rm -rf hide-stmt-src
 cp -r ${test_dir}/log2src/java hide-stmt-src
+chmod -R u+w hide-stmt-src
 HIDE_SRC_FILE=hide-stmt-src/com/example/net/Server.java
 cp ${HIDE_SRC_FILE} hide-stmt-orig.java
 # three lines added above the statements: they all move down by three
@@ -688,6 +690,7 @@ run_cap_test ${lnav_test} -n \
 # any line of a statement that spans several finds its filter
 rm -rf wrap-stmt-src
 cp -r ${test_dir}/log2src/java wrap-stmt-src
+chmod -R u+w wrap-stmt-src
 awk 'NR == 15 { print "        Runnable r = () -> logger.warn(\"client {} \""; print "            + \"is slow\", client);"; next } { print }' \
     hide-stmt-orig.java > wrap-stmt-src/com/example/net/Server.java
 run_cap_test ${lnav_test} -n \
@@ -702,6 +705,7 @@ run_cap_test ${lnav_test} -n \
 # it
 rm -rf tail-stmt-src
 cp -r ${test_dir}/log2src/java tail-stmt-src
+chmod -R u+w tail-stmt-src
 mkdir -p tail-stmt-src/com/example/other
 cp hide-stmt-orig.java tail-stmt-src/com/example/other/Server.java
 run_cap_test ${lnav_test} -n \

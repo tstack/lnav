@@ -2196,7 +2196,18 @@ private:
     void add_opid(string_key opid);
     void add_thread_id(string_key tid);
     void add_path(unsigned char op, const std::string& path, bool unique);
+    void add_file_line(unsigned char op, sqlite3_value* val);
     void add_indexed_column(int col, unsigned char op, sqlite3_value* val);
+
+    /**
+     * Narrows the scan to the rows that can hold the log_file_line range in
+     * the files the path constraints allow.  A file's lines are in time
+     * order, so the rows for its lines in the range sit between the first row
+     * at the time of the lowest line and the last row at the time of the
+     * highest.  Rows from other files in there are left for the path
+     * constraints and SQLite to reject.
+     */
+    void narrow_by_file_line();
 
     /**
      * Picks the rows from a table that knows them or from the column
@@ -2236,6 +2247,9 @@ private:
     // The rows of a `log_line IN (...)` list, sorted, without duplicates, or
     // nullopt without one.
     std::optional<std::vector<vis_line_t>> fc_line_list;
+    // The inclusive range of log_file_line from its constraints.
+    std::optional<int64_t> fc_file_line_low;
+    std::optional<int64_t> fc_file_line_high;
 };
 
 vtab_time_range&
@@ -2471,6 +2485,9 @@ vt_filter_constraints::add_footer(int32_t orig_col,
                            footer_column == log_footer_columns::unique_path);
             break;
         }
+        case log_footer_columns::file_line:
+            this->add_file_line(op, argv[argi]);
+            break;
         case log_footer_columns::partition:
         case log_footer_columns::actual_time:
         case log_footer_columns::idle_msecs:
@@ -2482,7 +2499,6 @@ vt_filter_constraints::add_footer(int32_t orig_col,
         case log_footer_columns::filters:
         case log_footer_columns::named_searches:
         case log_footer_columns::msg_line_count:
-        case log_footer_columns::file_line:
         case log_footer_columns::file_line_count:
         case log_footer_columns::raw_text:
         case log_footer_columns::line_hash:
@@ -2659,6 +2675,145 @@ vt_filter_constraints::add_path(unsigned char op,
 }
 
 void
+vt_filter_constraints::add_file_line(unsigned char op, sqlite3_value* val)
+{
+    auto set_low = [this](int64_t low) {
+        if (!this->fc_file_line_low || this->fc_file_line_low.value() < low) {
+            this->fc_file_line_low = low;
+        }
+    };
+    auto set_high = [this](int64_t high) {
+        if (!this->fc_file_line_high || high < this->fc_file_line_high.value())
+        {
+            this->fc_file_line_high = high;
+        }
+    };
+
+    // SQLite still checks the constraint on each row, so the range only has
+    // to hold every line that matches: a value with a fraction is rounded
+    // outward, and a value that isn't a number doesn't narrow anything.
+    double value;
+    switch (sqlite3_value_numeric_type(val)) {
+        case SQLITE_INTEGER:
+            value = (double) sqlite3_value_int64(val);
+            break;
+        case SQLITE_FLOAT:
+            value = sqlite3_value_double(val);
+            break;
+        case SQLITE_NULL:
+            // A comparison with NULL is never true, so no line matches.
+            set_low(1);
+            set_high(0);
+            return;
+        default:
+            return;
+    }
+
+    switch (op) {
+        case SQLITE_INDEX_CONSTRAINT_EQ:
+            set_low((int64_t) std::floor(value));
+            set_high((int64_t) std::ceil(value));
+            break;
+        case SQLITE_INDEX_CONSTRAINT_GT:
+        case SQLITE_INDEX_CONSTRAINT_GE:
+            set_low((int64_t) std::floor(value));
+            break;
+        case SQLITE_INDEX_CONSTRAINT_LT:
+        case SQLITE_INDEX_CONSTRAINT_LE:
+            set_high((int64_t) std::ceil(value));
+            break;
+    }
+}
+
+void
+vt_filter_constraints::narrow_by_file_line()
+{
+    if (!this->fc_file_line_low && !this->fc_file_line_high) {
+        return;
+    }
+
+    auto low = std::max(this->fc_file_line_low.value_or(1), (int64_t) 1);
+    auto high = this->fc_file_line_high.value_or(INT64_MAX);
+    auto& lss = *this->fc_vt->lss;
+    std::optional<vis_line_t> min_vl;
+    std::optional<vis_line_t> max_vl;
+    const auto path_matches
+        = [](const std::vector<log_cursor::string_constraint>& conses,
+             const std::string& path) {
+              return std::all_of(
+                  conses.begin(), conses.end(), [&path](const auto& cons) {
+                      return cons.matches(path);
+                  });
+          };
+
+    for (auto iter = lss.begin(); low <= high && iter != lss.end(); ++iter) {
+        if (!(*iter)->is_visible()) {
+            continue;
+        }
+        auto* lf = (*iter)->get_file_ptr();
+        if (lf->size() == 0
+            || !path_matches(this->fc_log_path, lf->get_filename())
+            || !path_matches(this->fc_unique_path, lf->get_unique_path()))
+        {
+            continue;
+        }
+
+        auto first_ll = lf->find_line_number(low);
+        if (first_ll == lf->end()) {
+            continue;
+        }
+        // The line before the first one past the range is the last in it.
+        auto past_ll = high == INT64_MAX ? lf->end()
+                                         : lf->find_line_number(high + 1);
+        if (past_ll == first_ll) {
+            continue;
+        }
+        auto last_ll = std::prev(past_ll);
+
+        auto lo_opt = lss.find_from_time(first_ll->get_timeval());
+        if (!lo_opt) {
+            continue;
+        }
+        auto hi_opt = lss.find_from_time(
+            to_timeval(last_ll->get_time<>() + std::chrono::microseconds{1}));
+        auto hi = hi_opt ? hi_opt.value() - 1_vl
+                         : vis_line_t(lss.text_line_count()) - 1_vl;
+        if (hi < lo_opt.value()) {
+            continue;
+        }
+        if (!min_vl || lo_opt.value() < min_vl.value()) {
+            min_vl = lo_opt.value();
+        }
+        if (!max_vl || max_vl.value() < hi) {
+            max_vl = hi;
+        }
+    }
+
+    if (!min_vl) {
+        log_info("log_file_line range [%lld:%lld] has no rows",
+                 (long long) low,
+                 (long long) high);
+        // A row before the first narrows the scan to nothing.
+        this->fc_cursor.update(SQLITE_INDEX_CONSTRAINT_EQ,
+                               -1_vl,
+                               log_cursor::constraint_t::unique);
+        return;
+    }
+
+    log_info("log_file_line range [%lld:%lld] is in rows [%d:%d]",
+             (long long) low,
+             (long long) high,
+             (int) min_vl.value(),
+             (int) max_vl.value());
+    this->fc_cursor.update(SQLITE_INDEX_CONSTRAINT_GE,
+                           min_vl.value(),
+                           log_cursor::constraint_t::unique);
+    this->fc_cursor.update(SQLITE_INDEX_CONSTRAINT_LE,
+                           max_vl.value(),
+                           log_cursor::constraint_t::unique);
+}
+
+void
 vt_filter_constraints::add_indexed_column(int col,
                                           unsigned char op,
                                           sqlite3_value* val)
@@ -2706,6 +2861,7 @@ vt_filter_constraints::add_indexed_column(int col,
 void
 vt_filter_constraints::apply()
 {
+    this->narrow_by_file_line();
     if (this->fc_line_list) {
         // A log_line IN list says which rows; the indexed columns are left
         // to SQLite's own check of their constraints on those rows, rather
@@ -3430,7 +3586,27 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                             }
                             break;
                         }
-                        case log_footer_columns::file_line:
+                        case log_footer_columns::file_line: {
+                            // The bounds narrow the scan to the rows that
+                            // can hold those lines (see
+                            // vt_filter_constraints::narrow_by_file_line()).
+                            switch (op) {
+                                case SQLITE_INDEX_CONSTRAINT_EQ:
+                                case SQLITE_INDEX_CONSTRAINT_GT:
+                                case SQLITE_INDEX_CONSTRAINT_GE:
+                                case SQLITE_INDEX_CONSTRAINT_LT:
+                                case SQLITE_INDEX_CONSTRAINT_LE:
+                                    argvInUse += 1;
+                                    indexes.push_back(constraint);
+                                    p_info->aConstraintUsage[lpc].argvIndex
+                                        = argvInUse;
+                                    index_desc.emplace_back(fmt::format(
+                                        FMT_STRING("log_file_line {} ?"),
+                                        sql_constraint_op_name(op)));
+                                    break;
+                            }
+                            break;
+                        }
                         case log_footer_columns::file_line_count:
                         case log_footer_columns::raw_text:
                         case log_footer_columns::line_hash:

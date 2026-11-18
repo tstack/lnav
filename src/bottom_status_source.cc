@@ -194,10 +194,8 @@ bottom_status_source::update_marks(listview_curses* lc)
         this->update_search_term(*tc);
     }
 
-
     auto report = search_report_for(*tc);
-    using bv_t = bookmark_vector<vis_line_t>;
-    const auto& bv = [tc, report, focused_slot]() -> const bv_t& {
+    const auto& bv = [tc, report, focused_slot]() -> const vis_bm_vec& {
         switch (report) {
             case search_report_t::focused:
                 return tc->search_matches_for_slot(focused_slot.value());
@@ -209,6 +207,22 @@ bottom_status_source::update_marks(listview_curses* lc)
         return tc->get_interactive_matches();
     }();
 
+    // The count is emboldened for a moment after it changes so that new hits
+    // arriving in a live log can be noticed without the field flashing.  A
+    // count for a different search is not a change in this sense.
+    auto& timer = ui_periodic_timer::singleton();
+    auto hit_count = bv.size();
+    auto search_id
+        = std::make_tuple(report, focused_slot, tc->get_current_search());
+    if (search_id != this->bss_hit_count_search) {
+        this->bss_hit_count_search = std::move(search_id);
+        this->bss_hit_count_fade = 0;
+    } else if (hit_count != this->bss_last_hit_count) {
+        timer.start_fade(this->bss_hit_count_fade, HIT_COUNT_FADE_TICKS);
+    }
+    this->bss_last_hit_count = hit_count;
+    auto emphasize = timer.fade_diff(this->bss_hit_count_fade) > 0;
+
     // A focused search and the "all searches" label always name something, so
     // they get a count even when it is zero.  The interactive search on its
     // own leaves the field empty until there is a pattern to count.
@@ -217,16 +231,33 @@ bottom_status_source::update_marks(listview_curses* lc)
     {
         auto vl = tc->get_selection();
         if (vl) {
+            auto count_al
+                = attr_line_t().appendf(FMT_STRING("{:L}"), hit_count);
+            if (emphasize) {
+                count_al.with_attr_for_all(
+                    VC_STYLE.value(text_attrs::with_bold()));
+            }
+
+            attr_line_t al;
             auto lb = bv.bv_tree.find(vl.value());
             if (lb != bv.bv_tree.end()) {
-                retval = sf.set_value("  Hit %'d of %'d for ",
-                                      (lb - bv.bv_tree.begin()) + 1,
-                                      bv.size());
+                al.append("  Hit ")
+                    .appendf(FMT_STRING("{:L}"), lb - bv.bv_tree.begin() + 1)
+                    .append(" of ")
+                    .append(count_al)
+                    .append(" for ");
             } else {
-                retval = sf.set_value("  %'d hits for ", bv.size());
+                al.append("  ").append(count_al).append(" hits for ");
             }
+            if (sf.set_value(al) || emphasize != this->bss_hit_count_bold) {
+                // set_value() only compares the text, so a change in just
+                // the emphasis has to be applied here.
+                sf.get_value() = al;
+                retval = true;
+            }
+            this->bss_hit_count_bold = emphasize;
         }
-    } else if (tc->is_searching()) {
+    } else if (tc->is_searching_for(SEARCH_ANIMATION_DELAY)) {
         // A search that this field is not counting -- a named search, say --
         // is running, so update_hits() has the cylon going.  Say what is
         // happening instead of animating an empty field.
@@ -244,7 +275,10 @@ bottom_status_source::update_hits(textview_curses* tc)
     bool retval = false;
     role_t new_role;
 
-    if (tc->is_searching()) {
+    // Short searches, like the scans of lines appended to a live log, are
+    // over before the animation would mean anything, so it only starts once
+    // a search has run for a while.
+    if (tc->is_searching_for(SEARCH_ANIMATION_DELAY)) {
         this->bss_hit_spinner += 1;
         if (this->bss_hit_spinner % 2) {
             new_role = role_t::VCR_ACTIVE_STATUS;
@@ -272,14 +306,18 @@ bottom_status_source::update_hits(textview_curses* tc)
 void
 bottom_status_source::update_loading(file_off_t off,
                                      file_ssize_t total,
-                                     const char* term)
+                                     const char* term,
+                                     bool quiet)
 {
     auto& sf = this->bss_fields[BSF_LOADING];
 
     require_ge(off, 0);
     require_ge(total, off);
 
+    const auto active_role
+        = quiet ? role_t::VCR_STATUS : role_t::VCR_ACTIVE_STATUS2;
     if (total == 0) {
+        this->bss_loading_quiet = false;
         sf.set_cylon(false);
         sf.set_role(role_t::VCR_STATUS);
         if (this->bss_paused) {
@@ -299,17 +337,26 @@ bottom_status_source::update_loading(file_off_t off,
         static auto DOTS_LEN = std::distance(std::begin(DOTS), std::end(DOTS));
 
         this->bss_load_percent += 1;
-        sf.set_cylon(true);
-        sf.set_role(role_t::VCR_ACTIVE_STATUS2);
+        this->bss_loading_quiet = quiet;
+        if (quiet && sf.is_cylon()) {
+            sf.clear();  // clear cylon style attribute
+        }
+        sf.set_cylon(!quiet);
+        sf.set_role(active_role);
         sf.set_value(" Working%s  ", DOTS[this->bss_load_percent % DOTS_LEN]);
     } else {
         int pct = (int) (((double) off / (double) total) * 100.0);
 
-        if (this->bss_load_percent != pct) {
+        if (this->bss_load_percent != pct || this->bss_loading_quiet != quiet)
+        {
             this->bss_load_percent = pct;
+            this->bss_loading_quiet = quiet;
 
-            sf.set_cylon(true);
-            sf.set_role(role_t::VCR_ACTIVE_STATUS2);
+            if (quiet && sf.is_cylon()) {
+                sf.clear();  // clear cylon style attribute
+            }
+            sf.set_cylon(!quiet);
+            sf.set_role(active_role);
             sf.set_value(" %s %2d%% ", term, pct);
         }
     }

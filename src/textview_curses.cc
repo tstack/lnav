@@ -495,6 +495,9 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
 
     auto op_guard = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
 
+    if (this->tc_searching == 0) {
+        this->tc_searching_since = std::chrono::steady_clock::now();
+    }
     this->tc_searching += 1;
     this->tc_search_action(this);
 
@@ -1032,6 +1035,9 @@ textview_curses::grep_end(grep_proc<vis_line_t>& gp)
     auto op_guard = lnav_opid_guard::resume(this->tc_search_op_id.value_or(""));
 
     this->tc_searching -= 1;
+    if (this->tc_searching == 0) {
+        this->tc_searching_since = std::nullopt;
+    }
     this->grep_end_batch(gp);
     if (this->tc_searching == 0 && this->tc_search_start_time) {
         const auto now = std::chrono::steady_clock::now();

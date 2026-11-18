@@ -1078,7 +1078,8 @@ struct refresh_status_bars {
         if (ot == lnav::func::op_type::interactive) {
         } else if (lnav_data.ld_bottom_source
                        .get_field(bottom_status_source::BSF_LOADING)
-                       .empty())
+                       .empty()
+                   || lnav_data.ld_bottom_source.is_loading_quiet())
         {
             prompt.p_editor.clear_inactive_value();
         } else if (prompt.p_editor.tc_inactive_value.al_string

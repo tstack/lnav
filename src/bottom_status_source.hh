@@ -30,7 +30,10 @@
 #ifndef lnav_bottom_status_source_hh
 #define lnav_bottom_status_source_hh
 
+#include <chrono>
+#include <csignal>
 #include <string>
+#include <tuple>
 
 #include "grep_proc.hh"
 #include "statusview_curses.hh"
@@ -84,17 +87,36 @@ public:
 
     bool update_hits(textview_curses* tc);
 
+    /**
+     * @param quiet Draw the field in the regular status bar style, without
+     * the animation, for an operation that should not draw attention to
+     * itself yet.
+     */
     void update_loading(file_off_t off,
                         file_ssize_t total,
-                        const char* term = "Loading");
+                        const char* term = "Loading",
+                        bool quiet = false);
+
+    /** @return True if the loading field is being drawn in the quiet style. */
+    bool is_loading_quiet() const
+    {
+        return this->bss_loading_quiet
+            && !this->bss_fields[BSF_LOADING].empty();
+    }
 
 private:
     status_field bss_prompt{1024, role_t::VCR_STATUS};
     status_field bss_error{1024, role_t::VCR_ALERT_STATUS};
     status_field bss_line_error{1024, role_t::VCR_ALERT_STATUS};
     status_field bss_fields[BSF__MAX];
+    /** How long a search runs before the hits field animates. */
+    static constexpr std::chrono::milliseconds SEARCH_ANIMATION_DELAY{500};
+    /** How many UI ticks the hit count stays emphasized after a change. */
+    static constexpr size_t HIT_COUNT_FADE_TICKS = 300;
+
     int bss_hit_spinner{0};
     int bss_load_percent{0};
+    bool bss_loading_quiet{false};
     bool bss_paused{false};
     /** Which search the hit count and the term beside it are reporting on. */
     enum class search_report_t {
@@ -121,6 +143,13 @@ private:
      */
     search_report_t bss_search_report{search_report_t::interactive};
     std::optional<size_t> bss_focused_search_slot;
+
+    /** The search that bss_last_hit_count was counted for. */
+    std::tuple<search_report_t, std::optional<size_t>, std::string>
+        bss_hit_count_search{search_report_t::interactive, std::nullopt, ""};
+    size_t bss_last_hit_count{0};
+    sig_atomic_t bss_hit_count_fade{0};
+    bool bss_hit_count_bold{false};
 };
 
 #endif

@@ -64,6 +64,7 @@ struct exec_context;
 
 using vis_bookmarks_t = bookmarks<vis_line_t>;
 using vis_bookmarks = bookmarks<vis_line_t>::type;
+using vis_bm_vec = bookmark_vector<vis_line_t>;
 
 class logfile_filter_state {
 public:
@@ -385,8 +386,7 @@ public:
     }
 
     static constexpr auto min_time_init = std::chrono::microseconds::zero();
-    static constexpr auto max_time_init
-        = std::chrono::microseconds::max();
+    static constexpr auto max_time_init = std::chrono::microseconds::max();
 
     void clear_preview_times()
     {
@@ -983,6 +983,20 @@ public:
 
     bool is_searching() const { return this->tc_searching > 0; }
 
+    /**
+     * @return True if searches have been running without a break for at
+     * least the given amount of time.  The scans of newly appended lines are
+     * usually over in a moment, so this separates them from searches that
+     * are worth telling the user about.
+     */
+    bool is_searching_for(std::chrono::milliseconds min_duration) const
+    {
+        return this->tc_searching_since
+            && std::chrono::steady_clock::now()
+                - this->tc_searching_since.value()
+            >= min_duration;
+    }
+
     void set_follow_search_for(int64_t ms_to_deadline,
                                std::function<bool()> func)
     {
@@ -1368,6 +1382,8 @@ protected:
     vis_bookmarks tc_bookmarks{vis_bookmarks_t::create_array()};
 
     int tc_searching{0};
+    /** When tc_searching last went from zero to non-zero. */
+    std::optional<std::chrono::steady_clock::time_point> tc_searching_since;
     /**
      * The line that the queued searches have reached, i.e. where a scan of
      * newly arrived lines should begin.  Both search procs are handed the same
@@ -1410,8 +1426,7 @@ protected:
      * per-slot breakdown is what lets one search be cleared without dropping
      * lines that another search also matched.
      */
-    std::array<bookmark_vector<vis_line_t>, GREP_MAX_PATTERNS>
-        tc_search_matches;
+    std::array<vis_bm_vec, GREP_MAX_PATTERNS> tc_search_matches;
     /** Slots that alloc_search_slot() has handed out. */
     std::bitset<GREP_MAX_PATTERNS> tc_search_slots_used;
     /**

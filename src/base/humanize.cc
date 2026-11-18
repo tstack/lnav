@@ -80,8 +80,10 @@ try_from(const string_fragment& sf)
         ^ \s* (?:
               # integer
               ( [\-\+]? \d+ )
-              # real with optional exponent
-            | ( [\-\+]? \d+ \. \d+ (?: [eE] [\-\+] \d+ )? )
+              # real, or a number with an exponent.  The exponent's sign is
+              # optional, since Java's Double.toString() writes 1.5E7.
+            | ( [\-\+]? \d+ (?: \. \d+ (?: [eE] [\-\+]? \d+ )?
+                             | [eE] [\-\+]? \d+ ) )
               # file size: 4KiB, 2 MB, 100B, 500KBps
             | ( [\-\+]? \d+ (?:\.\d+)? \s* (?:[KMGTPE] i?)? [Bb] (?:ps)? )
               # seconds: 1.2s, 1ms, 5us, 68 micros, 5 milliseconds

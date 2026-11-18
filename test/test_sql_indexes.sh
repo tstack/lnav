@@ -146,3 +146,21 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS timed, (SELECT group_concat(log_line) FROM access_log WHERE (c_ip || '') = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS unpushed, (SELECT count(*) FROM access_log WHERE c_ip = '66.249.66.194') AS total, (SELECT group_concat(log_line) FROM access_log WHERE c_ip = '66.249.66.194' AND log_time >= '2019-01-22 00:27:00' AND log_time < '2019-01-22 00:27:30') AS indexed" \
     ${test_dir}/logfile_shop_access_log.0
+
+# log_file_line bounds narrow the scan to the rows that can hold those lines
+# of each file the path constraints allow.  A unary plus keeps the constraint
+# from being pushed down, so the same condition finds the same rows either
+# way: across files, for JSON messages rendered into several lines, for a
+# range inside a multi-line message (no rows start there), in either
+# direction, with a bound on only one side, and with other constraints on the
+# rows.
+run_cap_test ${lnav_test} -n \
+    -c ";EXPLAIN QUERY PLAN SELECT * FROM all_logs WHERE log_path GLOB '*/logfile_json.json' AND log_file_line BETWEEN 3 AND 8" \
+    -c ";SELECT \$id, \$parent, replace(\$detail, 'SCAN TABLE', 'SCAN')" \
+    ${test_dir}/logfile_json.json
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line BETWEEN 2 AND 3) AS pushed_files, (SELECT group_concat(log_line) FROM all_logs WHERE +log_file_line BETWEEN 2 AND 3) AS unpushed_files, (SELECT group_concat(log_line) FROM all_logs WHERE log_path GLOB '*/logfile_json.json' AND log_file_line BETWEEN 12 AND 14) AS pushed_json, (SELECT group_concat(log_line) FROM all_logs WHERE log_path GLOB '*/logfile_json.json' AND +log_file_line BETWEEN 12 AND 14) AS unpushed_json, (SELECT group_concat(log_line) FROM all_logs WHERE log_path GLOB '*/logfile_postgres.1' AND log_file_line BETWEEN 3 AND 40) AS pushed_inside, (SELECT group_concat(log_line) FROM (SELECT log_line FROM all_logs WHERE log_file_line BETWEEN 1 AND 41 ORDER BY log_line DESC)) AS pushed_desc, (SELECT group_concat(log_line) FROM (SELECT log_line FROM all_logs WHERE +log_file_line BETWEEN 1 AND 41 ORDER BY log_line DESC)) AS unpushed_desc, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line = 2 AND log_line IN (1, 2, 3, 40, 41)) AS pushed_in, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line > 2.5 AND log_file_line <= 4) AS pushed_fraction, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line BETWEEN 5 AND 4) AS pushed_empty, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line BETWEEN NULL AND 5) AS pushed_null, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line > 30) AS pushed_gt, (SELECT group_concat(log_line) FROM all_logs WHERE +log_file_line > 30) AS unpushed_gt, (SELECT group_concat(log_line) FROM all_logs WHERE log_file_line <= 3) AS pushed_le, (SELECT group_concat(log_line) FROM all_logs WHERE +log_file_line <= 3) AS unpushed_le" \
+    ${test_dir}/logfile_json.json \
+    ${test_dir}/logfile_postgres.1 \
+    ${test_dir}/logfile_access_log.0

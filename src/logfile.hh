@@ -839,6 +839,13 @@ public:
 
     size_t get_line_number(const_iterator ll) const;
 
+    /**
+     * The first line of the index whose get_line_number() is at least
+     * `line_number`, or end() if the file has fewer lines.  Stepping forward
+     * from it with get_line_number() costs a step per line.
+     */
+    const_iterator find_line_number(size_t line_number) const;
+
     void read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
                            line_buffer::scan_direction dir
@@ -1133,6 +1140,58 @@ public:
     {
         return this->lf_level_stats;
     }
+
+    /**
+     * What is known about the file, for the details panel in the FILES view
+     * and the lnav_file.details column.  The values are copied out, so the
+     * caller decides how to present them.  The file's embedded metadata is
+     * left out; it's available from get_embedded_metadata() and the
+     * lnav_file_metadata table.
+     */
+    struct details {
+        struct child_command {
+            std::string cc_description;
+            bool cc_running{false};
+            std::optional<int> cc_exit_status;
+        };
+
+        /** Set when the file has log messages to take times from. */
+        struct times {
+            time_range t_content;
+            /** The time range from the open options, which may be bounded. */
+            time_range t_cutoff;
+            /** The time that dates without a year or day are relative to. */
+            std::chrono::microseconds t_base_time;
+            anchor_time_t t_base_time_source;
+        };
+
+        std::filesystem::path d_path;
+        /** The file that is read, or nullopt when the content is piped. */
+        std::optional<std::filesystem::path> d_actual_path;
+        std::optional<std::string> d_glob_pattern;
+        std::optional<child_command> d_child_command;
+        std::optional<text_format_t> d_text_format;
+        time_t d_mtime{0};
+        file_off_t d_size{0};
+        /** The size on disk, when the file is compressed. */
+        std::optional<file_off_t> d_compressed_size;
+        size_t d_lines{0};
+        logfile_activity d_activity;
+        std::optional<times> d_times;
+        std::optional<std::string> d_options_path;
+        std::optional<std::string> d_timezone;
+        logfile_name_source d_provenance{logfile_name_source::USER};
+        bool d_include_in_session{false};
+        bool d_detect_format{false};
+        file_location_t d_init_location;
+        std::optional<intern_string_t> d_format_name;
+        std::vector<lnav::console::user_message> d_format_match_messages;
+        std::string d_decompress_error;
+        note_map d_notes;
+        invalid_line_info d_invalid_lines;
+    };
+
+    details get_details() const;
 
 protected:
     /**

@@ -56,6 +56,7 @@ typedef enum {
     MODE_TIMES,
     MODE_LEVELS,
     MODE_TIME_ORDER,
+    MODE_LINE_NUMBERS,
 } dl_mode_t;
 
 static auto bound_file_options_hier
@@ -95,7 +96,7 @@ main(int argc, char* argv[])
         load_formats(paths, errors);
     }
 
-    while ((c = getopt(argc, argv, "a:ef:lotv")) != -1) {
+    while ((c = getopt(argc, argv, "a:ef:lnotv")) != -1) {
         switch (c) {
             case 'a':
                 append_path = optarg;
@@ -108,6 +109,9 @@ main(int argc, char* argv[])
                 break;
             case 'l':
                 mode = MODE_LINE_COUNT;
+                break;
+            case 'n':
+                mode = MODE_LINE_NUMBERS;
                 break;
             case 'o':
                 mode = MODE_TIME_ORDER;
@@ -232,6 +236,54 @@ main(int argc, char* argv[])
                            (long long) ll.get_time<>().count(),
                            ll.is_ignored() ? " ignored" : "");
                 }
+                break;
+            }
+            case MODE_LINE_NUMBERS: {
+                // Check get_line_number() and find_line_number() against a
+                // count from the start.  Each lookup follows a
+                // get_line_number() of the same line, so the memo holds the
+                // number being looked up and may point past the first line
+                // that has it.
+                size_t expected_number = 1;
+                size_t first_index = 0;
+                size_t sub_lines = 0;
+                for (size_t index = 0; index < lf->size(); index++) {
+                    if (index > 0 && !(*lf)[index - 1].is_sub_line()) {
+                        expected_number += 1;
+                        first_index = index;
+                    }
+                    if ((*lf)[index].is_sub_line()) {
+                        sub_lines += 1;
+                    }
+
+                    auto ll = lf->begin() + index;
+                    auto number = lf->get_line_number(ll);
+                    if (number != expected_number) {
+                        printf("get_line_number(%zu) = %zu, expected %zu\n",
+                               index,
+                               number,
+                               expected_number);
+                        retval = EXIT_FAILURE;
+                    }
+                    auto found = (size_t) std::distance(
+                        lf->cbegin(), lf->find_line_number(expected_number));
+                    if (found != first_index) {
+                        printf("find_line_number(%zu) = %zu, expected %zu\n",
+                               expected_number,
+                               found,
+                               first_index);
+                        retval = EXIT_FAILURE;
+                    }
+                }
+                if (lf->find_line_number(expected_number + 1) != lf->end()) {
+                    printf("find_line_number(%zu) is not end()\n",
+                           expected_number + 1);
+                    retval = EXIT_FAILURE;
+                }
+                printf("%zu lines, %zu sub-lines, %zu numbers\n",
+                       lf->size(),
+                       sub_lines,
+                       expected_number);
                 break;
             }
         }

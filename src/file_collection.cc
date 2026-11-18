@@ -597,6 +597,7 @@ file_collection::watch_logfile(lnav::futures::future_queue<file_collection>& fq,
                             retval.fc_file_names[entry.path().string()]
                                 .with_filename(custom_name.string())
                                 .with_source(logfile_name_source::ARCHIVE)
+                                .with_archive(filename, arc_path)
                                 .with_visibility(is_visible)
                                 .with_non_utf_visibility(false)
                                 .with_visible_size_limit(256 * 1024)

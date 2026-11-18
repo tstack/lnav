@@ -89,6 +89,26 @@ snippet::from_content_with_offset(intern_string_t src,
     return retval;
 }
 
+string_fragment
+user_message::level_name(level lvl)
+{
+    switch (lvl) {
+        case level::raw:
+            return "raw"_frag;
+        case level::ok:
+            return "ok"_frag;
+        case level::info:
+            return "info"_frag;
+        case level::warning:
+            return "warning"_frag;
+        case level::error:
+            return "error"_frag;
+        case level::fatal:
+            return "fatal"_frag;
+    }
+    return "unknown"_frag;
+}
+
 user_message
 user_message::raw(const attr_line_t& al)
 {

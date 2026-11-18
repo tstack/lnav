@@ -213,7 +213,11 @@ included in a :code:`SELECT *`:
     counting from one.  For a format that renders a message into several
     lines, like JSON, this counts the file's lines, not the rendered ones, and
     finding it reads the file's index from the start, so select it for a few
-    messages rather than a whole log.
+    messages rather than a whole log.  A constraint like
+    :code:`log_file_line BETWEEN 100 AND 107` or :code:`log_file_line = 42`
+    limits the scan to the part of the log with the times of those lines in
+    each file.  Add a :code:`log_path` constraint to leave out other files,
+    since their messages can fall between the times of those lines.
   :log_file_line_count: The number of lines the message takes up in the log
     file.  Unlike :code:`log_msg_line_count`, this leaves out the lines a format
     rendered the message into.

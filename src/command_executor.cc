@@ -73,6 +73,93 @@ exec_context INIT_EXEC_CONTEXT;
 
 static sig_atomic_t sql_counter = 0;
 
+/**
+ * How much of the progress display a running query gets.  The display draws
+ * attention to itself, which is right for a query the user is waiting on,
+ * but the queries that an external-access client sends while polling show up
+ * unbidden and are usually over in a moment.  For those, the display is
+ * built up in stages so that short queries do not make the screen flash and
+ * longer ones still explain why lnav is not responding.
+ */
+enum class sql_progress_stage_t {
+    /** Nothing is shown yet. */
+    hidden,
+    /** Only the loading field, in the regular status bar style. */
+    quiet,
+    /** The views are disabled and the loading field is animated. */
+    full,
+};
+
+/** How many UI timer ticks an external query runs before each stage. */
+static constexpr size_t SQL_PROGRESS_QUIET_TICKS = 2;
+static constexpr size_t SQL_PROGRESS_FULL_TICKS = 10;
+static sig_atomic_t sql_progress_quiet_at = 0;
+static sig_atomic_t sql_progress_full_at = 0;
+static bool sql_progress_started = false;
+
+/**
+ * @return The stage to draw the progress display in, or nullopt if it does
+ * not need to be drawn right now.  The stages are timed with UI timer ticks
+ * instead of with a clock since this is called every few SQLite instructions.
+ */
+static std::optional<sql_progress_stage_t>
+sql_progress_due()
+{
+    auto& timer = ui_periodic_timer::singleton();
+
+    if (!sql_progress_started) {
+        sql_progress_started = true;
+        // Requests from external clients run in the main exec_context, so
+        // its provenance says where the query came from.
+        if (lnav_data.ld_exec_context
+                .get_provenance<exec_context::external_access>())
+        {
+            timer.start_fade(sql_progress_quiet_at, SQL_PROGRESS_QUIET_TICKS);
+            timer.start_fade(sql_progress_full_at, SQL_PROGRESS_FULL_TICKS);
+        } else {
+            sql_progress_quiet_at = 0;
+            sql_progress_full_at = 0;
+        }
+    }
+
+    auto stage = sql_progress_stage_t::hidden;
+    if (timer.fade_diff(sql_progress_full_at) == 0) {
+        stage = sql_progress_stage_t::full;
+    } else if (timer.fade_diff(sql_progress_quiet_at) == 0) {
+        stage = sql_progress_stage_t::quiet;
+    }
+
+    // sql_counter is only advanced once something is drawn, which is what
+    // sql_progress_finished() checks to see if there is anything to undo.
+    if (stage == sql_progress_stage_t::hidden
+        || !timer.time_to_update(sql_counter))
+    {
+        return std::nullopt;
+    }
+
+    return stage;
+}
+
+/**
+ * Get the UI ready for a progress update in the given stage.
+ *
+ * @return True if the loading field should be drawn in the quiet style.
+ */
+static bool
+prepare_sql_progress(sql_progress_stage_t stage)
+{
+    if (stage != sql_progress_stage_t::full) {
+        return true;
+    }
+
+    auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    breadcrumb_view->set_enabled(false);
+    lnav_data.ld_status[LNS_TOP].set_enabled(false);
+    lnav_data.ld_view_stack.top() | [](auto* tc) { tc->set_enabled(false); };
+    lnav::prompt::get().p_editor.clear_alt_value();
+    return false;
+}
+
 int
 sql_progress(const log_cursor_summary& lc)
 {
@@ -84,20 +171,19 @@ sql_progress(const log_cursor_summary& lc)
         return 1;
     }
 
-    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
-        auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
-        breadcrumb_view->set_enabled(false);
-        lnav_data.ld_status[LNS_TOP].set_enabled(false);
-        lnav_data.ld_view_stack.top() |
-            [](auto* tc) { tc->set_enabled(false); };
+    auto stage = sql_progress_due();
+    if (stage) {
+        auto quiet = prepare_sql_progress(stage.value());
         ssize_t total = lnav_data.ld_log_source.text_line_count();
         off_t off = lc.lcs_curr_line;
 
         if (off >= 0 && off <= total) {
-            lnav_data.ld_bottom_source.update_loading(off, total);
+            lnav_data.ld_bottom_source.update_loading(
+                off, total, "Loading", quiet);
             lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
         }
-        lnav::prompt::get().p_editor.clear_alt_value();
+        // The refresh also checks for CTRL+], so a query can be cancelled
+        // in the quiet stage, before the hint is shown.
         auto refresh_res
             = lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
         if (refresh_res == lnav::progress_result_t::interrupt) {
@@ -119,19 +205,16 @@ sql_cache_progress(file_off_t off, file_off_t total)
         return lnav::progress_result_t::interrupt;
     }
 
-    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
-        auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
-        breadcrumb_view->set_enabled(false);
-        lnav_data.ld_status[LNS_TOP].set_enabled(false);
-        lnav_data.ld_view_stack.top() |
-            [](auto* tc) { tc->set_enabled(false); };
+    auto stage = sql_progress_due();
+    if (stage) {
+        auto quiet = prepare_sql_progress(stage.value());
         if (total > 0 && off < total) {
-            lnav_data.ld_bottom_source.update_loading(off, total, "Caching");
+            lnav_data.ld_bottom_source.update_loading(
+                off, total, "Caching", quiet);
         } else {
-            lnav_data.ld_bottom_source.update_loading(1, 1);
+            lnav_data.ld_bottom_source.update_loading(1, 1, "Loading", quiet);
         }
         lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-        lnav::prompt::get().p_editor.clear_alt_value();
         return lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
     }
 
@@ -141,6 +224,7 @@ sql_cache_progress(file_off_t off, file_off_t total)
 void
 sql_progress_finished()
 {
+    sql_progress_started = false;
     if (sql_counter == 0) {
         return;
     }

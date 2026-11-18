@@ -80,6 +80,198 @@ const typed_json_path_container<logfile_activity> activity_handlers = {
         .for_field(&logfile_activity::la_line_buffer_memory_bytes),
 };
 
+const char*
+note_name(logfile::note_type nt)
+{
+    switch (nt) {
+        case logfile::note_type::indexing_disabled:
+            return "indexing-disabled";
+        case logfile::note_type::duplicate:
+            return "duplicate";
+        case logfile::note_type::not_utf:
+            return "not-utf";
+        case logfile::note_type::line_limit:
+            return "line-limit";
+    }
+    return "unknown";
+}
+
+/**
+ * Write a message as plain text: the level, the message, and the reason and
+ * help when there are any.
+ */
+void
+gen_message(yajl_gen gen, const lnav::console::user_message& um)
+{
+    yajlpp_map obj(gen);
+
+    obj.gen("level");
+    obj.gen(lnav::console::user_message::level_name(um.um_level));
+    obj.gen("message");
+    obj.gen(um.um_message.get_string());
+    if (!um.um_reason.empty()) {
+        obj.gen("reason");
+        obj.gen(um.um_reason.get_string());
+    }
+    if (!um.um_help.empty()) {
+        obj.gen("help");
+        obj.gen(um.um_help.get_string());
+    }
+}
+
+/**
+ * The lnav_file.details column: what the FILES view's details panel shows
+ * about a file, other than what lnav_file has its own columns for.  Times
+ * from the log messages are formatted like log_time.
+ */
+json_string
+details_to_json(const logfile::details& fd)
+{
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+    {
+        yajlpp_map root(gen);
+
+        root.gen("actual-path");
+        if (fd.d_actual_path) {
+            root.gen(fd.d_actual_path->string());
+        } else {
+            root.gen();
+        }
+        if (fd.d_glob_pattern) {
+            root.gen("glob-pattern");
+            root.gen(fd.d_glob_pattern.value());
+        }
+        if (fd.d_child_command) {
+            const auto& child = fd.d_child_command.value();
+
+            root.gen("child-command");
+            yajlpp_map cmd(gen);
+            cmd.gen("command");
+            cmd.gen(child.cc_description);
+            cmd.gen("running");
+            cmd.gen(child.cc_running);
+            cmd.gen("exit-status");
+            if (child.cc_exit_status) {
+                cmd.gen(child.cc_exit_status.value());
+            } else {
+                cmd.gen();
+            }
+        }
+        root.gen("last-modified");
+        root.gen(lnav::to_rfc3339_string(
+            std::chrono::seconds{convert_log_time_to_local(fd.d_mtime)}, ' '));
+        root.gen("size");
+        root.gen((int64_t) fd.d_size);
+        if (fd.d_compressed_size) {
+            root.gen("compressed-size");
+            root.gen((int64_t) fd.d_compressed_size.value());
+        }
+        if (fd.d_times) {
+            const auto& times = fd.d_times.value();
+
+            root.gen("time-range");
+            {
+                yajlpp_map tr(gen);
+                tr.gen("begin");
+                tr.gen(lnav::to_rfc3339_string(times.t_content.tr_begin, ' '));
+                tr.gen("end");
+                tr.gen(lnav::to_rfc3339_string(times.t_content.tr_end, ' '));
+            }
+            if (times.t_cutoff.has_lower_bound()
+                || times.t_cutoff.has_upper_bound())
+            {
+                root.gen("cutoff");
+                yajlpp_map cutoff(gen);
+                if (times.t_cutoff.has_lower_bound()) {
+                    cutoff.gen("from");
+                    cutoff.gen(
+                        lnav::to_rfc3339_string(times.t_cutoff.tr_begin, ' '));
+                }
+                if (times.t_cutoff.has_upper_bound()) {
+                    cutoff.gen("to");
+                    cutoff.gen(
+                        lnav::to_rfc3339_string(times.t_cutoff.tr_end, ' '));
+                }
+            }
+            root.gen("base-time");
+            {
+                yajlpp_map base(gen);
+                base.gen("utc");
+                base.gen(lnav::to_rfc3339_string(times.t_base_time, ' '));
+                base.gen("source");
+                times.t_base_time_source.match(
+                    [&base](const logfile::file_line& fl) {
+                        base.gen("line");
+                        base.gen("line");
+                        base.gen((int64_t) fl.value_);
+                    },
+                    [&base](const logfile::file_mtime&) {
+                        base.gen("mtime");
+                    },
+                    [&base](const logfile::embedded_file_time&) {
+                        base.gen("embedded");
+                    });
+            }
+        }
+        root.gen("provenance");
+        root.gen(fmt::to_string(fd.d_provenance));
+        root.gen("include-in-session");
+        root.gen(fd.d_include_in_session);
+        root.gen("detect-format");
+        root.gen(fd.d_detect_format);
+        if (fd.d_init_location.valid()) {
+            root.gen("initial-location");
+            root.gen(fd.d_init_location.match(
+                [](default_for_text_format) { return std::string("default"); },
+                [](file_location_tail) { return std::string("tail"); },
+                [](int vl) { return fmt::format(FMT_STRING("L{}"), vl); },
+                [](std::string section) { return section; }));
+        }
+        root.gen("format-match");
+        {
+            yajlpp_array msgs(gen);
+            for (const auto& um : fd.d_format_match_messages) {
+                gen_message(gen, um);
+            }
+        }
+        if (!fd.d_decompress_error.empty()) {
+            root.gen("error");
+            root.gen(fd.d_decompress_error);
+        }
+        root.gen("notes");
+        {
+            yajlpp_array notes(gen);
+            for (const auto& [note_kind, note_um] : fd.d_notes.entries()) {
+                yajlpp_map note(gen);
+                note.gen("kind");
+                note.gen(note_name(note_kind));
+                note.gen("message");
+                note.gen(note_um.um_message.get_string());
+                if (!note_um.um_reason.empty()) {
+                    note.gen("reason");
+                    note.gen(note_um.um_reason.get_string());
+                }
+            }
+        }
+        if (fd.d_invalid_lines.ili_total > 0) {
+            root.gen("invalid-lines");
+            yajlpp_map ili(gen);
+            ili.gen("count");
+            ili.gen((int64_t) fd.d_invalid_lines.ili_total);
+            ili.gen("first");
+            {
+                yajlpp_array lines(gen);
+                for (auto line : fd.d_invalid_lines.ili_lines) {
+                    lines.gen((int64_t) line);
+                }
+            }
+        }
+    }
+
+    return json_string(gen);
+}
+
 struct lnav_file : tvt_iterator_cursor<lnav_file> {
     using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
 
@@ -99,6 +291,9 @@ CREATE TABLE lnav_db.lnav_file (
     options_path TEXT,    -- The matched path for the file options.
     options TEXT,         -- The effective options for the file.
     stats TEXT,           -- JSON-encoded indexing statistics for the file.
+    archive_path TEXT,    -- The archive the file was extracted from, if any.
+    archive_member TEXT,  -- The path of the file within its archive.
+    details TEXT,         -- JSON-encoded details from the files panel.
 
     content BLOB HIDDEN   -- The contents of the file.
 );
@@ -185,6 +380,32 @@ CREATE TABLE lnav_db.lnav_file (
                           activity_handlers.to_json_string(lf->get_activity()));
                 break;
             case 11: {
+                const auto& archive = lf->get_open_options().loo_archive_path;
+                if (archive) {
+                    to_sqlite(ctx, archive->string());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            case 12: {
+                const auto& member = lf->get_open_options().loo_archive_member;
+                if (member) {
+                    to_sqlite(ctx, member->string());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            case 13: {
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
+                to_sqlite(ctx, details_to_json(lf->get_details()));
+                break;
+            }
+            case 14: {
                 if (sqlite3_vtab_nochange(ctx)) {
                     return SQLITE_OK;
                 }
@@ -266,9 +487,29 @@ CREATE TABLE lnav_db.lnav_file (
                    const char* options_path,
                    const char* options,
                    const char* stats,
+                   const char* archive_path,
+                   const char* archive_member,
+                   const char* details,
                    const char* content)
     {
         auto lf = this->lf_collection.fc_files[rowid];
+
+        // Where the file came from isn't something that can be changed.
+        const auto& open_opts = lf->get_open_options();
+        auto same_path = [](const char* value,
+                            const std::optional<std::filesystem::path>& curr) {
+            if (value == nullptr || curr == std::nullopt) {
+                return value == nullptr && curr == std::nullopt;
+            }
+            return curr->string() == value;
+        };
+        if (!same_path(archive_path, open_opts.loo_archive_path)
+            || !same_path(archive_member, open_opts.loo_archive_member))
+        {
+            throw sqlite_func_error(
+                "the archive_path and archive_member columns cannot be "
+                "updated");
+        }
         // Round toward negative infinity so the microseconds stay positive,
         // which is how a timeval is kept.
         auto offset_secs = time_offset / 1000LL;
