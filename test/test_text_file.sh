@@ -35,6 +35,41 @@ run_cap_test ${lnav_test} -n \
     -c ':next-mark user' \
     ${test_dir}/textfile_plain.0
 
+# marked lines are shown even when a filter-out matches them
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':filter-out Lorem|sed' \
+    -c ':goto 0' \
+    ${test_dir}/textfile_plain.0
+
+# marked lines are shown even when a filter-in does not match them
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':filter-in Duis' \
+    -c ':goto 0' \
+    ${test_dir}/textfile_plain.0
+
+# unmarking a line that a filter matches hides it
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':filter-out Lorem|sed' \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':goto 0' \
+    ${test_dir}/textfile_plain.0
+
+# the filter context is shown around marked lines
+run_cap_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':filter-in officia' \
+    -c ':filter-context 1' \
+    -c ':goto 0' \
+    ${test_dir}/textfile_plain.0
+
 run_cap_test ${lnav_test} -n \
     -c ':goto 1' \
     -c ':toggle-sticky-header' \

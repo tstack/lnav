@@ -101,6 +101,11 @@ public:
     void text_selection_changed(textview_curses& tc) override;
 
     void text_filters_changed() override;
+    void text_mark(const bookmark_type_t* bm,
+                   vis_line_t line,
+                   bool added) override;
+    void text_clear_marks(const bookmark_type_t* bm) override;
+    bool apply_pending_mark_refilter() override;
     void clear_preview() override;
     void add_commands_for_session(
         const std::function<void(const std::string&)>& receiver) override;

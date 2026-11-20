@@ -520,6 +520,7 @@ load_time_bookmarks()
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     bool reload_needed = false;
     bool meta_loaded = false;
+    bool marks_loaded = false;
     auto_mem<char, sqlite3_free> errmsg;
 
     log_info("loading bookmark db: %s", db_path.c_str());
@@ -830,6 +831,7 @@ load_time_bookmarks()
                             lss.set_user_mark(&textview_curses::BM_USER,
                                               line_cl);
                             marked_count += 1;
+                            marks_loaded = true;
                         }
                         if (sticky) {
                             lss.set_user_mark(&textview_curses::BM_STICKY,
@@ -991,6 +993,8 @@ load_time_bookmarks()
     if (reload_needed) {
         if (meta_loaded) {
             lss.set_line_meta_changed();
+        }
+        if (meta_loaded || marks_loaded) {
             lss.text_filters_changed();
         }
         lnav_data.ld_views[LNV_LOG].reload_data();
@@ -1671,6 +1675,11 @@ load_text_bookmarks(sqlite3* db)
             = front->fvs_bookmarks[&textview_curses::BM_USER];
         tc.get_bookmarks()[&textview_curses::BM_STICKY]
             = front->fvs_bookmarks[&textview_curses::BM_STICKY];
+        if (!front->fvs_content_marks[&textview_curses::BM_USER].empty()
+            && tss.has_content_filters())
+        {
+            tss.text_filters_changed();
+        }
     }
 
     tc.reload_data();

@@ -417,6 +417,13 @@ Features:
   `kubectl exec` is used with the current context.
 
 Interface Changes:
+* Marked lines are now always shown, even when a filter would
+  hide them.  This applies to the LOG, TEXT, and TIMELINE views.
+  In the LOG view, lines marked by `:mark-expr` count too, and
+  marks also override `:filter-expr` and the minimum log level.
+  The time range set by `:hide-lines-before`/`:hide-lines-after`,
+  hidden files, and row types hidden by `:hide-in-timeline` still
+  apply.  Unmarking a line that a filter matches hides it.
 * The `/tuning/remote/ssh/transfer-command` configuration
   property is no longer used.  The tailer is transferred by a
   built-in script that needs `head` on the remote host.

@@ -543,6 +543,13 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         }
     }
 
+    for (auto& view : lnav_data.ld_views) {
+        auto* tss = view.get_sub_source();
+        if (tss != nullptr && tss->apply_pending_mark_refilter()) {
+            retval.rir_changes += 1;
+        }
+    }
+
     // log_trace("rebuilding logs indexes");
     auto result = lss.rebuild_index(deadline);
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {

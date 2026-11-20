@@ -89,6 +89,111 @@ run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     ${test_dir}/logfile_multiline.0
 
+# marked lines are shown even when a filter-out matches them
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-out vmkboot" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# marked lines are shown even when a filter-in does not match them
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":filter-in vmkernel" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# unmarking a line that a filter matches hides it
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-out vmk" \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# lines marked by :mark-expr are shown through a filter-out
+run_cap_test ${lnav_test} -n \
+    -c ":mark-expr :sc_bytes = 46210" \
+    -c ":filter-out GET" \
+    ${test_dir}/logfile_access_log.0
+
+# clearing the :mark-expr hides the lines it had matched
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out vmk" \
+    -c ":mark-expr :sc_bytes = 46210" \
+    -c ":clear-mark-expr" \
+    ${test_dir}/logfile_access_log.0
+
+# marked lines are shown through :filter-expr
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":filter-expr :sc_status = 404" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# marked lines are shown below the minimum log level
+run_cap_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ":mark" \
+    -c ":set-min-log-level error" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# the time range still hides marked lines
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":hide-lines-before 2009-07-20 22:59:27" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# a mark on a continuation line shows the whole message
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-out Hello" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_multiline.0
+
+# a :mark-expr match in a multi-line message shows the whole message
+run_cap_test ${lnav_test} -n \
+    -c ":mark-expr :log_body LIKE '%How are%'" \
+    -c ":filter-out Hello" \
+    ${test_dir}/logfile_multiline.0
+
+# marked lines are shown through a filter-out with :hide-unmarked-lines
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-out vmkboot" \
+    -c ":hide-unmarked-lines" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+# the filter context is shown around marked lines
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-in fatal" \
+    -c ":filter-context 1" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_leveltest.0
+
+# clearing the :mark-expr without a filter removes its marks
+run_cap_test ${lnav_test} -n \
+    -c ":mark-expr :sc_bytes = 46210" \
+    -c ":clear-mark-expr" \
+    -c ":goto 0" \
+    -c ":next-mark user-expr" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -n \
     -c ":unix-time" \
     "${test_dir}/logfile_access_log.*"

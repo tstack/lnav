@@ -263,6 +263,10 @@ public:
 
     bool get_marked_only() { return this->lss_marked_only; }
 
+    bool has_content_filters() const;
+
+    bool apply_pending_mark_refilter();
+
     size_t text_line_count() { return this->lss_filtered_index.size(); }
 
     size_t text_line_width(textview_curses& curses)
@@ -311,10 +315,7 @@ public:
 
     void text_update_marks(vis_bookmarks& bm);
 
-    void set_user_mark(const bookmark_type_t* bm, content_line_t cl)
-    {
-        this->lss_user_marks[bm].insert_once(cl);
-    }
+    void set_user_mark(const bookmark_type_t* bm, content_line_t cl);
 
     bookmarks<content_line_t>::type& get_user_bookmarks()
     {
@@ -1149,7 +1150,31 @@ private:
         this->lss_line_size_cache[0].first = -1;
     }
 
-    bool check_extra_filters(iterator ld, logfile::iterator ll);
+    /**
+     * Decides whether a line is shown.  A line whose message is marked,
+     * by the user or by `:mark-expr`, is shown even when the content
+     * filters (text filters, `:filter-expr`, min level) would hide it.
+     * The time range still applies to it.
+     */
+    bool check_filters(iterator ld,
+                       logfile::iterator ll,
+                       uint64_t line_number,
+                       uint32_t filter_in_mask,
+                       uint32_t filter_out_mask,
+                       bool msg_marked);
+
+    /** The lines of the message containing `ll`, as a half-open range. */
+    static std::pair<logfile::iterator, logfile::iterator> msg_range(
+        iterator ld, logfile::iterator ll);
+
+    /** True if any line in the message containing `ll` is marked. */
+    bool is_msg_marked(iterator ld, logfile::iterator ll) const;
+
+    /**
+     * Evaluates the `:mark-expr` expression for each line in the message
+     * containing `ll` and returns true if any line in it is marked.
+     */
+    bool eval_msg_marks(iterator ld, logfile::iterator ll);
 
     /**
      * Folds a metric line that passed the filters into the last visible

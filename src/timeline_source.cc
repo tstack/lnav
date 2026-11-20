@@ -1031,6 +1031,17 @@ timeline_source::rebuild_indexes()
         bv.clear();
     }
 
+    // Marked rows are shown even when the text filters would hide them.
+    // The names point into ts_pending_bookmarks, which is not changed
+    // until apply_pending_bookmarks() runs after the rebuild.
+    std::set<std::pair<row_type, string_fragment>> marked_rows;
+    for (const auto& pb : this->ts_pending_bookmarks) {
+        if (pb.pb_mark_type == &textview_curses::BM_USER) {
+            marked_rows.emplace(pb.pb_row_type,
+                                string_fragment::from_str(pb.pb_row_name));
+        }
+    }
+
     bm.clear();
 
     this->ts_lower_bound = {};
@@ -1553,6 +1564,15 @@ timeline_source::rebuild_indexes()
                 }
             }
 
+            if (!marked_rows.empty()
+                && marked_rows.count(
+                       {row.or_type, pair.second.or_name.to_frag()})
+                    > 0)
+            {
+                filtered_in = true;
+                filtered_out = false;
+            }
+
             if (min_log_time_opt
                 && otr.otr_range.tr_end < min_log_time_opt.value())
             {
@@ -2006,6 +2026,61 @@ timeline_source::text_filters_changed()
     this->rebuild_indexes();
     this->tss_view->reload_data();
     this->tss_view->redo_search();
+}
+
+void
+timeline_source::text_mark(const bookmark_type_t* bm,
+                           vis_line_t line,
+                           bool added)
+{
+    if (bm == &textview_curses::BM_USER && !added
+        && this->has_content_filters())
+    {
+        this->tss_mark_refilter_pending = true;
+    }
+}
+
+void
+timeline_source::text_clear_marks(const bookmark_type_t* bm)
+{
+    if (bm == &textview_curses::BM_USER && this->tss_view != nullptr
+        && !this->tss_view->get_bookmarks()[bm].empty()
+        && this->has_content_filters())
+    {
+        this->tss_mark_refilter_pending = true;
+    }
+}
+
+bool
+timeline_source::apply_pending_mark_refilter()
+{
+    if (!std::exchange(this->tss_mark_refilter_pending, false)
+        || this->tss_view == nullptr)
+    {
+        return false;
+    }
+
+    std::optional<std::pair<row_type, std::string>> sel_row;
+    auto sel = this->tss_view->get_selection();
+    if (sel && sel.value() < vis_line_t(this->ts_time_order.size())) {
+        const auto& row = *this->ts_time_order[sel.value()];
+        sel_row = std::make_pair(row.or_type, row.or_name.to_string());
+    }
+
+    this->text_filters_changed();
+
+    if (sel_row) {
+        for (size_t lpc = 0; lpc < this->ts_time_order.size(); lpc++) {
+            const auto& row = *this->ts_time_order[lpc];
+            if (row.or_type == sel_row->first
+                && row.or_name.to_frag() == sel_row->second)
+            {
+                this->tss_view->set_selection(vis_line_t(lpc));
+                break;
+            }
+        }
+    }
+    return true;
 }
 
 void

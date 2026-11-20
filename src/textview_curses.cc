@@ -2477,7 +2477,7 @@ filter_stack::get_mask(uint32_t& filter_mask)
 
 void
 filter_stack::get_enabled_mask(uint32_t& filter_in_mask,
-                               uint32_t& filter_out_mask)
+                               uint32_t& filter_out_mask) const
 {
     filter_in_mask = filter_out_mask = 0;
     for (auto& iter : *this) {
@@ -2574,6 +2574,29 @@ text_sub_source::update_filter_hash_state(hasher& h) const
             h.update(0);
         }
     }
+}
+
+bool
+text_sub_source::has_content_filters() const
+{
+    if (!this->tss_apply_filters) {
+        return false;
+    }
+
+    uint32_t filter_in_mask, filter_out_mask;
+    this->tss_filters.get_enabled_mask(filter_in_mask, filter_out_mask);
+    return filter_in_mask != 0 || filter_out_mask != 0;
+}
+
+bool
+text_sub_source::apply_pending_mark_refilter()
+{
+    if (!std::exchange(this->tss_mark_refilter_pending, false)) {
+        return false;
+    }
+
+    this->text_filters_changed();
+    return true;
 }
 
 void

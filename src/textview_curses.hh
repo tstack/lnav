@@ -285,7 +285,8 @@ public:
 
     void get_mask(uint32_t& filter_mask);
 
-    void get_enabled_mask(uint32_t& filter_in_mask, uint32_t& filter_out_mask);
+    void get_enabled_mask(uint32_t& filter_in_mask,
+                          uint32_t& filter_out_mask) const;
 
     uint32_t fs_generation{0};
 
@@ -663,6 +664,20 @@ public:
 
     virtual void text_filters_changed() {}
 
+    /**
+     * True when a filter that a mark can override is active, so that
+     * unmarking a line can hide it.  Marked lines are shown even when
+     * these filters would hide them.
+     */
+    virtual bool has_content_filters() const;
+
+    /**
+     * Unmarking a line can hide it, but the caller is usually in a loop
+     * over view rows, so the refilter is deferred until this is called.
+     * Returns true if the filters were reapplied.
+     */
+    virtual bool apply_pending_mark_refilter();
+
     virtual int get_filtered_count() const { return 0; }
 
     virtual int get_filtered_count_for(size_t filter_index) const { return 0; }
@@ -737,6 +752,7 @@ protected:
     textview_curses* tss_view{nullptr};
     filter_stack tss_filters;
     log_level_t tss_min_log_level{LEVEL_UNKNOWN};
+    bool tss_mark_refilter_pending{false};
 };
 
 class vis_location_history : public location_history {

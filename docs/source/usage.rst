@@ -387,6 +387,12 @@ To reduce the amount of noise in a log file, **lnav** can hide log messages
 that match certain criteria.  The following sub-sections explain ways to go
 about that.
 
+Marked lines are always shown, even when a filter would hide them.  In the
+LOG view, this includes messages marked by :ref:`:mark-expr<mark_expr>`, and
+marks also override :ref:`:filter-expr<filter_expr>` and the minimum log
+level.  The time range set by :ref:`:hide-lines-before<hide_lines_before>`
+and :ref:`:hide-lines-after<hide_lines_after>` still applies to them.
+
 
 Regular Expression Match
 ^^^^^^^^^^^^^^^^^^^^^^^^

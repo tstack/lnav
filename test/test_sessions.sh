@@ -614,3 +614,37 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line, log_named_searches FROM syslog_log WHERE log_named_searches IS NOT NULL" \
     ${test_dir}/logfile_syslog.0
 
+rm -rf ./sessions
+mkdir -p $HOME
+
+# a mark saved with a filter that hides its line
+run_cap_test ${lnav_test} -nq \
+    -c ":reset-session" \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":filter-out vmk" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.0
+
+# the restored mark shows its line through the restored filter
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_access_log.0
+
+rm -rf ./sessions
+mkdir -p $HOME
+
+# a text file mark saved with a filter that hides its line
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 1' \
+    -c ':mark' \
+    -c ':filter-out Lorem|sed' \
+    -c ':save-session' \
+    ${test_dir}/textfile_plain.0
+
+# the restored text file mark shows its line through the restored filter
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    -c ':goto 0' \
+    ${test_dir}/textfile_plain.0

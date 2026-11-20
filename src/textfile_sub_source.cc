@@ -222,6 +222,13 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     return {};
 }
 
+static bool
+is_user_marked(const textfile_sub_source::file_view_state& fvs, uint32_t cl)
+{
+    const auto& marks = fvs.fvs_content_marks[&textview_curses::BM_USER];
+    return marks.bv_tree.find(cl) != marks.bv_tree.end();
+}
+
 void
 textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                                          int row,
@@ -345,7 +352,8 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
             this->get_filters().get_enabled_mask(ctx_filter_in_mask,
                                                  ctx_filter_out_mask);
             auto content_line = ctx_lfo->lfo_filter_state.tfs_index[row];
-            if (ctx_lfo->excluded(
+            if (!is_user_marked(**curr_iter, content_line)
+                && ctx_lfo->excluded(
                     ctx_filter_in_mask, ctx_filter_out_mask, content_line))
             {
                 value_out.emplace_back(line_range{0, -1},
@@ -492,6 +500,11 @@ textfile_sub_source::text_mark(const bookmark_type_t* bm,
 
     auto cl = lfo->lfo_filter_state.tfs_index[static_cast<int>(line)];
     front->fvs_content_marks[bm].apply(cl, added);
+    if (bm == &textview_curses::BM_USER && !added
+        && this->has_content_filters())
+    {
+        this->tss_mark_refilter_pending = true;
+    }
 }
 
 void
@@ -502,6 +515,12 @@ textfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
     }
 
     auto& front = this->tss_files.front();
+    if (bm == &textview_curses::BM_USER
+        && !front->fvs_content_marks[bm].empty()
+        && this->has_content_filters())
+    {
+        this->tss_mark_refilter_pending = true;
+    }
     front->fvs_content_marks[bm].clear();
 }
 
@@ -578,8 +597,10 @@ textfile_sub_source::text_filters_changed()
     }
 
     auto* lfo = (line_filter_observer*) lf->get_logline_observer();
+    const auto& fvs = **this->current_file_state();
     uint32_t filter_in_mask, filter_out_mask;
 
+    this->tss_mark_refilter_pending = false;
     lfo->clear_deleted_filter_state();
     lf->reobserve_from(lf->begin() + lfo->get_min_count(lf->size()));
 
@@ -601,8 +622,8 @@ textfile_sub_source::text_filters_changed()
 
     for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
         if (this->tss_apply_filters) {
-            auto dominated
-                = lfo->excluded(filter_in_mask, filter_out_mask, lpc);
+            auto dominated = !is_user_marked(fvs, lpc)
+                && lfo->excluded(filter_in_mask, filter_out_mask, lpc);
             if (!dominated && lf->has_line_metadata()) {
                 auto ll = lf->begin() + lpc;
                 if (ll->get_time() < this->ttt_min_row_time) {
@@ -1396,7 +1417,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                                  filter_out_mask);
             auto* lfo = (line_filter_observer*) lf->get_logline_observer();
             for (uint32_t lpc = pf.pf_old_size; lpc < lf->size(); lpc++) {
-                if (this->tss_apply_filters
+                if (this->tss_apply_filters && !is_user_marked(*fvs, lpc)
                     && lfo->excluded(filter_in_mask, filter_out_mask, lpc))
                 {
                     continue;

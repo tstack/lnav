@@ -71,6 +71,35 @@ run_cap_test ${lnav_test} -n \
     -c ':filter-out CdysLK1XpcrXOpVDuh' \
     ${test_dir}/logfile_bro_http.log.0
 
+# marked rows are shown even when a filter-in does not match them
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ";UPDATE lnav_views SET selection = 0 WHERE name = 'timeline'" \
+    -c ':mark' \
+    -c ':filter-in CdysLK1XpcrXOpVDuh' \
+    -c ";UPDATE lnav_views SET top = 0 WHERE name = 'timeline'" \
+    ${test_dir}/logfile_bro_http.log.0
+
+# marked rows are shown even when a filter-out matches them
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ";UPDATE lnav_views SET selection = 0 WHERE name = 'timeline'" \
+    -c ':mark' \
+    -c ':filter-out CwFs1P2UcUdlSxD2La' \
+    -c ";UPDATE lnav_views SET top = 0 WHERE name = 'timeline'" \
+    ${test_dir}/logfile_bro_http.log.0
+
+# unmarking a row that a filter matches hides it
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view timeline' \
+    -c ";UPDATE lnav_views SET selection = 0 WHERE name = 'timeline'" \
+    -c ':mark' \
+    -c ':filter-in CdysLK1XpcrXOpVDuh' \
+    -c ";UPDATE lnav_views SET selection = 0 WHERE name = 'timeline'" \
+    -c ':mark' \
+    -c ";UPDATE lnav_views SET top = 0 WHERE name = 'timeline'" \
+    ${test_dir}/logfile_bro_http.log.0
+
 run_cap_test ${lnav_test} -n \
     -c ':switch-to-view timeline' \
     -c ':hide-file *' \
