@@ -1,0 +1,6 @@
+2016-06-30 12:00:01 trace tracemessage
+[7m2016-06-30 12:00:02[0m[7m [0m[7mdebug[0m[7m [0m[7mdebugmessage[0m
+2016-06-30 12:00:03 debug2 debug2message
+[33m2016-06-30 12:00:06[0m[33m [0m[33mwarn[0m[33m [0m[33mwarnmessage[0m
+[31m2016-06-30 12:00:07[0m[31m [0m[31mfatal[0m[31m [0m[31mfatalmessage[0m
+[31m2016-06-30 12:00:08 invalid invalidmessage[0m

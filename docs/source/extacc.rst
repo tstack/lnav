@@ -139,7 +139,9 @@ The following routes are available:
     server knows when there has been a state-change with respect to this
     client.  Currently, the :code:`view_states/log_selection` field is
     the only stable field and refers to the focused message in the LOG
-    view.  The :code:`log_index_seq` field is the :code:`log_index.seq`
+    view, along with :code:`view_states/fields`, which changes when the
+    fields or metrics that the LOG view shows change, e.g. with
+    :code:`:hide-fields` or :code:`:show-fields`.  The :code:`log_index_seq` field is the :code:`log_index.seq`
     from the previous response.
   * :code:`background_tasks` - A list of background task progress updates.
   * :code:`log_index` - What changed in the LOG view's index since the

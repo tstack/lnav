@@ -2325,6 +2325,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     lnav_data.ld_views[LNV_TEXT].update_hash_state(h);
                     vs.vs_text = h.to_uuid_string();
                 }
+                vs.vs_fields = fmt::to_string(
+                    log_format::get_field_visibility_generation());
                 {
                     auto& lss = lnav_data.ld_log_source;
 

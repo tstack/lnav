@@ -3644,6 +3644,55 @@ logfile::metric_display_columns(const metric_display_def& mdd) const
     return this->widths_for_display(mdd).mdw_columns;
 }
 
+bool
+logfile::is_metric_on_line(intern_string_t name) const
+{
+    auto* format = this->lf_format.get();
+    if (format == nullptr) {
+        return false;
+    }
+
+    if (format->metrics_are_columns()) {
+        // A column the user hid is in the field states, as :hide-fields
+        // left it.
+        const auto states = format->get_field_states();
+        const auto iter = states.find(name);
+        return iter == states.end() || !iter->second.is_hidden();
+    }
+
+    const auto meta = format->get_metric_meta(name);
+    if (meta && meta->is_hidden()) {
+        return false;
+    }
+
+    const auto* display = format->get_metric_display();
+    if (display != nullptr) {
+        for (const auto& mdd : *display) {
+            for (const auto& column : this->metric_display_columns(mdd)) {
+                if (std::find(column.mdc_series.begin(),
+                              column.mdc_series.end(),
+                              name)
+                    != column.mdc_series.end())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    const auto* stats = this->stats_for_metric(name);
+    if (stats == nullptr || stats->lvs_count == 0) {
+        return false;
+    }
+    const auto sf = name.to_string_fragment();
+    if (format->is_metric_shown(sf)) {
+        return true;
+    }
+    return stats->lvs_min_value < stats->lvs_max_value
+        && !format->is_metric_hidden(sf);
+}
+
 std::optional<double>
 logfile::metric_sample_number(const logline_value& lv)
 {

@@ -1,0 +1,15 @@
+source,metric,shown
+logfile_json_metrics,cpu.pct,1
+logfile_json_metrics,disk.pct,0
+logfile_json_metrics,mem.used{host=a},1
+logfile_json_metrics,mem.used{host=b},1
+logfile_json_metrics,queue.depth,0
+logfile_json_metrics,requests,1
+logfile_json_metrics_auto,cpu.pct,1
+logfile_json_metrics_auto,disk.pct,0
+logfile_json_metrics_auto,mem.used{host=a},1
+logfile_json_metrics_auto,mem.used{host=b},1
+logfile_json_metrics_auto,queue.depth,1
+logfile_metrics,cpu_pct,1
+logfile_metrics,disk_iops,1
+logfile_metrics,mem_mb,1

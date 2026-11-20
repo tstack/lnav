@@ -264,6 +264,12 @@ table:
   values, so it can be compared with the other numbers.
 :range_max: (hidden) The highest value the format says the metric can have,
   found the same way as :code:`range_min`, or NULL.
+:shown: (hidden) 1 if the metric is on the file's lines in the LOG view
+  now, after any :code:`:hide-fields` or :code:`:show-fields`: a column of
+  a CSV that is not hidden, a series of an entry of the format's display
+  list, or, for a format without one, a metric whose values vary or that
+  the user showed, unless it is hidden.  A line without a display list ends
+  at the edge of the view, so a metric that is shown can still be cut off.
 
 For example, to list the metrics that were sampled in the last hour:
 

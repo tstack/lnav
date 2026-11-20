@@ -185,6 +185,7 @@ longpoll(const PollInput& pi)
             && pi.view_states.log_selection
                 == p->p_latest_state.vs_log_selection
             && pi.view_states.text == p->p_latest_state.vs_text
+            && pi.view_states.fields == p->p_latest_state.vs_fields
             && pi.log_index_seq == p->p_latest_state.vs_log_index_seq;
         auto tasks_are_same = true;
 
@@ -253,6 +254,7 @@ longpoll(const PollInput& pi)
             ::rust::String::lossy(p->p_latest_state.vs_log),
             ::rust::String::lossy(p->p_latest_state.vs_log_selection),
             ::rust::String::lossy(p->p_latest_state.vs_text),
+            ::rust::String::lossy(p->p_latest_state.vs_fields),
         };
 
         const auto& latest = p->p_latest_state;
@@ -364,6 +366,7 @@ notify_pollers(const view_states& vs)
         if (poller.view_states.log != vs.vs_log
             || poller.view_states.log_selection != vs.vs_log_selection
             || poller.view_states.text != vs.vs_text
+            || poller.view_states.fields != vs.vs_fields
             || poller.log_index_seq != vs.vs_log_index_seq)
         {
             p->p_condvar.notify_all();

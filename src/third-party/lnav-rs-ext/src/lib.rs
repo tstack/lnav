@@ -239,10 +239,14 @@ mod ffi {
     }
 
     #[derive(Serialize, Deserialize, Default)]
+    #[serde(default)]
     struct ViewStates {
         pub log: String,
         pub log_selection: String,
         pub text: String,
+        /// Changes when the fields or metrics the LOG view shows change
+        /// (`:hide-fields`, `:show-fields`), so a client can read them again.
+        pub fields: String,
     }
 
     #[derive(Serialize, Deserialize, Default)]

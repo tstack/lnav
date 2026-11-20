@@ -380,7 +380,7 @@ public:
         return retval;
     }
 
-    bool hide_field(const intern_string_t field_name, bool val) override
+    bool apply_hide_field(const intern_string_t field_name, bool val) override
     {
         if (field_name == TS_META.lvm_name) {
             TS_META.lvm_user_hidden = val;
@@ -973,7 +973,7 @@ public:
     // shares the column name.  Only the currently-hidden columns are
     // tracked — showing a column erases its entry rather than storing
     // `false`, so the set stays bounded across hide/show cycles.
-    bool hide_field(const intern_string_t field_name, bool val) override
+    bool apply_hide_field(const intern_string_t field_name, bool val) override
     {
         if (val) {
             mlf_hidden_columns.insert(field_name);
@@ -996,7 +996,13 @@ public:
     {
         std::map<intern_string_t, logline_value_meta> retval;
         for (const auto& meta : this->mlf_state.mss_field_defs) {
-            retval.emplace(meta.lvm_name, meta);
+            auto state = meta;
+            // Hidden through another instance (the root format, for
+            // :hide-fields metrics_log.<col>) after this one saw its header.
+            if (mlf_hidden_columns.count(meta.lvm_name) != 0) {
+                state.lvm_user_hidden = true;
+            }
+            retval.emplace(meta.lvm_name, std::move(state));
         }
         // Include columns that were hidden before this instance saw
         // its header, so session save still captures them.
@@ -1533,7 +1539,7 @@ public:
         return std::nullopt;
     }
 
-    bool hide_field(intern_string_t field_name, bool val) override
+    bool apply_hide_field(intern_string_t field_name, bool val) override
     {
         if (field_name == LOG_TIME_STR) {
             field_name = TS;
@@ -2395,7 +2401,7 @@ public:
         return std::nullopt;
     }
 
-    bool hide_field(const intern_string_t field_name, bool val) override
+    bool apply_hide_field(const intern_string_t field_name, bool val) override
     {
         if (field_name == LOG_TIME_STR) {
             auto date_iter = FIELD_META.find(F_DATE);

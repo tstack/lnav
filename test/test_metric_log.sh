@@ -483,6 +483,41 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_metrics.csv \
     ${test_dir}/logfile_metrics2.csv
 
+# lnav_file_metrics.shown says which metrics are on a file's lines in the
+# LOG view: a display list's entries, or, without one, the metrics that
+# vary, never the hidden ones; and a CSV's columns.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT source, metric, shown FROM lnav_file_metrics ORDER BY source, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json \
+    ${test_dir}/logfile_json_metrics_auto.json \
+    ${test_dir}/logfile_metrics.csv
+
+# A metric hidden with :hide-fields isn't shown, nor is a CSV's hidden
+# column.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":hide-fields cpu.pct" \
+    -c ";SELECT source, metric, shown FROM lnav_file_metrics ORDER BY source, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+run_cap_test ${lnav_test} -n \
+    -c ":hide-fields metrics_log.cpu_pct" \
+    -c ";SELECT metric, shown FROM lnav_file_metrics ORDER BY metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics.csv
+
+# Hiding the value field of a format whose metrics are named in the data
+# blanks every cell on the line, so none of its metrics is shown.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":hide-fields test_json_metrics_log.value" \
+    -c ";SELECT metric, shown FROM lnav_file_metrics ORDER BY metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
 # A log_time_usecs range narrows the scan like a log_time one, and gives the
 # same rows.
 run_cap_test ${lnav_test} -n \

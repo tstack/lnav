@@ -389,9 +389,31 @@ public:
         return retval;
     }
 
-    virtual bool hide_field(const intern_string_t field_name, bool val)
+    /**
+     * Hides or shows a field, returning false if the format has no field
+     * with that name.  A change bumps the field visibility generation.
+     */
+    bool hide_field(const intern_string_t field_name, bool val)
     {
-        return false;
+        if (!this->apply_hide_field(field_name, val)) {
+            return false;
+        }
+        field_visibility_changed();
+        return true;
+    }
+
+    /**
+     * Changes whenever the user hides or shows a field or metric of any
+     * format, or a format's metric display list changes.
+     */
+    static size_t get_field_visibility_generation()
+    {
+        return lf_field_visibility_generation;
+    }
+
+    static void field_visibility_changed()
+    {
+        lf_field_visibility_generation += 1;
     }
 
     virtual std::map<intern_string_t, logline_value_meta> get_field_states()
@@ -713,6 +735,16 @@ public:
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
+    static size_t lf_field_visibility_generation;
+
+    /**
+     * Does the work of hide_field(), returning false if the format has no
+     * field with that name.
+     */
+    virtual bool apply_hide_field(const intern_string_t field_name, bool val)
+    {
+        return false;
+    }
 
     struct pcre_format {
         template<typename T, std::size_t N>

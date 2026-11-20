@@ -840,6 +840,7 @@ logline_value_vector::operator=(const logline_value_vector& other)
 }
 
 std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
+size_t log_format::lf_field_visibility_generation = 0;
 
 date_time_scanner
 log_format::build_time_scanner(const date_time_scanner& file_dts) const
@@ -7400,6 +7401,7 @@ external_log_format::update_metric_display()
     mds.mds_shown.insert(
         mds.mds_shown.end(), mds.mds_extra.begin(), mds.mds_extra.end());
     mds.mds_generation += 1;
+    field_visibility_changed();
 }
 
 bool
@@ -7531,7 +7533,8 @@ external_log_format::reset_user_field_state()
 }
 
 bool
-external_log_format::hide_field(const intern_string_t field_name, bool val)
+external_log_format::apply_hide_field(const intern_string_t field_name,
+                                      bool val)
 {
     const auto vd_iter = this->elf_value_defs.find(field_name);
     if (vd_iter == this->elf_value_defs.end() && this->elf_metric.is_defined())

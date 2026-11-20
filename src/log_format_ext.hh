@@ -197,7 +197,8 @@ public:
 
     bool match_samples(const std::vector<sample_t>& samples) const;
 
-    bool hide_field(const intern_string_t field_name, bool val) override;
+    bool apply_hide_field(const intern_string_t field_name,
+                          bool val) override;
 
     std::map<intern_string_t, logline_value_meta> get_field_states() override;
 

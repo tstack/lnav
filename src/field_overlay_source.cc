@@ -161,27 +161,7 @@ field_overlay_source::add_metric_samples(vis_line_t row)
         const auto name_sf = sl.sl_meta.lvm_name.to_string_fragment();
         const auto base = lnav::metrics::base_name(name_sf);
         const auto* format = sl.sl_lf->get_format_ptr();
-        const auto* display = format->get_metric_display();
-        auto on_line = false;
-        if (display != nullptr) {
-            for (const auto& mdd : *display) {
-                if (mdd.matches(name_sf)) {
-                    on_line = true;
-                    break;
-                }
-            }
-        } else if (format->is_metric_shown(name_sf)) {
-            on_line = true;
-        } else {
-            // Otherwise the line has the metrics that vary.
-            const auto* line_stats
-                = sl.sl_lf->stats_for_metric(sl.sl_meta.lvm_name);
-            on_line = !format->is_metric_hidden(name_sf)
-                && (format->metrics_are_columns()
-                    || (line_stats != nullptr && line_stats->lvs_count > 0
-                        && line_stats->lvs_min_value
-                            < line_stats->lvs_max_value));
-        }
+        const auto on_line = sl.sl_lf->is_metric_on_line(sl.sl_meta.lvm_name);
 
         attr_line_t al;
         al.append("   ");

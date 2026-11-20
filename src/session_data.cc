@@ -2497,6 +2497,7 @@ reset_session()
         }
         if (changed) {
             elf->elf_value_defs_state->vds_generation += 1;
+            log_format::field_visibility_changed();
         }
     }
 }

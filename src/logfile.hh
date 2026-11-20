@@ -1042,6 +1042,16 @@ public:
     const std::vector<metric_display_column>& metric_display_columns(
         const metric_display_def& mdd) const;
 
+    /**
+     * Whether the LOG view puts the metric `name` on this file's lines, as
+     * logfile_sub_source composes them: a column of a CSV unless the user
+     * hid it, a series of an entry of the format's display list, or,
+     * without a display list, a metric whose values vary or that the user
+     * showed, unless it is hidden.  A sample whose meta is hidden, e.g.
+     * because the format's value field is, is never on the line.
+     */
+    bool is_metric_on_line(intern_string_t name) const;
+
     /** The names of this file's metrics, in the order of their columns or
      * of when they were first seen. */
     std::vector<intern_string_t> get_metric_names() const;

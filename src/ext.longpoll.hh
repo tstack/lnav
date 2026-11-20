@@ -49,6 +49,11 @@ struct view_states {
     std::string vs_log;
     std::string vs_log_selection;
     std::string vs_text;
+    /**
+     * Changes when the fields or metrics the LOG view shows change: hidden
+     * or shown, or a format's metric display list.
+     */
+    std::string vs_fields;
     /** logfile_sub_source::lss_index_change_seq */
     uint64_t vs_log_index_seq{0};
     uint64_t vs_log_row_count{0};

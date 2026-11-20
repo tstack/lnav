@@ -1,0 +1,7 @@
+metric,shown
+cpu.pct,0
+disk.pct,0
+mem.used{host=a},0
+mem.used{host=b},0
+queue.depth,0
+requests,0

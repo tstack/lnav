@@ -1017,6 +1017,9 @@ struct ViewStates final {
   ::rust::String log;
   ::rust::String log_selection;
   ::rust::String text;
+  // Changes when the fields or metrics the LOG view shows change
+  // (`:hide-fields`, `:show-fields`), so a client can read them again.
+  ::rust::String fields;
 
   using IsRelocatable = ::std::true_type;
 };

@@ -1280,7 +1280,8 @@ CREATE TABLE lnav_db.lnav_file_metrics (
     unit_suffix text HIDDEN,       -- The suffix the values are shown with, e.g. 's' or 'B', or NULL if the format gives none.  A CSV's cells carry their own, so it is NULL for a column of a CSV.
     unit_divisor real HIDDEN,      -- What the values are divided by to be in the unit of the suffix, or 1 if they are not divided.
     range_min real HIDDEN,         -- The lowest value the format says the metric can have, from its display entry or the first matching pattern, in the units of the values (like min) rather than of the suffix, or NULL.
-    range_max real HIDDEN          -- The highest value the format says the metric can have, as range_min, or NULL.
+    range_max real HIDDEN,         -- The highest value the format says the metric can have, as range_min, or NULL.
+    shown integer HIDDEN           -- 1 if the metric is on the file's lines in the LOG view now, after any :hide-fields or :show-fields: a column of a CSV that is not hidden, a series of an entry of the format's display list, or, for a format without one, a metric whose values vary or that the user showed, unless it is hidden.  A line without a display list ends at the edge of the view, so a metric that is shown can still be cut off.
 );
 )";
 
@@ -1477,6 +1478,14 @@ CREATE TABLE lnav_db.lnav_file_metrics (
                 } else {
                     sqlite3_result_null(ctx);
                 }
+                break;
+            }
+            case 20: {
+                // Looked up now: the user can hide and show metrics, and the
+                // file can have been indexed more, since the cursor was
+                // opened.
+                sqlite3_result_int(
+                    ctx, mr.mr_logfile->is_metric_on_line(mr.mr_name));
                 break;
             }
             default:
